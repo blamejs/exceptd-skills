@@ -219,6 +219,7 @@ Use this mapping. Pick one primary route and zero-or-more secondary routes.
 - MLOps security / training data integrity / model registry / model signing / drift detection / MLflow / Kubeflow / Vertex AI / SageMaker / Hugging Face question → `mlops-security`
 - Incident response / IR playbook / PICERL / NIST 800-61 / ISO 27035 / breach notification / BEC incident / AI-class incident handling question → `incident-response-playbook`
 - Email security / anti-phishing / SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / BEC / vishing / deepfake / AI-augmented phishing question → `email-security-anti-phishing`
+- Age gate / age verification / age assurance / child online safety / COPPA / CIPA / California AADC / UK Children's Code / KOSA / GDPR Art. 8 / DSA Art. 28 / parental consent / CSAM detection question → `age-gates-child-safety`
 
 Multiple routes are common and expected. A new MCP CVE routes to `mcp-agent-trust` (primary), `ai-attack-surface` (secondary, for the broader surface impact), and `exploit-scoring` (secondary, if the RWEP needs explanation). State primary vs. secondary explicitly in the output.
 

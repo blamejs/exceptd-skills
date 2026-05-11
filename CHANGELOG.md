@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.4 — 2026-05-11
+
+Pin-level rename + terminology cleanup. The `age-gates-minor-safeguarding` skill shipped in 0.5.3 has been renamed to `age-gates-child-safety`. Prose use of "minor" replaced with "child" / "children" / specific cohort terms ("under-13", "under-16", "under-18") throughout the skill body. Direct regulatory citations that use the word (CN Minors Protection Law, DSA Art. 28 wording, AVMSD "minor protection" terminology, Character.ai case reference) preserved verbatim.
+
+### Public-surface change
+
+This is a renamed skill (removed `age-gates-minor-safeguarding` + added `age-gates-child-safety`). The snapshot gate handled the additive rename via `npm run refresh-snapshot`. Downstream consumers pinned to the previous name should update their reference; the published name had only been on `main` for ~one commit.
+
+### Files touched
+
+- Directory rename: `skills/age-gates-minor-safeguarding/` → `skills/age-gates-child-safety/`
+- Skill frontmatter: `name`, `description`, `triggers`
+- Skill body: prose "minor" → "child" where context allowed (~71 of 86 occurrences); 15 remaining are regulatory citations preserved verbatim
+- `manifest.json`: renamed entry + updated path + triggers
+- `manifest-snapshot.json`: regenerated
+- `AGENTS.md`: Quick Skill Reference row updated
+- `skills/researcher/skill.md`: dispatch routing entry added (the rename surfaced that this skill was never wired into researcher dispatch in 0.5.3 — corrected here)
+- `CHANGELOG.md`: 0.5.3 entry retroactively updated to use the new name
+- SBOM refreshed
+
+### Verification
+
+- 10/10 predeploy gates green
+- 38/38 skills signed and lint-passing
+
 ## 0.5.3 — 2026-05-11
 
 Pin-level skill additions closing thematic and age-related coverage gaps. Total skills 31 → 38.
@@ -15,7 +40,7 @@ Pin-level skill additions closing thematic and age-related coverage gaps. Total 
 - **`email-security-anti-phishing`** — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT email auth, AI-augmented phishing (voice cloning, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways, FIDO2/WebAuthn passkey deployment.
 
 **Age-related (1)** — flagged as audit gap during this cycle:
-- **`age-gates-minor-safeguarding`** — Age verification + minor safeguarding across ~25 jurisdictions: US COPPA + CIPA + California AADC + NY SAFE for Kids + adult-site age-verification state laws (TX/MS/UT/16+ states); EU GDPR Art. 8 + DSA Art. 28 + AVMSD + CSAM Regulation pending; UK Online Safety Act 2023 (Ofcom enforcement July 2025) + Children's Code; AU Online Safety Act + under-16 social media ban; IN DPDPA child provisions; BR LGPD Art. 14; CN Minors Protection Law; SG Online Safety Act; KOSA pending US federal. Age-verification standards (IEEE 2089-2021, OpenID Connect age claims). AI product age policies. CSAM detection (NCMEC).
+- **`age-gates-child-safety`** — Age verification + child online safety across ~25 jurisdictions: US COPPA + CIPA + California AADC + NY SAFE for Kids + adult-site age-verification state laws (TX/MS/UT/16+ states); EU GDPR Art. 8 + DSA Art. 28 + AVMSD + CSAM Regulation pending; UK Online Safety Act 2023 (Ofcom enforcement July 2025) + Children's Code; AU Online Safety Act + under-16 social media ban; IN DPDPA child provisions; BR LGPD Art. 14; CN Minors Protection Law (regulation name preserved verbatim); SG Online Safety Act; KOSA pending US federal. Age-verification standards (IEEE 2089-2021, OpenID Connect age claims). AI product age policies. CSAM detection (NCMEC).
 
 ### Cross-skill integration
 
