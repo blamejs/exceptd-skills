@@ -1,0 +1,1243 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "last_updated": "2026-05-01",
+    "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history."
+  },
+  "NIST-800-53-SI-2": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SI-2",
+    "control_name": "Flaw Remediation",
+    "designed_for": "Network-centric environments with human-speed exploit development. Original 2013 context; Rev 5 2020. Assumes organizationally-defined time periods are a meaningful security window.",
+    "misses": [
+      "Deterministic LPEs with no race condition — 'timely' is not operationalized for instant-root exploits",
+      "CISA KEV class: confirmed exploitation requires incident-speed response, not patch-cycle response",
+      "AI-assisted weaponization compressing time-to-reliable-exploit from weeks to hours",
+      "Live kernel patching as a required capability for systems that cannot tolerate reboots"
+    ],
+    "real_requirement": "Tiered SLA: CISA KEV + public PoC = 4h to live-patch or isolate. Public PoC (no KEV) = 24h. Critical (no public PoC) = 72h. High = 7 days. Live patching capability required for production systems that cannot reboot.",
+    "status": "open",
+    "opened_date": "2026-03-15",
+    "evidence_cves": [
+      "CVE-2026-31431",
+      "CVE-2026-43284"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "NIST-800-53-SC-8": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-8",
+    "control_name": "Transmission Confidentiality and Integrity",
+    "designed_for": "Cryptographic protection of data in transit via standard protocols (TLS, IPsec, etc.)",
+    "misses": [
+      "Dirty Frag (CVE-2026-43284) exploits the IPsec implementation itself — IPsec-based SC-8 compliance is not a compensating control when IPsec is the attack surface",
+      "No requirement for cryptographic subsystem integrity monitoring"
+    ],
+    "real_requirement": "SC-8 compliance evidence must note when kernel CVEs affecting the cryptographic subsystem are unpatched. IPsec-based controls cannot be claimed as compensating controls for CVEs affecting the IPsec kernel implementation.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-43284",
+      "CVE-2026-43500"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "NIST-800-53-AC-2": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "AC-2",
+    "control_name": "Account Management",
+    "designed_for": "Human user accounts, service accounts, machine identities in traditional IAM systems",
+    "misses": [
+      "AI agent identity: AI agents act with service account credentials but decisions are made by the model, not the account holder",
+      "Prompt injection as access control bypass: injected instructions cause AI to take actions using its authorized service account — the access is authorized from AC-2's perspective",
+      "No mechanism for session-level or invocation-level authorization for AI agent actions",
+      "Audit trails show the service account, not the adversary who injected the prompt"
+    ],
+    "real_requirement": "Agent identity controls: each AI agent invocation requires an authorization context (who initiated it, what actions are permitted for this session, what tools are authorized). Prompt-level access control separate from account-level access control.",
+    "status": "open",
+    "opened_date": "2026-03-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "NIST-800-53-SI-3": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SI-3",
+    "control_name": "Malicious Code Protection",
+    "designed_for": "Signature-based and behavioral malware detection for known malware families",
+    "misses": [
+      "PROMPTFLUX generates unique evasion code per execution by querying public LLMs — no signature exists because every sample is novel",
+      "AI-generated malware evasion is dynamically updated per detection event",
+      "LLM query by malware process is not a recognized detection indicator in SI-3 implementations"
+    ],
+    "real_requirement": "Malware protection must include: detection of AI API queries from unexpected processes (PROMPTFLUX indicator), behavioral analysis that doesn't rely solely on static signatures, LLM query monitoring as a security telemetry source.",
+    "status": "open",
+    "opened_date": "2026-02-01",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0017"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "NIST-800-53-SA-12": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SA-12",
+    "control_name": "Supply Chain Protection",
+    "designed_for": "Software procurement, vendor management, and supplier risk in enterprise environments",
+    "misses": [
+      "MCP server supply chain: developer-installed AI tool plugins are not covered by enterprise procurement controls",
+      "MCP server packages execute code on behalf of AI models — higher risk than traditional npm packages",
+      "No control for unsigned MCP server manifests or tool allowlisting",
+      "Supply chain risk for AI tool ecosystems is a new category not anticipated by SA-12"
+    ],
+    "real_requirement": "SA-12 scope must include AI tool plugins (MCP servers, VS Code extensions with AI capability). MCP servers require: signed manifests, tool allowlisting, organizational approved-registry, vendor review equivalent to critical third-party software.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "ISO-27001-2022-A.8.8": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.8",
+    "control_name": "Management of technical vulnerabilities",
+    "designed_for": "Systematic patch management with timelines based on risk classification",
+    "misses": [
+      "'Appropriate timescales' is undefined — interpreted as 30 days for Critical, 90 days for Medium in most implementations",
+      "No requirement for live kernel patching capability",
+      "No CISA KEV-aware response category",
+      "Timescales designed for human-speed exploit development"
+    ],
+    "real_requirement": "A.8.8 must be implemented with timescales indexed to: CISA KEV status (hours), PoC availability (24h), criticality class (72h). Live patching capability documented as required for production systems.",
+    "status": "open",
+    "opened_date": "2026-03-15",
+    "evidence_cves": [
+      "CVE-2026-31431"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "ISO-27001-2022-A.8.28": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.28",
+    "control_name": "Secure coding",
+    "designed_for": "Secure development practices: SAST, DAST, code review, secure libraries",
+    "misses": [
+      "No AI/ML system security requirements",
+      "No prompt injection coverage — prompt injection is a semantic vulnerability, not a code vulnerability",
+      "No model integrity verification requirements",
+      "RAG pipeline security is outside the scope of 'secure coding'"
+    ],
+    "real_requirement": "Separate AI system security controls are needed: prompt injection testing, model integrity verification, training pipeline security, RAG pipeline security. A.8.28 is not the right control family for AI system security.",
+    "status": "open",
+    "opened_date": "2026-01-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": []
+  },
+  "SOC2-CC6-logical-access": {
+    "framework": "SOC 2 (AICPA Trust Services Criteria)",
+    "control_id": "CC6",
+    "control_name": "Logical and Physical Access Controls",
+    "designed_for": "Authentication, authorization, and access controls for human users and service accounts",
+    "misses": [
+      "Prompt injection bypasses logical access: the AI agent's service account is properly authorized; the injected instructions route around CC6 entirely",
+      "Audit evidence for CC6 shows authorized service account activity — attacker identity is absent from all access logs",
+      "No control for AI agent session-level authorization distinct from service account authorization"
+    ],
+    "real_requirement": "CC6 requires supplementation with: AI agent invocation authorization (what is this specific model run permitted to do?), prompt logging for post-incident analysis, anomaly detection on AI agent actions.",
+    "status": "open",
+    "opened_date": "2026-03-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": []
+  },
+  "PCI-DSS-4.0-6.3.3": {
+    "framework": "PCI DSS 4.0",
+    "control_id": "6.3.3",
+    "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates",
+    "designed_for": "Critical patches within 1 month; other patches within 3 months. Designed for 2004-era exploit development timelines.",
+    "misses": [
+      "1-month critical patch window is an exploitation acceptance window for CISA KEV + public PoC",
+      "No live-patch requirement for PCI-scoped systems",
+      "No CISA KEV-specific response category",
+      "AI-accelerated exploit development breaks the assumption that 1 month is a safety window"
+    ],
+    "real_requirement": "PCI scoping must include a CISA KEV-specific response tier: < 72h remediation (live patch or documented compensating controls). 1-month window retains applicability only for vulnerabilities with no public PoC and no active exploitation.",
+    "status": "open",
+    "opened_date": "2026-03-15",
+    "evidence_cves": [
+      "CVE-2026-31431"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "ALL-AI-PIPELINE-INTEGRITY": {
+    "framework": "ALL",
+    "control_id": "UNIVERSAL-GAP-001",
+    "control_name": "AI Pipeline Integrity",
+    "designed_for": "N/A — no framework has this control",
+    "misses": [
+      "Model versioning and change control for externally managed LLMs",
+      "Behavioral regression testing after model updates",
+      "Training pipeline integrity and poisoning detection",
+      "Model fingerprinting for unauthorized change detection",
+      "Output monitoring for safety-relevant behavioral changes"
+    ],
+    "real_requirement": "AI pipeline integrity controls: (1) model version pinning where API supports it, (2) behavioral test suite with regression alerting, (3) provider changelog monitoring, (4) training pipeline SLSA-equivalent supply chain attestation for self-hosted models.",
+    "status": "open",
+    "opened_date": "2026-01-01",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": []
+  },
+  "ALL-MCP-TOOL-TRUST": {
+    "framework": "ALL",
+    "control_id": "UNIVERSAL-GAP-002",
+    "control_name": "MCP/Agent Tool Trust Boundaries",
+    "designed_for": "N/A — no framework has this control",
+    "misses": [
+      "No framework requires signed MCP server manifests",
+      "No framework requires AI client tool allowlisting",
+      "No framework requires authentication between AI clients and MCP servers",
+      "Developer-installed AI tool plugins are outside all vendor management control scopes"
+    ],
+    "real_requirement": "MCP trust controls: signed server manifests, explicit tool allowlists, bearer authentication, sandboxed server processes, organizational approved-registry for MCP servers.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+    "framework": "ALL",
+    "control_id": "UNIVERSAL-GAP-003",
+    "control_name": "Prompt Injection as Access Control Failure",
+    "designed_for": "N/A — no framework has this control",
+    "misses": [
+      "Prompt injection routes around all existing access control frameworks",
+      "The AI agent's service account takes the unauthorized action — audit logs show authorized activity",
+      "No framework has controls for prompt-level authorization distinct from account-level authorization"
+    ],
+    "real_requirement": "Prompt-level access control: each model invocation is constrained to an authorized action scope. Actions outside that scope require explicit user re-authorization. System prompt establishes authority hierarchy.",
+    "status": "open",
+    "opened_date": "2026-01-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "NIS2-Art21-patch-management": {
+    "framework": "EU NIS2 Directive",
+    "control_id": "Article 21(2)(e)",
+    "control_name": "Vulnerability handling and disclosure",
+    "designed_for": "General vulnerability management and disclosure processes for essential and important entities",
+    "misses": [
+      "No specific guidance on CISA KEV-class response timelines (hours, not days)",
+      "No requirement for live kernel patching capability in production environments",
+      "No definition of 'appropriate timeframe' for actively exploited vulnerabilities with public PoC",
+      "AI-accelerated exploit weaponization is not a consideration in the Article 21 controls"
+    ],
+    "real_requirement": "NIS2 Article 21 must be operationalized with CISA KEV-indexed SLAs: confirmed exploitation + public PoC = 4h to live-patch or isolate. 'Appropriate timeframe' requires explicit definition calibrated to exploit availability.",
+    "status": "open",
+    "opened_date": "2026-03-15",
+    "evidence_cves": [
+      "CVE-2026-31431"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "NIST-800-53-CM-7": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "CM-7",
+    "control_name": "Least Functionality",
+    "designed_for": "Restricting software, ports, protocols, and services to only those required for business functions",
+    "misses": [
+      "AI tool plugin authorization is not contemplated — MCP servers are not 'services' in the CM-7 sense",
+      "No mechanism for authorizing individual MCP server tool capabilities vs. blocking entire servers",
+      "Developer-installed AI plugins operate outside CM-7 enforcement scope in most implementations",
+      "No guidance on AI tool allowlisting as a CM-7 implementation technique"
+    ],
+    "real_requirement": "CM-7 scope must extend to AI tool plugins. AI client tool allowlists are a CM-7 implementation: only approved MCP servers and tools may be invoked. Default deny for unapproved AI tool capabilities.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "ISO-27001-2022-A.8.30": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.30",
+    "control_name": "Outsourced development",
+    "designed_for": "Security requirements for software developed by external parties under contract",
+    "misses": [
+      "MCP servers installed by developers are not 'outsourced development' — they are third-party plugins outside procurement scope",
+      "Developer-installed AI tool plugins bypass A.8.30 controls entirely",
+      "No control category for AI plugin supply chain risk",
+      "Contractual security requirements do not apply to open-source or self-published MCP servers"
+    ],
+    "real_requirement": "A.8.30 must be extended with an 'AI tool plugin' control category: organizational approved-registry for MCP servers, security review equivalents for AI plugins, prohibition on unreviewed MCP server installation on developer machines with privileged access.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "SOC2-CC9-vendor-management": {
+    "framework": "SOC 2 (AICPA Trust Services Criteria)",
+    "control_id": "CC9",
+    "control_name": "Risk Mitigation — Vendor and Business Partner Risk",
+    "designed_for": "Assessing and managing risk from vendors and business partners with access to system data",
+    "misses": [
+      "Developer-installed AI tool plugins are not vendors under CC9 — they are software installed by employees",
+      "MCP servers execute code in developer environments but are outside vendor risk management scope",
+      "No CC9 mechanism for AI plugin approval, monitoring, or revocation",
+      "AI coding assistant plugins with tool-use capability represent a new risk category outside CC9's vendor model"
+    ],
+    "real_requirement": "CC9 must be extended to include AI tool plugins as a vendor risk category. MCP servers that access organizational systems require CC9-equivalent assessment: security review, approved-registry, monitoring, and revocation capability.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "NIST-800-53-SC-28": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-28",
+    "control_name": "Protection of Information at Rest",
+    "designed_for": "Cryptographic protection of data at rest using standard encryption mechanisms",
+    "misses": [
+      "Dirty Frag (CVE-2026-43284) exploits the IPsec kernel implementation — IPsec-based SC-28 compliance is not a compensating control when IPsec is the attack surface",
+      "SC-28 controls via kernel cryptographic subsystems are invalidated when those subsystems have unpatched LPE vulnerabilities",
+      "No requirement to note in SC-28 evidence when kernel CVEs affect the cryptographic implementation"
+    ],
+    "real_requirement": "SC-28 compliance evidence must flag when kernel CVEs affect the cryptographic subsystem being used for compliance. IPsec-based or kernel-crypto-based SC-28 controls cannot be claimed as compensating controls for CVEs that exploit those subsystems.",
+    "status": "open",
+    "opened_date": "2026-04-01",
+    "evidence_cves": [
+      "CVE-2026-43284",
+      "CVE-2026-43500"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "NIST-800-53-SI-12": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SI-12",
+    "control_name": "Information Management and Retention",
+    "designed_for": "Managing and retaining information in accordance with applicable laws, directives, regulations, and policies",
+    "misses": [
+      "AI-generated outputs in RAG pipelines lack retention and integrity controls",
+      "Prompt logs required for AI action audit trails are not addressed by SI-12 retention policies",
+      "Model inference outputs that influence security-relevant decisions have no documented retention requirements",
+      "AI training data provenance and retention is outside SI-12 scope"
+    ],
+    "real_requirement": "SI-12 must be extended to include AI system data: prompt logs (security-relevant AI actions must be retained for incident investigation), model version history, inference output logs for security-sensitive decisions, training data provenance records.",
+    "status": "open",
+    "opened_date": "2026-03-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "NIST-AI-RMF-MEASURE-2.5": {
+    "framework": "NIST AI RMF 1.0",
+    "control_id": "MEASURE 2.5",
+    "control_name": "AI system to human interaction evaluation",
+    "designed_for": "Evaluating AI system outputs and behaviors in human-AI interaction contexts",
+    "misses": [
+      "MEASURE 2.5 measures human-AI interaction quality, not adversarial input resistance",
+      "Does not require adversarial prompt injection testing as a measurement activity",
+      "No methodology for measuring AI tool action authorization boundary compliance",
+      "Human feedback evaluation does not capture adversarially-induced behavioral changes"
+    ],
+    "real_requirement": "MEASURE 2.5 must include adversarial evaluation: red-team testing for prompt injection, measurement of action boundary compliance (does the AI stay within authorized scope?), and behavioral regression testing after model updates.",
+    "status": "open",
+    "opened_date": "2026-01-01",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "ISO-27001-2022-A.8.16": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.16",
+    "control_name": "Monitoring activities",
+    "designed_for": "Monitoring networks, systems, and applications for anomalous behavior and security events",
+    "misses": [
+      "AI API traffic as covert C2 (SesameOp) is indistinguishable from legitimate AI usage — standard A.8.16 monitoring has no signature for this pattern",
+      "LLM query monitoring as a security telemetry source is not required by A.8.16",
+      "PROMPTFLUX malware queries AI APIs during execution — this is not a recognized network anomaly in A.8.16 implementations",
+      "AI-generated code execution sequences are not a monitored behavior pattern"
+    ],
+    "real_requirement": "A.8.16 must be extended with AI-specific monitoring: LLM API query monitoring (which processes query which APIs), behavioral baseline for expected AI tool usage patterns, alerting on AI API queries from unexpected processes or at unexpected volumes.",
+    "status": "open",
+    "opened_date": "2026-02-01",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071"
+    ]
+  },
+  "SOC2-CC7-anomaly-detection": {
+    "framework": "SOC 2 (AICPA Trust Services Criteria)",
+    "control_id": "CC7",
+    "control_name": "System Operations — Threat and Vulnerability Management",
+    "designed_for": "Detecting, preventing, and responding to threats and vulnerabilities affecting the system",
+    "misses": [
+      "AI API traffic as covert C2 (ATLAS AML.T0096) does not trigger CC7 anomaly detection — traffic pattern is identical to legitimate AI usage",
+      "CC7 does not require monitoring for AI tool actions that exceed authorized scope",
+      "PROMPTFLUX real-time evasion generation via AI API queries is not a CC7 threat category",
+      "AI-generated code execution is not a recognized threat pattern in CC7 implementations"
+    ],
+    "real_requirement": "CC7 anomaly detection must include AI-specific threat signatures: baseline expected AI API usage per system/process, alert on AI API queries from security-sensitive processes, monitor AI tool action logs for out-of-scope actions, include AI-as-C2 in threat model.",
+    "status": "open",
+    "opened_date": "2026-02-01",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0096",
+      "AML.T0017"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1059"
+    ]
+  },
+  "CIS-Controls-v8-Control7": {
+    "framework": "CIS Controls v8",
+    "control_id": "Control 7",
+    "control_name": "Continuous Vulnerability Management",
+    "designed_for": "Continuously acquiring, assessing, and taking action on vulnerability information to minimize the window of opportunity for attackers",
+    "misses": [
+      "IG3 'continuous' vulnerability management with 'within one month' for critical still creates a 30-day exploitation window for CISA KEV + public PoC",
+      "No CISA KEV-specific response tier — KEV listing implies immediate exploitation risk, not monthly remediation",
+      "AI-accelerated exploit development compresses the weaponization window from weeks to hours, invalidating the monthly critical patch assumption",
+      "Live patching capability is not referenced as a required vulnerability management tool"
+    ],
+    "real_requirement": "CIS Control 7 must define a CISA KEV response tier: KEV + public PoC → 4h to deploy verified mitigation (live patch, compensating controls, or isolation). The 'within one month' window retains applicability only for vulnerabilities with no active exploitation and no public PoC.",
+    "status": "open",
+    "opened_date": "2026-03-15",
+    "evidence_cves": [
+      "CVE-2026-31431"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "NIST-800-53-SC-7": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-7",
+    "control_name": "Boundary Protection",
+    "designed_for": "Monitor and control communications at external boundaries and key internal boundaries. Original posture assumes traffic to malicious infrastructure is identifiable by destination reputation, novel domain, or anomalous port — i.e., the C2 channel looks unlike legitimate enterprise traffic.",
+    "misses": [
+      "AI-API C2 (SesameOp pattern, PROMPTFLUX, PROMPTSTEAL) routes commands through legitimate AI provider domains (api.openai.com, api.anthropic.com, generativelanguage.googleapis.com). Destination reputation = high; novelty = zero; the boundary device sees traffic indistinguishable from sanctioned developer / business use.",
+      "TLS termination at the boundary still does not yield the content for inspection without breaking the API contract (mutual auth, server cert pinning by the SDK).",
+      "Default egress allowlists in most enterprises explicitly permit major AI provider domains for legitimate productivity use — the same channel attackers leverage.",
+      "NetFlow / Zeek-class boundary telemetry cannot distinguish benign LLM prompts from C2 prompts. The signal must come from inside the application context (which AI SDK call shape, what user identity, what data left the prompt), not the boundary."
+    ],
+    "real_requirement": "SC-7 implementations that operate in environments using AI APIs MUST add an AI-egress-layer control: SDK-level prompt logging with identity binding, anomaly detection on prompt-shape / token-volume / off-business-hours patterns, and an allowlist of AI provider domains that explicitly enumerates the sanctioned business reason for each. Boundary-only SC-7 evidence is incomplete for any org with AI API access in production.",
+    "status": "open",
+    "opened_date": "2026-05-01",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0096",
+      "AML.T0017"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1102",
+      "T1568"
+    ]
+  },
+  "ISO-IEC-42001-2023-clause-6.1.2": {
+    "framework": "ISO/IEC 42001:2023 (AI Management System)",
+    "control_id": "Clause 6.1.2",
+    "control_name": "AI risk assessment",
+    "designed_for": "Lifecycle AI risk assessment as a basis for AI management system certification. Cross-walks with ISO 31000 risk methodology and ISO 23894 AI risk guidance. Applies globally — referenced under EU AI Act conformity, UK AI regulation principles, AU AI Ethics Framework, and Singapore AI Verify.",
+    "misses": [
+      "Real-time prompt injection threats — clause 6.1.2 is a periodic risk assessment, not a runtime threat surface",
+      "Cross-jurisdiction obligations (EU AI Act high-risk categorisation, NIS2 incident reporting, DORA ICT third-party register, UK CAF outcome B4, AU ISM AI annex) are not enumerated as risk inputs",
+      "LLM-API-as-C2 (SesameOp pattern, ATLAS AML.T0096) is not in the clause 6.1.2 example threat list — risk register templates omit it",
+      "No requirement to link AI risk register entries to specific TTP IDs (ATLAS / ATT&CK) — risks remain framework-internal abstractions"
+    ],
+    "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v5.1.0 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1071"
+    ]
+  },
+  "ISO-IEC-23894-2023-clause-7": {
+    "framework": "ISO/IEC 23894:2023 (AI Risk Management Guidance)",
+    "control_id": "Clause 7",
+    "control_name": "AI risk management process",
+    "designed_for": "Process-level guidance for managing risk across the AI lifecycle (design, develop, deploy, operate, decommission). Used globally as the methodological backbone behind ISO 42001 clause 6, EU AI Act risk management requirements, UK AI Assurance roadmap, AU AI Ethics Framework, and Singapore Model AI Governance Framework.",
+    "misses": [
+      "Post-deployment adversarial input drift — clause 7 treats risk identification as a phased activity rather than a continuous adversarial-evaluation loop",
+      "No requirement for red-team / adversarial prompt regression after model or system-prompt updates",
+      "Drift detection is framed around statistical model performance, not adversarial robustness — prompt-injection success rate is not a monitored signal",
+      "Cross-jurisdiction harmonisation (EU AI Act Art. 9 risk management, UK CAF, AU ISM) is referenced but not operationalised in clause 7 examples"
+    ],
+    "real_requirement": "Clause 7 implementations must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0043",
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "OWASP-LLM-Top-10-2025-LLM01": {
+    "framework": "OWASP Top 10 for LLM Applications 2025",
+    "control_id": "LLM01",
+    "control_name": "Prompt Injection",
+    "designed_for": "App-layer compliance baseline for LLM applications. Adopted globally as a reference set under EU AI Act technical documentation, UK NCSC AI guidance, AU ACSC AI security guidance, and ISO/IEC 27001:2022 A.8.28 secure coding extensions.",
+    "misses": [
+      "AI-API as C2 channel — LLM01 frames prompt injection as application output integrity, not network egress posture (SesameOp / ATLAS AML.T0096 is out of scope)",
+      "Legitimate-endpoint covert use — guidance assumes the malicious instruction is in the prompt, not that the LLM endpoint itself is the C2 destination",
+      "Indirect prompt injection via PR descriptions / web pages / RAG corpora is named but mitigations are advisory, not testable controls",
+      "No control mapping back to ATT&CK T1071 (Application Layer Protocol) or T1102 (Web Service) — LLM01 sits in an AI silo separated from network defence"
+    ],
+    "real_requirement": "LLM01 implementation must bind to network-egress controls: SDK-level prompt logging with identity binding, allowlisted AI provider domains with documented business justification, anomaly detection on prompt shape/volume/timing, and ATLAS+ATT&CK dual-mapping for every LLM01 finding so SOC tooling can correlate with non-AI telemetry.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1071"
+    ]
+  },
+  "OWASP-LLM-Top-10-2025-LLM02": {
+    "framework": "OWASP Top 10 for LLM Applications 2025",
+    "control_id": "LLM02",
+    "control_name": "Sensitive Information Disclosure",
+    "designed_for": "Preventing LLM applications from disclosing sensitive data via outputs, system prompts, or training data leakage. Cross-walks to GDPR Art. 32, UK DPA 2018 security principle, AU Privacy Act APP 11, HIPAA Security Rule, PCI DSS Req. 3, and ISO 27001:2022 A.5.34.",
+    "misses": [
+      "PHI / PII inside the model context window has no retention or minimisation requirement — LLM02 treats the prompt as ephemeral when providers retain it",
+      "Prompt injection (LLM01) and sensitive disclosure (LLM02) are treated as separate findings — chained exfiltration via injected instructions is not a primary scenario",
+      "Cross-tenant prompt cache leakage (provider-side) is not in scope — LLM02 stops at the application boundary",
+      "No requirement for DPIA-equivalent assessment (EU AI Act, GDPR Art. 35, UK ICO AI guidance) when sensitive data enters prompts"
+    ],
+    "real_requirement": "LLM02 must require: prompt-level data minimisation (DLP before send), DPIA-equivalent assessment when sensitive categories enter prompts (GDPR / UK ICO / AU Privacy Act / HIPAA), explicit provider data-retention contractual terms, and chained-scenario testing combining LLM01 + LLM02 (injection-driven exfiltration).",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1530"
+    ]
+  },
+  "OWASP-LLM-Top-10-2025-LLM06": {
+    "framework": "OWASP Top 10 for LLM Applications 2025",
+    "control_id": "LLM06",
+    "control_name": "Excessive Agency",
+    "designed_for": "Limiting the autonomy granted to LLM agents — tool scope, action authority, and human-in-the-loop placement. Cross-walks to EU AI Act Art. 14 (human oversight), UK CAF outcome B4, AU AI Ethics Framework principle of human-centred values, NIST AI RMF GOVERN-1.5.",
+    "misses": [
+      "MCP/agent-trust class — LLM06 is application-internal; it does not address third-party tool plugins (MCP servers) that arrive via developer install rather than enterprise procurement",
+      "No requirement for signed tool manifests or organisational tool allowlists — 'limit functionality' is advisory",
+      "Agent-to-agent delegation (one LLM calling another with its own tools) is not modelled — the agency boundary is treated as a single hop",
+      "No mapping to supply-chain controls (ISO 27001 A.8.30, NIST SA-12, SOC 2 CC9) — excessive agency via supply chain is a blind spot"
+    ],
+    "real_requirement": "LLM06 must require: signed MCP server manifests, organisational tool allowlists enforced at the AI client, per-invocation authorisation scopes (not per-account), and supply-chain governance for AI tool plugins equivalent to critical third-party software (ISO A.8.30 / SOC 2 CC9 / NIST SA-12 extended).",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2026-30615",
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1059"
+    ]
+  },
+  "OWASP-LLM-Top-10-2025-LLM08": {
+    "framework": "OWASP Top 10 for LLM Applications 2025",
+    "control_id": "LLM08",
+    "control_name": "Vector and Embedding Weaknesses",
+    "designed_for": "RAG-class issues: embedding poisoning, retrieval manipulation, embedding inversion, cross-tenant retrieval leakage. Cross-walks to ISO 27001:2022 A.8.28 secure coding, NIST AI RMF MAP-2.3, EU AI Act Art. 10 data governance, UK NCSC RAG guidance.",
+    "misses": [
+      "Indirect prompt injection via poisoned retrieval documents is named but no concrete test methodology is given",
+      "Embedding inversion (recovering source text from embeddings) is treated as theoretical despite working PoCs against common embedding models",
+      "No requirement for cross-tenant isolation testing of shared vector stores — multi-tenant SaaS RAG is a primary deployment pattern",
+      "Provenance and integrity of corpus documents (signed sources, content-addressable storage) are not required",
+      "No mapping to global data-governance regimes (GDPR Art. 5(1)(f), AU APP 11, UK DPA 2018) for the embedding store as a sensitive-data location"
+    ],
+    "real_requirement": "LLM08 must require: corpus document provenance and integrity (signed sources, content hashing), cross-tenant isolation testing for shared vector stores, embedding-inversion risk assessment for embeddings of sensitive data, retrieval-poisoning regression tests, and treatment of embedding stores as sensitive-data systems under applicable privacy regimes.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0018",
+      "AML.T0020",
+      "AML.T0043"
+    ],
+    "attack_refs": [
+      "T1565",
+      "T1530"
+    ]
+  },
+  "OWASP-ASVS-v5.0-V14": {
+    "framework": "OWASP ASVS v5.0",
+    "control_id": "V14",
+    "control_name": "Configuration verification",
+    "designed_for": "Application-level configuration audit: build config, dependencies, runtime hardening, secrets management. Used as the cross-walk baseline for ISO 27001 A.8.9 (configuration management), NIST 800-53 CM-6, SOC 2 CC7, PCI DSS 2.x, and AU ISM configuration controls.",
+    "misses": [
+      "AI-API configuration — model selection, temperature, system prompt, safety setting, provider data-retention setting are not audited as security configuration items",
+      "MCP server configuration — server registry source, signature verification policy, transport authentication mode are not in scope",
+      "Agent tool allowlists — V14 has no concept of a per-AI-client tool allowlist as a configuration object subject to verification",
+      "No requirement to version-control AI configuration alongside application code"
+    ],
+    "real_requirement": "V14 must add an AI configuration class: model + provider + system prompt + safety setting + data-retention setting under version control and review; MCP server registry source and signature policy verified; AI client tool allowlist treated as a security-relevant configuration object subject to change control and audit.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "NIST-800-218-SSDF": {
+    "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+    "control_id": "SSDF (all tasks)",
+    "control_name": "Secure Software Development Framework",
+    "designed_for": "Producer-side secure SDLC: prepare organisation, protect software, produce well-secured software, respond to vulnerabilities. Referenced by US EO 14028, FedRAMP, CMMC, and cross-walked by EU CRA (Cyber Resilience Act), UK NCSC Secure Development & Deployment, AU ISM software development controls, and ISO/IEC 27034.",
+    "misses": [
+      "AI-generated code provenance — SSDF treats source code as human-authored; AI-assistant output (Copilot, Cursor, Codex, Claude Code) has no provenance attestation in PW.4",
+      "Vendored-but-unsigned models in deployment artifacts — model weights shipped inside containers / packages are not in PS.3 software inventory",
+      "No SBOM requirement for model weights, training data manifests, or RAG corpora — PS.3 is silent on AI components",
+      "RV.1 vulnerability response assumes a CVE process; model-level vulnerabilities (jailbreaks, prompt-injection regressions) have no equivalent intake"
+    ],
+    "real_requirement": "SSDF must extend: PW.4 to require provenance markers on AI-generated code blocks (commit metadata, review evidence); PS.3 to include model weights, training data manifests, and RAG corpora in the software inventory / SBOM; RV.1 to accept and triage model-level vulnerability reports (jailbreaks, prompt-injection regressions, embedding inversion) on equal footing with code CVEs. Aligns with EU CRA Annex I, UK NCSC, AU ISM.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "NIST-800-82r3": {
+    "framework": "NIST SP 800-82 Rev 3 (Guide to OT Security)",
+    "control_id": "800-82r3 (overall guidance)",
+    "control_name": "Guide to Operational Technology (OT) Security",
+    "designed_for": "Security guidance for ICS/SCADA/DCS/PLC environments. Cross-walks to IEC 62443, EU NIS2 (essential entities — energy, water, transport), UK NCSC OT guidance and CAF for OT, AU SOCI Act + AESCSF (Australian Energy Sector Cyber Security Framework), and ISO 27019.",
+    "misses": [
+      "AI-enabled OT operator assistants — LLM copilots in control rooms are not contemplated; the trust model assumes human operators, not human+LLM operators",
+      "LLM-as-engineering-interface to ICS — natural-language operator tools that translate intent into PLC commands have no isolation requirement",
+      "Prompt-injection-driven safety state change is not in the 800-82r3 threat catalogue",
+      "AI-API egress from OT networks (for assistant features) violates the air-gap assumption that underpins many 800-82r3 zones-and-conduits diagrams"
+    ],
+    "real_requirement": "800-82r3 must add an AI-in-OT control class: (1) explicit prohibition or strict gating of LLM operator assistants in safety-critical zones, (2) prompt-injection threat-model entries for any natural-language operator interface, (3) treat AI-API egress from OT as a conduit requiring named approval and monitoring (NIS2 essential-entity reportable), (4) cross-walk to IEC 62443-3-3 SR 5.1 (network segmentation) for AI-API traffic.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T0883",
+      "T0855",
+      "T1071"
+    ]
+  },
+  "NIST-800-63B-rev4": {
+    "framework": "NIST SP 800-63B Rev 4 (Digital Identity Guidelines — Authentication & Lifecycle Mgmt)",
+    "control_id": "800-63B-rev4",
+    "control_name": "Authentication and Lifecycle Management (AAL/IAL/FAL)",
+    "designed_for": "Authentication assurance levels for human subscribers and non-person entities (NPEs). Referenced by US Federal services, cross-walked by EU eIDAS 2.0 (assurance levels low/substantial/high), UK GPG 44/45, AU TDIF (Trusted Digital Identity Framework), and ISO/IEC 29115.",
+    "misses": [
+      "AI agents as principals — 800-63B treats NPEs as long-lived service accounts; AI agents are short-lived, intent-driven, and act on behalf of a chain of humans/agents",
+      "Agent-to-agent authentication — no AAL-equivalent concept for one agent authenticating another with a derived authority scope",
+      "Ephemeral session keys for AI workflows — the assumption that authenticator binding is long-lived breaks for per-invocation agent runs",
+      "No equivalence with eIDAS 2.0 'electronic attestation of attributes' for agent capability tokens — cross-jurisdiction interop gap"
+    ],
+    "real_requirement": "800-63B Rev 4 must add an AAL-A (agent assurance level) construct: per-invocation authenticator binding, capability-scoped tokens (what this agent is permitted to do this run), agent-to-agent delegation chains with non-repudiation, and explicit cross-walk to eIDAS 2.0 attestations, UK GPG 45, AU TDIF, and ISO 29115 for cross-border agent identity.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1078",
+      "T1059"
+    ]
+  },
+  "IEC-62443-3-3": {
+    "framework": "IEC 62443-3-3 (Industrial communication networks — security for IACS)",
+    "control_id": "62443-3-3",
+    "control_name": "System security requirements and security levels",
+    "designed_for": "System-level security requirements for industrial automation and control systems (IACS), organised by foundational requirements (FR1–FR7) and security levels (SL1–SL4). Cross-walks to NIST 800-82r3, EU NIS2 (manufacturing/energy/water essential entities), UK NCSC CAF for OT, AU SOCI/AESCSF, and ISO 27019.",
+    "misses": [
+      "AI-augmented HMI — natural-language HMI overlays (operator copilots) are not modelled in FR1 (Identification and Authentication Control) or FR3 (System Integrity)",
+      "LLM-assisted OT operations — prompt injection routed through a copilot can drive HMI actions while every FR1 control reports normal operator identity",
+      "No security-level requirement (SL1–SL4) addresses AI-API egress from a control zone — conduits-and-zones model predates AI assistants",
+      "FR6 (Timely Response to Events) has no AI-specific signature class (prompt-injection-induced commands, AI-API as exfil channel)"
+    ],
+    "real_requirement": "62443-3-3 must add AI-in-OT requirements: SL2+ environments must prohibit or strictly gate LLM HMI overlays; FR1 must distinguish 'human operator action' from 'AI-mediated action initiated by operator' as separate identity claims; conduits-and-zones diagrams must enumerate AI-API egress as a named conduit subject to FR5 (Restricted Data Flow) and monitored under FR6.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T0883",
+      "T0855",
+      "T1071"
+    ]
+  },
+  "FedRAMP-Rev5-Moderate": {
+    "framework": "FedRAMP Rev 5 Moderate",
+    "control_id": "FedRAMP-Rev5-Moderate (baseline)",
+    "control_name": "FedRAMP Moderate baseline (NIST 800-53 Rev 5 tailoring)",
+    "designed_for": "Authorised cloud service offerings for US federal use at Moderate impact. Cross-walks to UK G-Cloud / Cyber Essentials Plus, EU EUCS (European Cybersecurity Certification Scheme for Cloud Services) Substantial level, AU IRAP PROTECTED, and ISO 27017/27018.",
+    "misses": [
+      "AI service shared-responsibility model — OpenAI, Anthropic, Google Gemini are not FedRAMP-authorised for most use cases but are legitimately and pervasively used by federal contractors and agencies in non-authorised modes",
+      "No FedRAMP-equivalent attestation path for AI providers — the gap drives 'shadow AI' where employees use unauthorised AI for authorised work",
+      "AC-2 / AC-6 / AU-2 evidence assumes the workload boundary is the cloud service — AI API calls cross that boundary in ways the SSP does not document",
+      "No alignment with EU EUCS or AU IRAP for cross-border federal contractor AI use"
+    ],
+    "real_requirement": "FedRAMP Rev 5 Moderate must publish: (1) an AI provider attestation path (StateRAMP-equivalent or FedRAMP Tailored for AI services), (2) explicit shared-responsibility matrix for AI APIs covering prompt data, output data, training opt-out, and retention, (3) SSP template language for documenting AI API usage in authorised systems, (4) cross-walk to EU EUCS Substantial and AU IRAP PROTECTED for joint operations.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1059"
+    ]
+  },
+  "CMMC-2.0-Level-2": {
+    "framework": "CMMC 2.0 (Cybersecurity Maturity Model Certification) Level 2",
+    "control_id": "CMMC-2.0-Level-2",
+    "control_name": "Level 2 — Advanced (110 NIST 800-171 Rev 2 controls)",
+    "designed_for": "US DoD Defense Industrial Base (DIB) contractor protection of Controlled Unclassified Information (CUI). Cross-walks to UK Cyber Essentials Plus + DEF STAN 05-138, EU CRA + NIS2 for defence supply chains, AU DISP (Defence Industry Security Program), and ISO 27001 + 27017 supplemented by NIST 800-171.",
+    "misses": [
+      "Same AI gaps as FedRAMP — no equivalence path for unauthorised AI providers used by DIB contractors",
+      "Defense contractor AI tool inventory — no requirement to maintain an inventory of AI assistants (Copilot, Cursor, Claude Code, MCP servers) with access to CUI-adjacent environments",
+      "3.13.x system and communications protection controls do not address AI-API egress as a CUI exfiltration channel",
+      "3.14.x system and information integrity controls do not address prompt-injection RCE in developer tooling (CVE-2025-53773 class)",
+      "No cross-walk to allied frameworks (UK DEF STAN, AU DISP) for AI use in joint programmes"
+    ],
+    "real_requirement": "CMMC 2.0 Level 2 must require: (1) inventory of AI assistants and MCP servers with CUI-adjacent access (3.4.1 extension), (2) AI-API egress monitoring as a CUI protection control (3.13 extension), (3) prompt-injection RCE in developer tooling as a 3.14 threat class with patching SLA, (4) explicit cross-walk to UK DEF STAN 05-138 and AU DISP for joint-programme AI policy parity.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1071",
+      "T1059"
+    ]
+  },
+  "HIPAA-Security-Rule-164.312(a)(1)": {
+    "framework": "HIPAA Security Rule (45 CFR § 164.312)",
+    "control_id": "164.312(a)(1)",
+    "control_name": "Access control standard (technical safeguards)",
+    "designed_for": "Technical safeguards for access to ePHI: unique user identification, emergency access, automatic logoff, encryption/decryption. Cross-walks to EU GDPR Art. 32 (security of processing) and EHDS (European Health Data Space), UK DPA 2018 + NHS DSPT, AU Privacy Act APP 11 + My Health Records Act, and ISO 27799.",
+    "misses": [
+      "PHI in LLM context windows — 164.312(a)(1) defines access by user identity; once PHI enters a prompt sent to a third-party LLM, the access boundary is the provider's, not the covered entity's",
+      "AI-generated note workflows (ambient scribes, summarisation, coding assistants) — provider-side prompt retention is not addressed by 164.312(a)(1) and is rarely covered by BAAs at the granularity required",
+      "Automatic logoff is meaningless for an AI agent session that persists across human sessions",
+      "No equivalence with GDPR Art. 35 DPIA / UK NHS DSPT / AU My Health Records Act for AI processing of health data — covered entities operating cross-border face unresolved obligations"
+    ],
+    "real_requirement": "164.312(a)(1) implementation must add: (1) BAA-level coverage for AI providers including prompt retention, training opt-out, and breach notification within HIPAA timelines, (2) per-prompt PHI minimisation (DLP), (3) AI agent session controls treated separately from human user controls, (4) cross-walk with GDPR Art. 35 / UK NHS DSPT / AU APP 11 for cross-border health data in AI workflows.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1530"
+    ]
+  },
+  "HITRUST-CSF-v11.4-09.l": {
+    "framework": "HITRUST CSF v11.4",
+    "control_id": "09.l",
+    "control_name": "Outsourced services management",
+    "designed_for": "Management of outsourced service provider relationships with access to in-scope data (healthcare-anchored but used across regulated industries). Cross-walks to ISO 27001:2022 A.5.19/A.5.21/A.5.22, NIST SP 800-53 SA-9, SOC 2 CC9, EU NIS2 Art. 21(2)(d), UK NHS DSPT, AU Essential Eight + Privacy Act third-party clauses.",
+    "misses": [
+      "AI vendor as outsourced service — 09.l contractual model assumes a named service provider relationship; AI APIs are often consumed via developer self-signup, bypassing procurement",
+      "No requirement for AI-specific contractual clauses: prompt retention, training opt-out, data residency, model version pinning, provider security incident notification specifically for prompt/output breaches",
+      "BAA / DPA templates referenced by 09.l predate AI-specific data-handling categories",
+      "No cross-walk to EU AI Act Art. 25 (importers/distributors) or UK ICO AI guidance for AI-vendor third-party assurance"
+    ],
+    "real_requirement": "09.l must require: (1) AI vendor inventory separate from general SaaS inventory, (2) AI-specific contractual clauses (prompt retention, training opt-out, residency, version pinning, prompt-breach notification timeline), (3) self-signup AI usage prohibited for in-scope data, (4) cross-walk to EU AI Act Art. 25, UK ICO AI guidance, AU Privacy Act third-party obligations.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "NERC-CIP-007-6-R4": {
+    "framework": "NERC CIP-007-6 (BES Cyber System Security Management)",
+    "control_id": "R4",
+    "control_name": "Security event monitoring",
+    "designed_for": "Security event monitoring for Bulk Electric System (BES) Cyber Systems in North America. Cross-walks to EU NIS2 (energy essential entity), UK Energy Emergencies Executive Committee + NCSC OT guidance, AU SOCI Act + AESCSF, and IEC 62443-3-3 FR6.",
+    "misses": [
+      "AI operator-assistant tooling in OT control rooms — CIP-007-6 R4 enumerates events on BES Cyber Assets; LLM copilots routed via corporate IT are not enumerated event sources",
+      "AI-API egress from corporate-to-OT boundary networks is not a monitored event class",
+      "Prompt-injection-induced operator commands appear in operator-action logs as normal operator activity — no R4 detection content addresses this",
+      "No cross-walk to NIS2 incident reporting timelines (24h early warning, 72h notification) for AI-mediated OT incidents"
+    ],
+    "real_requirement": "CIP-007-6 R4 must enumerate: (1) AI operator assistants as monitored event sources with explicit alerting on assistant-initiated operator commands, (2) AI-API egress events at the corporate-to-OT boundary, (3) prompt-injection indicators as a distinct event class, (4) alignment of R4 monitoring outputs with NIS2 24h/72h reporting obligations for multinational operators.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T0883",
+      "T0855",
+      "T1071"
+    ]
+  },
+  "PSD2-RTS-SCA": {
+    "framework": "EU PSD2 Regulatory Technical Standards on Strong Customer Authentication (Commission Delegated Regulation (EU) 2018/389)",
+    "control_id": "RTS-SCA",
+    "control_name": "Strong Customer Authentication and Common and Secure Communication",
+    "designed_for": "Two-of-three-factor SCA for electronic payments and account access. Cross-walks to UK PSRs 2017 + FCA SCA-RTS (post-Brexit equivalent), AU CDR (Consumer Data Right) authentication, eIDAS 2.0 high-assurance authentication, and ISO 27001:2022 A.5.16 / A.8.5.",
+    "misses": [
+      "AI agent as transaction initiator on customer's behalf — RTS-SCA contemplates the customer or a payment initiation service provider (PISP), not an autonomous AI agent acting under delegated authority",
+      "No SCA-equivalent mechanism for agent-to-bank transaction initiation with non-repudiation",
+      "Prompt-injection-induced transactions via banking copilots present a fully SCA-compliant audit trail (the customer's authenticated session) — RTS-SCA is silent on injected intent",
+      "No cross-walk to eIDAS 2.0 attestations for AI-agent transaction authority"
+    ],
+    "real_requirement": "RTS-SCA (and UK FCA SCA-RTS, AU CDR) must define an agent-initiation construct: explicit delegated-authority attestation per agent transaction class, scope-limited authority tokens (amount, counterparty, frequency), and a distinct audit indicator for AI-mediated transactions so injected intent can be detected post-hoc. Aligns with eIDAS 2.0 electronic attestations.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1078",
+      "T1059"
+    ]
+  },
+  "SWIFT-CSCF-v2026-1.1": {
+    "framework": "SWIFT Customer Security Controls Framework v2026",
+    "control_id": "1.1",
+    "control_name": "SWIFT Environment Protection",
+    "designed_for": "Baseline security controls for SWIFT users — secure zone, segregation, hardening. Mandatory for all SWIFT-connected institutions globally; cross-walks to EU DORA Art. 28 (ICT third-party risk), UK PRA SS1/21 operational resilience, AU APRA CPS 234, and ISO 27001 A.8.22 (segregation of networks).",
+    "misses": [
+      "AI-mediated transaction generation — natural-language operator tools that draft MT/MX messages are not in the CSCF v2026 1.1 secure-zone trust model",
+      "LLM-assisted operations on the SWIFT secure zone — copilot-style assistants for operations / reconciliation / sanctions screening introduce an unmodelled trust boundary",
+      "AI-API egress from the SWIFT secure zone (or its administrative jump zone) violates the segregation assumption underlying 1.1 but is not explicitly named as a prohibited conduit",
+      "No cross-walk to DORA Art. 28 for AI as an ICT third-party service supporting critical or important functions"
+    ],
+    "real_requirement": "CSCF v2026 1.1 must add: (1) explicit prohibition or strict gating of LLM assistants inside the SWIFT secure zone, (2) named-conduit treatment for AI-API egress from administrative jump zones with monitoring, (3) AI-generated message drafts flagged as a distinct review class before release, (4) alignment with DORA Art. 28 register of AI ICT third-party providers supporting critical functions, plus UK PRA SS1/21 and AU APRA CPS 234.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1078"
+    ]
+  },
+  "SLSA-v1.0-Build-L3": {
+    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts) — Build Track",
+    "control_id": "Build L3",
+    "control_name": "Hardened build platform with non-falsifiable provenance",
+    "designed_for": "Build-platform-attested provenance for software artifacts: hosted, hardened, non-forgeable provenance signed by the build platform. Referenced under US EO 14028, cross-walked by EU CRA Annex I (essential cybersecurity requirements) and Cyber Resilience Act SBOM obligations, UK NCSC supply chain guidance, AU ISM supply chain, ISO/IEC 5230 (OpenChain), and in-toto attestations.",
+    "misses": [
+      "AI-generated artifacts — code emitted by Copilot/Cursor/Codex/Claude Code is committed under the human developer's identity; the build platform attests the commit but not the AI origin of the diff",
+      "Model weights provenance — model artifacts (weights, tokenizers, adapter LoRAs) are software but have no SLSA L3-equivalent build attestation; HuggingFace + Civitai distribution is closer to SLSA L0/L1",
+      "Training data manifests have no provenance attestation track in SLSA v1.0",
+      "No cross-walk to EU CRA Annex I requirement for SBOMs covering AI components, UK NCSC AI supply chain, AU ISM AI annex"
+    ],
+    "real_requirement": "SLSA must add: (1) AI-authorship attestation layer (per-block provenance for AI-generated code with reviewer identity), (2) a Model Track parallel to the Build Track with L0–L3 maturity for model weight provenance (build environment, training data manifest, fine-tune lineage, signature), (3) explicit SBOM/AI-BOM linkage to satisfy EU CRA, UK NCSC, AU ISM AI annex requirements.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002"
+    ]
+  },
+  "VEX-CSAF-v2.1": {
+    "framework": "VEX via OASIS CSAF 2.1 (Common Security Advisory Framework)",
+    "control_id": "CSAF-2.1-VEX",
+    "control_name": "Vulnerability Exploitability eXchange profile",
+    "designed_for": "Machine-readable supplier statements about vulnerability applicability: not_affected, affected, fixed, under_investigation. Referenced under US CISA SBOM/VEX guidance, EU CRA Annex I (vulnerability handling obligations), UK NCSC vulnerability disclosure, AU ISM patch management, ISO/IEC 29147 (vulnerability disclosure) and 30111 (vulnerability handling).",
+    "misses": [
+      "VEX for AI components — model weights, embedding models, RAG corpora, MCP servers are software but have no CVE-equivalent identifier scheme for which VEX statements would be issued",
+      "Model-as-software supplier statements — when a fine-tuned model inherits a base model jailbreak, there is no VEX statement chain expressing 'this base-model issue is mitigated in this derived model'",
+      "Prompt-injection regressions are not in the CVE namespace and therefore have no VEX expression",
+      "No cross-walk to EU AI Act Art. 15 (cybersecurity of high-risk AI systems) — AI vulnerability disclosure obligations exist with no VEX-equivalent transport"
+    ],
+    "real_requirement": "CSAF 2.1 (or a successor profile) must add: (1) an AI-component identifier scheme (model + version + adapters + tokenizer), (2) AI-specific vulnerability classes (jailbreak class, prompt-injection vector, embedding inversion class) with VEX statements, (3) explicit chaining of base-model to derived-model VEX statements, (4) alignment with EU AI Act Art. 15 disclosure obligations, UK NCSC AI vulnerability disclosure, AU ISM AI annex.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "CycloneDX-v1.6-SBOM": {
+    "framework": "CycloneDX v1.6 (OWASP SBOM standard)",
+    "control_id": "CycloneDX-v1.6",
+    "control_name": "Software Bill of Materials",
+    "designed_for": "Component inventory for software, services, and (in 1.6) machine-learning models and data. Cross-walks to US EO 14028 + NTIA minimum elements, EU CRA Annex I SBOM requirement, UK NCSC SBOM guidance, AU ISM SBOM/supply-chain controls, and ISO/IEC 5962 (SPDX) for interoperability.",
+    "misses": [
+      "AI-BOM in practice — while CycloneDX 1.6 introduced ML-BOM types, in-the-wild SBOMs rarely include model weights, training data manifests, or RAG corpora as components",
+      "MCP-server inventory is not represented — MCP servers are runtime tool plugins, often installed per-developer, and current SBOM tooling does not enumerate them as components of the deployed application",
+      "Provenance fields exist but are commonly empty for AI components — supplier, version, signature, training-data-source are not populated by upstream model publishers",
+      "No mandated cross-walk between SPDX 3.0 AI extensions and CycloneDX ML-BOM — consumers face dialect divergence under EU CRA Annex I and NIST SSDF reporting"
+    ],
+    "real_requirement": "CycloneDX 1.6 deployment must require: (1) ML-BOM completeness checks (model + adapters + tokenizer + training data manifest where licensable), (2) MCP server inventory as part of the application SBOM, (3) populated provenance fields (signature, training data source, supplier) — empty fields treated as a defect, (4) SPDX 3.0 AI cross-walk evidence to satisfy EU CRA Annex I parity.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "SPDX-v3.0-SBOM": {
+    "framework": "SPDX v3.0 (ISO/IEC 5962-aligned SBOM standard)",
+    "control_id": "SPDX-v3.0",
+    "control_name": "Software Package Data Exchange — SBOM",
+    "designed_for": "Component, licence, security, and (in 3.0) AI/Dataset profile inventory. Referenced under US EO 14028, EU CRA Annex I SBOM obligation, UK NCSC SBOM guidance, AU ISM, and aligned to ISO/IEC 5962 for international cross-walk.",
+    "misses": [
+      "Same gaps as CycloneDX 1.6 — AI Profile and Dataset Profile exist in SPDX 3.0 but are rarely populated by upstream model publishers; missing-by-default is the norm",
+      "MCP server / AI tool plugin inventory is not modelled distinctly from generic packages",
+      "No mandated cross-walk to CycloneDX 1.6 ML-BOM — consumers face dialect divergence",
+      "Provenance fields for training datasets are often blocked by licensing opacity, with no SPDX requirement to declare opacity explicitly"
+    ],
+    "real_requirement": "SPDX 3.0 deployment must require: (1) AI Profile + Dataset Profile completeness checks, (2) explicit declaration when training dataset provenance is unavailable (opacity flag), (3) MCP server inventory as a named SPDX element type, (4) CycloneDX ML-BOM cross-walk evidence — maintained as a cross-walk peer rather than a substitute. Aligns with EU CRA Annex I and ISO/IEC 5962.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
+  "OWASP-Pen-Testing-Guide-v5": {
+    "framework": "OWASP Web Security Testing Guide v5 (WSTG)",
+    "control_id": "WSTG-v5",
+    "control_name": "Web application penetration testing methodology",
+    "designed_for": "Web application pen testing methodology used as a baseline cross-walk under PCI DSS Req. 11.4, ISO 27001:2022 A.8.29 (security testing in development and acceptance), NIST SP 800-115, UK NCSC CHECK / CREST, AU IRAP, and EU DORA Art. 24 (TLPT and testing).",
+    "misses": [
+      "AI-API pen testing methodology — no WSTG-v5 chapter addresses prompt injection, jailbreak, model-DoS, embedding inversion, or AI-API-as-C2 testing as named test classes",
+      "MCP server pen testing — supply-chain-attack testing on AI tool plugins is not covered; the WSTG threat model predates MCP",
+      "Indirect prompt injection via PR descriptions, RAG corpora, web content is not a named WSTG test",
+      "No cross-walk to PTES, NIST 800-115, EU DORA TLPT, UK CHECK/CREST, or AU IRAP for AI-augmented test scoping"
+    ],
+    "real_requirement": "WSTG v5 must add: (1) AI-API test class (prompt injection, jailbreak, model-DoS, embedding inversion, AI-API-as-C2 indicators), (2) MCP server test class (supply chain, tool-response injection, signature verification, allowlist bypass), (3) indirect prompt injection test methodology with named corpora (PR descriptions, web pages, ingest pipelines), (4) cross-walk to PTES, NIST 800-115, EU DORA TLPT, UK CHECK/CREST, AU IRAP.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0043",
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1059",
+      "T1071"
+    ]
+  },
+  "PTES-Pre-engagement": {
+    "framework": "Penetration Testing Execution Standard (PTES)",
+    "control_id": "PTES-Pre-engagement",
+    "control_name": "Pre-engagement Interactions",
+    "designed_for": "Engagement scoping, rules of engagement, and authorisation framework for penetration tests. Cross-walks to NIST SP 800-115, ISO 27001:2022 A.8.29, UK NCSC CHECK / CREST scoping, AU IRAP penetration testing, and EU DORA Art. 24 (Threat-Led Penetration Testing / TIBER-EU).",
+    "misses": [
+      "AI/MCP scoping language — pre-engagement templates do not enumerate AI APIs, AI assistants, MCP servers, RAG pipelines, or agent tool inventories as in-scope asset classes",
+      "No standard authorisation language for testing prompt-injection on third-party AI providers (and the contractual constraints providers impose on adversarial testing)",
+      "Rules of engagement do not address out-of-band data exfiltration via the AI provider as part of the test path",
+      "No cross-walk to EU DORA TLPT / TIBER-EU scoping templates for AI-augmented financial services testing"
+    ],
+    "real_requirement": "PTES Pre-engagement must add: (1) named AI/MCP asset classes in the standard scoping checklist, (2) provider-side authorisation guidance and contractual carve-outs for prompt-injection testing, (3) rules-of-engagement language addressing AI-API egress as a potential exfiltration channel during the test, (4) cross-walk to TIBER-EU / DORA Art. 24 / UK CBEST / AU CORIE scoping for AI-augmented financial services TLPT.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1071"
+    ]
+  },
+  "NIST-800-115": {
+    "framework": "NIST SP 800-115 (Technical Guide to Information Security Testing and Assessment)",
+    "control_id": "800-115",
+    "control_name": "Technical Guide to Information Security Testing and Assessment",
+    "designed_for": "Technical methodology for information security testing — review techniques, target identification, vulnerability validation, and reporting. Cross-walks to PCI DSS Req. 11.4, ISO 27001:2022 A.8.29, EU DORA Art. 24, UK NCSC CHECK / CREST, AU IRAP, OWASP WSTG, and PTES.",
+    "misses": [
+      "AI-API testing techniques — 800-115 enumerates network, application, and wireless techniques; AI-API surface is not a named test class",
+      "Fuzz testing as compliance evidence — 800-115 references fuzzing as a technique but does not require it as evidence under any compliance regime (and prompt-fuzzing for AI APIs is absent)",
+      "No methodology for testing AI-API-as-C2, prompt-injection RCE in developer tooling, or MCP server trust",
+      "No cross-walk to EU AI Act Art. 15 (cybersecurity of high-risk AI systems) testing obligations"
+    ],
+    "real_requirement": "800-115 must add: (1) AI-API testing chapter with techniques for prompt injection, jailbreak, model-DoS, embedding inversion, AI-API-as-C2, (2) prompt-fuzzing methodology with evidence retention guidance, (3) MCP server test class, (4) explicit compliance cross-walk: under what regimes (PCI 11.4, DORA Art. 24, EU AI Act Art. 15, UK CHECK, AU IRAP) is which test class required.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0043",
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1071",
+      "T1195.001"
+    ]
+  },
+  "CWE-Top-25-2024-meta": {
+    "framework": "CWE Top 25 Most Dangerous Software Weaknesses (2024 list)",
+    "control_id": "CWE-Top-25-2024-meta",
+    "control_name": "Meta-control: have you addressed the CWE Top 25?",
+    "designed_for": "MITRE/CISA-curated annual list of the most dangerous software weaknesses by observed real-world impact. Used as a baseline cross-walk under NIST SSDF (PW.4 / PW.5), OWASP ASVS, PCI DSS Req. 6, ISO 27001:2022 A.8.28 (secure coding), EU CRA Annex I (essential cybersecurity requirements), UK NCSC Secure Development & Deployment, and AU ISM.",
+    "misses": [
+      "CWE-1426 (Improper Validation of Generative AI Output) is in the CWE corpus but not in the 2024 Top 25 — it should be addressed even though the meta-control 'address the Top 25' does not surface it",
+      "AI-relevant CWEs are under-represented relative to real-world AI incident frequency in 2025-2026 — Top 25 lags AI-incident telemetry",
+      "Treating 'Top 25 addressed' as a compliance signal creates a compliance-theatre risk for organisations with significant AI surface",
+      "No cross-walk requirement to ATLAS TTPs — CWE addresses weaknesses; ATLAS addresses adversary techniques. Both are needed for AI coverage"
+    ],
+    "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v5.1.0 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
+    "status": "open",
+    "opened_date": "2026-05-11",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0043",
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  }
+}

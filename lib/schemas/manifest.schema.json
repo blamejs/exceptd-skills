@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exceptd.com/schemas/manifest.schema.json",
+  "title": "exceptd manifest.json",
+  "description": "Schema for the top-level manifest.json describing the exceptd skill collection.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "name",
+    "version",
+    "description",
+    "atlas_version",
+    "threat_review_date",
+    "skills"
+  ],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "description": { "type": "string", "minLength": 1 },
+    "homepage": { "type": "string", "format": "uri" },
+    "license": { "type": "string", "minLength": 1 },
+    "atlas_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "threat_review_date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "sources_dir": { "type": "string" },
+    "agents_dir": { "type": "string" },
+    "reports_dir": { "type": "string" },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/skillEntry" }
+    }
+  },
+  "$defs": {
+    "skillEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "path",
+        "description",
+        "triggers",
+        "data_deps",
+        "atlas_refs",
+        "attack_refs",
+        "framework_gaps",
+        "last_threat_review"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "path": {
+          "type": "string",
+          "pattern": "^skills/[a-z0-9][a-z0-9-]*[a-z0-9]/skill\\.md$"
+        },
+        "description": { "type": "string", "minLength": 10 },
+        "triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "data_deps": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.json$" }
+        },
+        "atlas_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^AML\\.T[0-9]{4}(\\.[0-9]{3})?$" }
+        },
+        "attack_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$" }
+        },
+        "framework_gaps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "forward_watch": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "last_threat_review": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Set by lib/verify.js when signing is not in use; replaced by signature when lib/sign.js runs."
+        },
+        "signature": {
+          "type": "string",
+          "description": "Ed25519 signature over skill.md content, base64-encoded. Added by lib/sign.js."
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp written by lib/sign.js."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+# Windsurf project rules — points at the canonical AGENTS.md.
+#
+# This stub exists so Windsurf's auto-load convention (`.windsurfrules`)
+# pulls in the project's full development standards without forcing
+# Windsurf users to manually configure a context file.
+#
+# Read the rules at: ./AGENTS.md
+#
+# AGENTS.md is the agent-agnostic canonical source for:
+#   - 13 hard rules
+#   - 8 recurring drift rules
+#   - Skill file format spec
+#   - Pre-ship checklist
+#
+# Mirrors exist for tool-specific auto-load conventions:
+#   - CLAUDE.md      — Anthropic Claude Code
+#   - .cursorrules   — Cursor
+#   - .github/copilot-instructions.md — GitHub Copilot
+#   - this file      — Windsurf
+#
+# All mirrors stay in lockstep with AGENTS.md; sync is enforced by
+# tests/bootstrap-mode.test.js.
+
+@AGENTS.md

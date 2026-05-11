@@ -1,0 +1,314 @@
+# Skill verify + lint + test + data-integrity + secret-scan on every
+# push to main and PR targeting main, plus tag pushes (`v*`).
+#
+# Posture mirrors the blamejs/blamejs CI:
+#   - Workflow-level permissions least-privilege (read-only); per-job
+#     blocks elevate only where genuinely needed (lint-summary posts a
+#     sticky PR comment, so it gets pull-requests: write).
+#   - Output posture: every step's full output is shown — no
+#     `>/dev/null`, no `--quiet`, no `--silent`. Operators reading a
+#     failed run see what actually fired without re-running locally.
+#   - Lint job captures full output and surfaces it via:
+#       - GitHub Step Summary (workflow run page).
+#       - Sticky PR comment with <details> blocks containing the actual
+#         lint output for any failing check.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags:     ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Skill signature verification ────────────────────────────────────────────
+  # AGENTS.md hard rule #13: every skill in manifest.json carries an
+  # Ed25519 signature verified against keys/public.pem before the
+  # orchestrator loads it. CI runs the same verifier the orchestrator
+  # uses at runtime — tampered or unsigned skills fail here.
+  verify-signatures:
+    name: Verify skill signatures (Ed25519)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Show Node + npm version
+        run: node --version && npm --version
+
+      - name: Verify Ed25519 signatures on every skill in manifest.json
+        run: npm run verify
+
+  # ── Tests across OS ─────────────────────────────────────────────────────────
+  # Skill content is LF-normalized via .gitattributes because the Ed25519
+  # signatures cover exact bytes. The matrix asserts the Node code in
+  # lib/, scripts/, orchestrator/ runs cross-platform without surprises
+  # (path handling, fs casing, line endings). Sign-verify round-trip
+  # tests in particular exercise PEM I/O across OS.
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Run tests (node:test)
+        run: npm test
+
+  # ── Data-integrity gates ────────────────────────────────────────────────────
+  # AGENTS.md hard rules #1 (no stale threat intel), #6 (zero-day learning
+  # loop), #10 (no placeholder data). Three independent checks against the
+  # data/ corpus. `validate-cves --offline` is fast and deterministic; live
+  # NVD/CISA cross-checks run on the scheduled atlas-currency.yml workflow,
+  # not on every PR, so a transient registry outage never blocks a merge.
+  data-integrity:
+    name: Data integrity (catalog + manifest snapshot)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Validate CVE catalog schema + zero-day learning coverage
+        run: node lib/validate-cve-catalog.js
+
+      - name: Validate offline CVE catalog state
+        run: node orchestrator/index.js validate-cves --offline --no-fail
+
+      - name: Validate offline RFC catalog state
+        # Schema-and-shape check against data/rfc-references.json. Live
+        # IETF Datatracker cross-checks run on the scheduled
+        # atlas-currency.yml workflow path, not on every PR.
+        run: node orchestrator/index.js validate-rfcs --offline --no-fail
+
+      - name: Manifest snapshot gate (breaking-change detector)
+        # Fails on removed skills or removed trigger keywords. Additive
+        # changes (new skills, new triggers) are logged but pass — the
+        # baseline gets refreshed alongside the next release commit so
+        # the new surface is tracked.
+        run: node scripts/check-manifest-snapshot.js
+
+  # ── Skill lint (frontmatter + body sections + cross-refs) ───────────────────
+  # AGENTS.md hard rules #4 (no orphaned controls), #7 (skills are
+  # instructions, not descriptions), #10 (no placeholders), #11 (no-MVP
+  # ban). The linter is the enforcement layer for the 7 required body
+  # sections and frontmatter completeness.
+  lint-skills:
+    name: Lint skill files
+    runs-on: ubuntu-latest
+    outputs:
+      outcome: ${{ steps.lint.outcome }}
+      output:  ${{ steps.lint.outputs.output }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Run skill lint
+        id: lint
+        run: |
+          set +e
+          OUTPUT=$(node lib/lint-skills.js 2>&1)
+          EXIT_CODE=$?
+          set -e
+          echo "$OUTPUT"
+          {
+            echo "output<<LINT_EOF"
+            echo "$OUTPUT"
+            echo "LINT_EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Skill lint found issues"
+          fi
+          exit $EXIT_CODE
+
+  # ── Secret scan (gitleaks) ──────────────────────────────────────────────────
+  # Full-history scan. The repo legitimately carries Ed25519 public keys
+  # and base64 signature strings (manifest.json), plus CVE descriptions
+  # that may quote PoC byte counts. Allowlists live in .gitleaks.toml.
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks
+        # Pulls the OSS gitleaks binary directly from GitHub releases.
+        # The `gitleaks/gitleaks-action` wrapper requires a commercial
+        # license (GITLEAKS_LICENSE secret) for organization accounts,
+        # which is unsuitable for an open-source project. The underlying
+        # `gitleaks` binary itself stays Apache-2.0 and has no such
+        # requirement — install + invoke it directly. We track LATEST
+        # rather than pinning a version: gitleaks is a security gate,
+        # new rules ship to catch new attack patterns, and pinning would
+        # silently miss improvements to the detection set.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          GITLEAKS_VERSION=$(curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+            | grep -oP '"tag_name":\s*"v\K[^"]+' | head -1)
+          if [ -z "$GITLEAKS_VERSION" ]; then
+            echo "::error::Could not resolve latest gitleaks release tag from GitHub API"
+            exit 1
+          fi
+          echo "[gitleaks] resolved latest release: v${GITLEAKS_VERSION}"
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Run gitleaks
+        # Default ruleset + .gitleaks.toml allowlists for the project's
+        # legitimate high-entropy surfaces (Ed25519 signatures, public
+        # key PEM, CVE descriptions with PoC byte counts).
+        run: |
+          gitleaks git --config=.gitleaks.toml --redact --verbose --exit-code=1
+
+  # ── Lint summary + sticky PR comment ────────────────────────────────────────
+  # Aggregates the skill-lint outcome (and any future linters) into a
+  # status table on the Step Summary + sticky PR comment. `if: always()`
+  # so the summary still posts when one or more lint jobs fail — that's
+  # the case operators most want to see at a glance.
+  lint-summary:
+    name: Lint summary
+    needs: [lint-skills]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Build summary
+        id: summary
+        env:
+          LINT_OUTCOME: ${{ needs.lint-skills.result }}
+          LINT_OUTPUT:  ${{ needs.lint-skills.outputs.output }}
+        run: |
+          PASS="✅"
+          FAIL="❌"
+
+          LINT_OK=$( [ "$LINT_OUTCOME" = "success" ] && echo "true" || echo "false" )
+          LINT_ICON=$( [ "$LINT_OK" = "true" ] && echo "$PASS" || echo "$FAIL" )
+
+          {
+            echo "body<<SUMMARY_EOF"
+            # Sticky-comment marker — always present so the next run's
+            # github-script matcher can find + update the existing
+            # comment regardless of pass/fail state.
+            echo "<!-- exceptd-lint-comment -->"
+            if [ "$LINT_OK" = "true" ]; then
+              echo "🎉   Skill lint finished with no errors   🎉"
+              echo ""
+            fi
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| Skill lint (frontmatter + 7 body sections + cross-refs) | $LINT_ICON |"
+
+            if [ "$LINT_OK" != "true" ] && [ -n "$LINT_OUTPUT" ]; then
+              echo ""
+              echo "<details><summary>Skill lint output</summary>"
+              echo ""
+              echo '```'
+              printf '%s\n' "$LINT_OUTPUT"
+              echo '```'
+              echo "</details>"
+            fi
+
+            echo "SUMMARY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "all_ok=$LINT_OK" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Lint Results"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| Skill lint | $LINT_ICON |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        env:
+          PR_BODY: ${{ steps.summary.outputs.body }}
+        with:
+          script: |
+            const body = process.env.PR_BODY;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('<!-- exceptd-lint-comment -->')
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if any linter failed
+        if: always()
+        run: |
+          if [ "${{ steps.summary.outputs.all_ok }}" != "true" ]; then
+            echo "One or more linters failed"
+            exit 1
+          fi

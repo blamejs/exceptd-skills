@@ -1,0 +1,67 @@
+# exceptd Security — Cursor Rules
+
+## What This Repository Is
+
+AI security skills grounded in mid-2026 threat reality. Each skill in `skills/*/skill.md` is a structured instruction set for performing a specific security analysis.
+
+## Context Files to Load
+
+Load these at the start of any session:
+- `CONTEXT.md` — complete orientation to the skill system
+- `manifest.json` — full skill registry with trigger → file mappings
+- `AGENT.md` — development standards that apply to all contributions
+
+## Skill System
+
+Skills live in `skills/<name>/skill.md` and are matched by trigger phrases in their frontmatter `triggers` arrays.
+
+To invoke a skill: match the user's query against the triggers in `manifest.json`, load the skill file, and follow its **Analysis Procedure** section.
+
+## Data Files
+
+All skills pull from `data/`. Do not hallucinate CVE data — read from `data/cve-catalog.json`. Do not invent framework gap claims — read from `data/framework-control-gaps.json`.
+
+```
+data/
+  cve-catalog.json          — CVE metadata with RWEP scores
+  atlas-ttps.json           — MITRE ATLAS v5.1.0 TTPs with gap flags
+  framework-control-gaps.json — Per-control gap analysis
+  exploit-availability.json — PoC status and weaponization tracking
+  global-frameworks.json    — 14-jurisdiction framework registry
+  zeroday-lessons.json      — Zero-day learning loop output
+```
+
+## Hard Rules (Summary)
+
+1. Never use CVSS as the sole risk metric — always use RWEP from `lib/scoring.js`
+2. Never imply a framework control is adequate without checking `data/framework-control-gaps.json`
+3. Never add a CVE reference without complete `data/cve-catalog.json` entry
+4. Every new CVE triggers a `data/zeroday-lessons.json` entry
+5. Analysis is always global: EU (NIS2/DORA) + UK (CAF) + AU (ISM) + ISO 27001, not US-only
+6. Skill files are instructions — follow them step by step, produce the specified output format
+
+## Orchestration
+
+The `orchestrator/` directory ties scanning, skill dispatch, and reporting together.
+
+```
+node orchestrator/index.js scan              # Scan current environment
+node orchestrator/index.js dispatch          # Route findings to skills
+node orchestrator/index.js report            # Generate output reports
+node orchestrator/index.js pipeline          # Run full agent pipeline
+```
+
+## MCP Config Location (for MCP audit work)
+
+When auditing MCP server configurations, check:
+- Cursor: `~/.cursor/mcp.json`
+- VS Code: `settings.json` → `mcp` section
+- Windsurf: `~/.windsurf/mcp.json`
+- Other assistants: see `orchestrator/scanner.js` for detection logic
+
+## What Not To Do
+
+- Do not ship functional exploit code — describe techniques, reference existence
+- Do not assert gap status without evidence — read `data/framework-control-gaps.json`
+- Do not use placeholder data — `data/` files contain real entries only
+- Do not omit global frameworks — US-only analysis is incomplete by design

@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exceptd.com/schemas/skill-frontmatter.schema.json",
+  "title": "exceptd Skill Frontmatter",
+  "description": "Schema for the YAML frontmatter at the top of every skills/<name>/skill.md. Mirrors the spec in AGENTS.md (Skill File Format).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "version",
+    "description",
+    "triggers",
+    "data_deps",
+    "atlas_refs",
+    "attack_refs",
+    "framework_gaps",
+    "last_threat_review"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "description": "Lowercase kebab-case identifier matching the directory under skills/."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version string. Quoted in YAML to preserve string type."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "One-line trigger description used by AI assistant skill matching."
+    },
+    "triggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Phrase patterns that invoke the skill."
+    },
+    "data_deps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._-]+\\.json$"
+      },
+      "description": "Filenames (relative to data/) that this skill reads. Each must resolve to an existing file."
+    },
+    "atlas_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^AML\\.T[0-9]{4}(\\.[0-9]{3})?$"
+      },
+      "description": "MITRE ATLAS TTP IDs at the pinned version (currently v5.1.0)."
+    },
+    "attack_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"
+      },
+      "description": "MITRE ATT&CK technique IDs."
+    },
+    "framework_gaps": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Framework control IDs whose gap this skill addresses. Each must resolve in data/framework-control-gaps.json."
+    },
+    "rfc_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(RFC-[0-9]+|DRAFT-[A-Z0-9-]+)$"
+      },
+      "description": "Optional. IETF RFC numbers (e.g. RFC-8446) or Internet-Draft slugs (e.g. DRAFT-IETF-TLS-ECDHE-MLKEM) the skill depends on. Each must resolve in data/rfc-references.json."
+    },
+    "cwe_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CWE-[0-9]+$"
+      },
+      "description": "Optional. CWE (Common Weakness Enumeration) IDs the skill addresses as root-cause weakness classes. Each must resolve in data/cwe-catalog.json."
+    },
+    "d3fend_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^D3-[A-Z]+$"
+      },
+      "description": "Optional. MITRE D3FEND defensive technique IDs the skill maps to. Each must resolve in data/d3fend-catalog.json."
+    },
+    "dlp_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^DLP-[A-Z0-9-]+$"
+      },
+      "description": "Optional. DLP control IDs the skill addresses (channels, classifiers, surfaces, enforcement, evidence). Each must resolve in data/dlp-controls.json."
+    },
+    "forward_watch": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Optional. Upcoming standards changes or new TTPs to watch for skill update."
+    },
+    "last_threat_review": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO date of the last threat-intel review for this skill."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+# Auto-routes review requests when PRs touch matching paths.
+# Order matters: later patterns override earlier ones.
+
+*                                   @dotCooCoo
+
+# High-trust paths — threat intel, scoring, and the verified skill manifest.
+# Changes here are load-bearing for every downstream user. Add a security-team
+# handle (e.g. @blamejs/security) as an additional owner once available.
+/data/                              @dotCooCoo
+/data/*.json                        @dotCooCoo
+/manifest.json                      @dotCooCoo
+/lib/verify.js                      @dotCooCoo
+/lib/sign.js                        @dotCooCoo
+/lib/scoring.js                     @dotCooCoo
+/keys/                              @dotCooCoo
+
+# Skill content.
+/skills/                            @dotCooCoo
+
+# Workflow and repo policy.
+/.github/                           @dotCooCoo
+/.github/workflows/                 @dotCooCoo
+/.github/CODEOWNERS                 @dotCooCoo

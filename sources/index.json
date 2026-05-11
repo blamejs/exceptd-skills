@@ -1,0 +1,384 @@
+{
+  "version": "1.1.0",
+  "last_updated": "2026-05-11",
+  "sources": {
+    "cve_primary": {
+      "name": "NVD — National Vulnerability Database",
+      "url": "https://nvd.nist.gov/vuln/detail/{CVE_ID}",
+      "api": "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={CVE_ID}",
+      "fields": ["cvss_score", "cvss_vector", "description", "affected_versions", "references"],
+      "update_frequency": "real-time",
+      "verification_required_fields": ["cvss_score", "cvss_vector"]
+    },
+    "cisa_kev": {
+      "name": "CISA Known Exploited Vulnerabilities Catalog",
+      "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+      "feed": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+      "fields": ["cisa_kev", "cisa_kev_date", "active_exploitation"],
+      "update_frequency": "real-time",
+      "check_method": "Query feed JSON for CVE ID",
+      "applies_to": "data/cve-catalog.json, data/exploit-availability.json"
+    },
+    "vulncheck_kev": {
+      "name": "VulnCheck KEV",
+      "url": "https://vulncheck.com/kev",
+      "api": "https://api.vulncheck.com/v3/index/vulncheck-kev",
+      "fields": ["vulncheck_kev", "vulncheck_kev_date", "reported_exploitation_sources", "ransomware_use"],
+      "update_frequency": "real-time",
+      "applies_to": "data/cve-catalog.json, data/exploit-availability.json",
+      "auth_required": true,
+      "fallback": "cisa_kev",
+      "note": "Commercial superset of CISA KEV with earlier signal and broader source coverage; requires API key. Catalog can fall back to CISA KEV when VulnCheck is unavailable."
+    },
+    "epss_api": {
+      "name": "FIRST EPSS API",
+      "url": "https://www.first.org/epss/",
+      "api": "https://api.first.org/data/v1/epss?cve={CVE_ID}",
+      "api_envelope": "https://api.first.org/data/v1/epss?cve={CVE_ID}&envelope=true&pretty=true",
+      "fields": ["epss", "percentile", "date"],
+      "update_frequency": "daily",
+      "applies_to": "data/cve-catalog.json, data/exploit-availability.json",
+      "verification_required_fields": ["epss", "percentile", "date"],
+      "note": "EPSS provides empirical 30-day probability of exploitation. Pair with CISA/VulnCheck KEV for current-state exploitation."
+    },
+    "osv": {
+      "name": "OSV.dev — Open Source Vulnerability Database",
+      "url": "https://osv.dev",
+      "api_get": "https://api.osv.dev/v1/vulns/{CVE_ID}",
+      "api_query": "https://api.osv.dev/v1/query",
+      "api_query_method": "POST",
+      "fields": ["id", "aliases", "affected", "references", "severity", "ecosystem"],
+      "update_frequency": "real-time",
+      "applies_to": "data/cve-catalog.json, data/exploit-availability.json",
+      "note": "Promoted from exploit_feeds.osv to top-level source in v1.1.0. Aggregates GHSA, PyPA, RustSec, Go vulndb, etc. The exploit_feeds.osv entry is retained for backwards reference but this top-level entry is canonical."
+    },
+    "csaf_advisories": {
+      "name": "CSAF 2.0 — Common Security Advisory Framework",
+      "url": "https://docs.oasis-open.org/csaf/csaf/v2.0/",
+      "current_version": "2.0",
+      "version_date": "2022-11-18",
+      "well_known_pattern": "https://{vendor-domain}/.well-known/csaf/",
+      "provider_metadata_pattern": "https://{vendor-domain}/.well-known/csaf/provider-metadata.json",
+      "fields": ["document.tracking.id", "vulnerabilities[].cve", "vulnerabilities[].product_status", "vulnerabilities[].remediations"],
+      "update_frequency": "real-time",
+      "applies_to": "data/cve-catalog.json, vendor_advisories ingestion",
+      "note": "Machine-readable vendor advisory format. Vendors publish CSAF documents at the well-known path; consumers resolve product-status and remediation timelines structurally rather than scraping HTML."
+    },
+    "stix_taxii": {
+      "name": "STIX 2.1 / TAXII 2.1",
+      "url": "https://oasis-open.github.io/cti-documentation/",
+      "stix_spec": "https://docs.oasis-open.org/cti/stix/v2.1/os/stix-v2.1-os.html",
+      "taxii_spec": "https://docs.oasis-open.org/cti/taxii/v2.1/os/taxii-v2.1-os.html",
+      "current_version": "2.1",
+      "version_date": "2021-06-10",
+      "fields": ["indicator", "attack-pattern", "course-of-action", "vulnerability", "report", "relationship"],
+      "update_frequency": "real-time (depends on producer)",
+      "applies_to": "Export: project can serialize cve-catalog + atlas-ttps + framework-control-gaps as STIX 2.1 bundles for ingestion by SIEM/SOAR/TIP platforms via TAXII 2.1 collections.",
+      "note": "Industry-standard threat-intel exchange format. exceptd treats STIX as an export target, not an inbound source — consumers can pull project artifacts via TAXII when an export feed is published."
+    },
+    "misp": {
+      "name": "MISP — Malware Information Sharing Platform",
+      "url": "https://www.misp-project.org/",
+      "feeds_index": "https://www.misp-project.org/feeds/",
+      "fields": ["Event", "Attribute", "Object", "Galaxy", "Tag"],
+      "update_frequency": "real-time (depends on instance/feeds)",
+      "applies_to": "Integration target: many organisations operate a MISP instance and ingest exceptd CVE catalog / ATLAS TTPs as a feed. No formal validator yet; integration via MISP feed format or PyMISP push.",
+      "note": "Aligns with STIX via the MISP-STIX converter. exceptd does not depend on MISP; downstream consumers integrate at their option."
+    },
+    "cwe": {
+      "name": "MITRE CWE — Common Weakness Enumeration",
+      "url": "https://cwe.mitre.org",
+      "current_version": "4.17",
+      "version_date": "2025-02-13",
+      "view_1003": "https://cwe.mitre.org/data/definitions/1003.html",
+      "view_1425": "https://cwe.mitre.org/data/definitions/1425.html",
+      "downloads": "https://cwe.mitre.org/data/downloads.html",
+      "fields": ["cwe_id", "name", "description", "relationships", "applicable_platforms"],
+      "update_frequency": "yearly (minor patch releases between)",
+      "applies_to": "data/cve-catalog.json (cwe field), data/atlas-ttps.json cross-reference",
+      "views": {
+        "1003": "Weaknesses for Simplified Mapping of Published Vulnerabilities — CNA-facing subset for CVE root-cause mapping",
+        "1425": "Weaknesses in AI/ML — relevant for AI-discovered CVE class and prompt-injection-adjacent flaws"
+      }
+    },
+    "capec": {
+      "name": "MITRE CAPEC — Common Attack Pattern Enumeration and Classification",
+      "url": "https://capec.mitre.org",
+      "current_version": "3.9",
+      "version_date": "2023-10-26",
+      "downloads": "https://capec.mitre.org/data/downloads.html",
+      "fields": ["capec_id", "name", "description", "related_weaknesses", "related_attack_techniques"],
+      "update_frequency": "periodic (typically annual)",
+      "applies_to": "data/atlas-ttps.json (capec cross-reference), data/cve-catalog.json (attack-pattern context)",
+      "note": "Bridges CWE (weakness taxonomy) and ATT&CK (technique taxonomy) at the attack-pattern layer."
+    },
+    "attack": {
+      "name": "MITRE ATT&CK",
+      "url": "https://attack.mitre.org",
+      "techniques_url": "https://attack.mitre.org/techniques/{TECHNIQUE_ID}",
+      "stix_bundle_enterprise": "https://github.com/mitre-attack/attack-stix-data/blob/master/enterprise-attack/enterprise-attack.json",
+      "current_version": "17",
+      "version_date": "2025-06-25",
+      "next_release_window": "late 2026 (typically October minor release)",
+      "fields": ["technique_id", "sub_technique_id", "name", "tactic", "platforms", "data_sources", "mitigations"],
+      "update_frequency": "biannual (major in spring, minor in fall historically)",
+      "applies_to": "data/atlas-ttps.json (cross-references), skill frontmatter attack_refs",
+      "note": "Per AGENTS.md rule #12, every attack_refs entry must pin against the current ATT&CK version. When ATT&CK ships a new release, audit attack_refs in skill frontmatter and bump last_threat_review."
+    },
+    "d3fend": {
+      "name": "MITRE D3FEND",
+      "url": "https://d3fend.mitre.org",
+      "api_sparql": "https://d3fend.mitre.org/api/sparql",
+      "ontology": "https://d3fend.mitre.org/ontology/",
+      "current_version": "1.0.0",
+      "version_date": "2024-08-30",
+      "fields": ["d3fend_technique", "digital_artifact", "offensive_technique_cross_reference"],
+      "update_frequency": "periodic",
+      "applies_to": "data/framework-control-gaps.json (defensive control cross-reference), skill-level control mapping",
+      "note": "Defensive countermeasure knowledge graph. D3FEND SPARQL endpoint accepts standard SPARQL 1.1 queries against the D3FEND ontology; useful for resolving 'what defensive technique counters this ATT&CK technique' queries."
+    },
+    "ssvc": {
+      "name": "SSVC — Stakeholder-Specific Vulnerability Categorization",
+      "url": "https://www.cisa.gov/ssvc",
+      "cmu_sei_source": "https://certcc.github.io/SSVC/",
+      "calculator": "https://www.cisa.gov/ssvc-calculator",
+      "fields": ["ssvc_decision", "exploitation", "exposure", "utility", "human_impact"],
+      "update_frequency": "periodic (decision-tree revisions)",
+      "applies_to": "lib/scoring.js (RWEP cross-walk), data/cve-catalog.json (optional ssvc decision)",
+      "note": "Decision-tree alternative to CVSS used by CISA for federal coordinated vulnerability disclosure. RWEP scoring in lib/scoring.js draws on SSVC decision-tree categories (Track / Track* / Attend / Act) for prioritisation."
+    },
+    "slsa": {
+      "name": "SLSA — Supply-chain Levels for Software Artifacts",
+      "url": "https://slsa.dev",
+      "spec_url": "https://slsa.dev/spec/v1.0/",
+      "current_version": "1.0",
+      "version_date": "2023-04-19",
+      "fields": ["build_level", "provenance", "isolation"],
+      "update_frequency": "periodic (versioned spec releases)",
+      "applies_to": "skill-level supply-chain controls (mcp-agent-trust, rag-pipeline-security, framework-gap-analysis)",
+      "note": "Defines four build levels (L0-L3). exceptd skills reference SLSA levels when prescribing supply-chain controls for AI tool plugins and MCP server distribution."
+    },
+    "sigstore": {
+      "name": "Sigstore",
+      "url": "https://www.sigstore.dev",
+      "rekor_url": "https://rekor.sigstore.dev",
+      "fulcio_url": "https://fulcio.sigstore.dev",
+      "fields": ["signature", "transparency_log_entry", "certificate_chain"],
+      "update_frequency": "real-time (transparency log append-only)",
+      "applies_to": "skill-level signing controls; cross-reference for keys/public.pem-based skill signing in this repo (per AGENTS.md rule #13)",
+      "note": "Keyless signing + Rekor transparency log. exceptd skills cite Sigstore as a recommended control for OCI image and container artifact provenance."
+    },
+    "vendor_advisories": {
+      "name": "Vendor security advisory aggregator (canonical feeds)",
+      "applies_to": "data/cve-catalog.json (vendor-side patch availability cross-reference)",
+      "feeds": {
+        "microsoft_msrc": {
+          "name": "Microsoft Security Response Center (MSRC)",
+          "url": "https://msrc.microsoft.com/update-guide",
+          "api": "https://api.msrc.microsoft.com/cvrf/v3.0/cvrf/{YYYY-MMM}",
+          "csaf_well_known": "https://msrc.microsoft.com/.well-known/csaf/",
+          "update_frequency": "monthly (Patch Tuesday) + out-of-band"
+        },
+        "redhat_rhsa": {
+          "name": "Red Hat Security Advisories",
+          "url": "https://access.redhat.com/security/security-updates/",
+          "csaf_index": "https://access.redhat.com/security/data/csaf/v2/advisories/",
+          "api": "https://access.redhat.com/hydra/rest/securitydata/cve/{CVE_ID}.json",
+          "update_frequency": "real-time"
+        },
+        "ubuntu_usn": {
+          "name": "Ubuntu Security Notices",
+          "url": "https://ubuntu.com/security/notices",
+          "json_feed": "https://ubuntu.com/security/notices.json",
+          "cve_api": "https://ubuntu.com/security/cves/{CVE_ID}.json",
+          "update_frequency": "real-time"
+        },
+        "apple": {
+          "name": "Apple Security Releases",
+          "url": "https://support.apple.com/en-us/HT201222",
+          "update_frequency": "periodic; out-of-band for actively exploited"
+        },
+        "cisco_psirt": {
+          "name": "Cisco Security Advisories",
+          "url": "https://sec.cloudapps.cisco.com/security/center/publicationListing.x",
+          "api_openvuln": "https://apix.cisco.com/security/advisories/v2",
+          "csaf_index": "https://sec.cloudapps.cisco.com/security/center/csafListing.x",
+          "update_frequency": "real-time"
+        },
+        "oracle_cpu": {
+          "name": "Oracle Critical Patch Updates",
+          "url": "https://www.oracle.com/security-alerts/",
+          "update_frequency": "quarterly (Jan/Apr/Jul/Oct) + out-of-band"
+        },
+        "suse": {
+          "name": "SUSE Security Advisories",
+          "url": "https://www.suse.com/support/security/",
+          "csaf_index": "https://ftp.suse.com/pub/projects/security/csaf/",
+          "update_frequency": "real-time"
+        },
+        "debian_dsa": {
+          "name": "Debian Security Advisories",
+          "url": "https://www.debian.org/security/",
+          "json_feed": "https://security-tracker.debian.org/tracker/data/json",
+          "update_frequency": "real-time"
+        },
+        "google_asb": {
+          "name": "Android Security Bulletin",
+          "url": "https://source.android.com/docs/security/bulletin",
+          "update_frequency": "monthly"
+        }
+      },
+      "note": "Each vendor canonical feed should be consulted alongside CSAF advisories where the vendor publishes them. CSAF parsing is the preferred ingestion path; HTML-only feeds require per-vendor extraction logic."
+    },
+    "atlas": {
+      "name": "MITRE ATLAS",
+      "url": "https://atlas.mitre.org",
+      "techniques_url": "https://atlas.mitre.org/techniques/{TTP_ID}",
+      "changelog_url": "https://atlas.mitre.org/resources/changelog",
+      "current_version": "5.1.0",
+      "version_date": "2025-11-01",
+      "fields": ["atlas_refs", "ttp_name", "ttp_description", "tactic"],
+      "update_frequency": "quarterly"
+    },
+    "ietf_datatracker": {
+      "name": "IETF Datatracker",
+      "url": "https://datatracker.ietf.org",
+      "rfc_url": "https://datatracker.ietf.org/doc/rfc{NUMBER}/",
+      "draft_url": "https://datatracker.ietf.org/doc/{DRAFT_SLUG}/",
+      "api": "https://datatracker.ietf.org/api/v1/doc/document/?name={DOC_NAME}&format=json",
+      "fields": ["status", "std_level", "errata_count", "replaces", "replaced_by"],
+      "update_frequency": "real-time",
+      "applies_to": "data/rfc-references.json — RFC and Internet-Draft references cited by skills (rfc_refs frontmatter field)",
+      "validator": "sources/validators/rfc-validator.js"
+    },
+    "rfc_editor": {
+      "name": "RFC Editor",
+      "url": "https://www.rfc-editor.org",
+      "rfc_info_url": "https://www.rfc-editor.org/info/rfc{NUMBER}",
+      "errata_api": "https://www.rfc-editor.org/errata/rfc{NUMBER}.json",
+      "fields": ["errata_count", "errata_entries"],
+      "note": "Canonical errata source; the orchestrator validate-rfcs command surfaces these counts."
+    },
+    "nist_frameworks": {
+      "nist_800_53": {
+        "name": "NIST SP 800-53 Rev 5",
+        "url": "https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final",
+        "version": "Rev 5 (2020)",
+        "update_frequency": "periodic"
+      },
+      "nist_csf": {
+        "name": "NIST Cybersecurity Framework 2.0",
+        "url": "https://www.nist.gov/cyberframework",
+        "version": "2.0 (2024)",
+        "update_frequency": "periodic"
+      },
+      "nist_ai_rmf": {
+        "name": "NIST AI Risk Management Framework",
+        "url": "https://www.nist.gov/system/files/documents/2023/01/26/AI%20RMF%201.0.pdf",
+        "version": "1.0 (2023)",
+        "update_frequency": "periodic"
+      }
+    },
+    "pqc_standards": {
+      "fips_203": {
+        "name": "FIPS 203 — ML-KEM",
+        "url": "https://csrc.nist.gov/pubs/fips/203/final",
+        "status": "final",
+        "published": "2024-08-13"
+      },
+      "fips_204": {
+        "name": "FIPS 204 — ML-DSA",
+        "url": "https://csrc.nist.gov/pubs/fips/204/final",
+        "status": "final",
+        "published": "2024-08-13"
+      },
+      "fips_205": {
+        "name": "FIPS 205 — SLH-DSA",
+        "url": "https://csrc.nist.gov/pubs/fips/205/final",
+        "status": "final",
+        "published": "2024-08-13"
+      },
+      "fips_206": {
+        "name": "FIPS 206 — HQC (pending)",
+        "url": "https://csrc.nist.gov/projects/post-quantum-cryptography",
+        "status": "pending",
+        "expected": "2026-2027"
+      }
+    },
+    "eu_frameworks": {
+      "gdpr": {
+        "name": "GDPR",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32016R0679",
+        "version": "2016/679"
+      },
+      "nis2": {
+        "name": "NIS2 Directive",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022L2555",
+        "version": "2022/2555",
+        "effective": "2024-10-17"
+      },
+      "dora": {
+        "name": "DORA",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2554",
+        "version": "2022/2554",
+        "effective": "2025-01-17"
+      },
+      "eu_ai_act": {
+        "name": "EU AI Act",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689",
+        "version": "2024/1689",
+        "full_application": "2026-08-02"
+      },
+      "eu_cra": {
+        "name": "EU Cyber Resilience Act",
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R2847",
+        "version": "2024/2847"
+      }
+    },
+    "au_frameworks": {
+      "ism": {
+        "name": "Australian Government Information Security Manual",
+        "url": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
+        "update_frequency": "monthly"
+      },
+      "essential_8": {
+        "name": "ASD Essential Eight",
+        "url": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight",
+        "version": "2023"
+      }
+    },
+    "sg_frameworks": {
+      "mas_trm": {
+        "name": "MAS Technology Risk Management Guidelines",
+        "url": "https://www.mas.gov.sg/regulation/guidelines/technology-risk-management-guidelines",
+        "version": "January 2021 (updated)"
+      }
+    },
+    "in_frameworks": {
+      "cert_in": {
+        "name": "CERT-In Directions",
+        "url": "https://www.cert-in.org.in/",
+        "version": "April 2022 Directions"
+      }
+    },
+    "exploit_feeds": {
+      "nvd_references": {
+        "name": "NVD CVE References",
+        "url": "https://nvd.nist.gov/vuln/detail/{CVE_ID}#vulnCurrentDescriptionTitle",
+        "note": "Check References section for PoC links — do not include direct exploit URLs in skill data"
+      },
+      "github_security_advisories": {
+        "name": "GitHub Security Advisories",
+        "url": "https://github.com/advisories",
+        "api": "https://api.github.com/advisories"
+      },
+      "osv": {
+        "name": "Open Source Vulnerability Database",
+        "url": "https://osv.dev",
+        "api": "https://api.osv.dev/v1/vulns/{CVE_ID}",
+        "promoted_to": "sources.osv",
+        "note": "Retained for backwards compatibility. The canonical entry is now sources.osv at the top level (v1.1.0)."
+      }
+    }
+  }
+}

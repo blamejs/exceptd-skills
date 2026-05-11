@@ -1,0 +1,1202 @@
+{
+  "name": "exceptd-security",
+  "version": "0.5.0",
+  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
+  "homepage": "https://exceptd.com",
+  "license": "Apache-2.0",
+  "atlas_version": "5.1.0",
+  "attack_version": "17",
+  "attack_version_date": "2025-06-25",
+  "threat_review_date": "2026-05-01",
+  "sources_dir": "sources/",
+  "agents_dir": "agents/",
+  "reports_dir": "reports/",
+  "skills": [
+    {
+      "name": "kernel-lpe-triage",
+      "version": "1.0.0",
+      "path": "skills/kernel-lpe-triage/skill.md",
+      "description": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, live-patch vs. reboot remediation",
+      "triggers": [
+        "kernel lpe",
+        "privilege escalation",
+        "copy fail",
+        "dirty frag",
+        "cve-2026-31431",
+        "cve-2026-43284",
+        "linux root",
+        "kernel patch",
+        "live kernel patch"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "exploit-availability.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "framework_gaps": [
+        "NIST-800-53-SI-2",
+        "ISO-27001-2022-A.8.8",
+        "PCI-DSS-4.0-6.3.3",
+        "NIS2-Art21-patch-management"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "VFvyXqdgje/ZJ9/a2ubFvjuIe6WuLpwNvUQlY55+PZS3oGs+DVMgzRxtWX73KQ4EigFNN3OIjnWgHHouVy2oCw==",
+      "signed_at": "2026-05-11T16:10:16.093Z",
+      "cwe_refs": [
+        "CWE-416",
+        "CWE-672",
+        "CWE-787"
+      ],
+      "d3fend_refs": [
+        "D3-ASLR",
+        "D3-EAL",
+        "D3-PHRA",
+        "D3-PSEP"
+      ]
+    },
+    {
+      "name": "ai-attack-surface",
+      "version": "1.0.0",
+      "path": "skills/ai-attack-surface/skill.md",
+      "description": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with gap flags",
+      "triggers": [
+        "ai attack surface",
+        "prompt injection",
+        "llm security",
+        "ai security assessment",
+        "model security",
+        "ai threat model",
+        "ai red team",
+        "promptsteal",
+        "promptflux"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [
+        "AML.T0043",
+        "AML.T0051",
+        "AML.T0054",
+        "AML.T0020",
+        "AML.T0096",
+        "AML.T0016",
+        "AML.T0017",
+        "AML.T0018"
+      ],
+      "attack_refs": [
+        "T1566",
+        "T1059",
+        "T1190"
+      ],
+      "framework_gaps": [
+        "ALL-AI-PIPELINE-INTEGRITY",
+        "ALL-PROMPT-INJECTION-ACCESS-CONTROL",
+        "ISO-27001-2022-A.8.28",
+        "NIST-800-53-AC-2",
+        "NIST-800-53-SI-3",
+        "OWASP-LLM-Top-10-2025-LLM01",
+        "OWASP-LLM-Top-10-2025-LLM02",
+        "SOC2-CC6-logical-access"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "5fxKEYkELgkJexg+rrisxZ3beaO01JLwmO+/RARe+WrDYeYtBx+DzF1raTYzbrq7rlzqMyIb15KGAn4VJVo1BQ==",
+      "signed_at": "2026-05-11T16:10:16.095Z",
+      "cwe_refs": [
+        "CWE-1039",
+        "CWE-1426",
+        "CWE-94"
+      ],
+      "d3fend_refs": [
+        "D3-IOPR",
+        "D3-NTA"
+      ]
+    },
+    {
+      "name": "mcp-agent-trust",
+      "version": "1.0.0",
+      "path": "skills/mcp-agent-trust/skill.md",
+      "description": "Enumerate MCP trust boundary failures — tool allowlisting, signed manifests, bearer auth, zero-interaction RCE",
+      "triggers": [
+        "mcp security",
+        "model context protocol",
+        "agent trust",
+        "tool trust",
+        "mcp rce",
+        "cve-2026-30615",
+        "cursor security",
+        "windsurf security",
+        "claude code security",
+        "ai agent security"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [
+        "AML.T0010",
+        "AML.T0016",
+        "AML.T0096"
+      ],
+      "attack_refs": [
+        "T1195.001",
+        "T1059",
+        "T1190"
+      ],
+      "framework_gaps": [
+        "ALL-MCP-TOOL-TRUST",
+        "ISO-27001-2022-A.8.30",
+        "NIST-800-53-CM-7",
+        "NIST-800-53-SA-12",
+        "OWASP-LLM-Top-10-2025-LLM06",
+        "SOC2-CC9-vendor-management"
+      ],
+      "rfc_refs": [
+        "RFC-7519",
+        "RFC-8725",
+        "RFC-6749",
+        "RFC-9700",
+        "RFC-9421",
+        "RFC-9114"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "FWKTUrcHSMewUkERj2c2T9wOqm6RM1mZ0OLWYPOGDzlP0l4+2B0Xhy5VJSyqV2sHVmTLuWYdxznp75jt68+OAw==",
+      "signed_at": "2026-05-11T16:10:16.095Z",
+      "cwe_refs": [
+        "CWE-345",
+        "CWE-494",
+        "CWE-94"
+      ],
+      "d3fend_refs": [
+        "D3-CBAN",
+        "D3-CSPP",
+        "D3-EAL",
+        "D3-EHB",
+        "D3-MFA"
+      ]
+    },
+    {
+      "name": "framework-gap-analysis",
+      "version": "1.0.0",
+      "path": "skills/framework-gap-analysis/skill.md",
+      "description": "Feed a framework control ID and threat scenario — receive the gap between what the control covers and what current TTPs require",
+      "triggers": [
+        "framework gap",
+        "control gap",
+        "nist gap",
+        "iso 27001 gap",
+        "soc 2 gap",
+        "pci gap",
+        "nis2 gap",
+        "compliance gap",
+        "why doesn't this control cover"
+      ],
+      "data_deps": [
+        "framework-control-gaps.json",
+        "atlas-ttps.json",
+        "cve-catalog.json",
+        "global-frameworks.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-01",
+      "signature": "PYSw9abiYfW+y7IkY8udJG5LSds2a4rMimlw3rrdD0zE3vunEeV/y7oTmDD4o83OqHSCKNzF/7vMhvd/noqICQ==",
+      "signed_at": "2026-05-11T16:10:16.096Z"
+    },
+    {
+      "name": "compliance-theater",
+      "version": "1.0.0",
+      "path": "skills/compliance-theater/skill.md",
+      "description": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns",
+      "triggers": [
+        "compliance theater",
+        "paper compliance",
+        "audit but exposed",
+        "compliant but vulnerable",
+        "compliance gap",
+        "checkbox security",
+        "audit theater"
+      ],
+      "data_deps": [
+        "framework-control-gaps.json",
+        "cve-catalog.json",
+        "exploit-availability.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [
+        "ALL-AI-PIPELINE-INTEGRITY",
+        "ALL-PROMPT-INJECTION-ACCESS-CONTROL"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "1HN0ky+UZW7u5wcpGeix+L5rCCIo7Rc+f6PP9AN7pIhB8YpxeQlKPz+lxAj2wlBHS8OoLMwe/Dq5v/KhHCUAAA==",
+      "signed_at": "2026-05-11T16:10:16.096Z"
+    },
+    {
+      "name": "exploit-scoring",
+      "version": "1.0.0",
+      "path": "skills/exploit-scoring/skill.md",
+      "description": "Real-World Exploit Priority (RWEP) scoring — CVSS plus KEV, PoC, AI-acceleration, blast radius, live-patch factors",
+      "triggers": [
+        "exploit scoring",
+        "rwep",
+        "real world priority",
+        "how bad is this cve",
+        "prioritize cve",
+        "cve priority",
+        "patch priority",
+        "beyond cvss"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "exploit-availability.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [
+        "CWE-Top-25-2024-meta"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "i7iH3akkwVMRLba1uq/Vw33/ZXbwOi4fLgmFLkw7dFkqoobtxctAdzfG+BB3CukQEC/M61uGzm5kUrstYxOpDQ==",
+      "signed_at": "2026-05-11T16:10:16.097Z"
+    },
+    {
+      "name": "rag-pipeline-security",
+      "version": "1.0.0",
+      "path": "skills/rag-pipeline-security/skill.md",
+      "description": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection",
+      "triggers": [
+        "rag security",
+        "retrieval security",
+        "vector store security",
+        "embedding attack",
+        "rag threat model",
+        "knowledge base security",
+        "vector poisoning"
+      ],
+      "data_deps": [
+        "atlas-ttps.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [
+        "AML.T0020",
+        "AML.T0043",
+        "AML.T0051",
+        "AML.T0054"
+      ],
+      "attack_refs": [
+        "T1565"
+      ],
+      "framework_gaps": [
+        "ISO-27001-2022-A.8.28",
+        "NIST-800-53-SI-12",
+        "NIST-AI-RMF-MEASURE-2.5",
+        "OWASP-LLM-Top-10-2025-LLM08"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "XkFGpsNnXBVslkQ48usEu9l1LjPiV2ppW+M4B63zXFBP2Puh52qYCffEPjUHYhoO5bjgTM7yCbK8XF/Dzk5wBw==",
+      "signed_at": "2026-05-11T16:10:16.097Z",
+      "cwe_refs": [
+        "CWE-1395",
+        "CWE-1426"
+      ],
+      "d3fend_refs": [
+        "D3-CSPP",
+        "D3-IOPR",
+        "D3-NTA"
+      ]
+    },
+    {
+      "name": "ai-c2-detection",
+      "version": "1.0.0",
+      "path": "skills/ai-c2-detection/skill.md",
+      "description": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures",
+      "triggers": [
+        "ai c2",
+        "ai command and control",
+        "sesameop",
+        "promptflux",
+        "promptsteal",
+        "ai api abuse",
+        "llm c2",
+        "covert channel ai",
+        "aml.t0096"
+      ],
+      "data_deps": [
+        "atlas-ttps.json",
+        "cve-catalog.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [
+        "AML.T0096",
+        "AML.T0017"
+      ],
+      "attack_refs": [
+        "T1071",
+        "T1102",
+        "T1568"
+      ],
+      "framework_gaps": [
+        "NIST-800-53-SI-3",
+        "NIST-800-53-SC-7",
+        "ISO-27001-2022-A.8.16",
+        "SOC2-CC7-anomaly-detection"
+      ],
+      "rfc_refs": [
+        "RFC-8446",
+        "RFC-9180",
+        "RFC-9458",
+        "RFC-9421",
+        "RFC-9114",
+        "RFC-9000"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "1Xqy7Kxxy6GpTvuYJPdllPzVDRFxb7N6AuxKuoaO4v91CiZLmiXt0sTIWImKJ3p9Eup6rJNDdsY71dolFhHNBA==",
+      "signed_at": "2026-05-11T16:10:16.097Z",
+      "d3fend_refs": [
+        "D3-CA",
+        "D3-CSPP",
+        "D3-DA",
+        "D3-IOPR",
+        "D3-NI",
+        "D3-NTA",
+        "D3-NTPM"
+      ]
+    },
+    {
+      "name": "policy-exception-gen",
+      "version": "1.0.0",
+      "path": "skills/policy-exception-gen/skill.md",
+      "description": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching",
+      "triggers": [
+        "policy exception",
+        "exception request",
+        "control exception",
+        "ephemeral exception",
+        "serverless exception",
+        "ai pipeline exception",
+        "zero trust exception",
+        "compensating control"
+      ],
+      "data_deps": [
+        "framework-control-gaps.json",
+        "global-frameworks.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-01",
+      "signature": "QNLOmAL54S/Cmk4cdO4L2BCGkqZ/FgY4UBsKWtg/EEW+YXF5ev+a8XsUT8q5veuUa2VYcYna7rD1iAnE+2PDBA==",
+      "signed_at": "2026-05-11T16:10:16.098Z"
+    },
+    {
+      "name": "threat-model-currency",
+      "version": "1.0.0",
+      "path": "skills/threat-model-currency/skill.md",
+      "description": "Score how current an org's threat model is against 2026 reality — 14-item checklist, currency percentage, prioritized update roadmap",
+      "triggers": [
+        "threat model currency",
+        "update threat model",
+        "threat model review",
+        "is our threat model current",
+        "threat model gap",
+        "threat intelligence gap"
+      ],
+      "data_deps": [
+        "atlas-ttps.json",
+        "cve-catalog.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-01",
+      "signature": "aFHq4cSl3CKchnVITxx+BrAEWD33WtFFJoQtwAug5g9R3/3ABtjaXYGVQaZcdcG1AIZkMoGSPywgLQWDY7ZDCw==",
+      "signed_at": "2026-05-11T16:10:16.098Z"
+    },
+    {
+      "name": "global-grc",
+      "version": "1.0.0",
+      "path": "skills/global-grc/skill.md",
+      "description": "Multi-jurisdiction GRC mapping — EU (GDPR/NIS2/DORA/EU AI Act/CRA), UK, AU, SG, JP, IN, CA, ISO 27001:2022, CSA CCM v4",
+      "triggers": [
+        "global grc",
+        "international compliance",
+        "gdpr security",
+        "nis2",
+        "dora compliance",
+        "eu ai act",
+        "cyber resilience act",
+        "mas trm",
+        "cert-in",
+        "essential 8",
+        "apra cps 234",
+        "multi-jurisdiction",
+        "global compliance"
+      ],
+      "data_deps": [
+        "global-frameworks.json",
+        "framework-control-gaps.json",
+        "atlas-ttps.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-01",
+      "signature": "viCTUWdy6euvd2KTAo6sLvarK/FZkDtYGocxBt0H+fY94kLQGW8K5cSpqIWdUF5NUytSHBCiG4YcSze8P9Z/BQ==",
+      "signed_at": "2026-05-11T16:10:16.098Z"
+    },
+    {
+      "name": "zeroday-gap-learn",
+      "version": "1.0.0",
+      "path": "skills/zeroday-gap-learn/skill.md",
+      "description": "Run the zero-day learning loop — CVE to attack vector to control gap to framework gap to new control requirement",
+      "triggers": [
+        "zero day lesson",
+        "zeroday gap",
+        "what control gap enabled this",
+        "learn from exploit",
+        "exploit to control gap",
+        "what should have caught this",
+        "0day learning"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "zeroday-lessons.json",
+        "framework-control-gaps.json",
+        "atlas-ttps.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-01",
+      "signature": "6PkUaHQi3Hxuqq/Jp4GYckvfqVEofmeT87NUH0T+pwyjlc+xZkoqNPn65f7ldciEPL86JIPi3/dDTKQbIFFBCw==",
+      "signed_at": "2026-05-11T16:10:16.099Z"
+    },
+    {
+      "name": "pqc-first",
+      "version": "1.0.0",
+      "path": "skills/pqc-first/skill.md",
+      "description": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF evolution",
+      "triggers": [
+        "pqc",
+        "post-quantum",
+        "quantum cryptography",
+        "quantum safe",
+        "ml-kem",
+        "ml-dsa",
+        "slh-dsa",
+        "harvest now decrypt later",
+        "quantum migration",
+        "crypto migration",
+        "openssl pqc",
+        "fips 203",
+        "fips 204",
+        "fips 205"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "framework-control-gaps.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "rfc_refs": [
+        "RFC-8446",
+        "DRAFT-IETF-TLS-ECDHE-MLKEM",
+        "DRAFT-IETF-TLS-HYBRID-DESIGN",
+        "RFC-9180",
+        "RFC-9420",
+        "RFC-9794",
+        "RFC-8032",
+        "RFC-9106"
+      ],
+      "forward_watch": [
+        "FIPS 206 (HQC) finalization",
+        "X25519+ML-KEM TLS RFC publication",
+        "OpenSSL FIPS 140-3 certification",
+        "ENISA PQC mandate",
+        "CRQC timeline estimate changes"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "DuSqaB8D1Fnt1PrLDhm4izBjHqGRb4syIJS4mqA1UoARuax3vT7nLOLnNqkz/eDqMeffVgB73iKFx6h+/L82BA==",
+      "signed_at": "2026-05-11T16:10:16.099Z",
+      "cwe_refs": [
+        "CWE-327"
+      ],
+      "d3fend_refs": [
+        "D3-FE",
+        "D3-MENCR"
+      ]
+    },
+    {
+      "name": "skill-update-loop",
+      "version": "1.0.0",
+      "path": "skills/skill-update-loop/skill.md",
+      "description": "Meta-skill for keeping all exceptd skills current — CISA KEV triggers, ATLAS version updates, framework amendments, forward_watch resolution, currency scoring",
+      "triggers": [
+        "update skills",
+        "skill review",
+        "check skill currency",
+        "forward watch",
+        "are skills current",
+        "update threat intel",
+        "skill maintenance",
+        "new cve update",
+        "atlas update",
+        "framework update"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "global-frameworks.json",
+        "zeroday-lessons.json",
+        "exploit-availability.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "forward_watch": [
+        "MITRE ATLAS version releases",
+        "CISA KEV additions",
+        "NIST PQC standards finalization",
+        "Major kernel CVEs",
+        "AI/MCP platform CVEs",
+        "Framework publication updates"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "uTYrNiBNBBaUhq4xwTuy83q9+muxAZndRRFOqx4AeELpbGG/XhcP0xpp3PJb+6glQxcpPI+XcdPnD4xDVqWJAQ==",
+      "signed_at": "2026-05-11T16:10:16.100Z"
+    },
+    {
+      "name": "security-maturity-tiers",
+      "version": "1.0.0",
+      "path": "skills/security-maturity-tiers/skill.md",
+      "description": "Three-tier implementation roadmap — MVP (ship this week), Practical (scalable today), Overkill (defense-in-depth)",
+      "triggers": [
+        "security maturity",
+        "implementation roadmap",
+        "what should we do first",
+        "security tiers",
+        "mvp security",
+        "where to start",
+        "security roadmap",
+        "minimum viable security",
+        "what's practical",
+        "security best practices",
+        "defense in depth",
+        "how do we get from here to there"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "framework-control-gaps.json",
+        "global-frameworks.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "forward_watch": [
+        "New attack classes that change MVP requirements (especially zero-interaction RCE)",
+        "Framework updates that change minimum compliance baselines",
+        "New tooling that makes higher tiers more accessible",
+        "PQC tooling maturity shifting overkill to practical"
+      ],
+      "last_threat_review": "2026-05-01",
+      "signature": "Lv8dHiwIqUbNsywCCB/+pYWGF+MHCvxVn1IAvR7Cnif5fy0sICv0N4SVsSb621qAAkHNshpfxqwuhbuQnE1TBA==",
+      "signed_at": "2026-05-11T16:10:16.100Z"
+    },
+    {
+      "name": "researcher",
+      "version": "1.0.0",
+      "path": "skills/researcher/skill.md",
+      "description": "Triage entry-point for raw threat intel — researches an input across all exceptd data catalogs, RWEP-scores it, and routes the operator to the right specialized skill(s)",
+      "triggers": [
+        "research this cve",
+        "what should I do about",
+        "new threat",
+        "new advisory",
+        "new exploit",
+        "triage threat",
+        "where do I start",
+        "which skill should I use",
+        "threat intel triage",
+        "exceptd research"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "zeroday-lessons.json",
+        "exploit-availability.json",
+        "global-frameworks.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "last_threat_review": "2026-05-11",
+      "signature": "ntphXUAnyjWqnU9jlNJAHcecjCGiVJTAHx6yfi+7uJJIcnSQBtwrXBVDNBynzAls9XEwEd2RhRngcHTr2UL3DA==",
+      "signed_at": "2026-05-11T16:10:16.100Z"
+    },
+    {
+      "name": "attack-surface-pentest",
+      "version": "1.0.0",
+      "path": "skills/attack-surface-pentest/skill.md",
+      "description": "Modern attack surface management + pen testing methodology for AI-era environments — NIST 800-115, OWASP WSTG, PTES, ATT&CK-driven adversary emulation, TIBER-EU",
+      "triggers": [
+        "attack surface",
+        "pen test",
+        "penetration testing",
+        "red team",
+        "adversary emulation",
+        "threat-led testing",
+        "tlpt",
+        "tiber-eu",
+        "asset inventory",
+        "external footprint",
+        "asm"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [
+        "AML.T0043",
+        "AML.T0051",
+        "AML.T0010"
+      ],
+      "attack_refs": [
+        "T1190",
+        "T1133",
+        "T1059",
+        "T1078"
+      ],
+      "framework_gaps": [
+        "NIST-800-115",
+        "OWASP-Pen-Testing-Guide-v5",
+        "PTES-Pre-engagement",
+        "NIS2-Art21-patch-management"
+      ],
+      "rfc_refs": [],
+      "cwe_refs": [
+        "CWE-79",
+        "CWE-89",
+        "CWE-78",
+        "CWE-787",
+        "CWE-1395"
+      ],
+      "d3fend_refs": [
+        "D3-CSPP",
+        "D3-EAL",
+        "D3-NTA"
+      ],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "NIST SP 800-115 successor publication (the 2008 original is the active gap)",
+        "TIBER-EU scenario library refresh under DORA Year-2 supervisory cycle",
+        "OWASP WSTG v5.x AI/MCP test cases (currently in working-group draft)",
+        "PTES revision incorporating AI-surface enumeration"
+      ],
+      "signature": "kR4YRqhSSTSv4K0X8jgNZBrNpV95bTKBP/z79LZ9M+4dqevHjWsarOihVFkXJ7gah1eHwnCx/f4ikKQpiLrLBw==",
+      "signed_at": "2026-05-11T16:10:16.100Z"
+    },
+    {
+      "name": "fuzz-testing-strategy",
+      "version": "1.0.0",
+      "path": "skills/fuzz-testing-strategy/skill.md",
+      "description": "Continuous fuzzing as a security control — coverage-guided fuzz (AFL++/libFuzzer), AI-assisted fuzz, OSS-Fuzz integration, kernel fuzz (syzkaller), AI-API fuzz, integration into CI/CD as compliance evidence",
+      "triggers": [
+        "fuzz testing",
+        "fuzzing",
+        "oss-fuzz",
+        "syzkaller",
+        "libfuzzer",
+        "afl",
+        "coverage-guided fuzz",
+        "ai-assisted fuzz",
+        "continuous fuzz",
+        "prompt fuzz",
+        "api fuzz"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [
+        "AML.T0043"
+      ],
+      "attack_refs": [
+        "T1190"
+      ],
+      "framework_gaps": [
+        "NIST-800-218-SSDF",
+        "NIST-800-115",
+        "OWASP-ASVS-v5.0-V14"
+      ],
+      "rfc_refs": [],
+      "cwe_refs": [
+        "CWE-787",
+        "CWE-416",
+        "CWE-20",
+        "CWE-78"
+      ],
+      "d3fend_refs": [
+        "D3-EAL",
+        "D3-IOPR",
+        "D3-PSEP"
+      ],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "NIST SP 800-218A (AI-specific SSDF practices) for any explicit fuzz requirement on model-serving stacks",
+        "OpenSSF Scorecard \"fuzzing\" check threshold evolution",
+        "syzkaller eBPF and io_uring surface expansion as new kernel attack surfaces ship",
+        "OSS-Fuzz-Gen / AI-assisted harness generation becoming the default expectation for OSS maintainers"
+      ],
+      "signature": "+OjzN0FHnAelsnRS1sB71PCZvhwmbJwJVFiBCI0enjUCB7WptwqReaBDIG3jRHn8MYbAN99UIr07W2lYDXYMBA==",
+      "signed_at": "2026-05-11T16:10:16.101Z"
+    },
+    {
+      "name": "dlp-gap-analysis",
+      "version": "1.0.0",
+      "path": "skills/dlp-gap-analysis/skill.md",
+      "description": "DLP gap analysis for mid-2026 — legacy DLP misses LLM prompts, MCP tool args, RAG retrievals, embedding-store exfil, and code-completion telemetry. Audit channels, classifiers, protected surfaces, enforcement actions, and evidence trails against modern threat reality and cross-jurisdictional privacy regimes",
+      "triggers": [
+        "dlp",
+        "data loss prevention",
+        "data leak",
+        "egress",
+        "exfiltration",
+        "data classification",
+        "llm dlp",
+        "prompt dlp",
+        "rag exfil",
+        "copilot data leak",
+        "data exfiltration",
+        "mcp tool arg dlp",
+        "embedding store exfil",
+        "clipboard ai paste"
+      ],
+      "data_deps": [
+        "dlp-controls.json",
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "global-frameworks.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [
+        "AML.T0096",
+        "AML.T0017",
+        "AML.T0051"
+      ],
+      "attack_refs": [
+        "T1567",
+        "T1530",
+        "T1213",
+        "T1041"
+      ],
+      "framework_gaps": [
+        "NIST-800-53-SC-7",
+        "ISO-27001-2022-A.8.16",
+        "ISO-IEC-42001-2023-clause-6.1.2",
+        "HIPAA-Security-Rule-164.312(a)(1)",
+        "SOC2-CC7-anomaly-detection"
+      ],
+      "rfc_refs": [
+        "RFC-8446",
+        "RFC-9458"
+      ],
+      "cwe_refs": [
+        "CWE-1426",
+        "CWE-200"
+      ],
+      "d3fend_refs": [
+        "D3-CSPP",
+        "D3-EAL",
+        "D3-IOPR",
+        "D3-NTA",
+        "D3-NTPM"
+      ],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "EU AI Office secondary legislation under EU AI Act Art 10 / Art 15 that may operationalise inference-time data-flow controls",
+        "ISO/IEC 42001 amendments expected 2026-2027 likely to add prescriptive data-flow guidance for AI systems",
+        "Microsoft Purview AI Hub, Nightfall, Netskope GenAI, Cloudflare AI Gateway feature deltas — SDK-level prompt capture coverage is the differentiator",
+        "MCP gateway / proxy standardisation (Anthropic enterprise MCP gateway, Portkey MCP) — tool-call argument inspection is the missing primary control",
+        "Quebec Law 25, India DPDPA, KSA PDPL enforcement actions naming AI-tool prompt data as in-scope personal information"
+      ],
+      "signature": "0+KvcAAhX6b/vi8FKc59SshPQ94Xit8K/veT/xocEjXRCuKVatv99g3cCsBgswMkI147VNNFqFkM5l0Z9awAAQ==",
+      "signed_at": "2026-05-11T16:10:16.101Z"
+    },
+    {
+      "name": "supply-chain-integrity",
+      "version": "1.0.0",
+      "path": "skills/supply-chain-integrity/skill.md",
+      "description": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts",
+      "triggers": [
+        "supply chain",
+        "slsa",
+        "sbom",
+        "vex",
+        "sigstore",
+        "cosign",
+        "in-toto",
+        "cyclonedx",
+        "spdx",
+        "software composition",
+        "model provenance",
+        "ai bom",
+        "aibom",
+        "csaf"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "rfc-references.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [
+        "AML.T0010",
+        "AML.T0018"
+      ],
+      "attack_refs": [
+        "T1195.001",
+        "T1195.002",
+        "T1554"
+      ],
+      "framework_gaps": [
+        "NIST-800-218-SSDF",
+        "SLSA-v1.0-Build-L3",
+        "VEX-CSAF-v2.1",
+        "CycloneDX-v1.6-SBOM",
+        "SPDX-v3.0-SBOM",
+        "NIST-800-53-SA-12"
+      ],
+      "rfc_refs": [
+        "RFC-8032"
+      ],
+      "cwe_refs": [
+        "CWE-1357",
+        "CWE-1395",
+        "CWE-494",
+        "CWE-502",
+        "CWE-829"
+      ],
+      "d3fend_refs": [
+        "D3-CBAN",
+        "D3-EAL",
+        "D3-EHB"
+      ],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "SLSA v1.1 (draft) — adds attestation chain requirements above L3 and a hardened-builder profile; track for re-baselining",
+        "CSAF 2.1 finalization — VEX status vocabulary expansion and machine-readable advisory pivoting",
+        "CycloneDX 1.7 — ML-BOM enrichment, model card embedding, training-data lineage fields",
+        "SPDX 3.1 — AI profile maturation, dataset provenance schema stabilization",
+        "EU CRA (Regulation 2024/2847) — implementing acts for technical documentation and SBOM submission expected through 2027",
+        "OpenSSF model-signing — emerging Sigstore-based signing standard for ML model weights; track for production adoption"
+      ],
+      "signature": "PC4R92I87qON++7iiq1C+iOhrUhBuTF5q8pyTiBN81VduO0+I3Tg8NZx7VWAbdbrpxxWfDE26flANb261/Q4Ag==",
+      "signed_at": "2026-05-11T16:10:16.101Z"
+    },
+    {
+      "name": "defensive-countermeasure-mapping",
+      "version": "1.0.0",
+      "path": "skills/defensive-countermeasure-mapping/skill.md",
+      "description": "Map offensive findings (CVE / TTP / framework gap) to MITRE D3FEND defensive countermeasures with explicit defense-in-depth, least-privilege, and zero-trust layering",
+      "triggers": [
+        "defensive mapping",
+        "d3fend",
+        "countermeasure",
+        "blue team",
+        "defense in depth",
+        "least privilege",
+        "zero trust",
+        "control mapping",
+        "mitigation",
+        "defensive coverage",
+        "blue team map"
+      ],
+      "data_deps": [
+        "d3fend-catalog.json",
+        "atlas-ttps.json",
+        "cve-catalog.json",
+        "framework-control-gaps.json",
+        "cwe-catalog.json",
+        "dlp-controls.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "rfc_refs": [],
+      "cwe_refs": [],
+      "d3fend_refs": [
+        "D3-ASLR",
+        "D3-CA",
+        "D3-CBAN",
+        "D3-CSPP",
+        "D3-DA",
+        "D3-EAL",
+        "D3-EHB",
+        "D3-FAPA",
+        "D3-FE",
+        "D3-IOPR",
+        "D3-MENCR",
+        "D3-MFA",
+        "D3-NI",
+        "D3-NTA",
+        "D3-NTPM",
+        "D3-PA",
+        "D3-PHRA",
+        "D3-PSEP",
+        "D3-RPA",
+        "D3-SCP"
+      ],
+      "last_threat_review": "2026-05-11",
+      "signature": "q7gFLPoqf/8bqATR6gt/nj0EoyUOlfzi+bZ0bT3pC9KW7O6M/ji9fT+AXSGNp6PKd+70ACb3mkMGmWgjLpQXCg==",
+      "signed_at": "2026-05-11T16:10:16.102Z"
+    },
+    {
+      "name": "identity-assurance",
+      "version": "1.0.0",
+      "path": "skills/identity-assurance/skill.md",
+      "description": "Identity assurance for mid-2026 — NIST 800-63 AAL/IAL/FAL, FIDO2/WebAuthn passkeys, OIDC/SAML/SCIM, agent-as-principal identity, short-lived workload tokens, OAuth 2.0 + RFC 9700 BCP",
+      "triggers": [
+        "identity assurance",
+        "aal",
+        "ial",
+        "fal",
+        "nist 800-63",
+        "fido2",
+        "webauthn",
+        "passkey",
+        "oidc",
+        "saml",
+        "scim",
+        "agent identity",
+        "workload identity",
+        "service account",
+        "federation",
+        "phishing-resistant"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json",
+        "rfc-references.json"
+      ],
+      "atlas_refs": [
+        "AML.T0051"
+      ],
+      "attack_refs": [
+        "T1078",
+        "T1556",
+        "T1110"
+      ],
+      "framework_gaps": [
+        "NIST-800-63B-rev4",
+        "NIST-800-53-AC-2",
+        "ISO-27001-2022-A.8.30",
+        "SOC2-CC6-logical-access"
+      ],
+      "rfc_refs": [
+        "RFC-7519",
+        "RFC-8725",
+        "RFC-6749",
+        "RFC-9700",
+        "RFC-8032"
+      ],
+      "cwe_refs": [
+        "CWE-287",
+        "CWE-862",
+        "CWE-863",
+        "CWE-798",
+        "CWE-306"
+      ],
+      "d3fend_refs": [],
+      "last_threat_review": "2026-05-11",
+      "signature": "awj06pEI22Y9cLqP7KTpvZdQYz26BBvg1fD8OeZS8CuSQbPawHvRuR4K2/jrWJlzJfR+/wli/IQzp1QsKwjHCw==",
+      "signed_at": "2026-05-11T16:10:16.102Z"
+    },
+    {
+      "name": "ot-ics-security",
+      "version": "1.0.0",
+      "path": "skills/ot-ics-security/skill.md",
+      "description": "OT / ICS security for mid-2026 — NIST 800-82r3, IEC 62443-3-3, NERC CIP, IT/OT convergence risks, AI-augmented HMI threats, ICS-specific TTPs (ATT&CK for ICS)",
+      "triggers": [
+        "ot security",
+        "ics security",
+        "scada",
+        "plc security",
+        "operational technology",
+        "industrial control",
+        "iec 62443",
+        "nist 800-82",
+        "nerc cip",
+        "it ot convergence",
+        "hmi security",
+        "air gap",
+        "level 0",
+        "level 1",
+        "purdue"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [
+        "AML.T0010"
+      ],
+      "attack_refs": [
+        "T0855",
+        "T0883",
+        "T1190",
+        "T1068"
+      ],
+      "framework_gaps": [
+        "NIST-800-82r3",
+        "IEC-62443-3-3",
+        "NERC-CIP-007-6-R4",
+        "NIS2-Art21-patch-management"
+      ],
+      "rfc_refs": [],
+      "cwe_refs": [
+        "CWE-287",
+        "CWE-798",
+        "CWE-306",
+        "CWE-1037"
+      ],
+      "d3fend_refs": [],
+      "last_threat_review": "2026-05-11",
+      "signature": "2HZY4swI+nogVnkiQHeWcmtmwX1C9Zs7n8H+cbFUvJSc7q6s6chRucIrYpGwsl7bdSJi/QYRHzVbvCMsgpT0DA==",
+      "signed_at": "2026-05-11T16:10:16.102Z"
+    },
+    {
+      "name": "coordinated-vuln-disclosure",
+      "version": "1.0.0",
+      "path": "skills/coordinated-vuln-disclosure/skill.md",
+      "description": "Coordinated Vulnerability Disclosure for mid-2026 — ISO 29147 (disclosure) + ISO 30111 (handling) + VDP + bug bounty + CSAF 2.0 advisories + security.txt + EU CRA / NIS2 regulator-mandated disclosure + AI vulnerability classes",
+      "triggers": [
+        "cvd",
+        "coordinated vulnerability disclosure",
+        "vdp",
+        "vulnerability disclosure program",
+        "bug bounty",
+        "responsible disclosure",
+        "iso 29147",
+        "iso 30111",
+        "csaf",
+        "security.txt",
+        "90-day disclosure",
+        "project zero"
+      ],
+      "data_deps": [
+        "cve-catalog.json",
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "zeroday-lessons.json",
+        "rfc-references.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [
+        "NIST-800-218-SSDF",
+        "ISO-27001-2022-A.8.8",
+        "SOC2-CC9-vendor-management"
+      ],
+      "rfc_refs": [],
+      "cwe_refs": [
+        "CWE-1357"
+      ],
+      "d3fend_refs": [],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "EU CRA Art. 11 implementing regulations and ENISA single-reporting-platform rollout (target operational 2026-09; first manufacturer notifications due 2027-12 per CRA transition timeline)",
+        "ISO/IEC 29147 and ISO/IEC 30111 revisions expected post-CRA to align \"method-neutral\" language with EU 24h-notification reality",
+        "CSAF 2.1 draft (CISA + OASIS working group) — VEX status profile extensions for AI/ML components and SBOM-aligned advisory shape",
+        "Forthcoming IETF work on AI vulnerability disclosure (proposed BoF under SECDISPATCH) and any update to RFC 9116 (security.txt) covering AI/model artifact disclosure endpoints",
+        "UK NCSC Vulnerability Disclosure Toolkit revisions and AU ISM CVD guidance updates",
+        "NYDFS 23 NYCRR 500 amendments potentially adding explicit CVD program requirements"
+      ],
+      "signature": "Uqanzdgg4NkSpJPkoPwDhI60WSgAqyTnEtAWAhMSo6fDbAlHSGQ2RnupLhFdlV/Ix3HqWduhM//qP1foov//Cg==",
+      "signed_at": "2026-05-11T16:10:16.102Z"
+    },
+    {
+      "name": "threat-modeling-methodology",
+      "version": "1.0.0",
+      "path": "skills/threat-modeling-methodology/skill.md",
+      "description": "Threat modeling methodologies for mid-2026 — STRIDE, PASTA, LINDDUN (privacy), Cyber Kill Chain, Diamond Model, MITRE Unified Kill Chain, AI-system threat modeling, agent-based threat modeling",
+      "triggers": [
+        "threat model",
+        "threat modeling",
+        "stride",
+        "pasta",
+        "linddun",
+        "kill chain",
+        "diamond model",
+        "unified kill chain",
+        "attack tree",
+        "threat modeling methodology",
+        "data flow diagram",
+        "dfd",
+        "trust boundary"
+      ],
+      "data_deps": [
+        "atlas-ttps.json",
+        "framework-control-gaps.json",
+        "cve-catalog.json",
+        "cwe-catalog.json",
+        "d3fend-catalog.json"
+      ],
+      "atlas_refs": [],
+      "attack_refs": [],
+      "framework_gaps": [
+        "NIST-800-218-SSDF",
+        "ISO-IEC-42001-2023-clause-6.1.2",
+        "ISO-27001-2022-A.8.28"
+      ],
+      "rfc_refs": [],
+      "cwe_refs": [],
+      "d3fend_refs": [],
+      "last_threat_review": "2026-05-11",
+      "forward_watch": [
+        "ISO/IEC 27005 revision integrating AI-system threats",
+        "OWASP Threat Modeling Manifesto v2 (post-2020)",
+        "MITRE ATLAS v6 publication and any methodology guidance attached",
+        "Unified Kill Chain successor revision (Pols, post-v3.0)",
+        "LINDDUN-GO and LINDDUN-PRO updates incorporating LLM privacy threats",
+        "PASTA v2 updates incorporating AI/ML application threats"
+      ],
+      "signature": "/gx1fD8+7tpqp0QWheXkhjZAkWH9CDmkH2y4C/pWDUCoYyTAVEwTH3LM4nvEyMjtgn93Cav9C5YLuFDOJyNpBA==",
+      "signed_at": "2026-05-11T16:10:16.103Z"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+# Dotfiles and local config — catch-all first
+.*
+!.gitignore
+!.gitattributes
+!.gitleaks.toml
+!.cursorrules
+!.windsurfrules
+!.dockerignore
+!.npmrc
+!.github
+
+# Node
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+out/
+
+# Runtime artifacts
+findings.json
+scan-output.json
+.bootstrap-complete
+*.tmp
+*.bak
+
+# OS artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Environment and secrets — never commit
+.env
+.env.*
+*.pem
+!keys/public.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Python (for any tooling)
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/

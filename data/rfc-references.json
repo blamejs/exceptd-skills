@@ -1,0 +1,286 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "last_updated": "2026-05-11",
+    "note": "IETF RFCs and Internet-Drafts that exceptd skills depend on. RFCs are the layer beneath compliance frameworks: a control like 'TLS 1.3 required' implicitly references RFC 8446; a 'use strong KEM' control depends on whatever draft-ietf-tls-ecdhe-mlkem settles into. Frameworks lag RFCs; RFCs lag attacker innovation. This catalog tracks both kinds of lag.",
+    "status_values": [
+      "Internet Standard",
+      "Proposed Standard",
+      "Best Current Practice",
+      "Informational",
+      "Experimental",
+      "Historic",
+      "Draft"
+    ],
+    "skill_refs_field": "rfc_refs"
+  },
+  "RFC-8446": {
+    "number": 8446,
+    "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
+    "status": "Proposed Standard",
+    "published": "2018-08",
+    "replaces": [
+      "RFC-5246"
+    ],
+    "errata_count": 39,
+    "tracker": "https://www.rfc-editor.org/info/rfc8446",
+    "relevance": "TLS 1.3 is the baseline assumption for every AI provider egress channel, every MCP HTTP transport, and every kernel-userspace TLS exchange. Skills that analyze boundary inspection, cert pinning, or AI-API C2 detection must ground in this RFC.",
+    "lag_notes": "RFC 8446 alone is not PQC-ready. Hybrid PQC drafts (draft-ietf-tls-ecdhe-mlkem, draft-ietf-tls-hybrid-design) layer on top — see those entries.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "dlp-gap-analysis",
+      "mcp-agent-trust",
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "DRAFT-IETF-TLS-ECDHE-MLKEM": {
+    "number": null,
+    "draft_id": "draft-ietf-tls-ecdhe-mlkem",
+    "title": "Post-Quantum Hybrid ECDHE-MLKEM Key Agreement for TLSv1.3",
+    "status": "Draft",
+    "published": "in flight as of 2026-05",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/",
+    "relevance": "Defines X25519+ML-KEM-768 and similar hybrid groups for TLS 1.3 — the operational path for PQC migration without rip-and-replace. Pinned in pqc-first as the recommended hybrid posture.",
+    "lag_notes": "Still a draft as of mid-2026. OpenSSL 3.5+ ships the hybrid groups under provisional codepoints. Final RFC number TBD on WG consensus.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "DRAFT-IETF-TLS-HYBRID-DESIGN": {
+    "number": null,
+    "draft_id": "draft-ietf-tls-hybrid-design",
+    "title": "Hybrid key exchange in TLS 1.3",
+    "status": "Draft",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-hybrid-design/",
+    "relevance": "General-purpose hybrid-KEM design that the ecdhe-mlkem draft instantiates. Operators evaluating the migration story should read both.",
+    "lag_notes": "Companion draft. Status synchronized with draft-ietf-tls-ecdhe-mlkem.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9180": {
+    "number": 9180,
+    "title": "Hybrid Public Key Encryption",
+    "status": "Informational",
+    "published": "2022-02",
+    "errata_count": 12,
+    "tracker": "https://www.rfc-editor.org/info/rfc9180",
+    "relevance": "HPKE is the substrate for TLS ECH, MLS, Oblivious HTTP, and several emerging covert-channel scenarios in AI-API C2 detection. PQC composition discussions for HPKE are ongoing at IETF.",
+    "lag_notes": "RFC 9180 is classical-only. PQC HPKE is being worked at IETF CFRG; expect draft updates through 2026-2027.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9458": {
+    "number": 9458,
+    "title": "Oblivious HTTP",
+    "status": "Proposed Standard",
+    "published": "2024-01",
+    "tracker": "https://www.rfc-editor.org/info/rfc9458",
+    "relevance": "Oblivious HTTP is a published-standard covert-channel candidate for AI-API C2: requests are encrypted to a relay so the destination sees no client identity. Boundary inspection cannot distinguish OHTTP-wrapped AI traffic from any other HTTPS traffic to the relay endpoint.",
+    "lag_notes": "Standard published; enterprise SC-7 boundary tooling vendors are 12-18 months behind on detection guidance. AI-c2-detection skill operationalizes the gap.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "dlp-gap-analysis"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9421": {
+    "number": 9421,
+    "title": "HTTP Message Signatures",
+    "status": "Proposed Standard",
+    "published": "2024-02",
+    "tracker": "https://www.rfc-editor.org/info/rfc9421",
+    "relevance": "Per-request signing of HTTP messages — relevant for MCP server-to-agent attestation and for AI provider abuse-signal subscriptions. AI providers increasingly use HTTP Message Signatures for webhook authenticity.",
+    "lag_notes": "Standard published; AI-provider adoption is uneven. MCP spec does not yet mandate it.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9114": {
+    "number": 9114,
+    "title": "HTTP/3",
+    "status": "Proposed Standard",
+    "published": "2022-06",
+    "errata_count": 7,
+    "tracker": "https://www.rfc-editor.org/info/rfc9114",
+    "relevance": "AI providers increasingly serve over HTTP/3 (QUIC). Boundary tools that rely on TLS termination + HTTP/1.1 / HTTP/2 inspection cannot apply to HTTP/3 without QUIC-aware probes. Detection gap for ai-c2-detection.",
+    "lag_notes": "Standard well-deployed; enterprise next-gen-firewall HTTP/3 inspection coverage as of mid-2026 remains uneven.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9000": {
+    "number": 9000,
+    "title": "QUIC: A UDP-Based Multiplexed and Secure Transport",
+    "status": "Proposed Standard",
+    "published": "2021-05",
+    "errata_count": 25,
+    "tracker": "https://www.rfc-editor.org/info/rfc9000",
+    "relevance": "QUIC is the transport beneath HTTP/3 and beneath several emerging AI inference APIs that need low-latency streaming. SC-7 boundary tools historically assume TCP for HTTPS — QUIC over UDP requires explicit detection rules.",
+    "skills_referencing": [
+      "ai-c2-detection"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-7519": {
+    "number": 7519,
+    "title": "JSON Web Token (JWT)",
+    "status": "Proposed Standard",
+    "published": "2015-05",
+    "errata_count": 25,
+    "tracker": "https://www.rfc-editor.org/info/rfc7519",
+    "relevance": "JWT is the dominant bearer-token format for MCP server auth, AI-provider API auth, and OAuth 2.0 access tokens (RFC 9068). mcp-agent-trust analyses signer trust, audience validation, and the alg=none / kid-confusion attack classes.",
+    "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
+    "skills_referencing": [
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-8725": {
+    "number": 8725,
+    "title": "JSON Web Token Best Current Practices",
+    "status": "Best Current Practice",
+    "published": "2020-02",
+    "errata_count": 4,
+    "tracker": "https://www.rfc-editor.org/info/rfc8725",
+    "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
+    "skills_referencing": [
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-6749": {
+    "number": 6749,
+    "title": "The OAuth 2.0 Authorization Framework",
+    "status": "Proposed Standard",
+    "published": "2012-10",
+    "errata_count": 33,
+    "tracker": "https://www.rfc-editor.org/info/rfc6749",
+    "relevance": "OAuth 2.0 underpins MCP server-to-client auth in production deployments. RFC 9700 (OAuth 2.0 Security BCP) is the operational reference.",
+    "skills_referencing": [
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9700": {
+    "number": 9700,
+    "title": "Best Current Practice for OAuth 2.0 Security",
+    "status": "Best Current Practice",
+    "published": "2025-01",
+    "tracker": "https://www.rfc-editor.org/info/rfc9700",
+    "relevance": "Replaces the older RFC 6819 threat model. MCP / agent OAuth implementations should track this BCP, not the original RFC 6749 alone.",
+    "lag_notes": "Published 2025-01. Enterprise IAM tooling is still catching up.",
+    "skills_referencing": [
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-8032": {
+    "number": 8032,
+    "title": "Edwards-Curve Digital Signature Algorithm (EdDSA)",
+    "status": "Informational",
+    "published": "2017-01",
+    "errata_count": 8,
+    "tracker": "https://www.rfc-editor.org/info/rfc8032",
+    "relevance": "Ed25519 / Ed448. exceptd itself uses Ed25519 for skill integrity signing (AGENTS.md hard rule #13, lib/sign.js). Not PQC-safe; pqc-first tracks the SLH-DSA / ML-DSA migration path for signature surfaces.",
+    "skills_referencing": [
+      "identity-assurance",
+      "pqc-first",
+      "supply-chain-integrity"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9106": {
+    "number": 9106,
+    "title": "Argon2 Memory-Hard Function for Password Hashing and Proof-of-Work",
+    "status": "Informational",
+    "published": "2021-09",
+    "errata_count": 3,
+    "tracker": "https://www.rfc-editor.org/info/rfc9106",
+    "relevance": "Argon2id is the memory-hard KDF baseline for password hashing in any system that exceptd operators deploy. Not directly PQC-relevant (it's a one-way function, not a public-key primitive) but pqc-first tracks crypto migration generally.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-4301": {
+    "number": 4301,
+    "title": "Security Architecture for the Internet Protocol",
+    "status": "Proposed Standard",
+    "published": "2005-12",
+    "errata_count": 11,
+    "tracker": "https://www.rfc-editor.org/info/rfc4301",
+    "relevance": "IPsec architecture. CVE-2026-43284 (Dirty Frag) exploits an implementation bug in the Linux kernel's IPsec ESP path; the spec layer is RFC 4301 + RFC 4303. Framework controls like NIST 800-53 SC-8 implicitly cite this RFC family without operationalizing the kernel-implementation gap.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-4303": {
+    "number": 4303,
+    "title": "IP Encapsulating Security Payload (ESP)",
+    "status": "Proposed Standard",
+    "published": "2005-12",
+    "errata_count": 7,
+    "tracker": "https://www.rfc-editor.org/info/rfc4303",
+    "relevance": "ESP — the specific IPsec datagram format exploited by Dirty Frag (CVE-2026-43284). Spec compliance does not imply implementation safety; the kernel-lpe-triage skill operationalizes the gap.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-7296": {
+    "number": 7296,
+    "title": "Internet Key Exchange Protocol Version 2 (IKEv2)",
+    "status": "Internet Standard",
+    "published": "2014-10",
+    "std_number": 79,
+    "errata_count": 19,
+    "tracker": "https://www.rfc-editor.org/info/rfc7296",
+    "relevance": "IKEv2 sets up IPsec SAs. Configuration mistakes here surface as SI-7 / SC-8 audit findings without indicating the kernel-side implementation reality. Referenced by kernel-lpe-triage when scoping the Dirty Frag blast radius.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9420": {
+    "number": 9420,
+    "title": "The Messaging Layer Security (MLS) Protocol",
+    "status": "Proposed Standard",
+    "published": "2023-07",
+    "errata_count": 5,
+    "tracker": "https://www.rfc-editor.org/info/rfc9420",
+    "relevance": "MLS provides group-key agreement for E2E messaging. Used by some AI agent group-chat systems (multi-agent coordination over E2E channels). PQC migration path is via the same hybrid-KEM approach as TLS.",
+    "lag_notes": "Standard published; MLS PQC composition is being worked at IETF CFRG.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9794": {
+    "number": 9794,
+    "title": "Terminology for Post-Quantum Cryptography",
+    "status": "Informational",
+    "published": "2025-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc9794",
+    "relevance": "Reference terminology for PQC discussions. Cited by every IETF working group document touching PQC. Operators reading the various drafts should anchor on this terminology.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "atlas_version": "5.1.0",
+    "atlas_release_date": "2025-11-01",
+    "last_updated": "2026-05-01",
+    "source": "https://atlas.mitre.org",
+    "note": "AI-relevant ATLAS v5.1.0 TTPs with framework_gap field. framework_gap: no framework has a control that addresses this TTP."
+  },
+  "AML.T0043": {
+    "id": "AML.T0043",
+    "name": "Craft Adversarial Data",
+    "tactic": "ML Attack Staging",
+    "description": "Adversary crafts input data designed to cause a target ML model to produce incorrect outputs. Includes perturbation-based adversarial examples that are visually identical to originals but trigger misclassification.",
+    "subtechniques": [
+      "AML.T0043.000 — White-Box Attack (adversary has model access)",
+      "AML.T0043.001 — Black-Box Attack (transfer-based, query-based)",
+      "AML.T0043.002 — Physical Attack (adversarial patch, stop sign perturbation)"
+    ],
+    "real_world_instances": ["Deepfake bypass of facial recognition", "Adversarial audio bypassing voice authentication"],
+    "framework_gap": true,
+    "framework_gap_detail": "No control in NIST 800-53, ISO 27001, SOC 2, or PCI requires adversarial robustness testing for ML models. SI-3 (malicious code protection) does not contemplate adversarial inputs.",
+    "controls_that_partially_help": ["NIST-800-53-SI-3", "NIST-AI-RMF-MEASURE-2.5"],
+    "controls_that_dont_help": ["NIST-800-53-AC-2", "ISO-27001-2022-A.8.28"],
+    "detection": "Model output confidence monitoring; behavioral anomaly on repeated low-confidence outputs from same source",
+    "exceptd_skills": ["ai-attack-surface", "rag-pipeline-security"]
+  },
+  "AML.T0010": {
+    "id": "AML.T0010",
+    "name": "ML Supply Chain Compromise",
+    "tactic": "Initial Access",
+    "description": "Adversary compromises the ML supply chain — pretrained models, datasets, training infrastructure, or AI tool plugins — to inject backdoors or malicious behavior before the model reaches the target organization.",
+    "subtechniques": [
+      "AML.T0010.000 — GPU Firmware Compromise",
+      "AML.T0010.001 — ML Framework Compromise (PyTorch, TensorFlow)",
+      "AML.T0010.002 — Model Repository Compromise (HuggingFace typosquatting)",
+      "AML.T0010.003 — MCP Server Supply Chain (developer AI tool plugin)"
+    ],
+    "real_world_instances": ["CVE-2026-30615 — Windsurf MCP zero-interaction RCE via supply chain"],
+    "framework_gap": true,
+    "framework_gap_detail": "NIST SA-12 covers traditional software supply chain. It does not contemplate: pretrained model provenance, HuggingFace model integrity, MCP server signing requirements, or developer-installed AI tool plugins. No framework requires model supply chain SLSA attestation.",
+    "controls_that_partially_help": ["NIST-800-53-SA-12", "ISO-27001-2022-A.8.30", "SOC2-CC9"],
+    "controls_that_dont_help": ["NIST-800-53-CM-7"],
+    "detection": "Hash verification of downloaded models; provenance attestation checking; anomaly on newly installed MCP server processes",
+    "exceptd_skills": ["mcp-agent-trust", "ai-attack-surface"]
+  },
+  "AML.T0016": {
+    "id": "AML.T0016",
+    "name": "Obtain Capabilities: Develop Capabilities",
+    "tactic": "Resource Development",
+    "description": "Adversary develops custom AI capabilities — fine-tuned models, adversarial attack toolkits, automated prompt injection frameworks — to conduct AI-specific attacks at scale.",
+    "subtechniques": [
+      "AML.T0016.000 — Develop AI Attack Toolkit",
+      "AML.T0016.001 — Fine-tune Model for Offensive Use",
+      "AML.T0016.002 — Automated Prompt Injection Framework"
+    ],
+    "real_world_instances": ["PROMPTFLUX — LLM-querying malware for real-time evasion code generation"],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework has a control for adversary development of AI attack capabilities. Threat intelligence programs (PM-16) do not have AI-specific threat actor capability tracking. No framework requires monitoring of offensive AI research for TTP evolution.",
+    "controls_that_partially_help": ["NIST-800-53-PM-16"],
+    "controls_that_dont_help": [],
+    "detection": "Threat intelligence feeds tracking offensive AI research; monitoring for AI-generated exploit code in underground forums",
+    "exceptd_skills": ["ai-attack-surface", "ai-c2-detection", "mcp-agent-trust"]
+  },
+  "AML.T0017": {
+    "id": "AML.T0017",
+    "name": "Discover ML Model Ontology",
+    "tactic": "Discovery",
+    "description": "Adversary queries an ML system to learn its output classes, decision logic, and behavior — enabling more effective evasion, prompt injection, or targeted adversarial example generation. For LLMs: systematic probing to learn system prompt content, output filters, or safety guardrails.",
+    "subtechniques": [
+      "AML.T0017.000 — Probe Model Capabilities",
+      "AML.T0017.001 — Extract System Prompt",
+      "AML.T0017.002 — Map Output Filters and Guardrails"
+    ],
+    "real_world_instances": ["PROMPTSTEAL — systematic LLM querying for system prompt extraction and knowledge base fingerprinting"],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework requires rate limiting on AI API queries from a discovery perspective. AI API query logging (SI-4) is not required by any framework. Behavioral anomaly detection for AI API probe patterns is absent from all control sets.",
+    "controls_that_partially_help": ["NIST-800-53-SI-4", "NIST-800-53-AC-17"],
+    "controls_that_dont_help": ["ISO-27001-2022-A.8.28"],
+    "detection": "AI API query rate monitoring; semantic similarity clustering of queries (probe pattern detection); alert on high query volume from single identity",
+    "exceptd_skills": ["ai-c2-detection", "ai-attack-surface"]
+  },
+  "AML.T0018": {
+    "id": "AML.T0018",
+    "name": "Backdoor ML Model",
+    "tactic": "Persistence",
+    "description": "Adversary inserts a backdoor into an ML model during training or fine-tuning. The backdoor is dormant until a trigger input is presented, at which point the model produces attacker-controlled outputs. The clean accuracy remains high, making detection difficult.",
+    "subtechniques": [
+      "AML.T0018.000 — Poison Training Data (data poisoning)",
+      "AML.T0018.001 — Trojan Model (direct weight manipulation)",
+      "AML.T0018.002 — Federated Learning Poisoning"
+    ],
+    "real_world_instances": ["HuggingFace model repository — researcher demonstrations of trojaned models that pass standard eval"],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework requires model integrity verification after training or fine-tuning. Change management controls (CM-3) do not address model weight changes. No framework requires behavioral regression testing after model updates. Training pipeline integrity (SLSA equivalent) is absent.",
+    "controls_that_partially_help": ["NIST-800-53-CM-3", "NIST-800-53-SA-12"],
+    "controls_that_dont_help": ["ISO-27001-2022-A.8.8"],
+    "detection": "Behavioral test suite with known-clean inputs; model output distribution monitoring; cryptographic hash of model weights at training completion",
+    "exceptd_skills": ["ai-attack-surface", "rag-pipeline-security", "skill-update-loop"]
+  },
+  "AML.T0020": {
+    "id": "AML.T0020",
+    "name": "Poison Training Data",
+    "tactic": "ML Attack Staging",
+    "description": "Adversary injects malicious examples into training data to degrade model performance, introduce backdoors, or bias outputs toward attacker-controlled behaviors. For RAG systems: adversary injects malicious content into the knowledge base.",
+    "subtechniques": [
+      "AML.T0020.000 — Inject Training Data at Scale",
+      "AML.T0020.001 — Craft Targeted Poisoned Samples",
+      "AML.T0020.002 — RAG Knowledge Base Poisoning (inject into retrieval corpus)"
+    ],
+    "real_world_instances": ["RAG pipeline attacks — injecting poisoned documents that redirect retrieval and cause model to output attacker content"],
+    "framework_gap": true,
+    "framework_gap_detail": "Data integrity controls (SI-12, SI-7) are designed for traditional data. No framework requires integrity monitoring of training datasets, vector store contents, or RAG knowledge bases. Embedding space anomaly detection is not a recognized control.",
+    "controls_that_partially_help": ["NIST-800-53-SI-7", "NIST-800-53-SI-12"],
+    "controls_that_dont_help": ["ISO-27001-2022-A.8.28"],
+    "detection": "Vector store content integrity monitoring; embedding distribution shift detection; hash-based integrity verification of knowledge base documents",
+    "exceptd_skills": ["rag-pipeline-security", "ai-attack-surface"]
+  },
+  "AML.T0051": {
+    "id": "AML.T0051",
+    "name": "LLM Prompt Injection",
+    "tactic": "Execution",
+    "description": "Adversary injects instructions into an LLM's input that override, supplement, or contradict the original system prompt, causing the model to execute attacker-controlled instructions within the application's authorization context.",
+    "subtechniques": [
+      "AML.T0051.000 — Direct Prompt Injection (user-facing input)",
+      "AML.T0051.001 — Indirect Prompt Injection (injected via retrieved content, documents, web pages)",
+      "AML.T0051.002 — Jailbreak (override safety guardrails)"
+    ],
+    "real_world_instances": [
+      "CVE-2025-53773 — GitHub Copilot prompt injection RCE via PR description",
+      "Multiple production AI assistant prompt injection incidents 2025-2026"
+    ],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework has a control for prompt injection as an access control failure vector. The attack uses the AI service account's authorized permissions — from AC-2's perspective, the access is authorized. MITRE ATLAS v5.1.0 documents the technique; no framework has implemented controls. OWASP LLM Top 10 documents the class; it is not incorporated in any compliance framework.",
+    "controls_that_partially_help": ["NIST-800-53-AC-2", "ISO-27001-2022-A.8.28"],
+    "controls_that_dont_help": ["NIST-800-53-SI-3", "SOC2-CC6"],
+    "detection": "AI action audit trail — log every tool call with triggering prompt content; alert on AI actions that diverge from user-stated intent; adversarial instruction classifier on external content before model ingestion",
+    "exceptd_skills": ["ai-attack-surface", "mcp-agent-trust", "rag-pipeline-security"]
+  },
+  "AML.T0054": {
+    "id": "AML.T0054",
+    "name": "LLM Jailbreak",
+    "tactic": "Defense Evasion",
+    "description": "Adversary uses prompt manipulation techniques to bypass an LLM's safety guardrails, causing the model to produce content or take actions it would normally refuse. Distinguished from prompt injection by the goal: jailbreaks evade safety filters rather than execute injected code.",
+    "subtechniques": [
+      "AML.T0054.000 — Role-play Jailbreak (DAN, persona attacks)",
+      "AML.T0054.001 — Obfuscation (base64, leetspeak, encoding tricks)",
+      "AML.T0054.002 — Many-Shot Jailbreak (long context pattern establishment)"
+    ],
+    "real_world_instances": ["Production AI assistant jailbreaks enabling policy bypass; AI coding assistant jailbreaks producing malware code"],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework requires safety guardrail testing for production AI systems. Red teaming for LLM jailbreaks is not a compliance requirement in any major framework. NIST AI RMF recommends but does not require adversarial testing. ISO 42001 (AI management) is not yet widely adopted.",
+    "controls_that_partially_help": ["NIST-AI-RMF-GOVERN-1.7"],
+    "controls_that_dont_help": ["NIST-800-53-SI-3", "ISO-27001-2022-A.8.28"],
+    "detection": "Content policy violation logging; output safety scoring; alert on repeated refusal-bypass attempts from same user",
+    "exceptd_skills": ["ai-attack-surface", "mcp-agent-trust"]
+  },
+  "AML.T0096": {
+    "id": "AML.T0096",
+    "name": "AI API as Covert C2 Channel",
+    "tactic": "Command and Control",
+    "description": "Adversary uses legitimate AI API calls as a covert command-and-control channel. Malware encodes commands in AI API requests and receives instructions via model responses. Traffic is indistinguishable from legitimate AI usage — same endpoints, same TLS, same bearer auth patterns.",
+    "subtechniques": [
+      "AML.T0096.000 — Steganographic encoding in AI prompts",
+      "AML.T0096.001 — LLM response as instruction decoder",
+      "AML.T0096.002 — Multi-agent covert relay"
+    ],
+    "real_world_instances": [
+      "SesameOp — first documented AI API C2 campaign, 2025. Malware beacons to OpenAI API for encoded instructions.",
+      "PROMPTFLUX — LLM C2 for real-time evasion code generation: malware queries public LLM APIs for novel AV evasion code on each execution."
+    ],
+    "framework_gap": true,
+    "framework_gap_detail": "Network egress controls (SC-7) do not flag AI API traffic — it is categorically allowed in most organizations. No framework requires monitoring of AI API traffic content. SIEM signatures for AI API C2 patterns do not exist in any standard detection ruleset. SI-3 (malware protection) does not contemplate LLM-querying malware. No framework has a control for AI API query anomaly detection by process identity.",
+    "controls_that_partially_help": ["NIST-800-53-SI-4", "NIST-800-53-SC-7"],
+    "controls_that_dont_help": ["NIST-800-53-SI-3", "ISO-27001-2022-A.8.16"],
+    "detection": "Process-level AI API query monitoring; alert on AI API calls from unexpected process identities; query volume anomaly; payload entropy analysis for steganographic encoding",
+    "exceptd_skills": ["ai-c2-detection", "ai-attack-surface"]
+  }
+}

@@ -1,0 +1,66 @@
+# Match the spirit of .gitignore but tighter — anything that should
+# never reach the Docker build context. Reduces context-upload size and
+# stops local-only secrets (.keys/private.pem) from ever landing in an
+# image layer even if Docker is run with a permissive UID.
+
+# Local secrets — NEVER ship in any image.
+.keys/
+*.pem
+!keys/public.pem
+
+# Local bootstrap marker — image runs bootstrap fresh.
+.bootstrap-complete
+
+# VCS — gitleaks tests need .git history when explicitly enabled,
+# but the default predeploy target doesn't. The gitleaks Docker target
+# overrides this exclusion if/when it's added.
+.git/
+.gitignore
+.gitattributes
+.gitleaks.toml
+
+# Node + tool state.
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / runtime artifacts.
+dist/
+build/
+out/
+findings.json
+scan-output.json
+*.tmp
+*.bak
+*.log
+
+# OS / editor noise.
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Sandbox / agent state that lives outside the repo proper.
+.claude/
+.cursorrules
+
+# Python tooling artifacts.
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Docker self-references (don't include the Dockerfile in its own context).
+docker/
+.dockerignore

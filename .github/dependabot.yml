@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # GitHub Actions — exceptd-skills uses ci.yml, atlas-currency.yml, and
+  # scorecard.yml. Dependabot keeps the pinned-SHA action versions current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "github-actions"
+
+  # npm — exceptd-skills is zero-dependency by design (AGENTS.md / Node stdlib
+  # only). Dependabot is still configured to catch any accidental
+  # `dependencies` / `devDependencies` regressions, but the open-PR limit is
+  # low because there should never be runtime deps to update.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "deps"
+      - "npm"

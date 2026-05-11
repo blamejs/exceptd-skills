@@ -1,0 +1,87 @@
+title = "exceptd-skills gitleaks config"
+
+# Inherit gitleaks' default ruleset (AWS keys, GCP creds, GitHub tokens,
+# npm tokens, generic high-entropy strings, etc.) and add project-
+# specific allowlists below. New rules CAN be added here when the
+# project gains a new credential shape it wants the scan to catch; for
+# now the defaults are the policy.
+[extend]
+useDefault = true
+
+# gitleaks 8.21+ requires the [[allowlists]] (plural) form; the singular
+# [allowlist] is deprecated and rejected when [[allowlists]] is also
+# present. Each [[allowlists]] block is independent — a finding is
+# suppressed if ANY block matches.
+
+[[allowlists]]
+description = "Ed25519 signing public key — tracked, not secret"
+# keys/public.pem is the verification half of the skill-signing keypair.
+# It is *meant* to be in the repo so downstream verifiers can confirm
+# skill integrity without out-of-band key distribution. The private
+# half lives at .keys/private.pem and is gitignored. gitleaks' generic
+# PEM detector treats every PEM block as suspicious; the public key is
+# the documented exception.
+paths = [
+  '''keys/public\.pem''',
+]
+
+[[allowlists]]
+description = "Ed25519 skill signatures + signed_at timestamps in manifest"
+# manifest.json carries an Ed25519 `signature` (base64) and `signed_at`
+# timestamp for every skill — AGENTS.md hard rule #13. The signature
+# strings are ~88 base64 chars with maximum-entropy content (by design;
+# a cryptographic signature with low entropy would be broken). Allowlist
+# the manifest by path; the alternative — adding a regex that matches
+# 88-char base64 — would defang the generic-high-entropy rule for real
+# strings of the same shape elsewhere.
+paths = [
+  '''manifest\.json''',
+]
+
+[[allowlists]]
+description = "CVE catalog + zero-day lessons — descriptive threat-intel content"
+# data/cve-catalog.json and data/zeroday-lessons.json contain CVE
+# descriptions that may quote PoC byte counts, exploit fingerprints,
+# or technique signatures. These are public threat-intel sourced from
+# NVD / CISA KEV / vendor advisories — not credentials. The
+# `exploit-availability.json` likewise tracks public PoC URLs (which
+# we do NOT redistribute verbatim; we reference the NVD references
+# section per AGENTS.md rule on no-direct-exploit-URLs).
+paths = [
+  '''data/cve-catalog\.json''',
+  '''data/zeroday-lessons\.json''',
+  '''data/exploit-availability\.json''',
+  '''data/atlas-ttps\.json''',
+]
+
+[[allowlists]]
+description = "Test fixtures and example cache snapshots"
+# Tests under tests/ exercise sign/verify round-trips using temporary
+# keypairs generated at test time. The literal PEM strings that appear
+# in any captured-output assertion are test fixtures, never operational
+# keys. sources/feeds/cve-cache.example.json is a clearly-labeled
+# example with `_example: true` showing the cached feed shape.
+paths = [
+  '''tests/.*\.test\.js''',
+  '''sources/feeds/cve-cache\.example\.json''',
+]
+
+[[allowlists]]
+description = "Doc-string placeholder shapes"
+# Skill markdown, README, and CHANGELOG legitimately embed CVE IDs,
+# ATLAS TTP IDs, framework control IDs, and example RWEP factor lines.
+# A small number of these shapes (e.g. exploit-byte-count quotes) trip
+# the generic-high-entropy rule.
+regexes = [
+  # CVE IDs themselves.
+  '''CVE-\d{4}-\d{4,7}''',
+  # ATLAS / ATT&CK technique IDs.
+  '''AML\.T\d{4}''',
+  '''T\d{4}(?:\.\d{3})?''',
+  # Framework control IDs (NIST 800-53, ISO 27001:2022, SOC 2, etc.).
+  '''NIST-800-53-[A-Z]{2}-\d{1,3}(?:\.\d+)*''',
+  '''ISO-27001-2022-A\.\d+\.\d+''',
+  '''SOC2-CC\d+(?:-[a-z0-9-]+)?''',
+  # PoC byte-count descriptions used in skill threat-context sections.
+  '''\b\d{2,4}-byte\s+(?:deterministic\s+)?(?:PoC|exploit|payload)\b''',
+]

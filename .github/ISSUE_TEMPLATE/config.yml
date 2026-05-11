@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/blamejs/exceptd-skills/security/advisories/new
+    about: Report a security vulnerability privately. See SECURITY.md for the disclosure policy + response time SLA.
+  - name: Threat-intel correction
+    url: https://github.com/blamejs/exceptd-skills/security/advisories/new
+    about: If a CVE entry or framework gap mapping is materially wrong AND the correction itself is sensitive (e.g. discloses a previously-undisclosed exploit detail), file it as a security advisory instead of a public issue.
+  - name: Question or general discussion
+    url: https://github.com/blamejs/exceptd-skills/discussions
+    about: For questions, design discussions, or feature ideas you want to socialize before opening a feature-request issue.

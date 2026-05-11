@@ -1,0 +1,63 @@
+exceptd-skills
+Copyright 2026 blamejs contributors
+
+This product includes software developed by the exceptd Security project
+(https://exceptd.com), part of the blamejs organization.
+
+Licensed under the Apache License, Version 2.0. See LICENSE for the full text.
+
+================================================================================
+Third-Party Data Sources
+================================================================================
+
+exceptd-skills does not bundle third-party code dependencies. The repository is
+zero-dep (Node.js stdlib only) and ships only project-authored skill content,
+data files, and tooling.
+
+The threat-intelligence data the skills are grounded in is sourced from the
+following public catalogs. Each source retains its own copyright and licensing;
+exceptd-skills references their identifiers (CVE IDs, ATLAS TTP IDs, framework
+control IDs) under fair-use research conventions, but does not redistribute
+their content verbatim.
+
+--------------------------------------------------------------------------------
+Source:      MITRE ATLAS
+URL:         https://atlas.mitre.org
+Version:     v5.1.0 (November 2025)
+Used for:    Adversarial Threat Landscape for AI Systems — TTP IDs cited in
+             skills/*, data/atlas-ttps.json, and manifest.json. Pinned per
+             CLAUDE.md hard rule #12.
+Notice:      ATLAS is © The MITRE Corporation, released under the terms at
+             https://atlas.mitre.org/resources/terms-of-use.
+--------------------------------------------------------------------------------
+Source:      MITRE ATT&CK
+URL:         https://attack.mitre.org
+Used for:    Enterprise technique IDs (T-numbers) cited in skill TTP mappings.
+Notice:      ATT&CK is © The MITRE Corporation; redistribution terms at
+             https://attack.mitre.org/resources/terms-of-use/.
+--------------------------------------------------------------------------------
+Source:      NIST National Vulnerability Database (NVD)
+URL:         https://nvd.nist.gov
+Used for:    CVE metadata (CVSS scores, vectors, descriptions) cited in
+             data/cve-catalog.json and cross-checked by
+             sources/validators/cve-validator.js.
+Notice:      U.S. Government work; not subject to copyright. Use must comply
+             with NVD's terms-of-use including rate-limiting guidance.
+--------------------------------------------------------------------------------
+Source:      CISA Known Exploited Vulnerabilities (KEV) Catalog
+URL:         https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+Used for:    KEV status flags driving the RWEP scoring formula in lib/scoring.js.
+Notice:      U.S. Government work; CISA publishes the catalog for free public use.
+--------------------------------------------------------------------------------
+Source:      Compliance frameworks (NIST 800-53, ISO/IEC 27001:2022, SOC 2, PCI
+             DSS, NIS2, DORA, EU AI Act, EU CRA, ASD Essential 8, MAS TRM,
+             CERT-In Directions, and the others enumerated in
+             data/global-frameworks.json)
+Used for:    Control IDs cited in framework_gaps fields and in skill body
+             "Framework Lag Declaration" sections. exceptd-skills does NOT
+             redistribute framework text; it only cites identifiers and
+             explains where current TTPs bypass the cited controls.
+Notice:      Each framework retains the licensing terms of its publisher.
+             Refer to the source listed in data/global-frameworks.json for
+             redistribution constraints.
+--------------------------------------------------------------------------------

@@ -1,0 +1,31 @@
+# Skill content and data files MUST stay LF — the Ed25519 signatures in
+# manifest.json cover the exact byte content of each skill.md. A Windows
+# checkout that rewrites LF → CRLF would invalidate every signature on
+# disk. Normalize to LF on commit and check out as LF on every platform.
+*.md         text eol=lf
+*.json       text eol=lf
+*.js         text eol=lf
+*.mjs        text eol=lf
+*.cjs        text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.pem        text eol=lf
+
+# Shell scripts MUST stay LF — run inside Linux CI runners; bash chokes
+# on CRLF with "$'\r': command not found".
+*.sh         text eol=lf
+
+# Standard binary types.
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.ico        binary
+*.zip        binary
+*.gz         binary
+*.tar        binary
+*.tgz        binary
+*.pdf        binary
+
+# Lockfiles — keep diff-friendly but never auto-rewrite.
+package-lock.json    text eol=lf -diff
