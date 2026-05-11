@@ -38,6 +38,10 @@ framework_gaps:
   - CycloneDX-v1.6-SBOM
   - SPDX-v3.0-SBOM
   - NIST-800-53-SA-12
+  - HITRUST-CSF-v11.4-09.l
+  - SWIFT-CSCF-v2026-1.1
+  - FedRAMP-Rev5-Moderate
+  - CMMC-2.0-Level-2
 rfc_refs:
   - RFC-8032
 forward_watch:
@@ -98,6 +102,10 @@ This project itself uses Ed25519 (RFC 8032) signing for skill integrity (`lib/si
 | Australia ISM / Essential Eight | ISM controls under "Application Control" (E8 Maturity Level 3) and "Patch Applications" | E8 ML3 requires application control to allowlist executable content. Does not require cryptographic provenance or model-weight signing. AI artifact supply chain is not addressed in current ISM (Sep 2024 update). |
 | Australia IRAP | Aligned with ISM | Same gap; IRAP assessors evaluate against ISM, which is not yet sufficient for the AI artifact layer. |
 | PCI DSS 4.0 | 6.3.2 (inventory of bespoke and custom software), 12.8 / 12.9 (third-party service providers) | Inventory is required; cryptographic provenance verification is not. The MCP / AI-coding-assistant supply chain is in scope when a developer accesses a CDE codebase but is not specifically called out. |
+| HITRUST CSF v11.4 | 09.l (Outsourced Services / Service Delivery) | Healthcare-sector outsourced-service control aligned to ISO 27002 and NIST 800-53 supplier requirements. Same shape of gap as ISO A.5.21: process-language for supplier review, no cryptographic provenance verification, no SLSA / in-toto / Sigstore floor for MCP servers or AI coding assistants accessing PHI-bearing codebases. |
+| SWIFT CSCF v2026 | 1.1 (SWIFT Environment Protection) | Mandates segregation and protection of the SWIFT secure zone, including third-party connectors and middleware. Does not specify cryptographic provenance (SLSA / Sigstore / in-toto) for the software loaded into the secure zone — AI-codegen, MCP servers, and unsigned model weights inside a SWIFT user's adjacent dev environment fall outside the explicit CSCF control surface. |
+| US FedRAMP Rev 5 Moderate | SA-12 / SR family (Supply Chain Risk Management) baseline | Federal cloud authorization baseline inherits NIST 800-53 SA-12 and the SR controls. Same process-level gap — SBOM is increasingly expected (EO 14028 implementing guidance) but SLSA level, in-toto attestation, and Sigstore signing are not specified as mandatory evidence for ATO; AI artefact provenance is not addressed. |
+| US DoD CMMC 2.0 Level 2 | Practices aligned to NIST 800-171 r2 + r3 (Configuration Management, Risk Assessment, Supply Chain) | DoD contractor baseline for CUI. Inherits the NIST 800-171 / 800-53 supply-chain gap. Does not require SLSA L3+ provenance, in-toto attestation, or Sigstore signing for software used to develop, build, or process CUI; MCP servers and AI coding assistants accessing CUI codebases are not specifically controlled. |
 
 **Fundamental gap:** No current framework requires cryptographic provenance verification at load time as the supply-chain control. Every framework allows process-only or inventory-only evidence to satisfy supply-chain controls. Model weights as supply-chain artifacts have effectively zero compliance-framework coverage as of mid-2026; the technical standards (CycloneDX 1.6 ML-BOM, SPDX 3.0 AI profile, OpenSSF model-signing) exist and are usable, but they are not mandated anywhere.
 

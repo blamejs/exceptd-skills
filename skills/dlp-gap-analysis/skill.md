@@ -40,6 +40,7 @@ framework_gaps:
   - ISO-IEC-42001-2023-clause-6.1.2
   - HIPAA-Security-Rule-164.312(a)(1)
   - SOC2-CC7-anomaly-detection
+  - NIST-800-53-SC-28
 rfc_refs:
   - RFC-8446
   - RFC-9458
@@ -79,6 +80,7 @@ The dominant real-world exfil pattern: an engineer pastes proprietary code, cust
 |---|---|---|---|
 | NIST 800-53 r5 SC-7 | Boundary Protection | Egress allowlisting and inspection at network boundaries. | AI provider domains (`api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`, `*.openai.azure.com`, `bedrock-runtime.*.amazonaws.com`) are uniformly allowlisted; SC-7 boundary inspection cannot see prompt content under TLS 1.3 (RFC 8446) and is blind to Oblivious HTTP relays (RFC 9458). SC-7 as written does not require SDK-level prompt logging or per-identity sanctioned-business-reason allowlist entries. The real_requirement is recorded under `NIST-800-53-SC-7` in `data/framework-control-gaps.json`. |
 | NIST 800-53 r5 SI-12 (referenced from `DLP-CHAN-LLM-CONTEXT`, `DLP-CHAN-IDE-TELEMETRY`) | Information Handling and Retention | Handling rules for information at rest and in transit. | Silent on retrieval-time classification enforcement against RAG corpora and silent on inference-time prompt content. |
+| NIST 800-53 r5 SC-28 | Protection of Information at Rest | Encryption of stored information. | Operationalised for disks, object stores, and databases — silent on RAG corpora, embedding stores, and model-context caches that hold protected content at rest inside AI pipelines. Engineer-pasted prompts cached by the AI vendor are an at-rest surface SC-28 does not name. |
 | NIST AI RMF MAP-4.1 / MEASURE-2.10 (referenced from `DLP-CHAN-LLM-PROMPT`, `DLP-CHAN-LLM-CONTEXT`) | AI risk identification and measurement | Identifies AI system risks and measurement criteria. | Voluntary, not auditable. Does not operationalise DLP at the prompt or retrieval boundary. |
 | ISO 27001:2022 A.8.16 | Monitoring Activities | Monitoring of networks, systems, and applications. | Channel-agnostic in language; every implementation guide cites email/web/endpoint. No guidance for SDK-level prompt logging, MCP tool-call argument capture, or RAG retrieval audit. |
 | ISO 27001:2022 A.5.34 (referenced from `DLP-CHAN-LLM-CONTEXT`, `DLP-CHAN-IDE-TELEMETRY`) | Privacy and Protection of PII | PII handling. | Does not address retrieval-time classification of PII in RAG corpora. |

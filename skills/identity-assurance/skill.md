@@ -37,6 +37,7 @@ framework_gaps:
   - NIST-800-53-AC-2
   - ISO-27001-2022-A.8.30
   - SOC2-CC6-logical-access
+  - PSD2-RTS-SCA
 rfc_refs:
   - RFC-7519
   - RFC-8725
@@ -96,6 +97,7 @@ Identity is the new perimeter, and the perimeter expanded. The 2026 principal po
 | India CERT-In (SBOM + identity directives, 2022 + 2024 amendments) | Identity controls referenced alongside SBOM and incident-reporting | CERT-In Directions mandate accurate logging tied to identity (180-day retention). Does not specify AAL targets, phishing-resistance, or agent principals. |
 | NY DFS 23 NYCRR Part 500 (amended Nov 2023) | §500.12 (Multi-Factor Authentication), §500.7 (Access Privileges) | Mandates MFA for any individual accessing the covered entity's information systems — explicit phishing-resistance not required (a documented gap). Agent-principal identity not addressed. |
 | ISO/IEC 27001:2022 / 27002:2022 | A.5.16, A.5.17, A.5.18, A.8.5 (identity, authentication info, access rights, secure authentication) | The 2022 revision improves on 2013 but predates the agent-principal pattern and does not mandate phishing-resistance. |
+| EU PSD2 RTS on Strong Customer Authentication (Reg. 2018/389) | SCA — two-factor authentication for payment initiation, account access, and remote transactions in scope of PSD2 | The canonical EU mandate for two-factor authentication in retail payments. RTS-SCA does not specify phishing-resistance (TOTP and SMS-OTP remain commonly deployed and accepted by NCAs) and predates the agent-principal pattern — an AI agent initiating a payment under a user's strongly-authenticated session is not contemplated. PSD3 / PSR revisions in progress; until then, SCA-compliant flows can still be defeated by AiTM relay against non-phishing-resistant factors. |
 
 **Fundamental gap:** every framework above either pre-dates the agent-as-principal pattern or treats AI-agent acting-under-user as a service-account, which it is not. The cross-jurisdiction picture also shows that phishing-resistance is recommended-not-mandated almost everywhere — paper-MFA still passes most audits.
 

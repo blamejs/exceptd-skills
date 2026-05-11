@@ -19,6 +19,8 @@ attack_refs: []
 framework_gaps:
   - ALL-AI-PIPELINE-INTEGRITY
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
+  - FedRAMP-Rev5-Moderate
+  - CMMC-2.0-Level-2
 last_threat_review: "2026-05-01"
 ---
 
@@ -55,6 +57,8 @@ Compliance theater is the operational shadow of framework lag. Per-framework lag
 | ISO 27001:2022 | A.5.19 / A.5.20 (Supplier relationships) | Drafted for SaaS and outsourced-service vendors. Does not cover MCP servers as third-party code executing inside the developer environment, nor LLM API providers as data processors for sensitive prompt content. |
 | NIST 800-53 | CM-3 (Configuration Change Control) | Drafted for changes the organization controls. LLM model updates by external providers occur without operator notification or consent, on the provider's schedule, and can alter safety-relevant behavior. The change-management control passes the audit and has zero coverage of this change vector. |
 | NIST 800-53 | AT-2 (Security Awareness Training) | Drafted against human-template phishing. 82.6% of phishing emails now contain AI-generated content. Grammar/style heuristics are no longer reliable detectors. A < 5% click rate on human-generated simulations says nothing about resistance to AI-generated highly personalized spear-phishing. |
+| US FedRAMP | Rev 5 Moderate baseline | Authorization-as-evidence pattern. A current ATO certifies that the CSP's control implementation was assessed against the Rev 5 Moderate baseline at a point in time. It does not certify that the CSP has any control over MCP servers running in tenant developer environments, prompt-injection attack surface in AI features, or AI-API providers used downstream. The Authority To Operate is treated by procurement as a security guarantee — Pattern 6 (Vendor/Third-Party Risk Theater) recurs at the federal-cloud layer. |
+| US DoD | CMMC 2.0 Level 2 (110 NIST 800-171 practices) | Certification-as-evidence pattern. A Level 2 certificate attests to assessor-verified implementation of the 110 practices at the time of assessment. It does not cover AI coding-assistant supply chain, MCP server trust on engineering workstations developing CUI-touching software, or model-update change control. The same Pattern 5 (Change Management Theater) and Pattern 6 (Vendor Management Theater) patterns recur with sharper consequences because CMMC gates DoD contract eligibility. |
 
 The pre-analyzed gaps for these controls live in the framework-gap-analysis skill's Built-In Gap Catalog. This skill consumes those gaps and produces a theater detection per gap.
 

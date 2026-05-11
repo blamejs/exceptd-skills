@@ -24,6 +24,8 @@ framework_gaps:
   - ISO-27001-2022-A.8.8
   - PCI-DSS-4.0-6.3.3
   - NIS2-Art21-patch-management
+  - NIST-800-53-SC-8
+  - CIS-Controls-v8-Control7
 rfc_refs:
   - RFC-4301
   - RFC-4303

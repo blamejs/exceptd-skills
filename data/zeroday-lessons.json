@@ -3,7 +3,19 @@
     "schema_version": "1.0.0",
     "last_updated": "2026-05-01",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring.",
-    "note": "Never delete entries. Closed gaps are marked status: closed. History is data."
+    "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
+    "tlp": "CLEAR",
+    "source_confidence": {
+      "scheme": "Admiralty (A-F + 1-6)",
+      "default": "B2",
+      "note": "B = usually reliable; 2 = probably true. Per-entry overrides via entry-level source_confidence field. Public-record catalogs (NVD, ATLAS, CWE, RFC, framework publishers) get A1 (completely reliable, confirmed). Project-curated catalogs (zeroday-lessons, exploit-availability) default to B2 with source citations."
+    },
+    "freshness_policy": {
+      "default_review_cadence_days": 90,
+      "stale_after_days": 180,
+      "rebuild_after_days": 365,
+      "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+    }
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -35,11 +47,31 @@
       }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {"covered": true, "adequate": false, "gap": "30-day SLA is exploitation window for CISA KEV + deterministic public PoC"},
-      "ISO-27001-2022-A.8.8": {"covered": true, "adequate": false, "gap": "Appropriate timescales undefined; typical 30-day interpretation is unsafe"},
-      "PCI-DSS-4.0-6.3.3": {"covered": true, "adequate": false, "gap": "1-month critical patch window is exploitation acceptance"},
-      "ASD-ISM-1623": {"covered": true, "adequate": "closest", "gap": "48h is better but still too long for 732-byte public exploit + CISA KEV"},
-      "ANY-FRAMEWORK": {"covered": false, "adequate": false, "gap": "No framework requires live kernel patching as a capability or auditd exploitation detection"}
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA is exploitation window for CISA KEV + deterministic public PoC"
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; typical 30-day interpretation is unsafe"
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "1-month critical patch window is exploitation acceptance"
+      },
+      "ASD-ISM-1623": {
+        "covered": true,
+        "adequate": "closest",
+        "gap": "48h is better but still too long for 732-byte public exploit + CISA KEV"
+      },
+      "ANY-FRAMEWORK": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires live kernel patching as a capability or auditd exploitation detection"
+      }
     },
     "new_control_requirements": [
       {
@@ -47,21 +79,29 @@
         "name": "CISA-KEV-RESPONSE-SLA",
         "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
         "evidence": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
-        "gap_closes": ["NIST-800-53-SI-2", "ISO-27001-2022-A.8.8", "PCI-DSS-4.0-6.3.3"]
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "PCI-DSS-4.0-6.3.3"
+        ]
       },
       {
         "id": "NEW-CTRL-002",
         "name": "LIVE-PATCH-CAPABILITY",
         "description": "For any system that processes production workloads and cannot tolerate unplanned reboots: live kernel patching capability (kpatch, livepatch, kGraft, or equivalent) must be deployed and tested quarterly.",
         "evidence": "CVE-2026-31431 — reboot required for full patch on systems that must maintain uptime",
-        "gap_closes": ["ALL-FRAMEWORKS-PATCH-SLA"]
+        "gap_closes": [
+          "ALL-FRAMEWORKS-PATCH-SLA"
+        ]
       },
       {
         "id": "NEW-CTRL-003",
         "name": "KERNEL-EXPLOITATION-DETECTION",
         "description": "Deploy auditd or eBPF-based monitoring rules for kernel privilege escalation indicators. Alert within 60 seconds of detection.",
         "evidence": "No detection rules required by any framework; Copy Fail class exploits are detectable via userfaultfd audit",
-        "gap_closes": ["ALL-FRAMEWORKS-DETECTION-GAPS"]
+        "gap_closes": [
+          "ALL-FRAMEWORKS-DETECTION-GAPS"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -100,9 +140,21 @@
       }
     },
     "framework_coverage": {
-      "ALL-MAJOR-FRAMEWORKS": {"covered": false, "adequate": false, "gap": "No framework has a control category for prompt injection as RCE vector. CVSS 9.6 with zero framework coverage."},
-      "NIST-800-53-AC-2": {"covered": true, "adequate": false, "gap": "Service account is properly authorized per AC-2; prompt injection bypasses AC-2 entirely"},
-      "MITRE-ATLAS-v5.1.0": {"covered": true, "adequate": "reference only", "gap": "ATLAS documents the technique (AML.T0051/T0054) but no framework has implemented controls based on ATLAS"}
+      "ALL-MAJOR-FRAMEWORKS": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework has a control category for prompt injection as RCE vector. CVSS 9.6 with zero framework coverage."
+      },
+      "NIST-800-53-AC-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Service account is properly authorized per AC-2; prompt injection bypasses AC-2 entirely"
+      },
+      "MITRE-ATLAS-v5.1.0": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "ATLAS documents the technique (AML.T0051/T0054) but no framework has implemented controls based on ATLAS"
+      }
     },
     "new_control_requirements": [
       {
@@ -110,14 +162,19 @@
         "name": "AI-TOOL-ACTION-AUTHORIZATION",
         "description": "AI coding assistants must have explicitly scoped permissions. Any action taken by an AI tool requires explicit user approval unless within a pre-approved action allowlist. Implied authorization from context is insufficient.",
         "evidence": "CVE-2025-53773 — AI tool took RCE action using developer's authorization without explicit approval",
-        "gap_closes": ["ALL-AI-PIPELINE-INTEGRITY", "NIST-800-53-AC-2"]
+        "gap_closes": [
+          "ALL-AI-PIPELINE-INTEGRITY",
+          "NIST-800-53-AC-2"
+        ]
       },
       {
         "id": "NEW-CTRL-005",
         "name": "AI-TOOL-INPUT-SANITIZATION",
         "description": "Content ingested by AI tools from external sources (PR descriptions, code comments, documentation, web pages, emails) must be treated as potentially adversarial. Apply adversarial instruction classifiers before including in model context.",
         "evidence": "CVE-2025-53773 — adversarial instructions in PR description were included in model context without sanitization",
-        "gap_closes": ["ISO-27001-2022-A.8.28"]
+        "gap_closes": [
+          "ISO-27001-2022-A.8.28"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -156,10 +213,26 @@
       }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {"covered": true, "adequate": false, "gap": "Patch SLA does not account for public PoC + suspected active exploitation"},
-      "NIST-800-53-SC-8": {"covered": true, "adequate": false, "gap": "IPsec compliance via SC-8 is not a compensating control — exploit runs through IPsec implementation"},
-      "NIST-800-53-SC-28": {"covered": true, "adequate": false, "gap": "Same — kernel crypto subsystem compliance claims are invalidated when the subsystem has unpatched LPE"},
-      "ISO-27001-2022-A.8.8": {"covered": true, "adequate": false, "gap": "Appropriate timescales undefined; same patch SLA problem as CVE-2026-31431"}
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA does not account for public PoC + suspected active exploitation"
+      },
+      "NIST-800-53-SC-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "IPsec compliance via SC-8 is not a compensating control — exploit runs through IPsec implementation"
+      },
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same — kernel crypto subsystem compliance claims are invalidated when the subsystem has unpatched LPE"
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; same patch SLA problem as CVE-2026-31431"
+      }
     },
     "new_control_requirements": [
       {
@@ -167,7 +240,10 @@
         "name": "CRYPTO-SUBSYSTEM-CVE-DISCLOSURE",
         "description": "When a CVE affects a kernel cryptographic subsystem (IPsec, RxRPC, etc.), any compliance controls that rely on that subsystem must be documented as 'not a compensating control' until the CVE is patched. Risk assessments must note this explicitly.",
         "evidence": "CVE-2026-43284 — IPsec-based SC-8 and SC-28 compliance is invalidated by this vulnerability",
-        "gap_closes": ["NIST-800-53-SC-8", "NIST-800-53-SC-28"]
+        "gap_closes": [
+          "NIST-800-53-SC-8",
+          "NIST-800-53-SC-28"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -206,9 +282,21 @@
       }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {"covered": true, "adequate": false, "gap": "Same patch SLA problem as other kernel LPEs with public PoC"},
-      "NIST-800-53-CM-7": {"covered": true, "adequate": "partial", "gap": "CM-7 least functionality could require disabling RxRPC, but this is rarely implemented for kernel subsystems"},
-      "ISO-27001-2022-A.8.8": {"covered": true, "adequate": false, "gap": "Same timescale problem as CVE-2026-31431 and CVE-2026-43284"}
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same patch SLA problem as other kernel LPEs with public PoC"
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": "partial",
+        "gap": "CM-7 least functionality could require disabling RxRPC, but this is rarely implemented for kernel subsystems"
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same timescale problem as CVE-2026-31431 and CVE-2026-43284"
+      }
     },
     "new_control_requirements": [
       {
@@ -216,7 +304,9 @@
         "name": "KERNEL-MODULE-INVENTORY-AND-DISABLE",
         "description": "Maintain an inventory of loaded kernel modules. For modules not required for business function (RxRPC, unused crypto modules), disable via modprobe blacklist as a least-functionality control. Review quarterly.",
         "evidence": "CVE-2026-43500 — RxRPC is rarely required; disabling eliminates one chain component",
-        "gap_closes": ["NIST-800-53-CM-7"]
+        "gap_closes": [
+          "NIST-800-53-CM-7"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -235,10 +325,26 @@
       "ai_factor": "AI tool is the attack vector. MCP is the supply chain."
     },
     "framework_coverage": {
-      "NIST-800-53-SA-12": {"covered": true, "adequate": false, "gap": "Supply chain protection doesn't contemplate MCP server trust as a category"},
-      "NIST-800-53-CM-7": {"covered": true, "adequate": false, "gap": "Least functionality doesn't address AI tool plugin authorization model"},
-      "ISO-27001-2022-A.8.30": {"covered": true, "adequate": false, "gap": "Outsourced development controls don't cover MCP server supply chain"},
-      "SOC2-CC9": {"covered": true, "adequate": false, "gap": "Vendor management doesn't reach developer-installed AI tool plugins"}
+      "NIST-800-53-SA-12": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain protection doesn't contemplate MCP server trust as a category"
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least functionality doesn't address AI tool plugin authorization model"
+      },
+      "ISO-27001-2022-A.8.30": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Outsourced development controls don't cover MCP server supply chain"
+      },
+      "SOC2-CC9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vendor management doesn't reach developer-installed AI tool plugins"
+      }
     },
     "new_control_requirements": [
       {
@@ -246,14 +352,20 @@
         "name": "MCP-SERVER-SIGNING",
         "description": "All MCP servers must have verifiable provenance. AI coding assistants must refuse to load unsigned MCP servers.",
         "evidence": "CVE-2026-30615 — unsigned MCP server enabled zero-interaction RCE",
-        "gap_closes": ["NIST-800-53-SA-12", "ISO-27001-2022-A.8.30"]
+        "gap_closes": [
+          "NIST-800-53-SA-12",
+          "ISO-27001-2022-A.8.30"
+        ]
       },
       {
         "id": "NEW-CTRL-007",
         "name": "MCP-TOOL-ALLOWLIST",
         "description": "AI clients must implement explicit tool allowlists. Default deny — only tools in the allowlist may be called.",
         "evidence": "CVE-2026-30615 — AI client called tools exposed by malicious server without restriction",
-        "gap_closes": ["NIST-800-53-CM-7", "ALL-MCP-TOOL-TRUST"]
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "ALL-MCP-TOOL-TRUST"
+        ]
       }
     ],
     "compliance_exposure_score": {

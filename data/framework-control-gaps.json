@@ -2,7 +2,19 @@
   "_meta": {
     "schema_version": "1.0.0",
     "last_updated": "2026-05-01",
-    "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history."
+    "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history.",
+    "tlp": "CLEAR",
+    "source_confidence": {
+      "scheme": "Admiralty (A-F + 1-6)",
+      "default": "A1",
+      "note": "B = usually reliable; 2 = probably true. Per-entry overrides via entry-level source_confidence field. Public-record catalogs (NVD, ATLAS, CWE, RFC, framework publishers) get A1 (completely reliable, confirmed). Project-curated catalogs (zeroday-lessons, exploit-availability) default to B2 with source citations."
+    },
+    "freshness_policy": {
+      "default_review_cadence_days": 90,
+      "stale_after_days": 180,
+      "rebuild_after_days": 365,
+      "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+    }
   },
   "NIST-800-53-SI-2": {
     "framework": "NIST SP 800-53 Rev 5",

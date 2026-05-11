@@ -13,6 +13,8 @@
  *   report            Print dispatch plan as a report
  *   watch             Start event bus watcher (long-running)
  *   validate-cves     Remind to validate CVE entries against NVD
+ *   validate-rfcs     Cross-check the RFC catalog against IETF Datatracker
+ *   watchlist         Aggregate forward_watch entries across all skills
  *   help              Show this help
  */
 
@@ -53,6 +55,9 @@ async function main() {
       break;
     case 'validate-rfcs':
       await runValidateRfcs(args);
+      break;
+    case 'watchlist':
+      runWatchlist(args);
       break;
     case 'help':
     default:
@@ -255,14 +260,22 @@ async function runValidateCves(rawArgs = []) {
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   // --- Header (fixed-width; works with the existing currency command's style)
-  const header = 'CVE                | Local RWEP | Local CVSS | NVD CVSS         | KEV Local | KEV NVD | Status';
-  const rule   = '-------------------|------------|------------|------------------|-----------|---------|----------';
+  const header = 'CVE                | Local RWEP | Local CVSS | NVD CVSS         | KEV Local | KEV NVD | EPSS Local      | EPSS Live       | EPSS Drift | Status';
+  const rule   = '-------------------|------------|------------|------------------|-----------|---------|-----------------|-----------------|------------|----------';
   console.log(header);
   console.log(rule);
 
   function fmt(v, n) {
     const s = (v === null || v === undefined) ? '-' : String(v);
     return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length);
+  }
+
+  // Format an EPSS pair as "score / percentile" with 4-decimal score, 2-decimal pct.
+  function fmtEpss(score, pct) {
+    if (score === null || score === undefined) return '-';
+    const s = Number(score).toFixed(4);
+    const p = (pct === null || pct === undefined) ? '?' : Number(pct).toFixed(2);
+    return `${s}/${p}`;
   }
 
   if (offline) {
@@ -275,6 +288,9 @@ async function runValidateCves(rawArgs = []) {
         fmt('(offline)', 16) + ' | ' +
         fmt(e.cisa_kev, 9) + ' | ' +
         fmt('(offline)', 7) + ' | ' +
+        fmt(fmtEpss(e.epss_score, e.epss_percentile), 15) + ' | ' +
+        fmt('(offline)', 15) + ' | ' +
+        fmt('(offline)', 10) + ' | ' +
         'local-only'
       );
     }
@@ -306,6 +322,31 @@ async function runValidateCves(rawArgs = []) {
     const cvssMismatch = r?.discrepancies?.some(d => d.field === 'cvss_score');
     const kevMismatch  = r?.discrepancies?.some(d => d.field === 'cisa_kev');
 
+    // EPSS Local / Live / Drift block
+    const liveEpss = r?.fetched?.epss || null;
+    const epssReachable = r?.fetched?.sources?.epss?.reachable === true;
+    const epssMismatchScore = r?.discrepancies?.some(d => d.field === 'epss_score');
+    const epssMismatchPct = r?.discrepancies?.some(d => d.field === 'epss_percentile');
+    const localEpssCell = fmtEpss(e.epss_score, e.epss_percentile);
+    const liveEpssCell = liveEpss
+      ? fmtEpss(liveEpss.score, liveEpss.percentile)
+      : (epssReachable ? 'not-found' : 'unreachable');
+    let driftCell = '-';
+    if (r?.drift) {
+      const dScore = (liveEpss?.score !== null && e.epss_score !== null && e.epss_score !== undefined)
+        ? (liveEpss.score - e.epss_score)
+        : null;
+      const dPct = (liveEpss?.percentile !== null && e.epss_percentile !== null && e.epss_percentile !== undefined)
+        ? (liveEpss.percentile - e.epss_percentile)
+        : null;
+      const parts = [];
+      if (dScore !== null) parts.push(`Δs=${(dScore >= 0 ? '+' : '') + dScore.toFixed(3)}`);
+      if (dPct !== null) parts.push(`Δp=${(dPct >= 0 ? '+' : '') + dPct.toFixed(3)}`);
+      driftCell = parts.join(' ') + ' DRIFT';
+    } else if (epssMismatchScore || epssMismatchPct) {
+      driftCell = 'DRIFT';
+    }
+
     console.log(
       fmt(id, 18) + ' | ' +
       fmt(e.rwep_score, 10) + ' | ' +
@@ -313,6 +354,9 @@ async function runValidateCves(rawArgs = []) {
       fmt(nvdScore === null ? '-' : `${nvdScore}${cvssMismatch ? ' DRIFT' : ''}`, 16) + ' | ' +
       fmt(e.cisa_kev, 9) + ' | ' +
       fmt(`${kevNvdStr}${kevMismatch ? ' DRIFT' : ''}`, 7) + ' | ' +
+      fmt(localEpssCell, 15) + ' | ' +
+      fmt(liveEpssCell, 15) + ' | ' +
+      fmt(driftCell, 10) + ' | ' +
       status
     );
 
@@ -442,6 +486,107 @@ async function runValidateRfcs(rawArgs = []) {
   }
 }
 
+/**
+ * watchlist — aggregate `forward_watch` entries across every skill in
+ * manifest.json into a single deduplicated, sorted list, with the skills
+ * that listed each item and the most recent `last_threat_review` date among
+ * them. Supports `--by-skill` to invert the view (per-skill watch items).
+ *
+ * Per AGENTS.md, `forward_watch` is the optional frontmatter field every
+ * skill uses to flag upcoming standards changes, new TTPs, or RFC drops
+ * that should trigger a skill update. This command surfaces the union so
+ * maintainers can see the full horizon at a glance.
+ */
+function runWatchlist(rawArgs = []) {
+  const fs = require('fs');
+  const path = require('path');
+  const { parseFrontmatter, extractFrontmatterBlock } = require('../lib/lint-skills.js');
+
+  const byskill = rawArgs.includes('--by-skill');
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  const repoRoot = path.join(__dirname, '..');
+
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch (err) {
+    console.error(`[watchlist] cannot read ${manifestPath}: ${err.message}`);
+    process.exit(2);
+  }
+
+  const skills = Array.isArray(manifest.skills) ? manifest.skills : [];
+  // item -> { skills: [{name, last_threat_review}] }
+  const itemToSkills = new Map();
+  // skill name -> { items: [...], last_threat_review }
+  const skillToItems = new Map();
+  let parseErrors = 0;
+
+  for (const entry of skills) {
+    const skillPath = path.join(repoRoot, entry.path);
+    if (!fs.existsSync(skillPath)) {
+      parseErrors++;
+      continue;
+    }
+    const content = fs.readFileSync(skillPath, 'utf8');
+    const { frontmatter: fmRaw } = extractFrontmatterBlock(content);
+    if (!fmRaw) {
+      parseErrors++;
+      continue;
+    }
+    let fm;
+    try {
+      fm = parseFrontmatter(fmRaw);
+    } catch {
+      parseErrors++;
+      continue;
+    }
+    const items = Array.isArray(fm.forward_watch) ? fm.forward_watch : [];
+    const reviewDate = typeof fm.last_threat_review === 'string' ? fm.last_threat_review : null;
+    skillToItems.set(entry.name, { items, last_threat_review: reviewDate });
+    for (const itemRaw of items) {
+      if (typeof itemRaw !== 'string' || !itemRaw.trim()) continue;
+      const item = itemRaw.trim();
+      if (!itemToSkills.has(item)) itemToSkills.set(item, []);
+      itemToSkills.get(item).push({ skill: entry.name, last_threat_review: reviewDate });
+    }
+  }
+
+  console.log(`\nForward-Watch Aggregator — ${new Date().toISOString()}`);
+  console.log(`Skills scanned: ${skills.length}  parse errors: ${parseErrors}`);
+
+  if (byskill) {
+    console.log(`Mode: by-skill\n`);
+    const names = [...skillToItems.keys()].sort();
+    for (const name of names) {
+      const info = skillToItems.get(name);
+      console.log(`### ${name}  (last_threat_review: ${info.last_threat_review || '-'})`);
+      if (info.items.length === 0) {
+        console.log('  (no forward_watch entries)');
+      } else {
+        for (const item of info.items) console.log(`  - ${item}`);
+      }
+      console.log();
+    }
+    console.log(`Total unique watch items across all skills: ${itemToSkills.size}`);
+    return;
+  }
+
+  console.log(`Mode: aggregated (unique items across all skills)\n`);
+  const sortedItems = [...itemToSkills.keys()].sort((a, b) => a.localeCompare(b));
+  for (const item of sortedItems) {
+    const listers = itemToSkills.get(item);
+    const dates = listers.map(l => l.last_threat_review).filter(Boolean).sort();
+    const mostRecent = dates.length ? dates[dates.length - 1] : '-';
+    const skillNames = listers.map(l => l.skill).join(', ');
+    console.log(`- ${item}`);
+    console.log(`    skills (${listers.length}): ${skillNames}`);
+    console.log(`    most-recent last_threat_review among listers: ${mostRecent}`);
+  }
+
+  console.log(`\nTotal unique watch items: ${itemToSkills.size}  (across ${skills.length} skills)`);
+  console.log(`Run with --by-skill to invert the view.`);
+}
+
 function printHelp() {
   console.log(`
 exceptd Security Orchestrator
@@ -454,8 +599,9 @@ Commands:
   currency          Check skill currency scores
   report [format]   Generate report (format: executive|technical|compliance)
   watch             Start event watcher (long-running)
-  validate-cves     Cross-check the CVE catalog against NVD + CISA KEV (--offline | --no-fail)
+  validate-cves     Cross-check the CVE catalog against NVD + CISA KEV + EPSS (--offline | --no-fail)
   validate-rfcs     Cross-check the RFC catalog against IETF Datatracker  (--offline | --no-fail)
+  watchlist         Aggregate forward_watch entries across all skills (--by-skill to invert)
   help              Show this help
 
 Environment variables:

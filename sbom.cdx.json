@@ -1,0 +1,58 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:2d260844-6821-4bc3-9cf2-6a7bc8f30fe9",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-11T16:34:38.560Z",
+    "tools": [
+      {
+        "name": "hand-written",
+        "version": "0.1.0",
+        "description": "SBOM generated from package.json + manual review (scripts/refresh-sbom.js)."
+      }
+    ],
+    "component": {
+      "bom-ref": "pkg:project/exceptd-security@0.5.0",
+      "type": "application",
+      "name": "exceptd-skills",
+      "version": "0.5.0",
+      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cyclonedx:dataflow:input",
+        "value": "data/atlas-ttps.json,data/cve-catalog.json,data/cwe-catalog.json,data/d3fend-catalog.json,data/dlp-controls.json,data/exploit-availability.json,data/framework-control-gaps.json,data/global-frameworks.json,data/rfc-references.json,data/zeroday-lessons.json"
+      },
+      {
+        "name": "exceptd:catalog:count",
+        "value": "10"
+      },
+      {
+        "name": "exceptd:skill:count",
+        "value": "25"
+      },
+      {
+        "name": "exceptd:integrity:method",
+        "value": "Ed25519 per-skill (lib/sign.js)"
+      },
+      {
+        "name": "exceptd:runtime:dependency:count",
+        "value": "0"
+      },
+      {
+        "name": "exceptd:devDependency:count",
+        "value": "0"
+      }
+    ]
+  },
+  "components": [],
+  "dependencies": []
+}

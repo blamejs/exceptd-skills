@@ -127,7 +127,8 @@ Optional 8th section (required for skills shipped on or after 2026-05-11; pre-ex
 5. Register in `manifest.json` with all fields.
 6. Sign the new skill: `node lib/sign.js sign-all` (or `npm run bootstrap` on first run) to add the Ed25519 `signature` and `signed_at` fields to `manifest.json`. Then run `node lib/verify.js` to confirm signatures verify.
 7. Verify: compliance theater check present? Concrete output format? Exploit availability assessment?
-8. Update CHANGELOG.md.
+8. Refresh the project SBOM so the `exceptd:skill:count` and `exceptd:catalog:count` properties in `sbom.cdx.json` track the live surface: `npm run refresh-sbom`. The predeploy SBOM-currency gate fails if `sbom.cdx.json` drifts from `manifest.json` skill count or `data/*.json` catalog count.
+9. Update CHANGELOG.md.
 
 ## Adding a New CVE
 

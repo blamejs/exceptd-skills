@@ -24,6 +24,8 @@
     "check-snapshot": "node scripts/check-manifest-snapshot.js",
     "refresh-snapshot": "node scripts/refresh-manifest-snapshot.js",
     "validate-catalog": "node lib/validate-cve-catalog.js",
+    "validate-catalog-meta": "node lib/validate-catalog-meta.js",
+    "refresh-sbom": "node scripts/refresh-sbom.js",
     "predeploy": "node scripts/predeploy.js",
     "test:docker": "docker build --target predeploy -t exceptd-test:predeploy -f docker/test.Dockerfile . && docker run --rm exceptd-test:predeploy",
     "test:docker:fresh": "docker build --target fresh-bootstrap -t exceptd-test:fresh-bootstrap -f docker/test.Dockerfile . && docker run --rm exceptd-test:fresh-bootstrap",
@@ -33,7 +35,8 @@
     "report": "node orchestrator/index.js report",
     "watch": "node orchestrator/index.js watch",
     "validate-cves": "node orchestrator/index.js validate-cves",
-    "validate-rfcs": "node orchestrator/index.js validate-rfcs"
+    "validate-rfcs": "node orchestrator/index.js validate-rfcs",
+    "watchlist": "node orchestrator/index.js watchlist"
   },
   "dependencies": {},
   "devDependencies": {}

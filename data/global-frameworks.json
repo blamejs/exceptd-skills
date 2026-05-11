@@ -3,7 +3,19 @@
     "schema_version": "1.3.0",
     "version": "1.3.0",
     "last_updated": "2026-05-11",
-    "note": "Multi-jurisdiction framework registry. patch_sla in hours. notification_sla in hours. source field must be primary regulatory source. v1.3.0 expansion: NO, MX, AR, TR, TH, PH, US_CALIFORNIA top-level jurisdictions added; EU member-state sub-regulator blocks added for Germany (BSI), France (ANSSI), Spain (AEPD + AESIA), Italy (ACN + AgID); EU-level technical body ENISA added as cross-cutting reference. v1.2.0 expansion: IL, CH, HK, TW, ID, VN, US_NYDFS added; JP expanded with APPI/PPC, FISC, NISC, METI, Economic Security Promotion Act, AI Strategy Council guidance. v1.1.0 expansion: BR, CN, ZA, AE, SA, NZ, KR, CL added; IN and CA enriched with data-protection law entries (DPDPA, Quebec Law 25, PIPEDA)."
+    "note": "Multi-jurisdiction framework registry. patch_sla in hours. notification_sla in hours. source field must be primary regulatory source. v1.3.0 expansion: NO, MX, AR, TR, TH, PH, US_CALIFORNIA top-level jurisdictions added; EU member-state sub-regulator blocks added for Germany (BSI), France (ANSSI), Spain (AEPD + AESIA), Italy (ACN + AgID); EU-level technical body ENISA added as cross-cutting reference. v1.2.0 expansion: IL, CH, HK, TW, ID, VN, US_NYDFS added; JP expanded with APPI/PPC, FISC, NISC, METI, Economic Security Promotion Act, AI Strategy Council guidance. v1.1.0 expansion: BR, CN, ZA, AE, SA, NZ, KR, CL added; IN and CA enriched with data-protection law entries (DPDPA, Quebec Law 25, PIPEDA).",
+    "tlp": "CLEAR",
+    "source_confidence": {
+      "scheme": "Admiralty (A-F + 1-6)",
+      "default": "A1",
+      "note": "B = usually reliable; 2 = probably true. Per-entry overrides via entry-level source_confidence field. Public-record catalogs (NVD, ATLAS, CWE, RFC, framework publishers) get A1 (completely reliable, confirmed). Project-curated catalogs (zeroday-lessons, exploit-availability) default to B2 with source citations."
+    },
+    "freshness_policy": {
+      "default_review_cadence_days": 90,
+      "stale_after_days": 180,
+      "rebuild_after_days": 365,
+      "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+    }
   },
   "EU": {
     "jurisdiction": "European Union",
@@ -2579,63 +2591,323 @@
   "_notification_summary": {
     "note": "Notification SLAs by jurisdiction, sorted fastest to slowest. 'discretionary' indicates statutes using 'as soon as practicable', 'with diligence', 'reasonable time', or 'immediately' without numeric pinning.",
     "table": [
-      {"jurisdiction": "Taiwan (CSMA L3-L4)", "sla_hours": 1, "trigger": "Highest-tier cyber incident at CIP", "note": "Enforcement Rules graduated by incident level — fastest mandatory cyber notification globally"},
-      {"jurisdiction": "Philippines (BSP)", "sla_hours": 2, "trigger": "Major cyber incident at BSP-supervised financial institution", "note": "BSP Circular 1019 / M-2020-007 — among the world's fastest sector notifications"},
-      {"jurisdiction": "Singapore (MAS TRM)", "sla_hours": 2, "trigger": "> 30min customer impact or breach", "note": "Tied with CSA CCoP and BSP"},
-      {"jurisdiction": "Singapore (CSA CCoP)", "sla_hours": 2, "trigger": "CII cybersecurity incident", "note": ""},
-      {"jurisdiction": "EU (DORA)", "sla_hours": 4, "trigger": "Major ICT incident in financial sector", "note": "Financial services only"},
-      {"jurisdiction": "India (CERT-In)", "sla_hours": 6, "trigger": "Defined incident categories", "note": "Sectoral incident reporting (not data-protection)"},
-      {"jurisdiction": "US NYDFS Part 500 (ransom payment)", "sla_hours": 24, "trigger": "Extortion/ransom payment by Covered Entity", "note": "§500.17(c) Second Amendment — 30-day follow-up explanation"},
-      {"jurisdiction": "EU (NIS2 early warning)", "sla_hours": 24, "trigger": "Significant incident early warning", "note": "72h full notification follows"},
-      {"jurisdiction": "Norway (NIS2 / Digitalsikkerhetsloven, anticipated)", "sla_hours": 24, "trigger": "Significant incident early warning at essential/important entity", "note": "Prop. 109 L (2023-2024) — anticipated EEA-implementation in 2026; mirrors EU NIS2 timing"},
-      {"jurisdiction": "Canada (OSFI B-10)", "sla_hours": 24, "trigger": "Material technology/cyber incident", "note": "Financial services only"},
-      {"jurisdiction": "EU (CRA)", "sla_hours": 24, "trigger": "Actively exploited vulnerability in product", "note": "Product manufacturers under EU CRA"},
-      {"jurisdiction": "Switzerland (Information Security Act)", "sla_hours": 24, "trigger": "Cyberattack on critical infrastructure operators", "note": "Art. 74e ISG, in force 2025-04-01 — first Swiss numeric cyber SLA"},
-      {"jurisdiction": "Argentina (BCRA Comunicación 'A' 7724)", "sla_hours": 24, "trigger": "Cyber incident with significant impact at BCRA-supervised entity", "note": "Financial sector only"},
-      {"jurisdiction": "Mexico (CNBV Annex 71)", "sla_hours": 24, "trigger": "Cyber incident affecting CNBV-supervised institution", "note": "Banking and broker-dealer sector"},
-      {"jurisdiction": "Saudi Arabia (KSA PDPL)", "sla_hours": 72, "trigger": "Personal data breach causing potential damage", "note": "Implementing Regulations Art. 24"},
-      {"jurisdiction": "Norway (Personopplysningsloven via EEA / GDPR)", "sla_hours": 72, "trigger": "Personal data breach affecting data subject rights", "note": "GDPR Art. 33 standard via EEA implementation"},
-      {"jurisdiction": "Türkiye (KVKK)", "sla_hours": 72, "trigger": "Personal data breach (unauthorised acquisition)", "note": "KVKK Board Decision 2019/10 operationalises Art. 12(5)"},
-      {"jurisdiction": "Thailand (PDPA)", "sla_hours": 72, "trigger": "Personal data breach risking rights and freedoms", "note": "PDPA Sec. 37(4)"},
-      {"jurisdiction": "Philippines (DPA — NPC)", "sla_hours": 72, "trigger": "Sensitive PI breach with real risk of serious harm", "note": "NPC Circular 16-03 / 2022-01"},
-      {"jurisdiction": "Korea (PIPA)", "sla_hours": 72, "trigger": "Personal information leakage", "note": "Enforcement Decree Art. 39"},
-      {"jurisdiction": "India (DPDPA)", "sla_hours": 72, "trigger": "Personal data breach affecting Data Principals", "note": "Per Draft DPDP Rules 2025"},
-      {"jurisdiction": "Brazil (LGPD)", "sla_hours": 72, "trigger": "Incident with relevant risk or damage", "note": "ANPD Resolution CD/ANPD 15/2024 ~ 3 business days"},
-      {"jurisdiction": "Chile (Law 21,719)", "sla_hours": 72, "trigger": "Security breach with risk to rights", "note": "Effective 2026-12-01"},
-      {"jurisdiction": "Indonesia (UU PDP)", "sla_hours": 72, "trigger": "Personal data protection failure with leakage/loss/unauthorised processing", "note": "Art. 46 — 3x24 hours"},
-      {"jurisdiction": "Vietnam (PDPD)", "sla_hours": 72, "trigger": "Personal data breach with risk to rights", "note": "Decree 13/2023 Art. 23 — notify Ministry of Public Security"},
-      {"jurisdiction": "EU (GDPR)", "sla_hours": 72, "trigger": "Personal data breach", "note": "72h standard"},
-      {"jurisdiction": "EU (NIS2 notification)", "sla_hours": 72, "trigger": "Significant incident full notification", "note": "After 24h early warning"},
-      {"jurisdiction": "Australia (APRA CPS 234)", "sla_hours": 72, "trigger": "Material information security incident", "note": ""},
-      {"jurisdiction": "US NYDFS Part 500 (cyber event)", "sla_hours": 72, "trigger": "Material cybersecurity event affecting Covered Entity", "note": "§500.17(a) — applies to foreign banks with NY branches globally"},
-      {"jurisdiction": "Japan (APPI)", "sla_hours": null, "trigger": "Leak/loss/damage of personal data likely to harm rights", "note": "PPC Rules — 'promptly' (~3-5 days preliminary, 30-60 days final)"},
-      {"jurisdiction": "Canada (Quebec Law 25)", "sla_hours": null, "trigger": "Confidentiality incident with risk of serious injury", "note": "discretionary — 'with diligence'; CAI practice trends toward days"},
-      {"jurisdiction": "Canada (PIPEDA)", "sla_hours": null, "trigger": "Breach with real risk of significant harm", "note": "discretionary — 'as soon as feasible'"},
-      {"jurisdiction": "South Africa (POPIA)", "sla_hours": null, "trigger": "Compromise of personal information", "note": "discretionary — 'as soon as reasonably possible'; Regulator practice ~72h"},
-      {"jurisdiction": "New Zealand (Privacy Act 2020)", "sla_hours": null, "trigger": "Notifiable privacy breach (serious harm)", "note": "discretionary — 'as soon as practicable'; OPC practice ~72h"},
-      {"jurisdiction": "UAE (PDPL)", "sla_hours": null, "trigger": "Personal data breach", "note": "discretionary — Executive Regulations pending as of 2026-05"},
-      {"jurisdiction": "China (PIPL)", "sla_hours": null, "trigger": "PI leak, tampering, or loss", "note": "Art. 57 'immediately' (立即) — no fixed hour SLA"},
-      {"jurisdiction": "Israel (Data Security Regulations)", "sla_hours": null, "trigger": "Severe security incident at medium/high level database", "note": "Reg. 11 — 'immediately'; PPA practice ~72h post-Amendment 13"},
-      {"jurisdiction": "Switzerland (revFADP)", "sla_hours": null, "trigger": "Personal data breach with high risk to rights", "note": "Art. 24 — 'as soon as possible'; FDPIC practice trends to 72h"},
-      {"jurisdiction": "Hong Kong (PDPO)", "sla_hours": null, "trigger": "Personal data breach", "note": "Voluntary regime — no statutory mandate as of 2026-05"},
-      {"jurisdiction": "Taiwan (PDPA)", "sla_hours": null, "trigger": "Personal data theft/alteration/damage/loss/leakage", "note": "Art. 12 — 'after investigating the facts'; PDPC 2024 guidance suggests 72h"},
-      {"jurisdiction": "Mexico (LFPDPPP)", "sla_hours": null, "trigger": "Security breach affecting data subjects", "note": "Reglamento Art. 64 — 'without delay'; INAI dissolution creates 2025-2026 enforcement uncertainty"},
-      {"jurisdiction": "Argentina (Law 25.326)", "sla_hours": null, "trigger": "Security incident affecting personal data", "note": "AAIP Resolution 240/2022 recommends ~72h for medium/high-risk databases; no statutory hour SLA"},
-      {"jurisdiction": "US California (CCPA / § 1798.82)", "sla_hours": null, "trigger": "Breach of unencrypted/unredacted personal information", "note": "'Most expedient time possible and without unreasonable delay'; AG notification when > 500 CA residents affected"}
+      {
+        "jurisdiction": "Taiwan (CSMA L3-L4)",
+        "sla_hours": 1,
+        "trigger": "Highest-tier cyber incident at CIP",
+        "note": "Enforcement Rules graduated by incident level — fastest mandatory cyber notification globally"
+      },
+      {
+        "jurisdiction": "Philippines (BSP)",
+        "sla_hours": 2,
+        "trigger": "Major cyber incident at BSP-supervised financial institution",
+        "note": "BSP Circular 1019 / M-2020-007 — among the world's fastest sector notifications"
+      },
+      {
+        "jurisdiction": "Singapore (MAS TRM)",
+        "sla_hours": 2,
+        "trigger": "> 30min customer impact or breach",
+        "note": "Tied with CSA CCoP and BSP"
+      },
+      {
+        "jurisdiction": "Singapore (CSA CCoP)",
+        "sla_hours": 2,
+        "trigger": "CII cybersecurity incident",
+        "note": ""
+      },
+      {
+        "jurisdiction": "EU (DORA)",
+        "sla_hours": 4,
+        "trigger": "Major ICT incident in financial sector",
+        "note": "Financial services only"
+      },
+      {
+        "jurisdiction": "India (CERT-In)",
+        "sla_hours": 6,
+        "trigger": "Defined incident categories",
+        "note": "Sectoral incident reporting (not data-protection)"
+      },
+      {
+        "jurisdiction": "US NYDFS Part 500 (ransom payment)",
+        "sla_hours": 24,
+        "trigger": "Extortion/ransom payment by Covered Entity",
+        "note": "§500.17(c) Second Amendment — 30-day follow-up explanation"
+      },
+      {
+        "jurisdiction": "EU (NIS2 early warning)",
+        "sla_hours": 24,
+        "trigger": "Significant incident early warning",
+        "note": "72h full notification follows"
+      },
+      {
+        "jurisdiction": "Norway (NIS2 / Digitalsikkerhetsloven, anticipated)",
+        "sla_hours": 24,
+        "trigger": "Significant incident early warning at essential/important entity",
+        "note": "Prop. 109 L (2023-2024) — anticipated EEA-implementation in 2026; mirrors EU NIS2 timing"
+      },
+      {
+        "jurisdiction": "Canada (OSFI B-10)",
+        "sla_hours": 24,
+        "trigger": "Material technology/cyber incident",
+        "note": "Financial services only"
+      },
+      {
+        "jurisdiction": "EU (CRA)",
+        "sla_hours": 24,
+        "trigger": "Actively exploited vulnerability in product",
+        "note": "Product manufacturers under EU CRA"
+      },
+      {
+        "jurisdiction": "Switzerland (Information Security Act)",
+        "sla_hours": 24,
+        "trigger": "Cyberattack on critical infrastructure operators",
+        "note": "Art. 74e ISG, in force 2025-04-01 — first Swiss numeric cyber SLA"
+      },
+      {
+        "jurisdiction": "Argentina (BCRA Comunicación 'A' 7724)",
+        "sla_hours": 24,
+        "trigger": "Cyber incident with significant impact at BCRA-supervised entity",
+        "note": "Financial sector only"
+      },
+      {
+        "jurisdiction": "Mexico (CNBV Annex 71)",
+        "sla_hours": 24,
+        "trigger": "Cyber incident affecting CNBV-supervised institution",
+        "note": "Banking and broker-dealer sector"
+      },
+      {
+        "jurisdiction": "Saudi Arabia (KSA PDPL)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach causing potential damage",
+        "note": "Implementing Regulations Art. 24"
+      },
+      {
+        "jurisdiction": "Norway (Personopplysningsloven via EEA / GDPR)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach affecting data subject rights",
+        "note": "GDPR Art. 33 standard via EEA implementation"
+      },
+      {
+        "jurisdiction": "Türkiye (KVKK)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach (unauthorised acquisition)",
+        "note": "KVKK Board Decision 2019/10 operationalises Art. 12(5)"
+      },
+      {
+        "jurisdiction": "Thailand (PDPA)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach risking rights and freedoms",
+        "note": "PDPA Sec. 37(4)"
+      },
+      {
+        "jurisdiction": "Philippines (DPA — NPC)",
+        "sla_hours": 72,
+        "trigger": "Sensitive PI breach with real risk of serious harm",
+        "note": "NPC Circular 16-03 / 2022-01"
+      },
+      {
+        "jurisdiction": "Korea (PIPA)",
+        "sla_hours": 72,
+        "trigger": "Personal information leakage",
+        "note": "Enforcement Decree Art. 39"
+      },
+      {
+        "jurisdiction": "India (DPDPA)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach affecting Data Principals",
+        "note": "Per Draft DPDP Rules 2025"
+      },
+      {
+        "jurisdiction": "Brazil (LGPD)",
+        "sla_hours": 72,
+        "trigger": "Incident with relevant risk or damage",
+        "note": "ANPD Resolution CD/ANPD 15/2024 ~ 3 business days"
+      },
+      {
+        "jurisdiction": "Chile (Law 21,719)",
+        "sla_hours": 72,
+        "trigger": "Security breach with risk to rights",
+        "note": "Effective 2026-12-01"
+      },
+      {
+        "jurisdiction": "Indonesia (UU PDP)",
+        "sla_hours": 72,
+        "trigger": "Personal data protection failure with leakage/loss/unauthorised processing",
+        "note": "Art. 46 — 3x24 hours"
+      },
+      {
+        "jurisdiction": "Vietnam (PDPD)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach with risk to rights",
+        "note": "Decree 13/2023 Art. 23 — notify Ministry of Public Security"
+      },
+      {
+        "jurisdiction": "EU (GDPR)",
+        "sla_hours": 72,
+        "trigger": "Personal data breach",
+        "note": "72h standard"
+      },
+      {
+        "jurisdiction": "EU (NIS2 notification)",
+        "sla_hours": 72,
+        "trigger": "Significant incident full notification",
+        "note": "After 24h early warning"
+      },
+      {
+        "jurisdiction": "Australia (APRA CPS 234)",
+        "sla_hours": 72,
+        "trigger": "Material information security incident",
+        "note": ""
+      },
+      {
+        "jurisdiction": "US NYDFS Part 500 (cyber event)",
+        "sla_hours": 72,
+        "trigger": "Material cybersecurity event affecting Covered Entity",
+        "note": "§500.17(a) — applies to foreign banks with NY branches globally"
+      },
+      {
+        "jurisdiction": "Japan (APPI)",
+        "sla_hours": null,
+        "trigger": "Leak/loss/damage of personal data likely to harm rights",
+        "note": "PPC Rules — 'promptly' (~3-5 days preliminary, 30-60 days final)"
+      },
+      {
+        "jurisdiction": "Canada (Quebec Law 25)",
+        "sla_hours": null,
+        "trigger": "Confidentiality incident with risk of serious injury",
+        "note": "discretionary — 'with diligence'; CAI practice trends toward days"
+      },
+      {
+        "jurisdiction": "Canada (PIPEDA)",
+        "sla_hours": null,
+        "trigger": "Breach with real risk of significant harm",
+        "note": "discretionary — 'as soon as feasible'"
+      },
+      {
+        "jurisdiction": "South Africa (POPIA)",
+        "sla_hours": null,
+        "trigger": "Compromise of personal information",
+        "note": "discretionary — 'as soon as reasonably possible'; Regulator practice ~72h"
+      },
+      {
+        "jurisdiction": "New Zealand (Privacy Act 2020)",
+        "sla_hours": null,
+        "trigger": "Notifiable privacy breach (serious harm)",
+        "note": "discretionary — 'as soon as practicable'; OPC practice ~72h"
+      },
+      {
+        "jurisdiction": "UAE (PDPL)",
+        "sla_hours": null,
+        "trigger": "Personal data breach",
+        "note": "discretionary — Executive Regulations pending as of 2026-05"
+      },
+      {
+        "jurisdiction": "China (PIPL)",
+        "sla_hours": null,
+        "trigger": "PI leak, tampering, or loss",
+        "note": "Art. 57 'immediately' (立即) — no fixed hour SLA"
+      },
+      {
+        "jurisdiction": "Israel (Data Security Regulations)",
+        "sla_hours": null,
+        "trigger": "Severe security incident at medium/high level database",
+        "note": "Reg. 11 — 'immediately'; PPA practice ~72h post-Amendment 13"
+      },
+      {
+        "jurisdiction": "Switzerland (revFADP)",
+        "sla_hours": null,
+        "trigger": "Personal data breach with high risk to rights",
+        "note": "Art. 24 — 'as soon as possible'; FDPIC practice trends to 72h"
+      },
+      {
+        "jurisdiction": "Hong Kong (PDPO)",
+        "sla_hours": null,
+        "trigger": "Personal data breach",
+        "note": "Voluntary regime — no statutory mandate as of 2026-05"
+      },
+      {
+        "jurisdiction": "Taiwan (PDPA)",
+        "sla_hours": null,
+        "trigger": "Personal data theft/alteration/damage/loss/leakage",
+        "note": "Art. 12 — 'after investigating the facts'; PDPC 2024 guidance suggests 72h"
+      },
+      {
+        "jurisdiction": "Mexico (LFPDPPP)",
+        "sla_hours": null,
+        "trigger": "Security breach affecting data subjects",
+        "note": "Reglamento Art. 64 — 'without delay'; INAI dissolution creates 2025-2026 enforcement uncertainty"
+      },
+      {
+        "jurisdiction": "Argentina (Law 25.326)",
+        "sla_hours": null,
+        "trigger": "Security incident affecting personal data",
+        "note": "AAIP Resolution 240/2022 recommends ~72h for medium/high-risk databases; no statutory hour SLA"
+      },
+      {
+        "jurisdiction": "US California (CCPA / § 1798.82)",
+        "sla_hours": null,
+        "trigger": "Breach of unencrypted/unredacted personal information",
+        "note": "'Most expedient time possible and without unreasonable delay'; AG notification when > 500 CA residents affected"
+      }
     ]
   },
   "_patch_sla_summary": {
     "note": "Critical patch SLAs by framework, sorted fastest to slowest",
     "table": [
-      {"framework": "CISA KEV (US executive branch)", "sla_hours": null, "sla_days": "varies", "note": "CISA KEV does not set a universal SLA — BOD 22-01 requires 14 days for federal agencies"},
-      {"framework": "ASD ISM + Essential 8 ML3 (AU)", "sla_hours": 48, "sla_days": 2, "note": "ISM-1623: exploit-confirmed critical patches"},
-      {"framework": "UK Cyber Essentials (UK)", "sla_hours": 336, "sla_days": 14, "note": "Internet-facing systems"},
-      {"framework": "CIS Controls v8 (global)", "sla_hours": 336, "sla_days": 14, "note": "Critical OS patches"},
-      {"framework": "NIST 800-53 SI-2 (US)", "sla_hours": null, "sla_days": "organizationally defined", "note": "Typically interpreted as 30 days"},
-      {"framework": "ISO 27001:2022 A.8.8 (global)", "sla_hours": null, "sla_days": "appropriate timescales", "note": "Typically interpreted as 30 days"},
-      {"framework": "PCI DSS 4.0 6.3.3 (global)", "sla_hours": 720, "sla_days": 30, "note": "Critical patches: 1 month"},
-      {"framework": "MAS TRM 11.2 (SG)", "sla_hours": 720, "sla_days": 30, "note": "Critical patches: 1 month"},
-      {"framework": "NSM Grunnprinsipper 2.2.5 (NO)", "sla_hours": 720, "sla_days": 30, "note": "'As soon as possible' for known-exploited; sector audit practice ~30 days for critical"}
+      {
+        "framework": "CISA KEV (US executive branch)",
+        "sla_hours": null,
+        "sla_days": "varies",
+        "note": "CISA KEV does not set a universal SLA — BOD 22-01 requires 14 days for federal agencies"
+      },
+      {
+        "framework": "ASD ISM + Essential 8 ML3 (AU)",
+        "sla_hours": 48,
+        "sla_days": 2,
+        "note": "ISM-1623: exploit-confirmed critical patches"
+      },
+      {
+        "framework": "UK Cyber Essentials (UK)",
+        "sla_hours": 336,
+        "sla_days": 14,
+        "note": "Internet-facing systems"
+      },
+      {
+        "framework": "CIS Controls v8 (global)",
+        "sla_hours": 336,
+        "sla_days": 14,
+        "note": "Critical OS patches"
+      },
+      {
+        "framework": "NIST 800-53 SI-2 (US)",
+        "sla_hours": null,
+        "sla_days": "organizationally defined",
+        "note": "Typically interpreted as 30 days"
+      },
+      {
+        "framework": "ISO 27001:2022 A.8.8 (global)",
+        "sla_hours": null,
+        "sla_days": "appropriate timescales",
+        "note": "Typically interpreted as 30 days"
+      },
+      {
+        "framework": "PCI DSS 4.0 6.3.3 (global)",
+        "sla_hours": 720,
+        "sla_days": 30,
+        "note": "Critical patches: 1 month"
+      },
+      {
+        "framework": "MAS TRM 11.2 (SG)",
+        "sla_hours": 720,
+        "sla_days": 30,
+        "note": "Critical patches: 1 month"
+      },
+      {
+        "framework": "NSM Grunnprinsipper 2.2.5 (NO)",
+        "sla_hours": 720,
+        "sla_days": 30,
+        "note": "'As soon as possible' for known-exploited; sector audit practice ~30 days for critical"
+      }
     ]
   }
 }

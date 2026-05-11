@@ -32,6 +32,7 @@ framework_gaps:
   - NIST-800-53-SA-12
   - OWASP-LLM-Top-10-2025-LLM06
   - SOC2-CC9-vendor-management
+  - SWIFT-CSCF-v2026-1.1
 rfc_refs:
   - RFC-7519
   - RFC-8725
@@ -119,6 +120,7 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 | SOC 2 | CC9 (Risk Mitigation — vendor management) | Vendor review processes. SOC 2 vendor management reviews are designed for SaaS providers with data access, not MCP servers that run local code. Audit evidence does not cover MCP server signing or allowlisting. |
 | CIS Controls v8 | Control 2 (Inventory and Control of Software Assets) | Software inventory and allowlisting. Does not explicitly cover MCP servers. AI coding assistant MCP configs are not in scope for most enterprise software inventory processes. |
 | PCI DSS 4.0 | 12.3.4 | Review and manage third-party service providers. Scoped to service providers with access to cardholder data. An MCP server running on a developer workstation accessing a PCI-scoped codebase is not clearly in scope and would not appear in vendor management reviews. |
+| SWIFT CSCF v2026 | 1.1 (SWIFT Environment Protection — allowlisted software inside the secure zone) | Mandates allowlisted software and protected operator-PC posture for the SWIFT secure zone. The control's allowlist concept is the closest existing analogue to MCP tool allowlisting, but CSCF 1.1 was written for traditional middleware and does not contemplate MCP servers, agent-mediated tool calls, or model-judgment-as-authorization on operator workstations adjacent to the SWIFT zone. |
 
 **Fundamental gap:** No current framework has a control category for "AI tool trust boundaries" — the concept that an AI model can be the authorization mechanism for code execution, and that this creates a new class of supply chain and access control risk.
 

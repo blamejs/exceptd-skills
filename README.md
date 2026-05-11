@@ -13,8 +13,6 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/blamejs/exceptd-skills/ci.yml?branch=main&label=CI)](https://github.com/blamejs/exceptd-skills/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![node](https://img.shields.io/badge/node-%3E%3D24.0.0-2ea043)](https://nodejs.org)
-[![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-2ea043)](package.json)
 [![Skills](https://img.shields.io/badge/skills-25-d946ef)](#skill-inventory)
 [![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.1.0-d946ef)](https://atlas.mitre.org)
 [![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v17-d946ef)](https://attack.mitre.org)

@@ -22,7 +22,9 @@ data_deps:
   - framework-control-gaps.json
 atlas_refs: []
 attack_refs: []
-framework_gaps: []
+framework_gaps:
+  - NIST-800-53-SC-8
+  - NIST-800-53-SC-28
 rfc_refs:
   - RFC-8446
   - DRAFT-IETF-TLS-ECDHE-MLKEM
