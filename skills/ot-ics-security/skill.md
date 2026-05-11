@@ -42,12 +42,7 @@ cwe_refs:
   - CWE-798
   - CWE-306
   - CWE-1037
-d3fend_refs:
-  - D3-NI
-  - D3-NTPM
-  - D3-NTA
-  - D3-EAL
-  - D3-PSEP
+d3fend_refs: []
 last_threat_review: "2026-05-11"
 ---
 

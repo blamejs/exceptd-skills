@@ -32,10 +32,7 @@ framework_gaps:
 rfc_refs: []
 cwe_refs:
   - CWE-1357
-d3fend_refs:
-  - D3-RPA
-  - D3-NTA
-  - D3-EAL
+d3fend_refs: []
 forward_watch:
   - EU CRA Art. 11 implementing regulations and ENISA single-reporting-platform rollout (target operational 2026-09; first manufacturer notifications due 2027-12 per CRA transition timeline)
   - ISO/IEC 29147 and ISO/IEC 30111 revisions expected post-CRA to align "method-neutral" language with EU 24h-notification reality

@@ -25,9 +25,10 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps:
-  - NIST-800-218-SSDF
-  - ISO-IEC-42001-2023-clause-6.1.2
   - ISO-27001-2022-A.8.28
+  - ISO-IEC-23894-2023-clause-7
+  - ISO-IEC-42001-2023-clause-6.1.2
+  - NIST-800-218-SSDF
 rfc_refs: []
 cwe_refs: []
 d3fend_refs: []

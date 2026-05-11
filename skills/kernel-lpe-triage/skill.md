@@ -31,6 +31,8 @@ rfc_refs:
   - RFC-4303
   - RFC-7296
 cwe_refs:
+  - CWE-125
+  - CWE-362
   - CWE-416
   - CWE-672
   - CWE-787

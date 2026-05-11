@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.5.1 — 2026-05-11
+
+Pin-level audit cleanup. Closes the final orphans surfaced by the cross-skill audit.
+
+### Orphan closures via citation backfill
+
+- **10 CWE orphans → 0** through citations in existing skills:
+  - CWE-22 / CWE-77 / CWE-352 / CWE-434 / CWE-918 cited in `mcp-agent-trust` (MCP HTTP transport weakness classes) and `attack-surface-pentest` (pen-test scope).
+  - CWE-269 / CWE-732 cited in `identity-assurance` (privilege management) and `attack-surface-pentest`.
+  - CWE-125 / CWE-362 cited in `kernel-lpe-triage` (memory + concurrency kernel classes) and `fuzz-testing-strategy`.
+  - CWE-1188 cited in `policy-exception-gen` and `security-maturity-tiers` (insecure-defaults posture).
+- **1 framework_gap orphan → 0**: `ISO-IEC-23894-2023-clause-7` cited in `ai-attack-surface` and `threat-modeling-methodology`.
+
+### Cumulative orphan state across all catalogs
+
+| Catalog | Orphans | Total entries |
+|---|---|---|
+| `data/atlas-ttps.json` | 0 | (full) |
+| `data/cve-catalog.json` | 0 | 5 |
+| `data/cwe-catalog.json` | 0 | 34 |
+| `data/d3fend-catalog.json` | 0 | 21 |
+| `data/rfc-references.json` | 0 | 19 |
+| `data/framework-control-gaps.json` | 0 | 49 |
+
+Every entry across every catalog is now referenced by ≥1 skill.
+
+### Verification
+
+- 10/10 predeploy gates green (Ed25519 / tests / catalog / offline-CVE / offline-RFC / snapshot / lint / watchlist / catalog-meta / SBOM-currency)
+- 132/132 tests passing
+- All 25 skills re-signed; manifest snapshot regenerated additively
+
 ## 0.5.0 — 2026-05-11
 
 **Cross-skill cohesion + foundational expansion completion.** Closes the orphan framework gaps the cross-skill audit identified, expands jurisdiction coverage, completes the hand-off DAG between skills.

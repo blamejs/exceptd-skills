@@ -41,8 +41,13 @@ rfc_refs:
   - RFC-9421
   - RFC-9114
 cwe_refs:
+  - CWE-22
   - CWE-345
+  - CWE-352
+  - CWE-434
   - CWE-494
+  - CWE-77
+  - CWE-918
   - CWE-94
 d3fend_refs:
   - D3-CBAN

@@ -45,16 +45,14 @@ rfc_refs:
   - RFC-9700
   - RFC-8032
 cwe_refs:
+  - CWE-269
   - CWE-287
+  - CWE-306
+  - CWE-732
+  - CWE-798
   - CWE-862
   - CWE-863
-  - CWE-798
-  - CWE-306
-d3fend_refs:
-  - D3-MFA
-  - D3-CBAN
-  - D3-CA
-  - D3-EAL
+d3fend_refs: []
 last_threat_review: "2026-05-11"
 ---
 

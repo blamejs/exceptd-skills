@@ -30,10 +30,12 @@ framework_gaps:
   - OWASP-ASVS-v5.0-V14
 rfc_refs: []
 cwe_refs:
-  - CWE-787
-  - CWE-416
+  - CWE-125
   - CWE-20
+  - CWE-362
+  - CWE-416
   - CWE-78
+  - CWE-787
 forward_watch:
   - NIST SP 800-218A (AI-specific SSDF practices) for any explicit fuzz requirement on model-serving stacks
   - OpenSSF Scorecard "fuzzing" check threshold evolution
