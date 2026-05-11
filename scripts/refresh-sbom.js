@@ -144,12 +144,20 @@ function buildSbom() {
         },
       ],
       component: {
-        'bom-ref': `pkg:project/${pkg.name}@${pkg.version}`,
+        // Switch from project: scheme to pkg:npm scheme post-v0.9.0 — the
+        // package is now published on npm with provenance attestation, so
+        // the CycloneDX bom-ref should reflect the canonical PURL.
+        'bom-ref': `pkg:npm/${pkg.name}@${pkg.version}`,
         type: 'application',
-        name: 'exceptd-skills',
+        name: pkg.name,
         version: pkg.version,
         description: pkg.description,
         licenses: [{ license: { id: 'Apache-2.0' } }],
+        purl: `pkg:npm/${pkg.name.replace('@', '%40')}@${pkg.version}`,
+        externalReferences: [
+          { type: 'distribution', url: `https://www.npmjs.com/package/${pkg.name}/v/${pkg.version}` },
+          { type: 'vcs', url: (pkg.repository && pkg.repository.url) || 'https://github.com/blamejs/exceptd-skills' },
+        ],
       },
       properties: [
         {

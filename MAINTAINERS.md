@@ -59,3 +59,75 @@ The project is pre-1.0 and currently single-maintainer. The maintainer ladder wi
 ## Stepping down
 
 A maintainer stepping down opens a PR removing themselves from this file and reassigning their CODEOWNERS lines. Notify other maintainers in the PR description with a target handover date.
+
+## Release runbook (npm publish)
+
+The project publishes `@blamejs/exceptd-skills` to npm with provenance attestation on every tag push that matches `v*.*.*`. The release flow is automated by `.github/workflows/release.yml`.
+
+### One-time setup (already complete for the current package owner)
+
+1. Claim the `@blamejs` npm scope (`npm login` + `npm org create blamejs`).
+2. Generate a granular npm automation token scoped to the `@blamejs/exceptd-skills` package: <https://docs.npmjs.com/creating-and-viewing-access-tokens>. Set expiry to ≤180 days; rotate before expiry.
+3. Add the token to GitHub repo secrets as `NPM_TOKEN` (Settings → Secrets and variables → Actions → New repository secret).
+4. Enable 2FA-on-publish for the package (`npm access set 2fa=automation @blamejs/exceptd-skills`). The OIDC token + 2FA-automation combination is what produces signed provenance.
+
+### Cutting a release
+
+1. Bump `package.json` version + `manifest.json` version to the new semver (e.g. `0.9.0`).
+2. Add a `## 0.9.0 — YYYY-MM-DD` section at the top of `CHANGELOG.md`.
+3. Re-sign skills + refresh derived artifacts:
+   ```
+   node lib/sign.js sign-all
+   node scripts/refresh-manifest-snapshot.js
+   node scripts/refresh-sbom.js
+   node scripts/build-indexes.js
+   ```
+4. Run the full predeploy gate (13 gates as of v0.9.0):
+   ```
+   npm run predeploy
+   ```
+5. Commit + push to `main`.
+6. Tag the release:
+   ```
+   git tag -a v0.9.0 -m "v0.9.0"
+   git push origin v0.9.0
+   ```
+7. The `Release` workflow fires automatically. It will:
+   - Verify the tag matches `package.json` version
+   - Run `npm run bootstrap` (verify-only path)
+   - Run `npm run predeploy` (all 13 gates)
+   - `npm pack --dry-run --json` and surface the tarball preview
+   - `npm publish --access public --provenance` using `NPM_TOKEN` + GitHub OIDC
+   - Create a GitHub Release with the CHANGELOG section as the body
+
+### Dry-run a release
+
+Use `workflow_dispatch` with `dry_run: true`:
+
+- Go to Actions → Release → "Run workflow"
+- Set `tag` to a real tag (e.g. `v0.9.0`)
+- Set `dry_run` to `true`
+- The workflow runs predeploy + `npm pack --dry-run` but skips `npm publish` and the GitHub Release step.
+
+### Rolling back a published release
+
+`npm unpublish` is restricted by registry policy (only within 72h, only if no dependents). The reliable rollback path is:
+
+1. Cut a `<version>-fix.1` patch release with the issue corrected.
+2. If the bad version must be retracted, `npm deprecate '@blamejs/exceptd-skills@<bad-version>' 'reason — use <next-version> instead'` — published consumers see a warning but the tarball stays available for reproducibility.
+
+### Verifying a published release
+
+A downstream consumer can verify:
+
+```
+npm install @blamejs/exceptd-skills
+# inspect the provenance attestation
+npm audit signatures
+# verify Ed25519 skill signatures
+npx @blamejs/exceptd-skills verify
+# verify vendored blamejs subset hashes
+npx @blamejs/exceptd-skills --help    # if installed locally, just `node ./node_modules/@blamejs/exceptd-skills/lib/validate-vendor.js`
+```
+
+`npm audit signatures` cross-references the publish provenance attestation against the GitHub OIDC issuer and the workflow run that produced the tarball.

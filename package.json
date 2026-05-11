@@ -1,7 +1,31 @@
 {
-  "name": "exceptd-security",
-  "version": "0.8.0",
-  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
+  "name": "@blamejs/exceptd-skills",
+  "version": "0.9.0",
+  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
+  "keywords": [
+    "ai-security",
+    "ai-skills",
+    "atlas",
+    "att-ck",
+    "compliance",
+    "cve",
+    "cwe",
+    "d3fend",
+    "framework-gap",
+    "grc",
+    "kev",
+    "llm-security",
+    "mcp",
+    "nist",
+    "nvd",
+    "prompt-injection",
+    "rwep",
+    "security-research",
+    "skills",
+    "supply-chain",
+    "threat-intelligence",
+    "threat-modeling"
+  ],
   "homepage": "https://exceptd.com",
   "repository": {
     "type": "git",
@@ -11,9 +35,40 @@
     "url": "https://github.com/blamejs/exceptd-skills/issues"
   },
   "license": "Apache-2.0",
-  "private": true,
+  "author": "blamejs contributors",
   "engines": {
     "node": ">=24.0.0 <25.0.0"
+  },
+  "bin": {
+    "exceptd": "bin/exceptd.js"
+  },
+  "main": "orchestrator/index.js",
+  "files": [
+    "bin/",
+    "lib/",
+    "orchestrator/",
+    "scripts/",
+    "vendor/",
+    "agents/",
+    "data/",
+    "skills/",
+    "keys/public.pem",
+    "manifest.json",
+    "manifest-snapshot.json",
+    "sbom.cdx.json",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "CONTEXT.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "SECURITY.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "bootstrap": "node scripts/bootstrap.js",
@@ -25,8 +80,10 @@
     "refresh-snapshot": "node scripts/refresh-manifest-snapshot.js",
     "validate-catalog": "node lib/validate-cve-catalog.js",
     "validate-catalog-meta": "node lib/validate-catalog-meta.js",
+    "validate-package": "node lib/validate-package.js",
     "refresh-sbom": "node scripts/refresh-sbom.js",
     "predeploy": "node scripts/predeploy.js",
+    "prepublishOnly": "node scripts/predeploy.js && node lib/validate-package.js",
     "test:docker": "docker build --target predeploy -t exceptd-test:predeploy -f docker/test.Dockerfile . && docker run --rm exceptd-test:predeploy",
     "test:docker:fresh": "docker build --target fresh-bootstrap -t exceptd-test:fresh-bootstrap -f docker/test.Dockerfile . && docker run --rm exceptd-test:fresh-bootstrap",
     "scan": "node orchestrator/index.js scan",

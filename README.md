@@ -10,6 +10,7 @@
 **AI security skills grounded in mid-2026 threat reality, not framework documentation from 2020.**
 
 [![release](https://img.shields.io/github/v/release/blamejs/exceptd-skills?include_prereleases&sort=semver&label=release)](https://github.com/blamejs/exceptd-skills/releases)
+[![npm](https://img.shields.io/npm/v/@blamejs/exceptd-skills.svg?label=npm)](https://www.npmjs.com/package/@blamejs/exceptd-skills)
 [![CI](https://img.shields.io/github/actions/workflow/status/blamejs/exceptd-skills/ci.yml?branch=main&label=CI)](https://github.com/blamejs/exceptd-skills/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
@@ -100,30 +101,122 @@ Methodology selection and execution across STRIDE, PASTA, LINDDUN (privacy), Cyb
 
 ---
 
-## Using These Skills
+## Install
 
-These skills work with any AI assistant: Claude Code, GitHub Copilot (via `.github/copilot-instructions.md`), Cursor (via `.cursorrules`), or any assistant that can read Markdown files.
+Three audience paths. Pick the one that matches how you'll use this.
 
-### Quick Start
+### 1. AI consumer (read-only — most users)
+
+You want an AI assistant to load the skills + catalogs against a question of yours. Easiest path:
+
+```bash
+npx @blamejs/exceptd-skills path
+```
+
+That prints the absolute path of the installed package. Point your AI assistant at:
+
+- `<path>/AGENTS.md` — canonical project rules + ground truth for every skill
+- `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (12 KB)
+- `<path>/data/_indexes/recipes.json` — curated multi-skill chains for common use cases
+
+No clone, no signing keys, no Node 24 required for assistants that read directly from disk. If your assistant needs a local copy as a regular checkout, use `npx degit blamejs/exceptd-skills my-skills` instead.
+
+### 2. Operator (run commands locally)
+
+You want to refresh CVE/RFC data, run currency checks, or generate reports. Install + invoke via `npx` (no global install needed):
+
+```bash
+npx @blamejs/exceptd-skills prefetch          # warm local cache of upstream data
+npx @blamejs/exceptd-skills refresh --from-cache --swarm
+npx @blamejs/exceptd-skills validate-cves --from-cache --no-fail
+npx @blamejs/exceptd-skills currency
+npx @blamejs/exceptd-skills report executive
+```
+
+For frequent use, install globally to skip the `npx` resolution every time:
+
+```bash
+npm install -g @blamejs/exceptd-skills
+exceptd help
+```
+
+Air-gapped operation: run `exceptd prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
+
+Optional env vars for higher rate budgets:
+
+| Variable | Purpose |
+|---|---|
+| `NVD_API_KEY` | Lifts NVD 2.0 from 5 → 50 requests per 30s window. Free key at <https://nvd.nist.gov/developers/request-an-api-key>. |
+| `GITHUB_TOKEN` | Lifts GitHub Releases (used for ATLAS / ATT&CK / D3FEND / CWE pin checks) from 60 → 5000 requests per hour. |
+
+### 3. Maintainer (extend / sign / publish)
+
+You're adding a skill, updating a catalog, or cutting a release. Clone + bootstrap the full toolchain:
 
 ```bash
 git clone https://github.com/blamejs/exceptd-skills
 cd exceptd-skills
-npm run bootstrap          # downstream consumers: this runs VERIFY ONLY
-npm run predeploy          # optional: run the full local CI gate
+npm run bootstrap          # auto-detects: verify-only / re-sign / first-init
+npm run predeploy          # full 13-gate CI sequence locally
 ```
 
-`npm run bootstrap` auto-detects the right mode:
+`bootstrap` auto-detects the right mode based on which keys exist on disk:
 
-- **Downstream consumer** (default for fresh clones) — `keys/public.pem` ships in the repo and `.keys/private.pem` doesn't exist on your machine. Bootstrap runs verify-only: it never generates a keypair or rewrites signatures. Confirms the working tree is intact and exits.
-- **Maintainer re-sign** — `.keys/private.pem` already exists locally. Bootstrap re-signs every skill against the current content and verifies.
-- **First-maintainer init** — no `keys/public.pem` shipped, or the maintainer passes `--init` explicitly. Bootstrap generates an Ed25519 keypair, signs every skill, and verifies.
+- **Verify-only** (default on a fresh clone): `keys/public.pem` ships in the repo, no `.keys/private.pem` locally. Checks that every skill verifies against the shipped signature, exits.
+- **Re-sign**: `.keys/private.pem` exists locally. Re-signs every skill against current content, verifies.
+- **First-init**: no `keys/public.pem` shipped or `--init` passed. Generates a new Ed25519 keypair, signs everything.
 
-Maintainers can also use `npm run verify` (verify-only) and `node lib/sign.js sign-all` (sign without verify) directly if needed.
+Direct invocations also available: `npm run verify`, `node lib/sign.js sign-all`.
 
-### Invoking a Skill
+## CLI command reference
 
-Type a trigger phrase or skill name in your AI assistant:
+Every command works the same via `npx @blamejs/exceptd-skills`, a global install (`exceptd`), or a local `node bin/exceptd.js`.
+
+```
+exceptd path                          Print absolute path to the installed package.
+
+exceptd prefetch [args]               Warm local cache of upstream artifacts.
+  --max-age 24h                       Skip entries fresher than this.
+  --source kev,nvd                    Comma-separated source filter.
+  --force                             Ignore freshness; refetch everything.
+  --no-network                        Dry-run plan; do not actually fetch.
+
+exceptd refresh [args]                Refresh upstream data; optionally apply upserts.
+  --apply                             Write diffs back to data/*.json and rebuild indexes.
+  --from-cache [<dir>]                Read from prefetch cache instead of upstream.
+  --swarm                             Fan-out across worker threads.
+  --source kev,epss,nvd,rfc,pins      Scope by source.
+  --from-fixture <dir>                Test mode — read frozen fixtures.
+  --report-out <path>                 Redirect refresh-report.json output.
+
+exceptd build-indexes [args]          Rebuild data/_indexes/*.json (17 outputs).
+  --only <names>                      Comma-separated subset (auto-pulls in dependencies).
+  --changed                           Rebuild only outputs whose deps changed.
+  --parallel                          Run independent outputs concurrently.
+
+exceptd verify                        Verify Ed25519 signature on every skill.
+exceptd scan                          Scan environment for findings.
+exceptd dispatch                      Scan then route findings to skills.
+exceptd skill <name>                  Show context for a specific skill.
+exceptd currency                      Skill currency report.
+exceptd report [executive|technical|compliance]   Generate report.
+exceptd validate-cves [args]          Cross-check CVE catalog vs NVD/KEV/EPSS.
+  --offline                           Local view only; no network.
+  --from-cache [<dir>]                Cache-first lookups with live fallback.
+  --no-fail                           Report drift without failing exit code.
+exceptd validate-rfcs [args]          Cross-check RFC catalog vs IETF Datatracker.
+  --offline                           Local view only; no network.
+  --from-cache [<dir>]                Cache-first lookups with live fallback.
+  --no-fail                           Report drift without failing exit code.
+exceptd watchlist [--by-skill]        Forward-watch aggregator across skills.
+
+exceptd version                       Package version.
+exceptd help                          This help.
+```
+
+## Invoking a skill from your AI assistant
+
+Once your assistant has loaded `AGENTS.md`, type a trigger phrase or skill name:
 
 ```
 kernel-lpe-triage
@@ -137,7 +230,7 @@ security-maturity-tiers
 pqc-first
 ```
 
-### AI Assistant Configuration
+## AI assistant configuration
 
 The canonical agent-agnostic project rules live in `AGENTS.md` — the **only** project-rules file in this repo. The project does not ship per-vendor mirrors; each tool is configured to load `AGENTS.md` directly.
 
@@ -152,31 +245,35 @@ The canonical agent-agnostic project rules live in `AGENTS.md` — the **only** 
 
 If your tool has a conventional auto-load filename not listed here and you'd like first-class support, open an issue — we'll add a pointer stub.
 
-### Orchestrator
+## Pre-computed indexes
 
-For programmatic use:
+`data/_indexes/` ships 17 derived files so AI consumers can answer cross-reference questions without scanning every skill + catalog. Highlights:
 
-```bash
-node orchestrator/index.js scan          # Scan environment
-node orchestrator/index.js dispatch      # Route findings to skills
-node orchestrator/index.js currency      # Check skill currency
-node orchestrator/index.js report        # Generate report
-```
+- **`summary-cards.json`** — 100-word abstract per skill; what to load when planning a multi-skill workflow.
+- **`recipes.json`** — 8 curated skill sequences for common use cases (AI red team prep, PCI audit defense, federal IR, DORA TLPT, K-12 EdTech review, ransomware tabletop, new-CVE triage, OSS dep triage).
+- **`chains.json`** — pre-hydrated cross-walks per CVE and per CWE: which skills cite this, which framework gaps it surfaces, which D3FEND countermeasures back it.
+- **`token-budget.json`** — approximate token cost per skill + per section for context budgeting.
+- **`jurisdiction-clocks.json`** — normalized jurisdiction × obligation × hours matrix (breach notification, patch SLA) across 29 jurisdictions.
+- **`did-ladders.json`** — canonical defense-in-depth ladders per attack class (prompt injection, kernel LPE, AI-as-C2, ransomware, supply chain, BOLA, model exfiltration, BEC).
+- **`theater-fingerprints.json`** — structured records for the 7 compliance theater patterns: claim, audit evidence, reality, fast detection test, controls implicated.
+- **`_meta.json`** — sha256 of every source file. The `validate-indexes` predeploy gate fails if any source changed after the last build; `build-indexes --changed` reads this to know what to rebuild.
 
-### Data Files
+Regenerate with `exceptd build-indexes` (full) or `exceptd build-indexes --changed --parallel` (incremental).
 
-All skills pull from `data/`. The files are:
+## Data catalogs
+
+All skills pull from `data/`. Cross-validated against canonical upstream sources via `exceptd refresh` / `exceptd validate-cves` / `exceptd validate-rfcs`.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
 - `atlas-ttps.json` — MITRE ATLAS v5.1.0 TTPs with gap flags and exploitation examples
 - `framework-control-gaps.json` — Per-framework, per-control: what it was designed for vs. what it misses
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
-- `global-frameworks.json` — All major global compliance frameworks (22+ jurisdictions, expanding to 29+) with control inventories and lag scores
+- `global-frameworks.json` — All major global compliance frameworks (34 jurisdictions) with control inventories and lag scores
 - `zeroday-lessons.json` — Zero-day → control gap → framework gap → new control requirement mappings
-- `cwe-catalog.json` — 30 CWE entries pinned to CWE v4.17 (Top 25 2024 + AI- and supply-chain-relevant additions)
-- `d3fend-catalog.json` — 21 MITRE D3FEND defensive technique entries pinned to D3FEND v1.0.0
-- `rfc-references.json` — 19 IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified`
-- `dlp-controls.json` — 21 DLP control entries indexed by channel / classifier / surface / enforcement / evidence
+- `cwe-catalog.json` — CWE entries pinned to CWE v4.17 (Top 25 + AI- / supply-chain-relevant additions)
+- `d3fend-catalog.json` — MITRE D3FEND defensive technique entries pinned to D3FEND v1.0.0
+- `rfc-references.json` — IETF RFC / Internet-Draft references with status, errata, replaces / replaced-by, `last_verified`
+- `dlp-controls.json` — DLP control entries indexed by channel / classifier / surface / enforcement / evidence
 
 ---
 

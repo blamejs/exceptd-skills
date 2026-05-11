@@ -1,5 +1,81 @@
 # Changelog
 
+## 0.9.0 — 2026-05-11
+
+**Minor: npm distribution. Package is now `@blamejs/exceptd-skills` on npm with provenance attestation.** Adds a clean `npx` install path for AI consumers and operators, a single-entry-point `exceptd` CLI that dispatches to every internal command, a tag-triggered release workflow with GitHub OIDC-signed provenance, and a new predeploy gate that checks the publish tarball shape on every commit.
+
+### npm publishing
+
+- **Package name**: `@blamejs/exceptd-skills` (was `exceptd-security`, never published)
+- **Distribution**: `https://www.npmjs.com/package/@blamejs/exceptd-skills`
+- **Provenance**: every release tarball is signed via GitHub OIDC + npm `--provenance`. Consumers can verify with `npm audit signatures`.
+- **`publishConfig.access`**: `public` (scoped public packages need this explicit)
+- **`files`** whitelist replaces the previous `private: true` block — only `bin/`, `lib/`, `orchestrator/`, `scripts/`, `vendor/`, `agents/`, `data/`, `skills/`, `keys/public.pem`, and top-level docs ship. Tests, `.cache/`, `.keys/`, `refresh-report.json`, dev tooling are excluded.
+- **Tarball**: ~860 KB packed / 3 MB unpacked / 136 files.
+
+### `bin/exceptd.js` CLI
+
+Single executable, exposed as `exceptd` after install. Dispatches to every existing script:
+
+```
+npx @blamejs/exceptd-skills path                          # absolute install path
+npx @blamejs/exceptd-skills prefetch
+npx @blamejs/exceptd-skills refresh --from-cache --swarm
+npx @blamejs/exceptd-skills build-indexes --changed --parallel
+npx @blamejs/exceptd-skills validate-cves --from-cache
+npx @blamejs/exceptd-skills currency
+npx @blamejs/exceptd-skills skill kernel-lpe-triage
+```
+
+The `exceptd path` subcommand is the recommended way for downstream AI consumers to discover where the installed package lives — they point their assistant at `<path>/AGENTS.md` + `<path>/data/_indexes/summary-cards.json` without needing to know the npm install location.
+
+### Release workflow `.github/workflows/release.yml`
+
+- **Trigger**: tag push matching `v*.*.*` (or `workflow_dispatch` for dry-runs)
+- **Gates**: verifies tag ↔ package.json version match → `npm install --no-audit --no-fund` (asserts zero deps) → `npm run bootstrap` → `npm run predeploy` (all 13 gates) → `npm pack --dry-run` preview → `npm publish --access public --provenance` → GitHub Release with the CHANGELOG section as the body
+- **Permissions**: `contents: write` + `id-token: write` (OIDC for provenance)
+- **Secrets**: `NPM_TOKEN` (granular automation token, scoped to `@blamejs/exceptd-skills` only)
+- **Dry-run mode**: `workflow_dispatch` with `dry_run: true` skips the `npm publish` and GitHub Release steps but runs everything else
+
+### `validate-package` predeploy gate
+
+New gate (#13 in the predeploy sequence). Runs `npm pack --dry-run --json` and asserts:
+
+- Every required file (README, LICENSE, NOTICE, AGENTS, manifest, sbom, bin, lib leaves, vendor leaves, data/_indexes/_meta, keys/public.pem) is present in the publish tarball
+- No forbidden file (`.keys/`, `.cache/`, `tests/`, `refresh-report.json`, `.env*`, `node_modules/`, any non-public `.pem`) is in the publish tarball
+- Tarball size is under 5 MB
+- `bin/exceptd.js` has a `#!/usr/bin/env node` shebang
+- `package.json` invariants: not private, has `bin.exceptd`, has `files[]`, has `publishConfig.access: public` + `provenance: true`
+
+Predeploy gate count: **12 → 13**. All green on this release.
+
+### Other changes
+
+- **README rewrite**: three audience paths (AI consumer / operator / maintainer), npx install instructions, full CLI command reference, pre-computed indexes summary. npm badge added back alongside the release badge.
+- **MAINTAINERS.md release runbook**: full one-time setup + per-release procedure + dry-run instructions + rollback options + consumer verification commands.
+- **SBOM updates**: package's own `bom-ref` switches from `pkg:project/exceptd-skills@version` to canonical PURL `pkg:npm/@blamejs/exceptd-skills@version`. Adds `externalReferences` linking to the npm package page + GitHub repo.
+- **Tests**: 182 → 192 (10 new in `tests/bin-dispatcher.test.js`). Covers help, version, path, alias flags, unknown command, orchestrator passthrough, package.json publish-readiness invariants.
+- **package.json updates**: keywords array for npm discoverability (`ai-security`, `compliance`, `cve`, `kev`, `mcp`, `prompt-injection`, `rwep`, `threat-intelligence`, etc.), explicit `author` field, `prepublishOnly` runs `predeploy + validate-package` so an accidental `npm publish` can't skip the gates.
+
+### Operator workflows
+
+The npm distribution doesn't change how the project is used. It just gives a cleaner install path:
+
+```
+# Previously: required git clone + npm run bootstrap
+git clone https://github.com/blamejs/exceptd-skills && cd exceptd-skills && npm run bootstrap
+
+# Now: one command, no clone, no install
+npx @blamejs/exceptd-skills path
+npx @blamejs/exceptd-skills prefetch
+```
+
+Maintainers still clone + `npm run bootstrap` + `npm run predeploy` for active development.
+
+### Release this version
+
+This release ships the npm publish infrastructure but does NOT itself publish. To publish v0.9.0 to npm, the maintainer must push the `v0.9.0` tag (after this commit lands on `main`) and supply `NPM_TOKEN` in repo secrets. See `MAINTAINERS.md` § "Release runbook" for the full procedure.
+
 ## 0.8.0 — 2026-05-11
 
 **Minor: prefetch cache + queue/retry/worker primitives + incremental build + swarm fan-out.** Adds the infrastructure to (a) warm a local cache of every upstream artifact so refresh/validate work without re-paying network cost, (b) run source fetches and builders in parallel, (c) rebuild only what changed since the last build. Also vendors `retry.js` + `worker-pool.js` from blamejs so battle-tested retry/threading semantics aren't reinvented.

@@ -126,6 +126,12 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-vendor.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    name: "Publish tarball shape (npm pack --dry-run + file allowlist)",
+    command: process.execPath,
+    args: [path.join(ROOT, "lib", "validate-package.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 /* Inline checker, run as `node -e`, so the predeploy gate stays one

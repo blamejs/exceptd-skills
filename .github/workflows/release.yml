@@ -1,0 +1,149 @@
+name: Release
+
+# Tag-triggered npm publish with provenance attestation + GitHub Release
+# creation. Validates the full predeploy gate sequence first so a bad
+# release can't be published.
+#
+# Trigger: push a tag matching v*.*.* (e.g. v0.9.0).
+#
+# Required secrets:
+#   NPM_TOKEN — npm automation token with publish rights on
+#               @blamejs scope. Set in repo Settings → Secrets and
+#               variables → Actions. Use a granular token scoped to
+#               the published package only.
+#
+# Provenance: this workflow uses GitHub's OIDC identity to sign the
+# published tarball via npm provenance. Requires `id-token: write`
+# permission on the publish job and `--provenance` on `npm publish`
+# (handled by publishConfig.provenance: true in package.json).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.9.0). Must already exist.'
+        required: true
+        default: ''
+      dry_run:
+        description: 'If true, run predeploy + npm pack but skip npm publish.'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  id-token: write          # required for npm provenance via GitHub OIDC
+
+jobs:
+  release:
+    name: Validate + publish + GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history for changelog extraction)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Node 24 + npm provenance support
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          # `always-auth: true` makes the published .npmrc authenticate
+          # against NPM_TOKEN — required because we don't `npm install`
+          # any deps but we DO need a writable auth token at publish time.
+          always-auth: true
+
+      - name: Verify tag matches package.json version
+        id: version_check
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME:-${{ inputs.tag }}}"
+          # Strip leading 'v' from the tag for comparison.
+          TAG_VERSION="${TAG#v}"
+          echo "package.json version: $PKG_VERSION"
+          echo "tag (stripped):       $TAG_VERSION"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies (none — sanity check zero-dep claim)
+        run: |
+          set -e
+          npm install --no-audit --no-fund
+          # If anything got pulled in transitively, that's a supply-chain
+          # surprise and we want to know.
+          DEP_COUNT="$(node -p "Object.keys(require('./package.json').dependencies || {}).length")"
+          DEV_COUNT="$(node -p "Object.keys(require('./package.json').devDependencies || {}).length")"
+          echo "dependencies: $DEP_COUNT, devDependencies: $DEV_COUNT"
+          if [ "$DEP_COUNT" != "0" ] || [ "$DEV_COUNT" != "0" ]; then
+            echo "::error::package.json declares dependencies — release flow expects zero"
+            exit 1
+          fi
+
+      - name: Bootstrap (verify-only path)
+        run: npm run bootstrap
+
+      - name: Predeploy gate sequence
+        # 13 gates: verify, tests, catalog validate, manifest snapshot,
+        # lint, watchlist, catalog-meta, sbom, indexes, vendor, package
+        # (plus the offline cve/rfc gates that mirror data-integrity).
+        run: npm run predeploy
+
+      - name: npm pack (dry-run preview)
+        run: |
+          npm pack --dry-run --json | tee /tmp/pack.json
+          PACKED_SIZE="$(node -e 'const j=require("/tmp/pack.json"); console.log(Array.isArray(j)?j[0].size:j.size)')"
+          UNPACKED_SIZE="$(node -e 'const j=require("/tmp/pack.json"); console.log(Array.isArray(j)?j[0].unpackedSize:j.unpackedSize)')"
+          FILE_COUNT="$(node -e 'const j=require("/tmp/pack.json"); console.log(Array.isArray(j)?j[0].files.length:j.files.length)')"
+          echo "Tarball: $PACKED_SIZE bytes packed / $UNPACKED_SIZE bytes unpacked / $FILE_COUNT files"
+
+      - name: npm publish (with provenance)
+        if: ${{ inputs.dry_run != 'true' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # --access public is also set via publishConfig, but explicit beats
+          # implicit on the release path.
+          # --provenance asks npm to publish a signed attestation tying
+          # this tarball to this GitHub workflow run.
+          npm publish --access public --provenance
+
+      - name: Extract CHANGELOG section for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version_check.outputs.version }}"
+          # Pull the section between "## <version>" and the next "## ".
+          # awk handles multiline + preserves formatting.
+          awk -v v="$VERSION" '
+            $0 ~ "^## " v " " { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "Release of v$VERSION." > /tmp/release-notes.md
+          fi
+          {
+            echo 'body<<RELEASE_NOTES_EOF'
+            cat /tmp/release-notes.md
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: ${{ inputs.dry_run != 'true' }}
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8  # v2.3.2
+        with:
+          tag_name: ${{ steps.version_check.outputs.tag }}
+          name: ${{ steps.version_check.outputs.tag }}
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: false
+          generate_release_notes: false
