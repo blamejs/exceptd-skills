@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:2d260844-6821-4bc3-9cf2-6a7bc8f30fe9",
+  "serialNumber": "urn:uuid:1da0bf93-4b3e-49d3-9004-7f82915ab1c5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-11T16:34:38.560Z",
+    "timestamp": "2026-05-11T16:58:21.462Z",
     "tools": [
       {
         "name": "hand-written",
@@ -13,10 +13,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:project/exceptd-security@0.5.0",
+      "bom-ref": "pkg:project/exceptd-security@0.5.2",
       "type": "application",
       "name": "exceptd-skills",
-      "version": "0.5.0",
+      "version": "0.5.2",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
       "licenses": [
         {
@@ -37,7 +37,7 @@
       },
       {
         "name": "exceptd:skill:count",
-        "value": "25"
+        "value": "31"
       },
       {
         "name": "exceptd:integrity:method",

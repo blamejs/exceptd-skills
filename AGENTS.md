@@ -216,4 +216,10 @@ Maintainers convert approved requests into skill files. The contributor is credi
 | ot security, ics security, scada, plc, iec 62443, nist 800-82, nerc cip | ot-ics-security |
 | cvd, vdp, bug bounty, iso 29147, iso 30111, csaf, security.txt | coordinated-vuln-disclosure |
 | threat model, stride, pasta, linddun, kill chain, diamond model, unified kill chain | threat-modeling-methodology |
+| webapp security, owasp top 10, owasp asvs, xss, csrf, sqli, ssrf, path traversal, file upload, command injection, deserialization, broken access control | webapp-security |
+| ai risk management, ai governance, iso 23894, iso 42001, nist ai rmf, ai impact assessment, eu ai act high-risk | ai-risk-management |
+| healthcare security, hipaa, hitrust, hl7 fhir, phi, medical device, samd, eu mdr, clinical decision support | sector-healthcare |
+| financial security, banking, dora, psd2 sca, swift cscf, nydfs, ffiec, mas trm, apra cps 234, tiber-eu, cbest | sector-financial |
+| federal cyber, fedramp, cmmc, eo 14028, nist 800-171, cui, fisma, m-22-09 zero trust, omb m-24-04, cisa bod/ed | sector-federal-government |
+| energy security, electric grid, nerc cip, tsa pipeline, awwa, nccs-g, aescsf, der security, inverter, smart meter | sector-energy |
 | forward watch, watchlist, upcoming standards, horizon scan | `node orchestrator/index.js watchlist` (add `--by-skill` to invert) |

@@ -42,7 +42,10 @@
       "ai-c2-detection",
       "dlp-gap-analysis",
       "mcp-agent-trust",
-      "pqc-first"
+      "pqc-first",
+      "sector-federal-government",
+      "sector-financial",
+      "webapp-security"
     ],
     "last_verified": "2026-05-11"
   },
@@ -112,7 +115,9 @@
     "lag_notes": "Standard published; AI-provider adoption is uneven. MCP spec does not yet mandate it.",
     "skills_referencing": [
       "ai-c2-detection",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare"
     ],
     "last_verified": "2026-05-11"
   },
@@ -127,7 +132,8 @@
     "lag_notes": "Standard well-deployed; enterprise next-gen-firewall HTTP/3 inspection coverage as of mid-2026 remains uneven.",
     "skills_referencing": [
       "ai-c2-detection",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "webapp-security"
     ],
     "last_verified": "2026-05-11"
   },
@@ -155,7 +161,10 @@
     "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
     "skills_referencing": [
       "identity-assurance",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
     ],
     "last_verified": "2026-05-11"
   },
@@ -169,7 +178,9 @@
     "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
     "skills_referencing": [
       "identity-assurance",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "sector-financial",
+      "webapp-security"
     ],
     "last_verified": "2026-05-11"
   },
@@ -212,6 +223,7 @@
     "skills_referencing": [
       "identity-assurance",
       "pqc-first",
+      "sector-federal-government",
       "supply-chain-integrity"
     ],
     "last_verified": "2026-05-11"

@@ -75,7 +75,7 @@ When a new entry is added:
 6. If RWEP changes by more than 10 points: update any skill that displays pre-calculated RWEP for this CVE
 7. Check if compliance theater patterns for this CVE need updating
 
-**Affected skills (by default):** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn
+**Affected skills (by default):** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, sector-financial, sector-federal-government
 
 ---
 
@@ -108,7 +108,7 @@ When a new kernel CVE in the LPE, container escape, or page-cache exploitation c
 5. Check compliance-theater Pattern 1 (patch management) — does new CVE change the theater analysis?
 6. Check threat-model-currency Classes 1–3
 
-**Affected skills:** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn
+**Affected skills:** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, webapp-security
 
 ---
 
@@ -124,7 +124,9 @@ When a new CVE affecting AI coding assistants, MCP clients/servers, or LLM tools
 5. Update threat-model-currency Classes 4–5
 6. Update exploit-scoring
 
-**Affected skills:** mcp-agent-trust, ai-attack-surface, exploit-scoring, threat-model-currency, zeroday-gap-learn, identity-assurance, coordinated-vuln-disclosure
+**Affected skills:** mcp-agent-trust, ai-attack-surface, exploit-scoring, threat-model-currency, zeroday-gap-learn, identity-assurance, coordinated-vuln-disclosure, webapp-security, ai-risk-management
+
+`webapp-security` captures the AI-codegen weakness drift dimension when new MCP / coding-assistant CVEs land — AI-generated webapp code inherits the weakness class of the assistant's model and any vulnerable suggestion patterns in its training distribution, and that drift must be reflected in the OWASP Top 10 / ASVS mapping. `ai-risk-management` captures the governance response to new AI-platform CVEs: ISO 23894 risk-treatment cycle, ISO 42001 AIMS control updates, NIST AI RMF MANAGE function re-run, and EU AI Act Art. 9 / Art. 15 obligations for high-risk system providers.
 
 ---
 
@@ -143,7 +145,16 @@ When a framework publishes an update:
 5. Update compliance-theater patterns if the theater pattern changes
 6. Bump `last_threat_review` in affected skills
 
-**Affected skills:** framework-gap-analysis, compliance-theater, global-grc, policy-exception-gen (exception templates may need update), ot-ics-security, coordinated-vuln-disclosure, threat-modeling-methodology
+**Affected skills:** framework-gap-analysis, compliance-theater, global-grc, policy-exception-gen (exception templates may need update), ot-ics-security, coordinated-vuln-disclosure, threat-modeling-methodology, webapp-security, ai-risk-management, sector-healthcare, sector-financial, sector-federal-government, sector-energy
+
+Sector and thematic skill dispatch on this trigger:
+
+- `webapp-security` — OWASP Top 10 revisions (next cycle expected 2025/2026) and OWASP ASVS releases redefine the baseline web-app control set and the AI-codegen weakness drift commentary in the skill body.
+- `ai-risk-management` — ISO/IEC 23894:2023 AI risk-management guidance, ISO/IEC 42001:2023 AIMS, NIST AI RMF 1.0 + Generative AI Profile (NIST AI 600-1) updates, and EU AI Act delegated / implementing acts.
+- `sector-healthcare` — HHS HIPAA Security Rule modernization NPRM progress (RIN 0945-AA22), HITRUST CSF annual versions, FDA Premarket Cybersecurity guidance revisions, EU MDR cybersecurity guidance from MDCG.
+- `sector-financial` — DORA Regulatory Technical Standards (RTS) and Implementing Technical Standards (ITS) publications, SWIFT CSCF annual baseline (typically released mid-year), NYDFS 23 NYCRR 500 amendments, FFIEC IT Examination Handbook revisions, MAS Technology Risk Management Guidelines updates, APRA CPS 234 / CPS 230 revisions.
+- `sector-federal-government` — FedRAMP rule revisions (post-FedRAMP Authorization Act and FedRAMP 20x), CMMC final rule (32 CFR Part 170) and DFARS clause revisions, OMB memo cycle (M-22-09 Zero Trust, M-24-04 AI, future memos), CISA Binding Operational Directives and Emergency Directives.
+- `sector-energy` — NERC CIP standard ballots and FERC orders (CIP-015 INSM and successors), TSA Pipeline Security Directives renewals (typically annual), AWWA water-sector cyber guidance revisions, EU NIS Cooperation Group sector guidance (NCCS-G), Australian AESCSF revisions.
 
 ---
 
@@ -212,7 +223,7 @@ When drift is detected:
 4. If a draft becomes an RFC, its catalog key changes from `DRAFT-...` to `RFC-NNNN`. Update all `rfc_refs` lists that cite the draft, and refresh `manifest-snapshot.json` (this counts as a public-surface change — a removed reference is breaking per the snapshot gate).
 5. If a new RFC newly applies to a domain a skill covers, add its catalog entry and the corresponding `rfc_refs` field.
 
-**Affected skills (by default):** any skill currently carrying `rfc_refs` — at the time of writing: `kernel-lpe-triage`, `mcp-agent-trust`, `ai-c2-detection`, `pqc-first`, `identity-assurance` (RFC 7519 / RFC 8725 / RFC 6749 / RFC 9700 / RFC 8032 for JWT, OAuth, and EdDSA), `coordinated-vuln-disclosure` (RFC 9116 for security.txt). Skills without `rfc_refs` are not affected by this trigger.
+**Affected skills (by default):** any skill currently carrying `rfc_refs` — at the time of writing: `kernel-lpe-triage`, `mcp-agent-trust`, `ai-c2-detection`, `pqc-first`, `identity-assurance` (RFC 7519 / RFC 8725 / RFC 6749 / RFC 9700 / RFC 8032 for JWT, OAuth, and EdDSA), `coordinated-vuln-disclosure` (RFC 9116 for security.txt), `webapp-security` (RFC 8446 TLS 1.3, RFC 9114 HTTP/3, RFC 7519 JWT, RFC 8725 JWT BCP, and other transport / token-layer dependencies the webapp control set relies on). Skills without `rfc_refs` are not affected by this trigger.
 
 **Affected catalogs:** `data/rfc-references.json`, `manifest.json`, `manifest-snapshot.json`.
 
@@ -231,9 +242,38 @@ When a new methodology version drops:
 4. If a D3FEND ontology release adds or renames technique IDs cited in `defensive-countermeasure-mapping`, audit that skill's `d3fend_refs` and update `data/d3fend-catalog.json`.
 5. Cross-jurisdiction: ENISA Threat Landscape methodology guidance and NIST SP 800-154 (Data-Centric Threat Modeling) are parallel anchors — surface any updates from those publishers in the same review window.
 
-**Affected skills (by default):** threat-modeling-methodology, threat-model-currency, researcher.
+**Affected skills (by default):** threat-modeling-methodology, threat-model-currency, researcher, ai-risk-management.
+
+`ai-risk-management` is included because AI risk methodology evolves alongside generic threat modeling: ISO/IEC 23894 risk-management process steps, NIST AI RMF MAP/MEASURE/MANAGE functions, and the LINDDUN-GO privacy-by-design extensions for AI systems track the same release cadence as STRIDE / Unified Kill Chain / D3FEND. A new methodology version that introduces an AI-specific category (e.g., a new LINDDUN privacy threat covering model-inversion or membership-inference) requires `ai-risk-management` to refresh its impact-assessment template alongside the threat-modeling refresh.
 
 **Affected catalogs:** `data/d3fend-catalog.json` (when D3FEND-version-driven), `data/atlas-ttps.json` (when methodology-to-TTP mapping shifts).
+
+---
+
+### Trigger 11: Sector regulatory cycle (annual + interim)
+
+**Monitor:** sector-specific regulator publication feeds and standards-body release calendars. Run a sector-cycle check at minimum quarterly, and immediately on any of the events listed below.
+
+Sectors run on their own regulatory cadence that is decoupled from the cross-cutting CISA KEV / ATLAS / RFC triggers above. A sector skill that does not track its sector's regulatory cycle decays even when no horizontal threat-intel event has fired.
+
+Per-sector watch list:
+
+- **Healthcare** — HHS HIPAA Security Rule modernization NPRM updates (RIN 0945-AA22 and successor rulemakings), HITRUST CSF annual release (versioned annually by HITRUST Alliance), FDA Premarket Cybersecurity for Medical Devices draft and final guidance updates, EU MDR cybersecurity guidance from MDCG, AWWA / sector-equivalent cyber-guidance updates where they intersect healthcare-water dependencies.
+- **Financial** — DORA Regulatory Technical Standards (RTS) and Implementing Technical Standards (ITS) publications (multi-year staged cadence across Art. 15, Art. 18, Art. 26, Art. 28 mandates), SWIFT CSCF annual baseline (typically released mid-year), NYDFS 23 NYCRR 500 amendments, FFIEC IT Examination Handbook and FFIEC Cybersecurity Assessment Tool updates, MAS Technology Risk Management Guidelines updates, APRA CPS 234 and CPS 230 revisions, ECB TIBER-EU and Bank of England CBEST framework version updates.
+- **Federal** — OMB memo cycle (M-XX-NN format, including M-22-09 Zero Trust, M-24-04 AI use, M-24-10 AI risk management practices, and subsequent issuances), CISA Binding Operational Directives and Emergency Directives issuances, NIST SP revisions in federal scope (SP 800-53, SP 800-171, SP 800-172, SP 800-207), FedRAMP Continuous Monitoring updates and FedRAMP 20x transition guidance, CMMC rule revisions (32 CFR Part 170 and DFARS 252.204-7021 successors).
+- **Energy** — NERC CIP standard ballots and FERC orders (including CIP-015 INSM and successors), FERC orders affecting bulk-electric-system cyber posture, TSA Pipeline Security Directives renewals (typically annual; SD Pipeline-2021-02 series and successors), EU NIS Cooperation Group sector guidance (NCCS-G) implementing acts, Australian AESCSF revisions, ICS-CERT (CISA ICS) advisory cadence.
+
+When a sector publishes an update:
+
+1. Check `data/global-frameworks.json` for the relevant jurisdiction block and update the framework / regulator entry, including the new effective date and citation reference.
+2. Check `data/framework-control-gaps.json` for affected control IDs — mark `status: "closed"` with the update reference if the update addresses the gap, otherwise update `gap_analysis` notes to reflect partial improvement or residual gap.
+3. Update the relevant sector skill's body (regulator-specific sections, control mapping tables, output-format examples) and bump `last_threat_review`.
+4. Bump `last_verified` on affected source entries in `sources/index.json` and in any source-tracking entries in `data/exploit-availability.json` or `data/rfc-references.json` that depend on the sector publication.
+5. If the update introduces a new control class not currently covered by any skill, evaluate whether to extend an existing sector skill or to add a new skill per AGENTS.md "Adding a New Skill" procedure.
+
+**Affected skills (by default):** sector-healthcare, sector-financial, sector-federal-government, sector-energy, global-grc, framework-gap-analysis, compliance-theater.
+
+**Affected catalogs:** `data/global-frameworks.json`, `data/framework-control-gaps.json`, `sources/index.json`.
 
 ---
 
