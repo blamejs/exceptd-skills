@@ -1,0 +1,18 @@
+{
+  "_note": "Frozen fixture for refresh-external PINS source — version-pin drift surfaces as report-only diffs.",
+  "status": "ok",
+  "errors": 0,
+  "summary": "fixture: 1 pin drift (synthetic)",
+  "diffs": [
+    {
+      "id": "attack_version",
+      "field": "version",
+      "before": "17",
+      "after": "18",
+      "severity": "medium",
+      "source_url": "https://github.com/mitre-attack/attack-stix-data/releases/tag/v18",
+      "local_path_hint": "manifest.json — attack_version",
+      "note": "Version-pin bump requires audit per AGENTS.md Hard Rule #12. Surface as GitHub issue, do not auto-apply."
+    }
+  ]
+}

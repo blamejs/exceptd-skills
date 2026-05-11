@@ -1,0 +1,319 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "note": "Curated skill sequences for common operator use cases. Each step is a vetted skill plus the reason it belongs in the chain. Cross-reference token-budget.json to estimate context cost.",
+    "recipe_count": 8
+  },
+  "recipes": [
+    {
+      "id": "ai-red-team-prep",
+      "name": "AI Red Team Engagement Prep",
+      "description": "Stand up the AI security baseline before red-teaming a model or AI feature. Covers attack surface, MCP plugin trust, prompt-injection class, agentic actions, RAG provenance.",
+      "when_to_use": "Before scoping or executing a red-team engagement against a model, agentic system, or AI feature.",
+      "typical_jurisdictions": [
+        "US",
+        "EU",
+        "UK",
+        "GLOBAL"
+      ],
+      "steps": [
+        {
+          "skill": "ai-attack-surface",
+          "why": "Comprehensive attack-surface inventory mapped to ATLAS v5.1.0 with gap flags."
+        },
+        {
+          "skill": "ai-c2-detection",
+          "why": "Detection coverage for AI-as-C2 (PROMPTFLUX / SesameOp / AI-API egress) before testing."
+        },
+        {
+          "skill": "mcp-agent-trust",
+          "why": "MCP server trust boundary for the engineering toolchain side of the surface."
+        },
+        {
+          "skill": "rag-pipeline-security",
+          "why": "RAG ingestion provenance + prompt-injection chain coverage."
+        },
+        {
+          "skill": "threat-modeling-methodology",
+          "why": "Frame the engagement scope using a current methodology (PASTA/LINDDUN-AI variant)."
+        }
+      ],
+      "skill_count": 5,
+      "skill_chain": [
+        "ai-attack-surface",
+        "ai-c2-detection",
+        "mcp-agent-trust",
+        "rag-pipeline-security",
+        "threat-modeling-methodology"
+      ]
+    },
+    {
+      "id": "pci-dss-4-audit-defense",
+      "name": "PCI DSS 4.0 Audit Defense",
+      "description": "Show real coverage of PCI 4.0 sections that auditors most commonly mis-read as 'compliant'. Focus on 6.3.3, 11.4, 12.10.",
+      "when_to_use": "Mock audit, ROC drafting, or QSA pre-engagement review.",
+      "typical_jurisdictions": [
+        "US",
+        "EU",
+        "UK",
+        "AU",
+        "SG",
+        "GLOBAL"
+      ],
+      "steps": [
+        {
+          "skill": "compliance-theater",
+          "why": "Detect the 7 documented theater patterns that pass PCI but leave exposure."
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "why": "Pre-analyzed PCI control gaps and what to substitute as compensating controls."
+        },
+        {
+          "skill": "incident-response-playbook",
+          "why": "PCI 12.10 incident-response coverage that maps to ATT&CK + AI-class incidents."
+        },
+        {
+          "skill": "supply-chain-integrity",
+          "why": "PCI 6.4 covers SDLC; supply-chain integrity covers what 6.4 omits (MCP / coding assistants)."
+        }
+      ],
+      "skill_count": 4,
+      "skill_chain": [
+        "compliance-theater",
+        "framework-gap-analysis",
+        "incident-response-playbook",
+        "supply-chain-integrity"
+      ]
+    },
+    {
+      "id": "federal-incident-response",
+      "name": "Federal Incident Response (FISMA + CISA + FedRAMP)",
+      "description": "Coordinate an incident affecting a federal system. Layered SLAs: CISA 8h, OMB M-22-09 access-control breach, FedRAMP continuous-monitoring obligations.",
+      "when_to_use": "Active or suspected incident on a federal-system boundary, FedRAMP CSP, or DoD/CMMC scope.",
+      "typical_jurisdictions": [
+        "US"
+      ],
+      "steps": [
+        {
+          "skill": "incident-response-playbook",
+          "why": "PICERL + cross-jurisdiction notification clocks (CISA 8h initial, OMB, FedRAMP)."
+        },
+        {
+          "skill": "sector-federal-government",
+          "why": "Federal-specific framework obligations (NIST 800-53, FedRAMP, CMMC, OMB memos)."
+        },
+        {
+          "skill": "coordinated-vuln-disclosure",
+          "why": "If a vulnerability triggered the incident, CVD coordination via CISA's process."
+        },
+        {
+          "skill": "policy-exception-gen",
+          "why": "Time-bound exceptions for any control bypassed under emergency response."
+        }
+      ],
+      "skill_count": 4,
+      "skill_chain": [
+        "incident-response-playbook",
+        "sector-federal-government",
+        "coordinated-vuln-disclosure",
+        "policy-exception-gen"
+      ]
+    },
+    {
+      "id": "dora-tlpt-scoping",
+      "name": "DORA TLPT Scoping (EU Financial Services)",
+      "description": "Scope a Threat-Led Penetration Test under DORA Art. 26-27 for an in-scope EU financial entity.",
+      "when_to_use": "Annual or triennial DORA TLPT scoping cycle, or after a critical-third-party change.",
+      "typical_jurisdictions": [
+        "EU"
+      ],
+      "steps": [
+        {
+          "skill": "sector-financial",
+          "why": "DORA-specific scoping requirements (Art. 26-27) and critical-function inventory."
+        },
+        {
+          "skill": "attack-surface-pentest",
+          "why": "Pen-test methodology aligned to ATT&CK Enterprise + financial-services adversary profile."
+        },
+        {
+          "skill": "threat-modeling-methodology",
+          "why": "Threat-led methodology (ATT&CK + ATLAS variants), red-team rules of engagement."
+        },
+        {
+          "skill": "supply-chain-integrity",
+          "why": "ICT third-party scope (DORA Art. 28-30) — TLPT must cover critical ICT third parties."
+        },
+        {
+          "skill": "incident-response-playbook",
+          "why": "Findings → DORA Art. 19 major-incident reporting (4h / 24h / 30d) if a real incident is uncovered."
+        }
+      ],
+      "skill_count": 5,
+      "skill_chain": [
+        "sector-financial",
+        "attack-surface-pentest",
+        "threat-modeling-methodology",
+        "supply-chain-integrity",
+        "incident-response-playbook"
+      ]
+    },
+    {
+      "id": "k12-edtech-privacy-review",
+      "name": "K-12 EdTech Privacy & Safety Review",
+      "description": "Review an EdTech product or pilot for a K-12 deployment. COPPA, FERPA, UK Children's Code, EU AI Act Annex III, AU eSafety, age-appropriate design.",
+      "when_to_use": "Procurement review for an EdTech vendor, K-12 board approval cycle, or post-deployment audit.",
+      "typical_jurisdictions": [
+        "US",
+        "UK",
+        "EU",
+        "AU"
+      ],
+      "steps": [
+        {
+          "skill": "age-gates-child-safety",
+          "why": "Age-appropriate design code, age estimation/assurance, dark-pattern audit, AI Act Annex III."
+        },
+        {
+          "skill": "dlp-gap-analysis",
+          "why": "Student record / PII flow audit; FERPA + state student-privacy laws (CA SOPIPA, NY Ed Law 2-D)."
+        },
+        {
+          "skill": "identity-assurance",
+          "why": "Auth posture for child accounts — NIST 800-63B IAL2/AAL2 mismatch for age-restricted UIs."
+        },
+        {
+          "skill": "compliance-theater",
+          "why": "K-12 vendor attestations are a known theater hotspot; surface the gaps."
+        },
+        {
+          "skill": "rag-pipeline-security",
+          "why": "If the EdTech includes any AI/LLM features (the common case), RAG + prompt-injection class."
+        }
+      ],
+      "skill_count": 5,
+      "skill_chain": [
+        "age-gates-child-safety",
+        "dlp-gap-analysis",
+        "identity-assurance",
+        "compliance-theater",
+        "rag-pipeline-security"
+      ]
+    },
+    {
+      "id": "ransomware-tabletop",
+      "name": "Ransomware Tabletop Exercise",
+      "description": "Run a tabletop covering modern ransomware: double-extortion, data exfiltration before encryption, OT impact, AI-assisted negotiation messages, multi-jurisdictional notification.",
+      "when_to_use": "Annual tabletop, post-incident replay, or executive-team readiness review.",
+      "typical_jurisdictions": [
+        "US",
+        "EU",
+        "UK",
+        "AU",
+        "CA",
+        "SG",
+        "JP",
+        "GLOBAL"
+      ],
+      "steps": [
+        {
+          "skill": "incident-response-playbook",
+          "why": "PICERL + cross-jurisdiction breach notification (GDPR 72h, NIS2 24h/72h, US state laws, NYDFS 72h)."
+        },
+        {
+          "skill": "sector-financial",
+          "why": "If financial-sector entity: ransom-payment disclosure (NYDFS 24h), DORA Art. 19, SAMA, MAS TRM."
+        },
+        {
+          "skill": "ot-ics-security",
+          "why": "If OT/critical infrastructure exposure: CIRCIA 24h, NERC CIP, IEC 62443, recovery without paying."
+        },
+        {
+          "skill": "email-security-anti-phishing",
+          "why": "Initial access vector typical of ransomware; AI-generated phishing baseline."
+        },
+        {
+          "skill": "defensive-countermeasure-mapping",
+          "why": "Map exercise findings to D3FEND countermeasures with verifiable telemetry."
+        }
+      ],
+      "skill_count": 5,
+      "skill_chain": [
+        "incident-response-playbook",
+        "sector-financial",
+        "ot-ics-security",
+        "email-security-anti-phishing",
+        "defensive-countermeasure-mapping"
+      ]
+    },
+    {
+      "id": "new-cve-drop-triage",
+      "name": "New CVE Drop Triage",
+      "description": "Standardized first 30 minutes after a high-impact CVE drop. RWEP score, KEV check, evidence chain, dispatched to the right specialized skill.",
+      "when_to_use": "Operator receives a CVE number from an advisory, news item, or vendor notice and needs to know what to do.",
+      "typical_jurisdictions": [
+        "GLOBAL"
+      ],
+      "steps": [
+        {
+          "skill": "researcher",
+          "why": "Entry-point dispatcher: anchors the CVE in the catalog, computes RWEP, routes to the right specialist."
+        },
+        {
+          "skill": "exploit-scoring",
+          "why": "RWEP score + factor breakdown, KEV + EPSS posture, weaponization timeline estimate."
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "why": "Pre-analyzed control gaps that auditor-track frameworks have for this CVE class."
+        },
+        {
+          "skill": "incident-response-playbook",
+          "why": "If active exploitation suspected: notification clocks + PICERL kickoff."
+        }
+      ],
+      "skill_count": 4,
+      "skill_chain": [
+        "researcher",
+        "exploit-scoring",
+        "framework-gap-analysis",
+        "incident-response-playbook"
+      ]
+    },
+    {
+      "id": "open-source-dep-triage",
+      "name": "Open-Source Dependency Triage",
+      "description": "Triage a new advisory in a transitive npm/PyPI/Maven dependency: scope, SBOM, exploit-availability, action.",
+      "when_to_use": "Dependabot or Renovate fires a critical/high finding, or a public advisory mentions a dependency you ship.",
+      "typical_jurisdictions": [
+        "GLOBAL"
+      ],
+      "steps": [
+        {
+          "skill": "supply-chain-integrity",
+          "why": "SBOM scoping, transitive-dep evaluation, build-system trust, signed-attestation check."
+        },
+        {
+          "skill": "exploit-scoring",
+          "why": "RWEP + EPSS + KEV decide whether this is a 'drop everything' or 'normal cycle' patch."
+        },
+        {
+          "skill": "coordinated-vuln-disclosure",
+          "why": "If the advisory is pre-coordination, hold the disclosure until the upstream window closes."
+        },
+        {
+          "skill": "fuzz-testing-strategy",
+          "why": "If you maintain a fork or critical patch: prioritized fuzz target the bug class."
+        }
+      ],
+      "skill_count": 4,
+      "skill_chain": [
+        "supply-chain-integrity",
+        "exploit-scoring",
+        "coordinated-vuln-disclosure",
+        "fuzz-testing-strategy"
+      ]
+    }
+  ]
+}

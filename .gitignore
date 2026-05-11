@@ -25,6 +25,7 @@ out/
 findings.json
 scan-output.json
 .bootstrap-complete
+refresh-report.json
 *.tmp
 *.bak
 

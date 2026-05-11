@@ -1,0 +1,2072 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "note": "Citation-count tables per catalog field. top_cited surfaces load-bearing entries; orphan_adjacent identifies entries cited by exactly one skill; uncited identifies catalog entries with zero skill references (review whether they should be culled or whether a skill should pick them up).",
+    "fields_indexed": [
+      "cwe_refs",
+      "d3fend_refs",
+      "framework_gaps",
+      "atlas_refs",
+      "attack_refs",
+      "rfc_refs",
+      "dlp_refs"
+    ]
+  },
+  "counts": {
+    "cwe_refs": {
+      "CWE-125": {
+        "count": 2,
+        "skills": [
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      "CWE-362": {
+        "count": 2,
+        "skills": [
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      "CWE-416": {
+        "count": 2,
+        "skills": [
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      "CWE-672": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "CWE-787": {
+        "count": 4,
+        "skills": [
+          "attack-surface-pentest",
+          "container-runtime-security",
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      "CWE-1039": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management"
+        ]
+      },
+      "CWE-1426": {
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "dlp-gap-analysis",
+          "mlops-security",
+          "rag-pipeline-security",
+          "sector-healthcare"
+        ]
+      },
+      "CWE-94": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "CWE-22": {
+        "count": 4,
+        "skills": [
+          "api-security",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "CWE-345": {
+        "count": 1,
+        "skills": [
+          "mcp-agent-trust"
+        ]
+      },
+      "CWE-352": {
+        "count": 5,
+        "skills": [
+          "api-security",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      "CWE-434": {
+        "count": 3,
+        "skills": [
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "CWE-494": {
+        "count": 2,
+        "skills": [
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      "CWE-77": {
+        "count": 3,
+        "skills": [
+          "api-security",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "CWE-918": {
+        "count": 4,
+        "skills": [
+          "api-security",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "CWE-1395": {
+        "count": 6,
+        "skills": [
+          "attack-surface-pentest",
+          "container-runtime-security",
+          "mlops-security",
+          "rag-pipeline-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "CWE-1188": {
+        "count": 6,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "policy-exception-gen",
+          "security-maturity-tiers",
+          "webapp-security"
+        ]
+      },
+      "CWE-327": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "CWE-269": {
+        "count": 4,
+        "skills": [
+          "attack-surface-pentest",
+          "container-runtime-security",
+          "identity-assurance",
+          "webapp-security"
+        ]
+      },
+      "CWE-732": {
+        "count": 5,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "identity-assurance",
+          "webapp-security"
+        ]
+      },
+      "CWE-78": {
+        "count": 3,
+        "skills": [
+          "attack-surface-pentest",
+          "fuzz-testing-strategy",
+          "webapp-security"
+        ]
+      },
+      "CWE-79": {
+        "count": 2,
+        "skills": [
+          "attack-surface-pentest",
+          "webapp-security"
+        ]
+      },
+      "CWE-89": {
+        "count": 2,
+        "skills": [
+          "attack-surface-pentest",
+          "webapp-security"
+        ]
+      },
+      "CWE-20": {
+        "count": 1,
+        "skills": [
+          "fuzz-testing-strategy"
+        ]
+      },
+      "CWE-200": {
+        "count": 6,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "dlp-gap-analysis",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      "CWE-1357": {
+        "count": 4,
+        "skills": [
+          "coordinated-vuln-disclosure",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "CWE-502": {
+        "count": 3,
+        "skills": [
+          "mlops-security",
+          "supply-chain-integrity",
+          "webapp-security"
+        ]
+      },
+      "CWE-829": {
+        "count": 2,
+        "skills": [
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "CWE-287": {
+        "count": 9,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      "CWE-306": {
+        "count": 3,
+        "skills": [
+          "identity-assurance",
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "CWE-798": {
+        "count": 5,
+        "skills": [
+          "cloud-security",
+          "identity-assurance",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-financial"
+        ]
+      },
+      "CWE-862": {
+        "count": 7,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      "CWE-863": {
+        "count": 4,
+        "skills": [
+          "api-security",
+          "identity-assurance",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      "CWE-1037": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      }
+    },
+    "d3fend_refs": {
+      "D3-ASLR": {
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "kernel-lpe-triage"
+        ]
+      },
+      "D3-EAL": {
+        "count": 7,
+        "skills": [
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      "D3-PHRA": {
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "kernel-lpe-triage"
+        ]
+      },
+      "D3-PSEP": {
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      "D3-IOPR": {
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "rag-pipeline-security"
+        ]
+      },
+      "D3-NTA": {
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "rag-pipeline-security"
+        ]
+      },
+      "D3-CBAN": {
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      "D3-CSPP": {
+        "count": 6,
+        "skills": [
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "rag-pipeline-security"
+        ]
+      },
+      "D3-EHB": {
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      "D3-MFA": {
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust"
+        ]
+      },
+      "D3-CA": {
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-DA": {
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-NI": {
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-NTPM": {
+        "count": 3,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis"
+        ]
+      },
+      "D3-FE": {
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "pqc-first"
+        ]
+      },
+      "D3-MENCR": {
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "pqc-first"
+        ]
+      },
+      "D3-FAPA": {
+        "count": 1,
+        "skills": [
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-PA": {
+        "count": 1,
+        "skills": [
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-RPA": {
+        "count": 1,
+        "skills": [
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-SCP": {
+        "count": 1,
+        "skills": [
+          "defensive-countermeasure-mapping"
+        ]
+      }
+    },
+    "framework_gaps": {
+      "NIST-800-53-SI-2": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "ISO-27001-2022-A.8.8": {
+        "count": 2,
+        "skills": [
+          "coordinated-vuln-disclosure",
+          "kernel-lpe-triage"
+        ]
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "NIS2-Art21-patch-management": {
+        "count": 4,
+        "skills": [
+          "attack-surface-pentest",
+          "kernel-lpe-triage",
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "NIST-800-53-SC-8": {
+        "count": 2,
+        "skills": [
+          "kernel-lpe-triage",
+          "pqc-first"
+        ]
+      },
+      "CIS-Controls-v8-Control7": {
+        "count": 2,
+        "skills": [
+          "exploit-scoring",
+          "kernel-lpe-triage"
+        ]
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "compliance-theater"
+        ]
+      },
+      "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "compliance-theater"
+        ]
+      },
+      "ISO-27001-2022-A.8.28": {
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "api-security",
+          "container-runtime-security",
+          "rag-pipeline-security",
+          "threat-modeling-methodology",
+          "webapp-security"
+        ]
+      },
+      "ISO-IEC-23894-2023-clause-7": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "threat-modeling-methodology"
+        ]
+      },
+      "NIST-800-53-AC-2": {
+        "count": 7,
+        "skills": [
+          "age-gates-child-safety",
+          "ai-attack-surface",
+          "api-security",
+          "identity-assurance",
+          "incident-response-playbook",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      "NIST-800-53-SI-3": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "email-security-anti-phishing"
+        ]
+      },
+      "OWASP-LLM-Top-10-2025-LLM01": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "webapp-security"
+        ]
+      },
+      "OWASP-LLM-Top-10-2025-LLM02": {
+        "count": 1,
+        "skills": [
+          "ai-attack-surface"
+        ]
+      },
+      "SOC2-CC6-logical-access": {
+        "count": 4,
+        "skills": [
+          "age-gates-child-safety",
+          "ai-attack-surface",
+          "identity-assurance",
+          "sector-financial"
+        ]
+      },
+      "ALL-MCP-TOOL-TRUST": {
+        "count": 1,
+        "skills": [
+          "mcp-agent-trust"
+        ]
+      },
+      "ISO-27001-2022-A.8.30": {
+        "count": 5,
+        "skills": [
+          "age-gates-child-safety",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-healthcare"
+        ]
+      },
+      "NIST-800-53-CM-7": {
+        "count": 3,
+        "skills": [
+          "cloud-security",
+          "container-runtime-security",
+          "mcp-agent-trust"
+        ]
+      },
+      "NIST-800-53-SA-12": {
+        "count": 2,
+        "skills": [
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      "OWASP-LLM-Top-10-2025-LLM06": {
+        "count": 1,
+        "skills": [
+          "mcp-agent-trust"
+        ]
+      },
+      "SOC2-CC9-vendor-management": {
+        "count": 3,
+        "skills": [
+          "cloud-security",
+          "coordinated-vuln-disclosure",
+          "mcp-agent-trust"
+        ]
+      },
+      "SWIFT-CSCF-v2026-1.1": {
+        "count": 3,
+        "skills": [
+          "mcp-agent-trust",
+          "sector-financial",
+          "supply-chain-integrity"
+        ]
+      },
+      "FedRAMP-Rev5-Moderate": {
+        "count": 4,
+        "skills": [
+          "cloud-security",
+          "compliance-theater",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "CMMC-2.0-Level-2": {
+        "count": 3,
+        "skills": [
+          "compliance-theater",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "CWE-Top-25-2024-meta": {
+        "count": 1,
+        "skills": [
+          "exploit-scoring"
+        ]
+      },
+      "NIST-800-53-SI-12": {
+        "count": 1,
+        "skills": [
+          "rag-pipeline-security"
+        ]
+      },
+      "NIST-AI-RMF-MEASURE-2.5": {
+        "count": 3,
+        "skills": [
+          "ai-risk-management",
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      "OWASP-LLM-Top-10-2025-LLM08": {
+        "count": 2,
+        "skills": [
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      "NIST-800-53-SC-7": {
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis"
+        ]
+      },
+      "ISO-27001-2022-A.8.16": {
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis",
+          "email-security-anti-phishing",
+          "incident-response-playbook"
+        ]
+      },
+      "SOC2-CC7-anomaly-detection": {
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis",
+          "email-security-anti-phishing",
+          "incident-response-playbook"
+        ]
+      },
+      "NIST-800-53-SC-28": {
+        "count": 2,
+        "skills": [
+          "dlp-gap-analysis",
+          "pqc-first"
+        ]
+      },
+      "NIST-800-115": {
+        "count": 2,
+        "skills": [
+          "attack-surface-pentest",
+          "fuzz-testing-strategy"
+        ]
+      },
+      "OWASP-Pen-Testing-Guide-v5": {
+        "count": 1,
+        "skills": [
+          "attack-surface-pentest"
+        ]
+      },
+      "PTES-Pre-engagement": {
+        "count": 1,
+        "skills": [
+          "attack-surface-pentest"
+        ]
+      },
+      "NIST-800-218-SSDF": {
+        "count": 8,
+        "skills": [
+          "api-security",
+          "coordinated-vuln-disclosure",
+          "fuzz-testing-strategy",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity",
+          "threat-modeling-methodology",
+          "webapp-security"
+        ]
+      },
+      "OWASP-ASVS-v5.0-V14": {
+        "count": 3,
+        "skills": [
+          "api-security",
+          "fuzz-testing-strategy",
+          "webapp-security"
+        ]
+      },
+      "ISO-IEC-42001-2023-clause-6.1.2": {
+        "count": 4,
+        "skills": [
+          "ai-risk-management",
+          "dlp-gap-analysis",
+          "mlops-security",
+          "threat-modeling-methodology"
+        ]
+      },
+      "HIPAA-Security-Rule-164.312(a)(1)": {
+        "count": 2,
+        "skills": [
+          "dlp-gap-analysis",
+          "sector-healthcare"
+        ]
+      },
+      "SLSA-v1.0-Build-L3": {
+        "count": 4,
+        "skills": [
+          "container-runtime-security",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "VEX-CSAF-v2.1": {
+        "count": 1,
+        "skills": [
+          "supply-chain-integrity"
+        ]
+      },
+      "CycloneDX-v1.6-SBOM": {
+        "count": 1,
+        "skills": [
+          "supply-chain-integrity"
+        ]
+      },
+      "SPDX-v3.0-SBOM": {
+        "count": 1,
+        "skills": [
+          "supply-chain-integrity"
+        ]
+      },
+      "HITRUST-CSF-v11.4-09.l": {
+        "count": 2,
+        "skills": [
+          "sector-healthcare",
+          "supply-chain-integrity"
+        ]
+      },
+      "NIST-800-63B-rev4": {
+        "count": 1,
+        "skills": [
+          "identity-assurance"
+        ]
+      },
+      "PSD2-RTS-SCA": {
+        "count": 2,
+        "skills": [
+          "identity-assurance",
+          "sector-financial"
+        ]
+      },
+      "NIST-800-82r3": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "IEC-62443-3-3": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "NERC-CIP-007-6-R4": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      }
+    },
+    "atlas_refs": {
+      "AML.T0043": {
+        "count": 5,
+        "skills": [
+          "ai-attack-surface",
+          "attack-surface-pentest",
+          "fuzz-testing-strategy",
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      "AML.T0051": {
+        "count": 9,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "attack-surface-pentest",
+          "dlp-gap-analysis",
+          "identity-assurance",
+          "incident-response-playbook",
+          "rag-pipeline-security",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      "AML.T0054": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "rag-pipeline-security"
+        ]
+      },
+      "AML.T0020": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      "AML.T0096": {
+        "count": 8,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "ai-risk-management",
+          "api-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "mcp-agent-trust",
+          "sector-financial"
+        ]
+      },
+      "AML.T0016": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "mcp-agent-trust"
+        ]
+      },
+      "AML.T0017": {
+        "count": 10,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "ai-risk-management",
+          "api-security",
+          "cloud-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "mlops-security",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      "AML.T0018": {
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "mlops-security",
+          "supply-chain-integrity"
+        ]
+      },
+      "AML.T0010": {
+        "count": 7,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "mcp-agent-trust",
+          "mlops-security",
+          "ot-ics-security",
+          "supply-chain-integrity"
+        ]
+      }
+    },
+    "attack_refs": {
+      "T1068": {
+        "count": 3,
+        "skills": [
+          "container-runtime-security",
+          "kernel-lpe-triage",
+          "ot-ics-security"
+        ]
+      },
+      "T1548.001": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "T1566": {
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "email-security-anti-phishing"
+        ]
+      },
+      "T1059": {
+        "count": 4,
+        "skills": [
+          "ai-attack-surface",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "T1190": {
+        "count": 12,
+        "skills": [
+          "ai-attack-surface",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "fuzz-testing-strategy",
+          "mcp-agent-trust",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-federal-government",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      "T1195.001": {
+        "count": 4,
+        "skills": [
+          "mcp-agent-trust",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "T1565": {
+        "count": 2,
+        "skills": [
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      "T1071": {
+        "count": 1,
+        "skills": [
+          "ai-c2-detection"
+        ]
+      },
+      "T1102": {
+        "count": 1,
+        "skills": [
+          "ai-c2-detection"
+        ]
+      },
+      "T1568": {
+        "count": 1,
+        "skills": [
+          "ai-c2-detection"
+        ]
+      },
+      "T1133": {
+        "count": 1,
+        "skills": [
+          "attack-surface-pentest"
+        ]
+      },
+      "T1078": {
+        "count": 10,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-security",
+          "email-security-anti-phishing",
+          "identity-assurance",
+          "incident-response-playbook",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      "T1567": {
+        "count": 6,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      "T1530": {
+        "count": 3,
+        "skills": [
+          "cloud-security",
+          "dlp-gap-analysis",
+          "sector-healthcare"
+        ]
+      },
+      "T1213": {
+        "count": 1,
+        "skills": [
+          "dlp-gap-analysis"
+        ]
+      },
+      "T1041": {
+        "count": 2,
+        "skills": [
+          "dlp-gap-analysis",
+          "incident-response-playbook"
+        ]
+      },
+      "T1195.002": {
+        "count": 1,
+        "skills": [
+          "supply-chain-integrity"
+        ]
+      },
+      "T1554": {
+        "count": 2,
+        "skills": [
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "T1556": {
+        "count": 1,
+        "skills": [
+          "identity-assurance"
+        ]
+      },
+      "T1110": {
+        "count": 1,
+        "skills": [
+          "identity-assurance"
+        ]
+      },
+      "T0855": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "T0883": {
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      "T1505": {
+        "count": 1,
+        "skills": [
+          "webapp-security"
+        ]
+      },
+      "T1486": {
+        "count": 2,
+        "skills": [
+          "incident-response-playbook",
+          "sector-financial"
+        ]
+      },
+      "T1552": {
+        "count": 1,
+        "skills": [
+          "cloud-security"
+        ]
+      },
+      "T1610": {
+        "count": 1,
+        "skills": [
+          "container-runtime-security"
+        ]
+      },
+      "T1611": {
+        "count": 1,
+        "skills": [
+          "container-runtime-security"
+        ]
+      },
+      "T1566.001": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "T1566.002": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "T1566.003": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      }
+    },
+    "rfc_refs": {
+      "RFC-4301": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "RFC-4303": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "RFC-7296": {
+        "count": 1,
+        "skills": [
+          "kernel-lpe-triage"
+        ]
+      },
+      "RFC-6749": {
+        "count": 3,
+        "skills": [
+          "api-security",
+          "identity-assurance",
+          "mcp-agent-trust"
+        ]
+      },
+      "RFC-7519": {
+        "count": 7,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      "RFC-8446": {
+        "count": 10,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "pqc-first",
+          "sector-federal-government",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      "RFC-8725": {
+        "count": 6,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      "RFC-9114": {
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      "RFC-9421": {
+        "count": 5,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "mcp-agent-trust",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      "RFC-9700": {
+        "count": 3,
+        "skills": [
+          "api-security",
+          "identity-assurance",
+          "mcp-agent-trust"
+        ]
+      },
+      "RFC-9180": {
+        "count": 3,
+        "skills": [
+          "ai-c2-detection",
+          "cloud-security",
+          "pqc-first"
+        ]
+      },
+      "RFC-9458": {
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis"
+        ]
+      },
+      "RFC-9000": {
+        "count": 1,
+        "skills": [
+          "ai-c2-detection"
+        ]
+      },
+      "DRAFT-IETF-TLS-ECDHE-MLKEM": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "DRAFT-IETF-TLS-HYBRID-DESIGN": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "RFC-9420": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "RFC-9794": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "RFC-8032": {
+        "count": 6,
+        "skills": [
+          "container-runtime-security",
+          "identity-assurance",
+          "mlops-security",
+          "pqc-first",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      "RFC-9106": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      }
+    },
+    "dlp_refs": {}
+  },
+  "top_cited": {
+    "cwe_refs": [
+      {
+        "id": "CWE-287",
+        "count": 9,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-862",
+        "count": 7,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-1188",
+        "count": 6,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "policy-exception-gen",
+          "security-maturity-tiers",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-1395",
+        "count": 6,
+        "skills": [
+          "attack-surface-pentest",
+          "container-runtime-security",
+          "mlops-security",
+          "rag-pipeline-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "CWE-1426",
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "dlp-gap-analysis",
+          "mlops-security",
+          "rag-pipeline-security",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "CWE-200",
+        "count": 6,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "dlp-gap-analysis",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-352",
+        "count": 5,
+        "skills": [
+          "api-security",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-732",
+        "count": 5,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "identity-assurance",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-798",
+        "count": 5,
+        "skills": [
+          "cloud-security",
+          "identity-assurance",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-financial"
+        ]
+      },
+      {
+        "id": "CWE-1357",
+        "count": 4,
+        "skills": [
+          "coordinated-vuln-disclosure",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      }
+    ],
+    "d3fend_refs": [
+      {
+        "id": "D3-EAL",
+        "count": 7,
+        "skills": [
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "D3-CSPP",
+        "count": 6,
+        "skills": [
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "D3-IOPR",
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "D3-NTA",
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "D3-CBAN",
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "D3-EHB",
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "D3-NTPM",
+        "count": 3,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis"
+        ]
+      },
+      {
+        "id": "D3-PSEP",
+        "count": 3,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "fuzz-testing-strategy",
+          "kernel-lpe-triage"
+        ]
+      },
+      {
+        "id": "D3-ASLR",
+        "count": 2,
+        "skills": [
+          "defensive-countermeasure-mapping",
+          "kernel-lpe-triage"
+        ]
+      },
+      {
+        "id": "D3-CA",
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping"
+        ]
+      }
+    ],
+    "framework_gaps": [
+      {
+        "id": "NIST-800-218-SSDF",
+        "count": 8,
+        "skills": [
+          "api-security",
+          "coordinated-vuln-disclosure",
+          "fuzz-testing-strategy",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity",
+          "threat-modeling-methodology",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "NIST-800-53-AC-2",
+        "count": 7,
+        "skills": [
+          "age-gates-child-safety",
+          "ai-attack-surface",
+          "api-security",
+          "identity-assurance",
+          "incident-response-playbook",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "ISO-27001-2022-A.8.28",
+        "count": 6,
+        "skills": [
+          "ai-attack-surface",
+          "api-security",
+          "container-runtime-security",
+          "rag-pipeline-security",
+          "threat-modeling-methodology",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "ISO-27001-2022-A.8.30",
+        "count": 5,
+        "skills": [
+          "age-gates-child-safety",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "FedRAMP-Rev5-Moderate",
+        "count": 4,
+        "skills": [
+          "cloud-security",
+          "compliance-theater",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "ISO-27001-2022-A.8.16",
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis",
+          "email-security-anti-phishing",
+          "incident-response-playbook"
+        ]
+      },
+      {
+        "id": "ISO-IEC-42001-2023-clause-6.1.2",
+        "count": 4,
+        "skills": [
+          "ai-risk-management",
+          "dlp-gap-analysis",
+          "mlops-security",
+          "threat-modeling-methodology"
+        ]
+      },
+      {
+        "id": "NIS2-Art21-patch-management",
+        "count": 4,
+        "skills": [
+          "attack-surface-pentest",
+          "kernel-lpe-triage",
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      {
+        "id": "SLSA-v1.0-Build-L3",
+        "count": 4,
+        "skills": [
+          "container-runtime-security",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "SOC2-CC6-logical-access",
+        "count": 4,
+        "skills": [
+          "age-gates-child-safety",
+          "ai-attack-surface",
+          "identity-assurance",
+          "sector-financial"
+        ]
+      }
+    ],
+    "atlas_refs": [
+      {
+        "id": "AML.T0017",
+        "count": 10,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "ai-risk-management",
+          "api-security",
+          "cloud-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "mlops-security",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "AML.T0051",
+        "count": 9,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "attack-surface-pentest",
+          "dlp-gap-analysis",
+          "identity-assurance",
+          "incident-response-playbook",
+          "rag-pipeline-security",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "AML.T0096",
+        "count": 8,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "ai-risk-management",
+          "api-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "mcp-agent-trust",
+          "sector-financial"
+        ]
+      },
+      {
+        "id": "AML.T0010",
+        "count": 7,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "mcp-agent-trust",
+          "mlops-security",
+          "ot-ics-security",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "AML.T0043",
+        "count": 5,
+        "skills": [
+          "ai-attack-surface",
+          "attack-surface-pentest",
+          "fuzz-testing-strategy",
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "AML.T0018",
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "mlops-security",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "AML.T0020",
+        "count": 3,
+        "skills": [
+          "ai-attack-surface",
+          "mlops-security",
+          "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "AML.T0016",
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "mcp-agent-trust"
+        ]
+      },
+      {
+        "id": "AML.T0054",
+        "count": 2,
+        "skills": [
+          "ai-attack-surface",
+          "rag-pipeline-security"
+        ]
+      }
+    ],
+    "attack_refs": [
+      {
+        "id": "T1190",
+        "count": 12,
+        "skills": [
+          "ai-attack-surface",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "fuzz-testing-strategy",
+          "mcp-agent-trust",
+          "ot-ics-security",
+          "sector-energy",
+          "sector-federal-government",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "T1078",
+        "count": 10,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-security",
+          "email-security-anti-phishing",
+          "identity-assurance",
+          "incident-response-playbook",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "T1567",
+        "count": 6,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "dlp-gap-analysis",
+          "incident-response-playbook",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "T1059",
+        "count": 4,
+        "skills": [
+          "ai-attack-surface",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "T1195.001",
+        "count": 4,
+        "skills": [
+          "mcp-agent-trust",
+          "mlops-security",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "T1068",
+        "count": 3,
+        "skills": [
+          "container-runtime-security",
+          "kernel-lpe-triage",
+          "ot-ics-security"
+        ]
+      },
+      {
+        "id": "T1530",
+        "count": 3,
+        "skills": [
+          "cloud-security",
+          "dlp-gap-analysis",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "T0855",
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      {
+        "id": "T0883",
+        "count": 2,
+        "skills": [
+          "ot-ics-security",
+          "sector-energy"
+        ]
+      },
+      {
+        "id": "T1041",
+        "count": 2,
+        "skills": [
+          "dlp-gap-analysis",
+          "incident-response-playbook"
+        ]
+      }
+    ],
+    "rfc_refs": [
+      {
+        "id": "RFC-8446",
+        "count": 10,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "pqc-first",
+          "sector-federal-government",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-7519",
+        "count": 7,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-financial",
+          "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-8032",
+        "count": 6,
+        "skills": [
+          "container-runtime-security",
+          "identity-assurance",
+          "mlops-security",
+          "pqc-first",
+          "sector-federal-government",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "RFC-8725",
+        "count": 6,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "identity-assurance",
+          "mcp-agent-trust",
+          "sector-financial",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-9421",
+        "count": 5,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "mcp-agent-trust",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
+        "id": "RFC-9114",
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "mcp-agent-trust",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-6749",
+        "count": 3,
+        "skills": [
+          "api-security",
+          "identity-assurance",
+          "mcp-agent-trust"
+        ]
+      },
+      {
+        "id": "RFC-9180",
+        "count": 3,
+        "skills": [
+          "ai-c2-detection",
+          "cloud-security",
+          "pqc-first"
+        ]
+      },
+      {
+        "id": "RFC-9700",
+        "count": 3,
+        "skills": [
+          "api-security",
+          "identity-assurance",
+          "mcp-agent-trust"
+        ]
+      },
+      {
+        "id": "RFC-9458",
+        "count": 2,
+        "skills": [
+          "ai-c2-detection",
+          "dlp-gap-analysis"
+        ]
+      }
+    ],
+    "dlp_refs": []
+  },
+  "orphan_adjacent": {
+    "cwe_refs": [
+      "CWE-20",
+      "CWE-327",
+      "CWE-345",
+      "CWE-672"
+    ],
+    "d3fend_refs": [
+      "D3-FAPA",
+      "D3-PA",
+      "D3-RPA",
+      "D3-SCP"
+    ],
+    "framework_gaps": [
+      "ALL-MCP-TOOL-TRUST",
+      "CWE-Top-25-2024-meta",
+      "CycloneDX-v1.6-SBOM",
+      "NIST-800-53-SI-12",
+      "NIST-800-53-SI-2",
+      "NIST-800-63B-rev4",
+      "OWASP-LLM-Top-10-2025-LLM02",
+      "OWASP-LLM-Top-10-2025-LLM06",
+      "OWASP-Pen-Testing-Guide-v5",
+      "PCI-DSS-4.0-6.3.3",
+      "PTES-Pre-engagement",
+      "SPDX-v3.0-SBOM",
+      "VEX-CSAF-v2.1"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1071",
+      "T1102",
+      "T1110",
+      "T1133",
+      "T1195.002",
+      "T1213",
+      "T1505",
+      "T1548.001",
+      "T1552",
+      "T1556",
+      "T1566.001",
+      "T1566.002",
+      "T1566.003",
+      "T1568",
+      "T1610",
+      "T1611"
+    ],
+    "rfc_refs": [
+      "DRAFT-IETF-TLS-ECDHE-MLKEM",
+      "DRAFT-IETF-TLS-HYBRID-DESIGN",
+      "RFC-4301",
+      "RFC-4303",
+      "RFC-7296",
+      "RFC-9000",
+      "RFC-9106",
+      "RFC-9420",
+      "RFC-9794"
+    ],
+    "dlp_refs": []
+  },
+  "uncited": {
+    "cwe_refs": [],
+    "atlas_refs": [],
+    "d3fend_refs": [],
+    "framework_gaps": [],
+    "rfc_refs": [],
+    "dlp_refs": [
+      "DLP-CHAN-CLIPBOARD-AI",
+      "DLP-CHAN-CODE-COMPLETION",
+      "DLP-CHAN-EMAIL-OUT",
+      "DLP-CHAN-IDE-TELEMETRY",
+      "DLP-CHAN-LLM-CONTEXT",
+      "DLP-CHAN-LLM-PROMPT",
+      "DLP-CHAN-MCP-TOOL-ARG",
+      "DLP-CHAN-USB-REMOVABLE",
+      "DLP-CHAN-WEB-UPLOAD",
+      "DLP-CLASS-EMBEDDING-MATCH",
+      "DLP-CLASS-ML-CLASSIFIER",
+      "DLP-CLASS-REGEX-PII",
+      "DLP-CLASS-WATERMARK",
+      "DLP-ENFORCE-BLOCK",
+      "DLP-ENFORCE-COACH",
+      "DLP-ENFORCE-REDACT",
+      "DLP-EVIDENCE-AUDIT",
+      "DLP-EVIDENCE-FORENSICS",
+      "DLP-LAG-LEGACY-SCOPE",
+      "DLP-SURFACE-EMBEDDING-STORE",
+      "DLP-SURFACE-RAG-CORPUS",
+      "DLP-SURFACE-TRAINING-DATA"
+    ]
+  }
+}

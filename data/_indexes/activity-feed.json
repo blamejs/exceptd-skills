@@ -1,0 +1,362 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
+    "event_count": 49
+  },
+  "events": [
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "researcher",
+      "path": "skills/researcher/skill.md",
+      "note": "Triage entry-point for raw threat intel — researches an input across all exceptd data catalogs, RWEP-scores it, and routes the operator to the right specialized skill(s)"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "attack-surface-pentest",
+      "path": "skills/attack-surface-pentest/skill.md",
+      "note": "Modern attack surface management + pen testing methodology for AI-era environments — NIST 800-115, OWASP WSTG, PTES, ATT&CK-driven adversary emulation, TIBER-EU"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "fuzz-testing-strategy",
+      "path": "skills/fuzz-testing-strategy/skill.md",
+      "note": "Continuous fuzzing as a security control — coverage-guided fuzz (AFL++/libFuzzer), AI-assisted fuzz, OSS-Fuzz integration, kernel fuzz (syzkaller), AI-API fuzz, integration into CI/CD as compliance evidence"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "dlp-gap-analysis",
+      "path": "skills/dlp-gap-analysis/skill.md",
+      "note": "DLP gap analysis for mid-2026 — legacy DLP misses LLM prompts, MCP tool args, RAG retrievals, embedding-store exfil, and code-completion telemetry. Audit channels, classifiers, protected surfaces, enforcement actions, and evidence trails against modern threat reality and cross-jurisdictional privacy regimes"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "supply-chain-integrity",
+      "path": "skills/supply-chain-integrity/skill.md",
+      "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "defensive-countermeasure-mapping",
+      "path": "skills/defensive-countermeasure-mapping/skill.md",
+      "note": "Map offensive findings (CVE / TTP / framework gap) to MITRE D3FEND defensive countermeasures with explicit defense-in-depth, least-privilege, and zero-trust layering"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "identity-assurance",
+      "path": "skills/identity-assurance/skill.md",
+      "note": "Identity assurance for mid-2026 — NIST 800-63 AAL/IAL/FAL, FIDO2/WebAuthn passkeys, OIDC/SAML/SCIM, agent-as-principal identity, short-lived workload tokens, OAuth 2.0 + RFC 9700 BCP"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "ot-ics-security",
+      "path": "skills/ot-ics-security/skill.md",
+      "note": "OT / ICS security for mid-2026 — NIST 800-82r3, IEC 62443-3-3, NERC CIP, IT/OT convergence risks, AI-augmented HMI threats, ICS-specific TTPs (ATT&CK for ICS)"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "coordinated-vuln-disclosure",
+      "path": "skills/coordinated-vuln-disclosure/skill.md",
+      "note": "Coordinated Vulnerability Disclosure for mid-2026 — ISO 29147 (disclosure) + ISO 30111 (handling) + VDP + bug bounty + CSAF 2.0 advisories + security.txt + EU CRA / NIS2 regulator-mandated disclosure + AI vulnerability classes"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "threat-modeling-methodology",
+      "path": "skills/threat-modeling-methodology/skill.md",
+      "note": "Threat modeling methodologies for mid-2026 — STRIDE, PASTA, LINDDUN (privacy), Cyber Kill Chain, Diamond Model, MITRE Unified Kill Chain, AI-system threat modeling, agent-based threat modeling"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "webapp-security",
+      "path": "skills/webapp-security/skill.md",
+      "note": "Web application security for mid-2026 — OWASP Top 10 2025, OWASP ASVS v5, CWE root-cause coverage, AI-generated code weakness drift, server-rendered vs SPA tradeoffs, defense-in-depth across the request lifecycle"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "ai-risk-management",
+      "path": "skills/ai-risk-management/skill.md",
+      "note": "AI governance and risk management for mid-2026 — ISO/IEC 23894 risk process, ISO/IEC 42001 management system, NIST AI RMF, EU AI Act high-risk obligations, AI impact assessments, AI red-team programs, AI incident lifecycle"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "sector-healthcare",
+      "path": "skills/sector-healthcare/skill.md",
+      "note": "Healthcare sector cybersecurity for mid-2026 — HIPAA + HITRUST + HL7 FHIR security, medical device cyber (FDA + EU MDR), AI-in-healthcare under EU AI Act + FDA AI/ML SaMD guidance, patient data flows through LLM clinical tools"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "sector-financial",
+      "path": "skills/sector-financial/skill.md",
+      "note": "Financial services cybersecurity for mid-2026 — EU DORA TLPT, PSD2 RTS-SCA, SWIFT CSCF v2026, NYDFS 23 NYCRR 500, FFIEC CAT, MAS TRM, APRA CPS 234, IL BoI Directive 361, OSFI B-13; Threat-Led Pen Testing schemes TIBER-EU + CBEST + iCAST"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "sector-federal-government",
+      "path": "skills/sector-federal-government/skill.md",
+      "note": "Federal government + defense contractor cybersecurity for mid-2026 — FedRAMP Rev5, CMMC 2.0, EO 14028, NIST 800-171/172 CUI, FISMA, M-22-09 federal Zero Trust, OMB M-24-04 AI risk, CISA BOD/ED; cross-jurisdiction NCSC UK, ENISA EUCC, AU PSPF, IL government cyber methodology"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "sector-energy",
+      "path": "skills/sector-energy/skill.md",
+      "note": "Electric power + oil & gas + water/wastewater + renewable-integration cybersecurity for mid-2026 — NERC CIP v6/v7, NIST 800-82r3, TSA Pipeline SD-2021-02C, AWWA cyber, EU NIS2 energy + NCCS-G (cross-border electricity), AU AESCSF + SOCI, ENISA energy sector"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "api-security",
+      "path": "skills/api-security/skill.md",
+      "note": "API security for mid-2026 — OWASP API Top 10 2023, AI-API specific (rate limits, prompt-shape egress, MCP HTTP transport), GraphQL + gRPC + REST + WebSocket attack surfaces, API gateway posture, BOLA/BFLA/SSRF/Mass Assignment"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "cloud-security",
+      "path": "skills/cloud-security/skill.md",
+      "note": "Cloud security for mid-2026 — CSPM/CWPP/CNAPP posture, CSA CCM v4, AWS/Azure/GCP shared responsibility, cloud workload identity federation, runtime security with eBPF, AI workloads on cloud"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "container-runtime-security",
+      "path": "skills/container-runtime-security/skill.md",
+      "note": "Container + Kubernetes runtime security for mid-2026 — CIS K8s Benchmark, NSA/CISA Hardening, Pod Security Standards, Kyverno/Gatekeeper admission, Sigstore policy-controller, eBPF runtime detection (Falco/Tetragon), AI inference workload hardening"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "mlops-security",
+      "path": "skills/mlops-security/skill.md",
+      "note": "MLOps pipeline security for mid-2026 — training data integrity, model registry signing, deployment pipeline provenance, inference serving hardening, drift detection, feedback loop integrity; covers MLflow / Kubeflow / Vertex AI / SageMaker / Azure ML / Hugging Face"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "incident-response-playbook",
+      "path": "skills/incident-response-playbook/skill.md",
+      "note": "Incident response playbook design for mid-2026 — NIST 800-61r3, ISO 27035, ATT&CK-driven detection, PICERL phases, AI-class incident handling (prompt injection breach, model exfiltration, AI-API C2), cross-jurisdiction breach notification timing"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "email-security-anti-phishing",
+      "path": "skills/email-security-anti-phishing/skill.md",
+      "note": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "skill_review",
+      "artifact": "age-gates-child-safety",
+      "path": "skills/age-gates-child-safety/skill.md",
+      "note": "Age-related gates and child online safety for mid-2026 — COPPA + CIPA + California AADC + GDPR Art. 8 + DSA Art. 28 + UK Online Safety Act + UK Children's Code + AU Online Safety Act + IN DPDPA child provisions + KOSA pending; age verification standards (IEEE 2089-2021, OpenID Connect age claims); AI product age policies"
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 5
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 34
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/d3fend-catalog.json",
+      "path": "data/d3fend-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 20
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/dlp-controls.json",
+      "path": "data/dlp-controls.json",
+      "schema_version": "1.0.0",
+      "entry_count": 22
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/global-frameworks.json",
+      "path": "data/global-frameworks.json",
+      "schema_version": "1.3.0",
+      "entry_count": 35
+    },
+    {
+      "date": "2026-05-11",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 19
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "kernel-lpe-triage",
+      "path": "skills/kernel-lpe-triage/skill.md",
+      "note": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, live-patch vs. reboot remediation"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "ai-attack-surface",
+      "path": "skills/ai-attack-surface/skill.md",
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with gap flags"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "mcp-agent-trust",
+      "path": "skills/mcp-agent-trust/skill.md",
+      "note": "Enumerate MCP trust boundary failures — tool allowlisting, signed manifests, bearer auth, zero-interaction RCE"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "framework-gap-analysis",
+      "path": "skills/framework-gap-analysis/skill.md",
+      "note": "Feed a framework control ID and threat scenario — receive the gap between what the control covers and what current TTPs require"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "compliance-theater",
+      "path": "skills/compliance-theater/skill.md",
+      "note": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "exploit-scoring",
+      "path": "skills/exploit-scoring/skill.md",
+      "note": "Real-World Exploit Priority (RWEP) scoring — CVSS plus KEV, PoC, AI-acceleration, blast radius, live-patch factors"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "rag-pipeline-security",
+      "path": "skills/rag-pipeline-security/skill.md",
+      "note": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "ai-c2-detection",
+      "path": "skills/ai-c2-detection/skill.md",
+      "note": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "policy-exception-gen",
+      "path": "skills/policy-exception-gen/skill.md",
+      "note": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "threat-model-currency",
+      "path": "skills/threat-model-currency/skill.md",
+      "note": "Score how current an org's threat model is against 2026 reality — 14-item checklist, currency percentage, prioritized update roadmap"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "global-grc",
+      "path": "skills/global-grc/skill.md",
+      "note": "Multi-jurisdiction GRC mapping — EU (GDPR/NIS2/DORA/EU AI Act/CRA), UK, AU, SG, JP, IN, CA, ISO 27001:2022, CSA CCM v4"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "zeroday-gap-learn",
+      "path": "skills/zeroday-gap-learn/skill.md",
+      "note": "Run the zero-day learning loop — CVE to attack vector to control gap to framework gap to new control requirement"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "pqc-first",
+      "path": "skills/pqc-first/skill.md",
+      "note": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF evolution"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "skill-update-loop",
+      "path": "skills/skill-update-loop/skill.md",
+      "note": "Meta-skill for keeping all exceptd skills current — CISA KEV triggers, ATLAS version updates, framework amendments, forward_watch resolution, currency scoring"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "skill_review",
+      "artifact": "security-maturity-tiers",
+      "path": "skills/security-maturity-tiers/skill.md",
+      "note": "Three-tier implementation roadmap — MVP (ship this week), Practical (scalable today), Overkill (defense-in-depth)"
+    },
+    {
+      "date": "2026-05-01",
+      "type": "catalog_update",
+      "artifact": "data/atlas-ttps.json",
+      "path": "data/atlas-ttps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 9
+    },
+    {
+      "date": "2026-05-01",
+      "type": "catalog_update",
+      "artifact": "data/exploit-availability.json",
+      "path": "data/exploit-availability.json",
+      "schema_version": "1.0.0",
+      "entry_count": 5
+    },
+    {
+      "date": "2026-05-01",
+      "type": "catalog_update",
+      "artifact": "data/framework-control-gaps.json",
+      "path": "data/framework-control-gaps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 49
+    },
+    {
+      "date": "2026-05-01",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.0.0",
+      "entry_count": 5
+    },
+    {
+      "date": "2026-05-01",
+      "type": "manifest_review",
+      "artifact": "manifest.json",
+      "path": "manifest.json",
+      "note": "manifest threat_review_date — 38 skills, 10 catalogs"
+    }
+  ]
+}

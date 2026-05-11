@@ -1,0 +1,967 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "note": "Normalized obligation matrix derived from data/global-frameworks.json. All times in hours. breach_notification.hours is null for jurisdictions that require notification only on a discretionary trigger.",
+    "jurisdiction_count": 29
+  },
+  "by_jurisdiction": {
+    "EU": {
+      "jurisdiction_name": "European Union",
+      "frameworks": {
+        "GDPR": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach affecting data subject rights",
+            "stages": null,
+            "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32016R0679",
+            "authority": "European Data Protection Board (EDPB)"
+          },
+          "authority": "European Data Protection Board (EDPB)"
+        },
+        "NIS2": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Significant incident (substantial impact on service provision)",
+            "stages": {
+              "early_warning": "24h — initial notification to NCA",
+              "incident_notification": "72h — significant incident report",
+              "final_report": "P+30 days — full post-incident report"
+            },
+            "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022L2555",
+            "authority": "ENISA + Member State NCAs"
+          },
+          "authority": "ENISA + Member State NCAs"
+        },
+        "DORA": {
+          "breach_notification": {
+            "hours": 4,
+            "trigger": "Major ICT-related incident (RTO/RPO breach, high financial impact, reputational damage)",
+            "stages": null,
+            "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554",
+            "authority": "ESAs (EBA, EIOPA, ESMA)"
+          },
+          "authority": "ESAs (EBA, EIOPA, ESMA)"
+        },
+        "EU_CRA": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Actively exploited vulnerability discovered in the product",
+            "stages": null,
+            "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R2847",
+            "authority": "ENISA + National Market Surveillance Authorities"
+          },
+          "authority": "ENISA + National Market Surveillance Authorities"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 4,
+        "framework": "DORA"
+      },
+      "fastest_patch_sla": null
+    },
+    "UK": {
+      "jurisdiction_name": "United Kingdom",
+      "frameworks": {
+        "CYBER_ESSENTIALS": {
+          "patch_sla": {
+            "hours": 336,
+            "note": "14 days for critical patches (internet-facing). Better than NIST 30-day, worse than ASD 48h.",
+            "source": "https://www.ncsc.gov.uk/cyberessentials/overview",
+            "authority": "NCSC"
+          },
+          "authority": "NCSC"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": {
+        "hours": 336,
+        "framework": "CYBER_ESSENTIALS"
+      }
+    },
+    "AU": {
+      "jurisdiction_name": "Australia",
+      "frameworks": {
+        "ASD_ISM": {
+          "patch_sla": {
+            "hours": 48,
+            "note": "ISM-1623: 48h for critical with existing exploit. Best non-CISA-aware SLA of any major framework.",
+            "source": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
+            "authority": "Australian Signals Directorate (ASD)"
+          },
+          "authority": "Australian Signals Directorate (ASD)"
+        },
+        "ESSENTIAL_8": {
+          "patch_sla": {
+            "hours": 48,
+            "note": "Maturity Level 3 — 48h for extreme risk. ML1 = 1 month, ML2 = 2 weeks, ML3 = 48h.",
+            "source": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight",
+            "authority": "Australian Signals Directorate (ASD)"
+          },
+          "authority": "Australian Signals Directorate (ASD)"
+        },
+        "APRA_CPS234": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Material information security incident",
+            "stages": null,
+            "source": "https://www.apra.gov.au/sites/default/files/cps_234_july_2019_for_public_release.pdf",
+            "authority": "Australian Prudential Regulation Authority (APRA)"
+          },
+          "authority": "Australian Prudential Regulation Authority (APRA)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "APRA_CPS234"
+      },
+      "fastest_patch_sla": {
+        "hours": 48,
+        "framework": "ASD_ISM"
+      }
+    },
+    "SG": {
+      "jurisdiction_name": "Singapore",
+      "frameworks": {
+        "MAS_TRM": {
+          "breach_notification": {
+            "hours": 2,
+            "trigger": "Significant IT disruption (> 30min customer impact), security breach",
+            "stages": null,
+            "source": "https://www.mas.gov.sg/regulation/guidelines/technology-risk-management-guidelines",
+            "authority": "Monetary Authority of Singapore (MAS)"
+          },
+          "patch_sla": {
+            "hours": 720,
+            "note": "1 month for critical patches — same PCI problem. Risk-based timeline in practice.",
+            "source": "https://www.mas.gov.sg/regulation/guidelines/technology-risk-management-guidelines",
+            "authority": "Monetary Authority of Singapore (MAS)"
+          },
+          "authority": "Monetary Authority of Singapore (MAS)"
+        },
+        "CSA_CCOP": {
+          "breach_notification": {
+            "hours": 2,
+            "trigger": "Cybersecurity incident affecting CII",
+            "stages": null,
+            "source": "https://www.csa.gov.sg/our-programmes/critical-information-infrastructure-protection/cybersecurity-code-of-practice",
+            "authority": "Cyber Security Agency of Singapore (CSA)"
+          },
+          "authority": "Cyber Security Agency of Singapore (CSA)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 2,
+        "framework": "MAS_TRM"
+      },
+      "fastest_patch_sla": {
+        "hours": 720,
+        "framework": "MAS_TRM"
+      }
+    },
+    "JP": {
+      "jurisdiction_name": "Japan",
+      "frameworks": {
+        "APPI": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Leak, loss, or damage of personal data likely to harm individual rights (specifically: special-care-required PI, breaches likely to cause financial damage, intentional acts, or >1,000 affected individuals)",
+            "stages": null,
+            "source": "https://www.ppc.go.jp/en/legal/",
+            "authority": "Personal Information Protection Commission (PPC, 個人情報保護委員会)"
+          },
+          "authority": "Personal Information Protection Commission (PPC, 個人情報保護委員会)"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "IN": {
+      "jurisdiction_name": "India",
+      "frameworks": {
+        "CERT_IN": {
+          "breach_notification": {
+            "hours": 6,
+            "trigger": "Mandatory incident reporting categories (data breach, ransomware, website defacement, etc.)",
+            "stages": null,
+            "source": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
+            "authority": "Computer Emergency Response Team — India (CERT-In)"
+          },
+          "authority": "Computer Emergency Response Team — India (CERT-In)"
+        },
+        "DPDPA": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach affecting Data Principals",
+            "stages": null,
+            "source": "https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf",
+            "authority": "Data Protection Board of India (DPBI)"
+          },
+          "authority": "Data Protection Board of India (DPBI)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 6,
+        "framework": "CERT_IN"
+      },
+      "fastest_patch_sla": null
+    },
+    "CA": {
+      "jurisdiction_name": "Canada",
+      "frameworks": {
+        "OSFI_B10": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Technology or cyber incident with material operational impact",
+            "stages": null,
+            "source": "https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/third-party-risk-management-guideline",
+            "authority": "Office of the Superintendent of Financial Institutions (OSFI)"
+          },
+          "authority": "Office of the Superintendent of Financial Institutions (OSFI)"
+        },
+        "QC_LAW_25": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Confidentiality incident presenting a 'risk of serious injury' must be reported to the CAI and affected individuals 'with diligence'",
+            "stages": null,
+            "source": "https://www.legisquebec.gouv.qc.ca/en/document/cs/p-39.1",
+            "authority": "Commission d'accès à l'information du Québec (CAI)"
+          },
+          "authority": "Commission d'accès à l'information du Québec (CAI)"
+        },
+        "PIPEDA": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Breach of security safeguards involving personal information where it is reasonable to believe there is a 'real risk of significant harm'",
+            "stages": null,
+            "source": "https://laws-lois.justice.gc.ca/eng/acts/p-8.6/",
+            "authority": "Office of the Privacy Commissioner of Canada (OPC)"
+          },
+          "authority": "Office of the Privacy Commissioner of Canada (OPC)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 24,
+        "framework": "OSFI_B10"
+      },
+      "fastest_patch_sla": null
+    },
+    "BR": {
+      "jurisdiction_name": "Brazil",
+      "frameworks": {
+        "LGPD": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Security incident that may cause relevant risk or damage to data subjects",
+            "stages": null,
+            "source": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm",
+            "authority": "Autoridade Nacional de Proteção de Dados (ANPD)"
+          },
+          "authority": "Autoridade Nacional de Proteção de Dados (ANPD)"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "CN": {
+      "jurisdiction_name": "China",
+      "frameworks": {
+        "PIPL": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Personal information leak, tampering, or loss",
+            "stages": null,
+            "source": "https://www.npc.gov.cn/npc/c30834/202108/a8c4e3672c74491a80b53a172bb753fe.shtml",
+            "authority": "Cyberspace Administration of China (CAC) — co-regulating with MIIT, MPS, SAMR"
+          },
+          "authority": "Cyberspace Administration of China (CAC) — co-regulating with MIIT, MPS, SAMR"
+        },
+        "DSL": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Data security incident; immediate disposal + notification to competent authority",
+            "stages": null,
+            "source": "https://www.npc.gov.cn/npc/c30834/202106/7c9af12f51334a73b56d7938f99a788a.shtml",
+            "authority": "CAC, MPS, MSS — sectoral regulators with national security coordination"
+          },
+          "authority": "CAC, MPS, MSS — sectoral regulators with national security coordination"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "ZA": {
+      "jurisdiction_name": "South Africa",
+      "frameworks": {
+        "POPIA": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Compromise of personal information where reasonable grounds to believe the information has been accessed or acquired by unauthorised person",
+            "stages": null,
+            "source": "https://www.gov.za/sites/default/files/gcis_document/201409/3706726-11act4of2013popi.pdf",
+            "authority": "Information Regulator (South Africa)"
+          },
+          "authority": "Information Regulator (South Africa)"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "AE": {
+      "jurisdiction_name": "United Arab Emirates",
+      "frameworks": {
+        "UAE_PDPL": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Breach or violation of personal data that would prejudice privacy, confidentiality, or security of the data subject",
+            "stages": null,
+            "source": "https://u.ae/-/media/Documents-2022/Federal-Decree-Law-No-45-of-2021-Regarding-the-Protection-of-Personal-Data-Protection.ashx",
+            "authority": "UAE Data Office (Federal); TDRA coordinates digital sector; sectoral regulators apply in finance, health"
+          },
+          "authority": "UAE Data Office (Federal); TDRA coordinates digital sector; sectoral regulators apply in finance, health"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "SA": {
+      "jurisdiction_name": "Saudi Arabia",
+      "frameworks": {
+        "KSA_PDPL": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach that may cause damage to personal data or to the data subject",
+            "stages": null,
+            "source": "https://sdaia.gov.sa/en/SDAIA/about/Files/PersonalDataEnglishV2.pdf",
+            "authority": "Saudi Data and AI Authority (SDAIA)"
+          },
+          "authority": "Saudi Data and AI Authority (SDAIA)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "KSA_PDPL"
+      },
+      "fastest_patch_sla": null
+    },
+    "NZ": {
+      "jurisdiction_name": "New Zealand",
+      "frameworks": {
+        "PRIVACY_ACT_2020": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Notifiable privacy breach: unauthorised access, disclosure, loss of personal information that has caused or is likely to cause serious harm",
+            "stages": null,
+            "source": "https://www.legislation.govt.nz/act/public/2020/0031/latest/LMS23223.html",
+            "authority": "Office of the Privacy Commissioner (OPC) — Te Mana Mātāpono Matatapu"
+          },
+          "authority": "Office of the Privacy Commissioner (OPC) — Te Mana Mātāpono Matatapu"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "KR": {
+      "jurisdiction_name": "Korea (Republic of)",
+      "frameworks": {
+        "PIPA": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal information leakage",
+            "stages": null,
+            "source": "https://www.law.go.kr/LSW/eng/engLsSc.do?menuId=2&section=lawNm&query=Personal+Information+Protection+Act",
+            "authority": "Personal Information Protection Commission (PIPC)"
+          },
+          "authority": "Personal Information Protection Commission (PIPC)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "PIPA"
+      },
+      "fastest_patch_sla": null
+    },
+    "CL": {
+      "jurisdiction_name": "Chile",
+      "frameworks": {
+        "CL_DPL": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Security breach affecting personal data with risk to data subject rights",
+            "stages": null,
+            "source": "https://www.bcn.cl/leychile/navegar?idNorma=141599",
+            "authority": "Agencia de Protección de Datos Personales (APDP) — established by Law 21,719; pre-existing oversight by SERNAC and Civil Registry"
+          },
+          "authority": "Agencia de Protección de Datos Personales (APDP) — established by Law 21,719; pre-existing oversight by SERNAC and Civil Registry"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "CL_DPL"
+      },
+      "fastest_patch_sla": null
+    },
+    "IL": {
+      "jurisdiction_name": "Israel",
+      "frameworks": {
+        "PPL_5741_1981": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Severe security incident affecting databases at medium or high security level (Regulation 11)",
+            "stages": null,
+            "source": "https://www.gov.il/en/departments/the_privacy_protection_authority",
+            "authority": "Privacy Protection Authority (PPA, רשות הגנת הפרטיות); transitioning to 'Public Authority for Privacy Protection' under Amendment 13 with expanded enforcement powers"
+          },
+          "authority": "Privacy Protection Authority (PPA, רשות הגנת הפרטיות); transitioning to 'Public Authority for Privacy Protection' under Amendment 13 with expanded enforcement powers"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "CH": {
+      "jurisdiction_name": "Switzerland",
+      "frameworks": {
+        "REVFADP": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Personal data breach likely to result in a high risk to data subjects' personality or fundamental rights (Art. 24 revFADP)",
+            "stages": null,
+            "source": "https://www.fedlex.admin.ch/eli/cc/2022/491/en",
+            "authority": "Federal Data Protection and Information Commissioner (FDPIC, EDÖB)"
+          },
+          "authority": "Federal Data Protection and Information Commissioner (FDPIC, EDÖB)"
+        },
+        "NCSC_CH": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Cyberattack on critical infrastructure operators (per Information Security Act Art. 74e, in force 2025-04-01)",
+            "stages": null,
+            "source": "https://www.ncsc.admin.ch/ncsc/en/home.html",
+            "authority": "Federal Office for Cybersecurity (BACS, formerly NCSC-CH; previously MELANI)"
+          },
+          "authority": "Federal Office for Cybersecurity (BACS, formerly NCSC-CH; previously MELANI)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 24,
+        "framework": "NCSC_CH"
+      },
+      "fastest_patch_sla": null
+    },
+    "HK": {
+      "jurisdiction_name": "Hong Kong SAR",
+      "frameworks": {
+        "PDPO": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Voluntary breach notification to PCPD recommended for breaches involving sensitive data or significant harm potential",
+            "stages": null,
+            "source": "https://www.pcpd.org.hk/english/data_privacy_law/ordinance_at_a_Glance/ordinance.html",
+            "authority": "Office of the Privacy Commissioner for Personal Data (PCPD)"
+          },
+          "authority": "Office of the Privacy Commissioner for Personal Data (PCPD)"
+        },
+        "HKMA_CFI2": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Significant IT control failures or cyber events affecting customer services or risk profile",
+            "stages": null,
+            "source": "https://www.hkma.gov.hk/eng/key-functions/banking/banking-regulatory-and-supervisory-regime/cybersecurity/",
+            "authority": "Hong Kong Monetary Authority (HKMA)"
+          },
+          "authority": "Hong Kong Monetary Authority (HKMA)"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    },
+    "TW": {
+      "jurisdiction_name": "Taiwan",
+      "frameworks": {
+        "PDPA_TW": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Personal data theft, alteration, damage, loss, or leakage (Art. 12)",
+            "stages": null,
+            "source": "https://law.moj.gov.tw/ENG/LawClass/LawAll.aspx?pcode=I0050021",
+            "authority": "Personal Data Protection Commission (PDPC, 個人資料保護委員會) — established under 2023 amendment; previously sectoral regulators"
+          },
+          "authority": "Personal Data Protection Commission (PDPC, 個人資料保護委員會) — established under 2023 amendment; previously sectoral regulators"
+        },
+        "CYBER_SECURITY_MGMT_ACT": {
+          "breach_notification": {
+            "hours": 1,
+            "trigger": "Cyber incident affecting CIP critical information and communications systems",
+            "stages": null,
+            "source": "https://law.moj.gov.tw/ENG/LawClass/LawAll.aspx?pcode=A0030297",
+            "authority": "Ministry of Digital Affairs (MoDA, 數位發展部) — established 2022-08-27; previously National Information and Communication Security Taskforce. Operational arm: National Institute of Cyber Security (NICS, 國家資通安全研究院)"
+          },
+          "authority": "Ministry of Digital Affairs (MoDA, 數位發展部) — established 2022-08-27; previously National Information and Communication Security Taskforce. Operational arm: National Institute of Cyber Security (NICS, 國家資通安全研究院)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 1,
+        "framework": "CYBER_SECURITY_MGMT_ACT"
+      },
+      "fastest_patch_sla": null
+    },
+    "ID": {
+      "jurisdiction_name": "Indonesia",
+      "frameworks": {
+        "PDP_LAW": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data protection failure causing data leakage, loss, or unauthorised processing (Art. 46)",
+            "stages": null,
+            "source": "https://peraturan.bpk.go.id/Details/229798/uu-no-27-tahun-2022",
+            "authority": "Personal Data Protection Agency (Lembaga Pelindungan Data Pribadi) — being established under Presidential Regulation pursuant to UU PDP Art. 58-60; interim oversight by Ministry of Communication and Informatics (Kominfo, now Komdigi)"
+          },
+          "authority": "Personal Data Protection Agency (Lembaga Pelindungan Data Pribadi) — being established under Presidential Regulation pursuant to UU PDP Art. 58-60; interim oversight by Ministry of Communication and Informatics (Kominfo, now Komdigi)"
+        },
+        "BI_CYBER_REG": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Significant cyber incident affecting payment services or banking operations",
+            "stages": null,
+            "source": "https://www.bi.go.id/en/publikasi/peraturan/Pages/PBI_230621.aspx",
+            "authority": "Bank Indonesia (BI); Financial Services Authority (Otoritas Jasa Keuangan, OJK)"
+          },
+          "authority": "Bank Indonesia (BI); Financial Services Authority (Otoritas Jasa Keuangan, OJK)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "PDP_LAW"
+      },
+      "fastest_patch_sla": null
+    },
+    "VN": {
+      "jurisdiction_name": "Vietnam",
+      "frameworks": {
+        "PDPD": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach causing risk to data subject rights and interests",
+            "stages": null,
+            "source": "https://thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Nghi-dinh-13-2023-ND-CP-bao-ve-du-lieu-ca-nhan-465185.aspx",
+            "authority": "Ministry of Public Security (Bộ Công An) — Department of Cybersecurity and Hi-Tech Crime Prevention (A05)"
+          },
+          "authority": "Ministry of Public Security (Bộ Công An) — Department of Cybersecurity and Hi-Tech Crime Prevention (A05)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "PDPD"
+      },
+      "fastest_patch_sla": null
+    },
+    "US_NYDFS": {
+      "jurisdiction_name": "United States — New York State (sub-national, financial services)",
+      "frameworks": {
+        "NYDFS_PART_500": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Cybersecurity event that has a reasonable likelihood of materially harming any material part of the normal operations of the Covered Entity OR a Cybersecurity Event involving Nonpublic Information that requires notice to a government body, self-regulatory agency, or other supervisory body (§500.17(a))",
+            "stages": null,
+            "source": "https://www.dfs.ny.gov/industry_guidance/cybersecurity",
+            "authority": "New York State Department of Financial Services (DFS)"
+          },
+          "authority": "New York State Department of Financial Services (DFS)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "NYDFS_PART_500"
+      },
+      "fastest_patch_sla": null
+    },
+    "NO": {
+      "jurisdiction_name": "Norway",
+      "frameworks": {
+        "PERSONOPPLYSNINGSLOVEN": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach affecting data subject rights (GDPR Art. 33 standard)",
+            "stages": null,
+            "source": "https://lovdata.no/dokument/NL/lov/2018-06-15-38",
+            "authority": "Datatilsynet (Norwegian Data Protection Authority)"
+          },
+          "authority": "Datatilsynet (Norwegian Data Protection Authority)"
+        },
+        "NSM_GRUNNPRINSIPPER": {
+          "patch_sla": {
+            "hours": 720,
+            "note": "NSM Grunnprinsipper 2.2.5 recommends 'as soon as possible' for known-exploited vulnerabilities; sector guidance and audit practice operationalise this as ~30 days for critical, with accelerated handling for actively exploited cases.",
+            "source": "https://nsm.no/regelverk-og-hjelp/rad-og-anbefalinger/grunnprinsipper-for-ikt-sikkerhet/",
+            "authority": "Nasjonal sikkerhetsmyndighet (NSM) — Norwegian National Security Authority"
+          },
+          "authority": "Nasjonal sikkerhetsmyndighet (NSM) — Norwegian National Security Authority"
+        },
+        "NIS2_NORWAY": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Significant incident at essential/important entity (NIS2 standard)",
+            "stages": null,
+            "source": "https://www.regjeringen.no/no/dokumenter/prop.-109-l-20232024/id3035898/",
+            "authority": "NSM as national CSIRT; Nkom (telecom), Finanstilsynet (finance), NVE (energy), Helsedirektoratet (health), and other sectoral authorities"
+          },
+          "authority": "NSM as national CSIRT; Nkom (telecom), Finanstilsynet (finance), NVE (energy), Helsedirektoratet (health), and other sectoral authorities"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 24,
+        "framework": "NIS2_NORWAY"
+      },
+      "fastest_patch_sla": {
+        "hours": 720,
+        "framework": "NSM_GRUNNPRINSIPPER"
+      }
+    },
+    "MX": {
+      "jurisdiction_name": "Mexico",
+      "frameworks": {
+        "LFPDPPP": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Security breach affecting rights of data subjects (Reglamento Art. 63)",
+            "stages": null,
+            "source": "https://www.diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf",
+            "authority": "Until 2025: INAI (Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales); reform in progress to transfer functions to a successor agency under the Secretaría Anticorrupción y Buen Gobierno (constitutional reform published 2024-12-20 dissolving INAI; transition law pending)"
+          },
+          "authority": "Until 2025: INAI (Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales); reform in progress to transfer functions to a successor agency under the Secretaría Anticorrupción y Buen Gobierno (constitutional reform published 2024-12-20 dissolving INAI; transition law pending)"
+        },
+        "CONDUSEF_CNBV_CYBER": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Cyber incident affecting operations, services, or sensitive information",
+            "stages": null,
+            "source": "https://www.cnbv.gob.mx/Normatividad/Disposiciones%20de%20car%C3%A1cter%20general%20aplicables%20a%20las%20instituciones%20de%20cr%C3%A9dito.pdf",
+            "authority": "Comisión Nacional Bancaria y de Valores (CNBV); CONDUSEF for consumer protection in financial services; Banco de México for payment systems oversight"
+          },
+          "authority": "Comisión Nacional Bancaria y de Valores (CNBV); CONDUSEF for consumer protection in financial services; Banco de México for payment systems oversight"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 24,
+        "framework": "CONDUSEF_CNBV_CYBER"
+      },
+      "fastest_patch_sla": null
+    },
+    "AR": {
+      "jurisdiction_name": "Argentina",
+      "frameworks": {
+        "LPDP": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Security incident affecting personal data",
+            "stages": null,
+            "source": "http://servicios.infoleg.gob.ar/infolegInternet/anexos/60000-64999/64790/norma.htm",
+            "authority": "Agencia de Acceso a la Información Pública (AAIP) — Dirección Nacional de Protección de Datos Personales"
+          },
+          "authority": "Agencia de Acceso a la Información Pública (AAIP) — Dirección Nacional de Protección de Datos Personales"
+        },
+        "BCRA_CYBER": {
+          "breach_notification": {
+            "hours": 24,
+            "trigger": "Cyber incident with significant impact on operations, customers or sensitive information",
+            "stages": null,
+            "source": "https://www.bcra.gob.ar/Pdfs/comytexord/A7724.pdf",
+            "authority": "Banco Central de la República Argentina (BCRA) — Superintendencia de Entidades Financieras y Cambiarias"
+          },
+          "authority": "Banco Central de la República Argentina (BCRA) — Superintendencia de Entidades Financieras y Cambiarias"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 24,
+        "framework": "BCRA_CYBER"
+      },
+      "fastest_patch_sla": null
+    },
+    "TR": {
+      "jurisdiction_name": "Türkiye",
+      "frameworks": {
+        "KVKK": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach (data being acquired by unauthorised parties)",
+            "stages": null,
+            "source": "https://www.kvkk.gov.tr/Icerik/6649/Personal-Data-Protection-Law",
+            "authority": "Kişisel Verileri Koruma Kurumu (KVKK Authority / KVKK)"
+          },
+          "authority": "Kişisel Verileri Koruma Kurumu (KVKK Authority / KVKK)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "KVKK"
+      },
+      "fastest_patch_sla": null
+    },
+    "TH": {
+      "jurisdiction_name": "Thailand",
+      "frameworks": {
+        "PDPA_TH": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach that risks the rights and freedoms of persons",
+            "stages": null,
+            "source": "https://www.pdpc.or.th/en/laws-and-regulations/",
+            "authority": "Personal Data Protection Committee (PDPC) — Office of the PDPC (PDPC Office)"
+          },
+          "authority": "Personal Data Protection Committee (PDPC) — Office of the PDPC (PDPC Office)"
+        },
+        "CSA_TH": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "Cyber threat affecting CII (graduated severity)",
+            "stages": null,
+            "source": "https://www.ncsa.or.th/laws.html",
+            "authority": "National Cyber Security Agency (NCSA) — สำนักงานคณะกรรมการการรักษาความมั่นคงปลอดภัยไซเบอร์แห่งชาติ"
+          },
+          "authority": "National Cyber Security Agency (NCSA) — สำนักงานคณะกรรมการการรักษาความมั่นคงปลอดภัยไซเบอร์แห่งชาติ"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 72,
+        "framework": "PDPA_TH"
+      },
+      "fastest_patch_sla": null
+    },
+    "PH": {
+      "jurisdiction_name": "Philippines",
+      "frameworks": {
+        "DPA_2012": {
+          "breach_notification": {
+            "hours": 72,
+            "trigger": "Personal data breach where (a) sensitive personal information or information that may enable identity fraud are reasonably believed to have been acquired by an unauthorised person, and (b) it is likely to give rise to a real risk of serious harm",
+            "stages": null,
+            "source": "https://privacy.gov.ph/data-privacy-act/",
+            "authority": "National Privacy Commission (NPC)"
+          },
+          "authority": "National Privacy Commission (NPC)"
+        },
+        "BSP_CYBER": {
+          "breach_notification": {
+            "hours": 2,
+            "trigger": "Major cyber incident or significant disruption to banking operations",
+            "stages": null,
+            "source": "https://www.bsp.gov.ph/Pages/Regulations/MORB.aspx",
+            "authority": "Bangko Sentral ng Pilipinas (BSP)"
+          },
+          "authority": "Bangko Sentral ng Pilipinas (BSP)"
+        }
+      },
+      "fastest_breach_notification": {
+        "hours": 2,
+        "framework": "BSP_CYBER"
+      },
+      "fastest_patch_sla": null
+    },
+    "US_CALIFORNIA": {
+      "jurisdiction_name": "United States — California (sub-national, privacy + AI baseline)",
+      "frameworks": {
+        "CCPA_CPRA": {
+          "breach_notification": {
+            "hours": null,
+            "trigger": "California's separate breach-notification statute Cal. Civ. Code § 1798.82 applies to security breaches of personal information",
+            "stages": null,
+            "source": "https://oag.ca.gov/privacy/ccpa",
+            "authority": "California Privacy Protection Agency (CPPA) — primary; California Attorney General — concurrent enforcement"
+          },
+          "authority": "California Privacy Protection Agency (CPPA) — primary; California Attorney General — concurrent enforcement"
+        }
+      },
+      "fastest_breach_notification": null,
+      "fastest_patch_sla": null
+    }
+  },
+  "sorted_by_breach_notification_hours": [
+    {
+      "jurisdiction": "TW",
+      "framework": "CYBER_SECURITY_MGMT_ACT",
+      "hours": 1,
+      "trigger": "Cyber incident affecting CIP critical information and communications systems"
+    },
+    {
+      "jurisdiction": "SG",
+      "framework": "MAS_TRM",
+      "hours": 2,
+      "trigger": "Significant IT disruption (> 30min customer impact), security breach"
+    },
+    {
+      "jurisdiction": "SG",
+      "framework": "CSA_CCOP",
+      "hours": 2,
+      "trigger": "Cybersecurity incident affecting CII"
+    },
+    {
+      "jurisdiction": "PH",
+      "framework": "BSP_CYBER",
+      "hours": 2,
+      "trigger": "Major cyber incident or significant disruption to banking operations"
+    },
+    {
+      "jurisdiction": "EU",
+      "framework": "DORA",
+      "hours": 4,
+      "trigger": "Major ICT-related incident (RTO/RPO breach, high financial impact, reputational damage)"
+    },
+    {
+      "jurisdiction": "IN",
+      "framework": "CERT_IN",
+      "hours": 6,
+      "trigger": "Mandatory incident reporting categories (data breach, ransomware, website defacement, etc.)"
+    },
+    {
+      "jurisdiction": "EU",
+      "framework": "NIS2",
+      "hours": 24,
+      "trigger": "Significant incident (substantial impact on service provision)"
+    },
+    {
+      "jurisdiction": "EU",
+      "framework": "EU_CRA",
+      "hours": 24,
+      "trigger": "Actively exploited vulnerability discovered in the product"
+    },
+    {
+      "jurisdiction": "CA",
+      "framework": "OSFI_B10",
+      "hours": 24,
+      "trigger": "Technology or cyber incident with material operational impact"
+    },
+    {
+      "jurisdiction": "CH",
+      "framework": "NCSC_CH",
+      "hours": 24,
+      "trigger": "Cyberattack on critical infrastructure operators (per Information Security Act Art. 74e, in force 2025-04-01)"
+    },
+    {
+      "jurisdiction": "NO",
+      "framework": "NIS2_NORWAY",
+      "hours": 24,
+      "trigger": "Significant incident at essential/important entity (NIS2 standard)"
+    },
+    {
+      "jurisdiction": "MX",
+      "framework": "CONDUSEF_CNBV_CYBER",
+      "hours": 24,
+      "trigger": "Cyber incident affecting operations, services, or sensitive information"
+    },
+    {
+      "jurisdiction": "AR",
+      "framework": "BCRA_CYBER",
+      "hours": 24,
+      "trigger": "Cyber incident with significant impact on operations, customers or sensitive information"
+    },
+    {
+      "jurisdiction": "EU",
+      "framework": "GDPR",
+      "hours": 72,
+      "trigger": "Personal data breach affecting data subject rights"
+    },
+    {
+      "jurisdiction": "AU",
+      "framework": "APRA_CPS234",
+      "hours": 72,
+      "trigger": "Material information security incident"
+    },
+    {
+      "jurisdiction": "IN",
+      "framework": "DPDPA",
+      "hours": 72,
+      "trigger": "Personal data breach affecting Data Principals"
+    },
+    {
+      "jurisdiction": "SA",
+      "framework": "KSA_PDPL",
+      "hours": 72,
+      "trigger": "Personal data breach that may cause damage to personal data or to the data subject"
+    },
+    {
+      "jurisdiction": "KR",
+      "framework": "PIPA",
+      "hours": 72,
+      "trigger": "Personal information leakage"
+    },
+    {
+      "jurisdiction": "CL",
+      "framework": "CL_DPL",
+      "hours": 72,
+      "trigger": "Security breach affecting personal data with risk to data subject rights"
+    },
+    {
+      "jurisdiction": "ID",
+      "framework": "PDP_LAW",
+      "hours": 72,
+      "trigger": "Personal data protection failure causing data leakage, loss, or unauthorised processing (Art. 46)"
+    },
+    {
+      "jurisdiction": "VN",
+      "framework": "PDPD",
+      "hours": 72,
+      "trigger": "Personal data breach causing risk to data subject rights and interests"
+    },
+    {
+      "jurisdiction": "US_NYDFS",
+      "framework": "NYDFS_PART_500",
+      "hours": 72,
+      "trigger": "Cybersecurity event that has a reasonable likelihood of materially harming any material part of the normal operations of the Covered Entity OR a Cybersecurity Event involving Nonpublic Information that requires notice to a government body, self-regulatory agency, or other supervisory body (§500.17(a))"
+    },
+    {
+      "jurisdiction": "NO",
+      "framework": "PERSONOPPLYSNINGSLOVEN",
+      "hours": 72,
+      "trigger": "Personal data breach affecting data subject rights (GDPR Art. 33 standard)"
+    },
+    {
+      "jurisdiction": "TR",
+      "framework": "KVKK",
+      "hours": 72,
+      "trigger": "Personal data breach (data being acquired by unauthorised parties)"
+    },
+    {
+      "jurisdiction": "TH",
+      "framework": "PDPA_TH",
+      "hours": 72,
+      "trigger": "Personal data breach that risks the rights and freedoms of persons"
+    },
+    {
+      "jurisdiction": "PH",
+      "framework": "DPA_2012",
+      "hours": 72,
+      "trigger": "Personal data breach where (a) sensitive personal information or information that may enable identity fraud are reasonably believed to have been acquired by an unauthorised person, and (b) it is likely to give rise to a real risk of serious harm"
+    }
+  ],
+  "sorted_by_patch_sla_hours": [
+    {
+      "jurisdiction": "AU",
+      "framework": "ASD_ISM",
+      "hours": 48,
+      "note": "ISM-1623: 48h for critical with existing exploit. Best non-CISA-aware SLA of any major framework."
+    },
+    {
+      "jurisdiction": "AU",
+      "framework": "ESSENTIAL_8",
+      "hours": 48,
+      "note": "Maturity Level 3 — 48h for extreme risk. ML1 = 1 month, ML2 = 2 weeks, ML3 = 48h."
+    },
+    {
+      "jurisdiction": "UK",
+      "framework": "CYBER_ESSENTIALS",
+      "hours": 336,
+      "note": "14 days for critical patches (internet-facing). Better than NIST 30-day, worse than ASD 48h."
+    },
+    {
+      "jurisdiction": "SG",
+      "framework": "MAS_TRM",
+      "hours": 720,
+      "note": "1 month for critical patches — same PCI problem. Risk-based timeline in practice."
+    },
+    {
+      "jurisdiction": "NO",
+      "framework": "NSM_GRUNNPRINSIPPER",
+      "hours": 720,
+      "note": "NSM Grunnprinsipper 2.2.5 recommends 'as soon as possible' for known-exploited vulnerabilities; sector guidance and audit practice operationalise this as ~30 days for critical, with accelerated handling for actively exploited cases."
+    }
+  ]
+}

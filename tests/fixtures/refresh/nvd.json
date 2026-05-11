@@ -1,0 +1,7 @@
+{
+  "_note": "Frozen fixture for refresh-external NVD source.",
+  "status": "ok",
+  "errors": 0,
+  "summary": "fixture: 0 NVD diffs (catalog at parity)",
+  "diffs": []
+}

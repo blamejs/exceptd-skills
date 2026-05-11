@@ -1,6 +1,6 @@
 {
   "name": "exceptd-security",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
   "homepage": "https://exceptd.com",
   "repository": {
@@ -40,7 +40,11 @@
     "build-indexes": "node scripts/build-indexes.js",
     "validate-indexes": "node lib/validate-indexes.js",
     "audit-perf": "node scripts/audit-perf.js",
-    "audit-cross-skill": "node scripts/audit-cross-skill.js"
+    "audit-cross-skill": "node scripts/audit-cross-skill.js",
+    "refresh": "node lib/refresh-external.js",
+    "refresh:dry": "node lib/refresh-external.js",
+    "refresh:apply": "node lib/refresh-external.js --apply",
+    "refresh:offline": "node lib/refresh-external.js --from-fixture tests/fixtures/refresh"
   },
   "dependencies": {},
   "devDependencies": {}

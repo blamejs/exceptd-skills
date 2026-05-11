@@ -1,0 +1,381 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "source": "skills/compliance-theater/skill.md (7 documented patterns)",
+    "pattern_count": 7
+  },
+  "patterns": {
+    "pattern-1": {
+      "pattern_number": 1,
+      "pattern_name": "Patch Management Theater",
+      "primary_attack_class": "patch-cycle vs. KEV-listed instant-root exploits",
+      "claim": "\"We have a patch management program. All Critical/High CVEs are remediated within 30 days.\"",
+      "audit_evidence": "Patch management policy document, ticketing system showing CVEs opened and closed within SLA, vulnerability scanner reports showing declining open vulnerabilities.",
+      "reality": "CVE-2026-31431 (Copy Fail) was CISA KEV listed on 2026-03-15 with a public 732-byte exploit script. A 30-day SLA means an organization can be \"compliant\" while having a public deterministic root exploit unpatched for 30 days. During that window: active exploitation confirmed.",
+      "why_its_theater": "The 30-day SLA was designed for environments where weaponization takes weeks. Copy Fail's weaponization time was ~1 hour (AI-discovered and PoC-ready). The control measures compliance with a time window that no longer reflects exploit development reality.",
+      "fast_test": "Pull last 12 months of patch records. Any CISA KEV patched > 72 hours after KEV listing = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "NIST 800-53",
+          "control_id": "SI-2",
+          "note": "30-day critical patch SLA designed for slow-weaponization era"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.8.8",
+          "note": "'Appropriate timescales' undefined; commonly read as 30 days for High"
+        },
+        {
+          "framework": "PCI DSS 4.0",
+          "control_id": "6.3.3",
+          "note": "One-month critical-patch window"
+        },
+        {
+          "framework": "NIS2",
+          "control_id": "Art. 21",
+          "note": "No specific patching SLA"
+        },
+        {
+          "framework": "CIS Controls v8",
+          "control_id": "Control 7",
+          "note": "Continuous vulnerability management; 'within one month' still too long"
+        }
+      ],
+      "evidence": {
+        "cve": "CVE-2026-31431",
+        "rationale": "Copy Fail: deterministic 732-byte root, CISA KEV, AI-discovered, public PoC"
+      },
+      "ttps": [
+        "T1068",
+        "T1203"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 1: Patch Management Theater"
+    },
+    "pattern-2": {
+      "pattern_number": 2,
+      "pattern_name": "Network Segmentation Theater (IPsec)",
+      "primary_attack_class": "IPsec subsystem as both control and attack surface",
+      "claim": "\"We have network segmentation between security zones implemented via IPsec tunnels. SC-8 / PCI DSS Req 1 compliant.\"",
+      "audit_evidence": "Network diagrams showing zone separation, IPsec configuration documentation, firewall rule reviews.",
+      "reality": "CVE-2026-43284 (Dirty Frag) exploits the IPsec subsystem. An unpatched host cannot use IPsec as a compensating control for Dirty Frag — the IPsec implementation is the attack surface. Network controls that rely on IPsec are providing no isolation guarantee for Dirty Frag-exposed hosts.",
+      "why_its_theater": "The segmentation control is real. The IPsec configuration is correct. The audit evidence is legitimate. But the control's security guarantee fails specifically for the class of vulnerability that uses IPsec as its attack path.",
+      "fast_test": "Identify hosts using IPsec for segmentation compliance. If kernel patch for CVE-2026-43284 not applied = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "NIST 800-53",
+          "control_id": "SC-8",
+          "note": "Transmission confidentiality — IPsec common compensating control"
+        },
+        {
+          "framework": "NIST 800-53",
+          "control_id": "SC-7",
+          "note": "Boundary protection — IPsec tunnel as zone separator"
+        },
+        {
+          "framework": "PCI DSS 4.0",
+          "control_id": "Req 1",
+          "note": "Network segmentation between trust zones"
+        }
+      ],
+      "evidence": {
+        "cve": "CVE-2026-43284",
+        "rationale": "Dirty Frag: kernel IPsec subsystem LPE — the control's cryptographic mechanism is the attack surface"
+      },
+      "ttps": [
+        "T1190"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 2: Network Segmentation Theater (IPsec)"
+    },
+    "pattern-3": {
+      "pattern_number": 3,
+      "pattern_name": "Access Control Theater (AI Agent)",
+      "primary_attack_class": "prompt injection bypasses access control via authorized service account",
+      "claim": "\"Our access control program (CC6 / AC-2) ensures all system access is authenticated, authorized, and logged.\"",
+      "audit_evidence": "IAM configuration reviews, access logs showing authorized accounts, no unauthorized access events, SOC 2 CC6 pass.",
+      "reality": "AI agent service accounts operate under CC6-compliant access controls. Prompt injection attacks cause the AI agent to take actions using its service account. The actions are authorized from CC6's perspective. The attacker's identity never appears in access logs. The audit evidence is correct and complete — and provides zero signal about the intrusion.",
+      "why_its_theater": "CC6 was designed for human-controlled accounts. AI agents with tool use capabilities create an authorization model where model judgment is the gating mechanism, not traditional access control. Prompt injection bypasses the model's judgment — and therefore bypasses the access control — without triggering any CC6 monitoring.",
+      "fast_test": "If AI agents have prod access and (a) prompt content + tool calls aren't logged or (b) no behavioral baseline = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "SOC 2",
+          "control_id": "CC6",
+          "note": "Logical access — designed for human-controlled accounts"
+        },
+        {
+          "framework": "NIST 800-53",
+          "control_id": "AC-2",
+          "note": "Account management — no concept of AI agent authority delegation"
+        },
+        {
+          "framework": "NIST 800-53",
+          "control_id": "AC-3",
+          "note": "Access enforcement — model judgment is the gate, not a recognized control"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.5.15",
+          "note": "Access control policy"
+        }
+      ],
+      "evidence": {
+        "cve": "CVE-2025-53773",
+        "rationale": "Copilot prompt-injection RCE: AI service account executes attacker-chosen actions; no identity boundary crossed"
+      },
+      "ttps": [
+        "AML.T0051",
+        "AML.T0054",
+        "T1059"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 3: Access Control Theater (AI Agent)"
+    },
+    "pattern-4": {
+      "pattern_number": 4,
+      "pattern_name": "Incident Response Theater (AI Pipeline)",
+      "primary_attack_class": "IR program with no detection input or procedure for AI-class incidents",
+      "claim": "\"We have an incident response program (IR-1 through IR-8 / A.5.24-A.5.28) with documented procedures for detecting, responding to, and recovering from security incidents.\"",
+      "audit_evidence": "IR policy, incident response playbooks, tabletop exercise records, defined roles and responsibilities.",
+      "reality": "The incident response program covers: malware infection, data breach, DDoS, ransomware, insider threat. It does not cover: model poisoning detected in production, prompt injection attack via AI assistant, AI-as-C2 channel discovered in network traffic, SesameOp-style exfiltration via AI API.",
+      "why_its_theater": "The IR program passes the audit because it meets the framework's requirements for documented procedures and tested response capabilities. Those capabilities are real for traditional incidents. For AI-specific incidents, the detection mechanisms don't exist (so incidents aren't detected) and the response procedures haven't been written (so response is ad-hoc if detection does occur).",
+      "fast_test": "Search IR playbooks for 'prompt injection', 'model poisoning', 'AI agent', 'LLM', 'MCP server'. Zero matches = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "SOC 2",
+          "control_id": "CC7",
+          "note": "System operations / anomaly detection — no baseline for AI-API traffic"
+        },
+        {
+          "framework": "NIST 800-53",
+          "control_id": "IR-4",
+          "note": "Incident handling — phases defined but not AI-class triggers"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.5.24-A.5.28",
+          "note": "IR planning/preparation/reporting/response/learning"
+        }
+      ],
+      "evidence": {
+        "campaign": "SesameOp",
+        "rationale": "AML.T0096 LLM Integration Abuse as C2 — no detection triggers exist, so IR procedures have no input"
+      },
+      "ttps": [
+        "AML.T0020",
+        "AML.T0096",
+        "AML.T0010"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 4: Incident Response Theater (AI Pipeline)"
+    },
+    "pattern-5": {
+      "pattern_number": 5,
+      "pattern_name": "Change Management Theater (AI Model)",
+      "primary_attack_class": "external model updates bypass operator change control",
+      "claim": "\"All changes to production systems go through our change management process (CM-3 / A.8.32). Changes are reviewed, approved, and documented.\"",
+      "audit_evidence": "Change management tickets for infrastructure deployments, software releases, configuration changes.",
+      "reality": "LLM models used by the organization are updated continuously by their providers (OpenAI, Anthropic, Google, etc.). These updates change model behavior, capabilities, and potentially safety properties. They do not go through the organization's change management process because the organization does not control them. Behavioral regressions introduced in model updates are not detected by change management controls.",
+      "why_its_theater": "The change management control is real and functioning. It controls everything the organization actually controls. But the organization's AI systems depend on externally managed components (the LLMs themselves) that change continuously outside the control perimeter.",
+      "fast_test": "List LLM API deps. Does each provider update open a change ticket? Is there a behavioral test suite? Is the model version pinned? Any 'no' = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "NIST 800-53",
+          "control_id": "CM-3",
+          "note": "Configuration change control — drafted for changes the operator controls"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.8.32",
+          "note": "Change management"
+        },
+        {
+          "framework": "SOC 2",
+          "control_id": "CC8",
+          "note": "Change management"
+        }
+      ],
+      "evidence": {
+        "campaign": "Continuous provider model updates",
+        "rationale": "Vendor-managed model updates bypass operator change control entirely; safety properties can shift silently"
+      },
+      "ttps": [
+        "AML.T0018",
+        "AML.T0020"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 5: Change Management Theater (AI Model)"
+    },
+    "pattern-6": {
+      "pattern_number": 6,
+      "pattern_name": "Vendor/Third-Party Risk Theater (AI API + MCP)",
+      "primary_attack_class": "vendor program scope excludes LLM APIs and MCP servers",
+      "claim": "\"We have a vendor management program (CC9 / SA-12 / A.5.19). All third-party vendors with access to our systems or data undergo security review.\"",
+      "audit_evidence": "Vendor security questionnaires, SOC 2 reports for critical vendors, data processing agreements.",
+      "reality": "AI/LLM APIs (OpenAI, Anthropic, Google, etc.) receive organization data in prompts. Developer workstations have MCP servers installed from public npm registries. Neither category typically undergoes the same vendor review as, say, a cloud storage provider — they're treated as SaaS tools, not vendors with data access.",
+      "why_its_theater": "The vendor management program is functional for its intended scope. The scope doesn't include: LLM API providers as data processors for prompt content, MCP server packages as third-party code executing in production environments, AI coding assistants as vendors with access to source code.",
+      "fast_test": "List LLM API providers. Is there a vendor risk assessment + DPA for each? List MCP servers on dev workstations — did each pass vendor review? Either gap = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "SOC 2",
+          "control_id": "CC9",
+          "note": "Risk mitigation; vendor management"
+        },
+        {
+          "framework": "NIST 800-53",
+          "control_id": "SA-12",
+          "note": "Supply chain protection"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.5.19",
+          "note": "Supplier relationships — drafted for SaaS-style vendors"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.5.20",
+          "note": "Information security in supplier agreements"
+        },
+        {
+          "framework": "US FedRAMP",
+          "control_id": "Rev 5 Moderate",
+          "note": "Authorization-as-evidence pattern; ATO does not cover tenant-side MCP"
+        },
+        {
+          "framework": "US DoD CMMC",
+          "control_id": "2.0 Level 2",
+          "note": "Certification-as-evidence; does not cover AI coding-assistant supply chain"
+        }
+      ],
+      "evidence": {
+        "cve": "CVE-2026-30615",
+        "rationale": "Windsurf MCP zero-interaction RCE — vendor management program had no coverage of MCP servers as third-party code"
+      },
+      "ttps": [
+        "AML.T0010"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 6: Vendor/Third-Party Risk Theater (AI API + MCP)"
+    },
+    "pattern-7": {
+      "pattern_number": 7,
+      "pattern_name": "Security Awareness Theater (AI Phishing)",
+      "primary_attack_class": "phishing simulation tests resistance to template-era phish, not AI-generated content",
+      "claim": "\"We conduct regular security awareness training and phishing simulations. Our click-rate on simulated phishes is < 5%.\"",
+      "audit_evidence": "Training completion records, phishing simulation results showing < 5% click rate, awareness program documentation.",
+      "reality": "82.6% of phishing emails now contain AI-generated content indistinguishable from legitimate emails by grammar/style checks. Traditional phishing simulation content is crafted by humans using templates. A < 5% click rate on human-generated phishing simulations says nothing about resistance to AI-generated highly personalized spear-phishing.",
+      "why_its_theater": "The training and simulation program is real. The click-rate metric is real. But the threat has shifted to AI-generated content that looks nothing like what the simulations train against. The 5% click rate is measured against last generation's phishing, not current generation.",
+      "fast_test": "Were any simulation emails AI-generated (not template-based) in the last 3 sims? Is MFA phishing-resistant (hardware keys / passkeys)? Either 'no' = THEATER FLAG.",
+      "controls": [
+        {
+          "framework": "NIST 800-53",
+          "control_id": "AT-2",
+          "note": "Security awareness training — drafted against human-template phishing"
+        },
+        {
+          "framework": "ISO 27001:2022",
+          "control_id": "A.6.3",
+          "note": "Information security awareness, education and training"
+        },
+        {
+          "framework": "PCI DSS 4.0",
+          "control_id": "12.6",
+          "note": "Security awareness program"
+        }
+      ],
+      "evidence": {
+        "campaign": "AI-generated phishing baseline (82.6% of phish contain AI-generated content)",
+        "rationale": "Grammar/style heuristics are no longer reliable detectors; <5% click rate on template phish is non-informative"
+      },
+      "ttps": [
+        "T1566",
+        "AML.T0016"
+      ],
+      "source_skill": "compliance-theater",
+      "source_section": "### Pattern 7: Security Awareness Theater (AI Phishing)"
+    }
+  },
+  "by_control": {
+    "NIST 800-53::SI-2": [
+      "pattern-1"
+    ],
+    "ISO 27001:2022::A.8.8": [
+      "pattern-1"
+    ],
+    "PCI DSS 4.0::6.3.3": [
+      "pattern-1"
+    ],
+    "NIS2::Art. 21": [
+      "pattern-1"
+    ],
+    "CIS Controls v8::Control 7": [
+      "pattern-1"
+    ],
+    "NIST 800-53::SC-8": [
+      "pattern-2"
+    ],
+    "NIST 800-53::SC-7": [
+      "pattern-2"
+    ],
+    "PCI DSS 4.0::Req 1": [
+      "pattern-2"
+    ],
+    "SOC 2::CC6": [
+      "pattern-3"
+    ],
+    "NIST 800-53::AC-2": [
+      "pattern-3"
+    ],
+    "NIST 800-53::AC-3": [
+      "pattern-3"
+    ],
+    "ISO 27001:2022::A.5.15": [
+      "pattern-3"
+    ],
+    "SOC 2::CC7": [
+      "pattern-4"
+    ],
+    "NIST 800-53::IR-4": [
+      "pattern-4"
+    ],
+    "ISO 27001:2022::A.5.24-A.5.28": [
+      "pattern-4"
+    ],
+    "NIST 800-53::CM-3": [
+      "pattern-5"
+    ],
+    "ISO 27001:2022::A.8.32": [
+      "pattern-5"
+    ],
+    "SOC 2::CC8": [
+      "pattern-5"
+    ],
+    "SOC 2::CC9": [
+      "pattern-6"
+    ],
+    "NIST 800-53::SA-12": [
+      "pattern-6"
+    ],
+    "ISO 27001:2022::A.5.19": [
+      "pattern-6"
+    ],
+    "ISO 27001:2022::A.5.20": [
+      "pattern-6"
+    ],
+    "US FedRAMP::Rev 5 Moderate": [
+      "pattern-6"
+    ],
+    "US DoD CMMC::2.0 Level 2": [
+      "pattern-6"
+    ],
+    "NIST 800-53::AT-2": [
+      "pattern-7"
+    ],
+    "ISO 27001:2022::A.6.3": [
+      "pattern-7"
+    ],
+    "PCI DSS 4.0::12.6": [
+      "pattern-7"
+    ]
+  }
+}

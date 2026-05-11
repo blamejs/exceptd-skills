@@ -1,0 +1,10 @@
+{
+  "_note": "Frozen fixture for refresh-external EPSS source.",
+  "status": "ok",
+  "errors": 0,
+  "summary": "fixture: 2 EPSS diffs (synthetic)",
+  "diffs": [
+    { "id": "CVE-2026-31431", "field": "epss_score", "before": 0.9421, "after": 0.9655, "severity": "medium" },
+    { "id": "CVE-2026-31431", "field": "epss_date", "before": "2026-05-01", "after": "2026-05-11", "severity": "low" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_note": "Frozen fixture for refresh-external KEV source. Drives deterministic test output without network. Update when the canonical KEV schema changes.",
+  "status": "ok",
+  "errors": 0,
+  "summary": "fixture: 1 KEV diff (synthetic)",
+  "diffs": [
+    {
+      "id": "CVE-2026-43284",
+      "field": "cisa_kev",
+      "before": false,
+      "after": true,
+      "severity": "high"
+    }
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "note": "Per-catalog compact summary so AI consumers can discover available data without loading every _meta block. Purpose strings are curated in scripts/builders/catalog-summaries.js.",
+    "catalog_count": 10
+  },
+  "catalogs": {
+    "atlas-ttps.json": {
+      "path": "data/atlas-ttps.json",
+      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.1.0 (November 2025).",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-01",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 9,
+      "sample_keys": [
+        "AML.T0043",
+        "AML.T0010",
+        "AML.T0016",
+        "AML.T0017",
+        "AML.T0018"
+      ]
+    },
+    "cve-catalog.json": {
+      "path": "data/cve-catalog.json",
+      "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 5,
+      "sample_keys": [
+        "CVE-2026-31431",
+        "CVE-2026-43284",
+        "CVE-2026-43500",
+        "CVE-2025-53773",
+        "CVE-2026-30615"
+      ]
+    },
+    "cwe-catalog.json": {
+      "path": "data/cwe-catalog.json",
+      "purpose": "MITRE CWE entries used by the project (subset with skill citations), with severity hint and category. Pinned to a CWE catalog version.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 34,
+      "sample_keys": [
+        "CWE-787",
+        "CWE-79",
+        "CWE-89",
+        "CWE-416",
+        "CWE-20"
+      ]
+    },
+    "d3fend-catalog.json": {
+      "path": "data/d3fend-catalog.json",
+      "purpose": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.0.0 release.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 20,
+      "sample_keys": [
+        "D3-EAL",
+        "D3-EHB",
+        "D3-PSEP",
+        "D3-ASLR",
+        "D3-SCP"
+      ]
+    },
+    "dlp-controls.json": {
+      "path": "data/dlp-controls.json",
+      "purpose": "DLP control inventory: per-pattern definitions for the dlp-gap-analysis skill, jurisdiction-tagged so a deployment can scope by applicable laws.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "B2",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 22,
+      "sample_keys": [
+        "DLP-CHAN-EMAIL-OUT",
+        "DLP-CHAN-WEB-UPLOAD",
+        "DLP-CHAN-USB-REMOVABLE",
+        "DLP-CHAN-LLM-PROMPT",
+        "DLP-CHAN-LLM-CONTEXT"
+      ]
+    },
+    "exploit-availability.json": {
+      "path": "data/exploit-availability.json",
+      "purpose": "Per-CVE exploit availability: PoC public status, weaponization signal, AI-assist status, blast-radius. Project-curated (B2 Admiralty confidence) with source citations.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-01",
+      "tlp": "CLEAR",
+      "source_confidence_default": "B2",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 5,
+      "sample_keys": [
+        "CVE-2026-31431",
+        "CVE-2026-43284",
+        "CVE-2026-43500",
+        "CVE-2025-53773",
+        "CVE-2026-30615"
+      ]
+    },
+    "framework-control-gaps.json": {
+      "path": "data/framework-control-gaps.json",
+      "purpose": "Per-control framework gap declarations: SI-2, A.8.8, PCI 6.3.3, etc. Each entry names the control, the lag, the evidence CVE, and remediation guidance.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-01",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 49,
+      "sample_keys": [
+        "NIST-800-53-SI-2",
+        "NIST-800-53-SC-8",
+        "NIST-800-53-AC-2",
+        "NIST-800-53-SI-3",
+        "NIST-800-53-SA-12"
+      ]
+    },
+    "global-frameworks.json": {
+      "path": "data/global-frameworks.json",
+      "purpose": "Multi-jurisdiction framework registry: 34 jurisdictions × applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps. Cross-cutting authority for jurisdiction-clocks index.",
+      "schema_version": "1.3.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 35,
+      "sample_keys": [
+        "EU",
+        "UK",
+        "AU",
+        "SG",
+        "JP"
+      ]
+    },
+    "rfc-references.json": {
+      "path": "data/rfc-references.json",
+      "purpose": "IETF RFCs + active Internet-Drafts cited by skills (TLS, IPsec, PQ crypto migration, HTTP/3, CT). Cross-validated against IETF Datatracker via validate-rfcs.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-11",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 19,
+      "sample_keys": [
+        "RFC-8446",
+        "DRAFT-IETF-TLS-ECDHE-MLKEM",
+        "DRAFT-IETF-TLS-HYBRID-DESIGN",
+        "RFC-9180",
+        "RFC-9458"
+      ]
+    },
+    "zeroday-lessons.json": {
+      "path": "data/zeroday-lessons.json",
+      "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-01",
+      "tlp": "CLEAR",
+      "source_confidence_default": "B2",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
+      },
+      "entry_count": 5,
+      "sample_keys": [
+        "CVE-2026-31431",
+        "CVE-2025-53773",
+        "CVE-2026-43284",
+        "CVE-2026-43500",
+        "CVE-2026-30615"
+      ]
+    }
+  }
+}
