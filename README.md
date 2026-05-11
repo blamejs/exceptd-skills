@@ -1,10 +1,37 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/img/logo/exceptd-logo-dark.svg">
+  <img src="public/img/logo/exceptd-logo-primary.svg" alt="exceptd" width="220" />
+</picture>
+
 # exceptd Security
 
-AI security skills grounded in mid-2026 threat reality, not framework documentation from 2020.
+**AI security skills grounded in mid-2026 threat reality, not framework documentation from 2020.**
+
+[![release](https://img.shields.io/github/v/release/blamejs/exceptd-skills?include_prereleases&sort=semver&label=release)](https://github.com/blamejs/exceptd-skills/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/blamejs/exceptd-skills/ci.yml?branch=main&label=CI)](https://github.com/blamejs/exceptd-skills/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![node](https://img.shields.io/badge/node-%3E%3D24.0.0-2ea043)](https://nodejs.org)
+[![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-2ea043)](package.json)
+[![Skills](https://img.shields.io/badge/skills-25-d946ef)](#skill-inventory)
+[![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.1.0-d946ef)](https://atlas.mitre.org)
+[![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v17-d946ef)](https://attack.mitre.org)
+[![Ed25519-signed](https://img.shields.io/badge/skills-Ed25519--signed-2ea043)](AGENTS.md)
+[![Jurisdictions](https://img.shields.io/badge/jurisdictions-33-blue)](data/global-frameworks.json)
+
+</div>
+
+---
 
 **Core premise:** Every major security and compliance tool on the market is still operating on stale threat models. NIST 800-53, ISO 27001, SOC 2, and PCI-DSS were written for network-centric, on-prem or early-cloud environments. They have no controls for AI pipeline integrity, MCP/agent tool trust boundaries, LLM prompt injection as an access control failure, page-cache exploitation bypassing filesystem integrity checks, or ephemeral infrastructure where traditional asset inventory is architecturally impossible.
 
 This platform surfaces what is actually happening right now. Every skill explicitly flags where a compliance framework's control is insufficient for current attack patterns. The framework is often the problem, not the org.
+
+## Status
+
+Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases). 25 skills across kernel LPE, AI attack surface, MCP trust, RAG security, AI-API C2 detection, PQC migration, framework gap analysis, compliance theater, exploit scoring, threat-model currency, zero-day learning, global GRC, policy exception generation, security maturity tiers, skill update loop, attack-surface pen testing, fuzz testing, DLP gap analysis, supply-chain integrity, defensive-countermeasure mapping, identity assurance, OT/ICS security, coordinated vulnerability disclosure, and threat-modeling methodology — plus a `researcher` triage dispatcher. 10 data catalogs cover CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons. 33 jurisdictions tracked.
 
 ---
 

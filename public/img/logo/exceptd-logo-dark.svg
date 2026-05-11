@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80" viewBox="0 0 320 80" role="img">
+  <title>exceptd security — dark</title>
+  <desc>exceptd security logo on dark background</desc>
+
+  <!-- Dark background -->
+  <rect width="320" height="80" fill="#0d0d0d" rx="0"/>
+
+  <!-- Icon: exception bracket mark -->
+  <polyline points="28,12 10,12 10,68 28,68" fill="none" stroke="#f5f5f5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="44,26 62,26 62,54 44,54" fill="none" stroke="#f5f5f5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="36" cy="40" r="7" fill="#ff4422"/>
+
+  <!-- Wordmark -->
+  <text x="80" y="48" font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="-1.5" fill="#f5f5f5">except<tspan fill="#ff4422">d</tspan></text>
+
+  <!-- Tagline -->
+  <text x="82" y="66" font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="10" letter-spacing="4" fill="#f5f5f5" opacity="0.35">SECURITY</text>
+</svg>
