@@ -75,7 +75,9 @@ When a new entry is added:
 6. If RWEP changes by more than 10 points: update any skill that displays pre-calculated RWEP for this CVE
 7. Check if compliance theater patterns for this CVE need updating
 
-**Affected skills (by default):** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, sector-financial, sector-federal-government
+**Affected skills (by default):** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, sector-financial, sector-federal-government, api-security, cloud-security, email-security-anti-phishing
+
+`api-security` is included because KEV-listed CVEs disproportionately affect public APIs (auth bypass, BOLA-class IDOR, deserialization in API gateways, GraphQL introspection abuse) — a new KEV entry in this class shifts the OWASP API Top 10 weighting and the AI-augmented API-recon TTPs the skill tracks. `cloud-security` is included because cloud-service CVEs (AWS / Azure / GCP control-plane, managed-service escapes, IMDS abuse, cross-tenant) routinely land in KEV and re-shape the CSPM / CWPP / CNAPP gap analysis under CSA CCM and FedRAMP. `email-security-anti-phishing` is included because KEV regularly lists phishing-toolkit, BEC-platform, and email-server CVEs (Exchange, Zimbra, MTA-class) whose presence in the wild changes the SPF / DKIM / DMARC / MTA-STS / ARC / BIMI gap posture and the AI-augmented phishing TTPs the skill tracks.
 
 ---
 
@@ -108,7 +110,9 @@ When a new kernel CVE in the LPE, container escape, or page-cache exploitation c
 5. Check compliance-theater Pattern 1 (patch management) — does new CVE change the theater analysis?
 6. Check threat-model-currency Classes 1–3
 
-**Affected skills:** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, webapp-security
+**Affected skills:** kernel-lpe-triage, exploit-scoring, compliance-theater, threat-model-currency, zeroday-gap-learn, webapp-security, container-runtime-security
+
+`container-runtime-security` is included because kernel CVEs are the canonical container-escape vector — every Copy Fail / Dirty Frag / page-cache class LPE collapses the container-host trust boundary regardless of how strong the Pod Security Standards / Kyverno / Gatekeeper / Falco / Tetragon policy stack is at the K8s layer. The CIS Kubernetes Benchmark and NSA/CISA Kubernetes Hardening Guide explicitly defer host-kernel patching to the underlying OS controls, so a new kernel LPE re-opens the runtime-isolation gap the container-runtime-security skill maps and forces an audit of seccomp / AppArmor / SELinux profile coverage and host-kernel live-patch posture across the cluster fleet.
 
 ---
 
@@ -124,9 +128,9 @@ When a new CVE affecting AI coding assistants, MCP clients/servers, or LLM tools
 5. Update threat-model-currency Classes 4–5
 6. Update exploit-scoring
 
-**Affected skills:** mcp-agent-trust, ai-attack-surface, exploit-scoring, threat-model-currency, zeroday-gap-learn, identity-assurance, coordinated-vuln-disclosure, webapp-security, ai-risk-management
+**Affected skills:** mcp-agent-trust, ai-attack-surface, exploit-scoring, threat-model-currency, zeroday-gap-learn, identity-assurance, coordinated-vuln-disclosure, webapp-security, ai-risk-management, mlops-security, api-security, cloud-security
 
-`webapp-security` captures the AI-codegen weakness drift dimension when new MCP / coding-assistant CVEs land — AI-generated webapp code inherits the weakness class of the assistant's model and any vulnerable suggestion patterns in its training distribution, and that drift must be reflected in the OWASP Top 10 / ASVS mapping. `ai-risk-management` captures the governance response to new AI-platform CVEs: ISO 23894 risk-treatment cycle, ISO 42001 AIMS control updates, NIST AI RMF MANAGE function re-run, and EU AI Act Art. 9 / Art. 15 obligations for high-risk system providers.
+`webapp-security` captures the AI-codegen weakness drift dimension when new MCP / coding-assistant CVEs land — AI-generated webapp code inherits the weakness class of the assistant's model and any vulnerable suggestion patterns in its training distribution, and that drift must be reflected in the OWASP Top 10 / ASVS mapping. `ai-risk-management` captures the governance response to new AI-platform CVEs: ISO 23894 risk-treatment cycle, ISO 42001 AIMS control updates, NIST AI RMF MANAGE function re-run, and EU AI Act Art. 9 / Art. 15 obligations for high-risk system providers. `mlops-security` is included because CVEs against MLOps platforms (MLflow, Kubeflow, Vertex AI, SageMaker, Hugging Face Hub, model registries, training orchestrators) attack the model supply chain end-to-end — training-data integrity, model-signing chains, registry RBAC, and drift-detection telemetry all sit downstream of the platform's own CVE surface. `api-security` is included because MCP transport CVEs that ride over HTTP/SSE/streamable-HTTP (and the parallel OAuth 2.1 / RFC 9700 / RFC 8725 token-layer dependencies) are API CVEs in their delivery layer, and the OWASP API Top 10 mapping must be refreshed when a new MCP HTTP-transport CVE lands. `cloud-security` is included because cloud-hosted AI services (Azure OpenAI, AWS Bedrock, GCP Vertex AI, Anthropic on AWS, OpenAI Enterprise on Azure) inherit the cloud provider's control-plane CVE surface in addition to the AI-platform CVE surface, and the shared-responsibility split shifts which controls the customer must operationalize when a new AI-platform CVE lands in a cloud-managed offering.
 
 ---
 
@@ -145,7 +149,7 @@ When a framework publishes an update:
 5. Update compliance-theater patterns if the theater pattern changes
 6. Bump `last_threat_review` in affected skills
 
-**Affected skills:** framework-gap-analysis, compliance-theater, global-grc, policy-exception-gen (exception templates may need update), ot-ics-security, coordinated-vuln-disclosure, threat-modeling-methodology, webapp-security, ai-risk-management, sector-healthcare, sector-financial, sector-federal-government, sector-energy
+**Affected skills:** framework-gap-analysis, compliance-theater, global-grc, policy-exception-gen (exception templates may need update), ot-ics-security, coordinated-vuln-disclosure, threat-modeling-methodology, webapp-security, ai-risk-management, sector-healthcare, sector-financial, sector-federal-government, sector-energy, api-security, cloud-security, container-runtime-security, mlops-security, incident-response-playbook, email-security-anti-phishing
 
 Sector and thematic skill dispatch on this trigger:
 
@@ -155,6 +159,12 @@ Sector and thematic skill dispatch on this trigger:
 - `sector-financial` — DORA Regulatory Technical Standards (RTS) and Implementing Technical Standards (ITS) publications, SWIFT CSCF annual baseline (typically released mid-year), NYDFS 23 NYCRR 500 amendments, FFIEC IT Examination Handbook revisions, MAS Technology Risk Management Guidelines updates, APRA CPS 234 / CPS 230 revisions.
 - `sector-federal-government` — FedRAMP rule revisions (post-FedRAMP Authorization Act and FedRAMP 20x), CMMC final rule (32 CFR Part 170) and DFARS clause revisions, OMB memo cycle (M-22-09 Zero Trust, M-24-04 AI, future memos), CISA Binding Operational Directives and Emergency Directives.
 - `sector-energy` — NERC CIP standard ballots and FERC orders (CIP-015 INSM and successors), TSA Pipeline Security Directives renewals (typically annual), AWWA water-sector cyber guidance revisions, EU NIS Cooperation Group sector guidance (NCCS-G), Australian AESCSF revisions.
+- `api-security` — OWASP API Security Top 10 revisions (the 2023 release is the current baseline; the next cycle is anticipated as the OWASP project's release cadence resumes), OWASP ASVS API-specific chapter updates, GraphQL security best-current-practice publications (GraphQL Foundation guidance), gRPC / Connect-RPC hardening guidance, and API-gateway-vendor secure-default baselines that re-shape the BOLA / BFLA / mass-assignment / rate-limit gap surface the skill maps.
+- `cloud-security` — CSA Cloud Controls Matrix (CCM) versioned releases (current v4.0.x cadence), FedRAMP baseline revisions (FedRAMP Rev. 5 implementation and FedRAMP 20x successors), CIS Foundations Benchmarks per cloud (AWS / Azure / GCP), CNCF cloud-native security whitepaper revisions, and CSP-published shared-responsibility / workload-identity guidance updates (AWS Well-Architected Security Pillar, Azure Security Benchmark, GCP CIS+).
+- `container-runtime-security` — CIS Kubernetes Benchmark releases (per K8s minor version), NSA/CISA Kubernetes Hardening Guide revisions, Pod Security Standards (PSS) policy updates upstream in Kubernetes, Kyverno / OPA Gatekeeper policy-library releases, Falco / Tetragon detection-rule-set releases, and CNCF runtime-security TAG output that shifts the admission-policy and NetworkPolicy gap analysis.
+- `mlops-security` — NIST AI RMF Generative AI Profile (NIST AI 600-1) updates and forthcoming profile additions, ISO/IEC 42001:2023 AIMS amendments, ISO/IEC 23894:2023 AI risk-management process revisions, EU AI Act delegated and implementing acts affecting high-risk AI providers, MLCommons / OpenSSF Model Signing specification revisions, and Sigstore-for-models guidance updates that change the training-pipeline / model-registry / model-signing gap surface.
+- `incident-response-playbook` — NIST SP 800-61 revisions (current Rev. 3 cadence), ISO/IEC 27035 series amendments (27035-1, 27035-2, 27035-3, 27035-4), ENISA incident-response good-practice guidance updates, FIRST CSIRT services framework revisions, and AI-incident-specific guidance from NIST AI RMF MANAGE function plus EU AI Act Art. 73 serious-incident reporting implementing acts.
+- `email-security-anti-phishing` — DMARC standard revisions (RFC 7489 successor work and DMARCbis IETF progression), SPF / DKIM / ARC / BIMI / MTA-STS / TLS-RPT specification updates from the IETF dmarc and uta working groups, NCSC Mail Check guidance revisions, CISA / NCSC anti-phishing technical guidance updates, and M3AAWG sender best-current-practice document revisions that re-shape the BEC / vishing / AI-augmented-phishing gap analysis.
 
 ---
 
@@ -223,7 +233,7 @@ When drift is detected:
 4. If a draft becomes an RFC, its catalog key changes from `DRAFT-...` to `RFC-NNNN`. Update all `rfc_refs` lists that cite the draft, and refresh `manifest-snapshot.json` (this counts as a public-surface change — a removed reference is breaking per the snapshot gate).
 5. If a new RFC newly applies to a domain a skill covers, add its catalog entry and the corresponding `rfc_refs` field.
 
-**Affected skills (by default):** any skill currently carrying `rfc_refs` — at the time of writing: `kernel-lpe-triage`, `mcp-agent-trust`, `ai-c2-detection`, `pqc-first`, `identity-assurance` (RFC 7519 / RFC 8725 / RFC 6749 / RFC 9700 / RFC 8032 for JWT, OAuth, and EdDSA), `coordinated-vuln-disclosure` (RFC 9116 for security.txt), `webapp-security` (RFC 8446 TLS 1.3, RFC 9114 HTTP/3, RFC 7519 JWT, RFC 8725 JWT BCP, and other transport / token-layer dependencies the webapp control set relies on). Skills without `rfc_refs` are not affected by this trigger.
+**Affected skills (by default):** any skill currently carrying `rfc_refs` — at the time of writing: `kernel-lpe-triage`, `mcp-agent-trust`, `ai-c2-detection`, `pqc-first`, `identity-assurance` (RFC 7519 / RFC 8725 / RFC 6749 / RFC 9700 / RFC 8032 for JWT, OAuth, and EdDSA), `coordinated-vuln-disclosure` (RFC 9116 for security.txt), `webapp-security` (RFC 8446 TLS 1.3, RFC 9114 HTTP/3, RFC 7519 JWT, RFC 8725 JWT BCP, and other transport / token-layer dependencies the webapp control set relies on), `api-security` (RFC 8446 TLS 1.3, RFC 9114 HTTP/3, RFC 7519 JWT, RFC 8725 JWT BCP, RFC 6749 OAuth 2.0 framework, RFC 9700 OAuth 2.0 Security Best Current Practice, RFC 9421 HTTP Message Signatures, and successor work in the IETF oauth and httpbis working groups), `cloud-security` (RFC 8446 TLS 1.3 for control-plane transport, RFC 9180 HPKE for envelope encryption and KMS integrations, RFC 7519 JWT and RFC 8725 JWT BCP for federated workload identity and STS tokens), `container-runtime-security` (RFC 8446 TLS 1.3 for service-mesh and API-server transport, RFC 8032 EdDSA for image-signing chains via cosign / sigstore), `mlops-security` (RFC 8032 EdDSA underpinning the model-signing chain via Sigstore-for-models and MLCommons model-signing specifications), `email-security-anti-phishing` (RFC 7208 SPF, RFC 6376 DKIM, RFC 7489 DMARC, RFC 9622 DMARCbis when promoted from current Internet-Draft status, RFC 8617 ARC, RFC 8461 MTA-STS, RFC 8460 TLS-RPT — note that the email-authentication RFC family may not yet be enumerated in `data/rfc-references.json` and must be cited by number until catalog entries are added per the standard procedure). Skills without `rfc_refs` are not affected by this trigger.
 
 **Affected catalogs:** `data/rfc-references.json`, `manifest.json`, `manifest-snapshot.json`.
 
@@ -274,6 +284,26 @@ When a sector publishes an update:
 **Affected skills (by default):** sector-healthcare, sector-financial, sector-federal-government, sector-energy, global-grc, framework-gap-analysis, compliance-theater.
 
 **Affected catalogs:** `data/global-frameworks.json`, `data/framework-control-gaps.json`, `sources/index.json`.
+
+---
+
+### Trigger 12: Vendor Security Tool Capability Shift
+
+**Monitor:** Gartner Magic Quadrant and Forrester Wave annual reports for the relevant vendor categories (CSPM, CWPP, CNAPP, EDR/XDR, secure email gateway / ICES, MLOps platforms, container security, API security), CNCF security TAG output (whitepapers, project graduations, and security-tooling assessments), OpenSSF working-group output (SLSA, Sigstore, model-signing, scorecard, secure-supply-chain consumption working groups), and vendor public roadmaps (AWS / Azure / GCP security service launches, Wiz / Lacework / Prisma / Sysdig / CrowdStrike / SentinelOne / Microsoft Defender / Proofpoint / Abnormal / Mimecast / Cloudflare / Akamai / Salt / Noname / Databricks / HuggingFace public capability announcements). Run a vendor-capability check at minimum semi-annually, and immediately on any new Magic Quadrant / Wave release or any vendor's general-availability announcement of a category-shifting capability.
+
+Per AGENTS.md Hard Rule #2 (framework lag is a first-class concept), a skill's framework-gap declaration is only valid as long as the vendor capability landscape behind those frameworks is unchanged. When a major vendor category ships a new detection or enforcement capability that closes a gap the skill currently maps as open, the skill body drifts from operational reality regardless of whether any CVE, ATLAS TTP, or framework amendment has fired. The reverse drift also matters: a vendor category that loses a previously-shipped capability (deprecation, acquisition-driven product collapse, or documented bypass that re-opens the gap) re-opens a skill's gap line and must be reflected promptly.
+
+When a vendor category ships a new capability (or loses one):
+
+1. Check whether the new (or removed) capability closes (or re-opens) a previously-documented framework gap in `data/framework-control-gaps.json`. If gap closed: update `status: "closed"` with the vendor-capability reference, preserve the historical gap entry per the standard procedure. If gap partially addressed: update `gap_analysis` to reflect partial improvement and document the residual gap. If gap re-opened: revert `status` to `"open"` with the deprecation / bypass reference.
+2. Update the affected skill's body — move language from "this is the gap" to "this is the new capability" (or vice versa), refresh the framework-lag declaration table, and update any TTP-to-control mapping rows that now resolve differently.
+3. Bump `last_threat_review` on each affected skill.
+4. Update `sources/index.json` if a new vendor primary-source (vendor public-documentation URL, capability-announcement post, security-tooling assessment) needs to be registered or if an existing source's `last_verified` needs to be refreshed.
+5. If the capability shift introduces a new control class not currently covered by any skill, evaluate whether to extend an existing skill or add a new skill per AGENTS.md "Adding a New Skill" procedure.
+
+**Affected skills (by default):** cloud-security, container-runtime-security, mlops-security, email-security-anti-phishing, defensive-countermeasure-mapping, dlp-gap-analysis.
+
+**Affected catalogs:** `data/framework-control-gaps.json`, `sources/index.json`, `data/d3fend-catalog.json` (when a vendor-shipped defensive capability maps to a D3FEND technique already in the catalog or warrants a new ID).
 
 ---
 

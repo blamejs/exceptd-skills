@@ -40,6 +40,9 @@
     "lag_notes": "RFC 8446 alone is not PQC-ready. Hybrid PQC drafts (draft-ietf-tls-ecdhe-mlkem, draft-ietf-tls-hybrid-design) layer on top — see those entries.",
     "skills_referencing": [
       "ai-c2-detection",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
       "dlp-gap-analysis",
       "mcp-agent-trust",
       "pqc-first",
@@ -87,6 +90,7 @@
     "lag_notes": "RFC 9180 is classical-only. PQC HPKE is being worked at IETF CFRG; expect draft updates through 2026-2027.",
     "skills_referencing": [
       "ai-c2-detection",
+      "cloud-security",
       "pqc-first"
     ],
     "last_verified": "2026-05-11"
@@ -115,6 +119,7 @@
     "lag_notes": "Standard published; AI-provider adoption is uneven. MCP spec does not yet mandate it.",
     "skills_referencing": [
       "ai-c2-detection",
+      "api-security",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare"
@@ -132,6 +137,7 @@
     "lag_notes": "Standard well-deployed; enterprise next-gen-firewall HTTP/3 inspection coverage as of mid-2026 remains uneven.",
     "skills_referencing": [
       "ai-c2-detection",
+      "api-security",
       "mcp-agent-trust",
       "webapp-security"
     ],
@@ -160,6 +166,8 @@
     "relevance": "JWT is the dominant bearer-token format for MCP server auth, AI-provider API auth, and OAuth 2.0 access tokens (RFC 9068). mcp-agent-trust analyses signer trust, audience validation, and the alg=none / kid-confusion attack classes.",
     "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
     "skills_referencing": [
+      "api-security",
+      "cloud-security",
       "identity-assurance",
       "mcp-agent-trust",
       "sector-financial",
@@ -177,6 +185,8 @@
     "tracker": "https://www.rfc-editor.org/info/rfc8725",
     "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
     "skills_referencing": [
+      "api-security",
+      "cloud-security",
       "identity-assurance",
       "mcp-agent-trust",
       "sector-financial",
@@ -193,6 +203,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc6749",
     "relevance": "OAuth 2.0 underpins MCP server-to-client auth in production deployments. RFC 9700 (OAuth 2.0 Security BCP) is the operational reference.",
     "skills_referencing": [
+      "api-security",
       "identity-assurance",
       "mcp-agent-trust"
     ],
@@ -207,6 +218,7 @@
     "relevance": "Replaces the older RFC 6819 threat model. MCP / agent OAuth implementations should track this BCP, not the original RFC 6749 alone.",
     "lag_notes": "Published 2025-01. Enterprise IAM tooling is still catching up.",
     "skills_referencing": [
+      "api-security",
       "identity-assurance",
       "mcp-agent-trust"
     ],
@@ -221,7 +233,9 @@
     "tracker": "https://www.rfc-editor.org/info/rfc8032",
     "relevance": "Ed25519 / Ed448. exceptd itself uses Ed25519 for skill integrity signing (AGENTS.md hard rule #13, lib/sign.js). Not PQC-safe; pqc-first tracks the SLH-DSA / ML-DSA migration path for signature surfaces.",
     "skills_referencing": [
+      "container-runtime-security",
       "identity-assurance",
+      "mlops-security",
       "pqc-first",
       "sector-federal-government",
       "supply-chain-integrity"

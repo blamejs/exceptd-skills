@@ -47,7 +47,7 @@ The researcher skill sits between raw input and the specialized analytical skill
 - **SesameOp campaign report.** Operator asks: "we are seeing strange Azure OpenAI calls from a finance host — is this anything?" Researcher recognizes the AI-as-C2 pattern from `data/zeroday-lessons.json`, maps to AML.T0096, routes to `ai-c2-detection`.
 - **NIST 800-53 Rev. 6 draft published.** Operator asks: "does our gap analysis change?" Researcher routes to `skill-update-loop` for currency review, then to `framework-gap-analysis` for the specific control deltas.
 
-Without this skill, the operator either has to know the full inventory of 30 specialized skills downstream of the researcher (researcher itself is the 31st) and pick the right one (cognitive load that does not scale) or default to a single catch-all skill (which produces shallow output). The researcher skill is the routing layer that makes the rest of the library usable under operational pressure.
+Without this skill, the operator either has to know the full inventory of 36 specialized skills downstream of the researcher (researcher itself is the 37th) and pick the right one (cognitive load that does not scale) or default to a single catch-all skill (which produces shallow output). The researcher skill is the routing layer that makes the rest of the library usable under operational pressure.
 
 ---
 
@@ -67,7 +67,7 @@ No compliance framework prescribes a research-and-route step between intake and 
 | SOC 2 | CC7.3 (Incident detection) | Requires incident detection and response procedures. Generic; does not require routing logic against a specialized analytical inventory. |
 | CIS Controls v8 | 17 (Incident Response Management) | Plan, train, test. No structured triage layer specified. |
 
-The framework lag here is structural: every framework assumes a generic incident handling pipeline. None assume the org has a curated inventory of 30 specialized analytical procedures and needs a router. The researcher skill is the routing layer the frameworks do not describe.
+The framework lag here is structural: every framework assumes a generic incident handling pipeline. None assume the org has a curated inventory of 36 specialized analytical procedures and needs a router. The researcher skill is the routing layer the frameworks do not describe.
 
 ---
 
@@ -213,6 +213,12 @@ Use this mapping. Pick one primary route and zero-or-more secondary routes.
 - Financial cyber / banking cyber / DORA TLPT / PSD2 SCA / SWIFT CSCF / NYDFS 23 NYCRR 500 / FFIEC / MAS TRM / APRA CPS 234 / TIBER-EU / CBEST question → `sector-financial`
 - Federal cyber / government cyber / FedRAMP / CMMC / EO 14028 / NIST 800-171 CUI / FISMA / M-22-09 Zero Trust / OMB M-24-04 AI / CISA BOD/ED question → `sector-federal-government`
 - Energy cyber / electric grid cyber / NERC CIP / TSA pipeline / AWWA water / EU NCCS-G / AESCSF / DER cyber / inverter security / smart meter cyber question → `sector-energy`
+- API security / OWASP API Top 10 / BOLA / BFLA / mass assignment / GraphQL / gRPC / WebSocket / API gateway / rate limit policy question → `api-security`
+- Cloud security / CSPM / CWPP / CNAPP / CSA CCM / AWS / Azure / GCP / shared responsibility / workload identity / cloud IAM question → `cloud-security`
+- Container security / Kubernetes / CIS K8s Benchmark / Pod Security Standards / Kyverno / Gatekeeper / Falco / Tetragon / admission policy / NetworkPolicy question → `container-runtime-security`
+- MLOps security / training data integrity / model registry / model signing / drift detection / MLflow / Kubeflow / Vertex AI / SageMaker / Hugging Face question → `mlops-security`
+- Incident response / IR playbook / PICERL / NIST 800-61 / ISO 27035 / breach notification / BEC incident / AI-class incident handling question → `incident-response-playbook`
+- Email security / anti-phishing / SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / BEC / vishing / deepfake / AI-augmented phishing question → `email-security-anti-phishing`
 
 Multiple routes are common and expected. A new MCP CVE routes to `mcp-agent-trust` (primary), `ai-attack-surface` (secondary, for the broader surface impact), and `exploit-scoring` (secondary, if the RWEP needs explanation). State primary vs. secondary explicitly in the output.
 

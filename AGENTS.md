@@ -222,4 +222,11 @@ Maintainers convert approved requests into skill files. The contributor is credi
 | financial security, banking, dora, psd2 sca, swift cscf, nydfs, ffiec, mas trm, apra cps 234, tiber-eu, cbest | sector-financial |
 | federal cyber, fedramp, cmmc, eo 14028, nist 800-171, cui, fisma, m-22-09 zero trust, omb m-24-04, cisa bod/ed | sector-federal-government |
 | energy security, electric grid, nerc cip, tsa pipeline, awwa, nccs-g, aescsf, der security, inverter, smart meter | sector-energy |
+| api security, owasp api top 10, bola, bfla, mass assignment, api gateway, graphql, grpc, websocket, mcp transport | api-security |
+| cloud security, cspm, cwpp, cnapp, csa ccm, aws, azure, gcp, workload identity, cloud iam, multi-cloud | cloud-security |
+| container security, kubernetes, cis k8s, pod security standards, kyverno, gatekeeper, falco, tetragon, admission policy | container-runtime-security |
+| mlops security, model registry, training data integrity, mlflow, kubeflow, vertex ai, sagemaker, hugging face, model signing, drift detection | mlops-security |
+| incident response, ir playbook, csirt, picerl, nist 800-61, iso 27035, breach notification, bec incident, ai incident | incident-response-playbook |
+| email security, anti-phishing, dmarc, dkim, spf, bimi, arc, mta-sts, bec, vishing, deepfake phishing | email-security-anti-phishing |
+| age gate, age verification, coppa, cipa, california aadc, uk children's code, kosa, gdpr article 8, dsa article 28, parental consent, csam, youth protection | age-gates-minor-safeguarding |
 | forward watch, watchlist, upcoming standards, horizon scan | `node orchestrator/index.js watchlist` (add `--by-skill` to invert) |
