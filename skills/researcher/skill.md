@@ -47,7 +47,7 @@ The researcher skill sits between raw input and the specialized analytical skill
 - **SesameOp campaign report.** Operator asks: "we are seeing strange Azure OpenAI calls from a finance host — is this anything?" Researcher recognizes the AI-as-C2 pattern from `data/zeroday-lessons.json`, maps to AML.T0096, routes to `ai-c2-detection`.
 - **NIST 800-53 Rev. 6 draft published.** Operator asks: "does our gap analysis change?" Researcher routes to `skill-update-loop` for currency review, then to `framework-gap-analysis` for the specific control deltas.
 
-Without this skill, the operator either has to know the full inventory of 36 specialized skills downstream of the researcher (researcher itself is the 37th) and pick the right one (cognitive load that does not scale) or default to a single catch-all skill (which produces shallow output). The researcher skill is the routing layer that makes the rest of the library usable under operational pressure.
+Without this skill, the operator either has to know the full inventory of 37 specialized skills downstream of the researcher (researcher itself is the 38th) and pick the right one (cognitive load that does not scale) or default to a single catch-all skill (which produces shallow output). The researcher skill is the routing layer that makes the rest of the library usable under operational pressure.
 
 ---
 
@@ -67,7 +67,7 @@ No compliance framework prescribes a research-and-route step between intake and 
 | SOC 2 | CC7.3 (Incident detection) | Requires incident detection and response procedures. Generic; does not require routing logic against a specialized analytical inventory. |
 | CIS Controls v8 | 17 (Incident Response Management) | Plan, train, test. No structured triage layer specified. |
 
-The framework lag here is structural: every framework assumes a generic incident handling pipeline. None assume the org has a curated inventory of 36 specialized analytical procedures and needs a router. The researcher skill is the routing layer the frameworks do not describe.
+The framework lag here is structural: every framework assumes a generic incident handling pipeline. None assume the org has a curated inventory of 37 specialized analytical procedures and needs a router. The researcher skill is the routing layer the frameworks do not describe.
 
 ---
 

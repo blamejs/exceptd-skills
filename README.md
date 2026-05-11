@@ -13,11 +13,11 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/blamejs/exceptd-skills/ci.yml?branch=main&label=CI)](https://github.com/blamejs/exceptd-skills/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Skills](https://img.shields.io/badge/skills-25-d946ef)](#skill-inventory)
+[![Skills](https://img.shields.io/badge/skills-38-d946ef)](#skill-inventory)
 [![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.1.0-d946ef)](https://atlas.mitre.org)
 [![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v17-d946ef)](https://attack.mitre.org)
 [![Ed25519-signed](https://img.shields.io/badge/skills-Ed25519--signed-2ea043)](AGENTS.md)
-[![Jurisdictions](https://img.shields.io/badge/jurisdictions-33-blue)](data/global-frameworks.json)
+[![Jurisdictions](https://img.shields.io/badge/jurisdictions-34-blue)](data/global-frameworks.json)
 
 </div>
 

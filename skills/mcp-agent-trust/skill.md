@@ -34,12 +34,13 @@ framework_gaps:
   - SOC2-CC9-vendor-management
   - SWIFT-CSCF-v2026-1.1
 rfc_refs:
-  - RFC-7519
-  - RFC-8725
   - RFC-6749
-  - RFC-9700
-  - RFC-9421
+  - RFC-7519
+  - RFC-8446
+  - RFC-8725
   - RFC-9114
+  - RFC-9421
+  - RFC-9700
 cwe_refs:
   - CWE-22
   - CWE-345
