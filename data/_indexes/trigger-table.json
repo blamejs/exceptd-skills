@@ -1,0 +1,1374 @@
+{
+  "kernel lpe": [
+    "kernel-lpe-triage"
+  ],
+  "privilege escalation": [
+    "kernel-lpe-triage"
+  ],
+  "copy fail": [
+    "kernel-lpe-triage"
+  ],
+  "dirty frag": [
+    "kernel-lpe-triage"
+  ],
+  "cve-2026-31431": [
+    "kernel-lpe-triage"
+  ],
+  "cve-2026-43284": [
+    "kernel-lpe-triage"
+  ],
+  "linux root": [
+    "kernel-lpe-triage"
+  ],
+  "kernel patch": [
+    "kernel-lpe-triage"
+  ],
+  "live kernel patch": [
+    "kernel-lpe-triage"
+  ],
+  "ai attack surface": [
+    "ai-attack-surface"
+  ],
+  "prompt injection": [
+    "ai-attack-surface"
+  ],
+  "llm security": [
+    "ai-attack-surface"
+  ],
+  "ai security assessment": [
+    "ai-attack-surface"
+  ],
+  "model security": [
+    "ai-attack-surface"
+  ],
+  "ai threat model": [
+    "ai-attack-surface"
+  ],
+  "ai red team": [
+    "ai-attack-surface"
+  ],
+  "promptsteal": [
+    "ai-attack-surface",
+    "ai-c2-detection"
+  ],
+  "promptflux": [
+    "ai-attack-surface",
+    "ai-c2-detection"
+  ],
+  "mcp security": [
+    "mcp-agent-trust"
+  ],
+  "model context protocol": [
+    "mcp-agent-trust"
+  ],
+  "agent trust": [
+    "mcp-agent-trust"
+  ],
+  "tool trust": [
+    "mcp-agent-trust"
+  ],
+  "mcp rce": [
+    "mcp-agent-trust"
+  ],
+  "cve-2026-30615": [
+    "mcp-agent-trust"
+  ],
+  "cursor security": [
+    "mcp-agent-trust"
+  ],
+  "windsurf security": [
+    "mcp-agent-trust"
+  ],
+  "claude code security": [
+    "mcp-agent-trust"
+  ],
+  "ai agent security": [
+    "mcp-agent-trust"
+  ],
+  "framework gap": [
+    "framework-gap-analysis"
+  ],
+  "control gap": [
+    "framework-gap-analysis"
+  ],
+  "nist gap": [
+    "framework-gap-analysis"
+  ],
+  "iso 27001 gap": [
+    "framework-gap-analysis"
+  ],
+  "soc 2 gap": [
+    "framework-gap-analysis"
+  ],
+  "pci gap": [
+    "framework-gap-analysis"
+  ],
+  "nis2 gap": [
+    "framework-gap-analysis"
+  ],
+  "compliance gap": [
+    "compliance-theater",
+    "framework-gap-analysis"
+  ],
+  "why doesn't this control cover": [
+    "framework-gap-analysis"
+  ],
+  "compliance theater": [
+    "compliance-theater"
+  ],
+  "paper compliance": [
+    "compliance-theater"
+  ],
+  "audit but exposed": [
+    "compliance-theater"
+  ],
+  "compliant but vulnerable": [
+    "compliance-theater"
+  ],
+  "checkbox security": [
+    "compliance-theater"
+  ],
+  "audit theater": [
+    "compliance-theater"
+  ],
+  "exploit scoring": [
+    "exploit-scoring"
+  ],
+  "rwep": [
+    "exploit-scoring"
+  ],
+  "real world priority": [
+    "exploit-scoring"
+  ],
+  "how bad is this cve": [
+    "exploit-scoring"
+  ],
+  "prioritize cve": [
+    "exploit-scoring"
+  ],
+  "cve priority": [
+    "exploit-scoring"
+  ],
+  "patch priority": [
+    "exploit-scoring"
+  ],
+  "beyond cvss": [
+    "exploit-scoring"
+  ],
+  "rag security": [
+    "rag-pipeline-security"
+  ],
+  "retrieval security": [
+    "rag-pipeline-security"
+  ],
+  "vector store security": [
+    "rag-pipeline-security"
+  ],
+  "embedding attack": [
+    "rag-pipeline-security"
+  ],
+  "rag threat model": [
+    "rag-pipeline-security"
+  ],
+  "knowledge base security": [
+    "rag-pipeline-security"
+  ],
+  "vector poisoning": [
+    "rag-pipeline-security"
+  ],
+  "ai c2": [
+    "ai-c2-detection"
+  ],
+  "ai command and control": [
+    "ai-c2-detection"
+  ],
+  "sesameop": [
+    "ai-c2-detection"
+  ],
+  "ai api abuse": [
+    "ai-c2-detection"
+  ],
+  "llm c2": [
+    "ai-c2-detection"
+  ],
+  "covert channel ai": [
+    "ai-c2-detection"
+  ],
+  "aml.t0096": [
+    "ai-c2-detection"
+  ],
+  "policy exception": [
+    "policy-exception-gen"
+  ],
+  "exception request": [
+    "policy-exception-gen"
+  ],
+  "control exception": [
+    "policy-exception-gen"
+  ],
+  "ephemeral exception": [
+    "policy-exception-gen"
+  ],
+  "serverless exception": [
+    "policy-exception-gen"
+  ],
+  "ai pipeline exception": [
+    "policy-exception-gen"
+  ],
+  "zero trust exception": [
+    "policy-exception-gen"
+  ],
+  "compensating control": [
+    "policy-exception-gen"
+  ],
+  "threat model currency": [
+    "threat-model-currency"
+  ],
+  "update threat model": [
+    "threat-model-currency"
+  ],
+  "threat model review": [
+    "threat-model-currency"
+  ],
+  "is our threat model current": [
+    "threat-model-currency"
+  ],
+  "threat model gap": [
+    "threat-model-currency"
+  ],
+  "threat intelligence gap": [
+    "threat-model-currency"
+  ],
+  "global grc": [
+    "global-grc"
+  ],
+  "international compliance": [
+    "global-grc"
+  ],
+  "gdpr security": [
+    "global-grc"
+  ],
+  "nis2": [
+    "global-grc"
+  ],
+  "dora compliance": [
+    "global-grc"
+  ],
+  "eu ai act": [
+    "global-grc"
+  ],
+  "cyber resilience act": [
+    "global-grc"
+  ],
+  "mas trm": [
+    "global-grc",
+    "sector-financial"
+  ],
+  "cert-in": [
+    "global-grc"
+  ],
+  "essential 8": [
+    "global-grc"
+  ],
+  "apra cps 234": [
+    "global-grc",
+    "sector-financial"
+  ],
+  "multi-jurisdiction": [
+    "global-grc"
+  ],
+  "global compliance": [
+    "global-grc"
+  ],
+  "zero day lesson": [
+    "zeroday-gap-learn"
+  ],
+  "zeroday gap": [
+    "zeroday-gap-learn"
+  ],
+  "what control gap enabled this": [
+    "zeroday-gap-learn"
+  ],
+  "learn from exploit": [
+    "zeroday-gap-learn"
+  ],
+  "exploit to control gap": [
+    "zeroday-gap-learn"
+  ],
+  "what should have caught this": [
+    "zeroday-gap-learn"
+  ],
+  "0day learning": [
+    "zeroday-gap-learn"
+  ],
+  "pqc": [
+    "pqc-first"
+  ],
+  "post-quantum": [
+    "pqc-first"
+  ],
+  "quantum cryptography": [
+    "pqc-first"
+  ],
+  "quantum safe": [
+    "pqc-first"
+  ],
+  "ml-kem": [
+    "pqc-first"
+  ],
+  "ml-dsa": [
+    "pqc-first"
+  ],
+  "slh-dsa": [
+    "pqc-first"
+  ],
+  "harvest now decrypt later": [
+    "pqc-first"
+  ],
+  "quantum migration": [
+    "pqc-first"
+  ],
+  "crypto migration": [
+    "pqc-first"
+  ],
+  "openssl pqc": [
+    "pqc-first"
+  ],
+  "fips 203": [
+    "pqc-first"
+  ],
+  "fips 204": [
+    "pqc-first"
+  ],
+  "fips 205": [
+    "pqc-first"
+  ],
+  "update skills": [
+    "skill-update-loop"
+  ],
+  "skill review": [
+    "skill-update-loop"
+  ],
+  "check skill currency": [
+    "skill-update-loop"
+  ],
+  "forward watch": [
+    "skill-update-loop"
+  ],
+  "are skills current": [
+    "skill-update-loop"
+  ],
+  "update threat intel": [
+    "skill-update-loop"
+  ],
+  "skill maintenance": [
+    "skill-update-loop"
+  ],
+  "new cve update": [
+    "skill-update-loop"
+  ],
+  "atlas update": [
+    "skill-update-loop"
+  ],
+  "framework update": [
+    "skill-update-loop"
+  ],
+  "security maturity": [
+    "security-maturity-tiers"
+  ],
+  "implementation roadmap": [
+    "security-maturity-tiers"
+  ],
+  "what should we do first": [
+    "security-maturity-tiers"
+  ],
+  "security tiers": [
+    "security-maturity-tiers"
+  ],
+  "mvp security": [
+    "security-maturity-tiers"
+  ],
+  "where to start": [
+    "security-maturity-tiers"
+  ],
+  "security roadmap": [
+    "security-maturity-tiers"
+  ],
+  "minimum viable security": [
+    "security-maturity-tiers"
+  ],
+  "what's practical": [
+    "security-maturity-tiers"
+  ],
+  "security best practices": [
+    "security-maturity-tiers"
+  ],
+  "defense in depth": [
+    "defensive-countermeasure-mapping",
+    "security-maturity-tiers"
+  ],
+  "how do we get from here to there": [
+    "security-maturity-tiers"
+  ],
+  "research this cve": [
+    "researcher"
+  ],
+  "what should i do about": [
+    "researcher"
+  ],
+  "new threat": [
+    "researcher"
+  ],
+  "new advisory": [
+    "researcher"
+  ],
+  "new exploit": [
+    "researcher"
+  ],
+  "triage threat": [
+    "researcher"
+  ],
+  "where do i start": [
+    "researcher"
+  ],
+  "which skill should i use": [
+    "researcher"
+  ],
+  "threat intel triage": [
+    "researcher"
+  ],
+  "exceptd research": [
+    "researcher"
+  ],
+  "attack surface": [
+    "attack-surface-pentest"
+  ],
+  "pen test": [
+    "attack-surface-pentest"
+  ],
+  "penetration testing": [
+    "attack-surface-pentest"
+  ],
+  "red team": [
+    "attack-surface-pentest"
+  ],
+  "adversary emulation": [
+    "attack-surface-pentest"
+  ],
+  "threat-led testing": [
+    "attack-surface-pentest"
+  ],
+  "tlpt": [
+    "attack-surface-pentest",
+    "sector-financial"
+  ],
+  "tiber-eu": [
+    "attack-surface-pentest",
+    "sector-financial"
+  ],
+  "asset inventory": [
+    "attack-surface-pentest"
+  ],
+  "external footprint": [
+    "attack-surface-pentest"
+  ],
+  "asm": [
+    "attack-surface-pentest"
+  ],
+  "fuzz testing": [
+    "fuzz-testing-strategy"
+  ],
+  "fuzzing": [
+    "fuzz-testing-strategy"
+  ],
+  "oss-fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "syzkaller": [
+    "fuzz-testing-strategy"
+  ],
+  "libfuzzer": [
+    "fuzz-testing-strategy"
+  ],
+  "afl": [
+    "fuzz-testing-strategy"
+  ],
+  "coverage-guided fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "ai-assisted fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "continuous fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "prompt fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "api fuzz": [
+    "fuzz-testing-strategy"
+  ],
+  "dlp": [
+    "dlp-gap-analysis"
+  ],
+  "data loss prevention": [
+    "dlp-gap-analysis"
+  ],
+  "data leak": [
+    "dlp-gap-analysis"
+  ],
+  "egress": [
+    "dlp-gap-analysis"
+  ],
+  "exfiltration": [
+    "dlp-gap-analysis"
+  ],
+  "data classification": [
+    "dlp-gap-analysis"
+  ],
+  "llm dlp": [
+    "dlp-gap-analysis"
+  ],
+  "prompt dlp": [
+    "dlp-gap-analysis"
+  ],
+  "rag exfil": [
+    "dlp-gap-analysis"
+  ],
+  "copilot data leak": [
+    "dlp-gap-analysis"
+  ],
+  "data exfiltration": [
+    "dlp-gap-analysis"
+  ],
+  "mcp tool arg dlp": [
+    "dlp-gap-analysis"
+  ],
+  "embedding store exfil": [
+    "dlp-gap-analysis"
+  ],
+  "clipboard ai paste": [
+    "dlp-gap-analysis"
+  ],
+  "supply chain": [
+    "supply-chain-integrity"
+  ],
+  "slsa": [
+    "supply-chain-integrity"
+  ],
+  "sbom": [
+    "supply-chain-integrity"
+  ],
+  "vex": [
+    "supply-chain-integrity"
+  ],
+  "sigstore": [
+    "supply-chain-integrity"
+  ],
+  "cosign": [
+    "supply-chain-integrity"
+  ],
+  "in-toto": [
+    "supply-chain-integrity"
+  ],
+  "cyclonedx": [
+    "supply-chain-integrity"
+  ],
+  "spdx": [
+    "supply-chain-integrity"
+  ],
+  "software composition": [
+    "supply-chain-integrity"
+  ],
+  "model provenance": [
+    "supply-chain-integrity"
+  ],
+  "ai bom": [
+    "supply-chain-integrity"
+  ],
+  "aibom": [
+    "supply-chain-integrity"
+  ],
+  "csaf": [
+    "coordinated-vuln-disclosure",
+    "supply-chain-integrity"
+  ],
+  "defensive mapping": [
+    "defensive-countermeasure-mapping"
+  ],
+  "d3fend": [
+    "defensive-countermeasure-mapping"
+  ],
+  "countermeasure": [
+    "defensive-countermeasure-mapping"
+  ],
+  "blue team": [
+    "defensive-countermeasure-mapping",
+    "incident-response-playbook"
+  ],
+  "least privilege": [
+    "defensive-countermeasure-mapping"
+  ],
+  "zero trust": [
+    "defensive-countermeasure-mapping"
+  ],
+  "control mapping": [
+    "defensive-countermeasure-mapping"
+  ],
+  "mitigation": [
+    "defensive-countermeasure-mapping"
+  ],
+  "defensive coverage": [
+    "defensive-countermeasure-mapping"
+  ],
+  "blue team map": [
+    "defensive-countermeasure-mapping"
+  ],
+  "identity assurance": [
+    "identity-assurance"
+  ],
+  "aal": [
+    "identity-assurance"
+  ],
+  "ial": [
+    "identity-assurance"
+  ],
+  "fal": [
+    "identity-assurance"
+  ],
+  "nist 800-63": [
+    "identity-assurance"
+  ],
+  "fido2": [
+    "identity-assurance"
+  ],
+  "webauthn": [
+    "identity-assurance"
+  ],
+  "passkey": [
+    "identity-assurance"
+  ],
+  "oidc": [
+    "identity-assurance"
+  ],
+  "saml": [
+    "identity-assurance"
+  ],
+  "scim": [
+    "identity-assurance"
+  ],
+  "agent identity": [
+    "identity-assurance"
+  ],
+  "workload identity": [
+    "cloud-security",
+    "identity-assurance"
+  ],
+  "service account": [
+    "identity-assurance"
+  ],
+  "federation": [
+    "identity-assurance"
+  ],
+  "phishing-resistant": [
+    "identity-assurance"
+  ],
+  "ot security": [
+    "ot-ics-security"
+  ],
+  "ics security": [
+    "ot-ics-security"
+  ],
+  "scada": [
+    "ot-ics-security"
+  ],
+  "plc security": [
+    "ot-ics-security"
+  ],
+  "operational technology": [
+    "ot-ics-security"
+  ],
+  "industrial control": [
+    "ot-ics-security"
+  ],
+  "iec 62443": [
+    "ot-ics-security"
+  ],
+  "nist 800-82": [
+    "ot-ics-security"
+  ],
+  "nerc cip": [
+    "ot-ics-security",
+    "sector-energy"
+  ],
+  "it ot convergence": [
+    "ot-ics-security"
+  ],
+  "hmi security": [
+    "ot-ics-security"
+  ],
+  "air gap": [
+    "ot-ics-security"
+  ],
+  "level 0": [
+    "ot-ics-security"
+  ],
+  "level 1": [
+    "ot-ics-security"
+  ],
+  "purdue": [
+    "ot-ics-security"
+  ],
+  "cvd": [
+    "coordinated-vuln-disclosure"
+  ],
+  "coordinated vulnerability disclosure": [
+    "coordinated-vuln-disclosure"
+  ],
+  "vdp": [
+    "coordinated-vuln-disclosure"
+  ],
+  "vulnerability disclosure program": [
+    "coordinated-vuln-disclosure"
+  ],
+  "bug bounty": [
+    "coordinated-vuln-disclosure"
+  ],
+  "responsible disclosure": [
+    "coordinated-vuln-disclosure"
+  ],
+  "iso 29147": [
+    "coordinated-vuln-disclosure"
+  ],
+  "iso 30111": [
+    "coordinated-vuln-disclosure"
+  ],
+  "security.txt": [
+    "coordinated-vuln-disclosure"
+  ],
+  "90-day disclosure": [
+    "coordinated-vuln-disclosure"
+  ],
+  "project zero": [
+    "coordinated-vuln-disclosure"
+  ],
+  "threat model": [
+    "threat-modeling-methodology"
+  ],
+  "threat modeling": [
+    "threat-modeling-methodology"
+  ],
+  "stride": [
+    "threat-modeling-methodology"
+  ],
+  "pasta": [
+    "threat-modeling-methodology"
+  ],
+  "linddun": [
+    "threat-modeling-methodology"
+  ],
+  "kill chain": [
+    "threat-modeling-methodology"
+  ],
+  "diamond model": [
+    "threat-modeling-methodology"
+  ],
+  "unified kill chain": [
+    "threat-modeling-methodology"
+  ],
+  "attack tree": [
+    "threat-modeling-methodology"
+  ],
+  "threat modeling methodology": [
+    "threat-modeling-methodology"
+  ],
+  "data flow diagram": [
+    "threat-modeling-methodology"
+  ],
+  "dfd": [
+    "threat-modeling-methodology"
+  ],
+  "trust boundary": [
+    "threat-modeling-methodology"
+  ],
+  "webapp security": [
+    "webapp-security"
+  ],
+  "web application security": [
+    "webapp-security"
+  ],
+  "owasp top 10": [
+    "webapp-security"
+  ],
+  "owasp asvs": [
+    "webapp-security"
+  ],
+  "xss": [
+    "webapp-security"
+  ],
+  "csrf": [
+    "webapp-security"
+  ],
+  "sqli": [
+    "webapp-security"
+  ],
+  "sql injection": [
+    "webapp-security"
+  ],
+  "path traversal": [
+    "webapp-security"
+  ],
+  "ssrf": [
+    "webapp-security"
+  ],
+  "file upload": [
+    "webapp-security"
+  ],
+  "command injection": [
+    "webapp-security"
+  ],
+  "unsafe deserialization": [
+    "webapp-security"
+  ],
+  "broken access control": [
+    "webapp-security"
+  ],
+  "ai generated code": [
+    "webapp-security"
+  ],
+  "ai risk management": [
+    "ai-risk-management"
+  ],
+  "ai governance": [
+    "ai-risk-management"
+  ],
+  "ai impact assessment": [
+    "ai-risk-management"
+  ],
+  "aia": [
+    "ai-risk-management"
+  ],
+  "dpia ai": [
+    "ai-risk-management"
+  ],
+  "iso 23894": [
+    "ai-risk-management"
+  ],
+  "iso 42001": [
+    "ai-risk-management"
+  ],
+  "nist ai rmf": [
+    "ai-risk-management"
+  ],
+  "ai red team program": [
+    "ai-risk-management"
+  ],
+  "ai incident response": [
+    "ai-risk-management"
+  ],
+  "eu ai act high-risk": [
+    "ai-risk-management"
+  ],
+  "ai vendor risk": [
+    "ai-risk-management"
+  ],
+  "ai management system": [
+    "ai-risk-management"
+  ],
+  "healthcare security": [
+    "sector-healthcare"
+  ],
+  "hipaa": [
+    "sector-healthcare"
+  ],
+  "hitrust": [
+    "sector-healthcare"
+  ],
+  "hl7": [
+    "sector-healthcare"
+  ],
+  "fhir": [
+    "sector-healthcare"
+  ],
+  "phi": [
+    "sector-healthcare"
+  ],
+  "protected health information": [
+    "sector-healthcare"
+  ],
+  "medical device security": [
+    "sector-healthcare"
+  ],
+  "samd": [
+    "sector-healthcare"
+  ],
+  "fda cyber": [
+    "sector-healthcare"
+  ],
+  "eu mdr": [
+    "sector-healthcare"
+  ],
+  "clinical decision support": [
+    "sector-healthcare"
+  ],
+  "ai diagnostic": [
+    "sector-healthcare"
+  ],
+  "patient data": [
+    "sector-healthcare"
+  ],
+  "financial security": [
+    "sector-financial"
+  ],
+  "banking security": [
+    "sector-financial"
+  ],
+  "dora": [
+    "sector-financial"
+  ],
+  "psd2": [
+    "sector-financial"
+  ],
+  "psd3": [
+    "sector-financial"
+  ],
+  "sca": [
+    "sector-financial"
+  ],
+  "strong customer authentication": [
+    "sector-financial"
+  ],
+  "swift cscf": [
+    "sector-financial"
+  ],
+  "nydfs": [
+    "sector-financial"
+  ],
+  "23 nycrr 500": [
+    "sector-financial"
+  ],
+  "ffiec": [
+    "sector-financial"
+  ],
+  "cbest": [
+    "sector-financial"
+  ],
+  "icast": [
+    "sector-financial"
+  ],
+  "federal cyber": [
+    "sector-federal-government"
+  ],
+  "government cybersecurity": [
+    "sector-federal-government"
+  ],
+  "fedramp": [
+    "sector-federal-government"
+  ],
+  "cmmc": [
+    "sector-federal-government"
+  ],
+  "eo 14028": [
+    "sector-federal-government"
+  ],
+  "nist 800-171": [
+    "sector-federal-government"
+  ],
+  "nist 800-172": [
+    "sector-federal-government"
+  ],
+  "cui": [
+    "sector-federal-government"
+  ],
+  "fisma": [
+    "sector-federal-government"
+  ],
+  "federal zero trust": [
+    "sector-federal-government"
+  ],
+  "m-22-09": [
+    "sector-federal-government"
+  ],
+  "omb m-24-04": [
+    "sector-federal-government"
+  ],
+  "jab authorization": [
+    "sector-federal-government"
+  ],
+  "cisa bod": [
+    "sector-federal-government"
+  ],
+  "cisa ed": [
+    "sector-federal-government"
+  ],
+  "stateramp": [
+    "sector-federal-government"
+  ],
+  "energy security": [
+    "sector-energy"
+  ],
+  "electric grid security": [
+    "sector-energy"
+  ],
+  "oil gas cyber": [
+    "sector-energy"
+  ],
+  "pipeline cyber": [
+    "sector-energy"
+  ],
+  "water utility cyber": [
+    "sector-energy"
+  ],
+  "tsa sd-2021": [
+    "sector-energy"
+  ],
+  "awwa cyber": [
+    "sector-energy"
+  ],
+  "aescsf": [
+    "sector-energy"
+  ],
+  "nccs-g": [
+    "sector-energy"
+  ],
+  "grid resilience": [
+    "sector-energy"
+  ],
+  "renewable cyber": [
+    "sector-energy"
+  ],
+  "inverter security": [
+    "sector-energy"
+  ],
+  "der security": [
+    "sector-energy"
+  ],
+  "smart meter security": [
+    "sector-energy"
+  ],
+  "api security": [
+    "api-security"
+  ],
+  "owasp api top 10": [
+    "api-security"
+  ],
+  "bola": [
+    "api-security"
+  ],
+  "bfla": [
+    "api-security"
+  ],
+  "mass assignment": [
+    "api-security"
+  ],
+  "api gateway": [
+    "api-security"
+  ],
+  "rate limiting": [
+    "api-security"
+  ],
+  "graphql security": [
+    "api-security"
+  ],
+  "grpc security": [
+    "api-security"
+  ],
+  "rest security": [
+    "api-security"
+  ],
+  "websocket security": [
+    "api-security"
+  ],
+  "ai api security": [
+    "api-security"
+  ],
+  "mcp transport": [
+    "api-security"
+  ],
+  "openapi security": [
+    "api-security"
+  ],
+  "cloud security": [
+    "cloud-security"
+  ],
+  "cspm": [
+    "cloud-security"
+  ],
+  "cwpp": [
+    "cloud-security"
+  ],
+  "cnapp": [
+    "cloud-security"
+  ],
+  "csa ccm": [
+    "cloud-security"
+  ],
+  "aws security": [
+    "cloud-security"
+  ],
+  "azure security": [
+    "cloud-security"
+  ],
+  "gcp security": [
+    "cloud-security"
+  ],
+  "cloud iam": [
+    "cloud-security"
+  ],
+  "irsa": [
+    "cloud-security"
+  ],
+  "cloud runtime": [
+    "cloud-security"
+  ],
+  "shared responsibility": [
+    "cloud-security"
+  ],
+  "multi cloud": [
+    "cloud-security"
+  ],
+  "falco": [
+    "cloud-security",
+    "container-runtime-security"
+  ],
+  "container security": [
+    "container-runtime-security"
+  ],
+  "kubernetes security": [
+    "container-runtime-security"
+  ],
+  "k8s security": [
+    "container-runtime-security"
+  ],
+  "cis kubernetes": [
+    "container-runtime-security"
+  ],
+  "nsa hardening": [
+    "container-runtime-security"
+  ],
+  "pod security standards": [
+    "container-runtime-security"
+  ],
+  "kyverno": [
+    "container-runtime-security"
+  ],
+  "gatekeeper": [
+    "container-runtime-security"
+  ],
+  "opa": [
+    "container-runtime-security"
+  ],
+  "tetragon": [
+    "container-runtime-security"
+  ],
+  "sigstore policy": [
+    "container-runtime-security"
+  ],
+  "admission controller": [
+    "container-runtime-security"
+  ],
+  "networkpolicy": [
+    "container-runtime-security"
+  ],
+  "cilium": [
+    "container-runtime-security"
+  ],
+  "kserve": [
+    "container-runtime-security"
+  ],
+  "vllm": [
+    "container-runtime-security"
+  ],
+  "mlops security": [
+    "mlops-security"
+  ],
+  "ml pipeline security": [
+    "mlops-security"
+  ],
+  "model registry security": [
+    "mlops-security"
+  ],
+  "training data integrity": [
+    "mlops-security"
+  ],
+  "mlflow": [
+    "mlops-security"
+  ],
+  "kubeflow": [
+    "mlops-security"
+  ],
+  "vertex ai": [
+    "mlops-security"
+  ],
+  "sagemaker": [
+    "mlops-security"
+  ],
+  "azure ml": [
+    "mlops-security"
+  ],
+  "hugging face": [
+    "mlops-security"
+  ],
+  "model signing": [
+    "mlops-security"
+  ],
+  "model card": [
+    "mlops-security"
+  ],
+  "data card": [
+    "mlops-security"
+  ],
+  "feature store": [
+    "mlops-security"
+  ],
+  "drift detection": [
+    "mlops-security"
+  ],
+  "model monitoring": [
+    "mlops-security"
+  ],
+  "incident response": [
+    "incident-response-playbook"
+  ],
+  "ir playbook": [
+    "incident-response-playbook"
+  ],
+  "csirt": [
+    "incident-response-playbook"
+  ],
+  "picerl": [
+    "incident-response-playbook"
+  ],
+  "nist 800-61": [
+    "incident-response-playbook"
+  ],
+  "iso 27035": [
+    "incident-response-playbook"
+  ],
+  "breach notification": [
+    "incident-response-playbook"
+  ],
+  "incident handler": [
+    "incident-response-playbook"
+  ],
+  "soc playbook": [
+    "incident-response-playbook"
+  ],
+  "ai incident": [
+    "incident-response-playbook"
+  ],
+  "prompt injection incident": [
+    "incident-response-playbook"
+  ],
+  "model exfiltration incident": [
+    "incident-response-playbook"
+  ],
+  "email security": [
+    "email-security-anti-phishing"
+  ],
+  "anti-phishing": [
+    "email-security-anti-phishing"
+  ],
+  "phishing": [
+    "email-security-anti-phishing"
+  ],
+  "spear phishing": [
+    "email-security-anti-phishing"
+  ],
+  "bec": [
+    "email-security-anti-phishing"
+  ],
+  "business email compromise": [
+    "email-security-anti-phishing"
+  ],
+  "dmarc": [
+    "email-security-anti-phishing"
+  ],
+  "dkim": [
+    "email-security-anti-phishing"
+  ],
+  "spf": [
+    "email-security-anti-phishing"
+  ],
+  "bimi": [
+    "email-security-anti-phishing"
+  ],
+  "arc": [
+    "email-security-anti-phishing"
+  ],
+  "mta-sts": [
+    "email-security-anti-phishing"
+  ],
+  "tlsrpt": [
+    "email-security-anti-phishing"
+  ],
+  "vishing": [
+    "email-security-anti-phishing"
+  ],
+  "deepfake phishing": [
+    "email-security-anti-phishing"
+  ],
+  "ai phishing": [
+    "email-security-anti-phishing"
+  ],
+  "secure email gateway": [
+    "email-security-anti-phishing"
+  ],
+  "age gate": [
+    "age-gates-child-safety"
+  ],
+  "age gates": [
+    "age-gates-child-safety"
+  ],
+  "age verification": [
+    "age-gates-child-safety"
+  ],
+  "age assurance": [
+    "age-gates-child-safety"
+  ],
+  "child online safety": [
+    "age-gates-child-safety"
+  ],
+  "coppa": [
+    "age-gates-child-safety"
+  ],
+  "cipa": [
+    "age-gates-child-safety"
+  ],
+  "california aadc": [
+    "age-gates-child-safety"
+  ],
+  "children's code": [
+    "age-gates-child-safety"
+  ],
+  "uk online safety act": [
+    "age-gates-child-safety"
+  ],
+  "kosa": [
+    "age-gates-child-safety"
+  ],
+  "gdpr article 8": [
+    "age-gates-child-safety"
+  ],
+  "dsa article 28": [
+    "age-gates-child-safety"
+  ],
+  "parental consent": [
+    "age-gates-child-safety"
+  ],
+  "csam": [
+    "age-gates-child-safety"
+  ],
+  "child safety": [
+    "age-gates-child-safety"
+  ],
+  "ofcom": [
+    "age-gates-child-safety"
+  ],
+  "esafety": [
+    "age-gates-child-safety"
+  ],
+  "children's online safety": [
+    "age-gates-child-safety"
+  ]
+}

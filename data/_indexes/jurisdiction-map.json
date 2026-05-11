@@ -1,0 +1,536 @@
+{
+  "EU": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "compliance-theater",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "exploit-scoring",
+      "framework-gap-analysis",
+      "fuzz-testing-strategy",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "mcp-agent-trust",
+      "mlops-security",
+      "ot-ics-security",
+      "policy-exception-gen",
+      "pqc-first",
+      "researcher",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "security-maturity-tiers",
+      "skill-update-loop",
+      "supply-chain-integrity",
+      "threat-model-currency",
+      "threat-modeling-methodology",
+      "webapp-security",
+      "zeroday-gap-learn"
+    ],
+    "example_excerpts": {},
+    "skill_count": 35
+  },
+  "UK": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "compliance-theater",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "fuzz-testing-strategy",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "mlops-security",
+      "ot-ics-security",
+      "pqc-first",
+      "researcher",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "security-maturity-tiers",
+      "skill-update-loop",
+      "supply-chain-integrity",
+      "threat-model-currency",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "example_excerpts": {},
+    "skill_count": 31
+  },
+  "AU": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "compliance-theater",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "exploit-scoring",
+      "framework-gap-analysis",
+      "fuzz-testing-strategy",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "mcp-agent-trust",
+      "mlops-security",
+      "ot-ics-security",
+      "pqc-first",
+      "researcher",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "security-maturity-tiers",
+      "skill-update-loop",
+      "supply-chain-integrity",
+      "threat-model-currency",
+      "threat-modeling-methodology",
+      "webapp-security",
+      "zeroday-gap-learn"
+    ],
+    "example_excerpts": {},
+    "skill_count": 34
+  },
+  "SG": {
+    "skills": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "mlops-security",
+      "researcher",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "example_excerpts": {},
+    "skill_count": 17
+  },
+  "JP": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "mlops-security",
+      "ot-ics-security",
+      "pqc-first",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "supply-chain-integrity",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "example_excerpts": {},
+    "skill_count": 22
+  },
+  "IN": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "mlops-security",
+      "researcher",
+      "sector-financial",
+      "sector-healthcare",
+      "threat-modeling-methodology"
+    ],
+    "example_excerpts": {},
+    "skill_count": 15
+  },
+  "CA": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-c2-detection",
+      "cloud-security",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "zeroday-gap-learn"
+    ],
+    "example_excerpts": {},
+    "skill_count": 13
+  },
+  "BR": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "incident-response-playbook",
+      "pqc-first",
+      "sector-financial",
+      "sector-healthcare",
+      "supply-chain-integrity",
+      "threat-modeling-methodology"
+    ],
+    "example_excerpts": {},
+    "skill_count": 13
+  },
+  "CN": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-risk-management",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "pqc-first",
+      "sector-federal-government",
+      "supply-chain-integrity",
+      "threat-modeling-methodology"
+    ],
+    "example_excerpts": {},
+    "skill_count": 12
+  },
+  "ZA": {
+    "skills": [
+      "sector-healthcare"
+    ],
+    "example_excerpts": {},
+    "skill_count": 1
+  },
+  "AE": {
+    "skills": [
+      "incident-response-playbook",
+      "sector-financial"
+    ],
+    "example_excerpts": {},
+    "skill_count": 2
+  },
+  "SA": {
+    "skills": [
+      "age-gates-child-safety",
+      "compliance-theater",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "fuzz-testing-strategy",
+      "global-grc",
+      "mcp-agent-trust",
+      "mlops-security",
+      "pqc-first",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "supply-chain-integrity",
+      "zeroday-gap-learn"
+    ],
+    "example_excerpts": {},
+    "skill_count": 16
+  },
+  "NZ": {
+    "skills": [
+      "sector-financial"
+    ],
+    "example_excerpts": {},
+    "skill_count": 1
+  },
+  "KR": {
+    "skills": [
+      "age-gates-child-safety",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 5
+  },
+  "CL": {
+    "skills": [],
+    "example_excerpts": {},
+    "skill_count": 0
+  },
+  "IL": {
+    "skills": [
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "mlops-security",
+      "ot-ics-security",
+      "pqc-first",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "supply-chain-integrity",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "example_excerpts": {},
+    "skill_count": 21
+  },
+  "CH": {
+    "skills": [
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "pqc-first",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 6
+  },
+  "HK": {
+    "skills": [
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "pqc-first",
+      "sector-financial",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 6
+  },
+  "TW": {
+    "skills": [
+      "cloud-security",
+      "container-runtime-security",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "ot-ics-security",
+      "pqc-first",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 8
+  },
+  "ID": {
+    "skills": [
+      "age-gates-child-safety",
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "compliance-theater",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "exploit-scoring",
+      "framework-gap-analysis",
+      "fuzz-testing-strategy",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "mcp-agent-trust",
+      "mlops-security",
+      "ot-ics-security",
+      "policy-exception-gen",
+      "pqc-first",
+      "rag-pipeline-security",
+      "researcher",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "skill-update-loop",
+      "supply-chain-integrity",
+      "threat-model-currency",
+      "threat-modeling-methodology",
+      "webapp-security",
+      "zeroday-gap-learn"
+    ],
+    "example_excerpts": {},
+    "skill_count": 37
+  },
+  "VN": {
+    "skills": [
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 4
+  },
+  "US_NYDFS": {
+    "skills": [
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "coordinated-vuln-disclosure",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "framework-gap-analysis",
+      "global-grc",
+      "identity-assurance",
+      "incident-response-playbook",
+      "mlops-security",
+      "pqc-first",
+      "researcher",
+      "sector-financial",
+      "skill-update-loop",
+      "supply-chain-integrity",
+      "webapp-security"
+    ],
+    "example_excerpts": {},
+    "skill_count": 17
+  },
+  "NO": {
+    "skills": [
+      "sector-energy",
+      "skill-update-loop"
+    ],
+    "example_excerpts": {},
+    "skill_count": 2
+  },
+  "MX": {
+    "skills": [
+      "sector-financial"
+    ],
+    "example_excerpts": {},
+    "skill_count": 1
+  },
+  "AR": {
+    "skills": [
+      "age-gates-child-safety"
+    ],
+    "example_excerpts": {},
+    "skill_count": 1
+  },
+  "TR": {
+    "skills": [],
+    "example_excerpts": {},
+    "skill_count": 0
+  },
+  "TH": {
+    "skills": [],
+    "example_excerpts": {},
+    "skill_count": 0
+  },
+  "PH": {
+    "skills": [],
+    "example_excerpts": {},
+    "skill_count": 0
+  },
+  "US_CALIFORNIA": {
+    "skills": [
+      "age-gates-child-safety",
+      "compliance-theater",
+      "dlp-gap-analysis",
+      "framework-gap-analysis",
+      "global-grc"
+    ],
+    "example_excerpts": {},
+    "skill_count": 5
+  },
+  "EU_DE_BSI": {
+    "skills": [
+      "age-gates-child-safety",
+      "cloud-security",
+      "coordinated-vuln-disclosure",
+      "fuzz-testing-strategy",
+      "pqc-first"
+    ],
+    "example_excerpts": {},
+    "skill_count": 5
+  },
+  "EU_FR_ANSSI": {
+    "skills": [
+      "cloud-security",
+      "pqc-first"
+    ],
+    "example_excerpts": {},
+    "skill_count": 2
+  },
+  "EU_ES_AEPD": {
+    "skills": [
+      "sector-financial"
+    ],
+    "example_excerpts": {},
+    "skill_count": 1
+  },
+  "EU_IT_AgID_ACN": {
+    "skills": [
+      "cloud-security",
+      "fuzz-testing-strategy"
+    ],
+    "example_excerpts": {},
+    "skill_count": 2
+  },
+  "EU_ENISA": {
+    "skills": [],
+    "example_excerpts": {},
+    "skill_count": 0
+  }
+}

@@ -114,6 +114,12 @@ const GATES = [
     args: ["-e", sbomCurrencyChecker()],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    name: "Pre-computed indexes freshness (data/_indexes/ vs. live sources)",
+    command: process.execPath,
+    args: [path.join(ROOT, "lib", "validate-indexes.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 /* Inline checker, run as `node -e`, so the predeploy gate stays one

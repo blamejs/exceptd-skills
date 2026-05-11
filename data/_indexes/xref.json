@@ -1,0 +1,818 @@
+{
+  "cwe_refs": {
+    "CWE-125": [
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "CWE-362": [
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "CWE-416": [
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "CWE-672": [
+      "kernel-lpe-triage"
+    ],
+    "CWE-787": [
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "CWE-1039": [
+      "ai-attack-surface",
+      "ai-risk-management"
+    ],
+    "CWE-1426": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "dlp-gap-analysis",
+      "mlops-security",
+      "rag-pipeline-security",
+      "sector-healthcare"
+    ],
+    "CWE-94": [
+      "ai-attack-surface",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "CWE-22": [
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "CWE-345": [
+      "mcp-agent-trust"
+    ],
+    "CWE-352": [
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "CWE-434": [
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "CWE-494": [
+      "mcp-agent-trust",
+      "supply-chain-integrity"
+    ],
+    "CWE-77": [
+      "api-security",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "CWE-918": [
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "CWE-1395": [
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "mlops-security",
+      "rag-pipeline-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "CWE-1188": [
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "policy-exception-gen",
+      "security-maturity-tiers",
+      "webapp-security"
+    ],
+    "CWE-327": [
+      "pqc-first"
+    ],
+    "CWE-269": [
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "identity-assurance",
+      "webapp-security"
+    ],
+    "CWE-732": [
+      "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
+      "identity-assurance",
+      "webapp-security"
+    ],
+    "CWE-78": [
+      "attack-surface-pentest",
+      "fuzz-testing-strategy",
+      "webapp-security"
+    ],
+    "CWE-79": [
+      "attack-surface-pentest",
+      "webapp-security"
+    ],
+    "CWE-89": [
+      "attack-surface-pentest",
+      "webapp-security"
+    ],
+    "CWE-20": [
+      "fuzz-testing-strategy"
+    ],
+    "CWE-200": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "CWE-1357": [
+      "coordinated-vuln-disclosure",
+      "mlops-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "CWE-502": [
+      "mlops-security",
+      "supply-chain-integrity",
+      "webapp-security"
+    ],
+    "CWE-829": [
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "CWE-287": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "ot-ics-security",
+      "sector-energy",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "CWE-306": [
+      "identity-assurance",
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "CWE-798": [
+      "cloud-security",
+      "identity-assurance",
+      "ot-ics-security",
+      "sector-energy",
+      "sector-financial"
+    ],
+    "CWE-862": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "CWE-863": [
+      "api-security",
+      "identity-assurance",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "CWE-1037": [
+      "ot-ics-security",
+      "sector-energy"
+    ]
+  },
+  "d3fend_refs": {
+    "D3-ASLR": [
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage"
+    ],
+    "D3-EAL": [
+      "attack-surface-pentest",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage",
+      "mcp-agent-trust",
+      "supply-chain-integrity"
+    ],
+    "D3-PHRA": [
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage"
+    ],
+    "D3-PSEP": [
+      "defensive-countermeasure-mapping",
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "D3-IOPR": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "fuzz-testing-strategy",
+      "rag-pipeline-security"
+    ],
+    "D3-NTA": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "attack-surface-pentest",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "rag-pipeline-security"
+    ],
+    "D3-CBAN": [
+      "defensive-countermeasure-mapping",
+      "mcp-agent-trust",
+      "supply-chain-integrity"
+    ],
+    "D3-CSPP": [
+      "ai-c2-detection",
+      "attack-surface-pentest",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
+      "mcp-agent-trust",
+      "rag-pipeline-security"
+    ],
+    "D3-EHB": [
+      "defensive-countermeasure-mapping",
+      "mcp-agent-trust",
+      "supply-chain-integrity"
+    ],
+    "D3-MFA": [
+      "defensive-countermeasure-mapping",
+      "mcp-agent-trust"
+    ],
+    "D3-CA": [
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-DA": [
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-NI": [
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-NTPM": [
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis"
+    ],
+    "D3-FE": [
+      "defensive-countermeasure-mapping",
+      "pqc-first"
+    ],
+    "D3-MENCR": [
+      "defensive-countermeasure-mapping",
+      "pqc-first"
+    ],
+    "D3-FAPA": [
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-PA": [
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-RPA": [
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-SCP": [
+      "defensive-countermeasure-mapping"
+    ]
+  },
+  "framework_gaps": {
+    "NIST-800-53-SI-2": [
+      "kernel-lpe-triage"
+    ],
+    "ISO-27001-2022-A.8.8": [
+      "coordinated-vuln-disclosure",
+      "kernel-lpe-triage"
+    ],
+    "PCI-DSS-4.0-6.3.3": [
+      "kernel-lpe-triage"
+    ],
+    "NIS2-Art21-patch-management": [
+      "attack-surface-pentest",
+      "kernel-lpe-triage",
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "NIST-800-53-SC-8": [
+      "kernel-lpe-triage",
+      "pqc-first"
+    ],
+    "CIS-Controls-v8-Control7": [
+      "exploit-scoring",
+      "kernel-lpe-triage"
+    ],
+    "ALL-AI-PIPELINE-INTEGRITY": [
+      "ai-attack-surface",
+      "compliance-theater"
+    ],
+    "ALL-PROMPT-INJECTION-ACCESS-CONTROL": [
+      "ai-attack-surface",
+      "compliance-theater"
+    ],
+    "ISO-27001-2022-A.8.28": [
+      "ai-attack-surface",
+      "api-security",
+      "container-runtime-security",
+      "rag-pipeline-security",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "ISO-IEC-23894-2023-clause-7": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "threat-modeling-methodology"
+    ],
+    "NIST-800-53-AC-2": [
+      "age-gates-child-safety",
+      "ai-attack-surface",
+      "api-security",
+      "identity-assurance",
+      "incident-response-playbook",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "NIST-800-53-SI-3": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "email-security-anti-phishing"
+    ],
+    "OWASP-LLM-Top-10-2025-LLM01": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "webapp-security"
+    ],
+    "OWASP-LLM-Top-10-2025-LLM02": [
+      "ai-attack-surface"
+    ],
+    "SOC2-CC6-logical-access": [
+      "age-gates-child-safety",
+      "ai-attack-surface",
+      "identity-assurance",
+      "sector-financial"
+    ],
+    "ALL-MCP-TOOL-TRUST": [
+      "mcp-agent-trust"
+    ],
+    "ISO-27001-2022-A.8.30": [
+      "age-gates-child-safety",
+      "cloud-security",
+      "identity-assurance",
+      "mcp-agent-trust",
+      "sector-healthcare"
+    ],
+    "NIST-800-53-CM-7": [
+      "cloud-security",
+      "container-runtime-security",
+      "mcp-agent-trust"
+    ],
+    "NIST-800-53-SA-12": [
+      "mcp-agent-trust",
+      "supply-chain-integrity"
+    ],
+    "OWASP-LLM-Top-10-2025-LLM06": [
+      "mcp-agent-trust"
+    ],
+    "SOC2-CC9-vendor-management": [
+      "cloud-security",
+      "coordinated-vuln-disclosure",
+      "mcp-agent-trust"
+    ],
+    "SWIFT-CSCF-v2026-1.1": [
+      "mcp-agent-trust",
+      "sector-financial",
+      "supply-chain-integrity"
+    ],
+    "FedRAMP-Rev5-Moderate": [
+      "cloud-security",
+      "compliance-theater",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "CMMC-2.0-Level-2": [
+      "compliance-theater",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "CWE-Top-25-2024-meta": [
+      "exploit-scoring"
+    ],
+    "NIST-800-53-SI-12": [
+      "rag-pipeline-security"
+    ],
+    "NIST-AI-RMF-MEASURE-2.5": [
+      "ai-risk-management",
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "OWASP-LLM-Top-10-2025-LLM08": [
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "NIST-800-53-SC-7": [
+      "ai-c2-detection",
+      "dlp-gap-analysis"
+    ],
+    "ISO-27001-2022-A.8.16": [
+      "ai-c2-detection",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "incident-response-playbook"
+    ],
+    "SOC2-CC7-anomaly-detection": [
+      "ai-c2-detection",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "incident-response-playbook"
+    ],
+    "NIST-800-53-SC-28": [
+      "dlp-gap-analysis",
+      "pqc-first"
+    ],
+    "NIST-800-115": [
+      "attack-surface-pentest",
+      "fuzz-testing-strategy"
+    ],
+    "OWASP-Pen-Testing-Guide-v5": [
+      "attack-surface-pentest"
+    ],
+    "PTES-Pre-engagement": [
+      "attack-surface-pentest"
+    ],
+    "NIST-800-218-SSDF": [
+      "api-security",
+      "coordinated-vuln-disclosure",
+      "fuzz-testing-strategy",
+      "mlops-security",
+      "sector-federal-government",
+      "supply-chain-integrity",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "OWASP-ASVS-v5.0-V14": [
+      "api-security",
+      "fuzz-testing-strategy",
+      "webapp-security"
+    ],
+    "ISO-IEC-42001-2023-clause-6.1.2": [
+      "ai-risk-management",
+      "dlp-gap-analysis",
+      "mlops-security",
+      "threat-modeling-methodology"
+    ],
+    "HIPAA-Security-Rule-164.312(a)(1)": [
+      "dlp-gap-analysis",
+      "sector-healthcare"
+    ],
+    "SLSA-v1.0-Build-L3": [
+      "container-runtime-security",
+      "mlops-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "VEX-CSAF-v2.1": [
+      "supply-chain-integrity"
+    ],
+    "CycloneDX-v1.6-SBOM": [
+      "supply-chain-integrity"
+    ],
+    "SPDX-v3.0-SBOM": [
+      "supply-chain-integrity"
+    ],
+    "HITRUST-CSF-v11.4-09.l": [
+      "sector-healthcare",
+      "supply-chain-integrity"
+    ],
+    "NIST-800-63B-rev4": [
+      "identity-assurance"
+    ],
+    "PSD2-RTS-SCA": [
+      "identity-assurance",
+      "sector-financial"
+    ],
+    "NIST-800-82r3": [
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "IEC-62443-3-3": [
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "NERC-CIP-007-6-R4": [
+      "ot-ics-security",
+      "sector-energy"
+    ]
+  },
+  "atlas_refs": {
+    "AML.T0043": [
+      "ai-attack-surface",
+      "attack-surface-pentest",
+      "fuzz-testing-strategy",
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "AML.T0051": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "attack-surface-pentest",
+      "dlp-gap-analysis",
+      "identity-assurance",
+      "incident-response-playbook",
+      "rag-pipeline-security",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "AML.T0054": [
+      "ai-attack-surface",
+      "rag-pipeline-security"
+    ],
+    "AML.T0020": [
+      "ai-attack-surface",
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "AML.T0096": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
+      "dlp-gap-analysis",
+      "incident-response-playbook",
+      "mcp-agent-trust",
+      "sector-financial"
+    ],
+    "AML.T0016": [
+      "ai-attack-surface",
+      "mcp-agent-trust"
+    ],
+    "AML.T0017": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "incident-response-playbook",
+      "mlops-security",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "AML.T0018": [
+      "ai-attack-surface",
+      "mlops-security",
+      "supply-chain-integrity"
+    ],
+    "AML.T0010": [
+      "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
+      "mcp-agent-trust",
+      "mlops-security",
+      "ot-ics-security",
+      "supply-chain-integrity"
+    ]
+  },
+  "attack_refs": {
+    "T1068": [
+      "container-runtime-security",
+      "kernel-lpe-triage",
+      "ot-ics-security"
+    ],
+    "T1548.001": [
+      "kernel-lpe-triage"
+    ],
+    "T1566": [
+      "ai-attack-surface",
+      "email-security-anti-phishing"
+    ],
+    "T1059": [
+      "ai-attack-surface",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "T1190": [
+      "ai-attack-surface",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
+      "fuzz-testing-strategy",
+      "mcp-agent-trust",
+      "ot-ics-security",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "T1195.001": [
+      "mcp-agent-trust",
+      "mlops-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "T1565": [
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "T1071": [
+      "ai-c2-detection"
+    ],
+    "T1102": [
+      "ai-c2-detection"
+    ],
+    "T1568": [
+      "ai-c2-detection"
+    ],
+    "T1133": [
+      "attack-surface-pentest"
+    ],
+    "T1078": [
+      "age-gates-child-safety",
+      "api-security",
+      "attack-surface-pentest",
+      "cloud-security",
+      "email-security-anti-phishing",
+      "identity-assurance",
+      "incident-response-playbook",
+      "sector-energy",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "T1567": [
+      "age-gates-child-safety",
+      "api-security",
+      "dlp-gap-analysis",
+      "incident-response-playbook",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "T1530": [
+      "cloud-security",
+      "dlp-gap-analysis",
+      "sector-healthcare"
+    ],
+    "T1213": [
+      "dlp-gap-analysis"
+    ],
+    "T1041": [
+      "dlp-gap-analysis",
+      "incident-response-playbook"
+    ],
+    "T1195.002": [
+      "supply-chain-integrity"
+    ],
+    "T1554": [
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "T1556": [
+      "identity-assurance"
+    ],
+    "T1110": [
+      "identity-assurance"
+    ],
+    "T0855": [
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "T0883": [
+      "ot-ics-security",
+      "sector-energy"
+    ],
+    "T1505": [
+      "webapp-security"
+    ],
+    "T1486": [
+      "incident-response-playbook",
+      "sector-financial"
+    ],
+    "T1552": [
+      "cloud-security"
+    ],
+    "T1610": [
+      "container-runtime-security"
+    ],
+    "T1611": [
+      "container-runtime-security"
+    ],
+    "T1566.001": [
+      "email-security-anti-phishing"
+    ],
+    "T1566.002": [
+      "email-security-anti-phishing"
+    ],
+    "T1566.003": [
+      "email-security-anti-phishing"
+    ]
+  },
+  "rfc_refs": {
+    "RFC-4301": [
+      "kernel-lpe-triage"
+    ],
+    "RFC-4303": [
+      "kernel-lpe-triage"
+    ],
+    "RFC-7296": [
+      "kernel-lpe-triage"
+    ],
+    "RFC-6749": [
+      "api-security",
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "RFC-7519": [
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "RFC-8446": [
+      "ai-c2-detection",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "dlp-gap-analysis",
+      "mcp-agent-trust",
+      "pqc-first",
+      "sector-federal-government",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "RFC-8725": [
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "mcp-agent-trust",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "RFC-9114": [
+      "ai-c2-detection",
+      "api-security",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "RFC-9421": [
+      "ai-c2-detection",
+      "api-security",
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "RFC-9700": [
+      "api-security",
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "RFC-9180": [
+      "ai-c2-detection",
+      "cloud-security",
+      "pqc-first"
+    ],
+    "RFC-9458": [
+      "ai-c2-detection",
+      "dlp-gap-analysis"
+    ],
+    "RFC-9000": [
+      "ai-c2-detection"
+    ],
+    "DRAFT-IETF-TLS-ECDHE-MLKEM": [
+      "pqc-first"
+    ],
+    "DRAFT-IETF-TLS-HYBRID-DESIGN": [
+      "pqc-first"
+    ],
+    "RFC-9420": [
+      "pqc-first"
+    ],
+    "RFC-9794": [
+      "pqc-first"
+    ],
+    "RFC-8032": [
+      "container-runtime-security",
+      "identity-assurance",
+      "mlops-security",
+      "pqc-first",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "RFC-9106": [
+      "pqc-first"
+    ]
+  },
+  "dlp_refs": {}
+}
