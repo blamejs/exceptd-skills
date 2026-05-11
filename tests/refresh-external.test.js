@@ -15,12 +15,19 @@ const { execFileSync, spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const FIX = path.join(ROOT, 'tests', 'fixtures', 'refresh');
-const REPORT = path.join(ROOT, 'refresh-report.json');
+const os = require('os');
+
+let REPORT;            // per-test tempfile so parallel test files don't race
+function mkReport() {
+  REPORT = path.join(os.tmpdir(), `refresh-report-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+  return REPORT;
+}
 
 function runDryRun(args = []) {
+  const reportPath = mkReport();
   const res = spawnSync(
     process.execPath,
-    [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-fixture', FIX, '--quiet', ...args],
+    [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-fixture', FIX, '--quiet', '--report-out', reportPath, ...args],
     { cwd: ROOT, encoding: 'utf8' }
   );
   return { exitCode: res.status, stdout: res.stdout, stderr: res.stderr };

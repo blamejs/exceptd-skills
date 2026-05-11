@@ -122,6 +122,18 @@ jobs:
         # the new surface is tracked.
         run: node scripts/check-manifest-snapshot.js
 
+      - name: Pre-computed indexes freshness (data/_indexes/ vs. live sources)
+        # validate-indexes re-hashes every source file recorded in
+        # data/_indexes/_meta.json and fails on drift. Pin matches the
+        # predeploy gate.
+        run: node lib/validate-indexes.js
+
+      - name: Vendor tree integrity (vendor/blamejs/ vs. _PROVENANCE.json)
+        # validate-vendor re-hashes every vendored file and verifies the
+        # recorded sha256 — silent hand-edits to a vendored copy fail the
+        # build. Re-vendor instructions: vendor/blamejs/README.md.
+        run: node lib/validate-vendor.js
+
   # ── Skill lint (frontmatter + body sections + cross-refs) ───────────────────
   # AGENTS.md hard rules #4 (no orphaned controls), #7 (skills are
   # instructions, not descriptions), #10 (no placeholders), #11 (no-MVP

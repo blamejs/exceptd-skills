@@ -45,6 +45,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Warm upstream cache (single fan-out fetch)
+        # Prefetch caches every upstream snapshot once at job start. The
+        # subsequent refresh runs read from .cache/upstream rather than
+        # re-hitting upstream APIs — eliminates parallel-fetch rate-limit
+        # contention and gives swarm-mode genuine parallelism.
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node lib/prefetch.js --quiet
+
       - name: Run refresh in dry-run mode (always first)
         id: dry
         env:
@@ -55,7 +65,9 @@ jobs:
           if [ -n "${{ inputs.source }}" ]; then
             SOURCE_ARG="--source ${{ inputs.source }}"
           fi
-          node lib/refresh-external.js $SOURCE_ARG 2>&1 | tee refresh-dry.log
+          # --from-cache + --swarm: source fetches run in parallel against
+          # the warm cache, never touching upstream a second time.
+          node lib/refresh-external.js --from-cache .cache/upstream --swarm $SOURCE_ARG 2>&1 | tee refresh-dry.log
           DRY_EXIT=${PIPESTATUS[0]}
           echo "exit_code=$DRY_EXIT" >> "$GITHUB_OUTPUT"
           # Count diffs across all sources to drive PR-open decision.
@@ -79,8 +91,9 @@ jobs:
           if [ -n "${{ inputs.source }}" ]; then
             SOURCE_ARG="--source ${{ inputs.source }}"
           fi
-          # Exclude pins from --apply (they're report-only anyway).
-          node lib/refresh-external.js --apply $SOURCE_ARG
+          # Apply from the same warm cache. --apply triggers an automatic
+          # build-indexes rebuild after writing upserts.
+          node lib/refresh-external.js --apply --from-cache .cache/upstream --swarm $SOURCE_ARG
 
       - name: Predeploy gate (verifies the apply produced a consistent state)
         if: |

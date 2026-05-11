@@ -243,6 +243,22 @@ async function runValidateCves(rawArgs = []) {
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
   const offline = flags.has('--offline');
   const noFail = flags.has('--no-fail');
+  // --from-cache: prefer cached upstream snapshots before falling back to live
+  // network. Accepts an optional path; defaults to .cache/upstream when bare.
+  // The cache layout is fixed by lib/prefetch.js — same one refresh-external
+  // reads from.
+  let cacheDir = null;
+  for (let i = 0; i < rawArgs.length; i++) {
+    const a = rawArgs[i];
+    if (a === '--from-cache') {
+      const next = rawArgs[i + 1];
+      cacheDir = next && !next.startsWith('--') ? next : '.cache/upstream';
+      if (next && !next.startsWith('--')) i++;
+    } else if (a.startsWith('--from-cache=')) {
+      cacheDir = a.slice('--from-cache='.length);
+    }
+  }
+  if (cacheDir) cacheDir = path.resolve(cacheDir);
 
   const catalogPath = path.join(__dirname, '..', 'data', 'cve-catalog.json');
   let catalog;
@@ -256,7 +272,10 @@ async function runValidateCves(rawArgs = []) {
   const cveIds = Object.keys(catalog).filter(k => /^CVE-\d{4}-\d{4,7}$/.test(k));
 
   console.log(`\nCVE Validation — ${new Date().toISOString()}`);
-  console.log(`${cveIds.length} CVEs in catalog. Mode: ${offline ? 'offline (local view only)' : 'live (NVD + CISA KEV)'}`);
+  const modeStr = offline
+    ? 'offline (local view only)'
+    : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (NVD + CISA KEV)');
+  console.log(`${cveIds.length} CVEs in catalog. Mode: ${modeStr}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   // --- Header (fixed-width; works with the existing currency command's style)
@@ -299,9 +318,17 @@ async function runValidateCves(rawArgs = []) {
     return;
   }
 
-  // Live path.
+  // Live path — opportunistically use the prefetch cache when --from-cache
+  // is set. Cache-resolved CVEs short-circuit the network fetch; missing
+  // entries fall through to the live validator. Both paths produce the
+  // same ValidationResult shape.
   const { validateAllCves } = require('../sources/validators');
-  const report = await validateAllCves(catalog, { concurrency: 4 });
+  let report;
+  if (cacheDir && fs.existsSync(cacheDir)) {
+    report = await validateAllCvesPreferCache(catalog, cacheDir);
+  } else {
+    report = await validateAllCves(catalog, { concurrency: 4 });
+  }
 
   // Index results by cve_id (validateAllCves preserves insertion order, but be explicit).
   const byId = new Map(report.results.map(r => [r.cve_id, r]));
@@ -405,6 +432,18 @@ async function runValidateRfcs(rawArgs = []) {
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
   const offline = flags.has('--offline');
   const noFail = flags.has('--no-fail');
+  let cacheDir = null;
+  for (let i = 0; i < rawArgs.length; i++) {
+    const a = rawArgs[i];
+    if (a === '--from-cache') {
+      const next = rawArgs[i + 1];
+      cacheDir = next && !next.startsWith('--') ? next : '.cache/upstream';
+      if (next && !next.startsWith('--')) i++;
+    } else if (a.startsWith('--from-cache=')) {
+      cacheDir = a.slice('--from-cache='.length);
+    }
+  }
+  if (cacheDir) cacheDir = path.resolve(cacheDir);
 
   const refsPath = path.join(__dirname, '..', 'data', 'rfc-references.json');
   let refs;
@@ -418,7 +457,10 @@ async function runValidateRfcs(rawArgs = []) {
   const ids = Object.keys(refs).filter(k => !k.startsWith('_'));
 
   console.log(`\nRFC Validation — ${new Date().toISOString()}`);
-  console.log(`${ids.length} RFC / draft entries in catalog. Mode: ${offline ? 'offline (local view only)' : 'live (IETF Datatracker)'}`);
+  const modeStr = offline
+    ? 'offline (local view only)'
+    : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (IETF Datatracker)');
+  console.log(`${ids.length} RFC / draft entries in catalog. Mode: ${modeStr}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   const header = 'ID                              | Status               | Errata | Last verified | Live status';
@@ -445,32 +487,78 @@ async function runValidateRfcs(rawArgs = []) {
   let driftFound = 0;
   let unreachable = 0;
 
+  // Cache-first helpers — read the prefetch payload for an RFC/draft and
+  // compute drift the same way validateRfc would. Cache misses fall through
+  // to the live validator.
+  const STATUS_MAP = {
+    std: 'Internet Standard', ps: 'Proposed Standard', ds: 'Draft Standard',
+    bcp: 'Best Current Practice', inf: 'Informational', exp: 'Experimental',
+    his: 'Historic', unkn: 'Unknown',
+  };
+  function rfcDocNameFor(id) {
+    if (id.startsWith('RFC-')) return `rfc${id.slice(4)}`;
+    if (id.startsWith('DRAFT-')) return `draft-${id.slice(6).toLowerCase()}`;
+    return null;
+  }
+  function readCachedRfc(docName) {
+    if (!cacheDir || !docName) return null;
+    const safe = docName.replace(/[^A-Za-z0-9._-]/g, '_');
+    const p = path.join(cacheDir, 'rfc', `${safe}.json`);
+    if (!fs.existsSync(p)) return null;
+    try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
+    catch { return null; }
+  }
+  let cacheHits = 0;
+  let liveFallbacks = 0;
+
   for (const id of ids) {
     const entry = refs[id];
     let liveStatus = offline || !validator ? 'skipped (offline)' : '?';
-    if (validator) {
-      try {
-        const result = await validator.validateRfc(id, entry);
-        if (result.status === 'unreachable') {
-          liveStatus = 'unreachable';
-          unreachable++;
-        } else if (result.status === 'match') {
-          liveStatus = 'match';
-        } else if (result.status === 'drift') {
-          liveStatus = 'DRIFT: ' + (result.discrepancies || []).join('; ');
+    if (!offline) {
+      const cached = readCachedRfc(rfcDocNameFor(id));
+      if (cached) {
+        cacheHits++;
+        const obj = cached.objects?.[0];
+        if (!obj) {
+          liveStatus = 'NOT FOUND upstream (cache)';
           driftFound++;
-        } else if (result.status === 'missing') {
-          liveStatus = 'NOT FOUND upstream';
-          driftFound++;
+        } else {
+          const upStatus = STATUS_MAP[obj.std_level] || null;
+          if (upStatus && entry.status && upStatus !== entry.status) {
+            liveStatus = `DRIFT: status local "${entry.status}" vs Datatracker "${upStatus}" (cache)`;
+            driftFound++;
+          } else {
+            liveStatus = 'match (cache)';
+          }
         }
-      } catch (err) {
-        liveStatus = `error: ${err.message}`;
-        unreachable++;
+      } else if (validator) {
+        liveFallbacks++;
+        try {
+          const result = await validator.validateRfc(id, entry);
+          if (result.status === 'unreachable') {
+            liveStatus = 'unreachable';
+            unreachable++;
+          } else if (result.status === 'match') {
+            liveStatus = 'match';
+          } else if (result.status === 'drift') {
+            liveStatus = 'DRIFT: ' + (result.discrepancies || []).join('; ');
+            driftFound++;
+          } else if (result.status === 'missing') {
+            liveStatus = 'NOT FOUND upstream';
+            driftFound++;
+          }
+        } catch (err) {
+          liveStatus = `error: ${err.message}`;
+          unreachable++;
+        }
       }
     }
     console.log(
       `${fmt(id, 32)}| ${fmt(entry.status, 20)} | ${fmt(entry.errata_count, 6)} | ${fmt(entry.last_verified, 13)} | ${liveStatus}`
     );
+  }
+  if (cacheDir) {
+    console.log(`\n[validate-rfcs] cache hits: ${cacheHits}; live fallbacks: ${liveFallbacks}`);
   }
 
   console.log();
@@ -587,6 +675,163 @@ function runWatchlist(rawArgs = []) {
   console.log(`Run with --by-skill to invert the view.`);
 }
 
+/**
+ * Cache-first variant of validateAllCves. For each catalog CVE, reads the
+ * NVD + EPSS payload from the prefetch cache (cacheDir/nvd/<id>.json +
+ * cacheDir/epss/<id>.json) and the KEV feed from cacheDir/kev/. Builds a
+ * ValidationResult matching the shape sources/validators/cve-validator.js
+ * produces so downstream consumers don't have to fork their logic.
+ *
+ * Missing cache entries fall through to the live validator for that CVE,
+ * so partial caches still produce a complete report.
+ */
+async function validateAllCvesPreferCache(catalog, cacheDir) {
+  const fs = require('fs');
+  const path = require('path');
+  const { validateCve } = require('../sources/validators');
+
+  function readCached(source, id) {
+    const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
+    const p = path.join(cacheDir, source, `${safe}.json`);
+    if (!fs.existsSync(p)) return null;
+    try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
+    catch { return null; }
+  }
+
+  function extractNvd(payload) {
+    const vuln = payload?.vulnerabilities?.[0]?.cve;
+    if (!vuln) return { found: false };
+    const m = vuln.metrics || {};
+    const ordered = [...(m.cvssMetricV31 || []), ...(m.cvssMetricV30 || []), ...(m.cvssMetricV2 || [])];
+    const primary = ordered.find((x) => x.type === 'Primary') || ordered[0];
+    return {
+      found: true,
+      score: typeof primary?.cvssData?.baseScore === 'number' ? primary.cvssData.baseScore : null,
+      vector: primary?.cvssData?.vectorString || null,
+    };
+  }
+
+  function extractEpss(payload, id) {
+    const data = Array.isArray(payload?.data) ? payload.data : [];
+    const row = data.find((r) => r?.cve === id) || data[0];
+    if (!row) return null;
+    return {
+      score: row.epss != null ? Number(row.epss) : null,
+      percentile: row.percentile != null ? Number(row.percentile) : null,
+      date: typeof row.date === 'string' ? row.date : null,
+    };
+  }
+
+  const kevFeed = readCached('kev', 'known_exploited_vulnerabilities');
+  const kevMap = new Map();
+  if (kevFeed) {
+    for (const v of kevFeed.vulnerabilities || []) {
+      if (v && v.cveID) kevMap.set(v.cveID, v);
+    }
+  }
+
+  const ids = Object.keys(catalog).filter((k) => /^CVE-\d{4}-\d{4,7}$/.test(k));
+  const results = [];
+  const by_status = { match: 0, drift: 0, unreachable: 0, missing: 0 };
+  let cacheHits = 0;
+  let liveFallbacks = 0;
+
+  for (const id of ids) {
+    const local = catalog[id];
+    const nvdPayload = readCached('nvd', id);
+    const epssPayload = readCached('epss', id);
+
+    if (!nvdPayload && !kevFeed && !epssPayload) {
+      // No cache for this CVE on any source — fall through to live.
+      liveFallbacks++;
+      try {
+        const r = await validateCve(id, local);
+        results.push(r);
+        by_status[r.status] = (by_status[r.status] || 0) + 1;
+      } catch (err) {
+        results.push({ cve_id: id, status: 'unreachable', discrepancies: [], fetched: { sources: { nvd: null, kev: null, epss: null } }, local, error: err.message });
+        by_status.unreachable++;
+      }
+      continue;
+    }
+
+    cacheHits++;
+    const discrepancies = [];
+    const fetched = {
+      cvss_score: null, cvss_vector: null,
+      in_kev: null, kev_date: null,
+      epss: null,
+      sources: { nvd: null, kev: null, epss: null },
+    };
+
+    if (nvdPayload) {
+      const n = extractNvd(nvdPayload);
+      if (n.found) {
+        fetched.cvss_score = n.score;
+        fetched.cvss_vector = n.vector;
+        fetched.sources.nvd = { reachable: true, found: true, fromCache: true };
+        if (n.score != null && local.cvss_score != null && Math.abs(n.score - local.cvss_score) > 0.05) {
+          discrepancies.push({ field: 'cvss_score', local: local.cvss_score, fetched: n.score, severity: 'high' });
+        }
+        if (n.vector && local.cvss_vector && n.vector !== local.cvss_vector) {
+          discrepancies.push({ field: 'cvss_vector', local: local.cvss_vector, fetched: n.vector, severity: 'medium' });
+        }
+      } else {
+        fetched.sources.nvd = { reachable: true, found: false, fromCache: true };
+      }
+    } else {
+      fetched.sources.nvd = { reachable: false, error: 'cache miss' };
+    }
+
+    if (kevFeed) {
+      const hit = kevMap.get(id);
+      fetched.in_kev = !!hit;
+      fetched.kev_date = hit?.dateAdded || null;
+      fetched.sources.kev = { reachable: true, total_entries: kevMap.size, fromCache: true };
+      if (typeof local.cisa_kev === 'boolean' && local.cisa_kev !== fetched.in_kev) {
+        discrepancies.push({ field: 'cisa_kev', local: local.cisa_kev, fetched: fetched.in_kev, severity: 'high' });
+      }
+      if (local.cisa_kev_date && fetched.kev_date && local.cisa_kev_date !== fetched.kev_date) {
+        discrepancies.push({ field: 'cisa_kev_date', local: local.cisa_kev_date, fetched: fetched.kev_date, severity: 'low' });
+      }
+    } else {
+      fetched.sources.kev = { reachable: false, error: 'cache miss' };
+    }
+
+    if (epssPayload) {
+      const e = extractEpss(epssPayload, id);
+      if (e) {
+        fetched.epss = e;
+        fetched.sources.epss = { reachable: true, found: true, date: e.date, fromCache: true };
+        if (e.score != null && local.epss_score != null && Math.abs(e.score - local.epss_score) > 0.05) {
+          discrepancies.push({ field: 'epss_score', local: local.epss_score, fetched: e.score, severity: 'medium' });
+        }
+        if (e.percentile != null && local.epss_percentile != null && Math.abs(e.percentile - local.epss_percentile) > 0.05) {
+          discrepancies.push({ field: 'epss_percentile', local: local.epss_percentile, fetched: e.percentile, severity: 'medium' });
+        }
+      } else {
+        fetched.sources.epss = { reachable: true, found: false, fromCache: true };
+      }
+    } else {
+      fetched.sources.epss = { reachable: false, error: 'cache miss' };
+    }
+
+    const status = discrepancies.length === 0 ? 'match' : 'drift';
+    results.push({ cve_id: id, status, discrepancies, fetched, local });
+    by_status[status] = (by_status[status] || 0) + 1;
+  }
+
+  return {
+    generated_at: new Date().toISOString(),
+    total: ids.length,
+    by_status,
+    drift_count: by_status.drift,
+    cache_hits: cacheHits,
+    live_fallbacks: liveFallbacks,
+    results,
+  };
+}
+
 function printHelp() {
   console.log(`
 exceptd Security Orchestrator
@@ -599,8 +844,13 @@ Commands:
   currency          Check skill currency scores
   report [format]   Generate report (format: executive|technical|compliance)
   watch             Start event watcher (long-running)
-  validate-cves     Cross-check the CVE catalog against NVD + CISA KEV + EPSS (--offline | --no-fail)
-  validate-rfcs     Cross-check the RFC catalog against IETF Datatracker  (--offline | --no-fail)
+  validate-cves     Cross-check the CVE catalog against NVD + CISA KEV + EPSS
+                    Flags: --offline | --no-fail | --from-cache [<dir>]
+                    --from-cache prefers cached upstream snapshots written by
+                    \`npm run prefetch\` (default .cache/upstream); cache misses
+                    fall back to live network per CVE.
+  validate-rfcs     Cross-check the RFC catalog against IETF Datatracker
+                    Flags: --offline | --no-fail | --from-cache [<dir>]
   watchlist         Aggregate forward_watch entries across all skills (--by-skill to invert)
   help              Show this help
 

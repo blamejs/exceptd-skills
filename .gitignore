@@ -26,6 +26,7 @@ findings.json
 scan-output.json
 .bootstrap-complete
 refresh-report.json
+.cache/
 *.tmp
 *.bak
 

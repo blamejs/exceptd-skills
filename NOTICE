@@ -10,9 +10,28 @@ Licensed under the Apache License, Version 2.0. See LICENSE for the full text.
 Third-Party Data Sources
 ================================================================================
 
-exceptd-skills does not bundle third-party code dependencies. The repository is
-zero-dep (Node.js stdlib only) and ships only project-authored skill content,
-data files, and tooling.
+exceptd-skills has zero npm runtime dependencies and depends on Node.js stdlib
+only. The repository does include one vendored code subset, attributed below.
+
+--------------------------------------------------------------------------------
+Vendored:    blamejs (subset)
+URL:         https://github.com/blamejs/blamejs
+Pinned at:   commit 1442f17758a4bd511c63877561c0ffa759f66a87 (0.9.0 fix-up)
+License:     Apache-2.0 (compatible — exceptd is Apache-2.0). Full text at
+             vendor/blamejs/LICENSE.
+Vendored:    vendor/blamejs/retry.js, vendor/blamejs/worker-pool.js
+Used for:    Battle-tested exponential-backoff retry + circuit breaker
+             (used by lib/job-queue.js for upstream-fetch retry semantics)
+             and worker_threads pool (used by scripts/build-indexes.js
+             --parallel and any future CPU-bound fan-out).
+Notice:      Flattened-and-stripped to leaf files with no transitive blamejs
+             imports. Strip rules + provenance hashes are recorded in
+             vendor/blamejs/_PROVENANCE.json and verified on every predeploy
+             via lib/validate-vendor.js. The vendored copy is © blamejs
+             contributors under the Apache-2.0 grant; see vendor/blamejs/README.md
+             for re-vendor instructions and the list of upstream files NOT
+             vendored (and why).
+--------------------------------------------------------------------------------
 
 The threat-intelligence data the skills are grounded in is sourced from the
 following public catalogs. Each source retains its own copyright and licensing;

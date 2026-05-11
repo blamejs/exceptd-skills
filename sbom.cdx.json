@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:b8c912e6-5997-4218-9122-be17f095f5b9",
+  "serialNumber": "urn:uuid:ef057bd2-593d-474d-9183-8ebb0f68af74",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-11T20:47:46.932Z",
+    "timestamp": "2026-05-11T22:13:08.750Z",
     "tools": [
       {
         "name": "hand-written",
@@ -13,10 +13,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:project/exceptd-security@0.7.0",
+      "bom-ref": "pkg:project/exceptd-security@0.8.0",
       "type": "application",
       "name": "exceptd-skills",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
       "licenses": [
         {
@@ -50,9 +50,98 @@
       {
         "name": "exceptd:devDependency:count",
         "value": "0"
+      },
+      {
+        "name": "exceptd:vendor:count",
+        "value": "2"
+      },
+      {
+        "name": "exceptd:vendor:pin",
+        "value": "https://github.com/blamejs/blamejs@1442f17758a4bd511c63877561c0ffa759f66a87"
       }
     ]
   },
-  "components": [],
+  "components": [
+    {
+      "bom-ref": "vendor:blamejs:retry.js",
+      "type": "library",
+      "name": "blamejs/retry.js",
+      "version": "1442f17758a4",
+      "description": "Vendored from blamejs/lib/retry.js (flattened + stripped). See vendor/blamejs/README.md.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b9a7d99a8477740dade4e4490e436817c250a3d63e9d91898a9cdaaeff82ac4"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/blamejs/blamejs"
+        },
+        {
+          "type": "distribution",
+          "url": "https://github.com/blamejs/blamejs/blob/1442f17758a4bd511c63877561c0ffa759f66a87/lib/retry.js"
+        }
+      ],
+      "properties": [
+        {
+          "name": "exceptd:vendor:upstream_sha256_at_pin",
+          "value": "e307f19a9012265d71f25fcf8e43e595479d38d1358f4b607b052d0ce053abb0"
+        },
+        {
+          "name": "exceptd:vendor:strip_summary",
+          "value": "observability event sink (_emitEvent → no-op); audit chain hooks; lazy-require for safeAsync (replaced with stdlib AbortSignal-aware sleep); numeric-checks dep (replaced with two inline predicates); constants C.TIME.seconds(...) (replaced with literal ms values)"
+        }
+      ]
+    },
+    {
+      "bom-ref": "vendor:blamejs:worker-pool.js",
+      "type": "library",
+      "name": "blamejs/worker-pool.js",
+      "version": "1442f17758a4",
+      "description": "Vendored from blamejs/lib/worker-pool.js (flattened + stripped). See vendor/blamejs/README.md.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "57d8f5c3bca23cd4ef2a16adf4107bc60c4da3fbc9bb861580edc76ed9a2d132"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/blamejs/blamejs"
+        },
+        {
+          "type": "distribution",
+          "url": "https://github.com/blamejs/blamejs/blob/1442f17758a4bd511c63877561c0ffa759f66a87/lib/worker-pool.js"
+        }
+      ],
+      "properties": [
+        {
+          "name": "exceptd:vendor:upstream_sha256_at_pin",
+          "value": "262f99e9cc3d4a8f4eba9ad3e28401e8a1f47f78040afa63c9b17eb998437171"
+        },
+        {
+          "name": "exceptd:vendor:strip_summary",
+          "value": "WorkerPoolError class (replaced with vanilla Error with `code` field); validate-opts dep (replaced with inline whitelist + type checks); numeric-bounds dep (replaced with inline predicates); audit event sink (_emitAudit → no-op stub); constants C.BYTES.kib / C.TIME.minutes (replaced with literal int values)"
+        }
+      ]
+    }
+  ],
   "dependencies": []
 }

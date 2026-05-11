@@ -75,6 +75,41 @@ function uuidV4FromSeed(seed) {
   );
 }
 
+function loadVendorProvenance() {
+  const p = path.join(REPO_ROOT, 'vendor', 'blamejs', '_PROVENANCE.json');
+  if (!fs.existsSync(p)) return null;
+  try {
+    return readJson(p);
+  } catch {
+    return null;
+  }
+}
+
+function vendorComponents(prov) {
+  if (!prov || !prov.files) return [];
+  const out = [];
+  for (const [name, info] of Object.entries(prov.files)) {
+    out.push({
+      'bom-ref': `vendor:blamejs:${name}`,
+      type: 'library',
+      name: `blamejs/${name}`,
+      version: prov.pinned_commit ? prov.pinned_commit.slice(0, 12) : 'unknown',
+      description: `Vendored from blamejs/lib/${name} (flattened + stripped). See vendor/blamejs/README.md.`,
+      licenses: [{ license: { id: prov.license || 'Apache-2.0' } }],
+      hashes: [{ alg: 'SHA-256', content: info.vendored_sha256 }],
+      externalReferences: [
+        { type: 'vcs', url: prov.source_repo || 'https://github.com/blamejs/blamejs' },
+        { type: 'distribution', url: `${prov.source_repo || 'https://github.com/blamejs/blamejs'}/blob/${prov.pinned_commit}/${info.upstream_path}` },
+      ],
+      properties: [
+        { name: 'exceptd:vendor:upstream_sha256_at_pin', value: info.upstream_sha256_at_pin || '' },
+        { name: 'exceptd:vendor:strip_summary', value: (info.stripped || []).join('; ') },
+      ],
+    });
+  }
+  return out;
+}
+
 function buildSbom() {
   const pkg = readJson(PACKAGE_PATH);
   const manifest = readJson(MANIFEST_PATH);
@@ -82,6 +117,8 @@ function buildSbom() {
   const timestamp = new Date().toISOString();
   const skillCount = Array.isArray(manifest.skills) ? manifest.skills.length : 0;
   const catalogCount = catalogs.length;
+  const vendorProv = loadVendorProvenance();
+  const vendoredComponents = vendorComponents(vendorProv);
 
   const serialNumber =
     'urn:uuid:' +
@@ -139,9 +176,19 @@ function buildSbom() {
           name: 'exceptd:devDependency:count',
           value: String(Object.keys(pkg.devDependencies || {}).length),
         },
+        {
+          name: 'exceptd:vendor:count',
+          value: String(vendoredComponents.length),
+        },
+        {
+          name: 'exceptd:vendor:pin',
+          value: vendorProv?.pinned_commit
+            ? `${vendorProv.source_repo}@${vendorProv.pinned_commit}`
+            : 'none',
+        },
       ],
     },
-    components: [],
+    components: vendoredComponents,
     dependencies: [],
   };
 

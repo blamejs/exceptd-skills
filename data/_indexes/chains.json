@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "note": "Pre-computed cross-walks keyed by CVE-id and (v0.7.0+) CWE-id. CVE chains hydrate: skills citing the CVE via framework gaps, plus union of catalog dimensions. CWE chains hydrate: skills citing the CWE directly, plus related CVEs via skill graph traversal.",
+    "note": "Pre-computed cross-walks keyed by CVE-id and (v0.7.0+) CWE-id.",
     "entry_types": [
       "CVE",
       "CWE"

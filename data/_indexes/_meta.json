@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-11T20:47:52.659Z",
+  "generated_at": "2026-05-11T22:13:17.168Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 49,
   "source_hashes": {
-    "manifest.json": "3774c3afdc74ecfc26800a59f8769934873053aa5dbbd96af9537267232b6b55",
+    "manifest.json": "aef5f95a29a043d1e8114c6f4b7405314f33f82faba2c9bfc8b6f917cd812c68",
     "data/atlas-ttps.json": "1500b5830dab070c4252496964a8c0948e1052a656e2c7c6e1efaf0350645e13",
     "data/cve-catalog.json": "a81d3e4b491b27ccc084596b063a6108ff10c9eb01d7776922fc393980b534fe",
     "data/cwe-catalog.json": "c3367d469b4b3d31e4c56397dd7a8305a0be338ecd85afa27804c0c9ce12157b",
@@ -69,7 +69,7 @@
     "trigger_table_entries": 453,
     "chains_cve_entries": 5,
     "chains_cwe_entries": 34,
-    "jurisdictions_indexed": 34,
+    "jurisdictions_indexed": 29,
     "handoff_dag_nodes": 38,
     "summary_cards": 38,
     "section_offsets_skills": 38,

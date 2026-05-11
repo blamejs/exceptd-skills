@@ -1,0 +1,54 @@
+{
+  "_schema_version": "1.0.0",
+  "_note": "Provenance manifest for vendored blamejs subset. lib/validate-vendor.js re-hashes each vendored file and verifies the recorded sha256 — silent hand-edits to a vendored copy fail the build. To re-vendor, copy the upstream file, re-apply the strip rules documented in each vendored file's header, refresh sha256 here, then re-run `npm run validate-vendor`.",
+  "source_repo": "https://github.com/blamejs/blamejs",
+  "license": "Apache-2.0",
+  "license_file": "LICENSE",
+  "license_sha256": "812075be5abe785284e823a97d09b5d1515b0221e3128059e1f5065de3c907d5",
+  "pinned_commit": "1442f17758a4bd511c63877561c0ffa759f66a87",
+  "pinned_at": "2026-05-11",
+  "files": {
+    "retry.js": {
+      "vendored_path": "vendor/blamejs/retry.js",
+      "vendored_sha256": "2b9a7d99a8477740dade4e4490e436817c250a3d63e9d91898a9cdaaeff82ac4",
+      "upstream_path": "lib/retry.js",
+      "upstream_sha256_at_pin": "e307f19a9012265d71f25fcf8e43e595479d38d1358f4b607b052d0ce053abb0",
+      "stripped": [
+        "observability event sink (_emitEvent → no-op)",
+        "audit chain hooks",
+        "lazy-require for safeAsync (replaced with stdlib AbortSignal-aware sleep)",
+        "numeric-checks dep (replaced with two inline predicates)",
+        "constants C.TIME.seconds(...) (replaced with literal ms values)"
+      ],
+      "exceptd_deltas": [
+        "_sleep timer is NOT unref'd — preserves event-loop liveness for one-shot CLI callers (refresh-external, prefetch, build-indexes --parallel). Upstream's safeAsync.sleep semantics around unref are not guaranteed; this delta is documented inline."
+      ],
+      "surface_preserved": [
+        "withRetry(fn, opts)",
+        "isRetryable(err)",
+        "backoffDelay(attempt, opts)",
+        "CircuitBreaker",
+        "DEFAULT_RETRY",
+        "DEFAULT_BREAKER"
+      ]
+    },
+    "worker-pool.js": {
+      "vendored_path": "vendor/blamejs/worker-pool.js",
+      "vendored_sha256": "57d8f5c3bca23cd4ef2a16adf4107bc60c4da3fbc9bb861580edc76ed9a2d132",
+      "upstream_path": "lib/worker-pool.js",
+      "upstream_sha256_at_pin": "262f99e9cc3d4a8f4eba9ad3e28401e8a1f47f78040afa63c9b17eb998437171",
+      "stripped": [
+        "WorkerPoolError class (replaced with vanilla Error with `code` field)",
+        "validate-opts dep (replaced with inline whitelist + type checks)",
+        "numeric-bounds dep (replaced with inline predicates)",
+        "audit event sink (_emitAudit → no-op stub)",
+        "constants C.BYTES.kib / C.TIME.minutes (replaced with literal int values)"
+      ],
+      "surface_preserved": [
+        "create(scriptPath, opts) -> { run, drain, terminate, stats }",
+        "bounded size + maxQueueDepth + taskTimeoutMs",
+        "worker recycle on uncaught error / timeout / exit"
+      ]
+    }
+  }
+}
