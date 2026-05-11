@@ -46,7 +46,14 @@ const GATES = [
     // resolves a bare directory path through the module loader before
     // the test runner sees it, which fails for a working dir that
     // sits inside a path containing parentheses (e.g. Dropbox).
-    args: ["--test", "tests/*.test.js"],
+    //
+    // --test-concurrency=1 forces sequential file execution. Several
+    // test files (build-incremental, indexes-v070, refresh-*) touch
+    // shared filesystem state under data/_indexes/ + refresh-report.json
+    // + skill bodies; running in parallel produces flaky races. Sequential
+    // is ~1.5s slower locally but eliminates the false negative we hit
+    // on the Linux CI runner in the v0.9.0 release attempt.
+    args: ["--test", "--test-concurrency=1", "tests/*.test.js"],
     ciJobName: "Tests",
   },
   {
