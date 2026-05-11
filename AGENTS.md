@@ -216,3 +216,4 @@ Maintainers convert approved requests into skill files. The contributor is credi
 | ot security, ics security, scada, plc, iec 62443, nist 800-82, nerc cip | ot-ics-security |
 | cvd, vdp, bug bounty, iso 29147, iso 30111, csaf, security.txt | coordinated-vuln-disclosure |
 | threat model, stride, pasta, linddun, kill chain, diamond model, unified kill chain | threat-modeling-methodology |
+| forward watch, watchlist, upcoming standards, horizon scan | `node orchestrator/index.js watchlist` (add `--by-skill` to invert) |
