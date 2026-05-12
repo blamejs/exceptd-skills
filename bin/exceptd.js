@@ -999,7 +999,42 @@ function cmdBrief(runner, args, runOpts, pretty) {
     detect_indicators_preview: (pb.phases?.detect?.indicators || []).map(i => ({
       id: i.id, type: i.type, confidence: i.confidence, deterministic: !!i.deterministic
     })),
-  }, pretty);
+  }, pretty, (obj) => {
+    // v0.11.8 (#99) — human renderer for `brief`. Used on TTY when --json /
+    // --pretty are NOT set. Structured digest covering the three info phases.
+    const lines = [];
+    lines.push(`brief: ${obj.playbook_id} (${obj.directive_id})`);
+    lines.push(`  scope: ${obj.scope || "n/a"}   threat_currency_score: ${obj.threat_currency_score}`);
+    if (obj.jurisdiction_obligations?.length) {
+      lines.push(`\nJurisdiction obligations (${obj.jurisdiction_obligations.length}):`);
+      for (const j of obj.jurisdiction_obligations.slice(0, 6)) {
+        lines.push(`  ${j.jurisdiction} ${j.regulation} → ${j.window_hours}h on ${j.clock_starts}`);
+      }
+      if (obj.jurisdiction_obligations.length > 6) lines.push(`  … ${obj.jurisdiction_obligations.length - 6} more`);
+    }
+    if (obj.threat_context) {
+      const first = obj.threat_context.split(/(?<=[.!?])\s+/)[0] || "";
+      lines.push(`\nThreat context: ${first.slice(0, 200)}${first.length > 200 ? "…" : ""}`);
+    }
+    if (obj.rwep_threshold) {
+      lines.push(`\nRWEP threshold: escalate ${obj.rwep_threshold.escalate} · monitor ${obj.rwep_threshold.monitor} · close ${obj.rwep_threshold.close}`);
+    }
+    const required = (obj.artifacts || []).filter(a => a.required);
+    const optional = (obj.artifacts || []).filter(a => !a.required);
+    lines.push(`\nRequired artifacts (${required.length}): ${required.map(a => a.id).join(", ") || "(none)"}`);
+    if (optional.length) lines.push(`Optional artifacts (${optional.length}): ${optional.map(a => a.id).slice(0, 8).join(", ")}${optional.length > 8 ? ", …" : ""}`);
+    const indicators = obj.detect_indicators_preview || [];
+    lines.push(`\nIndicators (${indicators.length}): ${indicators.map(i => i.id).slice(0, 8).join(", ")}${indicators.length > 8 ? ", …" : ""}`);
+    if (obj.preconditions?.length) {
+      lines.push(`\nPreconditions (${obj.preconditions.length}):`);
+      for (const p of obj.preconditions) {
+        lines.push(`  ${p.id} (${p.on_fail}): ${p.description?.slice(0, 80) || p.check}`);
+      }
+    }
+    lines.push(`\nRun: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
+    lines.push(`Full structured doc: --json or --pretty`);
+    return lines.join("\n");
+  });
 }
 
 /** `run-all` alias for `run --all`. */
@@ -1448,7 +1483,52 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Fallback: full result
   }
 
-  emit(result, pretty);
+  emit(result, pretty, (obj) => {
+    // v0.11.8 (#99) — human renderer for `run`. Used on TTY when --json /
+    // --pretty are NOT set. One-screen digest of the run; full JSON via --json.
+    const lines = [];
+    lines.push(`run: ${obj.playbook_id} (${obj.directive_id})`);
+    lines.push(`  session-id: ${obj.session_id}`);
+    lines.push(`  evidence-hash: ${obj.evidence_hash}`);
+    const cls = obj.phases?.detect?.classification || "n/a";
+    const rwep = obj.phases?.analyze?.rwep;
+    const adj = rwep?.adjusted ?? 0;
+    const base = rwep?.base ?? 0;
+    const top = rwep?.threshold?.escalate ?? "n/a";
+    const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
+    lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
+    const cves = obj.phases?.analyze?.matched_cves || [];
+    if (cves.length) {
+      lines.push(`\nMatched CVEs (${cves.length}):`);
+      for (const c of cves.slice(0, 6)) lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev}  ${c.active_exploitation || ""}`);
+      if (cves.length > 6) lines.push(`  … ${cves.length - 6} more`);
+    }
+    const indicators = obj.phases?.detect?.indicators || [];
+    const hits = indicators.filter(i => i.verdict === "hit");
+    if (hits.length) {
+      lines.push(`\nIndicators that fired (${hits.length}):`);
+      for (const i of hits.slice(0, 8)) lines.push(`  ${i.id}  (${i.confidence}${i.deterministic ? "/deterministic" : ""})`);
+    }
+    const rem = obj.phases?.validate?.selected_remediation;
+    if (rem) {
+      lines.push(`\nRecommended remediation: ${rem.id} (priority ${rem.priority})`);
+      lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
+    }
+    const notif = (obj.phases?.close?.notification_actions || []).filter(n => n.clock_started_at);
+    if (notif.length) {
+      lines.push(`\nNotification clocks started (${notif.length}):`);
+      for (const n of notif) lines.push(`  ${n.obligation_ref} → deadline ${n.deadline}`);
+    }
+    const feeds = obj.phases?.close?.feeds_into || [];
+    if (feeds.length) lines.push(`\nNext playbooks suggested: ${feeds.join(", ")}`);
+    const issues = obj.preflight_issues || [];
+    if (issues.length) {
+      lines.push(`\nPreflight warnings (${issues.length}):`);
+      for (const i of issues) lines.push(`  [${i.on_fail}] ${i.id}: ${i.check || ""}`);
+    }
+    lines.push(`\nFull structured result: --json (or --pretty for indented).`);
+    return lines.join("\n");
+  });
 }
 
 /**
@@ -1977,8 +2057,19 @@ function cmdAttest(runner, args, runOpts, pretty) {
         a_evidence_hash: self.evidence_hash,
         b_evidence_hash: other.evidence_hash,
         status: self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted",
-        artifact_diff: diffArtifacts((self.submission || {}).artifacts, (other.submission || {}).artifacts),
-        signal_override_diff: diffSignalOverrides((self.submission || {}).signal_overrides, (other.submission || {}).signal_overrides),
+        // v0.11.8 (#102): normalize submissions before diffing so flat-shape
+        // (observations + verdict) submissions emit meaningful artifact_diff
+        // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
+        // for flat submissions; the diff returned all zeros even when
+        // artifacts were present in observations.
+        artifact_diff: diffArtifacts(
+          normalizedArtifacts(self.submission, runner),
+          normalizedArtifacts(other.submission, runner)
+        ),
+        signal_override_diff: diffSignalOverrides(
+          normalizedSignalOverrides(self.submission, runner),
+          normalizedSignalOverrides(other.submission, runner)
+        ),
       }, pretty);
       return;
     }
@@ -2081,6 +2172,36 @@ function cmdAttest(runner, args, runOpts, pretty) {
 }
 
 /**
+ * v0.11.8 (#102): extract normalized artifacts/signal_overrides from a stored
+ * attestation submission. Flat-shape submissions store `observations` only;
+ * nested submissions store `artifacts` + `signal_overrides`. Returning the
+ * canonical nested view of both shapes lets `attest diff` produce meaningful
+ * counts regardless of which shape the operator submitted.
+ */
+function normalizedArtifacts(submission, runner) {
+  if (!submission || typeof submission !== "object") return {};
+  if (submission.artifacts) return submission.artifacts;
+  if (submission.observations) {
+    try {
+      const norm = runner.normalizeSubmission({ observations: submission.observations }, { _meta: {}, phases: { look: { artifacts: [] } } });
+      return norm.artifacts || {};
+    } catch { return {}; }
+  }
+  return {};
+}
+function normalizedSignalOverrides(submission, runner) {
+  if (!submission || typeof submission !== "object") return {};
+  if (submission.signal_overrides) return submission.signal_overrides;
+  if (submission.observations) {
+    try {
+      const norm = runner.normalizeSubmission({ observations: submission.observations }, { _meta: {}, phases: { look: { artifacts: [] } } });
+      return norm.signal_overrides || {};
+    } catch { return {}; }
+  }
+  return {};
+}
+
+/**
  * Per-artifact diff between two submissions. Returns { added, removed, changed }
  * keyed by artifact id. Used by `attest diff` (bug #34 fix) so operators get
  * field-level context instead of a binary evidence_hash signal.
@@ -2091,15 +2212,22 @@ function diffArtifacts(a, b) {
   const out = { added: [], removed: [], changed: [], unchanged_count: 0 };
   for (const id of allIds) {
     const av = a[id], bv = b[id];
-    if (!av && bv) out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
-    else if (av && !bv) out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
-    else if (JSON.stringify(av) !== JSON.stringify(bv)) {
+    if (!av && bv) {
+      out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
+    } else if (av && !bv) {
+      out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
+    } else if (av && bv && JSON.stringify(av) !== JSON.stringify(bv)) {
       out.changed.push({
         id,
         a_captured: !!av.captured, b_captured: !!bv.captured,
         a_value_preview: previewValue(av.value), b_value_preview: previewValue(bv.value),
       });
-    } else { out.unchanged_count++; }
+    } else if (av && bv) {
+      // v0.11.8 (#102): both sides have the entry AND they're identical →
+      // unchanged. Pre-0.11.8 the unchanged path was unreachable because the
+      // !av && bv guards short-circuited when both existed.
+      out.unchanged_count++;
+    }
   }
   return out;
 }
@@ -2767,20 +2895,28 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       process.stderr.write((pretty ? JSON.stringify(result || {}, null, 2) : JSON.stringify(result || {})) + "\n");
       process.exit(1);
     }
+    // v0.11.8 (#101): unify ai-run --no-stream shape with `run`. Pre-0.11.8
+    // ai-run flattened phases to top-level (`govern`, `direct`, `look`, ...),
+    // while `run` nested them under `phases.*`. Operators writing JSONPath
+    // queries had to know which verb produced the payload. Now both share
+    // `{ok, playbook_id, directive_id, session_id, evidence_hash, phases: {...}}`.
     emit({
+      ok: result.ok !== false,
       verb: "ai-run",
       mode: "no-stream",
       playbook_id: playbookId,
       directive_id: directiveId,
-      govern: governEvent,
-      direct: directEvent,
-      look: lookEvent,
-      detect: result.phases?.detect || null,
-      analyze: result.phases?.analyze || null,
-      validate: result.phases?.validate || null,
-      close: result.phases?.close || null,
       session_id: result.session_id,
       evidence_hash: result.evidence_hash,
+      phases: {
+        govern: governEvent,
+        direct: directEvent,
+        look: lookEvent,
+        detect: result.phases?.detect || null,
+        analyze: result.phases?.analyze || null,
+        validate: result.phases?.validate || null,
+        close: result.phases?.close || null,
+      },
     }, pretty);
     return;
   }
@@ -3133,19 +3269,31 @@ function cmdCi(runner, args, runOpts, pretty) {
       continue;
     }
     const cls = result.phases?.detect?.classification;
+    const rwepBase = result.phases?.analyze?.rwep?.base ?? 0;
     const rwepAdj = result.phases?.analyze?.rwep?.adjusted ?? 0;
     const cap = maxRwep !== null
       ? maxRwep
       : (result.phases?.analyze?.rwep?.threshold?.escalate ?? 90);
     const clockStarted = (result.phases?.close?.notification_actions || [])
       .some(n => n && n.clock_started_at != null);
+
     if (cls === "detected") {
       fail = true;
       failReasons.push(`${id}: classification=detected`);
     }
-    if (cls !== "not_detected" && cls !== "clean" && rwepAdj >= cap) {
+    // v0.11.8 (#103): only count RWEP against the cap when the operator's
+    // signals actually moved the score, OR classification reached "detected".
+    // Pre-0.11.8 a fresh `ci --scope code` run with NO operator evidence
+    // failed because catalog-baseline RWEP (e.g. 90 for KEV-listed kernel
+    // CVEs) exceeded the default cap (80). That penalized inconclusive runs
+    // for catalogue facts the operator hadn't yet weighed in on. Now: only
+    // RWEP DELTA (adjusted - base) counts against the cap on inconclusive
+    // classifications. Detected runs still fail on absolute RWEP.
+    if (cls === "detected" && rwepAdj >= cap) {
+      // Already failed above; this branch documents the rationale.
+    } else if (cls === "inconclusive" && rwepAdj - rwepBase >= cap) {
       fail = true;
-      failReasons.push(`${id}: rwep=${rwepAdj} >= cap=${cap} (classification=${cls})`);
+      failReasons.push(`${id}: rwep_delta=${rwepAdj - rwepBase} >= cap=${cap} (classification=inconclusive; operator evidence raised the score)`);
     }
     if (blockOnClock && clockStarted) {
       fail = true;

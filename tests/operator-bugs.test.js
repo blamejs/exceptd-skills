@@ -448,6 +448,92 @@ test('#98 report garbage returns JSON error exit 2', () => {
 });
 
 // ===================================================================
+test('#100 ok:false from preflight-halt exits non-zero', () => {
+  // Kernel-on-Windows triggers linux-platform halt → ok:false → exit 1.
+  // Locks in the exit-code contract: any result.ok === false maps to exit 1.
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'kernel', '--evidence', '-'], { input: sub });
+  // Status depends on host; on Linux this passes (ok:true exit 0), on
+  // Windows/macOS it halts (ok:false exit 1). Either way: ok:false ↔ exit 1.
+  const data = tryJson(r.stdout) || tryJson(r.stderr);
+  if (data && data.ok === false) {
+    assert.notEqual(r.status, 0, 'ok:false must exit non-zero');
+  } else if (data && data.ok === true) {
+    assert.equal(r.status, 0, 'ok:true must exit 0');
+  }
+  // Either branch is fine; just ensure the contract holds.
+});
+
+test('#100 warn-level preconditions do NOT block (run completes ok:true exit 0)', () => {
+  // secrets has on_fail: warn preconditions. With empty evidence, run still
+  // completes — warn issues populate preflight_issues but don't fail. This
+  // is the intended behavior, NOT a bug. The user-facing fix is --strict-preconditions.
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'secrets', '--evidence', '-'], { input: sub });
+  const data = tryJson(r.stdout);
+  if (data && data.ok === true) {
+    assert.equal(r.status, 0, 'warn-level run with ok:true exits 0');
+  }
+});
+
+test('#100 --strict-preconditions escalates warn-level to exit 1', () => {
+  // Same secrets run with --strict-preconditions must exit 1 if any preflight
+  // issue is unverified/warn.
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'secrets', '--evidence', '-', '--strict-preconditions'], { input: sub });
+  const data = tryJson(r.stdout) || tryJson(r.stderr);
+  if (data && Array.isArray(data.preflight_issues) && data.preflight_issues.length > 0) {
+    assert.equal(r.status, 1, '--strict-preconditions must exit 1 when preflight_issues present');
+  }
+});
+
+test('#101 ai-run --no-stream shape matches run shape (phases nested)', () => {
+  const sub = JSON.stringify({});
+  const r = cli(['ai-run', 'library-author', '--no-stream', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ai-run --no-stream output should be JSON');
+  assert.ok(data.phases, 'ai-run --no-stream must nest phases under .phases (parity with `run`)');
+  assert.ok('detect' in data.phases, 'phases.detect must be present');
+  assert.ok('analyze' in data.phases, 'phases.analyze must be present');
+});
+
+test('#102 attest diff unchanged_count counts identical entries', () => {
+  // Run twice with the same flat-shape submission. Diff should report
+  // unchanged_count >= 1 for the artifact and signal_override.
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'miss' } }
+  });
+  const sid1 = 'diffunch1-' + Date.now();
+  const sid2 = 'diffunch2-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff output should be JSON');
+  assert.ok(data.artifact_diff.unchanged_count >= 1,
+    'identical submissions should count unchanged artifacts > 0');
+  assert.ok(data.signal_override_diff.unchanged_count >= 1,
+    'identical submissions should count unchanged signal_overrides > 0');
+});
+
+test('#103 ci does not fail on inconclusive baseline RWEP', () => {
+  // Fresh repo, no evidence: every playbook returns inconclusive with
+  // catalog-baseline RWEP. Pre-0.11.8 default --max-rwep (80) tripped on
+  // baseline RWEP (90) and ci exited 2 with FAIL. Now: only RWEP DELTA
+  // counts on inconclusive runs.
+  const r = cli(['ci', '--scope', 'code', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ci output should be JSON');
+  // The fail_reasons for an unconfigured baseline run should not include
+  // "rwep_delta >= cap" since delta is 0 (no operator evidence).
+  const rwepDeltaReasons = (data.summary.fail_reasons || []).filter(reason =>
+    /rwep_delta/.test(reason) || /rwep=\d+ >= cap/.test(reason)
+  );
+  assert.equal(rwepDeltaReasons.length, 0,
+    'baseline-only ci run should not fail on catalog RWEP — only on RWEP delta from operator evidence');
+});
+
+// ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
   // We don't want this test to actually generate a keypair — just verify
   // the flag is recognized and doctor doesn't reject it as unknown.

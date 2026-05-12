@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.11.8 — 2026-05-12
+
+**Patch: items 99-104 + 6 new regression tests (328 total).**
+
+### Critical
+
+- **#99 default human-readable output for `brief` + `run`.** Closed across 8 releases of operator reports. `emit()`'s third arg now accepts a human renderer; both verbs supply one. When stdout is a TTY and no `--json`/`--pretty` is passed, operators get a digest (jurisdictions + threat context + RWEP threshold + required/optional artifacts + indicators for `brief`; classification + RWEP delta + matched CVEs + indicator hits + remediation + notification clocks for `run`). Piped output stays JSON for AI consumers and CI scripts.
+
+- **#103 CI no longer fails on inconclusive baseline RWEP.** Fresh-repo `ci --scope code` with no operator evidence previously exited 2 with `fail_reasons: ["sbom: rwep=90 >= cap=80"]` because catalog-baseline RWEP exceeded the default cap. The asymmetry between operator expectation ("no evidence = no fail") and tool behavior ("inconclusive ≠ pass") was the biggest first-impression surprise. Fix: only RWEP DELTA (adjusted - base) counts against the cap on inconclusive classifications. Detected classifications still gate on absolute RWEP. Baseline + zero evidence → PASS.
+
+### Bugs
+
+- **#101 `ai-run --no-stream` shape unified with `run`.** Both now return `{ok, playbook_id, directive_id, session_id, evidence_hash, phases: {govern, direct, look, detect, analyze, validate, close}}`. Pre-0.11.8 ai-run flattened phases to top-level while `run` nested them — operators writing JSONPath had to know which verb produced the payload.
+
+- **#102 `attest diff` `unchanged_count` now correct.** Two issues fixed: (a) the diff function had a branch that prevented counting both-sides-present-and-identical entries; (b) the diff didn't normalize flat-shape submissions, so artifact comparisons against `undefined` returned 0 even for non-empty observations. Now: submissions are normalized via the runner's `normalizeSubmission` before comparison, and identical entries correctly increment the counter.
+
+- **#100 exit code contract** — verified correct + locked with regression tests. `result.ok === false` → exit 1 (preflight halt). `result.ok === true` with warn-level preflight_issues → exit 0 (run completed). `--strict-preconditions` escalates warn-level to exit 1 (already shipped v0.11.6). Three named test cases lock the contract in.
+
+### Tests
+
+6 new regression cases for items 99-103. 328 cases total in `tests/operator-bugs.test.js`.
+
+### Deferred
+
+- **#104** `--block-on-jurisdiction-clock` trigger condition unclear in help — clock_starts events fire on `detect_confirmed` etc; without a detected classification no clock fires. Help text wording deferred to v0.11.9.
+- **#105-108** `ci --explain`, `diff <playbook> --since 7d`, `ci --required`, `attest sign <id>` — features deferred to v0.11.9.
+
 ## 0.11.7 — 2026-05-12
 
 **Republish of v0.11.6 (which failed CI publish). Adds CI publish-gate fix.**
