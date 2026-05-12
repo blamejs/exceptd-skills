@@ -1,6 +1,6 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
   "keywords": [
     "ai-security",
@@ -37,7 +37,7 @@
   "license": "Apache-2.0",
   "author": "blamejs contributors",
   "engines": {
-    "node": ">=24.0.0 <25.0.0"
+    "node": ">=24.0.0"
   },
   "bin": {
     "exceptd": "bin/exceptd.js"

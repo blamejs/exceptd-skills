@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.4 — 2026-05-12
+
+**Pin: drop upper bound on Node engine requirement.**
+
+`package.json` `engines.node` goes from `>=24.0.0 <25.0.0` to `>=24.0.0`. The strict upper bound emitted `EBADENGINE` warnings on Node 25+ installs even though the code works fine — the project uses only Node stdlib APIs that have been stable since Node 18.
+
 ## 0.9.3 — 2026-05-12
 
 **Pin: expand RFC auto-discovery seed list for broader project coverage.**
