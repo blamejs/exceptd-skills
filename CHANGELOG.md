@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.11.12 — 2026-05-12
+
+**Patch: items 123-126 — content-not-just-shape, exit-code discipline, diff iteration.**
+
+Pattern: previous releases shipped the right field names but with empty content (notifications array existed but every entry's metadata was null), and exit-code semantics didn't cover the gates operators actually wanted to wire.
+
+### Bugs
+
+- **#123 jurisdiction notification entries carry obligation metadata.** Pre-0.11.12 `phases.close.jurisdiction_notifications` produced the right count of entries but each entry shape was `{ obligation_ref, recipient, draft_notification, deadline, ... }` — no `jurisdiction`, no `regulation`, no `window_hours`. The upstream `govern.jurisdiction_obligations` had the real metadata but close didn't carry it forward. Now each notification entry includes `jurisdiction`, `regulation`, `obligation_type`, `window_hours`, `clock_start_event`, `clock_started_at`, `deadline`, `notification_deadline` (alias matching compliance-team vocabulary), and `evidence_required`. Operators running `exceptd ci --block-on-jurisdiction-clock` now get notifications with the metadata they need to route to regulators and put on calendars.
+
+- **#124 `--ack` propagates into `phases.govern.operator_consent`.** Consent semantically belongs in govern (it acknowledges the jurisdiction obligations surfaced there). Pre-0.11.12 `--ack` set only `result.operator_consent` at the top level; the govern phase showed `null`. Now `phases.govern.operator_consent` is `{ acked_at, explicit: true }` when `--ack` is passed, `null` otherwise. Top-level `result.operator_consent` retained for backward compat.
+
+- **#125 ci exit-code matrix covers BLOCKED.** Pre-0.11.12 ci returned 0 for every non-detected path including blocked runs that never executed (preflight halt, mutex contention, stale threat intel, missing precondition). CI gates couldn't distinguish "ran clean" from "didn't run." Now: `0 PASS`, `2 detected/escalate`, `3 ran-but-no-evidence`, `4 BLOCKED (any ok:false)`, `1 framework error`. BLOCKED takes precedence over no-data because it's a harder gate failure. Help text updated.
+
+- **#126 attest diff iterates artifact sets correctly.** Pre-0.11.12 `total_compared` was always 0 on flat-shape submissions because the diff helper called `normalizeSubmission` with an empty playbook stub (`look.artifacts: []`), producing empty maps. Now the diff loads the real playbook from each attestation's `playbook_id` and normalizes against the actual artifact catalog; falls back to direct observation-key mapping when the playbook can't be loaded (renamed/removed). Identical submissions with N observations now correctly report `total_compared: N, unchanged_count: N`.
+
+### Tests
+
+5 new regression cases. 344 total. Tests assert content shape, not just field presence — every test that checks for a notification array now also asserts the entries carry non-null jurisdiction/regulation/window_hours.
+
+### Voice note (internal)
+
+Three of the four items (#123, #124, #126) were "added the field but the field was empty." Lesson: when an operator says "field is missing," the next question to ask after "is it on the result?" is "is its content meaningful, or is it a structurally-present null?" Codified in CLAUDE.md.
+
 ## 0.11.11 — 2026-05-12
 
 **Patch: CI test-gate hotfix — emit-then-exit stdout flush.**

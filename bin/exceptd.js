@@ -219,7 +219,8 @@ v0.11.0 canonical surface
                              + rfc catalog + attestation-signing status.
                              --signatures | --currency | --cves | --rfcs
 
-  ci                         One-shot CI gate. Exits 2 on detected or rwep≥escalate.
+  ci                         One-shot CI gate. Exit codes: 0 PASS, 2 detected/escalate,
+                             3 ran-but-no-evidence, 4 blocked (ok:false), 1 framework error.
                              --all | --scope <type> | (auto-detect)
                              --max-rwep <n>         cap below playbook default
                              --block-on-jurisdiction-clock
@@ -2090,12 +2091,12 @@ function cmdAttest(runner, args, runOpts, pretty) {
         // for flat submissions; the diff returned all zeros even when
         // artifacts were present in observations.
         artifact_diff: diffArtifacts(
-          normalizedArtifacts(self.submission, runner),
-          normalizedArtifacts(other.submission, runner)
+          normalizedArtifacts(self.submission, runner, self.playbook_id),
+          normalizedArtifacts(other.submission, runner, other.playbook_id)
         ),
         signal_override_diff: diffSignalOverrides(
-          normalizedSignalOverrides(self.submission, runner),
-          normalizedSignalOverrides(other.submission, runner)
+          normalizedSignalOverrides(self.submission, runner, self.playbook_id),
+          normalizedSignalOverrides(other.submission, runner, other.playbook_id)
         ),
       }, pretty);
       return;
@@ -2205,25 +2206,55 @@ function cmdAttest(runner, args, runOpts, pretty) {
  * canonical nested view of both shapes lets `attest diff` produce meaningful
  * counts regardless of which shape the operator submitted.
  */
-function normalizedArtifacts(submission, runner) {
+function normalizedArtifacts(submission, runner, playbookId) {
   if (!submission || typeof submission !== "object") return {};
   if (submission.artifacts) return submission.artifacts;
   if (submission.observations) {
-    try {
-      const norm = runner.normalizeSubmission({ observations: submission.observations }, { _meta: {}, phases: { look: { artifacts: [] } } });
-      return norm.artifacts || {};
-    } catch { return {}; }
+    // v0.11.12 (#126): the prior stub playbook (look.artifacts: []) caused
+    // normalizeSubmission to produce {}, so attest diff reported
+    // total_compared: 0 even when both submissions held real observations.
+    // Try to load the real playbook from the attestation's playbook_id; if
+    // that fails (renamed/removed), fall back to treating each observation
+    // key as its own artifact id with `{ captured: true, value: <indicator|value> }`.
+    if (playbookId) {
+      try {
+        const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
+        if (pb) {
+          const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
+          if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) return norm.artifacts;
+        }
+      } catch { /* fall through to direct mapping */ }
+    }
+    // Direct mapping: observation keys are the artifact ids by convention.
+    const out = {};
+    for (const [k, v] of Object.entries(submission.observations)) {
+      out[k] = (v && typeof v === "object") ? v : { value: v };
+    }
+    return out;
   }
   return {};
 }
-function normalizedSignalOverrides(submission, runner) {
+function normalizedSignalOverrides(submission, runner, playbookId) {
   if (!submission || typeof submission !== "object") return {};
   if (submission.signal_overrides) return submission.signal_overrides;
   if (submission.observations) {
-    try {
-      const norm = runner.normalizeSubmission({ observations: submission.observations }, { _meta: {}, phases: { look: { artifacts: [] } } });
-      return norm.signal_overrides || {};
-    } catch { return {}; }
+    // v0.11.12 (#126): same fix as normalizedArtifacts — load the real
+    // playbook so look.indicators can map observation results to signal IDs.
+    if (playbookId) {
+      try {
+        const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
+        if (pb) {
+          const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
+          if (norm && norm.signal_overrides && Object.keys(norm.signal_overrides).length > 0) return norm.signal_overrides;
+        }
+      } catch { /* fall through to direct mapping */ }
+    }
+    // Direct mapping: observation key -> result (canonical hit/miss/inconclusive).
+    const out = {};
+    for (const [k, v] of Object.entries(submission.observations)) {
+      if (v && typeof v === "object" && v.result !== undefined) out[k] = v.result;
+    }
+    return out;
   }
   return {};
 }
@@ -3395,11 +3426,22 @@ function cmdCi(runner, args, runOpts, pretty) {
     process.exitCode = 2;
     return;
   }
-  // v0.11.10 (#100): ci exits non-zero when NO evidence was supplied AND
-  // every playbook returned inconclusive. Pre-0.11.10 this exited 0,
-  // conflating "ran clean" with "never ran." Operators forgot --evidence /
-  // --evidence-dir and assumed a green CI = real coverage. Now: surface
-  // the gap loudly.
+  // v0.11.12 (#125): ci exit code matrix. Pre-0.11.12 every non-detected
+  // path exited 0 including blocked runs that never executed — CI gates
+  // couldn't distinguish ok:false from ok:true. Now:
+  //   0 PASS — every playbook produced a result, none detected/escalating
+  //   2 FAIL — at least one detected or rwep>=escalate (above)
+  //   3 NO-DATA — ran but no --evidence and all inconclusive
+  //   4 BLOCKED — at least one playbook returned ok:false (preflight halt,
+  //     stale threat intel, missing precondition, mutex contention, etc.)
+  //   1 FRAMEWORK — engine/parse error (set elsewhere)
+  // BLOCKED takes precedence over NO-DATA because a blocked run is a
+  // harder gate failure than "no real data."
+  if (summary.blocked > 0) {
+    process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) returned ok:false (preflight/mutex/threat-currency/etc.). Exit 4. Inspect results[].reason for each blocked entry.\n`);
+    process.exitCode = 4;
+    return;
+  }
   const suppliedEvidence = args.evidence || args["evidence-dir"];
   const allInconclusive = summary.inconclusive === summary.total && summary.total > 0;
   if (!suppliedEvidence && allInconclusive) {

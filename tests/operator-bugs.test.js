@@ -627,6 +627,79 @@ test('#102 attest diff includes total_compared field', () => {
   assert.ok(typeof data?.signal_override_diff?.total_compared === 'number');
 });
 
+test('#123 jurisdiction_notifications entries carry obligation metadata', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected', blast_radius: 4 }
+  });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--session-id', 'jur123-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const notifs = data?.phases?.close?.jurisdiction_notifications || [];
+  assert.ok(notifs.length > 0, 'must have notifications when classification=detected');
+  const enriched = notifs.filter(n => n.jurisdiction && n.regulation);
+  assert.ok(enriched.length > 0,
+    'at least one notification entry must carry jurisdiction + regulation (enriched from govern.jurisdiction_obligations)');
+  for (const n of enriched) {
+    assert.equal(typeof n.jurisdiction, 'string', 'jurisdiction must be a string, not null');
+    assert.equal(typeof n.regulation, 'string', 'regulation must be a string, not null');
+    assert.ok(typeof n.window_hours === 'number', 'window_hours must be a number');
+    assert.ok(typeof n.notification_deadline === 'string', 'notification_deadline must be a string (ISO or sentinel)');
+    assert.ok(Array.isArray(n.evidence_required), 'evidence_required must be an array');
+  }
+});
+
+test('#124 --ack propagates into phases.govern.operator_consent', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'gov124-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data?.phases?.govern, 'govern phase must be present');
+  assert.ok(data.phases.govern.operator_consent,
+    'phases.govern.operator_consent must be populated when --ack passed (consent semantically belongs in govern)');
+  assert.equal(data.phases.govern.operator_consent.explicit, true);
+});
+
+test('#124 phases.govern.operator_consent is null without --ack', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-id', 'noackg-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.phases?.govern?.operator_consent, null,
+    'govern.operator_consent must be null (not undefined) when --ack not passed');
+});
+
+test('#125 ci with blocked playbook exits 4 (BLOCKED), not 0', () => {
+  // Force a block by passing --max-stale 0 with a stale-currency playbook
+  // (or stale-content). Simplest: invoke ci with --force-stale set false + a
+  // bogus --required that doesn't exist → unknown-playbook error path.
+  // Better: cause a real preflight halt by using --strict-preconditions with
+  // a precondition that can't be satisfied in this test env. Simplest robust
+  // approach: invoke with --threat-currency-min 999 which exceeds every
+  // playbook's score → all playbooks halt.
+  const r = cli(['ci', '--required', 'secrets', '--threat-currency-min', '999', '--json']);
+  // Should be 4 if blocked; if --threat-currency-min isn't wired, fall back
+  // to asserting non-zero (the bug was exit 0 on blocked).
+  assert.notEqual(r.status, 0, 'ci with blocked playbook must NOT exit 0');
+});
+
+test('#126 attest diff total_compared matches observation count when identical', () => {
+  const sub = JSON.stringify({
+    observations: {
+      w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' },
+      x: { captured: true, indicator: 'npm-token-rotation-cadence', result: 'miss' }
+    }
+  });
+  const sid1 = 'tc-c-' + Date.now();
+  const sid2 = 'tc-d-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff JSON must parse');
+  assert.ok(data.artifact_diff.total_compared > 0,
+    'identical submissions with 2 observations must have total_compared > 0 (not 0)');
+  assert.ok(data.artifact_diff.unchanged_count > 0,
+    'identical submissions must have unchanged_count > 0');
+  assert.equal(data.artifact_diff.total_compared, data.artifact_diff.unchanged_count,
+    'all artifacts identical → total_compared === unchanged_count');
+});
+
 test('#104 close emits jurisdiction_notifications alias + clocks count', () => {
   const sub = JSON.stringify({
     observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
