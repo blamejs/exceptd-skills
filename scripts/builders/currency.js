@@ -20,13 +20,15 @@
 const fs = require("fs");
 const path = require("path");
 
-function currencyScore(daysSinceReview, forwardWatchCount) {
+function currencyScore(daysSinceReview, _forwardWatchCount) {
+  // See orchestrator/pipeline.js — forward_watch count no longer
+  // affects currency score (it's a maintenance signal, not staleness).
+  // Param retained for ABI compatibility with callers.
   let score = 100;
   if (daysSinceReview > 180) score -= 30;
   else if (daysSinceReview > 90) score -= 20;
   else if (daysSinceReview > 60) score -= 10;
   else if (daysSinceReview > 30) score -= 5;
-  score -= forwardWatchCount * 5;
   return Math.max(0, score);
 }
 
@@ -99,7 +101,7 @@ function buildCurrency({ root, manifest, skills }) {
       schema_version: "1.0.0",
       reference_date: ref,
       note: "Pre-computed skill currency snapshot. Reference date is manifest.threat_review_date (deterministic). Re-runs of build-indexes against the same inputs produce byte-identical output. The orchestrator `currency` command produces a real-time view against today's date.",
-      decay_formula: "100 base; -30/-20/-10/-5 at 180/90/60/30-day thresholds; -5 per forward_watch entry. Label thresholds: ≥90 current, ≥70 acceptable, ≥50 stale, <50 critical_stale.",
+      decay_formula: "100 base; -30/-20/-10/-5 at 180/90/60/30-day thresholds. forward_watch count does NOT affect the score (it's a maintenance signal, not a staleness one). Label thresholds: ≥90 current, ≥70 acceptable, ≥50 stale, <50 critical_stale.",
     },
     summary,
     skills: rows,

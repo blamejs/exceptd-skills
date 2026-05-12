@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:03cec6e7-3ff8-4972-bcd1-769761ab963f",
+  "serialNumber": "urn:uuid:bb7ee40b-d15e-4cce-9862-51703a54b2c0",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-12T03:27:58.018Z",
+    "timestamp": "2026-05-12T03:50:55.384Z",
     "tools": [
       {
         "name": "hand-written",
@@ -13,10 +13,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.9.4",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.9.5",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.9.4",
+      "version": "0.9.5",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
       "licenses": [
         {
@@ -25,11 +25,11 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.9.4",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.9.5",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.9.4"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.9.5"
         },
         {
           "type": "vcs",

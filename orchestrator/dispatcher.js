@@ -37,6 +37,17 @@ function dispatch(findings) {
       if (seen.has(skill.name)) continue;
       seen.add(skill.name);
 
+      // Preserve per-CVE evidence so operators see the actual CVE IDs
+      // (not just an aggregate count). Earlier output read "1 CISA
+      // KEV CVE with RWEP >= 90" — the entry below now also carries
+      // the CVE ID + RWEP score so the print path can render
+      // "1 CISA KEV CVE with RWEP >= 90 (CVE-2026-31431 / Copy Fail
+      // RWEP 90)".
+      const evidence = {};
+      if (Array.isArray(finding.items) && finding.items.length > 0) evidence.items = finding.items;
+      if (finding.cve_id) evidence.cve_id = finding.cve_id;
+      if (finding.rwep_score !== undefined) evidence.rwep_score = finding.rwep_score;
+
       plan.push({
         skill_name: skill.name,
         skill_path: path.join(SKILLS_DIR, skill.name, 'skill.md'),
@@ -45,7 +56,8 @@ function dispatch(findings) {
         finding_severity: finding.severity,
         action_required: finding.action_required,
         priority: severityToPriority(finding.severity),
-        last_threat_review: skill.last_threat_review || 'unknown'
+        last_threat_review: skill.last_threat_review || 'unknown',
+        evidence,
       });
     }
   }

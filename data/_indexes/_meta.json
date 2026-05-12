@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-12T03:28:00.552Z",
+  "generated_at": "2026-05-12T03:50:57.878Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 49,
   "source_hashes": {
-    "manifest.json": "df707e6e95191a5b63e7223abadf716f01155477b113d5688092ed53bf4639b0",
+    "manifest.json": "ea6d754eb8909f05a931cd895cc10655842e212a3508a066c811650c58990db4",
     "data/atlas-ttps.json": "1500b5830dab070c4252496964a8c0948e1052a656e2c7c6e1efaf0350645e13",
     "data/cve-catalog.json": "a81d3e4b491b27ccc084596b063a6108ff10c9eb01d7776922fc393980b534fe",
     "data/cwe-catalog.json": "c3367d469b4b3d31e4c56397dd7a8305a0be338ecd85afa27804c0c9ce12157b",
@@ -78,7 +78,7 @@
     "jurisdiction_clocks": 29,
     "did_ladders": 8,
     "theater_fingerprints": 7,
-    "currency_action_required": 8,
+    "currency_action_required": 0,
     "frequency_fields": 7,
     "activity_feed_events": 49,
     "catalog_summaries": 10,

@@ -152,16 +152,34 @@ function cryptoScan() {
     const [major, minor] = version.split('.').map(Number);
     const isPqcReady = major > 3 || (major === 3 && minor >= 5);
 
+    // Probe the full NIST PQC suite + stateful hash signatures.
+    // Reports per-algo via boolean flags so downstream callers can
+    // decide which gaps matter for their threat model (ML-KEM for
+    // HNDL exposure, LMS/XMSS for firmware signing, etc.).
+    const pqc = probePqcAlgorithms();
+    const pqcDetail = [
+      `ML-KEM=${pqc.ml_kem ? 'avail' : 'missing'}`,    // FIPS 203
+      `ML-DSA=${pqc.ml_dsa ? 'avail' : 'missing'}`,    // FIPS 204
+      `SLH-DSA=${pqc.slh_dsa ? 'avail' : 'missing'}`,  // FIPS 205
+      `FN-DSA=${pqc.fn_dsa ? 'avail' : 'missing'}`,    // FIPS 206 draft (Falcon)
+      `HQC=${pqc.hqc ? 'avail' : 'missing'}`,          // alternate KEM (March 2025)
+      `LMS=${pqc.lms ? 'avail' : 'missing'}`,          // RFC 8554 (firmware)
+      `XMSS=${pqc.xmss ? 'avail' : 'missing'}`,        // RFC 8391
+    ].join(' ');
+
     findings.push({
       domain: 'crypto',
       signal: 'openssl_version',
       value: version,
       pqc_ready: isPqcReady,
-      severity: isPqcReady ? 'info' : 'high',
+      pqc_algorithms: pqc,
+      severity: isPqcReady && pqc.ml_kem ? 'info' : (isPqcReady ? 'medium' : 'high'),
       skill_hint: 'pqc-first',
       action_required: isPqcReady
-        ? `OpenSSL ${version} — PQC-capable. Verify ML-KEM/ML-DSA algorithm availability.`
-        : `OpenSSL ${version} — below 3.5. Upgrade required for PQC support (ML-KEM, ML-DSA, SLH-DSA).`
+        ? (pqc.ml_kem
+          ? `OpenSSL ${version} — PQC-capable. Probed: ${pqcDetail}.`
+          : `OpenSSL ${version} — claims PQC support but probe found no ML-KEM. Check provider config; may need OQS-Provider or Node 24 crypto.kemEncapsulate. Probed: ${pqcDetail}.`)
+        : `OpenSSL ${version} — below 3.5. Upgrade required for PQC support (ML-KEM, ML-DSA, SLH-DSA, FN-DSA, HQC, LMS, XMSS).`
     });
   }
 
@@ -294,6 +312,153 @@ function safeExecFile(cmd, args) {
   } catch (_) {
     return null;
   }
+}
+
+/**
+ * Probe runtime for PQC algorithm availability across the full
+ * emerging-standards landscape. Returns boolean flags per algorithm
+ * + a `provider_hint` indicating which surface confirmed each one.
+ *
+ *   --- NIST PQC finalized (FIPS 203/204/205, 2024) ---
+ *   ml_kem      ML-KEM (Kyber) — FIPS 203, key encapsulation
+ *   ml_dsa      ML-DSA (Dilithium) — FIPS 204, signatures
+ *   slh_dsa     SLH-DSA (SPHINCS+) — FIPS 205, stateless hash sigs
+ *
+ *   --- NIST PQC draft / alternate (2025+) ---
+ *   fn_dsa      FN-DSA (Falcon) — FIPS 206 draft, compact lattice sigs
+ *   hqc         HQC — alternate KEM selected March 2025
+ *
+ *   --- NIST PQC Round-4 alternates (still relevant in niche / archival) ---
+ *   frodo       FrodoKEM — conservative lattice KEM
+ *   ntru        NTRU / NTRU-Prime / sNTRU — original lattice KEM family
+ *   mceliece    Classic McEliece — code-based, long-term archival use
+ *   bike        BIKE — code-based KEM, OQS-Provider exposed
+ *
+ *   --- NIST additional signature on-ramp (2023+ Round 2) ---
+ *   hawk        HAWK — NTRU-based lattice signatures
+ *   mayo        MAYO — multivariate
+ *   sqisign     SQIsign — isogeny-based, small signatures
+ *   cross       CROSS — code-based
+ *   uov         UOV / SNOVA — Unbalanced Oil & Vinegar multivariate
+ *   sdith       SDitH — code-based (Syndrome Decoding in the Head)
+ *   mirath      MIRATH — code-based (rank metric)
+ *   faest       FAEST — symmetric-key/AES-based signatures
+ *   perk        PERK — code-based (Permuted Kernel Problem)
+ *
+ *   --- Stateful hash signatures (RFC 8391 / 8554) ---
+ *   lms         LMS — Leighton-Micali Signatures (firmware)
+ *   xmss        XMSS — eXtended Merkle Signature Scheme
+ *   hss         HSS — Hierarchical Signature System
+ *
+ *   --- IETF hybrid / composite sigs (emerging RFC drafts) ---
+ *   composite_sig   Composite Signatures (e.g. RSA+ML-DSA, ECDSA+ML-DSA)
+ *   composite_kem   Composite KEMs (e.g. X25519+ML-KEM)
+ */
+function probePqcAlgorithms() {
+  const result = {
+    // NIST finalized
+    ml_kem: false, ml_dsa: false, slh_dsa: false,
+    // NIST draft / alternate
+    fn_dsa: false, hqc: false,
+    // NIST Round-4 / niche
+    frodo: false, ntru: false, mceliece: false, bike: false,
+    // NIST signature on-ramp (Round 2)
+    hawk: false, mayo: false, sqisign: false, cross: false,
+    uov: false, sdith: false, mirath: false, faest: false, perk: false,
+    // Stateful hash sigs
+    lms: false, xmss: false, hss: false,
+    // IETF composite / hybrid
+    composite_sig: false, composite_kem: false,
+    provider_hint: {},
+  };
+  const crypto = require('crypto');
+
+  // Pattern table — values are regexes matching common spellings
+  // emitted by Node / OpenSSL / OQS-Provider / Bouncy Castle. Tested
+  // against algorithm-list output specifically (no English-prose
+  // false positives expected; the lists contain only algo names).
+  const PATTERNS = {
+    // NIST finalized
+    ml_kem:        /\b(ml-?kem|kyber)\b/i,
+    ml_dsa:        /\b(ml-?dsa|dilithium)\b/i,
+    slh_dsa:       /\b(slh-?dsa|sphincs(?:\+|plus)?)\b/i,
+    // NIST draft / alternate
+    fn_dsa:        /\b(fn-?dsa|falcon-?\d{3,4})\b/i,
+    hqc:           /\bhqc(-?\d+)?\b/i,
+    // NIST Round-4 / niche
+    frodo:         /\bfrodo(-?\d+)?(kem)?\b/i,
+    ntru:          /\b(s?ntru(-?prime)?(-?\d+)?|hrss\d*|hps\d+)\b/i,
+    mceliece:      /\b(classic-?)?mceliece(-?\d+)?\b/i,
+    bike:          /\bbike(-?l?\d+)?\b/i,
+    // NIST signature on-ramp (Round 2, 2024+)
+    hawk:          /\bhawk(-?\d+)?\b/i,
+    mayo:          /\bmayo(-?\d+)?\b/i,
+    sqisign:       /\bsqi-?sign(?:hd)?\b/i,
+    cross:         /\bcross-?(rsdp|rsdpg)?-?(small|fast|balanced)?-?[lns]?\d*\b/i,
+    uov:           /\b(uov|snova)(-?\d+)?\b/i,
+    sdith:         /\bsd-?i?t?h(-?gf\d+)?(-?cat\d+)?\b/i,
+    mirath:        /\bmirath(-?\d+)?\b/i,
+    faest:         /\bfaest(-em)?(-?\d+)?\b/i,
+    perk:          /\bperk-?[ls]?-?\d*\b/i,
+    // Stateful hash signatures
+    lms:           /\blms(?!-sha)\b/i,
+    xmss:          /\bxmss(\^?mt)?\b/i,
+    hss:           /\bhss(?!-sha)\b/i,
+    // Composite / hybrid (IETF drafts)
+    composite_sig: /\bcomposite-?(sig|signature)\b|\bhybrid-?sig\b|\b(rsa|ecdsa|eddsa)-?(\+|with)-?(ml-?dsa|dilithium|slh-?dsa|sphincs|falcon|fn-?dsa)\b/i,
+    composite_kem: /\bcomposite-?kem\b|\b(x25519|x448|secp\d+)-?(\+|with)-?(ml-?kem|kyber)\b|\bml-?kem-?(\+|with)-?(x25519|x448)\b/i,
+  };
+
+  function record(algo, source) {
+    if (!result[algo]) {
+      result[algo] = true;
+      result.provider_hint[algo] = source;
+    }
+  }
+
+  // Channel 1 — Node's crypto APIs (no shellouts). Node 24+ exposes
+  // crypto.kemEncapsulate as an experimental ML-KEM gateway; its
+  // presence is itself an ML-KEM availability signal.
+  try {
+    if (typeof crypto.kemEncapsulate === 'function') {
+      record('ml_kem', 'node:crypto.kemEncapsulate');
+    }
+    const allNames = [
+      ...(crypto.getCurves ? crypto.getCurves() : []),
+      ...(crypto.getHashes ? crypto.getHashes() : []),
+      ...(crypto.getCiphers ? crypto.getCiphers() : []),
+    ];
+    for (const name of allNames) {
+      for (const [algo, re] of Object.entries(PATTERNS)) {
+        if (re.test(name)) record(algo, `node:${name}`);
+      }
+    }
+  } catch (_) { /* probe failure → fall through to openssl */ }
+
+  // Channel 2 — `openssl list` enumerations. KEMs and signature
+  // algorithms split across two list commands; OQS-Provider exposes
+  // the on-ramp / niche algos when installed.
+  const kemList = safeExecFile('openssl', ['list', '-kem-algorithms']);
+  if (kemList) {
+    const kemAlgos = ['ml_kem', 'hqc', 'frodo', 'ntru', 'mceliece', 'bike', 'composite_kem'];
+    for (const algo of kemAlgos) {
+      if (PATTERNS[algo].test(kemList)) record(algo, 'openssl:list -kem-algorithms');
+    }
+  }
+  const sigList = safeExecFile('openssl', ['list', '-signature-algorithms']);
+  if (sigList) {
+    const sigAlgos = [
+      'ml_dsa', 'slh_dsa', 'fn_dsa',
+      'hawk', 'mayo', 'sqisign', 'cross', 'uov', 'sdith', 'mirath', 'faest', 'perk',
+      'lms', 'xmss', 'hss',
+      'composite_sig',
+    ];
+    for (const algo of sigAlgos) {
+      if (PATTERNS[algo].test(sigList)) record(algo, 'openssl:list -signature-algorithms');
+    }
+  }
+
+  return result;
 }
 
 function probeTls() {

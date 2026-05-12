@@ -68,11 +68,14 @@ const COMMANDS = {
   "validate-cves": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "validate-rfcs": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   watchlist:       () => path.join(PKG_ROOT, "orchestrator", "index.js"),
+  "framework-gap": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
+  "framework-gap-analysis": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
 };
 
 const ORCHESTRATOR_PASSTHROUGH = new Set([
   "scan", "dispatch", "skill", "currency", "report",
   "validate-cves", "validate-rfcs", "watchlist",
+  "framework-gap", "framework-gap-analysis",
 ]);
 
 function readPkgVersion() {

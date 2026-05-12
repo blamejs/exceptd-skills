@@ -59,10 +59,103 @@ async function main() {
     case 'watchlist':
       runWatchlist(args);
       break;
+    case 'framework-gap':
+    case 'framework-gap-analysis':
+      runFrameworkGap(args);
+      break;
     case 'help':
     default:
       printHelp();
   }
+}
+
+// Programmatic runner for the framework-gap-analysis skill. Closes the
+// dispatch loop — previously `exceptd dispatch` would say "run
+// framework-gap-analysis" but the only thing the CLI could actually do
+// was print the skill body. This subcommand executes the analytical
+// path in lib/framework-gap.js so an operator (or a CI gate) can pipe
+// the JSON into another tool.
+//
+// Usage:
+//   exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID>
+//   exceptd framework-gap NIST-800-53 CVE-2026-31431
+//   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
+//   exceptd framework-gap all CVE-2025-53773 --json
+function runFrameworkGap(rawArgs) {
+  const fs = require('fs');
+  const path = require('path');
+  const { gapReport, theaterCheck } = require('../lib/framework-gap');
+
+  const args = rawArgs.filter(a => !a.startsWith('--'));
+  const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
+  const jsonOut = flags.has('--json');
+
+  if (args.length < 2) {
+    console.error(`Usage: exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]
+Examples:
+  exceptd framework-gap NIST-800-53 CVE-2026-31431
+  exceptd framework-gap PCI-DSS-4.0 "prompt injection"
+  exceptd framework-gap all CVE-2025-53773 --json`);
+    process.exit(2);
+  }
+
+  const root = path.join(__dirname, '..');
+  let controlGaps, cveCatalog;
+  try {
+    controlGaps = JSON.parse(fs.readFileSync(path.join(root, 'data', 'framework-control-gaps.json'), 'utf8'));
+    cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
+  } catch (err) {
+    console.error(`[framework-gap] cannot read catalog: ${err.message}`);
+    process.exit(2);
+  }
+
+  const requested = args[0].toLowerCase() === 'all'
+    ? [...new Set(Object.values(controlGaps).flatMap(g =>
+        Array.isArray(g.framework) ? g.framework : [g.framework]
+      ).filter(f => f && f !== 'ALL'))]
+    : [args[0]];
+  const scenario = args[1];
+
+  const report = gapReport(requested, scenario, controlGaps, cveCatalog);
+  const theater = theaterCheck(controlGaps, cveCatalog);
+
+  if (jsonOut) {
+    console.log(JSON.stringify({ ...report, theater_findings: theater.findings, theater_score: theater.theater_score }, null, 2));
+    return;
+  }
+
+  // Human-readable output.
+  console.log(`\nFramework gap analysis — ${new Date().toISOString().slice(0, 10)}`);
+  console.log(`Scenario: ${scenario}`);
+  console.log(`Frameworks: ${requested.join(', ')}\n`);
+
+  for (const [fwId, result] of Object.entries(report.frameworks)) {
+    const flag = result.theater_exposure ? '⚠ THEATER RISK' : '✓ no scoped gaps';
+    console.log(`### ${fwId} — ${result.gap_count} matching control gap(s) — ${flag}`);
+    for (const g of result.gaps) {
+      console.log(`  - ${g.id} (${g.control}) — status: ${g.status}`);
+      if (g.real_requirement) console.log(`    real-requirement: ${g.real_requirement.slice(0, 160)}${g.real_requirement.length > 160 ? '…' : ''}`);
+    }
+    console.log();
+  }
+
+  if (report.universal_gaps.length > 0) {
+    console.log(`### Universal gaps (no jurisdiction covers these) — ${report.universal_gaps.length}`);
+    for (const g of report.universal_gaps) {
+      console.log(`  - ${g.id || g.name}: ${(g.real_requirement || '').slice(0, 140)}`);
+    }
+    console.log();
+  }
+
+  if (report.theater_risks.length > 0) {
+    console.log(`### Theater risk controls (compliant but exposed) — ${report.theater_risks.length}`);
+    for (const t of report.theater_risks) {
+      console.log(`  - ${t.control} → ${t.pattern} (framework: ${t.framework})`);
+    }
+    console.log();
+  }
+
+  console.log(`Summary: ${report.summary.total_gaps} matching gaps, ${report.summary.universal_gaps} universal, ${report.summary.theater_risk_controls} theater-risk controls`);
 }
 
 // --- command implementations ---
@@ -108,6 +201,18 @@ async function runDispatch() {
     console.log(`[${urgency}] ${item.skill_name}`);
     console.log(`  Triggered by: ${item.triggered_by} (${item.finding_domain})`);
     console.log(`  Action: ${item.action_required}`);
+    // Surface per-CVE detail when the underlying finding had a list of
+    // CVEs (e.g. cisa_kev_high_rwep). Operators need to know WHICH
+    // CVE — not just an aggregate count.
+    if (item.evidence && Array.isArray(item.evidence.items) && item.evidence.items.length > 0) {
+      console.log(`  Evidence:`);
+      for (const ev of item.evidence.items) {
+        const parts = [ev.id, ev.name && `"${ev.name}"`, ev.rwep != null && `RWEP ${ev.rwep}`].filter(Boolean);
+        console.log(`    - ${parts.join(' · ')}`);
+      }
+    } else if (item.evidence && item.evidence.cve_id) {
+      console.log(`  Evidence: ${item.evidence.cve_id}${item.evidence.rwep_score != null ? ` · RWEP ${item.evidence.rwep_score}` : ''}`);
+    }
     console.log(`  Path: ${item.skill_path}`);
     console.log();
   }
@@ -202,12 +307,21 @@ async function runReport(format) {
   }
 
   console.log('\n## Skill Currency');
-  const stale = currency_report.filter(s => s.currency_score < 70);
-  if (stale.length > 0) {
-    console.log(`${stale.length} skills need review:`);
-    for (const s of stale) console.log(`  - ${s.skill}: ${s.currency_score}% (${s.days_since_review}d old)`);
+  // Two tiers, named consistently and explained inline so the reader
+  // doesn't have to mentally map two thresholds onto the same list.
+  const critical = currency_report.filter(s => s.currency_score < 50);
+  const stale = currency_report.filter(s => s.currency_score >= 50 && s.currency_score < 70);
+  if (critical.length === 0 && stale.length === 0) {
+    console.log('All skills current (>= 70% currency, reviewed within the last 60 days).');
   } else {
-    console.log('All skills current.');
+    if (critical.length > 0) {
+      console.log(`Critical-stale (< 50% currency, > 90 days since review) — ${critical.length}:`);
+      for (const s of critical) console.log(`  - ${s.skill}: ${s.currency_score}% (${s.days_since_review}d old)`);
+    }
+    if (stale.length > 0) {
+      console.log(`Stale (50-69% currency, 30-90 days since review) — ${stale.length}:`);
+      for (const s of stale) console.log(`  - ${s.skill}: ${s.currency_score}% (${s.days_since_review}d old)`);
+    }
   }
 }
 

@@ -1,5 +1,70 @@
 # Changelog
 
+## 0.9.5 — 2026-05-12
+
+**Pin: six operator-reported bug fixes from real CLI use.**
+
+### Bug 1 — Currency formula penalized `forward_watch` entries
+
+`pipeline.js` and `scripts/builders/currency.js` subtracted 5 points per `forward_watch` item, so a skill that diligently tracked 14 upcoming threats scored **30%** the day after a review. Perverse incentive: punished skills doing the right thing. **Fix**: `forward_watch` no longer affects the score — currency is now a pure function of age-since-last_threat_review. `cloud-security` jumped from 30% → 100%; `sector-financial` from 40% → 100%; etc. The decay-formula docstring documents the change.
+
+### Bug 2 — `exceptd report executive` mixed currency thresholds in messaging
+
+Earlier output mixed `< 70%` ("skills need review") with `< 50%` ("require immediate update") in the same block, which read inconsistently. **Fix**: report now splits into two named tiers with the threshold inline:
+- *Critical-stale* (`< 50%`, `> 90` days)
+- *Stale* (`50-69%`, `30-90` days)
+
+### Bug 3 — PQC scanner stopped at "verify ML-KEM/ML-DSA"
+
+The scanner detected OpenSSL 3.5+ as "PQC-capable" but never actually probed for the algorithms. **Fix**: new `probePqcAlgorithms()` queries the runtime via three channels (Node `crypto.kemEncapsulate`/`getCurves`/`getHashes`/`getCiphers`, `openssl list -kem-algorithms`, `openssl list -signature-algorithms`) and returns boolean availability flags. Probes **22 algorithm flags** across the full emerging PQC landscape:
+
+| Tier | Algorithms |
+|---|---|
+| **NIST finalized (FIPS 203/204/205)** | ML-KEM (Kyber), ML-DSA (Dilithium), SLH-DSA (SPHINCS+) |
+| **NIST draft / alternate** | FN-DSA (Falcon, FIPS 206 draft), HQC (alternate KEM, March 2025) |
+| **NIST Round-4 / niche** | FrodoKEM, NTRU / NTRU-Prime, Classic McEliece, BIKE |
+| **NIST signature on-ramp (Round 2, 2024+)** | HAWK, MAYO, SQIsign, CROSS, UOV/SNOVA, SDitH, MIRATH, FAEST, PERK |
+| **Stateful hash sigs** | LMS (RFC 8554), XMSS (RFC 8391), HSS |
+| **IETF composite / hybrid** | composite signatures (RSA+ML-DSA, ECDSA+ML-DSA, etc.), composite KEMs (X25519+ML-KEM) |
+
+The scanner finding now surfaces per-algo `provider_hint` so an operator can tell whether availability came from Node's runtime, the OpenSSL provider, or OQS.
+
+### Bug 4 — Dispatcher hid CVE IDs behind aggregate counts
+
+`dispatch` previously said *"1 CISA KEV CVE with RWEP ≥ 90"* without naming the CVE. **Fix**: dispatcher threads the per-finding `items[]` array into each plan entry as an `evidence` block. The print path renders each CVE explicitly:
+```
+[CRITICAL] compliance-theater
+  Triggered by: cisa_kev_high_rwep (framework)
+  Action: 1 CISA KEV CVEs with RWEP >= 90...
+  Evidence:
+    - CVE-2026-31431 · "Copy Fail" · RWEP 90
+```
+
+### Bug 5 — `exceptd verify` succeeded without disclosing key fingerprint
+
+A swapped `keys/public.pem` would still produce *"38/38 passed"* — operators had no way to detect key substitution from the exit code alone. **Fix**: verify now prints **both SHA-256 and SHA3-512** fingerprints of the public key:
+
+```
+[verify] Public key: keys/public.pem
+[verify] SHA256:jD19nBPExofyiO60loNQgx5ONUbrwxG8XZM8Hh7pV+w=
+[verify] SHA3-512:okdinIchi8kMtlhOyYmDquwaRw2TSpJFe9MjfGpGI+7mE5dwPy5ZUVG4Hx1PB9KJkInLAzemhE1gsmhjZ0USww==
+```
+
+SHA-256 matches `ssh-keygen -lf` / GPG / npm-provenance / Sigstore conventions; SHA3-512 hedges against SHA-2 family weaknesses with the same Keccak family ML-KEM/ML-DSA use internally. Operators pin one (or both) out-of-band.
+
+### Bug 6 — `framework-gap-analysis` had no programmatic CLI runner
+
+Earlier `exceptd dispatch` would say *"run framework-gap-analysis"* but the only thing the CLI could actually do was `exceptd skill framework-gap-analysis` to dump the body. **Fix**: new `exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]` subcommand executes the analytical path in `lib/framework-gap.js`. Produces structured human or JSON output covering matching gaps, universal gaps, theater-risk controls per framework.
+
+Examples:
+```bash
+exceptd framework-gap NIST-800-53 CVE-2026-31431
+exceptd framework-gap PCI-DSS-4.0 "prompt injection"
+exceptd framework-gap all CVE-2025-53773 --json
+```
+
+13/13 predeploy gates green; 201 tests pass.
+
 ## 0.9.4 — 2026-05-12
 
 **Pin: drop upper bound on Node engine requirement.**

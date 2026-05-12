@@ -181,13 +181,19 @@ function getStageInstructions(stageName, previousOutput) {
   return instructions[stageName] || null;
 }
 
-function _currencyScore(daysSinceReview, forwardWatchCount) {
+function _currencyScore(daysSinceReview, _forwardWatchCount) {
+  // Currency = function of last_threat_review age, period. Earlier
+  // versions subtracted 5 per forward_watch entry, which created a
+  // perverse incentive: skills that diligently track upcoming threats
+  // (e.g. cloud-security with 14 forward_watch items) scored 30%
+  // currency even on the day after a review. forward_watch is a
+  // signal of ACTIVE maintenance, not staleness, so the count no
+  // longer affects the score. The arg is retained for ABI compat.
   let score = 100;
   if (daysSinceReview > 180) score -= 30;
   else if (daysSinceReview > 90) score -= 20;
   else if (daysSinceReview > 60) score -= 10;
   else if (daysSinceReview > 30) score -= 5;
-  score -= forwardWatchCount * 5;
   return Math.max(0, score);
 }
 
