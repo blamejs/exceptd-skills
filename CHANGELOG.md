@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.11.4 — 2026-05-12
+
+**Patch: high-impact #71 fix + items 72-77.**
+
+### Critical fix
+
+- **#71 detect didn't accept indicator-result synonyms.** Operators submitting flat-shape evidence with `observation.result: "no_hit"` (the standard vocabulary for years of CI/security tooling) hit the runner's strict `hit|miss|inconclusive` set, falsed every comparison, and ended up with `classification: "inconclusive"` regardless of evidence. This silently broke the new flat-shape submission UX that v0.11.0/v0.11.3 was built around. Same evidence in the legacy `signal_overrides` shape produced the correct `not_detected` verdict.
+
+  Fix: a `canonicalize()` step in both `normalizeSubmission` and `detect()` maps `no_hit`/`no-hit`/`clean`/`clear`/`not_hit`/`ok`/`pass`/`negative`/`false` → `miss`; `hit`/`detected`/`positive`/`true` → `hit`; `inconclusive`/`unknown`/`unverified`/`null` → `inconclusive`. Operator vocabulary is now normalized to the engine's canonical 3-value set at submission boundary.
+
+- **#77 CSAF/OpenVEX bundles auto-fixed.** Downstream of #71: now that detect actually processes signal_overrides correctly, the per-CVE statements in `bundle.vulnerabilities` / `statements` populate when there are matched_cves.
+
+### Bugs
+
+- **#72 ci --format silently ignored.** `exceptd ci --scope code --format summary` and the bare command emitted byte-identical full bundles (~350 KB). CI gates couldn't get a compact verdict without piping through jq. Now ci honors `--format summary|markdown|csaf-2.0|sarif|openvex` with the same shortcuts as `run --format`. Summary is a single-line JSON with `session_id + playbooks_run + verdict + counts`.
+- **#73 `indicators_evaluated` type changed silently.** v0.11.3 introduced it as an integer count; downstream consumers iterating `for i in detect.indicators_evaluated` crashed. Restored to an array of `{signal_id, outcome, confidence}`. Added `indicators_evaluated_count` as a peer field for callers wanting the integer.
+- **#76 `ci --format garbage` silent empty stdout.** Invalid format values now return `{ok:false, error, verb:"ci"}` JSON to stderr with exit 2, matching the unified error shape.
+
+### Not addressed in this patch
+
+- **#74 default-output flip still incomplete.** `emit()` indents JSON when stdout is a TTY (improvement over compact), but `brief`/`run`/`attest list`/`lint` still emit JSON, not a custom human form. The richer data on `brief`/`run` doesn't have a natural compact human view. Indented-JSON-on-TTY ships as the v0.11.x answer; a true human renderer per verb is deferred. `discover`/`doctor`/`ask`/`refresh` continue with their custom renderers.
+- **#75 preflight-blocked exit 0 for warn-level.** `on_fail: halt` preconditions correctly exit 1; `on_fail: warn` preconditions correctly exit 0 with `preflight_issues` populated. The operator wants warn-level to also fail CI — that's a `--strict-preconditions` flag, deferred to v0.11.5. Today: use `exceptd ci` for CI gates (correctly maps detected/escalate to exit 2); `run` is for single-investigation invocations where warn-level info is appropriate.
+
+### Already shipped (cross-referenced)
+
+- #78 `doctor --fix` (v0.11.2).
+
 ## 0.11.3 — 2026-05-12
 
 **Patch: operator-reported item #71 + full feature audit findings.**

@@ -3066,25 +3066,53 @@ function cmdCi(runner, args, runOpts, pretty) {
   const rwepValues = results.map(r => r.phases?.analyze?.rwep?.adjusted ?? 0);
   const maxRwepObserved = rwepValues.length ? Math.max(...rwepValues) : 0;
 
-  emit({
-    verb: "ci",
-    session_id: sessionId,
-    playbooks_run: ids,
-    summary: {
-      total: results.length,
-      detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
-      inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
-      not_detected: results.filter(r => ["not_detected", "clean"].includes(r.phases?.detect?.classification)).length,
-      blocked: results.filter(r => r && r.ok === false).length,
-      max_rwep_observed: maxRwepObserved,
-      jurisdiction_clocks_started: results
-        .flatMap(r => r.phases?.close?.notification_actions || [])
-        .filter(n => n && n.clock_started_at != null).length,
-      verdict: fail ? "FAIL" : "PASS",
-      fail_reasons: failReasons,
-    },
-    results,
-  }, pretty);
+  const summary = {
+    total: results.length,
+    detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
+    inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
+    not_detected: results.filter(r => ["not_detected", "clean"].includes(r.phases?.detect?.classification)).length,
+    blocked: results.filter(r => r && r.ok === false).length,
+    max_rwep_observed: maxRwepObserved,
+    jurisdiction_clocks_started: results
+      .flatMap(r => r.phases?.close?.notification_actions || [])
+      .filter(n => n && n.clock_started_at != null).length,
+    verdict: fail ? "FAIL" : "PASS",
+    fail_reasons: failReasons,
+  };
+
+  // v0.11.4 (#72): ci --format <fmt> previously emitted the full bundle
+  // regardless of flag. Now honors the same shortcuts as `run --format`:
+  //   summary  → one-line JSON of session + verdict + counts
+  //   markdown → operator-readable digest
+  //   csaf     → CSAF 2.0 envelope wrapping every result
+  //   sarif    → SARIF 2.1.0 with results from every playbook
+  //   openvex  → OpenVEX statements derived from every playbook's matched_cves
+  let formatRaw = args.format;
+  if (Array.isArray(formatRaw)) formatRaw = formatRaw[0];
+  const fmt = formatRaw === "csaf-2.0" ? "csaf" : formatRaw;
+  if (fmt === "summary") {
+    emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary }, pretty);
+  } else if (fmt === "markdown") {
+    const lines = [`# exceptd ci summary`, `session-id: ${sessionId}`, `verdict: **${summary.verdict}**`, ``];
+    lines.push(`**Playbooks run:** ${summary.total} (${summary.detected} detected, ${summary.inconclusive} inconclusive, ${summary.not_detected} clean, ${summary.blocked} blocked)`);
+    lines.push(`**Max RWEP observed:** ${summary.max_rwep_observed}`);
+    lines.push(`**Jurisdiction clocks started:** ${summary.jurisdiction_clocks_started}`);
+    if (summary.fail_reasons.length) {
+      lines.push(``, `## Fail reasons`);
+      for (const r of summary.fail_reasons) lines.push(`- ${r}`);
+    }
+    process.stdout.write(lines.join("\n") + "\n");
+  } else if (fmt === "csaf" || fmt === "sarif" || fmt === "openvex") {
+    // Aggregate the per-run bundles_by_format if present.
+    const bundles = results.map(r => r.phases?.close?.evidence_package?.bundles_by_format?.[fmt === "csaf" ? "csaf-2.0" : fmt]).filter(Boolean);
+    emit({ verb: "ci", session_id: sessionId, format: fmt, bundles_count: bundles.length, bundles }, pretty);
+  } else if (fmt && fmt !== "json") {
+    // v0.11.4 (#76): garbage format rejected with structured error, not silent empty stdout.
+    process.stderr.write(JSON.stringify({ ok: false, error: `ci: --format "${fmt}" not in accepted set ["summary","markdown","csaf-2.0","sarif","openvex","json"].`, verb: "ci" }) + "\n");
+    process.exit(2);
+  } else {
+    emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty);
+  }
   if (fail) {
     process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
     process.exit(2);
