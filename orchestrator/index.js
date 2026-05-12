@@ -305,6 +305,19 @@ function runCurrency() {
 }
 
 async function runReport(format) {
+  // v0.11.6 (#98): validate format positional. Pre-0.11.6 unknown formats
+  // emitted a generic "# exceptd Report" header — silently accepted any
+  // string. Now: reject with structured JSON error matching other verbs.
+  const VALID_REPORT_FORMATS = ['executive', 'technical', 'compliance', 'csaf'];
+  if (!VALID_REPORT_FORMATS.includes(format)) {
+    process.stderr.write(JSON.stringify({
+      ok: false,
+      error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.`,
+      verb: 'report',
+    }) + '\n');
+    process.exit(2);
+  }
+
   // v0.11.1 feature #55: `report csaf` emits a CSAF 2.0 envelope covering
   // every scanned finding + dispatched plan + currency posture. Useful for
   // VEX downstreams that ingest CSAF JSON.

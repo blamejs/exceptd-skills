@@ -436,12 +436,18 @@ function parseArgs(argv, opts) {
   return out;
 }
 
-function emit(obj, pretty) {
-  // v0.11.2 bug #60: when stdout is a TTY (interactive use), emit indented
-  // JSON instead of single-line — much more readable. Piped to a file or
-  // tool? Default to compact one-line JSON. --pretty forces indented
-  // regardless of TTY. --json-stdout-only is always compact.
+function emit(obj, pretty, humanRenderer) {
+  // v0.11.6 (#95): real default-human flip. When stdout is a TTY AND no
+  // --json/--pretty was passed AND a custom human renderer was supplied,
+  // render the human form. Otherwise: indented JSON on TTY (improvement
+  // over compact), compact JSON when piped. --pretty forces indented JSON
+  // regardless. --json forces JSON (overrides human renderer).
   const interactive = process.stdout.isTTY && !process.env.EXCEPTD_RAW_JSON;
+  const wantHuman = humanRenderer && interactive && !pretty && !global.__exceptdWantJson;
+  if (wantHuman) {
+    process.stdout.write(humanRenderer(obj) + "\n");
+    return;
+  }
   const indent = pretty || (interactive && !pretty);
   const s = indent ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
   process.stdout.write(s + "\n");
@@ -488,7 +494,7 @@ function dispatchPlaybook(cmd, argv) {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
             "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
             "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
-            "json-stdout-only", "fix", "human", "json"],
+            "json-stdout-only", "fix", "human", "json", "strict-preconditions"],
     multi: ["playbook", "format"],
   });
   // v0.11.2 bug #60: flip defaults to human-readable. JSON via explicit --json
@@ -502,6 +508,8 @@ function dispatchPlaybook(cmd, argv) {
   // ai-run/ci/attest show/export/diff/verify) fall back to indented JSON
   // labeled as such — better than no signal.
   args._jsonMode = !!(args.json || args.pretty || args["json-stdout-only"]);
+  // Hoist into module-level state so emit() can read it without plumbing.
+  global.__exceptdWantJson = args._jsonMode;
   const pretty = !!args.pretty;
   const runOpts = {
     airGap: !!args["air-gap"],
@@ -870,8 +878,13 @@ function cmdLint(runner, args, runOpts, pretty) {
   );
 
   const issues = [];
+  // v0.11.6 (#94): missing_required_artifact downgraded from error to warn.
+  // The runner doesn't refuse a submission missing required artifacts — it
+  // runs with the indicators that have data and marks the rest inconclusive.
+  // Lint was stricter than runner; users got errors on submissions the runner
+  // accepted. Now: lint warns about missing artifacts but doesn't fail.
   for (const id of missingRequired) {
-    issues.push({ severity: "error", kind: "missing_required_artifact", artifact_id: id, hint: `Add to submission.artifacts.${id} = { value, captured: true } (or under observations in the flat shape).` });
+    issues.push({ severity: "warn", kind: "missing_required_artifact", artifact_id: id, hint: `Add to submission.artifacts.${id} = { value, captured: true } (or under observations in the flat shape). The run will still execute without this; the corresponding indicators will return 'inconclusive'.` });
   }
   for (const k of unknownArtifactKeys) {
     issues.push({ severity: "warn", kind: "unknown_artifact_key", key: k, hint: `Not in playbook ${playbookId} look.artifacts[]. Recognized: ${[...knownArtifacts].slice(0, 10).join(", ")}…` });
@@ -916,7 +929,20 @@ function cmdLint(runner, args, runOpts, pretty) {
       info: issues.filter(i => i.severity === "info").length,
     },
     issues,
-  }, pretty);
+  }, pretty, (obj) => {
+    // v0.11.6 (#95) human renderer for lint.
+    const lines = [`lint: ${obj.playbook_id} (${obj.directive_id}) — shape: ${obj.submission_shape}`];
+    lines.push(`  ${obj.ok ? "[ok]" : "[!! fail]"}  errors=${obj.summary.errors}  warnings=${obj.summary.warnings}  info=${obj.summary.info}`);
+    if (obj.issues.length > 0) {
+      for (const i of obj.issues.slice(0, 30)) {
+        const tag = i.severity === "error" ? "[!! ERROR]" : (i.severity === "warn" ? "[!! WARN ]" : "[i  INFO ]");
+        lines.push(`  ${tag} ${i.kind}${i.artifact_id ? ": " + i.artifact_id : ""}${i.observation_key ? ": " + i.observation_key : ""}${i.key ? ": " + i.key : ""}${i.precondition_id ? ": " + i.precondition_id : ""}`);
+        if (i.hint) lines.push(`             ${i.hint}`);
+      }
+      if (obj.issues.length > 30) lines.push(`  … and ${obj.issues.length - 30} more (use --json for full list)`);
+    }
+    return lines.join("\n");
+  });
   if (!ok) process.exitCode = 1;
 }
 
@@ -1270,6 +1296,21 @@ function cmdRun(runner, args, runOpts, pretty) {
   if (result && result.ok === false) {
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
     process.exit(1);
+  }
+
+  // v0.11.6 (#96): --strict-preconditions escalates warn-level preflight
+  // issues to exit 1. Default (without the flag) preserves the existing
+  // behavior where warn-level issues stay informational. CI gates wanting
+  // "fail on any unverified precondition" pass this flag.
+  if (args["strict-preconditions"] && result && Array.isArray(result.preflight_issues)) {
+    const warnIssues = result.preflight_issues.filter(i =>
+      i.kind === "precondition_unverified" || i.kind === "precondition_warn"
+    );
+    if (warnIssues.length > 0) {
+      process.stderr.write(`[exceptd run] --strict-preconditions: ${warnIssues.length} unverified/warn precondition(s) — exit 1.\n`);
+      emit(result, pretty);
+      process.exit(1);
+    }
   }
 
   // --diff-from-latest: compare evidence_hash against the most recent prior
@@ -1987,6 +2028,13 @@ function cmdAttest(runner, args, runOpts, pretty) {
     let formatRaw = args.format || "json";
     if (Array.isArray(formatRaw)) formatRaw = formatRaw[0];
     const format = formatRaw === "csaf-2.0" ? "csaf" : formatRaw;
+    // v0.11.6 (#98): validate against accepted set. Pre-0.11.6 unknown
+    // formats fell through to the default redacted JSON output, silently
+    // accepting any value the operator passed.
+    const VALID_EXPORT_FORMATS = ["json", "csaf", "csaf-2.0"];
+    if (!VALID_EXPORT_FORMATS.includes(formatRaw)) {
+      return emitError(`attest export: --format "${formatRaw}" not in accepted set ${JSON.stringify(VALID_EXPORT_FORMATS)}.`, null, pretty);
+    }
     const redacted = attestations.map(a => ({
       session_id: a.session_id,
       playbook_id: a.playbook_id,
@@ -2452,6 +2500,31 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     },
   };
 
+  // v0.11.6 (#97): --fix runs BEFORE the JSON early-return so `exceptd doctor
+  // --fix --json` actually fixes (was a no-op pre-0.11.6). Re-runs the
+  // signing check after fix so the returned JSON reflects the post-fix state.
+  if (args.fix && checks.signing && !checks.signing.private_key_present) {
+    process.stderr.write("[doctor --fix] generating Ed25519 keypair via `node lib/sign.js generate-keypair`...\n");
+    const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], {
+      stdio: ["ignore", "pipe", "pipe"], cwd: PKG_ROOT,
+    });
+    if (r.status === 0) {
+      // Re-verify the private key is now present so the JSON output reflects
+      // the fix.
+      const keyPath = path.join(process.cwd(), ".keys", "private.pem");
+      const fallback = path.join(PKG_ROOT, ".keys", "private.pem");
+      const present = fs.existsSync(keyPath) || fs.existsSync(fallback);
+      checks.signing = { ok: present, severity: present ? "info" : "warn", private_key_present: present, can_sign_attestations: present };
+      out.checks = checks;
+      out.summary.fix_applied = "ed25519_keypair_generated";
+      process.stderr.write("[doctor --fix] keypair generated — re-checking signing status.\n");
+    } else {
+      out.summary.fix_attempted = "ed25519_keypair_generation_failed";
+      out.summary.fix_exit_code = r.status;
+      process.stderr.write(`[doctor --fix] generation failed (exit=${r.status}); run \`node lib/sign.js generate-keypair\` manually.\n`);
+    }
+  }
+
   if (wantJson) {
     emit(out, indent);
     if (!allGreen) process.exitCode = 1;
@@ -2505,17 +2578,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     lines.push(`summary: ${errorList.length} fail / ${warnList.length} warn — fail: ${errorList.join(", ")}; warn: ${warnList.join(", ") || "none"}`);
   }
   process.stdout.write(lines.join("\n") + "\n");
-  // Bug #69 (v0.11.2): --fix mode for missing private key.
-  if (args.fix && checks.signing && !checks.signing.private_key_present) {
-    process.stdout.write("\n[doctor --fix] generating Ed25519 keypair via `node lib/sign.js generate-keypair`...\n");
-    const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], { stdio: "inherit", cwd: PKG_ROOT });
-    if (r.status === 0) {
-      process.stdout.write("[doctor --fix] keypair generated — re-run `exceptd doctor` to confirm.\n");
-    } else {
-      process.stdout.write(`[doctor --fix] generation failed (exit=${r.status}); run \`node lib/sign.js generate-keypair\` manually.\n`);
-      process.exitCode = 1;
-      return;
-    }
+  // v0.11.6 (#97): --fix already ran above the JSON early-return. Echo the
+  // applied/attempted state here for human readers.
+  if (out.summary.fix_applied) {
+    process.stdout.write(`\n[doctor --fix] ${out.summary.fix_applied} — re-run \`exceptd doctor\` to confirm.\n`);
+  } else if (out.summary.fix_attempted) {
+    process.stdout.write(`\n[doctor --fix] ${out.summary.fix_attempted} (exit=${out.summary.fix_exit_code}); run \`node lib/sign.js generate-keypair\` manually.\n`);
+    process.exitCode = 1;
+    return;
   }
   if (errorList.length > 0) process.exitCode = 1;
   // Warnings alone do NOT force exit 1 — CI gates use exit 0 to mean "ran
@@ -2563,7 +2633,21 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     count: entries.length,
     filter: { playbook: args.playbook || null, since: args.since || null },
     roots_searched: [...seenRoots],
-  }, pretty);
+  }, pretty, (obj) => {
+    // v0.11.6 (#95) human renderer for attest list: one row per session.
+    const lines = [`attest list — ${obj.count} attestation(s)`];
+    if (obj.count === 0) {
+      lines.push(`  (no attestations under ${obj.roots_searched.join(' or ')})`);
+      return lines.join("\n");
+    }
+    lines.push(`  ${"session-id".padEnd(20)}  ${"playbook".padEnd(16)}  ${"captured-at".padEnd(20)}  evidence-hash`);
+    lines.push(`  ${"-".repeat(20)}  ${"-".repeat(16)}  ${"-".repeat(20)}  ${"-".repeat(20)}`);
+    for (const e of obj.attestations.slice(0, 50)) {
+      lines.push(`  ${(e.session_id || "?").padEnd(20)}  ${(e.playbook_id || "?").padEnd(16)}  ${(e.captured_at || "").slice(0, 19).padEnd(20)}  ${e.evidence_hash || ""}`);
+    }
+    if (obj.count > 50) lines.push(`  … and ${obj.count - 50} more (use --json for full list)`);
+    return lines.join("\n");
+  });
 }
 
 // ---------------------------------------------------------------------------

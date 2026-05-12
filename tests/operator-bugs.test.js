@@ -356,6 +356,98 @@ test('#85 from_observation populated when observation drove the indicator', () =
 });
 
 // ===================================================================
+test('#91 CSAF includes framework_gap_mapping as vulnerabilities', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'csaf output should be JSON');
+  const fwGapVulns = (data.vulnerabilities || []).filter(v =>
+    (v.ids || []).some(id => id.system_name === 'exceptd-framework-gap')
+  );
+  assert.ok(fwGapVulns.length > 0,
+    'CSAF must include framework gaps as vulnerabilities — pre-0.11.6 only matched_cves + indicators were emitted');
+});
+
+test('#91 OpenVEX includes framework_gap_mapping as statements', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'openvex', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'openvex output should be JSON');
+  const fwGapStatements = (data.statements || []).filter(s =>
+    s.vulnerability?.['@id']?.startsWith('exceptd:framework-gap:')
+  );
+  assert.ok(fwGapStatements.length > 0,
+    'OpenVEX must include framework gaps as statements');
+});
+
+test('#92 CSAF tracking.current_release_date is non-null', () => {
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data?.document?.tracking?.current_release_date,
+    'CSAF 2.0 §3.2.1.12 requires tracking.current_release_date non-null');
+});
+
+test('#93 SARIF defines every rule referenced by ruleId', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'sarif', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const rules = new Set((data.runs?.[0]?.tool?.driver?.rules || []).map(x => x.id));
+  const results = data.runs?.[0]?.results || [];
+  const missingDefs = [...new Set(results.map(r => r.ruleId))].filter(id => !rules.has(id));
+  assert.equal(missingDefs.length, 0,
+    `SARIF spec §3.27.3: every referenced ruleId must have a rule definition. Missing: ${JSON.stringify(missingDefs)}`);
+});
+
+test('#94 lint missing_required_artifact is a warning, not error', () => {
+  // Lint should not error on a submission the runner accepts.
+  const tmpFile = path.join(require('os').tmpdir(), `lint94-${Date.now()}.json`);
+  fs.writeFileSync(tmpFile, JSON.stringify({ observations: {} }));
+  const r = cli(['lint', 'library-author', tmpFile, '--json']);
+  fs.unlinkSync(tmpFile);
+  const data = tryJson(r.stdout);
+  const errors = (data?.issues || []).filter(i => i.severity === 'error');
+  const missingRequiredAsError = errors.filter(i => i.kind === 'missing_required_artifact');
+  assert.equal(missingRequiredAsError.length, 0,
+    'missing_required_artifact should be warn, not error — runner accepts the same submission');
+});
+
+test('#96 --strict-preconditions exits 1 on warn-level preconditions', () => {
+  // secrets has a regex-engine (on_fail: warn) precondition. Without
+  // --strict-preconditions, exit 0. With it, exit 1.
+  const sub = JSON.stringify({});
+  const rDefault = cli(['run', 'secrets', '--evidence', '-'], { input: sub });
+  assert.equal(rDefault.status, 0, 'default mode: warn-level precondition exits 0');
+  const rStrict = cli(['run', 'secrets', '--evidence', '-', '--strict-preconditions'], { input: sub });
+  assert.equal(rStrict.status, 1, '--strict-preconditions: warn-level precondition exits 1');
+});
+
+test('#98 attest export --format garbage returns JSON error', () => {
+  // We can use any existing session-id under .exceptd/attestations, OR fail
+  // gracefully if none — the format validation should fire before any
+  // session lookup.
+  const r = cli(['attest', 'export', 'nonexistent', '--format', 'garbage']);
+  assert.notEqual(r.status, 0);
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err && err.ok === false);
+  assert.match(err.error, /not in accepted set|no session dir/);
+});
+
+test('#98 report garbage returns JSON error exit 2', () => {
+  const r = cli(['report', 'garbage']);
+  assert.equal(r.status, 2);
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err && err.ok === false);
+  assert.match(err.error, /not in accepted set/);
+});
+
+// ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
   // We don't want this test to actually generate a keypair — just verify
   // the flag is recognized and doctor doesn't reject it as unknown.

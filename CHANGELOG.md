@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.11.6 — 2026-05-12
+
+**Patch: items 91-98 + regression coverage extended to 35 cases.**
+
+### Critical
+
+- **#91 CSAF + OpenVEX renderers excluded framework_gap_mapping.** SARIF already iterated it (added in v0.11.5); the other two formats diverged. Now: both CSAF and OpenVEX emit one vulnerability / statement per framework gap, keyed under `exceptd-framework-gap` (CSAF) / `exceptd:framework-gap:<framework>:<control>` (OpenVEX) pseudo-CVE namespaces. All three formats now share the same findings-extraction layer (CVEs + indicators + framework gaps).
+
+### Bugs
+
+- **#92 CSAF current_release_date null.** CSAF 2.0 §3.2.1.12 requires this field non-null; downstream validators rejected the bundle. Set to `initial_release_date` (same value, satisfies the spec).
+- **#93 SARIF references ruleIds without rule definitions.** SARIF spec §3.27.3: every referenced `ruleId` must have a corresponding entry in `tool.driver.rules`. Pre-0.11.6 SARIF referenced `framework-gap-0`/`framework-gap-1`/etc but only defined rules for indicator hits and matched CVEs. GitHub Code Scanning + VS Code SARIF Viewer + Azure DevOps would warn or fail to display rule context. Now: one rule definition per framework gap including the gap text and required-control hint.
+- **#94 lint stricter than runner.** Pre-0.11.6 lint reported `missing_required_artifact` as a hard error, but the runner accepted the same submission and ran with indicators returning `inconclusive`. Lint now warns (not errors) on missing required artifacts, with a hint explaining the run will still execute but inconclusively.
+- **#95 default-output flip landed for `attest list` + `lint`.** When stdout is a TTY and no `--json`/`--pretty` is passed, both verbs now emit a human-readable table / summary. `brief` and `run` keep indented JSON because their data is too rich for a compact human view — operators wanting markdown digests use `--format markdown` (run) or read the brief structured.
+- **#96 `--strict-preconditions` flag.** New on `run`: escalates warn-level preflight issues (unverified preconditions, `on_fail: warn`) to exit 1. Default (without the flag) preserves the v0.11.x behavior where warn-level preconditions are informational and exit 0. CI gates wanting "fail on any unverified precondition" pass this flag.
+- **#97 `doctor --fix` was a no-op under `--json`.** The fix logic was placed AFTER the JSON early-return, so `--fix --json` never executed. Moved before the early-return; now generates the keypair and the returned JSON reflects the post-fix state (`summary.fix_applied: "ed25519_keypair_generated"`).
+- **#98 `attest export --format garbage` + `report garbage` silently accepted.** Both now validate against the accepted set and emit structured JSON errors with exit non-zero, matching `run --format` / `ci --format` rejection.
+
+### Test infrastructure
+
+35 cases in `tests/operator-bugs.test.js` (8 new for 91-98). 322 tests pass total. Future bug fixes continue to land here.
+
 ## 0.11.5 — 2026-05-12
 
 **Patch: items 82-90 + permanent regression suite at `tests/operator-bugs.test.js`.**
