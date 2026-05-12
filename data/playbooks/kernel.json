@@ -1,0 +1,549 @@
+{
+  "_meta": {
+    "id": "kernel",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase playbook covering catalogued kernel LPE CVEs with version-aware matching, hardening posture, live-patch detection, and full GRC closure (CSAF evidence bundle + jurisdiction-aware notifications + auditor-ready exception generation).",
+        "cves_added": ["CVE-2026-31431", "CVE-2026-43284", "CVE-2026-43500"],
+        "framework_gaps_updated": ["nist-800-53-SI-2", "nis2-art21-2c", "iso-27001-2022-A.8.8"]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "linux-platform",
+        "description": "Playbook targets Linux kernel; macOS / Windows hosts are skipped with a visibility-gap finding rather than executed against.",
+        "check": "host.platform == 'linux'",
+        "on_fail": "halt"
+      },
+      {
+        "id": "uname-available",
+        "description": "uname(1) must be on PATH for any kernel-version finding to be meaningful.",
+        "check": "agent_has_command('uname') == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.severity == 'critical' OR analyze.blast_radius_score >= 4"
+      },
+      {
+        "playbook_id": "compliance-theater",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Linux kernel local privilege escalation",
+    "attack_class": "kernel-lpe",
+    "atlas_refs": [],
+    "attack_refs": ["T1068", "T1611"],
+    "cve_refs": ["CVE-2026-31431", "CVE-2026-43284", "CVE-2026-43500"],
+    "cwe_refs": ["CWE-416", "CWE-362", "CWE-787"],
+    "d3fend_refs": ["D3-KBPI", "D3-PA"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "pci-dss-4", "nis2", "dora",
+      "uk-caf", "au-ism", "au-essential-8"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_host_inventory", "exploitation_status_assessment", "interim_mitigation_record"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["full_incident_assessment", "remediation_plan", "residual_risk_statement"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["initial_notification", "ict_third_party_dependencies"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "patch-sla-without-kev-priority",
+          "claim": "Critical patches deployed within 30 days satisfies SI-2 / A.8.8 / Art.21(2)(c).",
+          "fast_detection_test": "Check whether KEV-listed kernel CVEs got priority over non-KEV CVSS-9 CVEs in the patch queue. Standard 30-day SLA is theater when KEV demands faster.",
+          "implicated_controls": ["nist-800-53-SI-2", "iso-27001-2022-A.8.8", "nis2-art21-2c"]
+        },
+        {
+          "pattern_id": "uname-as-patch-evidence",
+          "claim": "uname output matches patched version → host is patched.",
+          "fast_detection_test": "Distinguish vendor-backport kernels (e.g. RHEL 4.18 with CVE backports) from upstream version-string matches. uname alone is insufficient — distro changelog must be consulted.",
+          "implicated_controls": ["nist-800-53-SI-2", "soc2-cc7.1"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Frameworks treat kernel patching as a uniform monthly/quarterly SLA. They do not differentiate KEV-listed kernel LPEs (deterministic, weaponized within hours of disclosure) from typical kernel CVEs (theoretical, slow to weaponize). NIST SI-2 + ISO A.8.8 + NIS2 Art.21(2)(c) all permit 30-day patch windows that are wildly inadequate for confirmed-exploitation kernel CVEs. EU AI Act + DORA additionally require notification clocks that start at *detection*, not *patch deadline*, so framework lag here is measured in compliance windows, not technical posture.",
+        "lag_score": 14,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-2(2)",
+            "designed_for": "Routine flaw remediation with monthly cadence.",
+            "insufficient_because": "Treats all CVEs uniformly. No KEV escalation built into the control. A kernel LPE with confirmed exploitation and a public PoC gets the same 30-day SLA as a theoretical bug."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.8",
+            "designed_for": "Technical vulnerability management with risk-based prioritization.",
+            "insufficient_because": "Risk-based prioritization is left to the implementer. Without explicit RWEP or KEV referencing, organizations default to CVSS-only prioritization, which under-scores kernel LPEs in ways the 2026 threat landscape no longer permits."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(c)",
+            "designed_for": "Vulnerability handling and disclosure for essential entities.",
+            "insufficient_because": "Specifies process, not tempo. Permits patch-handling procedures that don't differentiate weaponized-in-hours kernel LPEs from theoretical issues."
+          }
+        ]
+      },
+      "skill_preload": ["kernel-lpe-triage", "exploit-scoring", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Kernel LPE landscape Q1-Q2 2026: CVE-2026-31431 'Copy Fail' (AI-discovered in ~1h, deterministic page-cache CoW primitive, no race condition, 732-byte PoC, KEV-listed 2026-03-15, confirmed in-the-wild) is the load-bearing exploit driving the current Linux LPE wave. CVE-2026-43284 + CVE-2026-43500 are sibling LPEs in catalog. Live-patch ecosystem (kpatch, kgraft, livepatch) covers Copy Fail on RHEL 9.4+ / Ubuntu 22.04 HWE / Debian 12 — vendors shipped live patches within 48h of KEV listing. Operators that adopted live-patch are not affected even on technically-vulnerable kernel versions; operators relying solely on reboot-required patches retain exposure for the duration of their reboot window.",
+      "rwep_threshold": {
+        "escalate": 90,
+        "monitor": 70,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST SI-2 + ISO A.8.8 + NIS2 Art.21(2)(c) permit 30-day patch SLAs that are inadequate for KEV-listed kernel LPEs with confirmed exploitation. NIST 800-53 Rev. 5.1.1 does not require KEV-aware prioritization, only risk-based — leaving it to implementer interpretation. Real-world tempo: weaponization in hours, patch SLA in weeks. Gap = ~28 days. Compensating controls (live-patch, MAC, kernel hardening) MUST close this gap before SLA-only compliance can be accepted.",
+      "skill_chain": [
+        { "skill": "kernel-lpe-triage", "purpose": "Determine whether the running kernel + hardening posture actually allows exploitation of a matched CVE.", "required": true },
+        { "skill": "exploit-scoring", "purpose": "Compute RWEP for each matched CVE; rank for triage.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map matched CVEs to which framework controls are insufficient and why.", "skip_if": "analyze.framework_gap_mapping.length == 0", "required": false },
+        { "skill": "compliance-theater", "purpose": "Run the theater test — does the org's claimed patch SLA actually catch this CVE in time?", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language if a matched CVE cannot be remediated within the jurisdiction's window.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 18000,
+        "breakdown": {
+          "govern": 2200,
+          "direct": 1400,
+          "look": 1800,
+          "detect": 2400,
+          "analyze": 4200,
+          "validate": 3600,
+          "close": 2400
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "kernel-release",
+          "type": "process_list",
+          "source": "uname -r",
+          "description": "Running kernel release string — required for semver match against catalog affected_versions ranges.",
+          "required": true,
+          "air_gap_alternative": "Read /proc/version directly if uname(1) is unavailable."
+        },
+        {
+          "id": "kernel-full",
+          "type": "process_list",
+          "source": "uname -a",
+          "description": "Full uname with build date and arch — provides backport-date signal.",
+          "required": false
+        },
+        {
+          "id": "os-release",
+          "type": "config_file",
+          "source": "/etc/os-release",
+          "description": "Distro identity + version — needed to determine whether the vendor ships backported fixes that don't bump the upstream version string.",
+          "required": false,
+          "air_gap_alternative": "Fall back to /etc/lsb-release or /etc/redhat-release if /etc/os-release missing."
+        },
+        {
+          "id": "livepatch-state",
+          "type": "process_list",
+          "source": "kpatch list || ls /sys/kernel/livepatch",
+          "description": "Live-patch inventory — kpatch / kgraft / livepatch can mitigate a matched CVE without changing uname output.",
+          "required": false,
+          "air_gap_alternative": "If neither tool is present, mark live-patch=indeterminate and downgrade matched-CVE confidence accordingly."
+        },
+        {
+          "id": "kernel-modules",
+          "type": "kernel_module_list",
+          "source": "lsmod || cat /proc/modules",
+          "description": "Loaded kernel modules — required for subset of CVEs whose vulnerability path depends on module presence (overlayfs, nf_tables, etc.).",
+          "required": false
+        },
+        {
+          "id": "sysctl-hardening",
+          "type": "config_file",
+          "source": "sysctl -a for kernel.kptr_restrict, kernel.unprivileged_userns_clone, kernel.unprivileged_bpf_disabled, kernel.yama.ptrace_scope, kernel.dmesg_restrict",
+          "description": "Hardening flags that change matched-CVE practical exploitability — used as confidence modifier.",
+          "required": false
+        },
+        {
+          "id": "cpu-vulnerabilities",
+          "type": "config_file",
+          "source": "/sys/devices/system/cpu/vulnerabilities/*",
+          "description": "Distro-reported, post-microcode CPU mitigation status.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host",
+        "depth": "standard",
+        "sampling": "single-host point-in-time snapshot; re-collect on every regression_trigger event"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "host.platform == 'linux'",
+          "if_false": "Skip playbook with visibility_gap=platform_unsupported. macOS/Windows kernels are not in catalog scope."
+        },
+        {
+          "assumption": "agent has read access to /proc and /sys",
+          "if_false": "Container with restricted /proc, or hardened host. Mark sysctl/cpu-vulnerabilities artifacts inconclusive; downgrade hardening-modifier confidence."
+        },
+        {
+          "assumption": "uname(1) on PATH",
+          "if_false": "Fall back to reading /proc/version. If both fail, halt the playbook — no kernel-version-cve-match is meaningful without a version string."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "livepatch-state", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "kernel-modules", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "sysctl-hardening", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "cpu-vulnerabilities", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "kernel-release", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "kver-in-affected-range",
+          "type": "log_pattern",
+          "value": "$kernel_release matches semver-in-range across catalogued kernel/LPE CVE affected_versions",
+          "description": "Primary detector — running kernel version falls inside any catalogued CVE's affected_versions range.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "livepatch-active",
+          "type": "behavioral_signal",
+          "value": "kpatch list emits non-empty result OR /sys/kernel/livepatch contains an active patch entry",
+          "description": "Live-patch mitigates a matched CVE without bumping uname output. Presence downgrades confidence of any matched CVE.",
+          "confidence": "medium",
+          "deterministic": false
+        },
+        {
+          "id": "kaslr-disabled",
+          "type": "behavioral_signal",
+          "value": "/proc/cmdline contains 'nokaslr'",
+          "description": "Disabled KASLR makes matched LPEs deterministic. Raises blast radius.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "unpriv-userns-enabled",
+          "type": "behavioral_signal",
+          "value": "kernel.unprivileged_userns_clone == 1",
+          "description": "Unprivileged user namespaces enabled — required for several catalogued LPE classes.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "unpriv-bpf-allowed",
+          "type": "behavioral_signal",
+          "value": "kernel.unprivileged_bpf_disabled == 0",
+          "description": "Unprivileged BPF allowed — primitive for several kernel LPE classes.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "kver-in-affected-range",
+          "benign_pattern": "Vendor-shipped distro kernel whose version-string matches an upstream affected range but contains backported fixes (RHEL/Ubuntu/Debian commonly do this).",
+          "distinguishing_test": "Read /etc/os-release for distro identity, then consult vendor's CVE backport tracker (Red Hat CVE database, Ubuntu USN, Debian DSA) for the specific CVE. If vendor confirms backport in the kernel package version, downgrade match to medium confidence and add a backport_confirmed=true signal."
+        },
+        {
+          "indicator_id": "kver-in-affected-range",
+          "benign_pattern": "Live-patched kernel — uname still reports vulnerable version but kpatch/livepatch has applied the fix in memory.",
+          "distinguishing_test": "Look up the matched CVE ID in `kpatch list` or /sys/kernel/livepatch/*/cve-ids if present. If matched CVE appears in active patch list, downgrade match confidence from high to medium and emit a livepatch_mitigation_active visibility note."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one indicator with confidence=high or deterministic=true fires, AND $kver was successfully captured. Matched-CVE count > 0.",
+        "inconclusive": "$kver captured but every matched CVE either (a) lacks affected_versions in the catalog, (b) has live-patch active, or (c) has confirmed vendor backport. Cannot deny without engaging exploit-replay in validate phase.",
+        "not_detected": "$kver captured AND zero matched CVEs in catalog AND hardening posture is high (lockdown=integrity or confidentiality, KASLR enabled, unpriv-userns=0, unpriv-bpf=disabled)."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "kver-in-affected-range", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Multiplier — if matched CVE has active_exploitation='confirmed' in catalog, full weight; otherwise 0." },
+        { "signal_id": "kver-in-affected-range", "rwep_factor": "cisa_kev", "weight": 20, "notes": "Multiplier — KEV-listed matched CVE = full weight." },
+        { "signal_id": "kver-in-affected-range", "rwep_factor": "public_poc", "weight": 15, "notes": "PoC availability in catalog (poc_available=true)." },
+        { "signal_id": "kver-in-affected-range", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "AI-discovered or AI-assisted weaponization flagged in catalog." },
+        { "signal_id": "kver-in-affected-range", "rwep_factor": "patch_available", "weight": -10, "notes": "Patch available reduces RWEP by 10. If patch not yet applied, this is informational, not a deduction." },
+        { "signal_id": "livepatch-active", "rwep_factor": "live_patch_available", "weight": -15, "notes": "Live-patch active for this specific CVE reduces RWEP by 15." },
+        { "signal_id": "kaslr-disabled", "rwep_factor": "blast_radius", "weight": 5, "notes": "Disabled KASLR + matched CVE increases blast radius score." },
+        { "signal_id": "unpriv-userns-enabled", "rwep_factor": "blast_radius", "weight": 5, "notes": "Enabled unprivileged userns + matched CVE increases blast radius score for userns-dependent LPEs." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a matched kernel LPE is exploited on this host, what scope of compromise is the host realistically delivering to the attacker?",
+        "scoring_rubric": [
+          { "condition": "host runs as single-tenant service AND no shared filesystem AND no privileged service accounts", "blast_radius_score": 1, "description": "Single-host root only. Lateral movement requires separate exploit chain." },
+          { "condition": "host has SSH agent forwarding active OR mounts shared NFS/CIFS volumes", "blast_radius_score": 2, "description": "Root → credential or filesystem theft → adjacent hosts." },
+          { "condition": "host is k8s node OR multi-tenant container host", "blast_radius_score": 3, "description": "Root → container escape → pod credentials → cluster-wide compromise." },
+          { "condition": "host is k8s control-plane node OR runs Vault/secrets agent OR has cloud-IMDS access with privileged IAM role", "blast_radius_score": 4, "description": "Root → cluster admin or cloud account takeover." },
+          { "condition": "host is bastion/jumpbox OR runs CA/HSM-adjacent service OR has cross-account trust relationships", "blast_radius_score": 5, "description": "Root → org-wide pivot. Identity boundary collapse." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Patches are deployed within 30 days of release per SI-2 / A.8.8 / Art.21(2)(c) — kernel CVEs are managed.",
+        "audit_evidence": "Patch deployment tickets showing kernel package updates within 30 days of CVE publication; quarterly compliance attestation signed by ops manager.",
+        "reality_test": "Cross-reference the patch tickets against KEV listing dates (not CVE publication dates). For each KEV-listed kernel CVE: was the patch deployed within (a) KEV due_date, (b) public-PoC publication + 72h, whichever is shorter? Compute the actual gap between weaponization and patch — anything > 72h on a KEV-listed kernel LPE with confirmed exploitation is theater.",
+        "theater_verdict_if_gap": "Org demonstrates SLA-compliant patching that nonetheless leaves KEV-listed kernel LPEs exploitable for weeks beyond practical weaponization. Either (a) shorten kernel-specific SLA to 72h for KEV-listed entries, (b) deploy live-patch coverage to close the gap without requiring reboot windows, OR (c) generate a defensible policy exception via policy-exception-gen acknowledging the residual risk + compensating controls."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "kernel-lpe-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "SI-2(2) — Flaw Remediation, Automated Flaw Remediation Status",
+          "actual_gap": "Control specifies process for tracking flaw remediation status, not tempo. No KEV-aware fast-path requirement. Permits 30-day SLA when 72h is the actual exploitation tempo.",
+          "required_control": "Add a KEV-fast-path control variant requiring KEV-listed flaws to be patched within max(KEV due_date, 72h post public-PoC). Live-patch deployment satisfies the variant without requiring reboot."
+        },
+        {
+          "finding_id": "kernel-lpe-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.8 — Management of technical vulnerabilities",
+          "actual_gap": "Risk-based prioritization is left to the implementer. Without explicit RWEP/KEV referencing, defaults to CVSS-only — which under-scores deterministic kernel LPEs.",
+          "required_control": "Require RWEP or equivalent prioritization scheme that incorporates KEV + public-PoC + active-exploitation + AI-discovery as first-class signals beyond CVSS. Document a fast-path SLA for kernel CVEs with RWEP >= 90."
+        },
+        {
+          "finding_id": "kernel-lpe-detected",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(c) — Policies and procedures for vulnerability handling and disclosure",
+          "actual_gap": "Specifies process not tempo. Permits patch handling that doesn't differentiate weaponized-in-hours kernel LPEs from theoretical issues.",
+          "required_control": "Mandate documented fast-path for vulnerabilities classified by RWEP >= 90 OR KEV-listed, with patching tempo aligned to weaponization tempo not framework SLA."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "rwep >= 90 AND patch_available == false", "action": "page_on_call" },
+        { "condition": "rwep >= 90 AND patch_available == true AND livepatch_active == false AND reboot_window > 24h", "action": "raise_severity" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "sbom" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "live-patch-deploy",
+          "description": "Deploy vendor live-patch (kpatch / kgraft / canonical livepatch) covering the matched CVE. No reboot required.",
+          "preconditions": ["livepatch_available_for_cve == true", "host_supports_livepatch == true"],
+          "priority": 1,
+          "compensating_controls": [],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "scheduled-kernel-upgrade",
+          "description": "Schedule kernel package upgrade + reboot during next maintenance window.",
+          "preconditions": ["vendor_patch_available == true", "reboot_window_within_72h == true"],
+          "priority": 2,
+          "compensating_controls": ["MAC_policy_tightened_until_reboot", "ssh_access_restricted_to_admins_until_reboot"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "hardening-compensation",
+          "description": "When reboot impossible within compliance window: tighten hardening flags (disable unpriv-userns, disable unpriv-bpf, set kptr_restrict=2, raise yama.ptrace_scope to 2) to break the exploit's primitive without patching.",
+          "preconditions": ["matched_cve.vector matches userns|bpf|ptrace|kptr", "ops_authorization_for_sysctl_changes == true"],
+          "priority": 3,
+          "compensating_controls": ["sysctl_changes_recorded_in_change_management", "exploit_replay_negative_test_passed"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate an auditor-ready policy exception via policy-exception-gen documenting that all faster remediation paths are blocked, with compensating controls and time-bound risk acceptance.",
+          "preconditions": ["remediation_paths[1..3] all blocked", "ciso_acceptance_obtainable == true"],
+          "priority": 4,
+          "compensating_controls": ["enhanced_logging_for_LPE_indicators", "monthly_residual_risk_review"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "uname-version-post-fix",
+          "test": "Run `uname -r` post-remediation. For scheduled-kernel-upgrade: confirm version now outside any matched-CVE affected_versions range.",
+          "expected_result": "Kernel release version outside catalogued affected_versions for all matched CVEs.",
+          "test_type": "functional"
+        },
+        {
+          "id": "livepatch-applied",
+          "test": "Run `kpatch list` (or `cat /sys/kernel/livepatch/*/cve-ids` if available). Confirm the matched CVE ID appears in the active live-patch set.",
+          "expected_result": "All previously-matched CVE IDs present in active live-patch list.",
+          "test_type": "functional"
+        },
+        {
+          "id": "hardening-primitive-broken",
+          "test": "For hardening-compensation path: verify the exploit's specific primitive is now unavailable. e.g. for unpriv-bpf-dependent CVE, run `sysctl kernel.unprivileged_bpf_disabled` — must return 1.",
+          "expected_result": "Primitive sysctl returns the hardened value; running the exploit's pre-flight check (without payload) returns EPERM.",
+          "test_type": "negative"
+        },
+        {
+          "id": "exploit-replay-negative",
+          "test": "Run a CVE-specific safe-mode exploit replay (no payload, no real privilege escalation; just the primitive-trigger step) in a sandbox copy of the production host config.",
+          "expected_result": "Primitive trigger fails; no EPRIV or EAGAIN signaling the exploit's first stage succeeded.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "no-regression-in-userns-bpf-userspace",
+          "test": "Run the host's standard container/test suite that exercises userns + bpf + ptrace pathways. Confirm legitimate workloads still function after hardening changes.",
+          "expected_result": "All tests pass; no regression in unprivileged userland that depends on the hardening flags' permissive values.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Kernel LPE matched but not yet patched OR patched via hardening compensation rather than vendor patch.",
+        "why_remains": "Either (a) reboot window scheduled but not yet executed, (b) live-patch unavailable for this CVE on this kernel + distro combination, OR (c) hardening compensation broke the primitive but the underlying vulnerable code path is unmodified — a future, related CVE could re-expose the host via a different primitive.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": ["MAC_policy_active", "enhanced_LPE_indicator_logging", "ssh_access_restricted_to_admins"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "patch_record",
+          "description": "Kernel package upgrade ticket with timestamps showing decision, deployment, and validation. For live-patch path: kpatch load record.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SI-2", "iso-27001-2022-A.8.8", "soc2-cc7.1", "nis2-art21-2c"]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Sandbox replay of the CVE's primitive-trigger step showing it now fails post-remediation. Distinguishes patch_applied=true from actually_exploit_broken=true.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["soc2-cc7.1", "iso-27001-2022-A.8.8"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "For hardening-compensation path: diff of sysctl values before and after remediation, plus the change-management approval reference.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, RWEP at detection, RWEP post-remediation, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2c"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "new_cve_in_class == true", "interval": "on_event" },
+        { "condition": "kernel_upgrade == true", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" },
+        { "condition": "post_major_deploy", "interval": "on_event" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["all_validation_tests_passed", "patch_records", "exploit_replay_negative", "residual_risk_statement", "framework_gap_mapping", "compliance_theater_verdict", "attestation"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Kernel LPE via $matched_cve_vector (e.g. page-cache CoW, unprivileged BPF, userns clone).",
+          "control_gap": "Patch-cadence-only control (SI-2 / A.8.8 / Art.21(2)(c)) did not catch the gap between weaponization (hours) and SLA-permitted patching (days). Compensating controls (live-patch, hardening) were not part of the control specification.",
+          "framework_gap": "NIST 800-53 + ISO 27001 + NIS2 vulnerability-handling controls specify process not tempo, and do not require KEV-aware fast-path. Frameworks lag real-world weaponization by ~28 days.",
+          "new_control_requirement": "Add a KEV-fast-path variant to vulnerability-handling controls: KEV-listed flaws must be patched within max(KEV due_date, 72h post public-PoC). Live-patch deployment satisfies the variant. Hardening-only compensation requires CISO-level risk acceptance and time-bound exception."
+        },
+        "feeds_back_to_skills": ["kernel-lpe-triage", "framework-gap-analysis", "compliance-theater", "zeroday-gap-learn"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["affected_host_inventory", "exploitation_status_assessment", "interim_mitigation_record"],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: Kernel LPE matched against catalogued CVE(s) ${matched_cve_ids} on ${affected_host_count} host(s). KEV-listed: ${kev_listed_count}. Active exploitation status: ${active_exploitation}. Interim mitigation in place: ${interim_mitigation}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["initial_notification", "ict_third_party_dependencies"],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — kernel LPE on financial-entity host(s). ${matched_cve_ids}. ICT third-party dependencies affected: ${ict_dependencies}. Full classification + impact assessment to follow within statutory windows."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (matched_cve.kev_due_date < remediation_eta AND livepatch_available == false)",
+        "exception_template": {
+          "scope": "Kernel LPE matched against ${matched_cve_ids} on ${affected_host_count} host(s); remediation paths 1-3 blocked.",
+          "duration": "until_vendor_patch",
+          "compensating_controls": ["MAC_policy_active", "sysctl_hardening_at_max", "enhanced_LPE_indicator_logging", "ssh_access_restricted_to_admins"],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for kernel LPE ${matched_cve_ids} on ${affected_host_count} host(s). Vendor patch availability: ${patch_available_status}. Live-patch availability for this kernel+distro: ${livepatch_status}. Reboot window: ${reboot_window}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. Detection coverage for exploitation attempts during the exception window is provided by ${detection_controls}. The exception will be re-evaluated on (a) vendor patch publication, (b) the listed expiry date, OR (c) a new exploitation indicator firing — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "all-catalogued-kernel-cves",
+      "title": "Match running kernel against every catalogued kernel/LPE CVE",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "copy-fail-specific",
+      "title": "Targeted investigation for CVE-2026-31431 'Copy Fail' (KEV, AI-discovered, deterministic)",
+      "applies_to": { "cve": "CVE-2026-31431" },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": { "escalate": 80, "monitor": 60, "close": 30 }
+        }
+      }
+    }
+  ]
+}

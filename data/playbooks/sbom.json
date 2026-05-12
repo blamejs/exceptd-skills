@@ -1,0 +1,893 @@
+{
+  "_meta": {
+    "id": "sbom",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase supply-chain SBOM playbook. Inventories installed packages via dpkg-query / rpm -qa / brew list / npm ls / pip freeze / cargo tree / gem list, walks repo lockfiles (package-lock.json / yarn.lock / pnpm-lock.yaml / Pipfile.lock / poetry.lock / requirements.txt / Cargo.lock / go.sum / Gemfile.lock), and matches versions to data/cve-catalog.json. Tests SLSA provenance, Sigstore attestation, and VEX status. Full GRC closure with NIS2 / DORA / EU CRA notification clocks.",
+        "cves_added": ["CVE-2026-31431", "CVE-2026-43284", "CVE-2026-43500", "CVE-2025-53773", "CVE-2026-30615"],
+        "framework_gaps_updated": ["nist-800-53-SA-12", "nist-800-218-SSDF", "iso-27001-2022-A.8.30", "eu-cra-art13", "nis2-art21-2d", "dora-art28"]
+      }
+    ],
+    "owner": "@blamejs/supply-chain",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "filesystem-read",
+        "description": "Agent must be able to read system package directories, /usr/lib, /var/lib/dpkg, /var/lib/rpm, $HOME, and the cwd.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "any-package-manager-present",
+        "description": "At least one supported package manager or lockfile must be present, otherwise there is no supply chain inventory this playbook can build.",
+        "check": "agent_has_command('dpkg-query') OR agent_has_command('rpm') OR agent_has_command('brew') OR agent_has_command('npm') OR agent_has_command('pip') OR agent_has_command('cargo') OR exists_any_lockfile",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "kernel",
+        "condition": "any matched_cve.attack_class == 'kernel-lpe'"
+      },
+      {
+        "playbook_id": "mcp",
+        "condition": "any matched_cve.attack_class == 'mcp-supply-chain'"
+      },
+      {
+        "playbook_id": "ai-api",
+        "condition": "any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Software bill of materials + supply-chain integrity",
+    "attack_class": "supply-chain",
+    "atlas_refs": ["AML.T0010", "AML.T0018"],
+    "attack_refs": ["T1195.001", "T1195.002", "T1554"],
+    "cve_refs": ["CVE-2026-31431", "CVE-2026-43284", "CVE-2026-43500", "CVE-2025-53773", "CVE-2026-30615"],
+    "cwe_refs": ["CWE-1357", "CWE-1395", "CWE-494", "CWE-502", "CWE-829"],
+    "d3fend_refs": ["D3-CBAN", "D3-EAL", "D3-EHB"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "pci-dss-4", "nis2", "dora", "eu-cra",
+      "uk-caf", "au-ism", "au-essential-8", "cmmc", "hipaa"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21(2)(d)",
+          "obligation": "submit_supply_chain_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": ["sbom_inventory", "cve_match_register", "vex_statements", "remediation_plan"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_systems_inventory", "matched_cves_with_active_exploitation", "interim_mitigation_record"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["full_incident_assessment", "remediation_plan", "vex_status_per_matched_cve"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.28",
+          "obligation": "submit_third_party_ict_risk_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": ["ict_third_party_register", "concentration_risk_assessment", "subcontracting_inventory"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["initial_notification", "ict_third_party_dependencies"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.13 / Annex I",
+          "obligation": "submit_technical_documentation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": ["sbom_per_product", "vulnerability_handling_evidence", "security_update_record"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_actively_exploited_vulnerability",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_product_identification", "exploitation_evidence", "mitigation_status"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "sbom-without-cve-correlation",
+          "claim": "We produce SBOMs per release — supply chain transparency requirement is met.",
+          "fast_detection_test": "Pull the most recent SBOM. Cross-reference its component list against data/cve-catalog.json. If the SBOM exists but no automated CVE correlation runs against it — i.e. the SBOM is a deliverable not a control — that is the canonical SBOM theater. SBOM as artifact without continuous correlation = paper compliance.",
+          "implicated_controls": ["nist-800-53-SA-12", "nist-800-218-SSDF-PS-3", "eu-cra-art13"]
+        },
+        {
+          "pattern_id": "lockfile-without-integrity",
+          "claim": "Dependencies are pinned in lockfiles — supply chain is reproducible.",
+          "fast_detection_test": "Walk all lockfiles (package-lock.json / yarn.lock / pnpm-lock.yaml / Pipfile.lock / poetry.lock / Cargo.lock / go.sum / Gemfile.lock). For each pinned entry, confirm it carries an integrity hash (sha512/sha384/sha256, sri-integrity, or go.sum cryptographic hash). Theater if any pinned entry lacks integrity — version-pin alone is a name that can be re-published over.",
+          "implicated_controls": ["nist-800-53-SA-12", "iso-27001-2022-A.8.30", "slsa-l3"]
+        },
+        {
+          "pattern_id": "transitive-deps-unsbomed",
+          "claim": "Our SBOM lists all dependencies.",
+          "fast_detection_test": "Diff the SBOM component count against the lockfile transitive count (npm ls --depth=Infinity, pip freeze + resolve transitively, cargo tree --depth=Infinity). Theater if transitive count exceeds SBOM count by > 5% — direct deps only is incomplete SBOM.",
+          "implicated_controls": ["nist-800-218-SSDF-PS-3", "eu-cra-art13", "cyclonedx-1-6"]
+        },
+        {
+          "pattern_id": "no-vex-statements",
+          "claim": "We respond to vulnerability alerts as they arise.",
+          "fast_detection_test": "For each matched CVE in the org's SBOM, check whether a VEX (Vulnerability Exploitability eXchange) statement exists. Theater if matched CVEs lack VEX status (not_affected / affected / fixed / under_investigation) — without VEX, every match becomes a manual investigation each time, and the org cannot demonstrate which matches are not exploitable in their context.",
+          "implicated_controls": ["nist-800-218-SSDF", "vex-csaf-2-1", "eu-cra-art14"]
+        },
+        {
+          "pattern_id": "ai-generated-code-not-in-sbom",
+          "claim": "Our SBOM is complete.",
+          "fast_detection_test": "AI coding assistants (Copilot, Cursor, Claude Code, Windsurf, Codex, Gemini CLI) commit code without provenance attestation. Theater if the org uses AI coding assistants AND no SBOM field captures AI-generated code provenance (which model produced the code, against what context, with what training cutoff). The SBOM lists npm:lodash@4.17.21 but not 'function parseUrl was emitted by Copilot from a docstring that contained indirect prompt injection.'",
+          "implicated_controls": ["nist-800-218-SSDF", "cyclonedx-1-7-ml-bom", "spdx-3-1-ai-profile"]
+        },
+        {
+          "pattern_id": "model-weights-not-treated-as-supply-chain",
+          "claim": "We treat models as artifacts.",
+          "fast_detection_test": "Inventory model weight files (.pt, .ckpt, .bin, .safetensors) on the host or in repo storage. For each, check (a) signed publisher key, (b) Sigstore-rekor entry, (c) format that doesn't execute code on load (safetensors versus .pt code-executing-deserialization formats). Theater if model weights are pulled from Hugging Face / GitHub LFS with hash-pinning only — hash-pinning a malicious blob does not prevent execution; only signature verification plus non-executing format closes the class (CWE-502).",
+          "implicated_controls": ["nist-800-218-SSDF", "openssf-model-signing", "atlas-aml-t0018"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Supply-chain frameworks have advanced fastest of any class in this exceptd release: SLSA v1.0, in-toto attestations, Sigstore signing, CycloneDX 1.6 / SPDX 3.0 SBOM, CSAF 2.0 VEX are all operational. Frameworks have begun to incorporate them: EU CRA (2024/2847) makes SBOM and vulnerability handling mandatory for products with digital elements; US NIST 800-218 SSDF + EO 14028 mandate SBOM for federal procurement; NIS2 Art.21(2)(d) makes supply chain security an essential measure. The gap is implementation: orgs produce SBOMs as deliverables without continuous CVE correlation, lockfiles without integrity hashes, no VEX statements, no AI-generated-code provenance, model weights treated as content blobs not supply-chain artifacts. The XZ Utils backdoor (2024, CVE-2024-3094) remains the canonical example of maintainer-position long-game supply-chain compromise that no SBOM-only program detects — the defense is in-toto attestation chain plus reproducible builds plus maintainer-key transparency, none of which are mandated by current compliance frameworks. CVE-2026-30615 (Windsurf MCP zero-interaction RCE) extends the supply-chain attack surface to developer tools themselves. CVE-2026-31431 (Copy Fail) demonstrates the SBOM-to-RWEP path: a single matched CVE in the kernel package list, KEV-listed and AI-discovered, becomes a 4-hour incident.",
+        "lag_score": 90,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SA-12",
+            "designed_for": "Supply chain protection for traditional software acquisition.",
+            "insufficient_because": "Does not require continuous CVE correlation against produced SBOMs. SBOM as deliverable satisfies SA-12; SBOM as control does not."
+          },
+          {
+            "framework": "nist-800-218",
+            "control_id": "SSDF PS.3 / PW.4",
+            "designed_for": "Secure software development practices including SBOM generation.",
+            "insufficient_because": "Mandates SBOM generation; does not mandate (a) integrity-hashed lockfiles, (b) transitive completeness check, (c) VEX statements, (d) AI-generated code provenance, (e) model weights as supply-chain artifacts."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.30",
+            "designed_for": "Outsourced development.",
+            "insufficient_because": "Procurement-event lens. Continuous lockfile drift + transitive dependency change is not captured by procurement review."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.20",
+            "designed_for": "Addressing information security within supplier agreements.",
+            "insufficient_because": "Supplier-agreement lens does not produce signature-attestation requirements for community-maintained packages."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC9.2",
+            "designed_for": "Vendor and business partner risk management.",
+            "insufficient_because": "Vendor inventory excludes open-source dependencies and AI-coding-assistant-emitted code."
+          },
+          {
+            "framework": "pci-dss-4",
+            "control_id": "6.3.2 / 6.3.3",
+            "designed_for": "Bespoke and custom software vulnerability tracking + patches.",
+            "insufficient_because": "Tracks vulnerabilities; does not mandate continuous SBOM-to-CVE correlation or VEX. 30-day patch window inadequate for KEV-listed dependency CVEs."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(d)",
+            "designed_for": "Supply chain security, including security-related aspects of relationships with direct suppliers.",
+            "insufficient_because": "Names supply chain security as essential measure; defers specifics. Implementing acts have not bound (a)-(e) above."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.28",
+            "designed_for": "ICT third-party risk management.",
+            "insufficient_because": "Captures direct ICT third parties (e.g. SaaS, cloud). Open-source dependency layer + AI-coding-assistant-emitted code is not a contractual third party."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.13 / Annex I",
+            "designed_for": "Essential cybersecurity requirements for products with digital elements.",
+            "insufficient_because": "Mandates SBOM and vulnerability handling; implementing acts for technical documentation through 2027. Until then, SBOM format and content vary; transitive completeness, VEX, AI-code provenance, model weights not binding."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.14",
+            "designed_for": "Actively-exploited-vulnerability 24-hour notification.",
+            "insufficient_because": "Notification window is tight; many orgs lack the SBOM-to-active-exploit correlation infrastructure to detect within window. Process gap, not control-text gap."
+          }
+        ]
+      },
+      "skill_preload": ["supply-chain-integrity", "exploit-scoring", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Supply-chain landscape Q1-Q2 2026: in-scope artifacts are every build-pipeline input, CI runner image, container base, transitive package, model weight loaded at inference, and AI-coding-assistant-emitted code committed to the repo. Defining incidents driving the current state: (1) CVE-2026-30615 (Windsurf MCP zero-interaction RCE, 150M+ download blast radius) — developer tool with no enforced manifest signing executes attacker-controlled code with zero user interaction. (2) CVE-2026-31431 (Copy Fail) — KEV-listed kernel LPE that matches via dpkg/rpm package inventory in seconds, becomes a 4-hour incident. (3) XZ Utils backdoor (CVE-2024-3094, 2024) — maintainer-position long-game compromise that no SBOM-only program detected. Typosquat campaigns target MCP, Hugging Face, npm @modelcontextprotocol/*, and PyPI ML namespaces (ATLAS AML.T0010). Model weights in code-executing serialization formats are CWE-502 deserialization vectors (ATLAS AML.T0018); hash-pinning a malicious blob does not prevent execution. AI-generated code is opaque-provenance code: Copilot/Cursor/Claude Code/Windsurf/Codex/Gemini emit code committed without attestation of which model produced it. Compliance trajectory: EU CRA (Art.13/14) and NIST SSDF have established SBOM as mandatory deliverable; implementing acts and program maturity continue to lag — orgs produce SBOMs without continuous correlation, VEX, transitive completeness, AI-code provenance, or model-weight signature verification.",
+      "rwep_threshold": {
+        "escalate": 80,
+        "monitor": 50,
+        "close": 30
+      },
+      "framework_lag_declaration": "Supply-chain frameworks have advanced fastest of any class in this exceptd release, but implementation gaps are pervasive. NIST 800-53 SA-12, NIST 800-218 SSDF, ISO 27001:2022 A.8.30/A.5.20, SOC 2 CC9.2, PCI DSS 4.0 sect.6.3, NIS2 Art.21(2)(d), DORA Art.28, EU CRA Art.13/14 all permit (a) SBOM as deliverable without continuous correlation, (b) lockfile-pinning without integrity hash, (c) direct-deps-only SBOM, (d) absence of VEX statements, (e) absence of AI-generated-code provenance, (f) model weights treated as content blobs. Lag = ~90 days behind operational tooling (SLSA / Sigstore / in-toto / VEX-CSAF) and ~210 days behind AI-coding-assistant adoption tempo. Compensating controls (continuous CVE correlation, integrity-pinned lockfiles, transitive SBOM completeness, VEX maintenance, AI-code provenance, model weight signature verification + safetensors-only loading) MUST close the gap before SBOM-as-deliverable compliance can be accepted.",
+      "skill_chain": [
+        { "skill": "supply-chain-integrity", "purpose": "Inventory installed packages and walk lockfiles. Test SLSA build provenance, Sigstore signing, in-toto attestation, VEX status, AI-code provenance, model weight signing.", "required": true },
+        { "skill": "exploit-scoring", "purpose": "For each matched CVE: compute RWEP using catalog kev / poc / ai-discovery / active-exploitation / patch / live-patch fields. Rank for triage.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map matched CVEs and theater fingerprints to framework controls that fail to cover them.", "skip_if": "analyze.framework_gap_mapping.length == 0", "required": false },
+        { "skill": "compliance-theater", "purpose": "Run the six theater fingerprints in govern.theater_fingerprints; emit verdict per pattern.", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception for any matched CVE that cannot be remediated within the relevant compliance window.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 26000,
+        "breakdown": {
+          "govern": 3000,
+          "direct": 1700,
+          "look": 3200,
+          "detect": 3800,
+          "analyze": 5500,
+          "validate": 5400,
+          "close": 3400
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "dpkg-packages",
+          "type": "process_list",
+          "source": "dpkg-query -W -f='${Package}\\t${Version}\\t${Architecture}\\t${Source}\\n' 2>/dev/null",
+          "description": "Debian/Ubuntu installed packages — name, version, architecture, source package.",
+          "required": false,
+          "air_gap_alternative": "Read /var/lib/dpkg/status directly if dpkg-query unavailable."
+        },
+        {
+          "id": "rpm-packages",
+          "type": "process_list",
+          "source": "rpm -qa --queryformat '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{ARCH}\\t%{SOURCERPM}\\n' 2>/dev/null",
+          "description": "RHEL/Fedora/SUSE installed packages — name, version-release, architecture, source RPM.",
+          "required": false,
+          "air_gap_alternative": "Read /var/lib/rpm directly if rpm command unavailable."
+        },
+        {
+          "id": "brew-packages",
+          "type": "process_list",
+          "source": "brew list --formula --versions 2>/dev/null AND brew list --cask --versions 2>/dev/null",
+          "description": "macOS Homebrew installed packages.",
+          "required": false
+        },
+        {
+          "id": "npm-global-packages",
+          "type": "process_list",
+          "source": "npm ls -g --depth=Infinity --json 2>/dev/null",
+          "description": "npm global packages with full transitive tree.",
+          "required": false,
+          "air_gap_alternative": "Walk $(npm root -g) directory listing for installed packages."
+        },
+        {
+          "id": "pip-packages",
+          "type": "process_list",
+          "source": "pip list --format=json 2>/dev/null AND pip freeze 2>/dev/null AND pipx list --json 2>/dev/null",
+          "description": "System / user Python packages.",
+          "required": false
+        },
+        {
+          "id": "cargo-installed",
+          "type": "process_list",
+          "source": "cargo install --list 2>/dev/null",
+          "description": "Rust binaries installed via cargo.",
+          "required": false
+        },
+        {
+          "id": "gem-packages",
+          "type": "process_list",
+          "source": "gem list --local 2>/dev/null",
+          "description": "Ruby gems installed system/user-wide.",
+          "required": false
+        },
+        {
+          "id": "go-binaries",
+          "type": "process_list",
+          "source": "ls -la $GOPATH/bin /usr/local/go/bin 2>/dev/null AND for each Go binary, run 'go version -m <bin>' to extract build info + dependencies",
+          "description": "Go binaries with embedded build info (BuildID, module versions).",
+          "required": false
+        },
+        {
+          "id": "repo-lockfiles",
+          "type": "config_file",
+          "source": "Recursive walk of $(pwd) and configured search roots for: package-lock.json, yarn.lock, pnpm-lock.yaml, Pipfile.lock, poetry.lock, requirements.txt, Cargo.lock, go.sum, Gemfile.lock, composer.lock, gradle.lockfile",
+          "description": "Repo-level lockfiles — primary source of pinned transitive dependencies.",
+          "required": false
+        },
+        {
+          "id": "container-image-layers",
+          "type": "config_file",
+          "source": "If docker / podman / nerdctl available: list running containers AND inspect each image's package layers (docker history <image> AND for each layer, dpkg-query / rpm -qa inside the layer).",
+          "description": "Containerized package inventory — different from host packages.",
+          "required": false
+        },
+        {
+          "id": "ai-coding-assistant-inventory",
+          "type": "config_file",
+          "source": "$HOME/.cursor, $HOME/.codeium, $HOME/.config/claude, $HOME/.config/Code, $HOME/.gemini — versions of installed assistants",
+          "description": "AI coding assistant versions — needed to match against CVE-2025-53773 (Copilot) / CVE-2026-30615 (Windsurf).",
+          "required": false
+        },
+        {
+          "id": "model-weight-files",
+          "type": "file_path",
+          "source": "find $HOME ~/.cache/huggingface ~/.cache/torch /var/lib/model-store -type f \\( -name '*.pt' -o -name '*.ckpt' -o -name '*.bin' -o -name '*.safetensors' -o -name '*.gguf' \\) 2>/dev/null AND for each: file <path> AND attempt to identify Sigstore signature / OpenSSF model-signing attestation",
+          "description": "Model weight artifacts — needed for AI-supply-chain analysis (ATLAS AML.T0018).",
+          "required": false
+        },
+        {
+          "id": "sbom-artifacts",
+          "type": "config_file",
+          "source": "Find existing SBOMs in repo / artifact storage: *.cdx.json (CycloneDX), *.spdx.json (SPDX), bom.json, sbom.json",
+          "description": "Existing SBOM artifacts — needed to test theater fingerprint #1 (sbom-without-cve-correlation).",
+          "required": false
+        },
+        {
+          "id": "vex-statements",
+          "type": "config_file",
+          "source": "Find existing VEX statements: *.vex.json, *.csaf.json (CSAF VEX profile)",
+          "description": "VEX statements — needed to test theater fingerprint #4 (no-vex-statements).",
+          "required": false
+        },
+        {
+          "id": "cve-catalog",
+          "type": "config_file",
+          "source": "data/cve-catalog.json — local exceptd CVE catalog with full per-CVE RWEP scoring inputs",
+          "description": "Authoritative catalog for matched-CVE correlation.",
+          "required": true,
+          "air_gap_alternative": "Catalog is shipped with exceptd; available offline."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host_and_attached_repos",
+        "depth": "deep",
+        "sampling": "Single-host point-in-time inventory. Fleet rollout requires per-host execution OR central package-management system integration. Per-repo lockfile walk requires repo-clone or CI-integrated execution."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "host has at least one supported package manager OR lockfile in cwd",
+          "if_false": "Return visibility_gap=no_supply_chain_surface. Host genuinely has no manageable supply chain (e.g. minimal container with only static binary)."
+        },
+        {
+          "assumption": "agent has read access to /var/lib/dpkg, /var/lib/rpm, package-manager state dirs, repo-cwd",
+          "if_false": "Halt — without read access to package state, inventory is empty and matching is impossible."
+        },
+        {
+          "assumption": "data/cve-catalog.json is loadable",
+          "if_false": "Halt — without the catalog, no matched-CVE correlation is possible."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "sbom-artifacts", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "vex-statements", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "container-image-layers", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "ai-coding-assistant-inventory", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "model-weight-files", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "cve-catalog", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "package-matches-catalogued-cve",
+          "type": "log_pattern",
+          "value": "Any inventoried package version falls inside any catalogued CVE's affected_versions range, where the CVE's framework and category match the package's class",
+          "description": "Primary detector — installed-package version matches a catalogued CVE.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "lockfile-no-integrity",
+          "type": "log_pattern",
+          "value": "Any pinned dependency in walked lockfiles lacks an integrity field (sha512/sha384/sha256, sri-integrity, go.sum-style hash)",
+          "description": "Theater fingerprint #2 detection — name-pinned without integrity.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "transitive-deps-incomplete-sbom",
+          "type": "log_pattern",
+          "value": "SBOM artifact present AND transitive dep count > SBOM component count * 1.05",
+          "description": "Theater fingerprint #3 — SBOM lists direct deps only.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "matched-cve-without-vex",
+          "type": "log_pattern",
+          "value": "package-matches-catalogued-cve == true AND no VEX statement exists for the matched CVE in the org's VEX register",
+          "description": "Theater fingerprint #4 detection — matched CVE without exploitability declaration.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "ai-code-no-provenance",
+          "type": "behavioral_signal",
+          "value": "ai-coding-assistant-inventory shows at least one installed assistant AND SBOM has no fields capturing AI-emitted code (no ml-bom, no spdx ai-profile, no commit-trailer convention)",
+          "description": "Theater fingerprint #5 detection — AI in use, AI-emitted code not in SBOM.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "model-weight-unsigned-and-executable-format",
+          "type": "file_path",
+          "value": "model-weight-files lists any .pt / .ckpt / .bin file without Sigstore / OpenSSF model-signing attestation",
+          "description": "Theater fingerprint #6 detection — code-executing model format without publisher signature.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0018"
+        },
+        {
+          "id": "windsurf-vulnerable-version",
+          "type": "file_path",
+          "value": "ai-coding-assistant-inventory shows Windsurf with version <= patched version for CVE-2026-30615",
+          "description": "Direct match for CVE-2026-30615.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1190"
+        },
+        {
+          "id": "kev-listed-match",
+          "type": "log_pattern",
+          "value": "Any package-matches-catalogued-cve match resolves to a CVE with cisa_kev=true in the catalog",
+          "description": "KEV-listed match — fast-path escalation required.",
+          "confidence": "deterministic",
+          "deterministic": true
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "package-matches-catalogued-cve",
+          "benign_pattern": "Vendor-shipped package whose version-string matches an upstream affected range but contains backported fixes (RHEL/Ubuntu/Debian commonly do this).",
+          "distinguishing_test": "Cross-reference the matched package against the vendor's CVE backport tracker (Red Hat CVE database, Ubuntu USN, Debian DSA). If vendor confirms backport in the package version, downgrade match to medium confidence and emit a backport_confirmed=true signal."
+        },
+        {
+          "indicator_id": "lockfile-no-integrity",
+          "benign_pattern": "Some Go module entries in go.sum use h1: hashes which are integrity; the playbook is correctly matching these as integrity-present.",
+          "distinguishing_test": "For Go entries, presence of h1: hash IS integrity; do not flag. Apply only to lockfiles where the manifest format permits an integrity field but the entry omits it."
+        },
+        {
+          "indicator_id": "ai-code-no-provenance",
+          "benign_pattern": "Org has documented internal commit-trailer convention (Co-Authored-By:, Generated-By:, AI-Model:) but it isn't reflected in machine-readable SBOM.",
+          "distinguishing_test": "Sample 20 commits in the repo. If commit-trailer convention is consistently used, downgrade to medium and recommend SBOM integration rather than flagging absence outright."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any of: (a) kev-listed-match=true, (b) package-matches-catalogued-cve=true with no benign-pattern match, (c) windsurf-vulnerable-version=true, (d) model-weight-unsigned-and-executable-format=true, (e) any theater fingerprint deterministic firing.",
+        "inconclusive": "Inventory captured but SBOM / VEX / model artifacts unavailable. Cannot test theater fingerprints #1, #4, #6.",
+        "not_detected": "Zero matched CVEs against current package inventory AND all lockfiles integrity-hashed AND SBOM-to-inventory count match AND every previously-matched CVE has a current VEX statement AND no executable-format unsigned model weights AND no Windsurf vulnerable installs."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Multiplier from catalog entry's active_exploitation field (confirmed=25, suspected=12, none=0)." },
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "cisa_kev", "weight": 20, "notes": "KEV-listed = full weight." },
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "public_poc", "weight": 15, "notes": "PoC availability per catalog." },
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "AI-discovered or AI-assisted-weaponization flagged in catalog." },
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "patch_available", "weight": -10, "notes": "Patch available reduces RWEP by 10." },
+        { "signal_id": "package-matches-catalogued-cve", "rwep_factor": "live_patch_available", "weight": -15, "notes": "Live patch available reduces RWEP by 15." },
+        { "signal_id": "kev-listed-match", "rwep_factor": "cisa_kev", "weight": 20, "notes": "Direct KEV signal." },
+        { "signal_id": "windsurf-vulnerable-version", "rwep_factor": "blast_radius", "weight": 25, "notes": "Zero-interaction RCE in developer endpoint." },
+        { "signal_id": "model-weight-unsigned-and-executable-format", "rwep_factor": "blast_radius", "weight": 20, "notes": "Deserialization vector on load; ATLAS AML.T0018." },
+        { "signal_id": "lockfile-no-integrity", "rwep_factor": "active_exploitation", "weight": 5, "notes": "Re-publication-over attack documented; modest active-exploitation signal." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a matched-CVE in this host's supply chain is exploited, OR the supply chain is compromised at the publisher level, what scope of compromise does this host realistically deliver?",
+        "scoring_rubric": [
+          { "condition": "host runs single-tenant dev workload with isolated dependencies, no production access, no CI signing keys", "blast_radius_score": 1, "description": "Local dev compromise only." },
+          { "condition": "host has prod-adjacent CI runners or test environments with non-prod credentials", "blast_radius_score": 2, "description": "Staging/dev cloud compromise." },
+          { "condition": "host is a production application server or k8s node with shared package surface", "blast_radius_score": 3, "description": "Production tenancy compromise via runtime dependency." },
+          { "condition": "host has package-publishing rights (npm/PyPI maintainer keys, cosign signing keys, GitHub-package writer)", "blast_radius_score": 4, "description": "Publisher-position compromise; downstream propagation." },
+          { "condition": "host is a release-engineering bootstrap with cross-account assume-role + publishing rights to org namespaces + CI signing keys + multi-platform cosign chains", "blast_radius_score": 5, "description": "Org-wide supply-chain pivot; XZ-Utils-class compromise." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "SBOM generation per release + dependency pinning + vulnerability tracking satisfies NIST SSDF / SA-12 / A.8.30 / NIS2 Art.21(2)(d) / DORA Art.28 / EU CRA Art.13/14.",
+        "audit_evidence": "Per-release SBOM artifact, lockfile present, vulnerability scanner reports, vendor-management records.",
+        "reality_test": "Run all six theater fingerprints in govern.theater_fingerprints. For each fingerprint: (1) cross-reference the most recent SBOM against data/cve-catalog.json — is there an automated correlation job or only manual lookup?; (2) walk lockfiles for integrity hashes — does every pinned entry have one?; (3) compare SBOM count to transitive count — is the SBOM complete?; (4) for each matched CVE, is there a VEX statement?; (5) does the SBOM capture AI-generated-code provenance?; (6) are model weights signed and in non-executing format? Theater if any fails AND no compensating control with current test exists.",
+        "theater_verdict_if_gap": "Org demonstrates SBOM-generation compliance that nonetheless leaves matched CVEs uncorrelated, lockfiles with name-pin-only entries vulnerable to publisher-key compromise, AI-generated code unattested, and model weights as silent deserialization vectors. Either (a) deploy continuous SBOM-to-CVE correlation with alerting (e.g. exceptd's own SBOM-match pipeline), (b) enforce integrity-hashed lockfiles in CI gate, (c) extend SBOM to transitive completeness, (d) maintain VEX register per matched CVE, (e) integrate AI-coding-assistant commit attestation, (f) restrict model loading to safetensors with Sigstore verification, OR (g) generate a defensible policy exception with compensating controls."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "SA-12 — Supply Chain Protection",
+          "actual_gap": "Procurement-event lens. Continuous lockfile drift, transitive dependency change, and AI-emitted code are not captured by procurement review.",
+          "required_control": "Add SA-12 variant requiring continuous SBOM-to-CVE correlation, integrity-hashed lockfiles, transitive completeness, VEX maintenance, AI-code provenance, signed model weights."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "nist-800-218",
+          "claimed_control": "SSDF PS.3 / PW.4",
+          "actual_gap": "Mandates SBOM generation but not (a)-(f) above.",
+          "required_control": "SSDF v1.2+ extension explicitly requiring continuous correlation, transitive completeness, VEX, AI-code provenance, model weight signing."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.30 — Outsourced development",
+          "actual_gap": "Procurement-event lens; does not cover community-maintained packages or AI-coding-assistant-emitted code.",
+          "required_control": "A.8.30 amendment for community-maintained dependency continuous attestation + AI-emitted code provenance."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "soc2",
+          "claimed_control": "CC9.2 — Vendor risk management",
+          "actual_gap": "Vendor inventory omits open-source dependencies and AI-coding-assistant-emitted code.",
+          "required_control": "Trust Services Criteria amendment requiring supply-chain inventory completeness as CC9.2 sub-objective."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "pci-dss-4",
+          "claimed_control": "6.3.2 / 6.3.3 — Vulnerability tracking and patches",
+          "actual_gap": "30-day patch window inadequate for KEV-listed dependency CVEs; no continuous SBOM correlation requirement.",
+          "required_control": "v4.1+ amendment with KEV-fast-path for dependency CVEs and mandatory SBOM-correlation cadence."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(d) — Supply chain security",
+          "actual_gap": "Names supply chain security; implementing acts have not bound continuous correlation, VEX, AI-code, model weights.",
+          "required_control": "Implementing acts to bind (a)-(f) above for essential entities."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "dora",
+          "claimed_control": "Art.28 — ICT third-party risk",
+          "actual_gap": "Captures contractual ICT third parties; open-source layer + AI-coding-assistant-emitted code is not a contractual party.",
+          "required_control": "RTS/ITS extending Art.28 obligations to dependency layer + AI-emitted code for financial entities."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "eu-cra",
+          "claimed_control": "Art.13 / Annex I — Essential cybersecurity requirements",
+          "actual_gap": "SBOM mandated; format/content/completeness implementing acts in publication.",
+          "required_control": "Implementing acts must bind transitive completeness, VEX, AI-code provenance, model-weight signature requirements."
+        },
+        {
+          "finding_id": "supply-chain-detected",
+          "framework": "eu-cra",
+          "claimed_control": "Art.14 — Actively-exploited-vulnerability 24h notification",
+          "actual_gap": "Notification window tight; many orgs lack SBOM-to-active-exploit correlation to detect within window.",
+          "required_control": "Operational guidance: continuous correlation job with KEV listing + active-exploitation feeds; automated notification draft on match."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "kev-listed-match == true", "action": "page_on_call" },
+        { "condition": "rwep >= 80 AND patch_available == false", "action": "page_on_call" },
+        { "condition": "windsurf-vulnerable-version == true", "action": "trigger_playbook", "target_playbook": "mcp" },
+        { "condition": "any matched_cve.attack_class == 'kernel-lpe'", "action": "trigger_playbook", "target_playbook": "kernel" },
+        { "condition": "model-weight-unsigned-and-executable-format == true AND blast_radius_score >= 3", "action": "raise_severity" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "framework" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" },
+        { "condition": "any actively_exploited_match AND jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "patch-matched-cves",
+          "description": "For each matched CVE: apply vendor patch via package manager (apt/yum/dnf/brew/npm/pip/cargo/gem), live-patch if available, or container-image rebuild.",
+          "preconditions": ["patch_available == true", "operator_authorized_for_package_upgrade == true"],
+          "priority": 1,
+          "compensating_controls": ["restart_affected_services_post_upgrade", "regression_test_post_upgrade"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "enforce-integrity-pinned-lockfiles",
+          "description": "Add CI gate that rejects any lockfile entry without an integrity hash. For npm: re-run with --package-lock-only to populate integrity. For pip: use pip-compile --generate-hashes. For others: regenerate with integrity-aware tooling.",
+          "preconditions": ["ci_pipeline_modifiable == true"],
+          "priority": 2,
+          "compensating_controls": ["lockfile_review_in_pr_template"],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "deploy-continuous-sbom-correlation",
+          "description": "Stand up automated SBOM-to-CVE correlation: on every SBOM generation, run against data/cve-catalog.json + upstream NVD/CISA-KEV feeds; alert on match with RWEP score and VEX prompt.",
+          "preconditions": ["sbom_generation_in_ci == true OR sbom_artifact_storage_accessible == true"],
+          "priority": 3,
+          "compensating_controls": ["alert_routing_to_secops"],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "extend-sbom-transitive-completeness",
+          "description": "Regenerate SBOMs with transitive depth (CycloneDX 1.6 deep mode, SPDX 3.0 with relationships, or per-tool deep flag). Verify component count matches transitive lockfile resolution.",
+          "preconditions": ["sbom_tooling_supports_transitive == true"],
+          "priority": 4,
+          "compensating_controls": ["sbom_completeness_gate_in_ci"],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "maintain-vex-register",
+          "description": "For each matched CVE: produce a VEX statement (not_affected / affected / fixed / under_investigation) with justification. Use CSAF 2.0 VEX profile.",
+          "preconditions": ["security_team_capacity_for_vex == true"],
+          "priority": 5,
+          "compensating_controls": ["vex_template_in_security_playbook"],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "ai-code-provenance",
+          "description": "Adopt commit-trailer convention or SBOM AI profile (CycloneDX 1.7 ML-BOM / SPDX 3.1 AI profile) capturing model + context + cutoff for AI-emitted code.",
+          "preconditions": ["org_uses_ai_coding_assistants == true", "ci_or_pre-commit_modifiable == true"],
+          "priority": 6,
+          "compensating_controls": ["pr_review_for_ai_emitted_code", "ai_code_review_checklist"],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "model-weight-signing-and-safetensors",
+          "description": "Restrict model-loader to safetensors format only AND require Sigstore (OpenSSF model-signing) verification before load.",
+          "preconditions": ["ml_loader_modifiable == true OR ml_inference_pipeline_owned == true"],
+          "priority": 7,
+          "compensating_controls": ["model_inventory_review", "non-safetensors_models_quarantined"],
+          "estimated_time_hours": 24
+        },
+        {
+          "id": "policy-exception",
+          "description": "Where a matched CVE cannot be remediated within compliance window (vendor pending, blocker dependency, architectural impossibility): generate auditor-ready policy exception via policy-exception-gen.",
+          "preconditions": ["remediation_paths[1..7] blocked for at least one matched CVE", "ciso_acceptance_obtainable == true"],
+          "priority": 8,
+          "compensating_controls": ["network_segmentation", "enhanced_logging_for_affected_component", "vendor_engagement_tracking"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "matched-cves-resolved",
+          "test": "Re-inventory packages and re-run CVE-catalog matching. Confirm zero remaining matches OR each remaining match has a current VEX statement justifying not_affected / fixed / accepted-residual.",
+          "expected_result": "Zero unresolved matches OR all matches VEX-covered.",
+          "test_type": "functional"
+        },
+        {
+          "id": "lockfile-integrity-gate",
+          "test": "Add a deliberately-malformed lockfile entry without integrity hash to a test branch. Confirm CI pipeline rejects the PR.",
+          "expected_result": "CI rejects; gate fires.",
+          "test_type": "negative"
+        },
+        {
+          "id": "sbom-cve-correlation-firing",
+          "test": "Add a known-vulnerable test dependency to a test branch. Confirm continuous correlation alert fires within target detection window with RWEP score.",
+          "expected_result": "Alert fires with correct match details.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sbom-transitive-complete",
+          "test": "Compare SBOM component count against transitive lockfile resolution count (npm ls --depth=Infinity --json | jq '..|.dependencies?|length' summed; pip freeze --all; cargo tree --depth=Infinity).",
+          "expected_result": "SBOM count >= transitive count (within rounding).",
+          "test_type": "functional"
+        },
+        {
+          "id": "vex-coverage",
+          "test": "List all matched CVEs over last 30 days. Confirm each has a VEX statement in the register.",
+          "expected_result": "100% VEX coverage.",
+          "test_type": "functional"
+        },
+        {
+          "id": "windsurf-version-post-patch",
+          "test": "If windsurf-vulnerable-version fired: re-read Windsurf version, confirm > patched_version_for_CVE-2026-30615.",
+          "expected_result": "Windsurf version above CVE-2026-30615 patched.",
+          "test_type": "functional"
+        },
+        {
+          "id": "model-loader-safetensors-only",
+          "test": "Attempt to load a deliberately-non-safetensors model. Confirm loader refuses.",
+          "expected_result": "Loader rejects non-safetensors format.",
+          "test_type": "negative"
+        },
+        {
+          "id": "regression-no-supply-chain-breakage",
+          "test": "Run full repo build + test suite post-remediation. Confirm no regressions in legitimate dependency resolution.",
+          "expected_result": "Build green; tests pass.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Supply chain mutates continuously. Every new dependency release, every new AI-coding-assistant emission, every new model publication introduces a fresh attestation requirement. Maintainer-position long-game compromise (XZ-Utils class) bypasses signature-based controls until the maintainer's transparency-log entry is revoked.",
+        "why_remains": "Signature verification proves authorship not safety; provenance attestation depends on publisher discipline; VEX maintenance requires sustained security-team capacity; AI-code provenance depends on tooling that's still standardizing (CycloneDX 1.7 / SPDX 3.1 draft). Crypto-agility for signing infrastructure is itself a multi-year program.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": ["continuous_sbom_to_cve_correlation_with_alerting", "ci_gate_for_lockfile_integrity", "vex_register_with_quarterly_review", "ai_code_review_checklist", "model_loader_safetensors_enforcement", "maintainer_key_transparency_monitoring"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full package inventory across all package managers + lockfile walk; matched-CVE list with per-match RWEP + VEX status.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SA-12", "nist-800-218-PS-3", "iso-27001-2022-A.8.30", "nis2-art21-2d", "eu-cra-art13"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after lockfile diff showing integrity hashes added; SBOM before/after showing transitive completeness; CI pipeline diff showing integrity-gate addition.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "patch_record",
+          "description": "Package upgrade tickets with timestamps for each matched-CVE remediation; container-image rebuild records.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SI-2", "iso-27001-2022-A.8.8", "pci-dss-4-6.3", "nis2-art21-2c"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, matched-CVE count at detection, count post-remediation, RWEP delta, VEX coverage percentage.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2d", "dora-art28", "eu-cra-art13"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "new_cve_in_class == true", "interval": "on_event" },
+        { "condition": "new_kev_listing_for_inventoried_package", "interval": "on_event" },
+        { "condition": "new_dependency_added", "interval": "on_event" },
+        { "condition": "new_release", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["scan_report", "config_diff", "patch_record", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "grc_platform_api",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Supply-chain compromise via (a) matched-CVE in installed package, (b) lockfile name-pin with re-publication-over, (c) transitive dependency missed by direct-only SBOM, (d) AI-coding-assistant emitting code with embedded prompt injection, (e) model weight in code-executing deserialization format triggering on load (CWE-502), (f) developer-tool RCE (Windsurf CVE-2026-30615).",
+          "control_gap": "SBOM-as-deliverable controls (SSDF, SA-12, A.8.30, CC9.2) did not generate signal because they don't require continuous CVE correlation, integrity-hashed lockfiles, transitive completeness, VEX maintenance, AI-code provenance, or model-weight signing.",
+          "framework_gap": "NIST 800-53 SA-12, NIST 800-218 SSDF, ISO 27001:2022 A.8.30, SOC 2 CC9.2, PCI DSS 4.0 6.3, NIS2 Art.21(2)(d), DORA Art.28, EU CRA Art.13/14 all permit SBOM-as-deliverable compliance over a fully exposed supply chain. Implementation lag = ~90 days behind operational tooling (SLSA / Sigstore / VEX) and ~210 days behind AI-coding-assistant adoption.",
+          "new_control_requirement": "Add supply-chain control class with: (a) continuous SBOM-to-CVE correlation with KEV / active-exploitation feeds and RWEP scoring, (b) CI gate enforcing integrity-hashed lockfiles, (c) transitive completeness check vs lockfile resolution, (d) VEX maintenance per matched CVE (CSAF 2.0 profile), (e) AI-code provenance via commit-trailer convention OR CycloneDX 1.7 ML-BOM / SPDX 3.1 AI profile, (f) model-loader restricted to safetensors with Sigstore/OpenSSF model-signing verification."
+        },
+        "feeds_back_to_skills": ["supply-chain-integrity", "exploit-scoring", "framework-gap-analysis", "compliance-theater", "zeroday-gap-learn"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.21(2)(d) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["sbom_inventory", "cve_match_register", "vex_statements", "remediation_plan"],
+          "draft_notification": "NIS2 Art.21(2)(d) supply chain security evidence: ${entity_name} attests supply chain security per Art.21(2)(d). SBOM inventory: ${sbom_summary}. Matched CVEs: ${match_count}; KEV-listed: ${kev_count}; remediated: ${remediated_count}; VEX-covered: ${vex_count}. Remediation plan attached."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["affected_systems_inventory", "matched_cves_with_active_exploitation", "interim_mitigation_record"],
+          "draft_notification": "NIS2 Art.23 24-hour early-warning: Supply-chain incident — matched CVE(s) ${matched_cve_ids} with active-exploitation on ${affected_host_count} host(s). KEV-listed: ${kev_count}. Interim mitigation: ${interim_mitigation}. Full assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["full_incident_assessment", "remediation_plan", "vex_status_per_matched_cve"],
+          "draft_notification": "NIS2 Art.23 incident notification (72h): full assessment of supply-chain incident. Affected systems: ${affected_systems}. Remediation plan: ${remediation_summary}. VEX status: ${vex_summary}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.28 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["ict_third_party_register", "concentration_risk_assessment", "subcontracting_inventory"],
+          "draft_notification": "DORA Art.28 third-party ICT risk submission: ${entity_name} (financial entity) attests third-party ICT risk management per Art.28. Register: ${register_summary}. Concentration risk: ${concentration_summary}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["initial_notification", "ict_third_party_dependencies"],
+          "draft_notification": "DORA Art.19 initial notification: major ICT-related incident — supply-chain matched-CVE exposure on financial-entity systems. ICT third-party dependencies affected: ${ict_dependencies}. Full classification to follow."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.13 / Annex I 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["sbom_per_product", "vulnerability_handling_evidence", "security_update_record"],
+          "draft_notification": "EU CRA Art.13 / Annex I technical documentation submission: ${entity_name} attests product cybersecurity requirements. SBOM per product attached. Vulnerability handling: ${vh_summary}. Security update record: ${update_record}."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.14 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["affected_product_identification", "exploitation_evidence", "mitigation_status"],
+          "draft_notification": "EU CRA Art.14 actively-exploited vulnerability notification: Product ${product_id} contains actively-exploited vulnerability ${matched_cve_id}. Affected versions: ${affected_versions}. Exploitation evidence: ${exploitation_evidence}. Mitigation: ${mitigation_status}. Updates: ${update_url}."
+        },
+        {
+          "obligation_ref": "AU/APRA CPS 234 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["materiality_assessment", "remediation_completed_evidence"],
+          "draft_notification": "APRA CPS 234 notification: material information security incident — supply-chain matched-CVE exposure. Materiality: ${materiality_justification}. Remediation summary: ${remediation_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (matched_cve_unpatched == true AND vendor_patch_pending == true)",
+        "exception_template": {
+          "scope": "Matched CVE(s) ${matched_cve_ids} affect package(s) ${affected_packages} which cannot be remediated within the compliance window. Blocking factors: ${blocking_factors} (vendor patch pending, blocker dependency, architectural impossibility, EOL package without backport).",
+          "duration": "until_vendor_patch",
+          "compensating_controls": ["network_segmentation_isolating_affected_component", "enhanced_logging_for_exploit_indicators", "ci_gate_blocking_new_uses_of_affected_package", "vendor_engagement_tracking_with_weekly_re-poll", "monthly_residual_risk_review"],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Supply Chain Protection / Outsourced Development / Vendor and Business Partner Risk Management / Vulnerability Handling), the organization documents a time-bound risk acceptance for matched CVE(s) ${matched_cve_ids} in package(s) ${affected_packages} on ${affected_host_count} host(s). Vendor patch availability: ${patch_available_status}. Live-patch availability: ${livepatch_status}. KEV listing: ${kev_status}. Active exploitation: ${active_exploitation_status}. Public PoC: ${poc_status}. AI-discovery: ${ai_discovered_status}. RWEP at exception submission: ${rwep_score}. The organization accepts that current framework controls (NIST 800-53 SA-12 / NIST 800-218 SSDF / ISO 27001:2022 A.8.30 / SOC 2 CC9.2 / PCI DSS 4.0 6.3 / NIS2 Art.21(2)(d) / DORA Art.28 / EU CRA Art.13/14) permit SBOM-as-deliverable compliance over the exposed package surface, that this structural gap is documented in ${exceptd_framework_gap_mapping_ref}, and that the organization's compensating controls during the exception window are: ${compensating_controls}. VEX statement: ${vex_statement} (under_investigation / not_affected / affected). Detection coverage during exception: continuous SBOM-to-CVE correlation, enhanced logging for exploit indicators, KEV-feed integration alerting on new KEV listing for the affected component. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (vendor patch publication, replacement dependency selection, OR ${default_30d_expiry}, whichever is first). Re-evaluation triggers: vendor patch publication, new KEV listing for affected package, active-exploitation indicator fires, new PoC published, OR scheduled expiry."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "all-installed-packages-and-lockfiles",
+      "title": "Full supply-chain inventory and matched-CVE triage",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "kernel-lpe-copy-fail",
+      "title": "Targeted match for CVE-2026-31431 'Copy Fail' (KEV, AI-discovered, deterministic kernel LPE)",
+      "applies_to": { "cve": "CVE-2026-31431" },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": { "escalate": 70, "monitor": 40, "close": 25 }
+        }
+      }
+    },
+    {
+      "id": "ml-supply-chain-aml-t0010",
+      "title": "ATLAS AML.T0010 — ML Supply Chain Compromise",
+      "applies_to": { "atlas_ttp": "AML.T0010" }
+    },
+    {
+      "id": "compromised-model-weight-aml-t0018",
+      "title": "ATLAS AML.T0018 — Compromised model weight",
+      "applies_to": { "atlas_ttp": "AML.T0018" }
+    }
+  ]
+}

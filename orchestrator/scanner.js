@@ -19,11 +19,33 @@ const DATA_DIR = process.env.EXCEPTD_DATA_DIR || path.join(__dirname, '..', 'dat
 
 /**
  * Run all scanners and return consolidated findings.
+ *
+ * DEPRECATED in v0.10.0. This is the pre-seven-phase legacy scanner that
+ * shells out from Node — kept as a safety-net path for non-AI operators.
+ * New code should call the playbook runner instead:
+ *
+ *   const runner = require('../lib/playbook-runner');
+ *   const result = await runner.run('kernel', 'all-catalogued-kernel-cves', agentSubmission);
+ *
+ * The runner emits seven-phase findings (govern through close) with full
+ * GRC closure: CSAF-2.0 evidence bundles, jurisdiction-aware notification
+ * deadlines, auditor-ready exception language, regression schedules.
+ * `exceptd scan` will be removed in v1.0.
+ *
  * @returns {{ timestamp: string, host: object, findings: object[], summary: object }}
  */
 async function scan() {
   const timestamp = new Date().toISOString();
   const findings = [];
+
+  // Deprecation banner — surfaces via stderr so JSON consumers aren't broken.
+  if (process.stderr.isTTY && !process.env.EXCEPTD_SUPPRESS_DEPRECATION) {
+    process.stderr.write(
+      '[scan] DEPRECATION: `exceptd scan` is legacy. Prefer `exceptd plan` + `exceptd run <playbook>` ' +
+      '(seven-phase contract with full GRC closure). See AGENTS.md "Seven-phase playbook contract". ' +
+      'Suppress this notice with EXCEPTD_SUPPRESS_DEPRECATION=1.\n'
+    );
+  }
 
   const host = hostInfo();
   findings.push(...kernelScan());
@@ -33,7 +55,7 @@ async function scan() {
   findings.push(...frameworkScan());
 
   const summary = summarize(findings);
-  return { timestamp, host, findings, summary };
+  return { timestamp, host, findings, summary, _deprecation: 'Use `exceptd plan` + `exceptd run <playbook>` for the seven-phase contract.' };
 }
 
 /**

@@ -1,0 +1,726 @@
+{
+  "_meta": {
+    "id": "crypto",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase PQC-readiness playbook. Inventories OpenSSL/LibreSSL/BoringSSL versions, sshd_config KEX/MAC/cipher suites, TLS 1.3 hybrid X25519+ML-KEM-768 support, certificate store hygiene (algorithm + expiry + cross-signing). Frames HNDL as the present threat surface. Full GRC closure mapping to NIS2/DORA/EU CRA/NIST PQC migration obligations.",
+        "cves_added": [],
+        "framework_gaps_updated": ["nist-800-53-SC-8", "nist-800-53-SC-13", "iso-27001-2022-A.8.24", "iso-27001-2022-A.8.25", "pci-dss-4-3.6", "dora-art9", "nis2-art21-2h"]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "filesystem-read",
+        "description": "Agent must be able to read /etc, system binary directories, and the user's home directory.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "openssl-or-equivalent-present",
+        "description": "At least one TLS library must be present and queryable. If none, the host has no crypto surface this playbook scopes.",
+        "check": "exists_any(['openssl', 'libssl.so*', 'libcrypto.so*']) == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "analyze.blast_radius_score >= 4"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Post-quantum cryptography exposure",
+    "attack_class": "pqc-exposure",
+    "atlas_refs": [],
+    "attack_refs": ["T1040", "T1557", "T1573"],
+    "cve_refs": [],
+    "cwe_refs": ["CWE-327", "CWE-326", "CWE-310"],
+    "d3fend_refs": ["D3-FE", "D3-MENCR"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "pci-dss-4", "nis2", "dora",
+      "uk-caf", "au-ism", "au-essential-8",
+      "sg-mas-trm", "jp-nisc", "in-cert", "ca-osfi-b10",
+      "hipaa", "cmmc", "nerc-cip", "eu-cra"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21(2)(h)",
+          "obligation": "maintain_cryptographic_inventory",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": ["cryptographic_asset_inventory", "pqc_migration_plan", "algorithm_sunset_tracking"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.9",
+          "obligation": "submit_cryptographic_resilience_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": ["cryptographic_resilience_assessment", "key_management_attestation", "pqc_readiness_status"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["confirmed_hndl_exposure", "affected_data_sensitivity_horizon", "interim_mitigation_record"]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "OMB M-23-02",
+          "obligation": "maintain_pqc_migration_inventory",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": ["federal_pqc_inventory", "annual_migration_progress_report"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "fips-140-as-pqc-evidence",
+          "claim": "We use FIPS 140-validated cryptographic modules, therefore our crypto posture is compliant and current.",
+          "fast_detection_test": "FIPS 140-3 validation lists only classical algorithms today (FIPS 203/204/205 add to the catalog but a module's validation cert lists specific algorithm modes). Read the actual FIPS 140-3 certificate for the module — if it lists only AES, RSA, ECDSA, ECDH, SHA-2/3 and no ML-KEM/ML-DSA/SLH-DSA, the module is fully compliant AND fully vulnerable to HNDL. The FIPS sticker tells you nothing about PQC readiness.",
+          "implicated_controls": ["nist-800-53-SC-13", "fips-140-3"]
+        },
+        {
+          "pattern_id": "tls-1-3-as-future-proof",
+          "claim": "We're on TLS 1.3 across the fleet — our transport encryption is modern.",
+          "fast_detection_test": "TLS 1.3 with classical-only key exchange (X25519, P-256, P-384) is HNDL-vulnerable today. Run: openssl s_client -connect <host>:443 -tls1_3 -groups X25519MLKEM768 — if the server does not negotiate the hybrid group, the org is recording-decrypt-later vulnerable regardless of TLS version. Reality: modern TLS version without modern key exchange = theater.",
+          "implicated_controls": ["nist-800-53-SC-8", "iso-27001-2022-A.8.24", "pci-dss-4-4.2.1"]
+        },
+        {
+          "pattern_id": "policy-mentions-pqc",
+          "claim": "Our cryptographic policy mentions post-quantum cryptography migration — we have a PQC program.",
+          "fast_detection_test": "Diff the policy against the cryptographic asset inventory. If the policy names PQC but the inventory lacks per-asset (a) current algorithm, (b) sensitivity horizon, (c) PQC migration target, (d) sunset date for the classical algorithm — the policy is a document, not a program. The inventory is the program; without it the policy is theater.",
+          "implicated_controls": ["nist-800-53-SC-13", "iso-27001-2022-A.8.24", "nis2-art21-2h"]
+        },
+        {
+          "pattern_id": "openssl-version-as-pqc-readiness",
+          "claim": "We're on OpenSSL 3.x, therefore we can support PQC when needed.",
+          "fast_detection_test": "OpenSSL 3.0/3.1/3.2 do not include native ML-KEM. OpenSSL 3.5 ships native ML-KEM/ML-DSA/SLH-DSA. Run: openssl list -kem-algorithms — if ML-KEM-768 (or ML-KEM-512/1024) is absent, the binary cannot negotiate the hybrid group regardless of how recent it sounds. Major-version label without the algorithm in -kem-algorithms = theater.",
+          "implicated_controls": ["nist-800-53-SC-13", "iso-27001-2022-A.8.24"]
+        },
+        {
+          "pattern_id": "ssh-config-modern-without-curve-audit",
+          "claim": "Our sshd_config uses modern KEX algorithms (curve25519-sha256).",
+          "fast_detection_test": "curve25519-sha256 is classical. sntrup761x25519-sha512@openssh.com is the OpenSSH 9.0+ hybrid PQC group. Read sshd -T | grep -i kexalg — if sntrup761x25519 or mlkem768x25519-sha256 is not present in KexAlgorithms, all SSH session keys are HNDL-recordable today.",
+          "implicated_controls": ["nist-800-53-SC-8", "iso-27001-2022-A.8.24"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Mainstream compliance frameworks treat cryptography as algorithm-agnostic policy ('use strong cryptography') and key-management hygiene. NIST 800-53 SC-8 / SC-13 cite FIPS-validated modules without requiring PQC-capable algorithms. ISO 27001:2022 A.8.24 / A.8.25 require cryptographic policy without naming specific algorithms or sunset dates. PCI DSS 4.0 §3.6 / §4.2.1 mandate 'strong cryptography' with no PQC-specific signal. NIS2 Art.21(2)(h) introduces cryptography as an essential measure but defers algorithm specifics. DORA Art.9 names cryptographic resilience but inherits the same gap. The federal cycle is further along: OMB M-23-02 + NSM-10 + CNSA 2.0 establish binding PQC migration timelines for US federal systems through 2030; commercial frameworks have not caught up. ISO 27001:2022 (published 2022, before FIPS 203/204/205 finalization in 2024) is the longest-laggard in our scope — its A.8.24 cryptographic-use control has no PQC language and no published amendment. EU jurisdictions are catching up faster via ENISA guidance, but the binding frameworks remain unchanged.",
+        "lag_score": 180,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-13",
+            "designed_for": "Use of FIPS-validated cryptographic modules.",
+            "insufficient_because": "FIPS validation is a module-level attestation. A FIPS 140-3 validated module is fully compliant with SC-13 and fully vulnerable to HNDL if its validated algorithms are classical only. SC-13 needs an algorithm-currency sub-control referencing FIPS 203/204/205."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-8",
+            "designed_for": "Transmission confidentiality and integrity.",
+            "insufficient_because": "Specifies that transmissions must be cryptographically protected. Does not specify against what threat model. HNDL adversary recording today and decrypting on CRQC date is a current threat that SC-8 in classical-only mode does not address."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.24",
+            "designed_for": "Use of cryptography — policy on cryptographic controls.",
+            "insufficient_because": "Published 2022 before FIPS 203/204/205 finalization. Names no algorithms, no sunset dates, no migration tempo. Compliant policy can be entirely classical."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.25",
+            "designed_for": "Secure development lifecycle.",
+            "insufficient_because": "Does not require crypto-agility — the ability to swap algorithms without re-architecting. Without crypto-agility, PQC migration requires re-engineering, which the control does not surface as a deficiency."
+          },
+          {
+            "framework": "pci-dss-4",
+            "control_id": "3.6 / 4.2.1",
+            "designed_for": "Strong cryptography for cardholder data at rest and in transit.",
+            "insufficient_because": "Defines 'strong cryptography' with current minimums (AES-128, ECC 224-bit). No PQC obligation. A PCI-compliant card processor today is HNDL-vulnerable for any cardholder data with > 10-year retention."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(h)",
+            "designed_for": "Use of cryptography, where appropriate, including encryption of communications.",
+            "insufficient_because": "Names cryptography as essential measure; defers specifics. Permits classical-only posture. Bound only by what regulators eventually publish as guidance."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.9",
+            "designed_for": "ICT systems, protocols and tools — cryptographic resilience.",
+            "insufficient_because": "Names cryptographic resilience but inherits NIS2's gap. Financial-entity HNDL exposure is acute (long-retention financial records) but framework cadence is months behind."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I (essential cybersecurity requirements)",
+            "designed_for": "Cryptography for products with digital elements.",
+            "insufficient_because": "Manufacturer obligation to use 'state-of-the-art' cryptography. 'State-of-the-art' is interpretive; without binding PQC reference, products ship classical-only."
+          }
+        ]
+      },
+      "skill_preload": ["pqc-first", "framework-gap-analysis", "compliance-theater", "global-grc", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "PQC landscape mid-2026: FIPS 203 (ML-KEM), 204 (ML-DSA), 205 (SLH-DSA) finalized 2024-08-13 — production-ready for 21 months. OpenSSL 3.5 (released Q1 2025) ships native ML-KEM/ML-DSA/SLH-DSA; OpenSSH 9.0+ ships sntrup761x25519-sha512 KEX since 2022; Chrome (since v124, 2024) negotiates X25519MLKEM768 with compatible servers. The deployment gap is not technical readiness — it is operator inertia. NSA CNSA 2.0 mandates PQC for NSS by 2030; NIST IR 8547 (draft, 2024) sets the federal transition timeline. EU ENISA's PQC transition mandate is advancing toward binding Member State implementation through 2027-2028. HNDL is operational reality, not a future concern: state-level adversaries are recording encrypted traffic at scale and have been since 2013 (publicly known). Any data with a sensitivity window of 10+ years currently protected by classical asymmetric crypto is decryptable in the 2030s by an adversary that captured the ciphertext today. Aggressive academic CRQC estimates now appear in peer-reviewed cryptanalysis literature in the 5-8 year horizon (from mid-2026), with conservative estimates 12-15 years. Either horizon makes today's classical-only TLS handshakes already-exfiltrated.",
+      "rwep_threshold": {
+        "escalate": 75,
+        "monitor": 45,
+        "close": 25
+      },
+      "framework_lag_declaration": "Every framework in scope is structurally insufficient for HNDL. NIST 800-53 SC-8/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I all permit fully-classical cryptographic posture as 'strong cryptography'. NIST itself is the exception: FIPS 203/204/205 are finalized, NIST IR 8547 is a published migration roadmap, OMB M-23-02 mandates federal PQC inventory — but the 800-53 control catalog is unchanged. ISO 27001:2022 was published before PQC finalization and has no scheduled amendment. PCI Council and EU regulators are publicly aware but have not amended binding controls. Lag = ~180 days behind operational readiness (PQC has been production-ready since 2024-08-13) and 4-8+ years behind the CRQC horizon that drives the harvest-now-decrypt-later attack. Compensating controls (crypto-agility, hybrid algorithms, layered encryption envelopes) must close this gap before SLA-only compliance can be accepted.",
+      "skill_chain": [
+        { "skill": "pqc-first", "purpose": "Enumerate TLS library versions, sshd KEX/MAC/cipher posture, certificate algorithms, OpenSSL kem-algorithms list. Test for ML-KEM-768/ML-DSA/SLH-DSA availability and configuration.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map each detected classical-only configuration to the specific framework controls that permit it and the operational threat that exploits it.", "required": true },
+        { "skill": "compliance-theater", "purpose": "Run the five theater tests in govern.theater_fingerprints; emit verdict for each.", "required": true },
+        { "skill": "global-grc", "purpose": "Cross-walk findings to per-jurisdiction obligations and notification clocks.", "skip_if": "jurisdiction_obligations.length == 0", "required": false },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language for assets that cannot reach hybrid PQC in this cycle.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 21000,
+        "breakdown": {
+          "govern": 2800,
+          "direct": 1600,
+          "look": 2400,
+          "detect": 3000,
+          "analyze": 4800,
+          "validate": 3800,
+          "close": 2600
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "openssl-version",
+          "type": "process_list",
+          "source": "openssl version -a",
+          "description": "OpenSSL full version, build info, FIPS mode. Required to determine ML-KEM availability.",
+          "required": true,
+          "air_gap_alternative": "If openssl(1) absent, read libssl.so.* and libcrypto.so.* dynamic library version strings."
+        },
+        {
+          "id": "openssl-kem-algorithms",
+          "type": "process_list",
+          "source": "openssl list -kem-algorithms 2>/dev/null AND openssl list -signature-algorithms 2>/dev/null AND openssl list -kem-algorithms -provider oqsprovider 2>/dev/null",
+          "description": "Available KEMs and signature algorithms. ML-KEM-768 / ML-DSA / SLH-DSA presence is the binary PQC readiness signal.",
+          "required": true
+        },
+        {
+          "id": "openssl-providers",
+          "type": "process_list",
+          "source": "openssl list -providers 2>/dev/null",
+          "description": "Loaded providers — default, fips, legacy, oqsprovider. Identifies whether liboqs is integrated.",
+          "required": false
+        },
+        {
+          "id": "libssl-libraries",
+          "type": "file_path",
+          "source": "ldconfig -p | grep -E 'libssl|libcrypto|libtls' AND find /usr/lib /usr/local/lib -name 'libssl*' -o -name 'libcrypto*' 2>/dev/null",
+          "description": "Installed TLS libraries — catches non-default OpenSSL builds, vendored libcrypto, LibreSSL, BoringSSL.",
+          "required": false
+        },
+        {
+          "id": "sshd-config-effective",
+          "type": "config_file",
+          "source": "sshd -T 2>/dev/null OR /etc/ssh/sshd_config + included files",
+          "description": "Effective sshd KEX/MAC/cipher posture. Primary detector for SSH-side HNDL exposure.",
+          "required": false,
+          "air_gap_alternative": "If sshd -T unavailable, parse /etc/ssh/sshd_config and walk included configs manually."
+        },
+        {
+          "id": "ssh-version",
+          "type": "process_list",
+          "source": "ssh -V 2>&1",
+          "description": "OpenSSH version. Versions >= 9.0 ship sntrup761x25519-sha512 hybrid KEX.",
+          "required": false
+        },
+        {
+          "id": "tls-server-handshake",
+          "type": "network_capture",
+          "source": "openssl s_client -connect 127.0.0.1:443 -tls1_3 -groups X25519MLKEM768 -servername localhost 2>&1 | head -200 (for each local TLS-serving port)",
+          "description": "Local TLS-serving processes' actual hybrid-group negotiation behavior.",
+          "required": false,
+          "air_gap_alternative": "Read server config (nginx ssl_ecdh_curve, apache SSLOpenSSLConfCmd, Caddy auto, HAProxy ssl-default-bind-curves) statically."
+        },
+        {
+          "id": "certificate-store",
+          "type": "config_file",
+          "source": "find /etc/ssl/certs /etc/pki /usr/local/share/ca-certificates -name '*.pem' -o -name '*.crt' 2>/dev/null AND for each cert: openssl x509 -in <path> -noout -subject -issuer -dates -ext basicConstraints,keyUsage -pubkey | openssl asn1parse",
+          "description": "Certificate store inventory — subject, issuer, validity, public-key algorithm. Identifies classical-only certs in the trust chain.",
+          "required": false
+        },
+        {
+          "id": "host-cert-keys",
+          "type": "config_file",
+          "source": "For each TLS-serving process: locate its server cert + key, run openssl x509/openssl rsa/openssl ec to identify algorithm and key size",
+          "description": "Per-service certificate algorithm — distinguishes RSA-2048 / ECDSA-P256 / Ed25519 / hybrid certs.",
+          "required": false
+        },
+        {
+          "id": "crypto-policy",
+          "type": "config_file",
+          "source": "/etc/crypto-policies/config (RHEL/Fedora) AND update-crypto-policies --show 2>/dev/null AND /etc/ssl/openssl.cnf",
+          "description": "System-wide crypto policy file — RHEL crypto-policies, Debian openssl.cnf, etc.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host_and_locally_terminated_tls",
+        "depth": "standard",
+        "sampling": "single-host point-in-time inventory. Fleet rollout requires per-host execution; centralized PQC inventory required for NIS2 Art.21(2)(h) compliance regardless. Re-collect on every regression_trigger event."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "host has at least one TLS library installed",
+          "if_false": "Host has no transport crypto surface this playbook addresses; return visibility_gap=no_crypto_surface. Note: an IoT/embedded host with bundled-mbedtls would require separate enumeration."
+        },
+        {
+          "assumption": "agent has read access to /etc/ssl, /etc/ssh, system certificate stores",
+          "if_false": "Investigation is unfounded for cert and ssh inventory; downgrade those branches to inconclusive."
+        },
+        {
+          "assumption": "openssl binary is on PATH OR libssl loader is queryable",
+          "if_false": "Fall back to ldconfig + library file inspection; mark openssl-kem-algorithms indeterminate; downgrade PQC readiness confidence."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "openssl-kem-algorithms", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "tls-server-handshake", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "certificate-store", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "sshd-config-effective", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "openssl-version", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "ml-kem-absent",
+          "type": "log_pattern",
+          "value": "openssl list -kem-algorithms does NOT contain ML-KEM-768 (or ML-KEM-512 / ML-KEM-1024)",
+          "description": "Primary detector — TLS library cannot negotiate ML-KEM. Entire stack is classical-only.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "ml-dsa-slh-dsa-absent",
+          "type": "log_pattern",
+          "value": "openssl list -signature-algorithms does NOT contain ML-DSA-44/65/87 AND does NOT contain SLH-DSA-*",
+          "description": "TLS library cannot use PQC signatures. Certificate-chain PQC migration is blocked.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "openssl-pre-3-5",
+          "type": "log_pattern",
+          "value": "openssl version starts with 'OpenSSL 1.', 'OpenSSL 2.', 'OpenSSL 3.0', 'OpenSSL 3.1', 'OpenSSL 3.2', 'OpenSSL 3.3', or 'OpenSSL 3.4'",
+          "description": "Pre-3.5 OpenSSL lacks native ML-KEM. Requires oqsprovider or upgrade.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "sshd-no-pqc-kex",
+          "type": "log_pattern",
+          "value": "sshd -T effective KexAlgorithms does NOT contain sntrup761x25519-sha512@openssh.com AND does NOT contain mlkem768x25519-sha256",
+          "description": "SSH daemon cannot negotiate PQC hybrid KEX. All SSH session keys HNDL-recordable.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1040"
+        },
+        {
+          "id": "tls-no-hybrid-group",
+          "type": "network_pattern",
+          "value": "openssl s_client -groups X25519MLKEM768 fails to negotiate (server returns 'no shared group' or downgrades to X25519)",
+          "description": "Local TLS service cannot negotiate hybrid PQC group. HNDL-recordable handshake.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1040"
+        },
+        {
+          "id": "rsa-2048-cert-long-life",
+          "type": "file_path",
+          "value": "Any cert in trust chain or as host cert uses RSA <= 2048 AND validity period > 10 years (or signs long-retention data)",
+          "description": "Classical RSA cert with sensitivity horizon exceeding CRQC estimate.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "weak-mac-or-cipher",
+          "type": "log_pattern",
+          "value": "sshd MACs contain hmac-sha1, hmac-md5, or *-cbc, OR sshd Ciphers contain 3des-cbc / aes*-cbc / arcfour*",
+          "description": "Weak symmetric or MAC algorithms accepted by sshd.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "no-crypto-inventory",
+          "type": "behavioral_signal",
+          "value": "No /etc/crypto-inventory, no centralized PQC migration tracker, no per-asset cryptography mapping",
+          "description": "NIS2 Art.21(2)(h) requires cryptographic asset inventory. Absence is itself a finding.",
+          "confidence": "high",
+          "deterministic": false
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "ml-kem-absent",
+          "benign_pattern": "Host runs an OpenSSL 3.4 binary with oqsprovider installed and configured — ML-KEM available via provider but not in default list output.",
+          "distinguishing_test": "Re-run with -provider oqsprovider explicitly. If ML-KEM-768 appears, downgrade to medium and note 'provider-dependent PQC availability'."
+        },
+        {
+          "indicator_id": "sshd-no-pqc-kex",
+          "benign_pattern": "OpenSSH server intentionally restricted to a minimal KEX set by hardening policy (e.g. FIPS-only) — operator may have deliberately excluded sntrup761x25519 pending NIST FIPS approval of an OpenSSH PQC KEX combination.",
+          "distinguishing_test": "Check for a documented FIPS-only justification in the sshd config comments or org policy. If present, downgrade to medium and note 'FIPS-restricted, HNDL-accepted-risk' — still requires policy exception."
+        },
+        {
+          "indicator_id": "rsa-2048-cert-long-life",
+          "benign_pattern": "Cert is for a service with explicit short sensitivity-horizon (e.g. ephemeral CI artifact signing rotating monthly), validity is administrative not data-sensitivity.",
+          "distinguishing_test": "Cross-reference the cert's service against the data classification of what it protects. If service handles only ephemeral data with < 1-year retention, downgrade to low."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any deterministic indicator fires AND the host serves or terminates TLS / SSH for production or sensitive data flows. Confirmed HNDL exposure: classical-only crypto + sensitivity horizon exceeding aggressive CRQC estimate (5-8 years).",
+        "inconclusive": "Crypto library version + KEX list captured but the corresponding TLS/SSH services not enumerated (e.g. firewall-restricted local access). Cannot map readiness gap to specific exposed services without further data.",
+        "not_detected": "ML-KEM-768 available in TLS library AND sshd accepts sntrup761x25519-sha512@openssh.com (or mlkem768x25519-sha256) AND all long-retention-sensitivity certs use hybrid (classical+PQC) signatures AND a cryptographic asset inventory exists with sunset dates for classical algorithms."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "ml-kem-absent", "rwep_factor": "active_exploitation", "weight": 25, "notes": "HNDL is operational — state-level recording is documented. Active exploitation in the recording sense, not yet decryption sense." },
+        { "signal_id": "ml-kem-absent", "rwep_factor": "blast_radius", "weight": 25, "notes": "Affects all TLS-protected flows; blast radius proportional to data sensitivity horizon." },
+        { "signal_id": "sshd-no-pqc-kex", "rwep_factor": "blast_radius", "weight": 20, "notes": "SSH session keys = bastion + lateral movement creds + tunneled traffic." },
+        { "signal_id": "rsa-2048-cert-long-life", "rwep_factor": "blast_radius", "weight": 20, "notes": "Certificate chain compromise on CRQC day collapses authentication for long-retention data." },
+        { "signal_id": "openssl-pre-3-5", "rwep_factor": "patch_available", "weight": -10, "notes": "Upgrade path is available; patch_available reduces RWEP." },
+        { "signal_id": "ml-kem-absent", "rwep_factor": "ai_weaponization", "weight": 5, "notes": "AI-accelerated cryptanalysis tooling exists (CRQC simulation), making the CRQC timeline less speculative." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If an adversary records this host's TLS/SSH traffic today and decrypts it on the CRQC day (mid-2030s), what scope of compromise is the host realistically delivering?",
+        "scoring_rubric": [
+          { "condition": "host handles only ephemeral data with < 1-year sensitivity horizon (e.g. transient CI worker, dev sandbox)", "blast_radius_score": 1, "description": "Data is stale by CRQC day; recorded handshake yields nothing valuable." },
+          { "condition": "host handles internal corporate data, 1-3 year sensitivity horizon", "blast_radius_score": 2, "description": "Some recorded data valuable on CRQC day; embarrassment + competitive cost." },
+          { "condition": "host handles personal data (GDPR / HIPAA / PCI), 3-10 year retention", "blast_radius_score": 3, "description": "Recorded PII / PHI / cardholder data decryptable on CRQC day → notification obligations on a delayed clock that the framework does not yet contemplate." },
+          { "condition": "host handles financial transaction logs, long-retention healthcare records, IP/trade secrets, 10-25 year sensitivity", "blast_radius_score": 4, "description": "Massive long-tail decryption event; significant material loss + regulatory action." },
+          { "condition": "host handles classified, state-sensitive, biometric template, or generational sensitivity data (25+ year horizon)", "blast_radius_score": 5, "description": "Strategic compromise on CRQC day; loss is irreversible and category-defining." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Strong cryptography is in use per NIST 800-53 SC-8/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9 — cryptographic controls are operating effectively.",
+        "audit_evidence": "TLS 1.3 deployment evidence, FIPS 140-3 validated module deployment, cryptographic policy document, certificate inventory, key-rotation logs.",
+        "reality_test": "Run: openssl list -kem-algorithms AND openssl s_client -groups X25519MLKEM768 -connect <production_tls_endpoint>:443 AND sshd -T | grep -i kexalg AND for each cert in trust chain with > 10y data-sensitivity-horizon: openssl x509 -in <cert> -text -noout | grep 'Signature Algorithm'. Theater if (a) ML-KEM-768 not available, OR (b) hybrid group not negotiated, OR (c) sshd lacks sntrup761x25519/mlkem768x25519, OR (d) any long-retention cert uses RSA-only or ECDSA-only signature. Each failure constitutes a recordable handshake or signature classical-vulnerable to CRQC adversary.",
+        "theater_verdict_if_gap": "Org demonstrates audit-clean cryptographic posture that is fully HNDL-vulnerable today. Either (a) upgrade to OpenSSL 3.5+ (or install oqsprovider on 3.x) and enable hybrid X25519+ML-KEM-768 as default group, (b) re-issue long-retention certs with hybrid signatures, (c) update sshd_config KexAlgorithms to prefer sntrup761x25519-sha512 / mlkem768x25519-sha256, (d) establish per-asset cryptographic inventory with sunset dates, OR (e) generate a defensible policy exception via policy-exception-gen documenting the HNDL acceptance + crypto-agility roadmap + compensating controls."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-13 — Cryptographic Protection",
+          "actual_gap": "Cites FIPS-validated modules. FIPS 140-3 validation lists specific algorithm modes; modules validated only for AES/RSA/ECDSA pass SC-13 and are HNDL-vulnerable.",
+          "required_control": "Add an SC-13(N) variant requiring algorithm-currency: any data with sensitivity horizon > aggressive-CRQC-estimate (5y) must be protected by FIPS 203/204/205 hybrid algorithms before re-attestation."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-8 — Transmission Confidentiality and Integrity",
+          "actual_gap": "Does not specify against what threat model. Permits classical-only TLS.",
+          "required_control": "Add an SC-8(N) variant explicitly requiring hybrid KEX for production TLS terminations protecting data with > 5y sensitivity horizon."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.24 — Use of cryptography",
+          "actual_gap": "Published 2022 before PQC finalization. Names no algorithms, no sunset dates.",
+          "required_control": "Amendment requiring (a) per-asset cryptographic inventory, (b) sunset dates for classical algorithms tied to data sensitivity horizon, (c) hybrid PQC default for new deployments."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "pci-dss-4",
+          "claimed_control": "§3.6 / §4.2.1 — Strong cryptography",
+          "actual_gap": "'Strong cryptography' defined with classical minimums. No PQC obligation for long-retention cardholder data.",
+          "required_control": "Update 'strong cryptography' definition to include FIPS 203/204/205 hybrid mandatory for cardholder data with retention > 5 years."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(h) — Use of cryptography",
+          "actual_gap": "Names cryptography as essential measure without algorithmic specifics.",
+          "required_control": "Implementing acts to bind 'appropriate cryptography' to NIST PQC standards for essential entities with long-retention sensitive data."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "dora",
+          "claimed_control": "Art.9 — ICT systems, protocols and tools",
+          "actual_gap": "Cryptographic-resilience language inherits NIS2 gap.",
+          "required_control": "RTS/ITS requiring financial-entity cryptographic inventory with PQC migration timeline. Financial records sensitivity horizon = max(regulatory retention, customer lifetime); both exceed CRQC."
+        },
+        {
+          "finding_id": "pqc-exposure-detected",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I — Essential cybersecurity requirements",
+          "actual_gap": "'State-of-the-art' cryptography is interpretive.",
+          "required_control": "Implementing acts binding 'state-of-the-art' to NIST PQC for products with > 5-year operational life."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "blast_radius_score >= 4 AND ml-kem-absent == true", "action": "raise_severity" },
+        { "condition": "rwep >= 75 AND data_sensitivity_horizon_years >= 10", "action": "page_on_call" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "framework" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "openssl-upgrade-to-3-5",
+          "description": "Upgrade OpenSSL to >= 3.5 (or install oqsprovider on 3.x). Enable ML-KEM-768 in default TLS groups.",
+          "preconditions": ["distro_package_for_openssl_3_5_available == true OR oqsprovider_packageable == true", "system_libssl_upgrade_safe == true"],
+          "priority": 1,
+          "compensating_controls": ["pin classical-only group fallback for legacy peers via per-service override"],
+          "estimated_time_hours": 3
+        },
+        {
+          "id": "enable-hybrid-tls-groups",
+          "description": "Configure each TLS-serving process to prefer X25519MLKEM768 (or X25519Kyber768Draft00 if oqsprovider). Set ssl_ecdh_curve nginx / SSLOpenSSLConfCmd apache / ssl-default-bind-curves haproxy.",
+          "preconditions": ["openssl_supports_ml_kem == true", "ops_authorization_for_service_restart == true"],
+          "priority": 2,
+          "compensating_controls": ["client_compat_canary_for_each_service", "monitoring_for_negotiation_failures"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "ssh-add-hybrid-kex",
+          "description": "Update sshd_config KexAlgorithms to prepend sntrup761x25519-sha512@openssh.com (and mlkem768x25519-sha256 on OpenSSH >= 9.6).",
+          "preconditions": ["openssh_>=_9_0", "operator_authorized_for_sshd_change == true"],
+          "priority": 3,
+          "compensating_controls": ["bastion_session_recording_for_legacy_kex_fallback", "monitoring_for_kex_negotiation_downgrades"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "reissue-long-life-certs-hybrid",
+          "description": "For every cert with > 10-year data-sensitivity horizon: re-issue with hybrid signature (ML-DSA or SLH-DSA + ECDSA) using publicly-trusted CA hybrid root or internal CA with hybrid cross-signing.",
+          "preconditions": ["ca_supports_hybrid_signatures == true OR internal_ca_can_be_extended == true"],
+          "priority": 4,
+          "compensating_controls": ["legacy_chain_for_pre-PQC_client_compat", "transparency_log_entries_for_hybrid_certs"],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "establish-crypto-inventory",
+          "description": "Build a per-asset cryptographic inventory with sensitivity horizon, current algorithm, PQC migration target, sunset date. Satisfies NIS2 Art.21(2)(h) maintenance obligation.",
+          "preconditions": ["asset_inventory_baseline_exists == true"],
+          "priority": 5,
+          "compensating_controls": [],
+          "estimated_time_hours": 40
+        },
+        {
+          "id": "policy-exception",
+          "description": "If a specific asset cannot reach hybrid PQC in this cycle (legacy hardware, embedded HSM without PQC firmware, vendor SaaS): generate auditor-ready policy exception with crypto-agility roadmap.",
+          "preconditions": ["remediation_paths[1..5] blocked for the specific asset", "ciso_acceptance_obtainable == true"],
+          "priority": 6,
+          "compensating_controls": ["network_segmentation_to_limit_handshake_exposure", "vpn_pqc_tunnel_overlay", "shortened_retention_for_classical-protected_data"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "ml-kem-in-list",
+          "test": "Run `openssl list -kem-algorithms` post-remediation. Confirm ML-KEM-768 (or 512/1024) is present.",
+          "expected_result": "ML-KEM-768 appears in -kem-algorithms output.",
+          "test_type": "functional"
+        },
+        {
+          "id": "hybrid-tls-negotiation",
+          "test": "Run `openssl s_client -connect <service>:443 -tls1_3 -groups X25519MLKEM768` against each TLS-serving service. Confirm hybrid group is negotiated.",
+          "expected_result": "Connected; negotiated group = X25519MLKEM768 (or org-equivalent hybrid).",
+          "test_type": "functional"
+        },
+        {
+          "id": "ssh-pqc-kex-negotiation",
+          "test": "Run `ssh -vv -o KexAlgorithms=sntrup761x25519-sha512@openssh.com localhost true` (or against bastion). Confirm negotiated KEX is the hybrid PQC value.",
+          "expected_result": "Debug output shows kex: algorithm: sntrup761x25519-sha512@openssh.com (or mlkem768x25519-sha256).",
+          "test_type": "functional"
+        },
+        {
+          "id": "classical-only-negotiation-negative",
+          "test": "Re-run `openssl s_client -groups X25519` (classical only). Confirm service still accepts classical for backward compatibility, but the default group is hybrid.",
+          "expected_result": "Negotiation succeeds; classical group accepted for compat but server-preferred order has hybrid first. Documented in service config.",
+          "test_type": "regression"
+        },
+        {
+          "id": "cert-algorithm-audit",
+          "test": "For each cert protecting long-retention data: `openssl x509 -in <cert> -noout -text | grep -E 'Signature Algorithm|Public Key Algorithm'`. Confirm hybrid signature or ML-DSA/SLH-DSA.",
+          "expected_result": "Long-retention certs report hybrid or PQC signature algorithm.",
+          "test_type": "functional"
+        },
+        {
+          "id": "inventory-completeness",
+          "test": "Open the cryptographic asset inventory. For each asset, confirm fields: current_algorithm, sensitivity_horizon, pqc_migration_target, classical_sunset_date are populated.",
+          "expected_result": "100% field completion for assets in scope.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even with hybrid PQC enabled, legacy peers may downgrade to classical groups during compatibility windows; certain assets (vendor SaaS, embedded HSM, legacy protocols) may not be migratable in this cycle and remain HNDL-recordable.",
+        "why_remains": "PQC migration is multi-year. Hybrid KEX is the only configuration where the encrypted material is safe against the CRQC adversary; classical-fallback paths preserve interop but reopen the recording window. Some assets have no PQC migration path until vendor firmware lands. Crypto-agility (the ability to swap algorithms without re-architecting) is an org-wide investment, not a single fix.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": ["network_segmentation_for_classical-only_assets", "shortened_retention_where_feasible", "transparency_monitoring_of_handshake_negotiation_for_downgrade_detection", "annual_crypto-agility_program_review"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "TLS handshake test results showing hybrid group negotiated on each production TLS endpoint; sshd KEX negotiation showing PQC hybrid; openssl list -kem-algorithms output.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SC-8", "nist-800-53-SC-13", "iso-27001-2022-A.8.24", "pci-dss-4-4.2.1", "nis2-art21-2h", "dora-art9"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after diffs of openssl.cnf, sshd_config, nginx/apache/haproxy ssl config showing hybrid group preference, plus change-management approval reference.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Cryptographic asset inventory snapshot (signed) showing per-asset current algorithm, sensitivity horizon, PQC migration target, classical sunset date.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nis2-art21-2h", "dora-art9", "iso-27001-2022-A.8.24", "us-omb-m-23-02"]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Certificate-store audit report identifying long-retention certs and their signature algorithms before and after hybrid re-issuance.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": ["nist-800-53-SC-12", "iso-27001-2022-A.8.24"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "new_openssh_release == true", "interval": "on_event" },
+        { "condition": "new_openssl_release == true", "interval": "on_event" },
+        { "condition": "FIPS_203_or_204_or_205_amendment", "interval": "on_event" },
+        { "condition": "new_NIST_PQC_standard_published", "interval": "on_event" },
+        { "condition": "quarterly", "interval": "90d" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["scan_report", "config_diff", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Harvest-now-decrypt-later: state-level adversary records classical-encrypted traffic today (TLS handshake, SSH session, signed cert), decrypts on CRQC day in mid-2030s, recovering long-retention sensitive data.",
+          "control_gap": "Frameworks define 'strong cryptography' against classical threat model. SC-8/SC-13, A.8.24, §3.6, Art.21(2)(h), Art.9 all permit classical-only posture as compliant. FIPS validation is a module-level attestation that confirms classical algorithms are correctly implemented; it does not surface algorithmic obsolescence.",
+          "framework_gap": "NIST 800-53 has not amended SC-8/SC-13 with PQC sub-controls despite FIPS 203/204/205 finalization in 2024-08. ISO 27001:2022 (pre-PQC) has no PQC language and no scheduled amendment. PCI Council and EU regulators publicly aware but have not amended binding controls. Lag = ~180 days behind PQC operational readiness and 4-8+ years behind the CRQC horizon.",
+          "new_control_requirement": "Add a 'cryptographic algorithm currency' sub-control across SC-8, SC-13, A.8.24, §3.6, §4.2.1, Art.21(2)(h), Art.9 requiring: (a) per-asset cryptographic inventory with sensitivity horizon, (b) hybrid PQC mandatory for new deployments protecting data with horizon > 5 years, (c) algorithm sunset dates documented per asset, (d) crypto-agility built into design (algorithm swap without re-architecting), (e) annual review against current NIST PQC publication state."
+        },
+        "feeds_back_to_skills": ["pqc-first", "framework-gap-analysis", "compliance-theater", "global-grc", "zeroday-gap-learn"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.21(2)(h) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["cryptographic_asset_inventory", "pqc_migration_plan", "algorithm_sunset_tracking"],
+          "draft_notification": "NIS2 Art.21(2)(h) cryptographic inventory submission: ${entity_name} maintains a cryptographic asset inventory dated ${inventory_date}. PQC migration plan with timelines and per-asset sunset dates is attached. Current state: ${total_assets} cryptographic assets inventoried; ${hybrid_pqc_count} hybrid PQC enabled; ${classical_only_count} classical-only with documented sunset dates. Re-attestation cadence: ${cadence}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.9 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["cryptographic_resilience_assessment", "key_management_attestation", "pqc_readiness_status"],
+          "draft_notification": "DORA Art.9 cryptographic resilience submission: ${entity_name} (financial entity) attests cryptographic resilience per Art.9. PQC readiness: ${pqc_readiness_summary}. Key management: ${km_summary}. HNDL exposure: ${hndl_exposure_summary}; remediation ETA: ${remediation_eta}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["confirmed_hndl_exposure", "affected_data_sensitivity_horizon", "interim_mitigation_record"],
+          "draft_notification": "NIS2 Art.23 24-hour early warning (where applicable): Confirmed HNDL exposure detected on ${affected_systems}. Data sensitivity horizon: ${horizon_years} years. Interim mitigation: ${mitigation_status}. Note: HNDL is a delayed-decryption threat; the breach realisation event is CRQC, not detection. This notification is precautionary."
+        },
+        {
+          "obligation_ref": "US/OMB M-23-02 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["federal_pqc_inventory", "annual_migration_progress_report"],
+          "draft_notification": "OMB M-23-02 annual PQC migration inventory: ${federal_entity} reports ${total_assets} cryptographic assets inventoried, ${hybrid_pqc_count} migrated to PQC, ${migration_eta_summary}. Per CNSA 2.0 binding deadline of 2030, current trajectory: ${on_track_or_off_track}."
+        },
+        {
+          "obligation_ref": "AU/APRA CPS 234 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["materiality_assessment", "remediation_completed_evidence"],
+          "draft_notification": "APRA CPS 234 notification (where remediation deemed material): cryptographic exposure remediation completed for ${affected_systems}. Materiality determination: ${materiality_justification}. Remediation summary: ${remediation_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR vendor_patch_pending == true OR architectural_impossibility == true",
+        "exception_template": {
+          "scope": "Asset(s) ${asset_list} cannot reach hybrid PQC posture within this remediation cycle. Blocking factors: ${blocking_factors} (e.g. legacy HSM firmware lacking PQC, vendor SaaS without PQC support, embedded device firmware end-of-life).",
+          "duration": "until_vendor_patch",
+          "compensating_controls": ["network_segmentation_isolating_classical-only_handshake_from_long-retention_data_flows", "vpn_pqc_tunnel_overlay_for_traffic_to/from_affected_assets", "shortened_retention_policy_for_data_protected_only_by_classical_crypto", "transparency_monitoring_of_handshake_negotiation_alerting_on_downgrade", "annual_crypto-agility_review", "vendor_pqc_roadmap_tracking"],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Cryptographic Protection / Use of Cryptography / Cryptographic Resilience), the organization documents a time-bound risk acceptance for asset(s) ${asset_list} that cannot reach hybrid post-quantum cryptography posture within the current remediation cycle. The accepted risk class is harvest-now-decrypt-later (HNDL): adversaries with traffic-recording capability today may decrypt recorded handshakes on the cryptographically-relevant quantum computer (CRQC) date, currently estimated at 2030-2035 per aggressive academic cryptanalysis and 2035-2040 per conservative industry assessment. The organization accepts that current framework controls (NIST 800-53 SC-8/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I) define 'strong cryptography' against a classical threat model and do not require PQC, that this gap is documented in ${exceptd_framework_gap_mapping_ref}, and that the organization's compensating controls during the exception window are: ${compensating_controls}. Crypto-agility roadmap: ${crypto_agility_roadmap}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (vendor PQC firmware publication, sensitivity-horizon expiry of protected data, OR ${default_180d_expiry}, whichever is first). Re-evaluation triggers: vendor publishes PQC support, NIST issues PQC amendment to 800-53, new CRQC estimate published in peer-reviewed cryptanalysis literature, OR scheduled expiry."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "all-crypto-pqc-readiness",
+      "title": "Full PQC readiness audit across TLS libraries, SSH, certificate store, and cryptographic policy",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "hndl-active-recording-investigation",
+      "title": "HNDL active-recording threat investigation (T1040 / T1557)",
+      "applies_to": { "attack_technique": "T1040" }
+    },
+    {
+      "id": "tls-encrypted-channel-pqc",
+      "title": "T1573 — Encrypted Channel readiness against CRQC adversary",
+      "applies_to": { "attack_technique": "T1573" }
+    }
+  ]
+}

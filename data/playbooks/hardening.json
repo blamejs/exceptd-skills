@@ -1,0 +1,672 @@
+{
+  "_meta": {
+    "id": "hardening",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase Linux hardening posture playbook. Inventories kernel hardening flags (/proc/sys/kernel/*, /proc/cmdline), CPU mitigation status (/sys/devices/system/cpu/vulnerabilities), sysctl posture, sshd_config, sudoers structure, PAM stack, and MAC posture (SELinux/AppArmor). This is the posture corroborator that the kernel playbook references — kernel.json answers 'is the running kernel in a vulnerable affected_versions range?', hardening.json answers 'and even if it is, do the hardening flags actually permit the exploit's primitive?'.",
+        "framework_gaps_updated": ["nist-800-53-CM-6", "nist-800-53-CM-7", "iso-27001-2022-A.8.9", "cmmc-cm-l2-3.4.2", "au-essential-8-application-hardening"]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "linux-platform",
+        "description": "Hardening flags inventoried here are Linux-specific (/proc/sys/kernel/*, SELinux/AppArmor). macOS/Windows hosts skip with platform-unsupported.",
+        "check": "host.platform == 'linux'",
+        "on_fail": "halt"
+      },
+      {
+        "id": "proc-readable",
+        "description": "Agent must have read access to /proc and /sys. Hardened containers with masked /proc cannot be evaluated; defer to container playbook.",
+        "check": "agent_can_read('/proc/sys/kernel/kptr_restrict') == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "kernel",
+        "condition": "always"
+      },
+      {
+        "playbook_id": "runtime",
+        "condition": "finding.severity >= 'high'"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Linux kernel + system hardening posture",
+    "attack_class": "kernel-lpe",
+    "atlas_refs": [],
+    "attack_refs": ["T1068", "T1611", "T1556", "T1098"],
+    "cve_refs": ["CVE-2026-31431", "CVE-2026-43284", "CVE-2026-43500"],
+    "cwe_refs": ["CWE-732", "CWE-269", "CWE-426", "CWE-1188"],
+    "d3fend_refs": ["D3-KBPI", "D3-PA", "D3-EI"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "pci-dss-4", "nis2", "dora",
+      "uk-caf", "au-ism", "au-essential-8", "cmmc"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21",
+          "obligation": "patch_critical",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["hardening_baseline_documented", "drift_remediation_record"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Essential 8 Application Hardening",
+          "obligation": "patch_critical",
+          "window_hours": 720,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["hardening_baseline_documented", "drift_remediation_record"]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "CMMC 2.0 CM.L2-3.4.2",
+          "obligation": "patch_critical",
+          "window_hours": 720,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["baseline_configuration_document", "ssp_section_update"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "cis-benchmark-as-state",
+          "claim": "We follow the CIS Benchmark for $distro → hardening complete.",
+          "fast_detection_test": "Run the CIS Benchmark scanner today and diff against the last attested benchmark run. Drift between attested run and today is the theater margin. If the org cannot produce a benchmark run within the last 90 days OR the diff shows > 5 controls regressed, the attestation is theater.",
+          "implicated_controls": ["nist-800-53-CM-6", "iso-27001-2022-A.8.9", "cmmc-cm-l2-3.4.1"]
+        },
+        {
+          "pattern_id": "selinux-permissive-as-enabled",
+          "claim": "SELinux is enabled.",
+          "fast_detection_test": "Run `getenforce`. 'Enforcing' is real; 'Permissive' is logs-only — the MAC policy is loaded but not blocking. Treat Permissive as the same posture as Disabled for blast-radius purposes; the audit attestation often does not distinguish.",
+          "implicated_controls": ["nist-800-53-AC-3", "iso-27001-2022-A.8.3"]
+        },
+        {
+          "pattern_id": "kptr-restrict-zero-with-kaslr-attested",
+          "claim": "KASLR is enabled, kernel address randomization mitigates kernel LPE primitives.",
+          "fast_detection_test": "Check `cat /proc/sys/kernel/kptr_restrict`. If 0, /proc/kallsyms is world-readable and KASLR is effectively defeated for any local attacker. KASLR-enabled with kptr_restrict=0 is the classic kernel-hardening theater shape.",
+          "implicated_controls": ["nist-800-53-SC-30", "iso-27001-2022-A.8.31"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Hardening frameworks (CIS Benchmarks, DISA STIGs, NIST 800-53 CM-6, ISO 27001 A.8.9, Australian Essential 8 application hardening) treat baseline as a documented-target state. They do not require continuous diff against the live host. The actual attacker primitive — unprivileged userns + unprivileged BPF + KASLR-effectively-disabled (kptr_restrict=0) + SELinux Permissive — is each individually a single sysctl value that drifts on package install / kernel-parameter change / vendor RPM update. Frameworks attest to baseline at audit time; they do not attest between audits. Real-world: hardening drift between annual audits is the dominant kernel-LPE enabler.",
+        "lag_score": 21,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "CM-6",
+            "designed_for": "Configuration settings — baselines documented and deviations managed.",
+            "insufficient_because": "Requires baseline documentation and deviation management process; does not require continuous attestation. Permits long drift windows between formal reviews. Combined with infrequent audit cadence, drift between attested state and live state can exceed compliance windows."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "CM-7(5)",
+            "designed_for": "Whitelisting-style authorized software / functionality enforcement.",
+            "insufficient_because": "Names application-layer least functionality, not kernel-layer hardening flag enforcement. Does not contemplate sysctl drift as a CM-7 issue."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.9",
+            "designed_for": "Configuration management — secure configuration of systems including hardware and software.",
+            "insufficient_because": "Same as CM-6 — baseline + change management satisfies the auditor without requiring continuous attestation of the specific kernel hardening flags that determine LPE exploitability."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Application Hardening / OS Hardening",
+            "designed_for": "Hardening application + OS with documented baseline.",
+            "insufficient_because": "Maturity Level 1-3 are progressive but each accepts attestation evidence at the time of assessment. No real-time drift requirement at any maturity level."
+          }
+        ]
+      },
+      "skill_preload": ["kernel-lpe-triage", "security-maturity-tiers", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Kernel LPE class of 2026 is exquisitely sensitive to hardening posture. CVE-2026-31431 'Copy Fail' (KEV 2026-03-15) requires unprivileged user namespaces to be enabled — `kernel.unprivileged_userns_clone = 1` is the gating flag. Distros differ on the default: Debian 12 ships it 0, Ubuntu 24.04 ships it 1, RHEL 9 ships it 0 unless explicitly enabled. Similarly, CVE-2026-43284 / CVE-2026-43500 chain through unprivileged BPF primitives — `kernel.unprivileged_bpf_disabled = 0` is the gating flag. SELinux in Enforcing mode breaks the standard exploitation chain for several LPE classes; SELinux in Permissive provides no mitigation, only logging. MAC posture is therefore decisive for blast-radius scoring even when kernel version is technically vulnerable. The combination matters: vulnerable kernel + permissive MAC + relaxed hardening flags = exploitable; vulnerable kernel + enforcing MAC + tight hardening flags = primitive broken even pre-patch.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST CM-6, ISO A.8.9, Essential 8 OS Hardening, CMMC CM.L2-3.4.1/2 all permit baseline + change-management evidence without requiring continuous attestation of the specific kernel hardening flags (kptr_restrict, unprivileged_userns_clone, unprivileged_bpf_disabled, yama.ptrace_scope, dmesg_restrict, kernel.lockdown, MAC enforcement mode) that determine whether a vulnerable kernel is actually exploitable. Gap = ~21 days at typical orgs between drift event and review. For environments using GitOps-deployed kernel parameters, drift can occur faster than monitoring catches.",
+      "skill_chain": [
+        { "skill": "kernel-lpe-triage", "purpose": "Identify which hardening flags gate exploitation of catalogued LPE CVEs; map flag state to per-CVE exploitability.", "required": true },
+        { "skill": "security-maturity-tiers", "purpose": "Score current hardening posture against tier model; identify gaps to next tier.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map hardening drift findings to which CM-6 / A.8.9 / Essential 8 controls were attested-but-drifted.", "required": true },
+        { "skill": "compliance-theater", "purpose": "Run the theater test on the org's CIS/STIG/Essential 8 attestation.", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language for hardening flags that cannot be tightened (e.g. unprivileged_userns_clone needed for legitimate container workloads).", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 19000,
+        "breakdown": {
+          "govern": 2400,
+          "direct": 1600,
+          "look": 2000,
+          "detect": 2800,
+          "analyze": 4200,
+          "validate": 3600,
+          "close": 2400
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "sysctl-kernel-hardening",
+          "type": "config_file",
+          "source": "sysctl -a 2>/dev/null | grep -E '^(kernel\\.(kptr_restrict|unprivileged_userns_clone|unprivileged_bpf_disabled|yama\\.ptrace_scope|dmesg_restrict|kexec_load_disabled|modules_disabled|sysrq|panic_on_oops|randomize_va_space|core_uses_pid|perf_event_paranoid)|net\\.ipv4\\.(conf\\.all\\.(rp_filter|accept_source_route|send_redirects)|tcp_syncookies)|fs\\.(protected_(hardlinks|symlinks|fifos|regular)|suid_dumpable))'",
+          "description": "Core kernel + network + filesystem hardening sysctl flags. These are the primitives gating most catalogued kernel LPE classes.",
+          "required": true,
+          "air_gap_alternative": "Read /proc/sys/* hierarchy directly (e.g. cat /proc/sys/kernel/kptr_restrict)."
+        },
+        {
+          "id": "kernel-cmdline",
+          "type": "config_file",
+          "source": "cat /proc/cmdline",
+          "description": "Boot-time kernel parameters. nokaslr, init_on_alloc=0, slab_nomerge, vsyscall, mitigations=off — each materially changes exploitability.",
+          "required": true
+        },
+        {
+          "id": "cpu-vulnerabilities",
+          "type": "config_file",
+          "source": "for f in /sys/devices/system/cpu/vulnerabilities/*; do echo \"$f: $(cat $f)\"; done",
+          "description": "Distro-reported CPU mitigation status per known vulnerability class (Spectre v1/v2, Meltdown, MDS, L1TF, Retbleed, Downfall, GDS, RFDS, Reptar).",
+          "required": true,
+          "air_gap_alternative": "If sysfs unavailable, parse `dmesg | grep -i 'vulnerability\\|mitigation'`."
+        },
+        {
+          "id": "kernel-lockdown",
+          "type": "config_file",
+          "source": "cat /sys/kernel/security/lockdown 2>/dev/null",
+          "description": "Kernel lockdown mode (none / integrity / confidentiality). Integrity mode blocks several kernel-modification LPE primitives; confidentiality also blocks /dev/mem-style reads.",
+          "required": false,
+          "air_gap_alternative": "Check /proc/cmdline for `lockdown=` parameter."
+        },
+        {
+          "id": "selinux-state",
+          "type": "config_file",
+          "source": "getenforce 2>/dev/null; sestatus 2>/dev/null",
+          "description": "SELinux mode: Enforcing | Permissive | Disabled. Critical for MAC posture scoring.",
+          "required": false,
+          "air_gap_alternative": "cat /sys/fs/selinux/enforce → 1 means Enforcing, 0 Permissive; absence means Disabled or AppArmor."
+        },
+        {
+          "id": "apparmor-state",
+          "type": "config_file",
+          "source": "aa-status 2>/dev/null; cat /sys/kernel/security/apparmor/profiles 2>/dev/null",
+          "description": "AppArmor profile load + enforce status. Profiles in 'complain' mode are equivalent to SELinux Permissive — logs-only.",
+          "required": false
+        },
+        {
+          "id": "sshd-config",
+          "type": "config_file",
+          "source": "sshd -T 2>/dev/null || cat /etc/ssh/sshd_config",
+          "description": "Effective sshd configuration. PermitRootLogin, PasswordAuthentication, KbdInteractiveAuthentication, MaxAuthTries, AllowUsers/AllowGroups, kex algorithms, ciphers, MACs.",
+          "required": true
+        },
+        {
+          "id": "sudoers-structure",
+          "type": "config_file",
+          "source": "cat /etc/sudoers; ls -la /etc/sudoers.d/; for f in /etc/sudoers.d/*; do echo \"--- $f ---\"; cat $f; done",
+          "description": "Sudoers configuration. Defaults requiretty / use_pty / lecture / log_input / log_output / passwd_timeout values; per-user/group rules.",
+          "required": true
+        },
+        {
+          "id": "pam-stack",
+          "type": "config_file",
+          "source": "ls /etc/pam.d/; cat /etc/pam.d/system-auth /etc/pam.d/common-auth /etc/pam.d/common-password 2>/dev/null",
+          "description": "PAM authentication stack. pam_unix minlen / remember / sha512 / nullok presence, pam_faillock / pam_tally2 presence, pam_pwquality settings.",
+          "required": false
+        },
+        {
+          "id": "audit-rules",
+          "type": "config_file",
+          "source": "auditctl -l 2>/dev/null; cat /etc/audit/audit.rules /etc/audit/rules.d/*.rules 2>/dev/null",
+          "description": "Linux audit subsystem rules. Required to corroborate that hardening + drift detection has audit coverage.",
+          "required": false
+        },
+        {
+          "id": "umask-defaults",
+          "type": "config_file",
+          "source": "grep -h '^UMASK\\|^umask' /etc/login.defs /etc/profile /etc/bash.bashrc /etc/profile.d/*.sh 2>/dev/null",
+          "description": "Default umask. 022 is permissive default; 027 or 077 is hardened. Matters for world-readable secrets and credential files.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host",
+        "depth": "deep",
+        "sampling": "single-host point-in-time snapshot; this is the corroborator for kernel.json so re-collect on every kernel playbook regression trigger plus monthly"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "host.platform == 'linux'",
+          "if_false": "Skip playbook with visibility_gap=platform_unsupported."
+        },
+        {
+          "assumption": "agent can read /proc/sys/kernel/*, /sys/devices/system/cpu/vulnerabilities/*, /sys/kernel/security/*",
+          "if_false": "Containerized environment with masked /proc/sys. Mark sysctl + lockdown artifacts inconclusive; explicitly note that the container playbook governs the actual hardening posture for this workload."
+        },
+        {
+          "assumption": "host has either SELinux or AppArmor (not neither)",
+          "if_false": "No MAC layer present. Treat as deterministic blast-radius amplifier; mark mac_posture=none."
+        },
+        {
+          "assumption": "sshd is the host's primary remote access daemon",
+          "if_false": "Non-standard remote-access path (e.g. console-only bastion, mosh-only, identity-aware proxy). Mark sshd-config artifact as out-of-scope and note the alternative path."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "sysctl-kernel-hardening", "fallback_action": "escalate_to_human", "confidence_impact": "high" },
+        { "artifact_id": "kernel-cmdline", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "cpu-vulnerabilities", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "kernel-lockdown", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "selinux-state", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "apparmor-state", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "sshd-config", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "audit-rules", "fallback_action": "mark_inconclusive", "confidence_impact": "low" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "kptr-restrict-disabled",
+          "type": "behavioral_signal",
+          "value": "kernel.kptr_restrict == 0",
+          "description": "/proc/kallsyms is world-readable; KASLR is effectively defeated for any local user. Decisive for kernel LPE exploitability.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "unprivileged-userns-enabled",
+          "type": "behavioral_signal",
+          "value": "kernel.unprivileged_userns_clone == 1",
+          "description": "Unprivileged user namespaces enabled. Required primitive for CVE-2026-31431 and userns-class LPEs.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "unprivileged-bpf-allowed",
+          "type": "behavioral_signal",
+          "value": "kernel.unprivileged_bpf_disabled == 0",
+          "description": "Unprivileged BPF allowed. Required primitive for BPF-class LPEs.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "yama-ptrace-permissive",
+          "type": "behavioral_signal",
+          "value": "kernel.yama.ptrace_scope == 0",
+          "description": "Yama ptrace_scope=0 allows any process to ptrace any same-UID process. Credential-theft + privilege-pivot primitive.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1212"
+        },
+        {
+          "id": "kaslr-disabled-at-boot",
+          "type": "log_pattern",
+          "value": "/proc/cmdline contains 'nokaslr' OR 'kaslr=off'",
+          "description": "Boot-time KASLR disabled. Makes catalogued kernel LPEs deterministic.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "mitigations-off",
+          "type": "log_pattern",
+          "value": "/proc/cmdline contains 'mitigations=off'",
+          "description": "Boot-time CPU mitigations disabled. Spectre/Meltdown/MDS/Retbleed/Downfall class becomes exploitable.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "selinux-not-enforcing",
+          "type": "behavioral_signal",
+          "value": "getenforce != 'Enforcing' AND aa-status reports no enforcing profiles",
+          "description": "No MAC enforcement. Several catalogued LPEs that would be blocked by an Enforcing MAC layer are open.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "sshd-permitrootlogin-yes",
+          "type": "log_pattern",
+          "value": "sshd_config effective: PermitRootLogin yes (or 'without-password' on legacy)",
+          "description": "Direct root SSH login enabled. Eliminates the privilege-escalation step.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.003"
+        },
+        {
+          "id": "sshd-password-auth-enabled",
+          "type": "log_pattern",
+          "value": "sshd_config effective: PasswordAuthentication yes AND no MFA via PAM",
+          "description": "Password-only SSH authentication. Credential-spray primitive.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1110.001"
+        },
+        {
+          "id": "core-pid-dumpable",
+          "type": "behavioral_signal",
+          "value": "fs.suid_dumpable >= 1",
+          "description": "SUID binaries can produce core dumps. Credential leakage primitive (cores can contain decrypted secrets in memory).",
+          "confidence": "high",
+          "deterministic": false
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "unprivileged-userns-enabled",
+          "benign_pattern": "Host runs rootless container workloads (Podman, Docker rootless, K8s with userns remapping). Distro default on Ubuntu 24.04 is enabled by design.",
+          "distinguishing_test": "Check whether the host runs unprivileged container workloads (process tree shows podman/docker rootless OR k8s kubelet with userns-mode). If yes, the flag is intentional; emit a 'hardening-by-design-trade-off' finding and require that compensating controls (MAC profile enforced on container runtime, kernel up to date on userns-class CVEs) are in place. If no userns workload is present, the flag is gratuitous attack surface."
+        },
+        {
+          "indicator_id": "unprivileged-bpf-allowed",
+          "benign_pattern": "Host runs observability tooling that requires unprivileged BPF (perf monitoring, eBPF-based APM agents).",
+          "distinguishing_test": "Resolve whether any process has BPF maps open via `bpftool prog list` or `lsof | grep bpf`. If no unprivileged BPF user exists, the flag is gratuitous. If unprivileged BPF is in active use, emit a hardening-trade-off finding and require BPF LSM enforcement as compensating control."
+        },
+        {
+          "indicator_id": "sshd-password-auth-enabled",
+          "benign_pattern": "Bastion host configured for emergency-break-glass operator access with TOTP/U2F via PAM as secondary factor.",
+          "distinguishing_test": "Check PAM stack on /etc/pam.d/sshd for pam_google_authenticator, pam_u2f, pam_oath, or pam_duo. If MFA module is present and required (auth required, not auth sufficient), downgrade to medium and emit a 'password+MFA' finding rather than 'password-only'."
+        },
+        {
+          "indicator_id": "selinux-not-enforcing",
+          "benign_pattern": "Host runs AppArmor instead of SELinux (Ubuntu/Debian default).",
+          "distinguishing_test": "Check `aa-status` for enforcing profiles. If AppArmor reports enforcing profiles covering the workload's processes, the MAC layer IS active and SELinux absence is benign. If both SELinux is non-enforcing AND AppArmor has no enforcing profiles, the host has no MAC enforcement."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic hardening-drift indicator fires (kptr-restrict-disabled, kaslr-disabled-at-boot, mitigations-off, sshd-permitrootlogin-yes) OR two or more high-confidence indicators fire AND the kernel playbook reports kver-in-affected-range for any catalogued LPE.",
+        "inconclusive": "/proc/sys read access masked or partial (container, hardened OS); cannot evaluate the gating flags. Distinguish 'hardening unknown' from 'hardening present' explicitly.",
+        "not_detected": "All required sysctl flags collected AND posture matches Essential 8 ML3 or CIS Level 2 baseline AND MAC layer is Enforcing AND no boot-time mitigation overrides are set."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "kptr-restrict-disabled", "rwep_factor": "blast_radius", "weight": 15, "notes": "Decisive for kernel LPE exploitability; multiplies impact of any matched kernel CVE." },
+        { "signal_id": "unprivileged-userns-enabled", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Gates CVE-2026-31431 exploitability; full weight when paired with vulnerable kernel." },
+        { "signal_id": "unprivileged-bpf-allowed", "rwep_factor": "active_exploitation", "weight": 15, "notes": "Gates BPF-class LPE exploitability." },
+        { "signal_id": "yama-ptrace-permissive", "rwep_factor": "blast_radius", "weight": 10, "notes": "Credential-theft primitive; blast radius amplifier rather than direct LPE." },
+        { "signal_id": "kaslr-disabled-at-boot", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Makes kernel LPEs deterministic; full weight." },
+        { "signal_id": "mitigations-off", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Re-opens CPU side-channel LPE classes; full weight." },
+        { "signal_id": "selinux-not-enforcing", "rwep_factor": "blast_radius", "weight": 10, "notes": "Removes a layer that would otherwise break the exploitation chain for several LPEs." },
+        { "signal_id": "sshd-permitrootlogin-yes", "rwep_factor": "blast_radius", "weight": 15, "notes": "Removes the LPE step entirely if credential is obtained." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the inventoried hardening posture, what is the realistic delta between 'kernel CVE matched' and 'kernel CVE actually exploitable on this host'?",
+        "scoring_rubric": [
+          { "condition": "All deterministic hardening flags hardened (kptr_restrict=2, unprivileged_userns_clone=0 or under MAC, unprivileged_bpf_disabled=1, KASLR enabled, mitigations=auto, MAC Enforcing, lockdown=integrity or confidentiality)", "blast_radius_score": 1, "description": "Hardening posture closes most catalogued LPE primitives. Vulnerable kernel does not mean exploitable host." },
+          { "condition": "One deterministic hardening flag drifted from baseline (e.g. unprivileged_userns_clone=1 due to container workload, MAC compensating) OR MAC layer compensates for drift", "blast_radius_score": 2, "description": "Trade-off posture. Drift is intentional and compensated; documented." },
+          { "condition": "Two or more deterministic hardening flags drifted AND no MAC compensation OR MAC in Permissive mode", "blast_radius_score": 3, "description": "Drift not compensated. Vulnerable kernel + this posture = exploitable in principle." },
+          { "condition": "Deterministic drift AND kernel playbook reports matched LPE with active_exploitation=confirmed AND no live-patch", "blast_radius_score": 4, "description": "Operational exposure. Exploitation chain is complete given foothold." },
+          { "condition": "Deterministic drift AND host is k8s control-plane OR identity broker OR has cross-account trust", "blast_radius_score": 5, "description": "Drift on a host whose compromise is org-wide. Identity boundary collapse risk." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org follows CIS Benchmark / DISA STIG / Essential 8 OS Hardening for $distro; CM-6 / A.8.9 baseline configured.",
+        "audit_evidence": "CIS Benchmark scan output dated within the last audit cycle; documented baseline configuration; change-management records for any deviations.",
+        "reality_test": "Run a fresh CIS Benchmark scan (or `oscap` against the appropriate SCAP profile) today on the host AND compare to: (a) the most recent attested benchmark run, (b) the documented deviation list. Compute the count of controls that have regressed since the attestation date. Any regression count > 0 on the deterministic hardening flags (kptr_restrict, unprivileged_userns_clone, unprivileged_bpf_disabled, KASLR, MAC mode) is automatic theater regardless of overall pass percentage. Additionally test whether `getenforce` returns 'Enforcing' (not 'Permissive') and whether AppArmor profiles are 'enforce' (not 'complain').",
+        "theater_verdict_if_gap": "Attested hardening baseline diverges from live posture on at least one flag that gates kernel LPE exploitability. Either (a) re-harden the host to match attestation, (b) re-attest the baseline to match live state AND document compensating MAC/live-patch coverage, OR (c) generate a policy exception with bounded duration + named compensating controls."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "hardening-drift",
+          "framework": "nist-800-53",
+          "claimed_control": "CM-6 — Configuration Settings",
+          "actual_gap": "Permits baseline + change-management without continuous drift monitoring on the specific kernel hardening flags that determine LPE exploitability.",
+          "required_control": "Add a CM-6 sub-control requiring monthly programmatic verification of named kernel hardening flags (sysctl + cmdline + MAC mode) against documented baseline."
+        },
+        {
+          "finding_id": "hardening-drift",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.9 — Configuration Management",
+          "actual_gap": "Baseline + change-management evidence accepted. Does not require continuous attestation of named flags.",
+          "required_control": "Statement of Applicability footnote requiring monthly programmatic baseline diff for kernel hardening flags."
+        },
+        {
+          "finding_id": "hardening-drift",
+          "framework": "au-essential-8",
+          "claimed_control": "OS Hardening / Application Hardening",
+          "actual_gap": "Maturity Level scoring is point-in-time; drift between assessments is not surfaced.",
+          "required_control": "Add a continuous-attestation criterion at ML3 requiring monthly programmatic baseline diff."
+        },
+        {
+          "finding_id": "hardening-drift",
+          "framework": "cmmc",
+          "claimed_control": "CM.L2-3.4.2 — Establish and enforce security configuration settings",
+          "actual_gap": "Same as CM-6 lineage — process-shaped, not state-shaped.",
+          "required_control": "L2 assessment requires monthly programmatic baseline diff evidence for kernel hardening flags as part of the SSP-attached configuration baseline."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "deterministic_hardening_drift == true AND kernel.playbook.reports_matched_lpe == true", "action": "trigger_playbook", "target_playbook": "kernel" },
+        { "condition": "selinux_disabled AND apparmor_no_enforcing_profiles AND blast_radius_score >= 3", "action": "raise_severity" },
+        { "condition": "sshd_permitrootlogin_yes == true", "action": "page_on_call" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "tighten-sysctl",
+          "description": "Apply hardened sysctl values: kptr_restrict=2, unprivileged_userns_clone=0 (or compensate with MAC), unprivileged_bpf_disabled=1, yama.ptrace_scope=2, fs.suid_dumpable=0, dmesg_restrict=1. Persist via /etc/sysctl.d/99-exceptd-hardening.conf.",
+          "preconditions": ["no_workload_requires_relaxed_flag == true OR mac_compensation_in_place == true", "ops_authorization_for_sysctl_changes == true"],
+          "priority": 1,
+          "compensating_controls": ["change-management-ticket", "regression-test-suite-passed"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "tighten-kernel-cmdline",
+          "description": "Remove `nokaslr` / `kaslr=off` / `mitigations=off` from /etc/default/grub or equivalent bootloader config; reboot to apply. Optionally add `lockdown=integrity` for kernels >= 5.4.",
+          "preconditions": ["vendor_supports_lockdown == true OR removing_existing_override == true", "reboot_window_within_72h == true"],
+          "priority": 2,
+          "compensating_controls": ["change-management-ticket", "post-boot-cmdline-verification"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "enable-mac-enforcing",
+          "description": "Move SELinux from Permissive to Enforcing (after audit log review for would-have-denials) OR move AppArmor profiles from 'complain' to 'enforce'.",
+          "preconditions": ["audit_log_review_complete == true", "workload_compatible_with_enforcing == true"],
+          "priority": 1,
+          "compensating_controls": ["audit-log-baseline-captured", "regression-test-suite-passed"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "tighten-sshd",
+          "description": "Set PermitRootLogin no, PasswordAuthentication no (or require MFA via PAM), MaxAuthTries 3, restrict via AllowUsers/AllowGroups. Test from a second session before logging out.",
+          "preconditions": ["non_root_admin_account_exists == true", "ssh_key_or_mfa_already_deployed == true"],
+          "priority": 1,
+          "compensating_controls": ["second-session-verified", "break-glass-console-access-confirmed"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "policy-exception",
+          "description": "If a hardening flag cannot be tightened due to workload requirements (e.g. unprivileged_userns_clone needed for rootless containers), generate an auditor-ready exception with named compensating controls.",
+          "preconditions": ["workload_requires_relaxed_flag == true", "mac_or_alternative_compensation_documented == true"],
+          "priority": 4,
+          "compensating_controls": ["mac-profile-tightened", "enhanced-audit-on-affected-syscall-path", "ciso-acceptance-on-residual-risk"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "sysctl-values-applied",
+          "test": "Run `sysctl kernel.kptr_restrict kernel.unprivileged_userns_clone kernel.unprivileged_bpf_disabled kernel.yama.ptrace_scope fs.suid_dumpable` and compare to hardened baseline.",
+          "expected_result": "All values match hardened baseline.",
+          "test_type": "functional"
+        },
+        {
+          "id": "cmdline-no-overrides",
+          "test": "cat /proc/cmdline. Confirm no 'nokaslr', 'kaslr=off', 'mitigations=off', 'no_vsyscall', or other mitigation-disabling parameters.",
+          "expected_result": "Boot-time kernel parameters free of mitigation overrides.",
+          "test_type": "negative"
+        },
+        {
+          "id": "mac-enforcing",
+          "test": "Run `getenforce` (expect 'Enforcing') OR `aa-status` (expect at least the workload's processes covered by enforcing profiles).",
+          "expected_result": "MAC layer in Enforcing mode covering workload.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sshd-effective-config",
+          "test": "Run `sshd -T` and grep for PermitRootLogin, PasswordAuthentication. Run a from-elsewhere `ssh -o PreferredAuthentications=password root@host` and confirm refusal.",
+          "expected_result": "Root SSH login refused; password-only auth path refused or MFA-gated.",
+          "test_type": "negative"
+        },
+        {
+          "id": "exploit-primitive-blocked",
+          "test": "For each catalogued kernel LPE with a hardening-flag dependency: run the safe-mode primitive-trigger step (no payload) and confirm it returns EPERM.",
+          "expected_result": "Primitive trigger fails on the hardened host; succeeds on a known-unhardened reference host.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "no-workload-regression",
+          "test": "Run the host's standard application test suite. Confirm no regression in workloads after sysctl + MAC + sshd hardening.",
+          "expected_result": "All workload regression tests pass.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Hardened posture still permits a kernel LPE that does not depend on any of the inventoried gating flags. New LPEs may emerge whose primitive is unrelated to userns/BPF/ptrace/kptr.",
+        "why_remains": "Hardening flags are a moving target — new CVEs name new primitives, and a host hardened against today's catalog may be exposed to tomorrow's. The compensating control is regression cadence + new-CVE-in-class trigger, not absolute hardening.",
+        "acceptance_level": "manager",
+        "compensating_controls_in_place": ["mac-enforcing", "monthly-hardening-diff-cadence", "edr-on-syscall-anomalies", "kernel-playbook-tied-to-this-baseline"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full sysctl + cmdline + MAC + sshd_config + lockdown inventory output with timestamps and host identity.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["nist-800-53-CM-6", "iso-27001-2022-A.8.9", "cmmc-cm-l2-3.4.2", "au-essential-8-os-hardening"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Pre/post diff of sysctl values + /etc/default/grub + sshd_config showing remediation applied.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Safe-mode primitive-trigger replays for each catalogued kernel LPE with hardening-flag dependency, showing post-remediation EPERM.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["soc2-cc7.1", "iso-27001-2022-A.8.8"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: hardening baseline hash, scan timestamp, drift count, RWEP at detection, RWEP post-remediation.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2c"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "new_cve_in_class == true", "interval": "on_event" },
+        { "condition": "kernel_upgrade == true", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" },
+        { "condition": "post_major_deploy", "interval": "on_event" },
+        { "condition": "post_distro_release_upgrade", "interval": "on_event" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["scan_report", "config_diff", "exploit_replay_negative", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Kernel LPE chain through $hardening_gate_flag (unprivileged_userns_clone / unprivileged_bpf_disabled / kptr_restrict=0 / KASLR off / MAC Permissive / sshd root login).",
+          "control_gap": "Hardening baseline controls (CM-6, A.8.9, Essential 8 OS Hardening, CMMC CM.L2-3.4.2) accept baseline + change management as evidence and do not require continuous attestation of the specific flags that gate kernel LPE exploitability.",
+          "framework_gap": "Baseline-attestation cadence (annual to quarterly) is structurally slower than drift cadence (per-package-install, per-kernel-parameter-change). Frameworks lag drift by ~21 days at typical orgs.",
+          "new_control_requirement": "Monthly programmatic verification of named kernel hardening flags (sysctl + cmdline + MAC + sshd effective config) against documented baseline. Drift triggers automatic regeneration of the kernel-LPE playbook scope."
+        },
+        "feeds_back_to_skills": ["kernel-lpe-triage", "security-maturity-tiers", "framework-gap-analysis", "compliance-theater"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.21 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["hardening_baseline_documented", "drift_remediation_record"],
+          "draft_notification": "NIS2 Art.21 critical-vulnerability handling record: Hardening drift identified on ${affected_host_count} host(s) gating exploitability of catalogued kernel LPE(s) ${matched_cve_ids}. Drift count: ${drift_count}. Compensating controls in place: ${compensating_controls}. Remediation completed by ${remediation_date}. Evidence: hardening baseline + drift remediation record attached."
+        },
+        {
+          "obligation_ref": "AU/Essential 8 Application Hardening 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["hardening_baseline_documented", "drift_remediation_record"],
+          "draft_notification": "Essential 8 OS Hardening evidence package: Hardening baseline verification on ${affected_host_count} host(s). Maturity Level claimed: ${ml_claimed}. Maturity Level supported by evidence: ${ml_evidence}. Drift remediation record: ${remediation_summary}."
+        },
+        {
+          "obligation_ref": "US/CMMC 2.0 CM.L2-3.4.2 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["baseline_configuration_document", "ssp_section_update"],
+          "draft_notification": "CMMC CM.L2-3.4.2 baseline configuration update: Hardening baseline diff on ${affected_host_count} host(s). SSP section to update: ${ssp_section}. Drift remediation record attached. Continuous-monitoring evidence retained for assessor review."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "workload_requires_relaxed_flag == true AND mac_or_alternative_compensation_documented == true",
+        "exception_template": {
+          "scope": "Hardening flag(s) ${flag_list} relaxed on ${affected_host_count} host(s) due to documented workload requirement (${workload_class}).",
+          "duration": "until_next_audit",
+          "compensating_controls": ["mac-profile-tightened-on-affected-syscall", "enhanced-audit-on-affected-path", "edr-anomaly-detection-on-affected-primitive", "monthly-residual-risk-review"],
+          "risk_acceptance_owner": "manager",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for hardening flag(s) ${flag_list} on ${affected_host_count} host(s). Workload requirement: ${workload_requirement_narrative}. Compensating controls in place: ${compensating_controls}. Residual exposure post-compensation: only those kernel LPEs whose primitive specifically requires the relaxed flag AND whose mitigation path does not exist in MAC policy. Risk accepted by ${manager_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. Detection coverage during the exception window is provided by ${detection_controls}. Re-evaluation triggers: (a) workload no longer requires the relaxed flag, (b) listed expiry date, (c) new exploitation indicator firing on the affected primitive — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "full-hardening-posture",
+      "title": "Full hardening posture inventory — sysctl, cmdline, MAC, sshd, sudoers, PAM",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "kernel-lpe-gating-flags",
+      "title": "Targeted directive — flags that gate catalogued kernel LPE exploitability",
+      "applies_to": { "attack_technique": "T1068" }
+    },
+    {
+      "id": "userns-gating-flag",
+      "title": "Targeted directive — unprivileged_userns_clone state for CVE-2026-31431",
+      "applies_to": { "cve": "CVE-2026-31431" }
+    }
+  ]
+}

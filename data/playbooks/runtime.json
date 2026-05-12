@@ -1,0 +1,649 @@
+{
+  "_meta": {
+    "id": "runtime",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase runtime inventory playbook. Walks listening sockets, sudo rules, SUID/SGID binaries, cron/systemd timers, and process tree on a live Linux host. Cross-references findings against ATLAS T1078/T1543/T1546/T1574 lineage and the catalogued kernel LPE chain. Designed as the live-host corroborator of the kernel playbook — kernel.json answers 'is the running kernel vulnerable?', runtime.json answers 'and what is the attacker actually going to find when they land here?'.",
+        "framework_gaps_updated": ["nist-800-53-CM-7", "nist-800-53-AC-6", "iso-27001-2022-A.8.2", "nis2-art21-2d"]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "linux-platform",
+        "description": "Runtime inventory is Linux-shaped (ss/sudo/find/systemctl). macOS/Windows hosts halt rather than emit misleading evidence.",
+        "check": "host.platform == 'linux'",
+        "on_fail": "halt"
+      },
+      {
+        "id": "exec-allowed",
+        "description": "Host AI must be permitted to execute read-only inventory commands. Read-only scans (no writes, no kill) are required.",
+        "check": "agent_has_command_exec == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "non-destructive",
+        "description": "All commands in this playbook are read-only. If the agent's policy forbids any command in the chain, skip that artifact and downgrade confidence rather than abort.",
+        "check": "agent_policy.allows_read_only_scan == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "kernel",
+        "condition": "always"
+      },
+      {
+        "playbook_id": "hardening",
+        "condition": "always"
+      },
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.severity == 'critical' OR analyze.blast_radius_score >= 3"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Linux runtime attack-surface inventory",
+    "attack_class": "kernel-lpe",
+    "atlas_refs": [],
+    "attack_refs": ["T1078", "T1543", "T1546", "T1574", "T1068", "T1548.003"],
+    "cve_refs": [],
+    "cwe_refs": ["CWE-269", "CWE-732", "CWE-250", "CWE-426"],
+    "d3fend_refs": ["D3-PA", "D3-SCA", "D3-SFA"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "pci-dss-4", "nis2", "dora",
+      "uk-caf", "au-ism", "au-essential-8"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_host_inventory", "lateral_movement_path_assessment", "interim_mitigation_record"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["initial_notification", "ict_third_party_dependencies"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "least-privilege-as-paper-policy",
+          "claim": "Org has a documented least-privilege policy → AC-6 / A.8.2 satisfied.",
+          "fast_detection_test": "Run `sudo -l -n` on a sample of service accounts and `find / -perm -4000 -user root` on representative production hosts. Count SUID binaries that exist beyond the distro baseline AND count sudoers entries with NOPASSWD wildcards. Any non-zero result with a 'least privilege' attestation is theater.",
+          "implicated_controls": ["nist-800-53-AC-6", "iso-27001-2022-A.8.2", "nis2-art21-2i"]
+        },
+        {
+          "pattern_id": "edr-as-runtime-visibility",
+          "claim": "We have EDR deployed → runtime attack surface is monitored (CM-7, A.8.2).",
+          "fast_detection_test": "Ask the EDR vendor for a single SUID-creation alert from the last 90 days. Ask for a single sudoers-modification alert. Most EDRs do not alert on the static attack surface — they alert on execution. Static-surface theater.",
+          "implicated_controls": ["nist-800-53-CM-7", "iso-27001-2022-A.8.7"]
+        },
+        {
+          "pattern_id": "cron-as-someone-elses-problem",
+          "claim": "Scheduled jobs are reviewed quarterly per change-management policy.",
+          "fast_detection_test": "Diff the current /etc/cron.d + /etc/systemd/system/*.timer inventory against the last quarterly review record. Any new entry not in the review = drift. If the org cannot produce the quarterly review file, that is itself the theater verdict.",
+          "implicated_controls": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Runtime attack-surface inventory sits in the gap between CM-7 (least functionality), AC-6 (least privilege), and the vulnerability-handling controls. Frameworks treat 'least privilege' as a policy artifact reviewable annually; they do not require a programmatic enumeration of SUID/SGID/sudoers/cron-timer/listening-socket state on production hosts. NIS2 Art.21(2)(d) names supply-chain security but does not name persistence-vector inventory. ISO 27001:2022 A.8.2 names privileged-access rights but accepts a documented policy as evidence. The actual attacker is enumerating exactly these primitives on landing — the post-foothold reconnaissance phase. Framework lag here is structural: there is no control that names 'enumerate persistence + lateral primitives quarterly'.",
+        "lag_score": 21,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "CM-7",
+            "designed_for": "Least functionality — services and applications limited to required only.",
+            "insufficient_because": "Specifies a policy outcome, not an enumeration cadence. A host with 200 SUID binaries and 40 listening sockets can pass CM-7 attestation if the org documents 'we run only required services'. The auditor cannot disprove that without running this playbook themselves."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "AC-6(7)",
+            "designed_for": "Review of user privileges — at least annually.",
+            "insufficient_because": "Annual cadence permits 364-day drift in sudoers/SUID state. AC-6(7) does not name the specific enumeration tests that distinguish drift from compliant state, so 'we reviewed user privileges' attestation is accepted without programmatic evidence."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.2",
+            "designed_for": "Privileged access rights — managed and reviewed.",
+            "insufficient_because": "Accepts policy + review-record evidence. Does not require live enumeration of sudoers + SUID + cron/timer state. Most certified orgs can produce policy without producing inventory."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(i)",
+            "designed_for": "Access control policies, including privileged accounts.",
+            "insufficient_because": "Policy-shaped, not state-shaped. Permits policy compliance without state-of-host evidence."
+          }
+        ]
+      },
+      "skill_preload": ["kernel-lpe-triage", "attack-surface-pentest", "incident-response-playbook", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Post-foothold reconnaissance is the highest-signal attacker behavior of 2025-2026. Confirmed in IR engagements: attackers who establish initial access (phishing, vuln chain, supply chain) execute a standard enumeration sweep within 60-180 seconds — listening sockets, sudo rules, SUID binaries, cron/systemd timers, process tree — to identify the privilege-escalation path. CVE-2026-31431 'Copy Fail' (KEV, 2026-03-15) and the unprivileged-userns LPE class are not exploitable in isolation; they are chained to runtime primitives this playbook inventories. ATLAS T1078 (Valid Accounts) and ATT&CK T1543 (Create or Modify System Process), T1546 (Event Triggered Execution), T1574 (Hijack Execution Flow) are the named persistence primitives an attacker plants once they have a foothold. Defenders who only patch CVEs without inventorying these primitives are patching the door while leaving the windows open.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 35
+      },
+      "framework_lag_declaration": "NIST CM-7 + AC-6, ISO A.8.2 + A.8.18, and NIS2 Art.21(2)(i) treat least-privilege and least-functionality as policy outcomes reviewable annually. They do not require programmatic enumeration of the specific primitives (sudoers NOPASSWD, non-baseline SUID, world-writable cron, host-mounted systemd services, listening sockets on non-loopback) that attackers use to convert foothold into root. A host can be CM-7/AC-6 compliant on paper while presenting dozens of LPE primitives to a landed attacker. Gap = ~21 days between drift and policy review at typical orgs; for fast-moving environments (containerized + GitOps-deployed), drift accumulates faster than annual review can catch.",
+      "skill_chain": [
+        { "skill": "attack-surface-pentest", "purpose": "Enumerate listening sockets, sudo rules, SUID/SGID binaries, cron/timer entries, process tree. Map each to ATT&CK persistence/PrivEsc TTPs.", "required": true },
+        { "skill": "kernel-lpe-triage", "purpose": "Cross-reference enumerated primitives with the kernel LPE catalog to identify which primitives the running kernel could weaponize.", "required": true },
+        { "skill": "incident-response-playbook", "purpose": "If any deterministic finding (rogue cron, attacker-shaped SUID, unknown systemd timer) fires, hand off to IR-playbook for containment + chain-of-custody.", "skip_if": "detect.indicators.fired.deterministic == false", "required": false },
+        { "skill": "framework-gap-analysis", "purpose": "Map each finding to which framework control claims to cover it and where the gap is.", "required": true },
+        { "skill": "compliance-theater", "purpose": "Run the theater test on the org's least-privilege/least-functionality attestation.", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language for primitives that cannot be removed within the compliance window.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 20000,
+        "breakdown": {
+          "govern": 2400,
+          "direct": 1600,
+          "look": 2400,
+          "detect": 3200,
+          "analyze": 4400,
+          "validate": 3600,
+          "close": 2400
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "listening-sockets",
+          "type": "process_list",
+          "source": "ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null",
+          "description": "Listening TCP sockets with owning PID/program. Required for T1133 (External Remote Services) and T1021 (Remote Services) surface mapping.",
+          "required": true,
+          "air_gap_alternative": "Read /proc/net/tcp and /proc/net/tcp6 directly and resolve socket inodes via /proc/*/fd/*; mark process-name resolution as best-effort."
+        },
+        {
+          "id": "listening-sockets-udp",
+          "type": "process_list",
+          "source": "ss -ulnp 2>/dev/null || netstat -ulnp 2>/dev/null",
+          "description": "Listening UDP sockets. Required to spot rogue services (DNS rebinding, cobalt-strike-style C2 listeners).",
+          "required": false
+        },
+        {
+          "id": "sudo-rules",
+          "type": "config_file",
+          "source": "sudo -l -n 2>/dev/null; cat /etc/sudoers; ls /etc/sudoers.d/",
+          "description": "Sudo rules for current user + visible sudoers files. NOPASSWD entries and wildcards are the primary LPE drivers.",
+          "required": true,
+          "air_gap_alternative": "Read /etc/sudoers + /etc/sudoers.d/* directly if sudo binary unavailable; mark per-user resolution as best-effort."
+        },
+        {
+          "id": "suid-binaries",
+          "type": "process_list",
+          "source": "find / -xdev \\( -perm -4000 -o -perm -2000 \\) -type f 2>/dev/null",
+          "description": "SUID/SGID binaries across local filesystems. Non-baseline entries are LPE primitives (gtfobins-shaped).",
+          "required": true,
+          "air_gap_alternative": "Compare against a snapshotted baseline from /var/lib/exceptd/suid-baseline.txt if present; otherwise emit full inventory as evidence."
+        },
+        {
+          "id": "cron-entries",
+          "type": "config_file",
+          "source": "ls -la /etc/cron.{hourly,daily,weekly,monthly,d}/ /var/spool/cron/ 2>/dev/null; cat /etc/crontab",
+          "description": "System crontab + drop-in cron directories. T1053.003 (Scheduled Task — Cron) primary persistence vector.",
+          "required": true
+        },
+        {
+          "id": "user-cron",
+          "type": "config_file",
+          "source": "for u in $(getent passwd | awk -F: '{print $1}'); do crontab -u $u -l 2>/dev/null && echo \"---$u---\"; done",
+          "description": "Per-user crontabs. Often missed in policy reviews because they're not in /etc.",
+          "required": false
+        },
+        {
+          "id": "systemd-timers",
+          "type": "config_file",
+          "source": "systemctl list-timers --all --no-pager 2>/dev/null; systemctl list-unit-files --type=timer --no-pager 2>/dev/null",
+          "description": "Systemd timers — modern scheduled-task primitive. T1053.006. Often outside legacy cron review scope.",
+          "required": true,
+          "air_gap_alternative": "ls /etc/systemd/system/*.timer /usr/lib/systemd/system/*.timer if systemctl unavailable."
+        },
+        {
+          "id": "systemd-services",
+          "type": "config_file",
+          "source": "systemctl list-unit-files --type=service --state=enabled --no-pager 2>/dev/null",
+          "description": "Enabled systemd services. T1543.002 (Create or Modify System Process — Systemd Service) persistence target.",
+          "required": true
+        },
+        {
+          "id": "process-tree",
+          "type": "process_list",
+          "source": "ps -eo pid,ppid,user,cmd --forest 2>/dev/null || ps auxf",
+          "description": "Process tree with parent linkage. Required to spot rogue PPID 1 (orphan reparented to init = classic implant signal) and unexpected privileged children.",
+          "required": true
+        },
+        {
+          "id": "passwd-shadow-baseline",
+          "type": "config_file",
+          "source": "getent passwd; awk -F: '$3 == 0' /etc/passwd",
+          "description": "Local users + any UID=0 accounts other than root. UID=0 duplicates are T1136.001 (Create Account — Local) persistence.",
+          "required": true
+        },
+        {
+          "id": "world-writable-paths",
+          "type": "config_file",
+          "source": "find /etc /usr/local /opt -xdev -type f -perm -o+w 2>/dev/null | head -200",
+          "description": "World-writable files in trusted path locations. T1574.005 (Hijack Execution Flow — Executable Installer File Permissions Weakness).",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host",
+        "depth": "standard",
+        "sampling": "single-host point-in-time snapshot; re-collect on regression_trigger events (post-deploy, monthly cadence, new-CVE-in-class)"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "host.platform == 'linux'",
+          "if_false": "Skip playbook with visibility_gap=platform_unsupported. macOS launchd and Windows scheduled-task inventory require different artifact shapes."
+        },
+        {
+          "assumption": "agent runs with read access to /etc, /proc, /var/spool/cron, and can list /home/*/.crontab",
+          "if_false": "Downgrade affected artifacts to inconclusive; emit a privilege-scoped visibility gap rather than a clean negative."
+        },
+        {
+          "assumption": "host has a SUID baseline at /var/lib/exceptd/suid-baseline.txt (from prior run or vendor install)",
+          "if_false": "First run on this host. Emit current SUID inventory as the baseline + flag as 'baseline-establishing run'; do not call non-baseline entries findings."
+        },
+        {
+          "assumption": "host is not running inside a hardened container with /proc masked",
+          "if_false": "Many inventory artifacts will be empty by design (gVisor, kata-containers, hardened systemd-nspawn). Mark as container-restricted and refer to container playbook for the meaningful surface."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "listening-sockets", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "sudo-rules", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "suid-binaries", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "cron-entries", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "systemd-timers", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "process-tree", "fallback_action": "escalate_to_human", "confidence_impact": "high" },
+        { "artifact_id": "passwd-shadow-baseline", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "non-baseline-suid",
+          "type": "file_path",
+          "value": "Any SUID/SGID binary not in /var/lib/exceptd/suid-baseline.txt AND not in the distro's official SUID list for the running version",
+          "description": "Non-baseline SUID binary. Could be (a) post-install drift, (b) attacker-planted persistence, or (c) third-party install. All three need a finding.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1548.001"
+        },
+        {
+          "id": "sudoers-nopasswd-wildcard",
+          "type": "log_pattern",
+          "value": "sudoers entry matching regex `NOPASSWD:\\s*(ALL|/[^,]*\\*)` for non-root user",
+          "description": "Wildcard NOPASSWD entry for a non-root user is an LPE primitive. Indistinguishable on the host from an attacker-planted backdoor.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1548.003"
+        },
+        {
+          "id": "duplicate-uid-zero",
+          "type": "log_pattern",
+          "value": "/etc/passwd contains more than one entry with UID 0",
+          "description": "Multiple UID=0 accounts. T1136.001 persistence pattern. Outside legitimate installs.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1136.001"
+        },
+        {
+          "id": "listening-socket-unknown-bind",
+          "type": "network_pattern",
+          "value": "Listening TCP/UDP socket bound to 0.0.0.0 or :: on a port not in the host's documented service inventory",
+          "description": "Unknown external-bound listener. Could be a forgotten test service, a rogue agent, or a C2 listener.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1133"
+        },
+        {
+          "id": "cron-or-timer-outside-policy",
+          "type": "file_path",
+          "value": "Cron entry in /etc/cron.{d,hourly,daily,weekly,monthly} OR systemd timer in /etc/systemd/system/ NOT in the org's scheduled-task inventory",
+          "description": "Scheduled task not in change-management record. T1053.003 / T1053.006 persistence.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1053.003"
+        },
+        {
+          "id": "world-writable-in-trusted-path",
+          "type": "file_path",
+          "value": "World-writable file under /etc, /usr/local/bin, /usr/local/sbin, /opt",
+          "description": "Hijack-execution-flow primitive. Any non-root process can replace the file.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1574.005"
+        },
+        {
+          "id": "orphan-privileged-process",
+          "type": "process_name",
+          "value": "Process running as UID 0 with PPID 1 AND parent != systemd/init AND executable path under /tmp, /dev/shm, /var/tmp, /home",
+          "description": "Privileged orphan in a writable temp path. Common implant shape.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1055"
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "non-baseline-suid",
+          "benign_pattern": "Third-party package installed via vendor RPM/DEB that ships its own SUID helper (e.g. some KVM/Docker tools, /opt/-installed enterprise software).",
+          "distinguishing_test": "For each non-baseline SUID, run `rpm -qf <path>` or `dpkg -S <path>`. If the file is owned by an installed package and the package's vendor public key signed it, downgrade to medium confidence + emit a 'package-owned non-baseline SUID' finding rather than 'unknown SUID'. If the file is owned by no package OR by a package whose signature does not verify, escalate to high."
+        },
+        {
+          "indicator_id": "sudoers-nopasswd-wildcard",
+          "benign_pattern": "Ops automation user (Ansible, Puppet, Chef bootstrap account) with NOPASSWD entry, intended and documented in change management.",
+          "distinguishing_test": "Check whether the user account appears in the org's automation-accounts inventory AND whether the wildcard scope is bounded (e.g. NOPASSWD: /usr/bin/systemctl, not NOPASSWD: ALL). NOPASSWD: ALL with no scope is theater regardless of intent."
+        },
+        {
+          "indicator_id": "listening-socket-unknown-bind",
+          "benign_pattern": "Service discovery / observability agent (Prometheus node-exporter, Datadog agent, Consul) bound to 0.0.0.0 because operator deployed default config.",
+          "distinguishing_test": "Resolve the PID owning the socket back to a package via /proc/<pid>/exe → `rpm -qf` or `dpkg -S`. If owned by a known observability vendor's package AND port matches the vendor's documented default, downgrade to medium and emit a 'wide-bind on observability service' hardening finding instead of a rogue-listener finding."
+        },
+        {
+          "indicator_id": "cron-or-timer-outside-policy",
+          "benign_pattern": "Distro-shipped cron entries (logrotate, mlocate, apt-daily, fwupd-refresh) that are not in the org's user-managed inventory because they were never reviewed.",
+          "distinguishing_test": "Check whether the cron/timer unit file is owned by a distro package (`dpkg -S` / `rpm -qf`). If yes, classify as 'distro-baseline' and only flag if the unit calls an executable under /tmp, /var/tmp, /dev/shm, /home, or a world-writable path."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic indicator fires (sudoers-nopasswd-wildcard, duplicate-uid-zero, world-writable-in-trusted-path, orphan-privileged-process) OR two or more high-confidence indicators fire on the same host.",
+        "inconclusive": "Multiple artifacts marked inconclusive due to access restrictions (containerized host with masked /proc, agent without read access to /etc/sudoers); cannot distinguish clean state from undetectable state.",
+        "not_detected": "All required artifacts captured AND no deterministic indicators fired AND no more than one high-confidence indicator with a confirmed benign distinguishing test."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "non-baseline-suid", "rwep_factor": "active_exploitation", "weight": 15, "notes": "If the SUID maps to a gtfobins-listed primitive, weaponization is one shell command away — full weight." },
+        { "signal_id": "non-baseline-suid", "rwep_factor": "public_poc", "weight": 10, "notes": "Gtfobins itself is the public PoC corpus for the named SUID primitive." },
+        { "signal_id": "sudoers-nopasswd-wildcard", "rwep_factor": "active_exploitation", "weight": 25, "notes": "NOPASSWD wildcard is direct privilege escalation; treat as exploitation-already-confirmed." },
+        { "signal_id": "duplicate-uid-zero", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Duplicate root account is post-compromise persistence — treat as incident-already-occurred." },
+        { "signal_id": "listening-socket-unknown-bind", "rwep_factor": "blast_radius", "weight": 10, "notes": "Each externally-bound unknown listener adds to blast radius." },
+        { "signal_id": "cron-or-timer-outside-policy", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Unrecognized scheduled task with attacker-shape path (/tmp, /dev/shm) = persistence indicator." },
+        { "signal_id": "world-writable-in-trusted-path", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "AI-assisted attackers exploit these reliably; the primitive is trivial to find with grep." },
+        { "signal_id": "orphan-privileged-process", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Implant-shaped process running. Treat as IR trigger." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the inventoried runtime primitives, what is the realistic post-foothold pivot capability from this host?",
+        "scoring_rubric": [
+          { "condition": "No deterministic indicators fired AND no non-baseline SUID AND no NOPASSWD entries beyond bounded automation account", "blast_radius_score": 1, "description": "Foothold buys the attacker a non-privileged shell with no obvious LPE path. Must chain a kernel CVE or 0-day." },
+          { "condition": "One non-baseline SUID OR one unknown external listener fired, on a single-tenant host", "blast_radius_score": 2, "description": "One credible LPE primitive present; lateral pivot still requires separate exploit chain." },
+          { "condition": "NOPASSWD wildcard or non-baseline SUID present AND host mounts shared filesystems OR has SSH key agent forwarding", "blast_radius_score": 3, "description": "Root → credential/keystore theft → adjacent hosts." },
+          { "condition": "Deterministic indicator fired AND host is k8s node OR runs Vault/SSM agent OR has cloud-IMDS access with privileged IAM", "blast_radius_score": 4, "description": "Root → cluster admin or cloud account compromise via inventoried primitives alone, no kernel CVE chain needed." },
+          { "condition": "Multiple deterministic indicators OR orphan-privileged-process fired AND host has cross-account trust OR runs identity-broker / bastion role", "blast_radius_score": 5, "description": "Active compromise already shaped on the host. Identity boundary collapse imminent or in progress." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org enforces least privilege and least functionality per AC-6 / CM-7 / A.8.2 / A.8.18 / NIS2 Art.21(2)(i).",
+        "audit_evidence": "Annual privileged-access review record + change-management-approved service inventory + EDR alerting policy document.",
+        "reality_test": "On a sample of 3-5 production hosts, count: (a) sudoers NOPASSWD entries not bounded to a single command path, (b) SUID binaries that are not owned by a vendor-signed package, (c) listening sockets on 0.0.0.0 with PIDs not in the documented service inventory, (d) cron/timer units calling executables under /tmp, /var/tmp, /dev/shm, /home. If the sum across the sample is > 5, the attestation describes policy that the runtime does not implement.",
+        "theater_verdict_if_gap": "Least-privilege/least-functionality attestation is paper-only. The host inventory diverges materially from the policy. Either (a) shrink the runtime surface to match the attested policy, (b) update the policy + change-management record to match the inventoried reality, OR (c) generate a policy exception via policy-exception-gen documenting the divergence + compensating controls + time-bound remediation plan."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "runtime-attack-surface-inventory",
+          "framework": "nist-800-53",
+          "claimed_control": "CM-7 — Least Functionality",
+          "actual_gap": "Specifies a policy outcome. No required programmatic enumeration of SUID/sudoers/cron/listener state. Accepts attestation as evidence.",
+          "required_control": "Add a CM-7 sub-control requiring quarterly programmatic enumeration of the runtime persistence surface (SUID, sudoers, cron, systemd timers, listening sockets) with diff against documented baseline. Drift requires change-management review."
+        },
+        {
+          "finding_id": "runtime-attack-surface-inventory",
+          "framework": "nist-800-53",
+          "claimed_control": "AC-6(7) — Review of User Privileges",
+          "actual_gap": "Annual cadence permits 364-day drift. No required enumeration tests; review evidence is attestation-shaped.",
+          "required_control": "Require quarterly enumeration of sudoers (NOPASSWD wildcards), SUID/SGID (non-baseline binaries), UID 0 duplicates. Annual policy review remains; quarterly state inventory becomes mandatory."
+        },
+        {
+          "finding_id": "runtime-attack-surface-inventory",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.2 — Privileged Access Rights",
+          "actual_gap": "Permits policy-shaped evidence. Does not require live enumeration of NOPASSWD entries or SUID inventory.",
+          "required_control": "Add a Statement of Applicability footnote requiring quarterly programmatic inventory of the privileged-access surface alongside the policy attestation. ISO does not need to mandate the tooling, but it should mandate the evidence shape."
+        },
+        {
+          "finding_id": "runtime-attack-surface-inventory",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(i) — Access Control Policies",
+          "actual_gap": "Policy-shaped. Permits 'access control policy in place' as evidence without requiring host-state corroboration.",
+          "required_control": "Require essential/important entities to produce host-state corroboration alongside policy documentation when responding to competent-authority requests."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "rwep >= 90 AND deterministic_indicator_fired == true", "action": "page_on_call" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "cred-stores" },
+        { "condition": "orphan-privileged-process fired OR duplicate-uid-zero fired", "action": "trigger_playbook", "target_playbook": "kernel" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "remove-non-baseline-suid",
+          "description": "Strip SUID bit from non-baseline binaries that are not vendor-owned. Document the change; update /var/lib/exceptd/suid-baseline.txt.",
+          "preconditions": ["non_baseline_suid_count > 0", "ops_authorization_for_chmod == true"],
+          "priority": 1,
+          "compensating_controls": ["suid-baseline-tracked", "edr-alerts-on-suid-creation"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "bound-sudo-nopasswd",
+          "description": "Replace NOPASSWD: ALL or NOPASSWD: /path/* entries with bounded command-specific entries (NOPASSWD: /usr/bin/systemctl restart $servicename pattern).",
+          "preconditions": ["sudoers_nopasswd_wildcard_count > 0", "automation_account_owner_authorization == true"],
+          "priority": 1,
+          "compensating_controls": ["sudoers-change-recorded", "automation-account-inventory-updated"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "investigate-implant",
+          "description": "Hand off to IR playbook for any finding matching implant shape (duplicate-uid-zero, orphan-privileged-process, cron-or-timer with attacker-path executable). Do not delete on the live host — preserve for forensics.",
+          "preconditions": ["deterministic_implant_indicator_fired == true"],
+          "priority": 1,
+          "compensating_controls": ["host-isolated-from-network", "memory-snapshot-captured-pre-removal"],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "scope-listening-services",
+          "description": "Re-bind unknown 0.0.0.0 listeners to loopback OR to a documented internal-only interface. Add to documented service inventory if intentional; uninstall if not.",
+          "preconditions": ["unknown_external_listener_count > 0", "service_owner_identified == true"],
+          "priority": 2,
+          "compensating_controls": ["host-firewall-rule-added", "service-inventory-updated"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "policy-exception",
+          "description": "If a finding cannot be remediated within the compliance window, generate an auditor-ready exception with bounded compensating controls.",
+          "preconditions": ["remediation_paths[1..4] blocked OR time_to_remediate > obligation_window"],
+          "priority": 4,
+          "compensating_controls": ["enhanced-edr-monitoring-on-affected-paths", "monthly-residual-risk-review"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "suid-diff-clean",
+          "test": "Re-run `find / -xdev -perm -4000 -type f 2>/dev/null` and diff against /var/lib/exceptd/suid-baseline.txt. Expect zero non-baseline entries.",
+          "expected_result": "Diff is empty OR only contains entries explicitly added to baseline via change management.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sudo-nopasswd-bounded",
+          "test": "Grep /etc/sudoers + /etc/sudoers.d/* for `NOPASSWD:\\s*(ALL|/[^,]*\\*)` patterns. Expect zero matches.",
+          "expected_result": "No unbounded NOPASSWD entries remain; bounded entries (single command path, no wildcards) acceptable.",
+          "test_type": "negative"
+        },
+        {
+          "id": "listener-inventory-aligned",
+          "test": "Diff ss -tlnp output against the documented service inventory. Expect every listener to map to a documented service.",
+          "expected_result": "Every listening socket maps to a documented service OR is bound only to loopback.",
+          "test_type": "functional"
+        },
+        {
+          "id": "cron-timer-aligned",
+          "test": "Diff cron/timer inventory against the org's scheduled-task register. Expect no unrecognized entries.",
+          "expected_result": "Every cron/timer entry is in the scheduled-task register OR is a distro-baseline entry owned by a signed package.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-uid-zero-duplicates",
+          "test": "Run `awk -F: '$3 == 0' /etc/passwd | wc -l`. Expect exactly 1 (root).",
+          "expected_result": "Single UID=0 account.",
+          "test_type": "negative"
+        },
+        {
+          "id": "implant-removed-forensics-complete",
+          "test": "For any implant-shape finding handed to IR: confirm memory + disk forensics complete, implant removed, host re-imaged or formally re-attested.",
+          "expected_result": "IR ticket closed with evidence package; host re-attested.",
+          "test_type": "exploit_replay"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after remediation, the runtime attack surface accumulates drift faster than scheduled review. Any non-routine deploy can introduce a non-baseline SUID, an unintended NOPASSWD entry, or a new listener that the inventory misses until the next cadence run.",
+        "why_remains": "Drift is structural: every package install, ops automation change, or developer ad-hoc fix can change the surface. The compensating control is cadence + EDR + change-management discipline, not absence of drift.",
+        "acceptance_level": "manager",
+        "compensating_controls_in_place": ["quarterly-runtime-inventory", "edr-suid-creation-alerting", "change-management-on-sudoers", "documented-service-inventory"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full inventory output (listeners, sudo rules, SUID list, cron/timer list, process tree, world-writable list) with timestamps and host identity.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["nist-800-53-CM-7", "nist-800-53-AC-6", "iso-27001-2022-A.8.2"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Diff of /etc/sudoers + /etc/sudoers.d/* before and after remediation; SUID baseline before and after.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Change-management ticket references for each sudoers / SUID / listener modification, with approver and approval timestamp.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["soc2-cc8.1", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: host identity, scan timestamp, indicator firing counts, RWEP at detection, RWEP post-remediation.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2c"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "post_major_deploy", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" },
+        { "condition": "new_cve_in_class == true", "interval": "on_event" },
+        { "condition": "ir_incident_on_host == true", "interval": "on_event" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "json",
+        "contents": ["scan_report", "config_diff", "ticket_reference", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Post-foothold reconnaissance via $primitive_class (NOPASSWD wildcard / non-baseline SUID / unknown listener / unsupervised cron/timer / orphan privileged process).",
+          "control_gap": "Least-privilege/least-functionality controls (AC-6, CM-7, A.8.2) are policy-shaped, not state-shaped. They accept attestation evidence and do not require enumeration of the specific runtime primitives an attacker uses post-foothold.",
+          "framework_gap": "NIST + ISO + NIS2 vulnerability + access-control frameworks do not name the persistence-vector inventory as required evidence. Frameworks lag the attacker's standard 60-180 second post-foothold enumeration by an entire annual review cycle.",
+          "new_control_requirement": "Mandate quarterly programmatic enumeration of the runtime persistence surface (sudoers NOPASSWD, SUID baseline diff, listener vs service inventory, cron/timer vs scheduled-task register, UID 0 duplicates, world-writable trusted paths) with documented baseline + drift review."
+        },
+        "feeds_back_to_skills": ["attack-surface-pentest", "framework-gap-analysis", "compliance-theater", "incident-response-playbook"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["affected_host_inventory", "lateral_movement_path_assessment", "interim_mitigation_record"],
+          "draft_notification": "NIS2 Art.23 24-hour early-warning notification: Runtime attack-surface inventory on ${affected_host_count} host(s) revealed deterministic compromise indicators including ${indicator_summary}. Affected host(s) isolated pending IR. Interim mitigation: ${interim_mitigation}. Full assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["initial_notification", "ict_third_party_dependencies"],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — runtime compromise indicators detected on financial-entity host(s). Indicators: ${indicator_summary}. ICT third-party dependencies affected: ${ict_dependencies}. Full classification + impact assessment to follow within statutory windows."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (sudoers_change_requires_vendor_coordination == true AND vendor_eta > obligation_window)",
+        "exception_template": {
+          "scope": "Runtime primitives ${primitive_inventory} on ${affected_host_count} host(s); remediation paths 1-3 blocked or pending vendor coordination.",
+          "duration": "until_vendor_patch",
+          "compensating_controls": ["edr-monitoring-on-affected-primitive", "enhanced-audit-logging-on-affected-binary", "host-firewall-rule-added", "change-management-freeze-on-affected-paths"],
+          "risk_acceptance_owner": "manager",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for runtime attack-surface primitive(s) ${primitive_inventory} on ${affected_host_count} host(s). Primitive class: ${primitive_class}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${manager_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. Detection coverage during the exception window is provided by ${detection_controls}. The exception will be re-evaluated on (a) vendor patch publication, (b) the listed expiry date, OR (c) a new exploitation indicator firing on the affected primitive — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "full-runtime-inventory",
+      "title": "Full Linux runtime attack-surface inventory — listeners, sudo, SUID, cron/timers, process tree",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "post-foothold-imitation",
+      "title": "Targeted directive — run the attacker's standard 60-180s post-foothold enumeration sweep",
+      "applies_to": { "attack_technique": "T1078" }
+    },
+    {
+      "id": "persistence-surface",
+      "title": "Persistence-vector inventory — cron/systemd timer + sudoers + UID 0 duplicates",
+      "applies_to": { "attack_technique": "T1543" }
+    }
+  ]
+}

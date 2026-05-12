@@ -1,0 +1,715 @@
+{
+  "_meta": {
+    "id": "cred-stores",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase credential-store inventory playbook. Inspects ~/.aws/credentials, ~/.kube/config, ~/.config/gcloud/credentials.db, ~/.docker/config.json, ~/.npmrc, ~/.pypirc, GPG keychain. Distinguishes long-lived static credentials from short-lived federated (SSO-issued kube tokens, IAM Identity Center / Workforce Identity / OIDC-issued service account tokens). Reports identity-assurance posture per store with framework-gap mapping.",
+        "framework_gaps_updated": ["nist-800-53-IA-5", "nist-800-63b-aal", "iso-27001-2022-A.5.16", "nis2-art21-2j"]
+      }
+    ],
+    "owner": "@blamejs/identity",
+    "air_gap_mode": true,
+    "preconditions": [
+      {
+        "id": "home-dir-readable",
+        "description": "Playbook inspects files in the current user's $HOME. Agent must be able to read the running user's home directory.",
+        "check": "agent_can_read('$HOME') == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "secrets",
+        "condition": "finding.severity >= 'high'"
+      },
+      {
+        "playbook_id": "runtime",
+        "condition": "finding.severity == 'critical'"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Per-user credential store inventory + identity-assurance posture",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [],
+    "attack_refs": ["T1078", "T1552.001", "T1552.004", "T1528", "T1606.001"],
+    "cve_refs": [],
+    "cwe_refs": ["CWE-522", "CWE-256", "CWE-798", "CWE-732"],
+    "d3fend_refs": ["D3-CAA", "D3-FCR", "D3-ANCI"],
+    "frameworks_in_scope": [
+      "nist-800-53", "iso-27001-2022", "soc2", "pci-dss-4",
+      "nis2", "dora", "uk-caf", "au-ism", "au-essential-8"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["credential_inventory", "exposure_window_estimate", "rotation_status"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["initial_notification", "ict_third_party_dependencies"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["credential_inventory", "data_subject_impact_assessment"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "sso-attested-but-aws-static-keys-live",
+          "claim": "We use SSO / Identity Center / Workforce Identity for all cloud access — no static keys.",
+          "fast_detection_test": "Cat ~/.aws/credentials. If file is non-empty AND contains an [profile] block with aws_access_key_id (not just aws_sso_session-shaped config), SSO attestation is incomplete. Repeat for ~/.config/gcloud/credentials.db (sqlite query for service_account-shaped rows) and ~/.kube/config (token: field with no exec: federated flow).",
+          "implicated_controls": ["nist-800-53-IA-2", "iso-27001-2022-A.5.16", "soc2-cc6.1"]
+        },
+        {
+          "pattern_id": "mfa-attested-but-pat-bypasses",
+          "claim": "MFA is enforced for all developer access.",
+          "fast_detection_test": "GitHub PATs, NPM tokens, PyPI tokens, container registry tokens bypass MFA by design — they are long-lived bearer tokens. Inspect ~/.npmrc, ~/.pypirc, ~/.docker/config.json for raw tokens. Any non-OAuth-flow token is an MFA bypass primitive whose existence undermines the MFA attestation.",
+          "implicated_controls": ["nist-800-53-IA-2(1)", "iso-27001-2022-A.5.17", "pci-dss-4-req-8.4"]
+        },
+        {
+          "pattern_id": "passkey-attested-but-ssh-keys-stale",
+          "claim": "Passkeys / FIDO2 are deployed for all auth — phishing-resistant.",
+          "fast_detection_test": "ls -la ~/.ssh/ and check mtime on private keys. SSH keys older than 12 months on a workstation that's been online during that time are stale credentials that exist outside the FIDO2 trust model. Any FIDO2 / Passkey attestation that does not also address legacy SSH key lifecycle is incomplete.",
+          "implicated_controls": ["nist-800-63b-aal3", "iso-27001-2022-A.5.16", "uk-caf-b2"]
+        },
+        {
+          "pattern_id": "credential-age-not-tracked",
+          "claim": "Credentials are rotated quarterly per policy.",
+          "fast_detection_test": "Stat each credential file: mtime is the upper bound on credential age. If any ~/.aws/credentials or ~/.kube/config or ~/.docker/config.json mtime is > 90 days, the policy is not enforced on this workstation. Compare against the policy text: if policy says 'rotated' but no rotation cadence is technically enforced, it is theater.",
+          "implicated_controls": ["nist-800-53-IA-5(1)", "iso-27001-2022-A.5.17", "pci-dss-4-req-8.3.7"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Credential store inventory sits at the intersection of identity management (NIST 800-63 AAL, NIST 800-53 IA family, ISO A.5.16 / A.5.17, NIS2 Art.21(2)(j)) and key management (PCI Req.8, SOC 2 CC6). Frameworks specify what credentials should be (AAL3 / phishing-resistant / short-lived) but do not require enumeration of what is actually present on developer workstations. The 2025-2026 IR pattern: developer workstation compromise → ~/.aws/credentials harvest → cloud account pivot. Long-lived static keys live alongside SSO-attested identity layers. SSO attestation accepted by auditors; static keys not audited because they are not in the SSO-attested system. This is the dominant gap.",
+        "lag_score": 25,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IA-5(1)",
+            "designed_for": "Password-based authenticator management — complexity, lifetime, history.",
+            "insufficient_because": "Names passwords. Does not name long-lived bearer tokens (PATs, NPM, PyPI, AWS access keys) as authenticators-requiring-management. These tokens are functionally passwords but escape IA-5 specification."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "IA-2",
+            "designed_for": "Identification + authentication of organizational users.",
+            "insufficient_because": "Permits SSO attestation as the answer. Does not require enumeration of credential stores on user devices that may bypass SSO."
+          },
+          {
+            "framework": "nist-800-63b",
+            "control_id": "AAL3",
+            "designed_for": "Authenticator Assurance Level 3 — phishing-resistant authenticators.",
+            "insufficient_because": "Describes target authenticators. Coexistence of AAL3 with AAL1-shaped bearer tokens (long-lived PATs, static cloud keys) is permissible. Auditor evaluates AAL3 presence, not AAL3 exclusivity."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.16",
+            "designed_for": "Identity management — full lifecycle of user identities.",
+            "insufficient_because": "Identity lifecycle but not credential-store enumeration. Permits attested SSO-only narrative while local stores hold parallel non-SSO credentials."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(j)",
+            "designed_for": "Cryptography and access control policies.",
+            "insufficient_because": "Policy shape. Permits 'we use SSO' as evidence without requiring per-device credential-store inventory."
+          }
+        ]
+      },
+      "skill_preload": ["identity-assurance", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Developer workstation credential harvest is the dominant 2025-2026 cloud-account-compromise vector. Mandiant / CrowdStrike Q1 2026 IR data: ~38% of cloud account intrusions traced to harvest of ~/.aws/credentials, ~/.kube/config, ~/.config/gcloud, or ~/.npmrc on a developer endpoint. Stealer malware families (Lumma, Rhadamanthys, Stealc) ship dedicated parsers for these files. AI-coding-assistant agentic flows expand the attack surface: any tool a developer trusts to read their workspace can be prompt-injected to exfiltrate these stores. Identity-assurance posture matters: workstations using exclusively federated short-lived credentials (SSO → STS:AssumeRoleWithWebIdentity → 1h credentials in ~/.aws/cli/cache) deny the harvest its target; workstations with long-lived static credentials provide it directly. Frameworks attest AAL3 + SSO without requiring the workstation-inventory evidence that distinguishes the two postures.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 60,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-63b AAL specs, NIST 800-53 IA-2/IA-5, ISO A.5.16/A.5.17, NIS2 Art.21(2)(j), PCI-DSS Req.8 collectively specify target authenticator properties (phishing-resistant, short-lived, MFA-gated). They do not require enumeration of credentials actually present on developer endpoints. SSO + MFA attestation is accepted as evidence even when local credential stores hold long-lived bearer tokens that bypass SSO. Gap = ~25 days between credential-store drift (new PAT issued, new long-lived AWS key created) and any framework's review cadence.",
+      "skill_chain": [
+        { "skill": "identity-assurance", "purpose": "Score each inventoried credential against AAL/IAL/FAL framework. Distinguish AAL3 short-lived from AAL1 long-lived. Map to NIST 800-63 obligations.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map credential-store findings to which IA/A.5 controls claim to cover them and where the gap is.", "required": true },
+        { "skill": "compliance-theater", "purpose": "Run the theater test on the org's SSO / MFA / passkey attestation against the live credential-store state.", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language for long-lived credentials that cannot be eliminated (e.g. CI bootstrap secrets, legacy SaaS without OIDC).", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 18000,
+        "breakdown": {
+          "govern": 2400,
+          "direct": 1600,
+          "look": 2000,
+          "detect": 2800,
+          "analyze": 4000,
+          "validate": 2800,
+          "close": 2400
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "aws-credentials",
+          "type": "config_file",
+          "source": "~/.aws/credentials (INI); ~/.aws/config (INI)",
+          "description": "AWS CLI credentials + profile config. INI parse: [profile] blocks with aws_access_key_id are static; sso_session = blocks + role_arn with credential_process are federated.",
+          "required": true,
+          "air_gap_alternative": "Stat the file for presence + mtime; parse offline without API calls."
+        },
+        {
+          "id": "aws-sso-cache",
+          "type": "file",
+          "source": "~/.aws/sso/cache/*.json",
+          "description": "AWS SSO session cache. Presence + expiration field indicates federated short-lived credentials in use.",
+          "required": false
+        },
+        {
+          "id": "kube-config",
+          "type": "config_file",
+          "source": "~/.kube/config (YAML)",
+          "description": "Kubernetes client config. users[].user has token: (static), client-certificate (static), OR exec: (dynamic / federated — e.g. aws eks get-token, gke-gcloud-auth-plugin, oidc-login).",
+          "required": true,
+          "air_gap_alternative": "Read the file; parse YAML offline."
+        },
+        {
+          "id": "gcloud-credentials",
+          "type": "config_file",
+          "source": "~/.config/gcloud/credentials.db (SQLite); ~/.config/gcloud/access_tokens.db; ~/.config/gcloud/application_default_credentials.json",
+          "description": "gcloud credential database. SQLite query for type=service_account (static JSON key), type=authorized_user (federated user creds), type=external_account (workload identity / workforce identity / OIDC). ADC JSON shape differentiates service account from federated.",
+          "required": true,
+          "air_gap_alternative": "If sqlite3 unavailable, stat for file presence + mtime; mark token-type as inconclusive."
+        },
+        {
+          "id": "docker-config",
+          "type": "config_file",
+          "source": "~/.docker/config.json",
+          "description": "Docker / OCI registry auth. auths[].auth fields are base64(user:password) — long-lived. credHelpers / credsStore directs to an OS keychain — better. credsStore=ecr-login / gcloud / acr is federated.",
+          "required": true
+        },
+        {
+          "id": "npmrc",
+          "type": "config_file",
+          "source": "~/.npmrc; project-level .npmrc",
+          "description": "NPM registry auth. //registry.npmjs.org/:_authToken=npm_* is a long-lived PAT. //registry.npmjs.org/:_auth=base64(user:pass) is even worse (deprecated).",
+          "required": true
+        },
+        {
+          "id": "pypirc",
+          "type": "config_file",
+          "source": "~/.pypirc",
+          "description": "PyPI upload auth. password = pypi-A... is a long-lived PyPI token.",
+          "required": true
+        },
+        {
+          "id": "gpg-keys",
+          "type": "config_file",
+          "source": "gpg --list-secret-keys --keyid-format=long --with-fingerprint 2>/dev/null",
+          "description": "GPG private key inventory. Each secret key is a long-lived signing credential. Key creation date + expiration + algorithm + bit-strength.",
+          "required": false,
+          "air_gap_alternative": "ls ~/.gnupg/private-keys-v1.d/ for presence count if gpg(1) unavailable; cannot resolve algorithm/strength offline."
+        },
+        {
+          "id": "ssh-keys-inventory",
+          "type": "config_file",
+          "source": "ls -la ~/.ssh/id_* 2>/dev/null; for k in ~/.ssh/id_*; do ssh-keygen -l -f $k 2>/dev/null; done",
+          "description": "SSH private key inventory. Fingerprint + algorithm + bit-strength + file mtime (proxy for credential age).",
+          "required": true
+        },
+        {
+          "id": "ssh-config",
+          "type": "config_file",
+          "source": "~/.ssh/config",
+          "description": "SSH config. ProxyJump / ForwardAgent / CertificateFile settings reveal whether SSH access is bastion-mediated and cert-based (better) vs. raw key (worse).",
+          "required": false
+        },
+        {
+          "id": "keychain-inventory",
+          "type": "config_file",
+          "source": "(linux) secret-tool search * * 2>/dev/null | head -100; (mac, if relevant) security dump-keychain -d ~/Library/Keychains/login.keychain-db 2>/dev/null",
+          "description": "OS keychain summary. Counts and item-class breakdown, not the secret values.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "current_user_home_directory",
+        "depth": "standard",
+        "sampling": "single-user point-in-time snapshot; re-collect on regression triggers (new credential issued, monthly cadence)"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "agent runs as the user whose credential stores are to be inventoried",
+          "if_false": "Cross-user inventory requires root or sudo. Mark per-user-store findings inconclusive unless explicit cross-user authority is documented."
+        },
+        {
+          "assumption": "user is a developer / engineer with non-trivial credential surface",
+          "if_false": "Most stores will be empty/absent. That is itself the desired posture; emit baseline_clean and skip false-positive concerns."
+        },
+        {
+          "assumption": "host platform is linux / mac / wsl (POSIX home-directory layout)",
+          "if_false": "Windows users have %USERPROFILE%\\.aws, %APPDATA%\\gcloud, %APPDATA%\\npm; same conceptual artifacts but different paths."
+        },
+        {
+          "assumption": "agent can call gpg / ssh-keygen / sqlite3",
+          "if_false": "Use air-gap alternatives for each artifact; some structural detail (key algorithm, sqlite-stored token-type) becomes inconclusive."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "aws-credentials", "fallback_action": "mark_inconclusive", "confidence_impact": "high" },
+        { "artifact_id": "kube-config", "fallback_action": "mark_inconclusive", "confidence_impact": "high" },
+        { "artifact_id": "gcloud-credentials", "fallback_action": "mark_inconclusive", "confidence_impact": "high" },
+        { "artifact_id": "docker-config", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "npmrc", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "pypirc", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "gpg-keys", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "ssh-keys-inventory", "fallback_action": "escalate_to_human", "confidence_impact": "high" },
+        { "artifact_id": "keychain-inventory", "fallback_action": "mark_inconclusive", "confidence_impact": "low" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "aws-static-key-present",
+          "type": "log_pattern",
+          "value": "~/.aws/credentials contains a [profile] block with aws_access_key_id = AKIA* AND no sso_session / credential_process",
+          "description": "Long-lived AWS IAM user key. AAL1-equivalent. Static credential.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.001"
+        },
+        {
+          "id": "kube-static-token",
+          "type": "log_pattern",
+          "value": "~/.kube/config users[].user.token: field present AND no exec: federated flow alongside",
+          "description": "Static Kubernetes service-account or admin token. Long-lived bearer. Indistinguishable from a federated kube context that uses cached token unless exec: is also present.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1528"
+        },
+        {
+          "id": "gcp-service-account-json-adc",
+          "type": "log_pattern",
+          "value": "~/.config/gcloud/application_default_credentials.json contains \"type\": \"service_account\"",
+          "description": "ADC pointing at a service-account JSON private key. Long-lived. The recommended posture is type=external_account (workforce identity) or type=authorized_user (federated user creds).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.004"
+        },
+        {
+          "id": "docker-cleartext-auth",
+          "type": "log_pattern",
+          "value": "~/.docker/config.json contains auths[].auth: field with base64(user:password) AND no credHelpers / credsStore for that registry",
+          "description": "Docker registry credentials in cleartext (base64 is not encryption). credHelpers/credsStore would route to OS keychain or cloud-IAM-federated path.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.001"
+        },
+        {
+          "id": "npm-pat-present",
+          "type": "log_pattern",
+          "value": "~/.npmrc contains :_authToken=npm_[A-Za-z0-9]{36,}",
+          "description": "Long-lived NPM Personal Access Token. MFA bypass; publish-capable tokens enable supply-chain attacks.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.001"
+        },
+        {
+          "id": "pypi-token-present",
+          "type": "log_pattern",
+          "value": "~/.pypirc contains password = pypi-[A-Za-z0-9_-]{40,}",
+          "description": "Long-lived PyPI upload token. Same MFA-bypass + supply-chain implications as NPM.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.001"
+        },
+        {
+          "id": "ssh-key-rsa-short-bits",
+          "type": "log_pattern",
+          "value": "ssh-keygen reports RSA key with bit-length < 3072 OR DSA key of any size",
+          "description": "Weak SSH key. RSA-2048 is acceptable but trending out; RSA-1024 / DSA are deprecated. Cryptographic posture issue.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "ssh-key-old",
+          "type": "behavioral_signal",
+          "value": "Any ~/.ssh/id_* file with mtime > 365 days ago",
+          "description": "Stale SSH key. Predates likely org rotation cadence; predates likely AAL/FIDO2 enrollment.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "gpg-key-old-or-weak",
+          "type": "log_pattern",
+          "value": "gpg --list-secret-keys reports a secret key with algorithm DSA OR RSA<3072 OR creation date > 5 years AND no expiration set",
+          "description": "Weak or never-expiring GPG private key. Long-lived signing credential outside any rotation cadence.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "credentials-file-bad-perms",
+          "type": "file_path",
+          "value": "Any of ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.pypirc, ~/.config/gcloud/* with mode != 0600 (and not 0700 for the gcloud directory)",
+          "description": "Permissive permissions on a credential file. Local-user theft primitive.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.004"
+        },
+        {
+          "id": "all-stores-empty-or-federated",
+          "type": "behavioral_signal",
+          "value": "Inventory shows zero static credentials AND every present store uses exec: / sso_session / credsStore / type=external_account (federated paths) OR is empty",
+          "description": "Clean federated posture. AAL3-equivalent. Not a finding; emit as positive evidence.",
+          "confidence": "high",
+          "deterministic": false
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "aws-static-key-present",
+          "benign_pattern": "Profile is a deliberately-isolated break-glass credential stored encrypted at rest with passphrase-on-decrypt (e.g. macOS keychain-wrapped, sops-managed); the user has temporarily decrypted it for use.",
+          "distinguishing_test": "Check whether the credentials file mtime is very recent (< 24h) AND the user has documented break-glass procedure. If yes, downgrade to medium and emit a 'break-glass credential in use' visibility finding rather than 'static credential present'. Persistent presence (mtime > 30d) cannot be distinguished from accidental — hold as deterministic."
+        },
+        {
+          "indicator_id": "kube-static-token",
+          "benign_pattern": "Token field is populated by a federated exec: hook (e.g. some kube clients write the result back to token: for caching). Check whether exec: is also present on the same user entry.",
+          "distinguishing_test": "Parse the kubeconfig: if users[N].user contains BOTH token: AND exec:, the token is exec-refreshable and effectively short-lived. If only token: is present, it is static. Disambiguates by structure alone."
+        },
+        {
+          "indicator_id": "ssh-key-old",
+          "benign_pattern": "Legacy host that still requires RSA key but is on its way to being decommissioned.",
+          "distinguishing_test": "Check ~/.ssh/config for Host stanzas referencing this key as IdentityFile AND check whether those hosts are in a documented decommission inventory. If yes, downgrade to medium + emit 'pending-decommission' finding. Untracked legacy keys hold high confidence."
+        },
+        {
+          "indicator_id": "ssh-key-rsa-short-bits",
+          "benign_pattern": "Yubikey-resident RSA-2048 key (some Yubikey models cap at 2048). Functionally hardware-backed despite short bit-length.",
+          "distinguishing_test": "Check ssh-keygen output: if the key file is a stub referencing a PKCS#11 module (PKCS11Provider in ssh_config or a `# YubiKey` comment) the key is hardware-backed. Hardware backing trumps bit-length for AAL purposes."
+        },
+        {
+          "indicator_id": "npm-pat-present",
+          "benign_pattern": "Read-only PAT scoped to specific package(s) for CI download; cannot publish.",
+          "distinguishing_test": "PAT token type and scope cannot be determined offline in air-gap mode. In air-gap mode, hold high confidence and document as inconclusive. With network, call npm /-/npm/v1/tokens to verify scope."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic indicator fires (static-credential of any provider class OR credentials-file-bad-perms).",
+        "inconclusive": "Files exist but agent cannot read or parse them (different UID, encrypted-at-rest store, sqlite without sqlite3 binary). Distinguish 'static-credential cannot be detected' from 'no static credential present'.",
+        "not_detected": "All credential stores inspected AND no deterministic indicators fired AND all-stores-empty-or-federated fires positively AND all credential files have mode 0600."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "aws-static-key-present", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Stealer malware ships dedicated AWS-credentials parsers. Treat as exploitation-imminent on any compromised endpoint." },
+        { "signal_id": "kube-static-token", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Static kube tokens enable cluster pivot; ATT&CK T1528 in published threat actor playbooks." },
+        { "signal_id": "gcp-service-account-json-adc", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Service account JSON = same risk class as AWS access keys." },
+        { "signal_id": "docker-cleartext-auth", "rwep_factor": "blast_radius", "weight": 15, "notes": "Registry compromise = supply-chain pivot." },
+        { "signal_id": "npm-pat-present", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Publish-capable NPM PAT = supply-chain attack primitive (event-stream, ua-parser-js, chalk classes of incidents)." },
+        { "signal_id": "pypi-token-present", "rwep_factor": "active_exploitation", "weight": 25, "notes": "PyPI publish token = same supply-chain pattern as NPM." },
+        { "signal_id": "ssh-key-rsa-short-bits", "rwep_factor": "ai_weaponization", "weight": 5, "notes": "AI-accelerated cryptanalysis is not yet a practical threat to RSA-2048, but DSA + RSA-1024 cracking is operational." },
+        { "signal_id": "ssh-key-old", "rwep_factor": "blast_radius", "weight": 10, "notes": "Stale key = unknown exposure history." },
+        { "signal_id": "credentials-file-bad-perms", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Permissive perms on a creds file = same-host LPE chains to credential theft." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the inventoried credential stores, what is the realistic blast radius if this endpoint is compromised by stealer malware or a prompt-injected agent?",
+        "scoring_rubric": [
+          { "condition": "All stores empty or federated (all-stores-empty-or-federated fires), all permissions correct, SSH keys ed25519 + recent + agent-mediated", "blast_radius_score": 1, "description": "Endpoint compromise yields no useful long-lived credentials. AAL3-equivalent." },
+          { "condition": "One static credential present in a single bounded scope (e.g. one read-only PAT) AND federated paths exist for all primary providers", "blast_radius_score": 2, "description": "Limited bounded scope from one static credential. Cleanup feasible without org-wide impact." },
+          { "condition": "Multiple static credentials across one provider OR a single static credential with broad scope (admin / wildcard / cross-account-trust)", "blast_radius_score": 3, "description": "Provider-account-level pivot from a single endpoint compromise." },
+          { "condition": "Static credentials across multiple providers (cloud + SCM + registry) OR publish-capable supply-chain token (NPM/PyPI/container) present", "blast_radius_score": 4, "description": "Cross-provider pivot + supply-chain attack primitive." },
+          { "condition": "All of: static cloud admin key + publish-capable supply-chain token + permissive permissions + stale SSH keys", "blast_radius_score": 5, "description": "Maximum endpoint-derived blast radius. Identity boundary collapse from this single compromise." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org enforces SSO + MFA + FIDO2/Passkey for all identity assurance per IA-2 / A.5.16 / AAL3.",
+        "audit_evidence": "Identity Provider configuration documentation; SSO enrollment reports; MFA/FIDO2 enrollment rates.",
+        "reality_test": "Inspect the workstation credential stores. Count: (a) static cloud credentials (~/.aws/credentials AKIA*, ~/.config/gcloud/*.json service_account), (b) static SCM/registry tokens (~/.npmrc, ~/.pypirc, ~/.docker/config.json auths.auth), (c) static kube tokens, (d) SSH keys with mtime > 12 months. Any count > 0 contradicts the AAL3 attestation: the workstation has parallel non-SSO credentials that bypass the entire identity stack. Additionally check whether the IdP's audit logs contain login events for the developer in the last 30 days — if not, the developer is operating exclusively via the local static credentials, the SSO attestation is theater for this user.",
+        "theater_verdict_if_gap": "SSO/MFA/AAL3 attestation describes a posture that local credential stores contradict. Static long-lived credentials exist alongside the attested federated identity layer. Either (a) eliminate static credentials and route all access via SSO + federated short-lived tokens, (b) update attestation to acknowledge the bounded exceptions + name compensating controls (credential vaulting, audit-log monitoring), OR (c) generate a policy exception per scope/duration documenting the gap."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "credential-store-static",
+          "framework": "nist-800-53",
+          "claimed_control": "IA-2 — Identification and Authentication",
+          "actual_gap": "SSO attestation accepted. No required enumeration of bypass credentials present on user endpoints.",
+          "required_control": "Add an IA-2 sub-control requiring quarterly endpoint-credential-store inventory for all users in scope, with documented disposition for any non-federated credentials found."
+        },
+        {
+          "finding_id": "credential-store-static",
+          "framework": "nist-800-53",
+          "claimed_control": "IA-5(1) — Password-Based Authenticator Management",
+          "actual_gap": "Names passwords. Long-lived bearer tokens (PATs, AWS keys, PyPI/NPM tokens) escape the specification despite being functionally passwords.",
+          "required_control": "Extend IA-5 scope to all bearer-token authenticators with the same management requirements: lifetime, rotation, complexity (token strength), inventory."
+        },
+        {
+          "finding_id": "credential-store-static",
+          "framework": "nist-800-63b",
+          "claimed_control": "AAL3 — Phishing-Resistant Authenticator Assurance",
+          "actual_gap": "Names target authenticator. Coexistence with AAL1 bearer tokens not addressed; auditor evaluates AAL3 presence, not AAL3 exclusivity.",
+          "required_control": "Add an 'AAL3-exclusive' criterion that requires no AAL1-equivalent credentials present in scope for users attested as AAL3."
+        },
+        {
+          "finding_id": "credential-store-static",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.16 — Identity Management",
+          "actual_gap": "Identity lifecycle does not require endpoint inventory of parallel credentials.",
+          "required_control": "Statement of Applicability footnote requiring evidence that user endpoints do not hold parallel non-SSO credentials."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "rwep >= 90 AND credential_is_publish_capable == true", "action": "page_on_call" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "secrets" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" },
+        { "condition": "any_static_admin_credential == true", "action": "raise_severity" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "migrate-aws-to-sso",
+          "description": "Replace static aws_access_key_id entries with sso_session profiles using IAM Identity Center (or AWS SSO). Remove old key from ~/.aws/credentials AND deactivate at IAM console.",
+          "preconditions": ["org_has_identity_center == true", "user_enrolled_in_sso == true"],
+          "priority": 1,
+          "compensating_controls": ["iam-key-deactivated", "cloudtrail-monitor-on-old-key-for-residual-use"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "migrate-gcp-to-workforce-identity",
+          "description": "Replace ~/.config/gcloud/application_default_credentials.json service_account with workforce identity (gcloud auth login or workforce-pool federation). Delete the service account key at GCP console.",
+          "preconditions": ["org_has_workforce_identity_pool == true OR user_has_authorized_user_credentials == true"],
+          "priority": 1,
+          "compensating_controls": ["gcp-key-deleted", "gcp-audit-log-monitor-on-old-key"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "migrate-kube-to-oidc",
+          "description": "Replace static token: kubeconfig entries with exec: hooks (oidc-login, aws eks get-token, gke-gcloud-auth-plugin). Revoke old service-account token via kubectl delete secret.",
+          "preconditions": ["cluster_supports_oidc == true OR cluster_is_managed_cloud_k8s == true"],
+          "priority": 1,
+          "compensating_controls": ["kube-token-revoked", "k8s-audit-log-monitor-on-old-token"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "migrate-docker-to-cred-helpers",
+          "description": "Replace ~/.docker/config.json auths.auth with credHelpers/credsStore directives routing to OS keychain or cloud-IAM (ecr-login, gcloud, acr).",
+          "preconditions": ["target_registry_supports_cred_helper == true"],
+          "priority": 1,
+          "compensating_controls": ["docker-token-rotated"],
+          "estimated_time_hours": 0.5
+        },
+        {
+          "id": "rotate-supply-chain-tokens",
+          "description": "For ~/.npmrc / ~/.pypirc tokens: rotate AND scope down (read-only where possible) AND move to OS keychain (npm config set _authToken in keychain-backed config OR pypi via keyring backend).",
+          "preconditions": ["org_authority_to_rotate == true"],
+          "priority": 2,
+          "compensating_controls": ["token-scope-tightened", "publish-mfa-required"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "fix-credentials-perms",
+          "description": "chmod 0600 on all credential files; chmod 0700 on ~/.config/gcloud/, ~/.aws/, ~/.ssh/.",
+          "preconditions": ["file_owner_is_current_user"],
+          "priority": 2,
+          "compensating_controls": [],
+          "estimated_time_hours": 0.25
+        },
+        {
+          "id": "modernize-ssh-keys",
+          "description": "Generate fresh ed25519 SSH key; deploy public key to all currently-authorized hosts; remove old RSA/DSA private keys from disk. Optionally use ssh-agent + Yubikey for hardware backing.",
+          "preconditions": ["all_authorized_hosts_known == true"],
+          "priority": 2,
+          "compensating_controls": ["ssh-key-inventory-updated"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "policy-exception",
+          "description": "If static credential cannot be eliminated (e.g. legacy SaaS without OIDC), generate exception with bounded compensating controls and time-bound rotation cadence.",
+          "preconditions": ["federated_alternative_unavailable == true"],
+          "priority": 4,
+          "compensating_controls": ["credential-vaulted", "rotation-cadence-30d", "audit-log-monitor-on-credential"],
+          "estimated_time_hours": 4
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "re-inventory-clean",
+          "test": "Re-run the credential-store inventory. Expect zero deterministic static-credential indicators.",
+          "expected_result": "No deterministic static-credential findings; all-stores-empty-or-federated fires positively.",
+          "test_type": "negative"
+        },
+        {
+          "id": "providers-confirm-revocation",
+          "test": "At each provider (AWS IAM list-access-keys, GCP keys list, GitHub /user/keys, NPM /-/npm/v1/tokens, PyPI account tokens), confirm old credentials are deactivated/revoked.",
+          "expected_result": "All old credentials inactive or deleted at the provider.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sso-paths-functional",
+          "test": "Functionally test each replaced flow: aws sts get-caller-identity via SSO; gcloud auth list via workforce identity; kubectl auth can-i via exec: flow; docker pull via cred-helper.",
+          "expected_result": "All federated flows succeed; user can perform prior workflow without static credentials.",
+          "test_type": "functional"
+        },
+        {
+          "id": "perms-correct",
+          "test": "stat -c '%a' on credential files and directories. Expect 0600 for files, 0700 for directories.",
+          "expected_result": "All credential files/directories have correct permissions.",
+          "test_type": "negative"
+        },
+        {
+          "id": "no-residual-use",
+          "test": "Review provider audit logs (CloudTrail, GCP audit, NPM/PyPI download events) for the old credentials' last-use timestamps. Confirm no use after rotation.",
+          "expected_result": "No activity on old credentials post-rotation.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after migration to federated identity, transient short-lived tokens (~/.aws/cli/cache/*.json, ~/.config/gcloud/access_tokens.db, ~/.kube/cache/) remain on disk during their TTL. Stealer malware that runs during a session window can still harvest live federated tokens.",
+        "why_remains": "Short-lived tokens still exist; the trade-off is shorter exposure window (1h vs. perpetual) but not zero. The compensating control is endpoint protection + IdP risk-based authentication (impossible-travel, device-binding), not absence of tokens-on-disk.",
+        "acceptance_level": "manager",
+        "compensating_controls_in_place": ["all-federated-paths", "edr-active-on-endpoint", "idp-risk-based-authn", "quarterly-credential-inventory-cadence"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Pre-remediation credential-store inventory + post-remediation rescan.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["nist-800-53-IA-2", "nist-800-53-IA-5", "iso-27001-2022-A.5.16"]
+        },
+        {
+          "evidence_type": "log_excerpt",
+          "description": "Provider audit log excerpt for the lifetime of each rotated credential.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nis2-art21-2c", "soc2-cc7.2"]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Credential rotation tickets at each provider; SSO/Workforce Identity migration approvals.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["soc2-cc8.1", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: user identity, endpoint identity, inventory hash, RWEP at detection, RWEP post-remediation, AAL claimed/supported by evidence.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-63b-aal", "nist-800-53-CA-7", "iso-27001-2022-A.5.36"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "monthly", "interval": "30d" },
+        { "condition": "post_new_provider_onboarded", "interval": "on_event" },
+        { "condition": "post_employee_role_change", "interval": "on_event" },
+        { "condition": "post_credential_compromise_incident", "interval": "on_event" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "json",
+        "contents": ["scan_report", "log_excerpt", "ticket_reference", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Endpoint credential harvest via $store_class (~/.aws/credentials / ~/.kube/config / ~/.config/gcloud/* / ~/.docker/config.json / ~/.npmrc / ~/.pypirc / ~/.ssh/id_* / GPG keychain).",
+          "control_gap": "Identity-assurance controls (IA-2, IA-5, AAL3, A.5.16, NIS2 Art.21(2)(j)) accept SSO + MFA attestation as evidence without requiring endpoint-credential-store inventory. Long-lived bearer tokens coexist with attested AAL3 posture.",
+          "framework_gap": "NIST 800-63 AAL specifies target authenticators, not bypass-credential exclusion. NIST 800-53 IA family names password authenticators, not all bearer-token authenticators. ISO and NIS2 are policy-shaped on identity lifecycle.",
+          "new_control_requirement": "Quarterly endpoint-credential-store inventory required for all users in scope of an AAL3 attestation. Static-credential presence on an AAL3-attested user's endpoint = automatic finding requiring remediation OR documented exception."
+        },
+        "feeds_back_to_skills": ["identity-assurance", "framework-gap-analysis", "compliance-theater"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["credential_inventory", "exposure_window_estimate", "rotation_status"],
+          "draft_notification": "NIS2 Art.23 early-warning notification: Credential-store finding on ${affected_user_count} user endpoint(s); static long-lived credentials identified across ${provider_count} provider(s). Credentials rotated to federated equivalents. Exposure window: ${exposure_window}. Full incident assessment within 72h per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["initial_notification", "ict_third_party_dependencies"],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — endpoint credential exposure on financial-entity user endpoint(s). ICT third-party dependencies: ${ict_dependencies}. Full classification + impact assessment to follow within statutory windows."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["credential_inventory", "data_subject_impact_assessment"],
+          "draft_notification": "GDPR Art.33 72-hour notification: Endpoint credential exposure event affecting credentials with potential access to systems processing personal data. Categories of data subjects potentially affected: ${data_subject_categories}. Containment: credentials rotated; provider audit logs reviewed for misuse window."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "federated_alternative_unavailable == true OR (legacy_saas_no_oidc == true AND business_continuity_requires_static_credential == true)",
+        "exception_template": {
+          "scope": "Static credential of class ${credential_class} for provider ${provider_name} on user endpoint(s) ${affected_endpoint_count}; federated alternative unavailable due to ${blocking_reason}.",
+          "duration": "until_next_audit",
+          "compensating_controls": ["credential-vaulted-with-passphrase", "rotation-cadence-30d", "audit-log-monitor-on-credential", "edr-alert-on-credential-file-read", "ip-allowlist-tightened"],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for static credential ${credential_class} on ${affected_endpoint_count} endpoint(s). Provider: ${provider_name}. Blocking reason for federation: ${blocking_reason_narrative}. Compensating controls in place: credential vaulted with passphrase-on-use; ${rotation_cadence_days}-day forced rotation; provider audit log monitored daily for anomalous use; EDR alerts on read of the credential file outside the documented use pattern. Residual exposure: static credential remains valid during its rotation window; vaulting + passphrase reduces but does not eliminate stealer-malware harvest if endpoint is fully compromised. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} OR provider OIDC availability, whichever is first. The exception will be re-evaluated on (a) provider OIDC availability, (b) listed expiry date, (c) any audit-log anomaly on the credential — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "full-credential-store-inventory",
+      "title": "Full per-user credential-store inventory across cloud, k8s, container registry, package managers, SSH, GPG",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "cloud-static-keys",
+      "title": "Targeted directive — long-lived cloud credentials (AWS access keys, GCP service account JSON, Azure SP secrets)",
+      "applies_to": { "attack_technique": "T1552.001" }
+    },
+    {
+      "id": "supply-chain-tokens",
+      "title": "Targeted directive — publish-capable package-manager tokens (NPM, PyPI, container registry)",
+      "applies_to": { "attack_technique": "T1528" }
+    }
+  ]
+}

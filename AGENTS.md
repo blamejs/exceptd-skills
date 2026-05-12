@@ -34,6 +34,51 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
 
 ---
 
+## Seven-phase playbook contract
+
+exceptd ships investigation playbooks under `data/playbooks/*.json` (schema: `lib/schemas/playbook.schema.json`; reference playbook: `data/playbooks/kernel.json`). Each playbook defines a **seven-phase** investigation that splits cleanly between exceptd (knowledge + GRC layer) and the host AI assistant (artifact collection + indicator evaluation). The host AI invokes the runner via `node lib/playbook-runner.js` today; direct CLI verbs (`exceptd plan`, `exceptd govern`, `exceptd direct`, `exceptd run`) are landing in a follow-up task. exceptd owns **govern, direct, analyze, validate, close**; the AI owns **look, detect**. Phases run strictly in order — never reorder, never skip.
+
+### The seven phases
+
+1. **govern (exceptd)** — Runner emits jurisdiction obligations (e.g. NIS2 24h, DORA 4h, GDPR 72h), theater fingerprints to test for, framework gap context, and `skill_preload` listing skills the AI must load into its session context before proceeding. The AI loads `skill_preload` and surfaces jurisdiction obligations to the operator **before** doing any investigation work.
+2. **direct (exceptd)** — Runner emits `threat_context` (current real CVEs/TTPs with dates from `data/cve-catalog.json`), `rwep_threshold` (live-patch / urgent-patch / scheduled-patch bands), `framework_lag_declaration`, `skill_chain`, and `token_budget`. The AI uses this to plan its collection work — what to look for and why.
+3. **look (AI)** — The AI collects typed artifacts per the playbook's `look.artifacts` spec using **native** tools (Bash, Read, Grep, Glob — no shelling back into exceptd for collection). When `_meta.air_gap_mode=true`, the AI honors each artifact's `air_gap_alternative` instead of the default collection method. Every artifact submission is structured as `artifacts: { <id>: { value, captured: true|false, reason?: string } }`. Failed collections are **never** silently dropped — they get `captured: false` with a `reason` string so the runner records the visibility gap.
+4. **detect (AI)** — The AI evaluates the collected artifacts against `playbook.detect.indicators`. Pattern-matching (regex against raw artifact content, version range checks, presence/absence tests) happens in the AI — exceptd does not see the raw artifact content. The AI submits `signal_overrides: { <indicator_id>: 'hit' | 'miss' | 'inconclusive' }` plus any other signal values the playbook declares. If the indicator definition includes `false_positive_checks_required`, the AI MUST run those checks before declaring `hit`.
+5. **analyze (exceptd)** — Runner joins the AI's signals to `data/cve-catalog.json`, computes RWEP per `lib/scoring.js`, scores blast radius, runs the compliance theater check, builds the `framework_gap_mapping` (EU/UK/AU/ISO/NIST per Hard Rule #5), and fires `escalation_criteria` when thresholds are crossed.
+6. **validate (exceptd)** — Runner picks a `remediation_path` from the playbook's options (priority-ordered), returns `validation_tests` the AI must run to confirm the remediation worked, a `residual_risk_statement`, `evidence_requirements`, and a `regression_next_run` cadence.
+7. **close (exceptd)** — Runner assembles a CSAF-2.0-shaped `evidence_package` (signed=true by default), drafts a `learning_loop` lesson queued for `data/zeroday-lessons.json`, computes `notification_actions` with ISO-8601 deadlines derived from each obligation's `clock_starts` event, evaluates the `exception_generation` trigger and renders `auditor_ready_language` verbatim when it fires, finalizes the `regression_schedule`, and lists `feeds_into` downstream playbooks.
+
+### What the AI MUST do
+
+- **Never bypass govern.** Always surface jurisdiction obligations to the operator before any investigation activity. This is non-negotiable — DPO / GRC accountability begins at govern, not at close.
+- **Never silently drop artifacts.** Collection failures get `captured: false, reason: "<string>"`. The runner uses missing-artifact records to compute visibility gaps and to qualify confidence in the analyze phase.
+- **Always run `false_positive_checks_required`** tests when detect returns them. A `hit` without its false-positive checks is reported as `inconclusive`.
+- **Always show the operator `auditor_ready_language` verbatim** from `close.exception` when the exception fires. Never paraphrase, summarize, or "clean up" the auditor-ready language — it is signed-off language and changing it invalidates the artifact.
+- **Always offer to persist the signed `evidence_package`** to the operator's evidence store. Never discard it silently, never replace it with a chat-window summary.
+- **Honor `_meta.mutex`.** If a playbook's `_meta.mutex` lists a currently-running playbook ID, the AI MUST refuse to start the new playbook and tell the operator which one is blocking it.
+- **Honor `threat_currency_score`.** Below 70: surface a currency warning to the operator. Below 50: hard-block playbook execution unless the operator passes `--force-stale`.
+
+### What the AI MUST NOT do
+
+- **Do not duplicate exceptd's catalog data** in your own response. CVE metadata, ATLAS TTP IDs, framework control IDs, RFC numbers — always cross-reference live via the runner. Stale duplicates violate Hard Rule #1.
+- **Do not skip close.** A finding without a close phase is not durable. Do not claim a finding is "complete" without an `evidence_package` emission. Open findings without close phase are tracked as IR-incomplete.
+- **Do not invent** CVE IDs, framework controls, jurisdiction obligations, ATLAS TTPs, or RFC references not present in the playbook output. If the playbook does not return it, it does not exist for this investigation.
+- **Do not reorder the phases.** govern → direct → look → detect → analyze → validate → close. No exceptions, no shortcuts, no "we already know what's wrong so skip govern."
+- **Do not auto-execute `notification_actions`** or auto-file tickets. The runner produces drafts; the operator reviews and dispatches. AI-initiated regulator notification is out of scope and out of policy.
+
+### Worked example (kernel playbook)
+
+Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/playbook-runner.js data/playbooks/kernel.json`. **govern** returns NIS2 24h incident notification + DORA 4h major-ICT-incident notification obligations and preloads `kernel-lpe-triage`, `exploit-scoring`, `global-grc`; AI surfaces both deadlines to the operator. **direct** emits threat_context anchored on real 2026 kernel CVEs and rwep_threshold bands 90 (live-patch) / 70 (urgent) / 30 (scheduled). **look** directs the AI to capture `uname -r` and `/etc/os-release`; AI uses Bash to read both and submits `artifacts: { kernel_version: { value: "5.15.0-101-generic", captured: true }, os_release: { value: "Ubuntu 22.04.4 LTS", captured: true } }`. **detect** evaluates the `kver-in-affected-range` indicator; AI confirms 5.15.0 falls in the affected range and submits `signal_overrides: { 'kver-in-affected-range': 'hit' }` after running its false-positive checks; the playbook classifies the host as "detected". **analyze** matches three catalogued CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality). **validate** selects remediation path `live-patch-deploy` (priority 1) over `kernel-upgrade` (priority 2), returns validation_tests and a residual_risk_statement. **close** emits a signed CSAF-2.0 evidence_package, draft NIS2 (24h from operator-confirmed detection time) and DORA (4h from same anchor) notification text, and a learning_loop lesson queued for `data/zeroday-lessons.json`. AI shows the operator both notification drafts and asks whether to persist the evidence_package — does not auto-send either.
+
+### CLI invocation
+
+- **Today:** `node lib/playbook-runner.js <path-to-playbook.json>` — current Node module entry point.
+- **Coming:** `exceptd plan`, `exceptd govern`, `exceptd direct`, `exceptd run` — direct CLI verbs land in a follow-up task and will wrap the same runner. AI assistants should prefer the named verbs once they ship; the Node module entry point remains stable as the underlying implementation.
+
+Schema reference: `lib/schemas/playbook.schema.json`. Reference playbook (read this before authoring a new one): `data/playbooks/kernel.json`.
+
+---
+
 ## Recurring Drift Rules
 
 **DR-1: Framework-as-truth drift**

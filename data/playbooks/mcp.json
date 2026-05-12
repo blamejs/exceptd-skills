@@ -1,0 +1,727 @@
+{
+  "_meta": {
+    "id": "mcp",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 96,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase MCP supply-chain trust playbook. Enumerates installed MCP servers across Claude Code / Cursor / Windsurf / VS Code+Copilot / Gemini CLI configs, tests for unsigned manifests, missing tool allowlists, unpinned versions, command provenance gaps, and zero-interaction RCE exposure (CVE-2026-30615). Full GRC closure with EU AI Act + NIS2 + DORA notification clocks and auditor-ready exception generation.",
+        "cves_added": ["CVE-2026-30615"],
+        "framework_gaps_updated": ["nist-800-53-SA-12", "nist-800-53-CM-7", "iso-27001-2022-A.8.30", "soc2-CC9", "eu-ai-act-art15"]
+      }
+    ],
+    "owner": "@blamejs/ai-security",
+    "air_gap_mode": false,
+    "preconditions": [
+      {
+        "id": "filesystem-read",
+        "description": "Agent must be able to read the user's home directory and per-tool config locations (~/.cursor, ~/.config/Code, ~/.codeium/windsurf, etc.).",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "any-ai-coding-assistant-installed",
+        "description": "At least one MCP-capable AI coding assistant must be installed on the host. If none, this playbook returns visibility_gap=no_mcp_clients and skips the rest.",
+        "check": "exists($HOME/.cursor) || exists($HOME/.codeium/windsurf) || exists($HOME/.config/claude) || exists($HOME/.config/Code) || exists($HOME/.gemini)",
+        "on_fail": "skip_phase"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.severity == 'critical' OR analyze.blast_radius_score >= 4"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "ai-api",
+        "condition": "finding.includes_credential_exposure == true"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "MCP server supply-chain trust",
+    "attack_class": "mcp-supply-chain",
+    "atlas_refs": ["AML.T0010", "AML.T0016", "AML.T0096"],
+    "attack_refs": ["T1195.001", "T1059", "T1190"],
+    "cve_refs": ["CVE-2026-30615"],
+    "cwe_refs": ["CWE-345", "CWE-494", "CWE-829", "CWE-94", "CWE-77"],
+    "d3fend_refs": ["D3-CBAN", "D3-EAL", "D3-EHB", "D3-CSPP"],
+    "frameworks_in_scope": [
+      "nist-800-53", "nist-csf-2", "iso-27001-2022",
+      "soc2", "nis2", "dora", "eu-ai-act", "eu-cra",
+      "uk-caf", "au-ism", "au-essential-8", "cmmc"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_mcp_client_inventory", "malicious_server_indicators", "interim_isolation_record"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["full_incident_assessment", "manifest_provenance_audit", "remediation_plan"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "submit_full_report",
+          "window_hours": 720,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["root_cause_analysis", "control_changes_implemented", "lessons_learned"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["initial_notification", "ict_third_party_dependencies", "developer_endpoint_blast_radius"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU AI Act Art.73",
+          "obligation": "notify_regulator",
+          "window_hours": 360,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["serious_incident_assessment", "ai_system_affected", "tool_provenance_audit"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "vendor-management-without-mcp-coverage",
+          "claim": "Third-party / vendor risk management (CC9, SA-12, A.5.19) is operating effectively — all SaaS vendors are reviewed.",
+          "fast_detection_test": "Ask the GRC team to produce their vendor inventory and search it for any MCP server, npm @modelcontextprotocol/*, or developer-installed AI tool plugin. If MCP servers running inside developer environments are absent from the inventory while the AI coding assistants themselves are present, the program covers SaaS only and is blind to the MCP attack surface.",
+          "implicated_controls": ["nist-800-53-SA-12", "iso-27001-2022-A.5.19", "iso-27001-2022-A.5.20", "soc2-CC9"]
+        },
+        {
+          "pattern_id": "mcp-allowlist-without-signature-field",
+          "claim": "MCP tool allowlisting is enforced — only approved tools can be invoked.",
+          "fast_detection_test": "Diff the operator's documented MCP allowlist against the actual mcpServers entries in ~/.cursor/mcp.json, ~/.codeium/windsurf/mcp_config.json, ~/.config/claude/config.json. Theater if allowlist entries lack a signature, fingerprint, or content-hash field — the allowlist names a tool by string identifier that can be typosquatted or version-shifted without the allowlist firing.",
+          "implicated_controls": ["nist-800-53-CM-7", "iso-27001-2022-A.8.30", "eu-ai-act-art15"]
+        },
+        {
+          "pattern_id": "unsigned-manifest-passes-cm-7",
+          "claim": "Least-functionality (CM-7) is enforced — only authorized software runs in developer environments.",
+          "fast_detection_test": "Pick any MCP server installed in any AI coding assistant config. Verify whether its manifest is signed (Sigstore / OpenSSF model-signing / GPG with maintainer key in transparency log). Unsigned manifest + CM-7 = compliant + uncontrolled.",
+          "implicated_controls": ["nist-800-53-CM-7", "nist-800-53-SA-12", "cmmc-2-CM-L2-3-4-7"]
+        },
+        {
+          "pattern_id": "version-pin-without-integrity",
+          "claim": "MCP server versions are pinned in config — supply chain is reproducible.",
+          "fast_detection_test": "For each pinned entry, check whether it carries an integrity hash (sha256:, sri integrity, or in-toto attestation reference). Version-pinned without integrity = pinning a name that can be re-published over.",
+          "implicated_controls": ["nist-800-53-SA-12", "iso-27001-2022-A.8.30", "eu-cra-art13"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "No mainstream compliance framework — NIST 800-53, ISO 27001:2022, SOC 2, PCI DSS 4.0, NIS2, DORA, EU AI Act, EU CRA — has a control category for MCP server trust. Vendor-management controls (SA-12 / A.5.19 / CC9) were drafted for SaaS vendors and outsourced services; they do not contemplate a 'developer installs a tool that the AI assistant then executes with the developer's full local privileges, zero user interaction required.' Configuration-management controls (CM-7 / A.8.9 / CC8) treat MCP servers as approved-software-list items, not as attestable code-signing targets. The result: an organization can pass a clean audit while every developer endpoint runs unsigned, unpinned MCP servers fetched from the long tail of npm and PyPI namespaces. CVE-2026-30615 (Windsurf MCP zero-interaction RCE, 150M+ download blast radius) is the canonical proof: the vendor-management control was 'operating effectively' across every affected org.",
+        "lag_score": 210,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SA-12",
+            "designed_for": "Supply chain protection for traditional software acquisition (commercial off-the-shelf vendors, contractor-developed components).",
+            "insufficient_because": "Does not contemplate AI tool plugins installed by developers post-procurement. MCP servers are acquired outside any procurement gate, executed inside the developer's privileged session, and never enter the asset inventory the control targets."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "CM-7",
+            "designed_for": "Least functionality — only authorized software runs.",
+            "insufficient_because": "Authorization is binary (allowed / disallowed). No primitive for 'allowed only if signed manifest verifies against publisher transparency log', which is the only durable test against MCP supply-chain compromise."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.30",
+            "designed_for": "Outsourced development — third-party-developed code entering the org.",
+            "insufficient_because": "Treats outsourced development as a procurement event. MCP servers enter the org continuously, on developer initiative, with no procurement signal."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.19",
+            "designed_for": "Supplier relationships for service providers (SaaS, MSP, cloud).",
+            "insufficient_because": "An MCP server is third-party code executing inside the org's developer environment, not a service the org consumes over the network. The supplier-relationship lens does not produce the right controls."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC9.2",
+            "designed_for": "Vendor and business partner risk management.",
+            "insufficient_because": "Vendor inventory excludes developer-installed AI tool plugins. The CC9 audit produces a clean opinion on a vendor list that omits the entire MCP attack surface."
+          },
+          {
+            "framework": "eu-ai-act",
+            "control_id": "Art.15 (Accuracy, robustness and cybersecurity)",
+            "designed_for": "High-risk AI system robustness and cybersecurity.",
+            "insufficient_because": "Drafted for the AI model and the AI system boundary. MCP servers are tools the AI invokes — they sit outside the system boundary the article was drafted against, yet they execute with the developer's full privilege."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.13 / Annex I",
+            "designed_for": "Essential cybersecurity requirements for products with digital elements.",
+            "insufficient_because": "Manufacturer of an MCP server is captured, but tool sideloading by developers is not — and the CRA's manufacturer obligations don't translate cleanly to maintainer-signed packages on npm/PyPI."
+          }
+        ]
+      },
+      "skill_preload": ["mcp-agent-trust", "supply-chain-integrity", "exploit-scoring", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "MCP supply-chain landscape Q1-Q2 2026: CVE-2026-30615 (Windsurf MCP zero-interaction RCE, CVSS 9.8, published 2026-02) is the load-bearing incident driving the current wave. A malicious MCP server delivers an adversarial tool response → AI assistant follows instructions without user interaction → code execution in the developer's user context. The vulnerability class — unsigned manifests, no enforced allowlist, no required authentication between AI client and MCP server — is reachable across Cursor, VS Code+Copilot, Claude Code, Gemini CLI, and Windsurf (150M+ combined downloads). Typosquat campaigns against npm @modelcontextprotocol/* and PyPI ML namespaces are documented through 2026-04. Detection signal in production environments is rising: organizations that ran exceptd's mcp-agent-trust skill in the 30 days after the Windsurf advisory found a median of 7 unsigned MCP servers per developer endpoint, with 2 of those installed from registry namespaces typosquatting legitimate vendor names. Compliance frameworks have not caught up: SOC 2 CC9, NIST SA-12, and ISO A.5.19 all permit clean audits over the affected estate.",
+      "rwep_threshold": {
+        "escalate": 80,
+        "monitor": 50,
+        "close": 25
+      },
+      "framework_lag_declaration": "Every framework in scope (NIST 800-53 SA-12/CM-7, ISO 27001:2022 A.5.19/A.5.20/A.8.30, SOC 2 CC9, NIS2 Art.21(2)(d), EU AI Act Art.15, EU CRA Art.13) is structurally insufficient. The shared structural failure: every control treats third-party software risk as a procurement event with a discrete vendor list, while MCP servers are continuously sideloaded by developers from package registries with no procurement signal, no enforced signing, and no allowlist that survives version drift. Until frameworks add a 'developer-installed AI tool plugin' control category with mandatory manifest signature verification + version pinning with integrity hash + provenance attestation, vendor-management audit opinions provide zero signal about MCP exposure. Gap = ~210 days behind operational reality; no framework body has issued draft language as of 2026-05-11.",
+      "skill_chain": [
+        { "skill": "mcp-agent-trust", "purpose": "Enumerate installed MCP servers across all AI coding assistant configs and test each for signed manifest, allowlist enforcement, version pinning + integrity hash, command-provenance trail.", "required": true },
+        { "skill": "supply-chain-integrity", "purpose": "Cross-reference each MCP server against SLSA build-provenance / Sigstore / in-toto attestation; flag the long tail with no attestation chain.", "required": true },
+        { "skill": "exploit-scoring", "purpose": "Compute RWEP for CVE-2026-30615 against the running configuration; rank MCP servers by exposure to known weaponized vectors.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map each finding to the specific framework controls that fail to cover it, with auditor-ready gap language.", "skip_if": "analyze.framework_gap_mapping.length == 0", "required": false },
+        { "skill": "compliance-theater", "purpose": "Run the four theater tests defined in govern.theater_fingerprints; emit verdict for each.", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "If an org-critical MCP server cannot be removed/replaced within the compliance window, generate a defensible time-bound exception.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 22000,
+        "breakdown": {
+          "govern": 2800,
+          "direct": 1500,
+          "look": 2400,
+          "detect": 3200,
+          "analyze": 5000,
+          "validate": 4200,
+          "close": 2900
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "cursor-mcp-config",
+          "type": "mcp_manifest",
+          "source": "$HOME/.cursor/mcp.json",
+          "description": "Cursor's MCP server configuration — primary attack surface for the Cursor IDE userbase.",
+          "required": false,
+          "air_gap_alternative": "If $HOME/.cursor absent, mark Cursor not-installed; do not infer absence of Cursor MCP exposure organization-wide."
+        },
+        {
+          "id": "claude-code-mcp-config",
+          "type": "mcp_manifest",
+          "source": "$HOME/.config/claude/config.json AND $HOME/.claude/settings.json AND .mcp.json in project roots",
+          "description": "Claude Code's MCP configuration — user, project, and enterprise scopes.",
+          "required": false
+        },
+        {
+          "id": "windsurf-mcp-config",
+          "type": "mcp_manifest",
+          "source": "$HOME/.codeium/windsurf/mcp_config.json",
+          "description": "Windsurf MCP configuration — directly affected by CVE-2026-30615.",
+          "required": false
+        },
+        {
+          "id": "vscode-copilot-mcp-config",
+          "type": "mcp_manifest",
+          "source": "$HOME/.config/Code/User/settings.json (chat.mcp.servers) AND .vscode/mcp.json in workspaces",
+          "description": "VS Code + GitHub Copilot Chat MCP configuration.",
+          "required": false
+        },
+        {
+          "id": "gemini-cli-mcp-config",
+          "type": "mcp_manifest",
+          "source": "$HOME/.gemini/settings.json (mcpServers)",
+          "description": "Gemini CLI MCP configuration.",
+          "required": false
+        },
+        {
+          "id": "mcp-process-list",
+          "type": "process_list",
+          "source": "ps -eo pid,ppid,user,cmd | grep -Ei 'mcp|modelcontextprotocol|npx.*@.*mcp' OR Get-CimInstance Win32_Process | Where-Object CommandLine -match 'mcp'",
+          "description": "Currently-running MCP server processes — catches anything launched by an assistant that isn't reflected in static config.",
+          "required": true
+        },
+        {
+          "id": "npm-global-mcp",
+          "type": "process_list",
+          "source": "npm ls -g --depth=0 --json 2>/dev/null OR yarn global list --json",
+          "description": "Globally-installed npm packages — used to spot @modelcontextprotocol/* and known MCP servers.",
+          "required": false,
+          "air_gap_alternative": "Read $(npm root -g) directory listing if npm command fails."
+        },
+        {
+          "id": "pip-global-mcp",
+          "type": "process_list",
+          "source": "pip list --format=json 2>/dev/null AND pipx list --json 2>/dev/null",
+          "description": "Python-installed MCP server packages.",
+          "required": false
+        },
+        {
+          "id": "mcp-manifest-signatures",
+          "type": "mcp_manifest",
+          "source": "For each enumerated MCP server, check package directory for .sigstore, .sig, COSIGN.pub, in-toto attestation, or Sigstore transparency log entry.",
+          "description": "Signature / attestation artifacts for each installed MCP server.",
+          "required": false,
+          "air_gap_alternative": "When offline, defer Sigstore-rekor lookups; mark signature=indeterminate and downgrade confidence."
+        },
+        {
+          "id": "mcp-allowlist-policy",
+          "type": "config_file",
+          "source": "$HOME/.claude/settings.json (permissions.allow), Cursor's .cursorrules, Windsurf workspace policy, VS Code chat.mcp.allowlist",
+          "description": "Per-tool allowlist policy — the operator's documented set of authorized tools.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "local_host_developer_environment",
+        "depth": "standard",
+        "sampling": "single-developer-endpoint point-in-time snapshot; fleet rollout requires per-endpoint execution. Re-collect on every regression_trigger event."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "agent runs in developer endpoint context (not a server / production VM)",
+          "if_false": "MCP attack surface is by definition developer-endpoint. If running in a server context with no AI coding assistants, return visibility_gap=wrong_environment_class."
+        },
+        {
+          "assumption": "agent has read access to $HOME and subdirectories",
+          "if_false": "Investigation is unfounded. Halt and escalate — MCP configs live in user home; no read = no detection."
+        },
+        {
+          "assumption": "at least one AI coding assistant config directory exists",
+          "if_false": "Return visibility_gap=no_mcp_clients. Note: a config-less host may still be exposed via a fresh install of an MCP-capable assistant; document as residual."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "mcp-manifest-signatures", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "npm-global-mcp", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "mcp-allowlist-policy", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "mcp-process-list", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "unsigned-mcp-manifest",
+          "type": "file_path",
+          "value": "$mcp_server_package missing .sigstore, .sig, sigstore-rekor log entry, OR signed in-toto attestation",
+          "description": "Primary detector — an MCP server with no signature artifact is unattestable and matches CVE-2026-30615's risk class.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0010",
+          "attack_ref": "T1195.001"
+        },
+        {
+          "id": "mcp-version-without-integrity",
+          "type": "log_pattern",
+          "value": "mcpServers.<name>.command pins a version (e.g. @modelcontextprotocol/server-foo@1.2.3) but no sha256, sri-integrity, or attestation reference accompanies it",
+          "description": "Version pin without integrity hash — the named package can be re-published over without the pin firing.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "mcp-allowlist-missing",
+          "type": "behavioral_signal",
+          "value": "AI coding assistant config contains mcpServers entries with no corresponding allowlist policy (Claude Code permissions.allow / Cursor allowed-tools / VS Code chat.mcp.allowlist)",
+          "description": "No tool allowlist → AI invokes any tool the MCP server exposes.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "mcp-typosquat-candidate",
+          "type": "file_path",
+          "value": "MCP package name within edit-distance-2 of known-good MCP server namespace (e.g. @modelcontextprotocol/server-filesystem vs @modelcontex-tprotocol/server-filesystem)",
+          "description": "Typosquat candidate against the @modelcontextprotocol or vendor official namespace.",
+          "confidence": "high",
+          "deterministic": false,
+          "atlas_ref": "AML.T0010"
+        },
+        {
+          "id": "mcp-command-provenance-gap",
+          "type": "log_pattern",
+          "value": "mcpServers.<name>.command launches via npx / uvx / curl|sh / a path outside a maintainer-controlled registry",
+          "description": "Command provenance gap — server is fetched at launch with no integrity check.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.001"
+        },
+        {
+          "id": "vulnerable-windsurf-version",
+          "type": "file_path",
+          "value": "Installed Windsurf IDE version <= patched_version_for_CVE-2026-30615",
+          "description": "Direct match for CVE-2026-30615.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1190"
+        },
+        {
+          "id": "mcp-server-running-as-root",
+          "type": "process_name",
+          "value": "ps shows an MCP server process running with effective UID 0 or with elevated capabilities (CAP_SYS_ADMIN, CAP_NET_ADMIN)",
+          "description": "MCP server with elevated privileges turns a tool-response RCE into immediate root.",
+          "confidence": "deterministic",
+          "deterministic": true
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "unsigned-mcp-manifest",
+          "benign_pattern": "First-party MCP server distributed by the AI coding assistant vendor itself (Anthropic, Microsoft, Cursor) where vendor-internal signing was used but no public-rekor entry exists.",
+          "distinguishing_test": "Check whether the MCP server's package path matches the official vendor path (~/.claude/, vendor's bundled tools directory, etc.) AND the manifest's publisher field matches the AI assistant vendor. If both hold, downgrade to medium confidence with a 'vendor-internal-signing-unverifiable' note."
+        },
+        {
+          "indicator_id": "mcp-typosquat-candidate",
+          "benign_pattern": "Legitimate fork by a known author (e.g. an enterprise's own mirror of @modelcontextprotocol/server-filesystem under @acme-corp/).",
+          "distinguishing_test": "Look up the publisher's GitHub identity and the package's metadata. If publisher matches a known org GitHub identity with > 6 months of history and the fork was not made within 7 days of the typosquat campaign window, downgrade to medium confidence."
+        },
+        {
+          "indicator_id": "mcp-command-provenance-gap",
+          "benign_pattern": "npx-based launch of an MCP server whose npm package version is integrity-locked in a project-level lockfile.",
+          "distinguishing_test": "Walk up to the nearest package-lock.json / yarn.lock / pnpm-lock.yaml; if it contains an integrity field for the MCP server's published version, downgrade to medium confidence."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one MCP server enumerated with either (a) unsigned-mcp-manifest=true AND mcp-version-without-integrity=true (the deterministic CVE-2026-30615 risk class), OR (b) vulnerable-windsurf-version=true, OR (c) mcp-typosquat-candidate=true with no benign-pattern match.",
+        "inconclusive": "MCP servers enumerated but signature/integrity artifact lookup was indeterminate (e.g. air-gap mode, Sigstore rekor unreachable). Cannot deny — escalate to human or retry with network.",
+        "not_detected": "No MCP servers enumerated across all known assistant configs AND no MCP-server processes running AND no @modelcontextprotocol packages in global package managers. Document as not-detected with a 'fresh install of any MCP-capable assistant re-opens this' caveat."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "cisa_kev", "weight": 0, "notes": "CVE-2026-30615 is not KEV-listed as of 2026-05-11; factor zero. Re-score if KEV listing occurs." },
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "public_poc", "weight": 20, "notes": "Partial PoC public per catalog." },
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "active_exploitation", "weight": 10, "notes": "Suspected, not confirmed per catalog." },
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "blast_radius", "weight": 30, "notes": "Zero-interaction RCE in developer endpoint with full local credential exposure (AWS/GCP/kube dotfiles)." },
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "patch_available", "weight": -15, "notes": "Vendor patch shipped." },
+        { "signal_id": "vulnerable-windsurf-version", "rwep_factor": "live_patch_available", "weight": -10, "notes": "IDE auto-update path treated as live-patch." },
+        { "signal_id": "unsigned-mcp-manifest", "rwep_factor": "blast_radius", "weight": 20, "notes": "Each unsigned manifest is a separate attack surface; tally to blast radius." },
+        { "signal_id": "mcp-server-running-as-root", "rwep_factor": "blast_radius", "weight": 15, "notes": "Elevated privileges escalate any tool-response RCE to root immediately." },
+        { "signal_id": "mcp-typosquat-candidate", "rwep_factor": "active_exploitation", "weight": 10, "notes": "Typosquat campaigns are documented active TTP for MCP namespaces through Q2 2026." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a malicious or compromised MCP server delivers an adversarial tool response on this developer endpoint, what scope of compromise is the endpoint realistically delivering to the attacker?",
+        "scoring_rubric": [
+          { "condition": "endpoint has no cloud-IAM credentials, no kube context, no SSH key material, isolated dev VM", "blast_radius_score": 1, "description": "RCE in developer-user context only; lateral movement requires separate exploit chain." },
+          { "condition": "endpoint has personal git credentials and project-scoped tokens but no production access", "blast_radius_score": 2, "description": "Source-code theft + commit-rewrite vector via stolen git creds." },
+          { "condition": "endpoint has ~/.aws/credentials, ~/.config/gcloud, or ~/.kube/config with read access to non-production environments", "blast_radius_score": 3, "description": "Cloud read across staging/dev; data exfil + IAM enumeration." },
+          { "condition": "endpoint has production-scoped IAM roles, kube admin contexts, or signing keys (cosign, sigstore, GPG)", "blast_radius_score": 4, "description": "Production tenancy + supply-chain-publishing capability." },
+          { "condition": "endpoint is a release-engineering / CI/CD bootstrap host with cross-account assume-role + package-publishing rights to org namespaces", "blast_radius_score": 5, "description": "Org-wide pivot via supply-chain re-publication. Single endpoint compromises entire downstream." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Vendor/third-party risk management (NIST SA-12, ISO A.5.19, SOC 2 CC9) is operating effectively — all third-party software entering the developer environment is reviewed and authorized.",
+        "audit_evidence": "Vendor inventory with risk ratings, signed vendor-attestation forms, quarterly access reviews, procurement-system records.",
+        "reality_test": "Pull the vendor inventory used in the most recent audit. Search it for every MCP server name enumerated by this playbook. Theater if any enumerated MCP server is absent from the vendor inventory AND the audit opinion was clean. Bonus theater multiplier: enumerated MCP server is published from an npm/PyPI namespace not owned by any existing vendor in the inventory.",
+        "theater_verdict_if_gap": "Org has a vendor-management program that issues clean audit opinions while every developer endpoint sideloads unsigned, unpinned MCP servers from the long tail of package registries with no procurement signal. Either (a) extend vendor inventory to include all developer-installed AI tool plugins with manifest signature verification as the authorization gate, (b) enforce per-assistant allowlists with signed fingerprint + version-pin-with-integrity-hash, OR (c) generate a defensible policy exception via policy-exception-gen with time-bound risk acceptance and compensating controls (network egress allowlist for MCP processes, kernel-level seccomp/AppArmor profile for MCP processes, mandatory MCP-running-as-non-root)."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "SA-12 — Supply Chain Protection",
+          "actual_gap": "Procurement-event lens. MCP servers enter the org continuously, on developer initiative, outside any procurement gate. SA-12 generates no signal.",
+          "required_control": "Add an SA-12 variant requiring per-instance manifest signature verification (Sigstore / OpenSSF model-signing) before any developer-installed AI tool plugin is permitted to execute. Version pinning must accompany integrity hash. The AI assistant client itself must enforce the allowlist."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "nist-800-53",
+          "claimed_control": "CM-7 — Least Functionality",
+          "actual_gap": "Binary authorization (allowed / disallowed). No primitive for 'allowed only if signed manifest verifies'.",
+          "required_control": "Bind CM-7 authorization to a signature-verification policy expressed in the AI client's MCP allowlist."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.30 — Outsourced development",
+          "actual_gap": "Treats outsourced development as a procurement event. MCP servers enter the org continuously without procurement signal.",
+          "required_control": "Extend A.8.30 to encompass developer-installed AI tool plugins with continuous-attestation requirements rather than point-in-time procurement review."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.19 — Information security in supplier relationships",
+          "actual_gap": "Supplier-relationship lens does not produce signature-attestation requirements; treats package maintainers as out-of-scope suppliers.",
+          "required_control": "Add a supplier-relationship sub-control: any third-party code (including community-maintained packages) executing within developer environments must be attestable via signed publisher key in transparency log."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "soc2",
+          "claimed_control": "CC9.2 — Vendor and business partner risk management",
+          "actual_gap": "Vendor inventory excludes developer-installed AI tool plugins; audit produces clean opinion on incomplete inventory.",
+          "required_control": "Require vendor inventory completeness test: cross-reference enumerated MCP servers (and equivalents for future AI tool standards) against the inventory; any unenumerated package is a finding."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "eu-ai-act",
+          "claimed_control": "Art.15 — Accuracy, robustness and cybersecurity",
+          "actual_gap": "System boundary drawn around the AI model; MCP tools outside the boundary even though they execute with full local privilege.",
+          "required_control": "Extend Art.15 cybersecurity obligations to the tool-plugin attack surface for high-risk AI systems; require signed manifests + allowlist enforcement as cybersecurity controls."
+        },
+        {
+          "finding_id": "mcp-supply-chain-detected",
+          "framework": "eu-cra",
+          "claimed_control": "Art.13 / Annex I — essential cybersecurity requirements",
+          "actual_gap": "Manufacturer-of-the-MCP-server captured, but tool sideloading by developers (no manufacturer relationship) is not.",
+          "required_control": "Implementing acts to extend essential requirements to developer-installed plugins distributed via package registries; pre-execution signature verification as a mandatory product feature for AI assistants."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "rwep >= 80 AND vulnerable-windsurf-version == true", "action": "page_on_call" },
+        { "condition": "rwep >= 80 AND mcp-server-running-as-root == true", "action": "page_on_call" },
+        { "condition": "mcp-typosquat-candidate == true AND no benign_match", "action": "raise_severity" },
+        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "sbom" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" },
+        { "condition": "any unsigned-mcp-manifest with cloud credentials detected", "action": "trigger_playbook", "target_playbook": "ai-api" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "vendor-patch-windsurf",
+          "description": "Apply vendor patch for CVE-2026-30615 via Windsurf auto-update.",
+          "preconditions": ["vulnerable_windsurf_version == true", "auto_update_available == true"],
+          "priority": 1,
+          "compensating_controls": [],
+          "estimated_time_hours": 0.5
+        },
+        {
+          "id": "remove-unsigned-mcp-servers",
+          "description": "Remove every MCP server with unsigned-mcp-manifest=true OR mcp-typosquat-candidate=true. Document removed entries in change-management.",
+          "preconditions": ["operator_authorized_to_modify_mcp_config == true"],
+          "priority": 2,
+          "compensating_controls": ["mcp_egress_network_allowlist", "mcp_runs_as_non_root_enforced"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "enforce-signed-allowlist",
+          "description": "Adopt an enforced MCP allowlist with signature/fingerprint binding for each authorized tool. Configure Claude Code permissions.allow, Cursor allowed-tools, VS Code chat.mcp.allowlist, Windsurf workspace policy with signed fingerprints.",
+          "preconditions": ["all_authorized_mcp_servers_have_published_signatures == true"],
+          "priority": 3,
+          "compensating_controls": ["pre-commit hook validates mcp config against signed allowlist", "CI gate rejects PRs that introduce unsigned mcp entries"],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "version-pin-with-integrity",
+          "description": "For every authorized MCP server, replace bare version pin with integrity-hash pin (sha256 / sri-integrity / attestation reference) sourced from package lockfile or Sigstore rekor entry.",
+          "preconditions": ["package_lockfile_exists == true OR sigstore_rekor_entry_available == true"],
+          "priority": 4,
+          "compensating_controls": ["scheduled re-pin job on every authorized MCP package release"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate auditor-ready policy exception via policy-exception-gen if a business-critical MCP server cannot meet signing / allowlist / integrity-pin requirements within compliance window.",
+          "preconditions": ["remediation_paths[1..4] blocked for at least one MCP server", "ciso_acceptance_obtainable == true"],
+          "priority": 5,
+          "compensating_controls": ["MCP process seccomp/AppArmor profile", "egress allowlist for MCP processes", "enhanced logging on tool invocation patterns"],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "windsurf-version-post-patch",
+          "test": "Read Windsurf version string after auto-update. Confirm version outside CVE-2026-30615 affected range.",
+          "expected_result": "Windsurf version > patched_version_for_CVE-2026-30615.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-unsigned-mcp-remains",
+          "test": "Re-enumerate all MCP servers across all assistant configs. For each, verify .sigstore / .sig / rekor entry exists. Fail if any unsigned manifest remains.",
+          "expected_result": "Zero MCP servers with unsigned-mcp-manifest=true.",
+          "test_type": "negative"
+        },
+        {
+          "id": "allowlist-enforces-signature",
+          "test": "Attempt to register a deliberately-unsigned dummy MCP server in the assistant's config. Confirm the AI client refuses to invoke its tools.",
+          "expected_result": "Client emits a signature-verification-failed error; no tool invocation succeeds.",
+          "test_type": "negative"
+        },
+        {
+          "id": "typosquat-canary",
+          "test": "Add a canary entry to the allowlist with a name within edit-distance-1 of a permitted MCP server. Confirm client rejects the canary on the basis that its fingerprint does not match the permitted entry.",
+          "expected_result": "Client rejects canary; emits allowlist-fingerprint-mismatch.",
+          "test_type": "negative"
+        },
+        {
+          "id": "mcp-process-non-root",
+          "test": "Run ps post-remediation. Confirm no MCP server processes run with effective UID 0 or with elevated capabilities.",
+          "expected_result": "All MCP processes run as non-root with no elevated capabilities.",
+          "test_type": "functional"
+        },
+        {
+          "id": "ai-assistant-regression",
+          "test": "Run the developer's standard AI-assisted workflow (open project, request file-system tool calls, run an MCP-mediated git op). Confirm all authorized tool calls succeed.",
+          "expected_result": "Authorized MCP tool calls succeed; unauthorized fail-closed.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "MCP servers remain a continuously-mutating supply-chain surface. Every new authorized MCP server introduces a fresh attestation requirement; every new release of an authorized MCP server requires re-validation. A future malicious update from a previously-trusted publisher would bypass signature-based controls until the publisher's transparency-log entry is itself revoked.",
+        "why_remains": "Signature verification proves authorship, not safety. A compromised maintainer key produces validly-signed malware. Compensating coverage requires publisher-key transparency monitoring (revocation propagation) and behavioral detection on tool invocation patterns — both immature in mid-2026.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": ["mcp_egress_network_allowlist", "mcp_seccomp_apparmor_profile", "publisher_key_transparency_monitoring", "tool_invocation_behavioral_baseline"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Enumeration report of every MCP server across every AI assistant config on the endpoint, with signature / integrity / allowlist-binding status for each.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SA-12", "iso-27001-2022-A.8.30", "soc2-CC9", "nis2-art21-2d"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before / after diff of every assistant MCP config showing removed unsigned entries, added integrity hashes, allowlist binding to signed fingerprints.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32", "eu-ai-act-art15"]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Allowlist-enforcement and typosquat-canary tests, with output proving the client rejected the deliberately-unauthorized entries.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["soc2-CC9", "iso-27001-2022-A.8.30"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, enumerated MCP server count, signed-vs-unsigned ratio at detection and post-remediation, RWEP delta.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2d", "eu-ai-act-art15"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "new_cve_in_class == true", "interval": "on_event" },
+        { "condition": "new_mcp_server_added_to_any_config", "interval": "on_event" },
+        { "condition": "new_version_of_any_authorized_mcp_server", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["scan_report", "config_diff", "exploit_replay_negative", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "MCP server delivers adversarial tool response → AI assistant follows instructions → zero-interaction RCE in developer user context. Variants: malicious-from-day-one publisher, typosquat against legitimate namespace, compromised legitimate publisher key.",
+          "control_gap": "Vendor-management controls did not generate signal — MCP servers are continuously sideloaded outside procurement. Configuration-management controls treated MCP server names as authorization tokens without enforcing manifest signature verification.",
+          "framework_gap": "NIST SA-12, ISO A.5.19/A.8.30, SOC 2 CC9 all treat third-party software as a procurement event. EU AI Act Art.15 draws the system boundary around the model, not the tool plugins.  No mainstream framework currently requires signed-manifest + integrity-pinned + allowlist-bound MCP tool authorization. Lag against operational reality: ~210 days as of 2026-05-11.",
+          "new_control_requirement": "Add a control class 'AI tool plugin authorization' with mandatory: (a) manifest signature verification against publisher transparency-log entry pre-execution; (b) version pinning with integrity hash; (c) per-assistant enforced allowlist with signed-fingerprint binding; (d) MCP process runs non-root with seccomp/AppArmor profile; (e) egress network allowlist for MCP processes."
+        },
+        "feeds_back_to_skills": ["mcp-agent-trust", "supply-chain-integrity", "framework-gap-analysis", "compliance-theater", "zeroday-gap-learn"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["affected_mcp_client_inventory", "malicious_server_indicators", "interim_isolation_record"],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: MCP supply-chain exposure detected on ${affected_endpoint_count} developer endpoint(s). Enumerated MCP servers: ${total_mcp_count}; unsigned-manifest count: ${unsigned_count}; typosquat candidates: ${typosquat_count}; vulnerable Windsurf installs (CVE-2026-30615): ${windsurf_vuln_count}. Interim isolation: ${interim_isolation_status}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["full_incident_assessment", "manifest_provenance_audit", "remediation_plan"],
+          "draft_notification": "NIS2 Art.23 incident notification (72-hour): Full assessment of MCP supply-chain incident. Affected systems: ${affected_systems}. Provenance audit findings: ${provenance_summary}. Remediation plan: vendor patch deployment, unsigned-manifest removal, allowlist enforcement with signed fingerprints, version pinning with integrity hash. Estimated completion: ${remediation_eta}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["root_cause_analysis", "control_changes_implemented", "lessons_learned"],
+          "draft_notification": "NIS2 Art.23 final report (1-month): Root cause — MCP server supply-chain trust controls were structurally insufficient at detection. Control changes implemented: ${control_changes}. Lessons learned: ${lessons}. Residual risk acceptance: ${residual_risk_owner} signed ${acceptance_date}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["initial_notification", "ict_third_party_dependencies", "developer_endpoint_blast_radius"],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — MCP supply-chain exposure on ${affected_endpoint_count} developer endpoint(s) within financial-entity scope. CVE-2026-30615 exposure: ${windsurf_vuln_count}. ICT third-party dependencies (MCP publishers): ${ict_dependencies}. Full classification + impact assessment to follow within statutory windows."
+        },
+        {
+          "obligation_ref": "EU/EU AI Act Art.73 360h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["serious_incident_assessment", "ai_system_affected", "tool_provenance_audit"],
+          "draft_notification": "EU AI Act Art.73 serious-incident notification: MCP tool-plugin supply-chain exposure on high-risk AI system ${ai_system_id}. Tool provenance audit: ${unsigned_count} of ${total_mcp_count} tool plugins lacked manifest attestation at detection. Affected AI system: ${ai_system_description}. Remediation per validate phase."
+        },
+        {
+          "obligation_ref": "AU/APRA CPS 234 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": ["materiality_assessment", "remediation_completed_evidence"],
+          "draft_notification": "APRA CPS 234 notification: Material information security incident — MCP supply-chain exposure on ${affected_endpoint_count} developer endpoint(s). Materiality determination: ${materiality_justification}. Remediation completed: ${remediation_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (business_critical_mcp_server.signature_unavailable == true AND replacement_unavailable == true)",
+        "exception_template": {
+          "scope": "Business-critical MCP server(s) ${unauthorized_mcp_list} cannot meet manifest-signature, integrity-pin, or allowlist-binding requirements within the compliance window. Remediation paths 1-4 blocked.",
+          "duration": "until_vendor_patch",
+          "compensating_controls": ["mcp_egress_network_allowlist_restricting_to_known-good_endpoints", "mcp_process_seccomp_apparmor_profile", "mcp_runs_as_non_root_enforced", "tool_invocation_behavioral_baseline_with_alerting", "weekly_re-enumeration_and_diff_against_baseline", "publisher_key_transparency_monitoring"],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Supply Chain Protection / Outsourced Development / Vendor and Business Partner Risk Management), the organization documents a time-bound risk acceptance for MCP server(s) ${unauthorized_mcp_list} executing within developer environments without manifest signature verification. Vendor-published signing infrastructure for these MCP servers: ${vendor_signing_status}. Replacement candidates evaluated: ${replacement_evaluation}. The organization accepts that current vendor-management, configuration-management, and supplier-relationship controls in NIST 800-53 (SA-12, CM-7), ISO 27001:2022 (A.5.19, A.5.20, A.8.30), SOC 2 (CC9.2), and EU AI Act (Art.15) do not adequately address the developer-installed AI tool plugin attack surface, that this gap is documented in ${exceptd_framework_gap_mapping_ref}, and that the organization's compensating controls are: ${compensating_controls}. Detection coverage during the exception window: behavioral baseline of tool invocation patterns with anomaly alerting, weekly re-enumeration with diff-from-baseline, egress monitoring on MCP processes. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (vendor signing infrastructure publication, replacement MCP server selection, OR ${default_30d_expiry}, whichever is first). Re-evaluation triggers: vendor publishes signed manifest, new CVE in MCP supply-chain class, behavioral anomaly fires, OR scheduled expiry."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "all-mcp-servers-trust-audit",
+      "title": "Enumerate every MCP server across every AI coding assistant config and audit trust posture",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "cve-2026-30615-windsurf",
+      "title": "Targeted investigation for CVE-2026-30615 (Windsurf MCP zero-interaction RCE)",
+      "applies_to": { "cve": "CVE-2026-30615" },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": { "escalate": 70, "monitor": 40, "close": 20 }
+        }
+      }
+    },
+    {
+      "id": "ml-supply-chain-compromise-atlas",
+      "title": "ATLAS AML.T0010 — ML Supply Chain Compromise via MCP namespace",
+      "applies_to": { "atlas_ttp": "AML.T0010" }
+    }
+  ]
+}

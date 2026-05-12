@@ -1,0 +1,652 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exceptd.com/schemas/playbook.schema.json",
+  "title": "exceptd investigation playbook",
+  "description": "A seven-phase investigation protocol. exceptd owns govern/direct/analyze/validate/close (knowledge + GRC layer); the host AI owns look/detect (execution). Each directive walks the agent through one focused investigation while keeping the GRC loop closed.",
+  "type": "object",
+  "required": ["_meta", "domain", "phases", "directives"],
+  "additionalProperties": false,
+  "properties": {
+
+    "_meta": {
+      "type": "object",
+      "required": ["id", "version", "last_threat_review", "threat_currency_score", "changelog", "owner", "air_gap_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Unique playbook id, kebab-case, matches filename." },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "Semver, independent of package version." },
+        "last_threat_review": { "type": "string", "format": "date", "description": "ISO 8601 date the threat model was last validated against current attacker behavior." },
+        "threat_currency_score": { "type": "number", "minimum": 0, "maximum": 100, "description": "Currency 0-100. Below 70 warns; below 50 blocks execution unless --force-stale is set." },
+        "changelog": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["version", "date", "summary"],
+            "additionalProperties": false,
+            "properties": {
+              "version": { "type": "string" },
+              "date": { "type": "string", "format": "date" },
+              "summary": { "type": "string" },
+              "cves_added": { "type": "array", "items": { "type": "string" } },
+              "cves_removed": { "type": "array", "items": { "type": "string" } },
+              "framework_gaps_updated": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "owner": { "type": "string", "description": "GitHub handle or team responsible for currency." },
+        "air_gap_mode": { "type": "boolean", "description": "When true, all artifact collection and lookups use offline fallbacks. No network." },
+        "preconditions": {
+          "type": "array",
+          "description": "Must hold before the playbook runs.",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "check", "on_fail"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "check": { "type": "string", "examples": ["kernel_version >= 5.4", "siem_accessible == true", "agent_has_filesystem_read == true"] },
+              "on_fail": { "type": "string", "enum": ["halt", "warn", "skip_phase"] }
+            }
+          }
+        },
+        "mutex": { "type": "array", "items": { "type": "string" }, "description": "Playbook IDs that must not run concurrently with this one." },
+        "feeds_into": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["playbook_id", "condition"],
+            "additionalProperties": false,
+            "properties": {
+              "playbook_id": { "type": "string" },
+              "condition": { "type": "string", "examples": ["finding.severity == 'critical'", "theater_score < 60", "always"] }
+            }
+          }
+        }
+      }
+    },
+
+    "domain": {
+      "type": "object",
+      "required": ["name", "attack_class", "atlas_refs", "attack_refs", "cve_refs", "frameworks_in_scope"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "attack_class": {
+          "type": "string",
+          "description": "Attack class — every value backed by a shipped exceptd skill. Speculative classes without a skill are excluded to keep the enum truthful.",
+          "enum": [
+            "kernel-lpe", "container-escape",
+            "ai-attack-surface", "prompt-injection", "rag-exfiltration",
+            "ai-c2", "mlops-poisoning", "mcp-supply-chain",
+            "identity-abuse", "supply-chain",
+            "cloud-misconfig", "webapp-exploit", "api-abuse",
+            "email-phishing", "dlp-exfiltration",
+            "ot-ics", "pqc-exposure", "compliance-theater"
+          ]
+        },
+        "atlas_refs": { "type": "array", "items": { "type": "string", "pattern": "^AML\\.T\\d{4}(\\.\\d{3})?$" } },
+        "attack_refs": { "type": "array", "items": { "type": "string", "pattern": "^T\\d{4}(\\.\\d{3})?$" } },
+        "cve_refs": { "type": "array", "items": { "type": "string", "pattern": "^CVE-\\d{4}-\\d{4,}$" }, "description": "All CVEs must exist in data/cve-catalog.json." },
+        "cwe_refs": { "type": "array", "items": { "type": "string", "pattern": "^CWE-\\d+$" } },
+        "d3fend_refs": { "type": "array", "items": { "type": "string" } },
+        "frameworks_in_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "nist-800-53", "nist-800-82", "nist-csf-2", "iso-27001-2022",
+              "soc2", "pci-dss-4", "nis2", "dora", "eu-ai-act", "eu-cra",
+              "uk-caf", "au-ism", "au-essential-8", "sg-mas-trm",
+              "jp-nisc", "in-cert", "ca-osfi-b10", "hipaa", "nerc-cip", "cmmc"
+            ]
+          }
+        }
+      }
+    },
+
+    "phases": {
+      "type": "object",
+      "required": ["govern", "direct", "look", "detect", "analyze", "validate", "close"],
+      "additionalProperties": false,
+      "properties": {
+
+        "govern": {
+          "type": "object",
+          "description": "Phase 1 — exceptd. Loads GRC context, jurisdiction obligations, theater fingerprints. Sets the compliance lens before investigation.",
+          "required": ["jurisdiction_obligations", "theater_fingerprints", "framework_context", "skill_preload"],
+          "additionalProperties": false,
+          "properties": {
+            "jurisdiction_obligations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["jurisdiction", "regulation", "obligation", "window_hours", "clock_starts"],
+                "additionalProperties": false,
+                "properties": {
+                  "jurisdiction": { "type": "string", "examples": ["EU", "UK", "AU", "US-CA", "SG", "JP"] },
+                  "regulation": { "type": "string", "examples": ["NIS2", "GDPR Art.33", "APRA CPS 234", "DORA Art.19"] },
+                  "obligation": { "type": "string", "examples": ["notify_regulator", "notify_affected_individuals", "patch_critical"] },
+                  "window_hours": { "type": "integer" },
+                  "clock_starts": { "type": "string", "enum": ["detect_confirmed", "analyze_complete", "validate_complete", "manual"] },
+                  "evidence_required": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "theater_fingerprints": {
+              "type": "array",
+              "description": "References data/_indexes/theater-fingerprints.json.",
+              "items": {
+                "type": "object",
+                "required": ["pattern_id", "claim", "fast_detection_test"],
+                "additionalProperties": false,
+                "properties": {
+                  "pattern_id": { "type": "string" },
+                  "claim": { "type": "string" },
+                  "fast_detection_test": { "type": "string" },
+                  "implicated_controls": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "framework_context": {
+              "type": "object",
+              "required": ["gap_summary", "lag_score"],
+              "additionalProperties": false,
+              "properties": {
+                "gap_summary": { "type": "string", "description": "One-paragraph summary of coverage gaps for this domain, written for the host AI to load as context." },
+                "lag_score": { "type": "integer", "minimum": 0, "description": "Days the most relevant framework lags behind current attacker capability." },
+                "per_framework_gaps": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["framework", "control_id", "designed_for", "insufficient_because"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "framework": { "type": "string" },
+                      "control_id": { "type": "string" },
+                      "designed_for": { "type": "string" },
+                      "insufficient_because": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "skill_preload": { "type": "array", "items": { "type": "string" }, "description": "Skills to load into context before investigation starts." }
+          }
+        },
+
+        "direct": {
+          "type": "object",
+          "description": "Phase 2 — exceptd. Scopes the investigation, sets RWEP thresholds, declares framework lag, sequences the skill chain.",
+          "required": ["threat_context", "rwep_threshold", "framework_lag_declaration", "skill_chain", "token_budget"],
+          "additionalProperties": false,
+          "properties": {
+            "threat_context": { "type": "string", "description": "What is happening in the wild right now. Cite current CVEs, TTPs, threat actor activity with dates. Not generic background." },
+            "rwep_threshold": {
+              "type": "object",
+              "required": ["escalate", "monitor", "close"],
+              "additionalProperties": false,
+              "properties": {
+                "escalate": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "monitor": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "close": { "type": "integer", "minimum": 0, "maximum": 100, "description": "RWEP below this after remediation allows closing." }
+              }
+            },
+            "framework_lag_declaration": { "type": "string", "description": "Explicit statement of which framework controls are structurally insufficient for this domain and why." },
+            "skill_chain": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["skill", "purpose"],
+                "additionalProperties": false,
+                "properties": {
+                  "skill": { "type": "string" },
+                  "purpose": { "type": "string" },
+                  "skip_if": { "type": "string" },
+                  "required": { "type": "boolean", "default": true }
+                }
+              }
+            },
+            "token_budget": {
+              "type": "object",
+              "required": ["estimated_total", "breakdown"],
+              "additionalProperties": false,
+              "properties": {
+                "estimated_total": { "type": "integer" },
+                "breakdown": {
+                  "type": "object",
+                  "properties": {
+                    "govern": { "type": "integer" },
+                    "direct": { "type": "integer" },
+                    "look": { "type": "integer" },
+                    "detect": { "type": "integer" },
+                    "analyze": { "type": "integer" },
+                    "validate": { "type": "integer" },
+                    "close": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        "look": {
+          "type": "object",
+          "description": "Phase 3 — host AI. Collects typed artifacts from the environment.",
+          "required": ["artifacts", "collection_scope", "environment_assumptions", "fallback_if_unavailable"],
+          "additionalProperties": false,
+          "properties": {
+            "artifacts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "type", "source", "description", "required"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "type": {
+                    "type": "string",
+                    "enum": ["log", "file", "process_list", "network_capture", "api_response", "registry_key", "memory_dump", "config_file", "audit_trail", "model_output", "embedding_store", "mcp_manifest", "kernel_module_list", "syscall_trace"]
+                  },
+                  "source": { "type": "string" },
+                  "description": { "type": "string" },
+                  "required": { "type": "boolean" },
+                  "air_gap_alternative": { "type": "string" }
+                }
+              }
+            },
+            "collection_scope": {
+              "type": "object",
+              "required": ["time_window", "asset_scope"],
+              "additionalProperties": false,
+              "properties": {
+                "time_window": { "type": "string", "examples": ["72h", "30d", "since_last_patch"] },
+                "asset_scope": { "type": "string", "examples": ["all_linux_hosts", "ai_inference_nodes", "mcp_server_fleet"] },
+                "depth": { "type": "string", "enum": ["surface", "standard", "deep"], "default": "standard" },
+                "sampling": { "type": "string" }
+              }
+            },
+            "environment_assumptions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["assumption", "if_false"],
+                "additionalProperties": false,
+                "properties": {
+                  "assumption": { "type": "string", "examples": ["linux_kernel >= 5.4", "ai_pipelines_present", "mcp_servers_deployed", "ephemeral_compute == true"] },
+                  "if_false": { "type": "string" }
+                }
+              }
+            },
+            "fallback_if_unavailable": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["artifact_id", "fallback_action", "confidence_impact"],
+                "additionalProperties": false,
+                "properties": {
+                  "artifact_id": { "type": "string" },
+                  "fallback_action": { "type": "string", "examples": ["use_compensating_artifact", "mark_inconclusive", "escalate_to_human"] },
+                  "confidence_impact": { "type": "string", "enum": ["none", "low", "medium", "high"] }
+                }
+              }
+            }
+          }
+        },
+
+        "detect": {
+          "type": "object",
+          "description": "Phase 4 — host AI. Evaluates collected artifacts against typed indicators.",
+          "required": ["indicators", "false_positive_profile", "minimum_signal"],
+          "additionalProperties": false,
+          "properties": {
+            "indicators": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "type", "value", "confidence", "deterministic"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "type": {
+                    "type": "string",
+                    "enum": ["file_hash", "file_path", "network_pattern", "behavioral_signal", "log_pattern", "process_name", "syscall_sequence", "prompt_pattern", "embedding_anomaly", "api_call_sequence", "kernel_module", "memory_signature"]
+                  },
+                  "value": { "type": "string" },
+                  "description": { "type": "string" },
+                  "confidence": { "type": "string", "enum": ["low", "medium", "high", "deterministic"] },
+                  "deterministic": { "type": "boolean", "description": "True if presence is definitive proof, not probabilistic." },
+                  "atlas_ref": { "type": "string" },
+                  "attack_ref": { "type": "string" }
+                }
+              }
+            },
+            "false_positive_profile": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["indicator_id", "benign_pattern", "distinguishing_test"],
+                "additionalProperties": false,
+                "properties": {
+                  "indicator_id": { "type": "string" },
+                  "benign_pattern": { "type": "string" },
+                  "distinguishing_test": { "type": "string" }
+                }
+              }
+            },
+            "minimum_signal": {
+              "type": "object",
+              "required": ["detected", "inconclusive", "not_detected"],
+              "additionalProperties": false,
+              "properties": {
+                "detected": { "type": "string", "description": "Specific conditions constituting confirmed detection." },
+                "inconclusive": { "type": "string", "description": "Conditions meaning the investigation cannot confirm or deny. Triggers human escalation." },
+                "not_detected": { "type": "string", "description": "Conditions allowing closure as not detected with documented confidence." }
+              }
+            }
+          }
+        },
+
+        "analyze": {
+          "type": "object",
+          "description": "Phase 5 — exceptd. Scores findings, maps framework gaps, assesses blast radius, runs compliance theater check.",
+          "required": ["rwep_inputs", "blast_radius_model", "compliance_theater_check", "framework_gap_mapping", "escalation_criteria"],
+          "additionalProperties": false,
+          "properties": {
+            "rwep_inputs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["signal_id", "rwep_factor", "weight"],
+                "additionalProperties": false,
+                "properties": {
+                  "signal_id": { "type": "string" },
+                  "rwep_factor": { "type": "string", "enum": ["cisa_kev", "public_poc", "ai_weaponization", "active_exploitation", "patch_available", "live_patch_available", "blast_radius"] },
+                  "weight": { "type": "number", "description": "Must match lib/scoring.js formula." },
+                  "notes": { "type": "string" }
+                }
+              }
+            },
+            "blast_radius_model": {
+              "type": "object",
+              "required": ["scope_question", "scoring_rubric"],
+              "additionalProperties": false,
+              "properties": {
+                "scope_question": { "type": "string" },
+                "scoring_rubric": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["condition", "blast_radius_score", "description"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "condition": { "type": "string" },
+                      "blast_radius_score": { "type": "integer", "minimum": 1, "maximum": 5 },
+                      "description": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "compliance_theater_check": {
+              "type": "object",
+              "required": ["claim", "audit_evidence", "reality_test", "theater_verdict_if_gap"],
+              "additionalProperties": false,
+              "properties": {
+                "claim": { "type": "string", "description": "The paper-compliance claim being tested." },
+                "audit_evidence": { "type": "string", "description": "What an auditor would accept as proof of compliance." },
+                "reality_test": { "type": "string", "description": "The specific test that distinguishes paper compliance from actual exposure." },
+                "theater_verdict_if_gap": { "type": "string", "description": "What to say in the finding when paper passes but reality fails." }
+              }
+            },
+            "framework_gap_mapping": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["finding_id", "framework", "claimed_control", "actual_gap"],
+                "additionalProperties": false,
+                "properties": {
+                  "finding_id": { "type": "string" },
+                  "framework": { "type": "string" },
+                  "claimed_control": { "type": "string" },
+                  "actual_gap": { "type": "string" },
+                  "required_control": { "type": "string", "description": "What a real control would require to actually address this finding." }
+                }
+              }
+            },
+            "escalation_criteria": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["condition", "action"],
+                "additionalProperties": false,
+                "properties": {
+                  "condition": { "type": "string", "examples": ["rwep >= 90 AND patch_available == false", "blast_radius_score >= 4"] },
+                  "action": { "type": "string", "enum": ["raise_severity", "trigger_playbook", "page_on_call", "notify_legal"] },
+                  "target_playbook": { "type": "string", "description": "If action is trigger_playbook, which one." }
+                }
+              }
+            }
+          }
+        },
+
+        "validate": {
+          "type": "object",
+          "description": "Phase 6 — exceptd. Picks remediation path, confirms it actually worked, records residual risk.",
+          "required": ["remediation_paths", "validation_tests", "residual_risk_statement", "evidence_requirements", "regression_trigger"],
+          "additionalProperties": false,
+          "properties": {
+            "remediation_paths": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "description", "preconditions", "priority"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "description": { "type": "string" },
+                  "preconditions": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "examples": [["live_patch_available == true"], ["reboot_window_within_4h == true"], ["compensating_control_deployed == true"]]
+                  },
+                  "priority": { "type": "integer", "minimum": 1, "description": "Lower number is preferred. 1 is the recommended path when its preconditions hold." },
+                  "compensating_controls": { "type": "array", "items": { "type": "string" } },
+                  "estimated_time_hours": { "type": "number" }
+                }
+              }
+            },
+            "validation_tests": {
+              "type": "array",
+              "description": "How to confirm remediation actually worked. Not just 'the patch was applied'.",
+              "items": {
+                "type": "object",
+                "required": ["id", "test", "expected_result", "test_type"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "test": { "type": "string", "description": "Specific test the host AI runs to verify the fix." },
+                  "expected_result": { "type": "string" },
+                  "test_type": { "type": "string", "enum": ["functional", "negative", "regression", "exploit_replay"] }
+                }
+              }
+            },
+            "residual_risk_statement": {
+              "type": "object",
+              "required": ["risk", "why_remains", "acceptance_level"],
+              "additionalProperties": false,
+              "properties": {
+                "risk": { "type": "string" },
+                "why_remains": { "type": "string" },
+                "acceptance_level": { "type": "string", "enum": ["operator", "manager", "ciso", "board"], "description": "Who must accept this residual risk." },
+                "compensating_controls_in_place": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "evidence_requirements": {
+              "type": "array",
+              "description": "What an auditor would need to see to accept this finding as closed.",
+              "items": {
+                "type": "object",
+                "required": ["evidence_type", "description", "retention_period"],
+                "additionalProperties": false,
+                "properties": {
+                  "evidence_type": { "type": "string", "enum": ["log_excerpt", "config_diff", "screenshot", "scan_report", "exploit_replay_negative", "attestation", "patch_record", "ticket_reference"] },
+                  "description": { "type": "string" },
+                  "retention_period": { "type": "string", "examples": ["1_year", "7_years", "audit_cycle"] },
+                  "framework_satisfied": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "regression_trigger": {
+              "type": "array",
+              "description": "Conditions under which this playbook should re-run automatically.",
+              "items": {
+                "type": "object",
+                "required": ["condition", "interval"],
+                "additionalProperties": false,
+                "properties": {
+                  "condition": { "type": "string", "examples": ["new_cve_in_class == true", "kernel_upgrade == true", "monthly", "post_major_deploy"] },
+                  "interval": { "type": "string", "examples": ["7d", "30d", "on_event"] }
+                }
+              }
+            }
+          }
+        },
+
+        "close": {
+          "type": "object",
+          "description": "Phase 7 — exceptd. Closes the GRC loop. Generates auditor evidence package, triggers learning loop, files policy exceptions, fires notification clocks, sets regression schedule.",
+          "required": ["evidence_package", "learning_loop", "notification_actions", "exception_generation", "regression_schedule"],
+          "additionalProperties": false,
+          "properties": {
+            "evidence_package": {
+              "type": "object",
+              "required": ["bundle_format", "contents", "destination"],
+              "additionalProperties": false,
+              "properties": {
+                "bundle_format": { "type": "string", "enum": ["json", "csaf-2.0", "stix-2.1", "markdown", "pdf"] },
+                "contents": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "References to evidence_requirements collected in validate phase.",
+                  "examples": [["all_validation_tests_passed", "patch_records", "exploit_replay_negative", "residual_risk_statement"]]
+                },
+                "destination": { "type": "string", "examples": ["s3://audit-evidence/", "grc_platform_api", "local_only"] },
+                "signed": { "type": "boolean", "default": true, "description": "Ed25519-sign the evidence bundle for tamper-evident audit trail." }
+              }
+            },
+            "learning_loop": {
+              "type": "object",
+              "description": "Run the zero-day learning loop. Writes back to data/zeroday-lessons.json.",
+              "required": ["enabled", "lesson_template"],
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "lesson_template": {
+                  "type": "object",
+                  "required": ["attack_vector", "control_gap", "framework_gap", "new_control_requirement"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "attack_vector": { "type": "string", "description": "Extracted from the finding." },
+                    "control_gap": { "type": "string", "description": "Which control should have caught this and why it didn't." },
+                    "framework_gap": { "type": "string", "description": "Which framework owns that control and where it falls short." },
+                    "new_control_requirement": { "type": "string", "description": "What a real control would require. Feeds into framework-gap-analysis skill." }
+                  }
+                },
+                "feeds_back_to_skills": { "type": "array", "items": { "type": "string" }, "description": "Skills whose context should be refreshed after this lesson is recorded." }
+              }
+            },
+            "notification_actions": {
+              "type": "array",
+              "description": "Jurisdiction-aware notification triggers. References govern.jurisdiction_obligations.",
+              "items": {
+                "type": "object",
+                "required": ["obligation_ref", "deadline", "recipient", "evidence_attached"],
+                "additionalProperties": false,
+                "properties": {
+                  "obligation_ref": { "type": "string", "description": "Refers to a jurisdiction_obligations entry from govern phase." },
+                  "deadline": { "type": "string", "description": "ISO 8601 datetime computed from clock_starts + window_hours." },
+                  "recipient": { "type": "string", "examples": ["regulator_email", "internal_legal", "data_subjects"] },
+                  "evidence_attached": { "type": "array", "items": { "type": "string" } },
+                  "draft_notification": { "type": "string", "description": "Pre-drafted notification text the operator reviews before sending." }
+                }
+              }
+            },
+            "exception_generation": {
+              "type": "object",
+              "description": "If the finding cannot be remediated within compliance windows, generate a defensible policy exception via the policy-exception-gen skill.",
+              "required": ["trigger_condition", "exception_template"],
+              "additionalProperties": false,
+              "properties": {
+                "trigger_condition": { "type": "string", "examples": ["remediation_blocked == true", "vendor_patch_pending == true", "architectural_impossibility == true"] },
+                "exception_template": {
+                  "type": "object",
+                  "required": ["scope", "duration", "compensating_controls", "risk_acceptance_owner"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "scope": { "type": "string" },
+                    "duration": { "type": "string", "examples": ["30d", "until_vendor_patch", "until_next_audit"] },
+                    "compensating_controls": { "type": "array", "items": { "type": "string" } },
+                    "risk_acceptance_owner": { "type": "string", "enum": ["operator", "manager", "ciso", "board"] },
+                    "auditor_ready_language": { "type": "string", "description": "Pre-drafted exception text formatted for SOC 2 / ISO 27001 / framework-appropriate audit." }
+                  }
+                }
+              }
+            },
+            "regression_schedule": {
+              "type": "object",
+              "required": ["next_run", "trigger"],
+              "additionalProperties": false,
+              "properties": {
+                "next_run": { "type": "string", "description": "ISO 8601 datetime computed from validate.regression_trigger." },
+                "trigger": { "type": "string", "examples": ["interval", "event", "both"] },
+                "notify_on_skip": { "type": "boolean", "default": true }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "directives": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Concrete investigation directives. Each directive is one focused investigation through the seven phases. A playbook can have multiple directives (e.g. one per CVE in scope).",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "applies_to"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "title": { "type": "string" },
+          "applies_to": {
+            "type": "object",
+            "description": "When this directive should run. Lets a single playbook handle multiple related conditions.",
+            "additionalProperties": false,
+            "properties": {
+              "cve": { "type": "string" },
+              "atlas_ttp": { "type": "string" },
+              "attack_technique": { "type": "string" },
+              "always": { "type": "boolean" }
+            }
+          },
+          "phase_overrides": {
+            "type": "object",
+            "description": "Directive-level overrides for any of the seven phases. Inherits from the playbook-level phases unless overridden.",
+            "additionalProperties": false,
+            "properties": {
+              "govern": { "type": "object" },
+              "direct": { "type": "object" },
+              "look": { "type": "object" },
+              "detect": { "type": "object" },
+              "analyze": { "type": "object" },
+              "validate": { "type": "object" },
+              "close": { "type": "object" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

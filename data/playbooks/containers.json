@@ -1,0 +1,766 @@
+{
+  "_meta": {
+    "id": "containers",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-11",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-11",
+        "summary": "Initial seven-phase container-escape posture playbook. Walks current repo for Dockerfile bases (--platform, FROM scratch, version-pinned vs. latest), docker-compose files (privileged, cap-add, host network), k8s manifests (hostPID/hostNetwork/hostIPC, privileged, runAsUser:0, missing seccompProfile). Cross-references runc / containerd / kubelet CVE lineage (Leaky Vessels CVE-2024-21626 class + subsequent breakouts). Closes GRC loop with NIST 800-190, CIS Kubernetes Benchmark, and supply-chain framework gap mapping.",
+        "framework_gaps_updated": ["nist-800-190", "nist-800-53-CM-7", "iso-27001-2022-A.8.9", "pci-dss-4-req-2", "cmmc-cm-l2-3.4.6"]
+      }
+    ],
+    "owner": "@blamejs/container-security",
+    "air_gap_mode": true,
+    "preconditions": [
+      {
+        "id": "repo-context",
+        "description": "Playbook walks the current working directory for container-related files. Must have a working directory with read access.",
+        "check": "cwd_readable == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "kernel",
+        "condition": "finding.severity >= 'high'"
+      },
+      {
+        "playbook_id": "secrets",
+        "condition": "always"
+      }
+    ]
+  },
+
+  "domain": {
+    "name": "Container runtime posture + manifest review",
+    "attack_class": "container-escape",
+    "atlas_refs": [],
+    "attack_refs": ["T1611", "T1610", "T1613", "T1525", "T1068"],
+    "cve_refs": [],
+    "cwe_refs": ["CWE-269", "CWE-732", "CWE-250", "CWE-284", "CWE-863"],
+    "d3fend_refs": ["D3-PA", "D3-CBAN", "D3-EI"],
+    "frameworks_in_scope": [
+      "nist-800-53", "iso-27001-2022", "soc2", "pci-dss-4",
+      "nis2", "dora", "uk-caf", "au-ism", "au-essential-8", "cmmc"
+    ]
+  },
+
+  "phases": {
+
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21",
+          "obligation": "patch_critical",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": ["container_manifest_inventory", "runtime_cve_status", "remediation_plan"]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": ["affected_workload_inventory", "exploitation_status_assessment"]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "CMMC 2.0 CM.L2-3.4.6",
+          "obligation": "patch_critical",
+          "window_hours": 720,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["baseline_configuration_document", "ssp_section_update"]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "cis-k8s-benchmark-attested-but-stale",
+          "claim": "We pass the CIS Kubernetes Benchmark / NIST 800-190 — container security covered.",
+          "fast_detection_test": "Walk the repo for k8s manifests and grep for privileged: true, hostPID: true, hostNetwork: true, hostIPC: true, runAsUser: 0, securityContext absent, seccompProfile absent. Any non-zero count in deployable manifests contradicts CIS K8s Section 5 / NIST 800-190 hardening claims regardless of cluster-wide attestation.",
+          "implicated_controls": ["nist-800-190", "nist-800-53-CM-7", "iso-27001-2022-A.8.9"]
+        },
+        {
+          "pattern_id": "image-scanning-attested-but-latest-tag",
+          "claim": "Container images are scanned for vulnerabilities in CI.",
+          "fast_detection_test": "Grep Dockerfiles for `FROM .*:latest` OR `FROM .*` (no tag at all). 'latest' resolves differently between scan time and deploy time; the scan result is for a different image than what ships. Any non-zero count makes the image-scanning attestation meaningless for the affected images.",
+          "implicated_controls": ["nist-800-190-4.1.1", "soc2-cc7.1", "iso-27001-2022-A.8.8"]
+        },
+        {
+          "pattern_id": "supply-chain-attested-but-no-pinning",
+          "claim": "We follow SLSA / NIST SSDF for container supply chain.",
+          "fast_detection_test": "Grep Dockerfiles for FROM with @sha256: digest pinning. Compare count of pinned vs. unpinned FROM directives. SLSA Level 3+ effectively requires digest pinning. Tag-only references without digest are theater for any SLSA L3+ attestation.",
+          "implicated_controls": ["nist-ssdf-ps-3.2", "nist-800-218", "eu-cra"]
+        },
+        {
+          "pattern_id": "runc-patched-but-no-version-evidence",
+          "claim": "Leaky Vessels (CVE-2024-21626 lineage) is patched cluster-wide.",
+          "fast_detection_test": "Ask the org for the kubectl version + node runc version on each pool. CVE-2024-21626 requires runc >= 1.1.12 OR containerd / Docker bundling a fixed runc. Without per-node version evidence, 'patched' is attested but not verified. Node staging windows can leave clusters mixed-patch for weeks.",
+          "implicated_controls": ["nist-800-190", "iso-27001-2022-A.8.8"]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Container-escape posture sits across NIST 800-190 (Application Container Security Guide), CIS Kubernetes Benchmark, NIST 800-53 CM-7 (least functionality), ISO A.8.9 (configuration management), and supply-chain frameworks (NIST SSDF / SLSA / EU CRA). NIST 800-190 is the most container-aware US framework but is non-mandatory guidance; CIS K8s Benchmark is widely adopted but point-in-time. Frameworks evaluate cluster-wide posture; they do not require per-manifest analysis of the actual workloads as deployed. Real-world: privileged: true / hostPID / runAsUser: 0 manifests routinely ship despite cluster-wide attestation, because the framework gap is between attestation cadence and manifest velocity. Additionally: runc / containerd / kubelet CVE lineage (CVE-2024-21626 Leaky Vessels and its progeny) requires per-node runtime version evidence, not cluster-wide patch attestation. SCOPE: self-scoped to current working directory walk; complements (does not replace) live-cluster admission control + runtime security scanning.",
+        "lag_score": 21,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "CM-7",
+            "designed_for": "Least functionality across system components.",
+            "insufficient_because": "Treats containers as a system component requiring least-functionality policy. Does not name container-specific primitives (privileged, hostPID, runAsUser:0, securityContext absent) as required enumeration items."
+          },
+          {
+            "framework": "nist-800-190",
+            "control_id": "4.1.1, 4.1.2, 4.2.1, 4.4.1",
+            "designed_for": "Container image, registry, orchestrator, container security.",
+            "insufficient_because": "Non-mandatory guidance. Provides good content but no compliance-enforcement teeth on its own; organizations cite it without being audited against it."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.9",
+            "designed_for": "Configuration management baseline.",
+            "insufficient_because": "Same baseline + change-management posture as host hardening — accepts attestation, doesn't require per-manifest analysis."
+          },
+          {
+            "framework": "pci-dss-4",
+            "control_id": "Req.2.2",
+            "designed_for": "Configuration standards for system components.",
+            "insufficient_because": "Container-aware language added in 4.0 but operationalization is left to the QSA. Auditors vary widely in container expertise."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I",
+            "designed_for": "Cyber Resilience Act essential requirements (effective Dec 2027).",
+            "insufficient_because": "Names SBOM + vulnerability handling; effective date is in the future. Container-specific operationalization will be set by harmonized standards still being drafted in 2026."
+          }
+        ]
+      },
+      "skill_preload": ["container-runtime-security", "supply-chain-integrity", "framework-gap-analysis", "compliance-theater", "policy-exception-gen"]
+    },
+
+    "direct": {
+      "threat_context": "Container escape attack class in 2025-2026 is dominated by the runc / containerd / kubelet CVE chain. CVE-2024-21626 'Leaky Vessels' (runc <1.1.12 working-directory race → fd leak into host) shipped Jan 2024 with public PoC and is the canonical container-escape primitive; subsequent runc/containerd CVEs follow the same pattern (host-resource leakage via misconfigured isolation). Mandiant 2025 IR report: ~22% of cloud-tenant compromises involved a container-escape step. The escape is exquisitely sensitive to manifest posture: privileged: true grants the attacker the full host kernel (LPE without escape); hostPID/hostNetwork/hostIPC grant cross-pod visibility; runAsUser: 0 + writable host mount = direct host write. seccompProfile + AppArmor profile presence is the primary mitigation. Manifests in repos are the attestation-vs-reality battleground — admission controllers reject some but not all anti-patterns, depending on policy maturity.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 35
+      },
+      "framework_lag_declaration": "NIST 800-190 + CIS K8s Benchmark + NIST 800-53 CM-7 + ISO A.8.9 + PCI Req.2.2 collectively cover container hardening but accept cluster-wide attestation as evidence. None require per-manifest analysis as a control. Manifest drift in GitOps repos can introduce privileged: true / hostPID / unscoped capabilities faster than any attestation cadence. EU CRA + NIST SSDF + SLSA cover supply-chain posture but most orgs are at SLSA L1-L2 without digest pinning. Gap = ~21 days between manifest drift and review cadence; per-CVE gap (e.g. Leaky Vessels) is hours from public PoC to weaponization vs. weeks of node-staging windows.",
+      "skill_chain": [
+        { "skill": "container-runtime-security", "purpose": "Inventory Dockerfile + compose + k8s manifest posture; map to NIST 800-190 + CIS K8s Benchmark; identify per-manifest anti-patterns.", "required": true },
+        { "skill": "supply-chain-integrity", "purpose": "Assess image provenance: digest pinning, base-image lineage, signature verification, SBOM availability.", "required": true },
+        { "skill": "framework-gap-analysis", "purpose": "Map findings to which framework controls claim to cover them and where the gap is.", "required": true },
+        { "skill": "compliance-theater", "purpose": "Run the theater test on the org's container-security attestation (CIS K8s + image scanning + SLSA claim).", "required": true },
+        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready exception language for workloads requiring elevated privileges (CNI plugins, CSI drivers, eBPF observability) where the elevation is intentional.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+      ],
+      "token_budget": {
+        "estimated_total": 21000,
+        "breakdown": {
+          "govern": 2600,
+          "direct": 1800,
+          "look": 2400,
+          "detect": 3400,
+          "analyze": 4400,
+          "validate": 3800,
+          "close": 2600
+        }
+      }
+    },
+
+    "look": {
+      "artifacts": [
+        {
+          "id": "dockerfile-inventory",
+          "type": "file",
+          "source": "Walk cwd for filenames Dockerfile, *.dockerfile, Containerfile, *.containerfile",
+          "description": "All Dockerfile-shaped files in the repo. Each is a build recipe whose FROM directive + USER directive + RUN curl-pipe-bash anti-patterns are findings.",
+          "required": true,
+          "air_gap_alternative": "Filesystem walk; no network."
+        },
+        {
+          "id": "dockerfile-content",
+          "type": "file",
+          "source": "For each Dockerfile: full content with line numbers.",
+          "description": "Required for per-directive analysis (FROM lines, USER directives, COPY/ADD source/dest, RUN commands, HEALTHCHECK presence, --platform flags).",
+          "required": true
+        },
+        {
+          "id": "compose-files",
+          "type": "file",
+          "source": "Walk cwd for filenames docker-compose.yml, docker-compose.yaml, compose.yml, compose.yaml, docker-compose.*.yml",
+          "description": "docker-compose definitions. Services with privileged: true, cap_add, network_mode: host, pid: host, ipc: host, volumes binding /, /etc, /proc, /sys, /var/run/docker.sock.",
+          "required": true
+        },
+        {
+          "id": "k8s-manifests",
+          "type": "file",
+          "source": "Walk cwd for *.yaml / *.yml files; identify those with apiVersion + kind (k8s resource shape). Filter to Pod, Deployment, StatefulSet, DaemonSet, Job, CronJob, ReplicaSet kinds.",
+          "description": "Kubernetes workload manifests. spec.securityContext + per-container securityContext + hostPID/hostNetwork/hostIPC + volumes (hostPath, /var/run/docker.sock) + containers[].image (tag vs. digest).",
+          "required": true
+        },
+        {
+          "id": "helm-charts",
+          "type": "file",
+          "source": "Walk for Chart.yaml + values.yaml + templates/*.yaml under helm-chart directory shape.",
+          "description": "Helm chart inventory. values.yaml is configuration surface; templates contain manifest shape. Findings parallel k8s-manifests.",
+          "required": false
+        },
+        {
+          "id": "kustomize-overlays",
+          "type": "file",
+          "source": "Walk for kustomization.yaml + overlay/*.yaml.",
+          "description": "Kustomize overlays. Patch findings against base manifests; security-context-changing patches are themselves findings.",
+          "required": false
+        },
+        {
+          "id": "pod-security-admission-config",
+          "type": "file",
+          "source": "Walk for files containing 'PodSecurity' configuration (PodSecurityPolicy deprecated; PodSecurity admission controller config).",
+          "description": "Cluster's admission control policy. Restrictive / Baseline / Privileged policy assignments per namespace.",
+          "required": false
+        },
+        {
+          "id": "network-policies",
+          "type": "file",
+          "source": "Walk for k8s manifests with kind: NetworkPolicy or kind: CiliumNetworkPolicy / CalicoNetworkPolicy.",
+          "description": "Network policy inventory. Absence is itself a finding; namespaces without NP default to allow-all.",
+          "required": false
+        },
+        {
+          "id": "service-account-manifests",
+          "type": "file",
+          "source": "Walk for k8s manifests with kind: ServiceAccount or RoleBinding / ClusterRoleBinding.",
+          "description": "Service account + RBAC binding inventory. cluster-admin-bound SAs in deployable namespaces are findings.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "current_repository_working_tree",
+        "depth": "deep",
+        "sampling": "complete walk; no sampling — every container-related file is read"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "cwd is a repository containing some container/k8s manifest content",
+          "if_false": "Playbook completes with zero findings + visibility note 'no container manifests in scope'. Not a finding; the workload-not-containerized posture is its own valid choice."
+        },
+        {
+          "assumption": "agent can parse YAML and identify k8s resource kinds",
+          "if_false": "Mark k8s-manifest analysis inconclusive; defer to a YAML-capable agent."
+        },
+        {
+          "assumption": "repo represents the as-deployed state",
+          "if_false": "Repo may contain example/test manifests not deployed (e.g. examples/ directory). Mark these with 'not-deployed-shape' and emit findings only on root-of-deploy paths (typical: k8s/, manifests/, deploy/, charts/, ci/)."
+        },
+        {
+          "assumption": "node runc / containerd / kubelet versions are not in repo",
+          "if_false": "If runtime version evidence is in repo (rare but possible for self-managed clusters), cross-reference against CVE catalog for runtime CVEs."
+        }
+      ],
+      "fallback_if_unavailable": [
+        { "artifact_id": "dockerfile-inventory", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "compose-files", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
+        { "artifact_id": "k8s-manifests", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
+        { "artifact_id": "helm-charts", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "pod-security-admission-config", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
+        { "artifact_id": "network-policies", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
+        { "artifact_id": "service-account-manifests", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" }
+      ]
+    },
+
+    "detect": {
+      "indicators": [
+        {
+          "id": "dockerfile-from-latest",
+          "type": "file_path",
+          "value": "Dockerfile FROM directive with :latest tag OR no tag at all (defaults to :latest)",
+          "description": "Image base resolves differently between scan and deploy. Image scanning attestation does not apply to the deployed image.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1525"
+        },
+        {
+          "id": "dockerfile-no-digest-pin",
+          "type": "log_pattern",
+          "value": "Dockerfile FROM directive without @sha256:* digest",
+          "description": "Tag-only base reference. Tag mutability means provenance cannot be verified.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1525"
+        },
+        {
+          "id": "dockerfile-runs-as-root",
+          "type": "log_pattern",
+          "value": "Dockerfile lacks USER directive OR USER directive sets root / 0",
+          "description": "Container will run as root inside the namespace. Combined with any namespace escape, root-on-host.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "dockerfile-curl-pipe-bash",
+          "type": "log_pattern",
+          "value": "Dockerfile RUN directive containing `curl|wget` piped to `bash|sh|python` OR pipe pattern from network to shell interpreter",
+          "description": "Build-time supply-chain compromise primitive. Compromised CDN or DNS rebind = arbitrary code in image.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "compose-privileged",
+          "type": "log_pattern",
+          "value": "docker-compose service block containing `privileged: true`",
+          "description": "Container has full host kernel access. Container escape is built in by configuration.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "compose-cap-add-sys-admin",
+          "type": "log_pattern",
+          "value": "docker-compose `cap_add: [SYS_ADMIN]` OR `cap_add: [SYS_PTRACE]` OR `cap_add: [SYS_MODULE]`",
+          "description": "Dangerous capability granted. SYS_ADMIN especially is functionally equivalent to root-on-host.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "compose-host-network",
+          "type": "log_pattern",
+          "value": "docker-compose `network_mode: host` OR `pid: host` OR `ipc: host`",
+          "description": "Host namespace sharing. Cross-process visibility + tampering primitive.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1610"
+        },
+        {
+          "id": "compose-docker-sock-mount",
+          "type": "log_pattern",
+          "value": "docker-compose volume entry mounting /var/run/docker.sock into the container",
+          "description": "Container can control the Docker daemon. Functionally equivalent to root on host.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "k8s-privileged",
+          "type": "log_pattern",
+          "value": "k8s manifest containers[].securityContext.privileged: true",
+          "description": "K8s container with privileged: true. Same risk class as compose-privileged.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "k8s-host-namespaces",
+          "type": "log_pattern",
+          "value": "k8s manifest spec.hostPID: true OR spec.hostNetwork: true OR spec.hostIPC: true",
+          "description": "Pod shares host namespaces. Cross-host-process visibility.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1610"
+        },
+        {
+          "id": "k8s-run-as-root",
+          "type": "log_pattern",
+          "value": "k8s manifest containers[].securityContext.runAsUser: 0 OR runAsNonRoot: false OR runAsUser unset AND image runs as root",
+          "description": "Container runs as root. Combined with any escape primitive = host root.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "k8s-no-seccomp-profile",
+          "type": "log_pattern",
+          "value": "k8s manifest containers[].securityContext.seccompProfile absent AND pod.spec.securityContext.seccompProfile absent",
+          "description": "Default seccomp profile = unconfined on many CRI implementations. Allows full syscall surface inside the container.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "k8s-hostpath-sensitive",
+          "type": "log_pattern",
+          "value": "k8s manifest volumes[].hostPath.path matching ^/$ OR ^/etc OR ^/proc OR ^/sys OR ^/var/run/docker.sock OR ^/var/lib/kubelet OR ^/var/log",
+          "description": "Sensitive host path mounted into container. Host filesystem read/write primitive.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "k8s-image-latest",
+          "type": "log_pattern",
+          "value": "k8s manifest containers[].image ends in :latest OR has no tag separator",
+          "description": "Image tag :latest in k8s. Resolves to whatever the registry holds at pod-start time; deployment is non-deterministic.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1525"
+        },
+        {
+          "id": "k8s-cluster-admin-binding",
+          "type": "log_pattern",
+          "value": "k8s manifest kind: ClusterRoleBinding referencing cluster-admin role AND subjects include a ServiceAccount in a workload namespace",
+          "description": "Workload SA bound to cluster-admin. Pod compromise = cluster compromise.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.004"
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "k8s-privileged",
+          "benign_pattern": "Legitimate infrastructure workloads requiring privileged mode (CNI plugins like Cilium/Calico, CSI drivers, kube-proxy, eBPF observability agents).",
+          "distinguishing_test": "Check whether the manifest is in a namespace explicitly enumerated as infrastructure (kube-system, kube-flannel, cilium-system, longhorn-system, etc.) AND the workload name matches a documented infrastructure component. If yes, downgrade to medium + emit 'intentional infrastructure privilege' finding requiring documented PodSecurity exemption. Workload-namespace privileged: true holds deterministic."
+        },
+        {
+          "indicator_id": "k8s-host-namespaces",
+          "benign_pattern": "Node-level agents (DaemonSets) that legitimately need host network for observability or networking (kube-proxy, ingress controllers, CNI agents).",
+          "distinguishing_test": "Same as above — check infrastructure-namespace + kind: DaemonSet + documented component. Holds for compose-host-network similarly."
+        },
+        {
+          "indicator_id": "compose-docker-sock-mount",
+          "benign_pattern": "Local development compose file for tools that legitimately orchestrate other containers (Portainer dev, dind-runner CI).",
+          "distinguishing_test": "Check whether the file path contains /dev/, /examples/, /docs/, /test/ AND whether the same repo has a separate production compose without the mount. If yes, downgrade to medium and emit 'development-only socket mount' finding. Production compose with the mount holds deterministic."
+        },
+        {
+          "indicator_id": "dockerfile-runs-as-root",
+          "benign_pattern": "Multi-stage build where final stage uses USER directive but earlier stages don't (intentional pattern).",
+          "distinguishing_test": "Parse all stages in the Dockerfile. Find the FROM with `AS` matching the final-stage name (or the last FROM if no aliases). Check whether the final stage has a USER directive. If final-stage USER is set to non-root, downgrade to medium and emit 'multi-stage build, root in build stages only'. If even the final stage has no USER, hold deterministic."
+        },
+        {
+          "indicator_id": "k8s-image-latest",
+          "benign_pattern": "Dev/staging manifest with :latest intentionally for fast iteration.",
+          "distinguishing_test": "Check whether the manifest path contains /dev/, /staging/, /local/ AND whether sibling files exist for /prod/ without :latest. If yes, downgrade to medium with 'dev-only latest tag'. Prod path with :latest holds deterministic."
+        },
+        {
+          "indicator_id": "k8s-no-seccomp-profile",
+          "benign_pattern": "Cluster-level default seccomp profile applied via Kubelet --seccomp-default flag (k8s 1.27+). Per-pod profile not needed.",
+          "distinguishing_test": "Cluster-default flag presence is not visible from manifests alone. In air-gap mode, hold high confidence and emit a finding requiring cluster-default-seccomp evidence as compensating control."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic indicator fires on a non-infrastructure-namespace manifest, OR two or more high-confidence indicators fire on the same workload.",
+        "inconclusive": "Manifests present but agent cannot parse YAML or determine namespace context. Distinguish 'parse failure' from 'clean manifests'.",
+        "not_detected": "All container files inspected AND no deterministic indicators fired on workload-namespace manifests AND no more than one high-confidence indicator with confirmed benign distinguishing test."
+      }
+    },
+
+    "analyze": {
+      "rwep_inputs": [
+        { "signal_id": "compose-privileged", "rwep_factor": "active_exploitation", "weight": 30, "notes": "privileged: true is exploitation-already-configured." },
+        { "signal_id": "k8s-privileged", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Same as compose-privileged." },
+        { "signal_id": "compose-docker-sock-mount", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Docker socket mount = full host control." },
+        { "signal_id": "k8s-hostpath-sensitive", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Sensitive host path mount = direct host write." },
+        { "signal_id": "k8s-host-namespaces", "rwep_factor": "blast_radius", "weight": 20, "notes": "Host namespace = cross-process pivot." },
+        { "signal_id": "compose-host-network", "rwep_factor": "blast_radius", "weight": 20, "notes": "Same." },
+        { "signal_id": "k8s-cluster-admin-binding", "rwep_factor": "active_exploitation", "weight": 30, "notes": "Cluster-admin SA in workload namespace = pre-positioned escalation." },
+        { "signal_id": "k8s-run-as-root", "rwep_factor": "blast_radius", "weight": 15, "notes": "Root inside container amplifies any escape primitive." },
+        { "signal_id": "k8s-no-seccomp-profile", "rwep_factor": "blast_radius", "weight": 10, "notes": "Unconfined syscalls = full escape primitive surface." },
+        { "signal_id": "k8s-image-latest", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "Image mutation between scan and deploy creates an AI-discoverable attack window." },
+        { "signal_id": "dockerfile-from-latest", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "Same — build vs. deploy provenance gap." },
+        { "signal_id": "dockerfile-curl-pipe-bash", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Supply-chain build primitive." }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the manifest posture, what is the realistic blast radius when this workload is deployed and an attacker achieves code execution inside the container?",
+        "scoring_rubric": [
+          { "condition": "No deterministic indicators on workload-namespace manifests AND digest pinning + non-root + seccomp profile present", "blast_radius_score": 1, "description": "Container is hardened. Escape requires a runtime CVE chain; no pre-positioned primitives." },
+          { "condition": "One high-confidence indicator (e.g. no seccomp, or no digest pin) on otherwise-hardened manifest", "blast_radius_score": 2, "description": "Single hardening gap. Escape requires both a runtime CVE and the gap." },
+          { "condition": "One deterministic indicator (privileged: false but hostPath sensitive, OR latest tag) on a workload manifest", "blast_radius_score": 3, "description": "One pre-positioned escape primitive. Container compromise → host with manageable effort." },
+          { "condition": "Multiple deterministic indicators on workload manifest OR cluster-admin SA in workload namespace", "blast_radius_score": 4, "description": "Container compromise = cluster-wide compromise without runtime CVE chain." },
+          { "condition": "privileged: true + hostPID/Network + docker.sock mount + cluster-admin SA on workload-namespace pod", "blast_radius_score": 5, "description": "Pre-positioned host-and-cluster compromise. Pod compromise = full infrastructure access." }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org passes CIS Kubernetes Benchmark + NIST 800-190 + image scanning in CI; container security covered.",
+        "audit_evidence": "Most-recent CIS K8s scan report; image-scanner CI logs; admission controller config.",
+        "reality_test": "Run the manifest walk today and count: (a) workload-namespace manifests with privileged: true, (b) workload manifests with hostPID/hostNetwork/hostIPC, (c) manifests with runAsUser: 0 (or no runAsNonRoot constraint), (d) manifests with image: *:latest, (e) Dockerfiles with FROM *:latest or no tag, (f) Dockerfiles without USER directive, (g) ClusterRoleBindings to cluster-admin from workload-namespace SAs. Any non-zero count in workload-namespace contradicts CIS K8s Section 5 / NIST 800-190 4.4. Additionally test whether the admission controller would actually block these manifests if reapplied (paste a known-bad manifest into a `kubectl apply --dry-run=server` and confirm rejection). If admission passes, the controls are advisory.",
+        "theater_verdict_if_gap": "CIS K8s attestation describes a hardened posture that manifest reality contradicts. Workload-namespace privileged/host-namespace/cluster-admin patterns ship despite the attestation. Either (a) refactor the offending manifests to hardened equivalents, (b) update admission controller to baseline/restricted PodSecurity for workload namespaces, OR (c) generate per-workload policy exception documenting the elevation + named compensating controls."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "container-manifest-posture",
+          "framework": "nist-800-53",
+          "claimed_control": "CM-7 — Least Functionality",
+          "actual_gap": "Treats containers as generic system components. No required enumeration of container-specific anti-patterns.",
+          "required_control": "CM-7 sub-control: per-manifest analysis of container security primitives (privileged, host namespaces, capabilities, runAsUser, seccomp, image pinning) with documented baseline + deviation register."
+        },
+        {
+          "finding_id": "container-manifest-posture",
+          "framework": "nist-800-190",
+          "claimed_control": "4.1.1, 4.4.1, 4.4.2, 4.4.3",
+          "actual_gap": "Non-mandatory guidance; orgs cite without being audited against specifics.",
+          "required_control": "Adopt 800-190 as a CM-7 compliance target (not just reference). Require evidence per workload manifest, not cluster-wide attestation."
+        },
+        {
+          "finding_id": "container-manifest-posture",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.9 — Configuration Management",
+          "actual_gap": "Baseline + change-management evidence accepted. No required per-workload analysis.",
+          "required_control": "SoA footnote requiring per-workload manifest review against documented hardened baseline."
+        },
+        {
+          "finding_id": "container-manifest-posture",
+          "framework": "pci-dss-4",
+          "claimed_control": "Req.2.2 — Configuration Standards",
+          "actual_gap": "Container-aware in 4.0 but QSA expertise varies; auditor may accept cluster-wide attestation.",
+          "required_control": "Require QSA training on container-specific evaluation and per-workload manifest review for systems in CDE."
+        },
+        {
+          "finding_id": "container-supply-chain",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I (effective Dec 2027)",
+          "actual_gap": "Will require SBOM + vulnerability handling. Operationalization unclear for containerized products as of 2026.",
+          "required_control": "Pre-CRA enforcement preparation: digest-pinned base images, SBOM-per-image, signed images, attested provenance per SLSA L3+."
+        }
+      ],
+      "escalation_criteria": [
+        { "condition": "rwep >= 90 AND blast_radius_score >= 4", "action": "page_on_call" },
+        { "condition": "k8s-cluster-admin-binding fired AND target_namespace not in infrastructure_namespaces", "action": "raise_severity" },
+        { "condition": "blast_radius_score >= 4 AND workload_is_internet_facing == true", "action": "trigger_playbook", "target_playbook": "secrets" },
+        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" }
+      ]
+    },
+
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "remove-privileged-flag",
+          "description": "Refactor manifest to remove privileged: true. If workload needs specific capability, replace with bounded capabilities: add: [NET_ADMIN] etc. and drop: [ALL]. If host access genuinely required (eBPF observability), move workload to a dedicated infrastructure namespace + document via PodSecurity exemption.",
+          "preconditions": ["workload_owner_consulted == true", "alternative_capability_path_identified == true"],
+          "priority": 1,
+          "compensating_controls": ["pod-security-baseline-enforced", "admission-controller-blocks-privileged"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "remove-host-namespaces",
+          "description": "Remove hostPID / hostNetwork / hostIPC from workload manifests. Move legitimate host-namespace consumers to infrastructure namespaces with documented exemption.",
+          "preconditions": ["workload_owner_consulted == true", "host_namespace_requirement_documented_or_invalid == true"],
+          "priority": 1,
+          "compensating_controls": ["pod-security-baseline-enforced", "namespace-isolation-tightened"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "pin-images-by-digest",
+          "description": "Replace image: name:tag with image: name@sha256:digest in k8s manifests; replace FROM name:tag with FROM name@sha256:digest in Dockerfiles. Automate digest resolution in CI.",
+          "preconditions": ["ci_supports_digest_resolution == true OR manual_digest_pinning_accepted == true"],
+          "priority": 2,
+          "compensating_controls": ["image-signature-verified", "registry-immutability-enforced"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "set-runasnonroot",
+          "description": "Add securityContext.runAsNonRoot: true and runAsUser: <non-zero> to all workload pods. Update Dockerfile USER directives accordingly.",
+          "preconditions": ["image_supports_non_root == true"],
+          "priority": 2,
+          "compensating_controls": ["pod-security-restricted-enforced"],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "add-seccomp-profile",
+          "description": "Add seccompProfile.type: RuntimeDefault (or Localhost with specific profile) to pod or container securityContext. Or enable cluster-wide --seccomp-default at kubelet.",
+          "preconditions": ["cluster_supports_seccomp_profile == true"],
+          "priority": 2,
+          "compensating_controls": ["seccomp-profile-active"],
+          "estimated_time_hours": 1
+        },
+        {
+          "id": "remove-docker-sock-mount",
+          "description": "Remove /var/run/docker.sock from container volumes. If workload genuinely needs to orchestrate containers, switch to (a) kubernetes API client with bounded SA permissions, (b) BuildKit / Buildah daemonless build, or (c) sysbox or kata for hardened nested runtime.",
+          "preconditions": ["alternative_path_identified == true"],
+          "priority": 1,
+          "compensating_controls": ["bounded-rbac-applied", "sysbox-or-kata-deployed"],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "scope-cluster-admin-binding",
+          "description": "Replace cluster-admin ClusterRoleBinding for workload SAs with namespace-scoped Role + RoleBinding granting only required verbs/resources. Audit current usage first to enumerate required permissions.",
+          "preconditions": ["sa_usage_audit_complete == true"],
+          "priority": 1,
+          "compensating_controls": ["scoped-role-applied", "audit2rbac-output-attached"],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "update-runtime-patches",
+          "description": "Confirm runc >= 1.1.12, containerd patched against current CVE lineage, kubelet at minimum supported minor. Coordinate node-by-node patch rollout.",
+          "preconditions": ["maintenance_window_available == true"],
+          "priority": 2,
+          "compensating_controls": ["node-cordon-drain-update-uncordon-pattern"],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "policy-exception",
+          "description": "For workloads requiring elevated privileges that cannot be remediated (CNI, CSI, eBPF observability, specific HPC workloads), generate auditor-ready exception with named compensating controls.",
+          "preconditions": ["elevation_documented_as_required == true", "infrastructure_namespace_designated == true"],
+          "priority": 4,
+          "compensating_controls": ["namespace-isolation-enforced", "audit-log-monitoring-on-workload", "runtime-policy-tightened-on-workload"],
+          "estimated_time_hours": 4
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "manifest-rescan-clean",
+          "test": "Re-run the manifest walk. Expect zero deterministic indicators on workload-namespace manifests.",
+          "expected_result": "All workload manifests pass; infrastructure-namespace exemptions documented.",
+          "test_type": "negative"
+        },
+        {
+          "id": "admission-controller-blocks-bad-manifest",
+          "test": "Take a known-bad manifest (privileged: true in a workload namespace) and `kubectl apply --dry-run=server`. Confirm rejection.",
+          "expected_result": "Admission controller rejects the manifest with reason matching PodSecurity baseline/restricted policy.",
+          "test_type": "negative"
+        },
+        {
+          "id": "image-pins-active",
+          "test": "Grep all manifests for `image:` directives. Confirm every entry contains `@sha256:`.",
+          "expected_result": "100% of image references digest-pinned.",
+          "test_type": "functional"
+        },
+        {
+          "id": "runtime-version-confirmed",
+          "test": "On each node pool: `kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{\" \"}{.status.nodeInfo.containerRuntimeVersion}{\"\\n\"}{end}'`. Cross-reference against current container runtime CVE list.",
+          "expected_result": "All nodes report runtime versions outside any active CVE's affected ranges.",
+          "test_type": "functional"
+        },
+        {
+          "id": "rbac-scoped",
+          "test": "For each workload SA: `kubectl auth can-i --list --as=system:serviceaccount:<ns>:<sa>`. Confirm permissions match documented scope; no wildcard verbs.",
+          "expected_result": "SA permissions scoped; no '*' verbs on '*' resources.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-workload-regression",
+          "test": "Run the application's integration test suite. Confirm no regression from manifest hardening.",
+          "expected_result": "All integration tests pass.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even with hardened manifests, runtime CVEs in runc / containerd / kubelet emerge regularly. A hardened manifest reduces blast radius of an exploited runtime CVE but does not prevent the CVE itself. Additionally, supply-chain compromise of the base image cannot be prevented by manifest posture.",
+        "why_remains": "Container security is layered defense. Hardened manifests + admission control + image signing + runtime security + node hardening together provide defense in depth; no single layer is sufficient.",
+        "acceptance_level": "manager",
+        "compensating_controls_in_place": ["admission-controller-baseline", "image-signatures-verified", "runtime-security-monitoring", "node-hardening-baselined", "monthly-manifest-cadence"]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full manifest walk output: per-file indicator firing counts, RWEP per workload, before-after diff.",
+          "retention_period": "1_year",
+          "framework_satisfied": ["nist-800-190", "nist-800-53-CM-7", "iso-27001-2022-A.8.9", "cmmc-cm-l2-3.4.6"]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Pre/post manifest diffs showing remediation applied; admission controller config history.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.8.32"]
+        },
+        {
+          "evidence_type": "patch_record",
+          "description": "Per-node runc / containerd / kubelet version evidence with patch deployment timestamps.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-SI-2", "iso-27001-2022-A.8.8", "nis2-art21-2c"]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: repo identity, manifest count, indicator firing counts, runtime versions, RWEP at detection, RWEP post-remediation.",
+          "retention_period": "7_years",
+          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2c"]
+        }
+      ],
+      "regression_trigger": [
+        { "condition": "post_helm_or_kustomize_change", "interval": "on_event" },
+        { "condition": "new_cve_in_container_runtime", "interval": "on_event" },
+        { "condition": "monthly", "interval": "30d" },
+        { "condition": "post_admission_controller_policy_change", "interval": "on_event" }
+      ]
+    },
+
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": ["scan_report", "config_diff", "patch_record", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Container escape via $primitive_class (privileged: true / hostPath sensitive / docker.sock mount / hostPID / runAsUser: 0 / runc-class CVE chain / unpinned image mutation between scan and deploy).",
+          "control_gap": "Container hardening controls (NIST 800-190, CIS K8s Benchmark, CM-7, A.8.9, PCI Req.2.2) accept cluster-wide attestation as evidence and do not require per-manifest analysis or per-node runtime-version evidence.",
+          "framework_gap": "Cluster-wide attestation cadence + per-workload manifest velocity creates structural drift window. Runtime CVE patch tempo + node staging window creates separate drift. Frameworks lag both by ~21 days.",
+          "new_control_requirement": "Per-manifest analysis at admission time + per-node runtime version evidence + digest-pinned images + signed image verification become required baseline controls. Continuous attestation replaces point-in-time CIS scans."
+        },
+        "feeds_back_to_skills": ["container-runtime-security", "supply-chain-integrity", "framework-gap-analysis", "compliance-theater"]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.21 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["container_manifest_inventory", "runtime_cve_status", "remediation_plan"],
+          "draft_notification": "NIS2 Art.21 vulnerability-handling record: Container posture review on ${affected_workload_count} workload(s) and ${node_count} node(s). Findings: ${finding_summary}. Remediation completed by ${remediation_date}. Container runtime versions: ${runtime_version_summary}. Evidence: manifest inventory + runtime CVE status + remediation plan attached."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["affected_workload_inventory", "exploitation_status_assessment"],
+          "draft_notification": "NIS2 Art.23 early-warning notification: Container-escape-related finding on ${affected_workload_count} workload(s). Indicator(s): ${indicator_summary}. Interim mitigation: ${interim_mitigation}. Full incident assessment within 72h per Art.23(4)."
+        },
+        {
+          "obligation_ref": "US/CMMC 2.0 CM.L2-3.4.6 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": ["baseline_configuration_document", "ssp_section_update"],
+          "draft_notification": "CMMC CM.L2-3.4.6 update: Container baseline configuration review completed on ${affected_workload_count} workload(s). Baseline updates: ${baseline_updates}. SSP section to update: ${ssp_section}. Continuous-monitoring evidence retained."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "elevation_documented_as_required == true OR (runtime_patch_window > obligation_window AND compensating_controls_documented == true)",
+        "exception_template": {
+          "scope": "Container privilege elevation OR unpatched runtime on ${affected_workload_count} workload(s) / ${node_count} node(s). Elevation reason: ${elevation_reason}.",
+          "duration": "until_next_audit",
+          "compensating_controls": ["namespace-isolation-enforced", "network-policy-restrictive", "runtime-security-monitoring-active", "audit-log-monitoring-on-workload", "admission-controller-exemption-documented"],
+          "risk_acceptance_owner": "manager",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for container privilege configuration ${elevation_class} on ${affected_workload_count} workload(s) and/or runtime version exposure on ${node_count} node(s). Elevation reason: ${elevation_reason_narrative}. Workload(s) deployed in dedicated infrastructure namespace ${namespace_name} with restrictive network policy and runtime security monitoring. Compensating controls in place: ${compensating_controls}. Residual exposure: workload retains elevated privileges; runtime CVE patch deployment subject to node staging window. Risk accepted by ${manager_name} on ${acceptance_date}. Time-bound until ${duration_expiry} OR runtime patch completion + workload refactor completion, whichever is first. Detection coverage during the exception window: ${detection_controls}. Re-evaluation triggers: (a) workload refactor to remove elevation, (b) runtime patch completion, (c) listed expiry date, (d) any runtime security event on the workload — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+
+  "directives": [
+    {
+      "id": "full-container-manifest-walk",
+      "title": "Full container manifest walk — Dockerfile + compose + k8s + helm",
+      "applies_to": { "always": true }
+    },
+    {
+      "id": "container-escape-primitives",
+      "title": "Targeted directive — manifests pre-positioning container escape primitives",
+      "applies_to": { "attack_technique": "T1611" }
+    },
+    {
+      "id": "supply-chain-image-provenance",
+      "title": "Targeted directive — image provenance + digest pinning + signature verification",
+      "applies_to": { "attack_technique": "T1525" }
+    }
+  ]
+}
