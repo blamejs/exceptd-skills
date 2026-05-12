@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.11.5 — 2026-05-12
+
+**Patch: items 82-90 + permanent regression suite at `tests/operator-bugs.test.js`.**
+
+Every operator-reported bug fixed across the v0.9.5 → v0.11.x arc now lands as a named test case in `tests/operator-bugs.test.js`. Re-introductions surface at `npm test`, not at user re-report. 27 cases on day one covering items #17, #18, #19, #31, #32, #33, #46, #58, #62, #65, #71, #73, #76, #82, #83, #85, #87.
+
+### Critical
+
+- **#82 SARIF / CSAF / OpenVEX rendered empty bundles** when the playbook had no catalogued CVEs. crypto-codebase / library-author have `domain.cve_refs: []` by design (they check process / posture, not catalogue CVEs), so the renderers had nothing to populate. Pre-0.11.5 a successful run with 9 indicators firing produced `vulnerabilities: 0` / `results: 0` / `statements: 0`. Now: indicators that fire (verdict: hit) and framework gaps are first-class SARIF results / CSAF vulnerabilities / OpenVEX statements. Each fired indicator becomes a SARIF result with `kind: indicator_hit` + a pseudo-CVE id under the `exceptd:` namespace for CSAF/OpenVEX. SARIF + CSAF + OpenVEX bundles now meaningfully integrate with GitHub Code Scanning / VEX downstreams / supply-chain tooling even for posture-only playbooks.
+
+### Bugs
+
+- **#83 lint and run disagreed on shape validity.** Lint walked the raw submission and only matched observations whose key was a known artifact id. The runner's `normalizeSubmission` followed `val.artifact` indirection — so observations with arbitrary keys (`obs-1`, `obs-2`) and an `artifact:` field route correctly. Fix: lint now runs the same `normalizeSubmission` the runner does, then validates the canonical normalized shape. The user's proposed fix — single observations-normalizer module that lint, run, and format renderers all consume — landed.
+
+- **#85 `from_observation` always null.** The diagnostic field on `indicators_evaluated[]` is now populated with the observation key that drove each indicator outcome (when supplied via flat-shape observation + indicator + result). Lets operators trace "which observation produced this verdict" without guessing.
+
+- **#86 / #76 `--format garbage` was silent.** v0.11.4 fixed it for `run`; this release fixes the same surface on `ci`. Both now emit `{ok:false, error, verb}` JSON to stderr with non-zero exit when an unknown format is requested.
+
+- **#90 legacy verbs in help.** v0.10.x legacy verbs (plan / govern / direct / look / scan / dispatch / etc) appeared in the help output alongside their v0.11 replacements. Operators copy-pasting from `exceptd help | grep '^  [a-z]'` ended up using legacy verbs and missed the new ones. Each legacy entry is now prefixed with `[DEPRECATED]` so the grep pattern still excludes them.
+
+### Deferred (confirmed not yet shipped)
+
+- **#88 default-output flip incomplete.** `emit()` indents JSON on TTY (improvement over compact JSON); `discover`/`doctor`/`ask`/`refresh` use custom human renderers. `brief`/`run`/`attest list`/`lint` still emit JSON because their data is too rich for a compact human view. Indented-JSON-on-TTY is the v0.11.x answer; per-verb human renderers continue to be incremental.
+
+- **#89 warn-level preconditions exit 0.** `on_fail: halt` correctly exits 1; `on_fail: warn` exits 0 with `preflight_issues` populated. The operator wants warn-level to also fail CI gates — `--strict-preconditions` flag deferred to v0.11.6. Today: use `exceptd ci` for CI gates (correctly maps detected/escalate to exit 2).
+
+### Test infrastructure
+
+- New: `tests/operator-bugs.test.js` (27 cases, all green). Future bug fixes land here as named cases so the audit script becomes part of CI.
+
 ## 0.11.4 — 2026-05-12
 
 **Patch: high-impact #71 fix + items 72-77.**

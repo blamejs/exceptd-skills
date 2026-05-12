@@ -245,17 +245,26 @@ v0.11.0 canonical surface
 v0.10.x compatibility (will be removed in v0.12)
 ────────────────────────────────────────────────
 
-These verbs still work but emit a one-time deprecation banner. Migrate to
-the v0.11.0 verb shown:
+These verbs still work but emit a one-time deprecation banner. The
+[DEPRECATED] prefix is included so \`exceptd help | grep '^  [a-z]'\`
+doesn't surface them in the active-verbs list. Migrate to v0.11:
 
-  plan → brief --all                govern → brief <pb> --phase govern
-  direct → brief <pb> --phase direct  look → brief <pb> --phase look
-  ingest → run                       reattest → attest diff
-  list-attestations → attest list   scan → discover --scan-only
-  dispatch → discover                currency → doctor --currency
-  verify → doctor --signatures      validate-cves → doctor --cves
-  validate-rfcs → doctor --rfcs     watchlist → watch
-  prefetch → refresh --no-network   build-indexes → refresh --indexes-only
+  [DEPRECATED] plan              → brief --all
+  [DEPRECATED] govern <pb>       → brief <pb> --phase govern
+  [DEPRECATED] direct <pb>       → brief <pb> --phase direct
+  [DEPRECATED] look <pb>         → brief <pb> --phase look
+  [DEPRECATED] ingest            → run
+  [DEPRECATED] reattest <sid>    → attest diff <sid>
+  [DEPRECATED] list-attestations → attest list
+  [DEPRECATED] scan              → discover --scan-only
+  [DEPRECATED] dispatch          → discover
+  [DEPRECATED] currency          → doctor --currency
+  [DEPRECATED] verify            → doctor --signatures
+  [DEPRECATED] validate-cves     → doctor --cves
+  [DEPRECATED] validate-rfcs     → doctor --rfcs
+  [DEPRECATED] watchlist         → watch
+  [DEPRECATED] prefetch          → refresh --no-network
+  [DEPRECATED] build-indexes     → refresh --indexes-only
 
 Output: default human-readable (v0.11.0). --json for machine output.
         --pretty for indented JSON.
@@ -818,7 +827,6 @@ function cmdLint(runner, args, runOpts, pretty) {
   catch (e) { return emitError(`lint: failed to read evidence: ${e.message}`, { evidence: evidencePath }, pretty); }
 
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  const resolved = runner._resolvedPhase;
   const lookPhase = pb.phases?.look || {};
   const detectPhase = pb.phases?.detect || {};
 
@@ -827,26 +835,38 @@ function cmdLint(runner, args, runOpts, pretty) {
   const knownIndicators = new Set((detectPhase.indicators || []).map(i => i.id));
   const knownPreconditions = new Set((pb._meta?.preconditions || []).map(p => p.id));
 
-  // Support both flat (observations) and nested (artifacts/signal_overrides) shapes.
+  // v0.11.5 #83: shared shape contract with runner. Pre-0.11.5 lint
+  // walked the raw submission and only matched observations whose key was
+  // a known artifact id. The runner's normalizeSubmission follows
+  // `val.artifact` indirection — so observations with arbitrary keys
+  // (obs-1, obs-2) and an `artifact:` field route correctly. Lint must
+  // do the same normalization before validating, or lint and run disagree
+  // on what's a valid submission.
+  const normalized = runner.normalizeSubmission(submission, pb);
   const flat = submission.observations || null;
-  const artifactsKey = flat ? flat : (submission.artifacts || {});
-  const signalsKey = flat ? flat : (submission.signal_overrides || {});
 
+  // After normalize, validation walks the canonical nested shape.
   const missingRequired = requiredArtifacts.filter(id => {
-    const a = artifactsKey[id];
-    return !a || (flat ? !a.captured : !a.captured);
+    const a = normalized.artifacts && normalized.artifacts[id];
+    return !a || !a.captured;
   });
 
-  const unknownArtifactKeys = Object.keys(submission.artifacts || {})
+  const unknownArtifactKeys = Object.keys(normalized.artifacts || {})
     .filter(k => !knownArtifacts.has(k));
-  const unknownSignalKeys = Object.keys(submission.signal_overrides || {})
+  const unknownSignalKeys = Object.keys(normalized.signal_overrides || {})
     .filter(k => !knownIndicators.has(k));
   const unknownObservationKeys = flat
-    ? Object.keys(flat).filter(k => !knownArtifacts.has(k) && !knownIndicators.has(k) && !knownPreconditions.has(k))
+    ? Object.keys(flat).filter(k => {
+        // Skip observations with explicit `artifact:` indirection — those
+        // are valid by-design even when the key doesn't match a known artifact.
+        const v = flat[k];
+        if (v && typeof v === "object" && v.artifact) return false;
+        return !knownArtifacts.has(k) && !knownIndicators.has(k) && !knownPreconditions.has(k);
+      })
     : [];
 
   const unsuppliedPreconditions = [...knownPreconditions].filter(
-    p => !((submission.precondition_checks || {}).hasOwnProperty(p) || (flat || {}).hasOwnProperty(p))
+    p => !(((submission.precondition_checks || {}).hasOwnProperty(p)) || ((normalized.precondition_checks || {}).hasOwnProperty(p)))
   );
 
   const issues = [];
@@ -866,33 +886,19 @@ function cmdLint(runner, args, runOpts, pretty) {
     issues.push({ severity: "warn", kind: "unknown_observation_key", key: k });
   }
 
-  // #71 (v0.11.3): when a submission is flat-shape with all captured artifacts
-  // but no indicator+result inline and no verdict.classification — detect()
-  // will return "inconclusive" because nothing drives the indicator decisions.
-  // Lint must surface this so operators don't ship a half-shape evidence file
-  // that passes lint but produces an inconclusive run.
+  // #71 (v0.11.3) + #83 (v0.11.5): when a submission is flat-shape but the
+  // post-normalize signal_overrides is empty AND no verdict.classification
+  // is supplied, detect() will return inconclusive. Surface this before run.
   if (flat) {
-    const observationsWithoutIndicator = Object.entries(flat).filter(([k, v]) => {
-      if (!knownArtifacts.has(k)) return false; // unknown keys flagged elsewhere
-      if (typeof v !== "object" || v === null) return false;
-      const captured = v.captured !== false;
-      return captured && !(v.indicator && v.result);
-    });
     const verdictClass = submission.verdict?.classification;
     const verdictWillDrive = verdictClass === "clean" || verdictClass === "not_detected" || verdictClass === "detected" || verdictClass === "inconclusive";
-    if (observationsWithoutIndicator.length > 0 && !verdictWillDrive && Object.keys(submission.signal_overrides || {}).length === 0) {
-      for (const [k] of observationsWithoutIndicator) {
-        issues.push({
-          severity: "warn",
-          kind: "observation_lacks_indicator_result",
-          observation_key: k,
-          hint: `Artifact "${k}" captured without "indicator" + "result" fields. detect will return 'inconclusive' for this indicator. Either add { "indicator": "<id>", "result": "hit"|"miss"|"inconclusive" } per observation, OR supply verdict.classification at the submission root to drive the overall verdict.`,
-        });
-      }
+    const normalizedHasOverrides = Object.keys(normalized.signal_overrides || {}).length > 0;
+    if (!verdictWillDrive && !normalizedHasOverrides) {
+      const observationsCount = Object.keys(flat).length;
       issues.push({
         severity: "info",
         kind: "detect_will_be_inconclusive",
-        hint: `Flat submission shape with ${observationsWithoutIndicator.length} captured artifact(s) but no indicator+result inline and no verdict.classification. detect() will return 'inconclusive'. Run \`exceptd run ${playbookId} --signal-list\` to see the indicator IDs the playbook recognizes.`,
+        hint: `Flat submission with ${observationsCount} observation(s) but no indicator+result fields and no verdict.classification. detect() will return 'inconclusive'. Each observation needs { "indicator": "<id>", "result": "hit"|"miss"|"inconclusive" } to drive an indicator outcome. Run \`exceptd run ${playbookId} --signal-list\` for the indicator IDs.`,
       });
     }
   }
