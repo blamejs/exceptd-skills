@@ -1,0 +1,1387 @@
+{
+  "_meta": {
+    "id": "crypto-codebase",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-12",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-12",
+        "summary": "Initial seven-phase code-walk crypto audit playbook for library / SDK / framework / CLI / language-runtime / build-tool authors who ship cryptographic primitives to downstream consumers. Complements the host-side `crypto` playbook (which probes OpenSSL / sshd / certificate store on the running host). Where `crypto` asks 'is the host PQC-ready?', `crypto-codebase` asks 'are the crypto choices we ship in our source tree HNDL-safe, FIPS-claim-honest, and downstream-consumer-safe?'. Walks the repo with Glob/Grep/Read, surfacing weak hash usage (MD5/SHA1), deprecated KEX (DH-1024, RSA-1024), insecure RNG (Math.random in security context), under-iterated KDFs (PBKDF2 < 600k post-OWASP 2023), bare ECDSA/RSA where ML-DSA hybrid is feasible, hardcoded curve choices, and vendored PQC implementations of dubious provenance. Theater detection focuses on FIPS-validated-claim mismatches and 'PQC-ready' feature-flag fictions.",
+        "cves_added": [],
+        "framework_gaps_updated": [
+          "nist-800-53-SC-13",
+          "iso-27001-2022-A.8.24",
+          "iso-27001-2022-A.8.28",
+          "pci-dss-4-3.6",
+          "eu-cra-annex-I-1",
+          "nis2-art21-2g"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "code",
+    "preconditions": [
+      {
+        "id": "filesystem-read-repo",
+        "description": "Agent must be able to walk the working directory tree, read source files, and read package/lock manifests.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "repo-has-source-tree",
+        "description": "Working directory must contain a recognizable source tree (package.json, pyproject.toml, go.mod, Cargo.toml, pom.xml, build.gradle, src/, lib/, or comparable). A repo with no source files has no shipped crypto surface.",
+        "check": "exists_any(['package.json','pyproject.toml','go.mod','Cargo.toml','pom.xml','build.gradle','src','lib','crates']) == true",
+        "on_fail": "warn"
+      },
+      {
+        "id": "publishable-or-distributed",
+        "description": "Playbook is targeted at library / SDK / framework / CLI / runtime / build-tool authors who SHIP code to downstream consumers. Internal-only application repos may still benefit but findings carry lower blast radius.",
+        "check": "repo_is_published_artifact == true OR repo_distributes_to_external_consumers == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "analyze.blast_radius_score >= 3 OR finding.severity == 'critical'"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "secrets",
+        "condition": "detect.indicators contains 'hardcoded-key-material'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Library-author / SDK-author crypto posture (shipped-code audit)",
+    "attack_class": "pqc-exposure",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1040",
+      "T1552",
+      "T1573",
+      "T1600"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-310",
+      "CWE-326",
+      "CWE-327",
+      "CWE-328",
+      "CWE-329",
+      "CWE-330",
+      "CWE-331",
+      "CWE-338",
+      "CWE-759",
+      "CWE-760",
+      "CWE-916"
+    ],
+    "d3fend_refs": [
+      "D3-FE",
+      "D3-MENCR",
+      "D3-CH"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "pci-dss-4",
+      "nis2",
+      "dora",
+      "eu-cra",
+      "eu-ai-act",
+      "uk-caf",
+      "au-essential-8",
+      "au-ism",
+      "cmmc"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_csirt_exploited_vuln_in_published_product",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_product_versions",
+            "vulnerability_description",
+            "mitigation_status",
+            "downstream_consumer_notification_plan"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.13",
+          "obligation": "publish_sbom_and_crypto_attributes",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "product_sbom",
+            "cryptographic_attribute_disclosure",
+            "vulnerability_handling_policy"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator_critical_product_vuln",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "essential_entity_consumer_count",
+            "exploitation_status_assessment",
+            "interim_mitigation_record"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "CISA Secure-By-Design Self-Attestation (M-23-02 / EO 14028)",
+          "obligation": "annual_secure_by_design_attestation_for_federal_use",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "secure_by_design_attestation",
+            "vendor_pqc_migration_inventory",
+            "cryptographic_provenance_statement"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "ASD ISM (vendor-shipped cryptography requirements)",
+          "obligation": "publish_cryptographic_implementation_disclosure",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "approved_cryptographic_algorithm_list",
+            "vendor_attested_implementation_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK PSTI Act / CAF C.5",
+          "obligation": "publish_vulnerability_disclosure_policy_for_connected_products",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "vdp_published",
+            "minimum_security_period_declared"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "pqc-ready-feature-flag-without-ml-kem",
+          "claim": "Our library is 'PQC-ready' / ships 'pqc-first' / has a 'post-quantum' configuration switch.",
+          "fast_detection_test": "Grep the entire source tree for actual ML-KEM / ML-DSA / SLH-DSA / Kyber / Dilithium / SPHINCS+ implementation references: `rg -i 'ml[-_]?kem|ml[-_]?dsa|slh[-_]?dsa|kyber|dilithium|sphincs'` AND verify they resolve to concrete cryptographic operations (encapsulate/decapsulate/sign/verify) rather than configuration strings, feature-flag names, or documentation comments. A 'pqc-ready' switch with zero ML-KEM call sites is a marketing toggle, not a primitive.",
+          "implicated_controls": [
+            "nist-800-53-SC-13",
+            "iso-27001-2022-A.8.24",
+            "eu-cra-annex-I-1"
+          ]
+        },
+        {
+          "pattern_id": "fips-validated-by-linking-openssl",
+          "claim": "Our product is FIPS-validated / FIPS-compliant because we link against OpenSSL 3.x (or BoringSSL, or NSS).",
+          "fast_detection_test": "FIPS validation is a runtime provider state, not a link-time fact. Grep the source for: (a) explicit FIPS-provider activation (`OSSL_PROVIDER_load(ctx, \"fips\")` in C, `crypto.setFips(true)` in Node, `OpenSSL::Provider.load(\"fips\")` in Ruby, equivalent in other bindings), (b) a runtime check that the FIPS provider is actually selected before performing crypto, (c) absence of non-FIPS provider config in the shipped openssl.cnf / equivalent. If the library never activates the FIPS provider and never asserts it is selected at runtime, the 'FIPS-validated' claim is link-time theater and downstream consumers running the library against a non-FIPS provider config (the default) get classical, non-FIPS-validated crypto.",
+          "implicated_controls": [
+            "nist-800-53-SC-13",
+            "fips-140-3",
+            "cmmc-l3-sc-l1-3.13.11"
+          ]
+        },
+        {
+          "pattern_id": "weak-hash-in-non-security-context-defense",
+          "claim": "Yes we ship MD5 / SHA1 — but only as a non-security hash (cache key, ETag, fingerprint, deduplication).",
+          "fast_detection_test": "Walk every MD5 / SHA1 call site. For each, trace the output's downstream usage: does it ever feed (a) a signature, (b) a MAC, (c) an integrity check, (d) a password-derivation routine, (e) a tamper-evident log, (f) a content-addressed identity used for authorization? If the hash output crosses ANY security boundary the 'non-security' defense fails. Acceptable usage requires (i) inline comment justifying non-security usage AND (ii) static-analysis annotation suppressing the warning AND (iii) no transitive flow into authorization/integrity code paths.",
+          "implicated_controls": [
+            "nist-800-53-SC-13",
+            "iso-27001-2022-A.8.24",
+            "pci-dss-4-3.6"
+          ]
+        },
+        {
+          "pattern_id": "math-random-in-security-by-accident",
+          "claim": "We use crypto-grade RNG throughout — Math.random() / random.random() / rand() only appears in test fixtures and non-security paths.",
+          "fast_detection_test": "Grep `Math.random(`, `random.random(`, `random.randint(`, `rand(`, `srand(`, `mt_rand(` in the production source set (exclude test/spec/fixture directories with explicit allowlist). For each hit, trace whether the output is ever used as: a key, nonce, IV, salt, session token, password reset token, OAuth state, CSRF token, jti claim, or shuffled in a security-sensitive ordering (e.g. shuffling encrypted shards). Any single such path is a hard fail — CWE-338 — regardless of how local-looking the code is.",
+          "implicated_controls": [
+            "nist-800-53-SC-13",
+            "iso-27001-2022-A.8.24",
+            "pci-dss-4-3.6"
+          ]
+        },
+        {
+          "pattern_id": "pbkdf2-iterations-set-in-2015",
+          "claim": "Our password hashing uses PBKDF2 with industry-standard parameters.",
+          "fast_detection_test": "Grep `pbkdf2`, `PBKDF2`, `derive_key`, `password_hash`, `hash_password`. For each call site, extract the iterations parameter (or its default if implicit). OWASP 2023 published minimum for PBKDF2-HMAC-SHA256 = 600,000 iterations; PBKDF2-HMAC-SHA512 = 210,000; PBKDF2-HMAC-SHA1 (which itself is deprecated for new use) = 1,300,000. Anything below those minimums is structurally weak. Anything below 100,000 is GPU-crackable in a coffee break. Bonus theater: a config option named `pbkdfIterations` whose documented default is 10,000 with an inline comment 'tune for your environment' — downstream consumers will not tune it.",
+          "implicated_controls": [
+            "nist-800-63b",
+            "iso-27001-2022-A.8.24",
+            "pci-dss-4-8.3.2"
+          ]
+        },
+        {
+          "pattern_id": "vendored-pqc-without-provenance",
+          "claim": "We ship our own ML-KEM / Kyber / Dilithium implementation for performance / bundle-size / no-deps reasons.",
+          "fast_detection_test": "Locate the vendored implementation. Audit for: (a) does it match a known-good reference (liboqs / pq-crystals / Cloudflare CIRCL / aws-lc-rs PQC fork)? (b) is the source-of-truth commit hash recorded? (c) is there a build-time integrity verification (the vendored copy is verified against an upstream hash at CI)? (d) is the implementation constant-time (no early-exit branches on secret values, no memcmp on secret outputs)? Vendored PQC without provenance + integrity + constant-time audit is implementation theater — the library ships a primitive whose security properties have not been verified.",
+          "implicated_controls": [
+            "nist-800-53-SA-12",
+            "iso-27001-2022-A.8.28",
+            "eu-cra-annex-I-1"
+          ]
+        },
+        {
+          "pattern_id": "crypto-agility-claim-no-pluggability",
+          "claim": "Our crypto layer is 'crypto-agile' — we can swap algorithms when needed.",
+          "fast_detection_test": "Locate the crypto abstraction. Is the algorithm a runtime-pluggable strategy (interface + registered implementations, downstream consumers can supply their own)? Or is it a hardcoded library call wrapped in a function whose name happens to be `cryptoAgileSigner`? Acceptable crypto-agility evidence: (a) an interface / trait / abstract class with at least two implementations in the source tree, (b) configuration hook for downstream consumers to register an implementation, (c) explicit algorithm-identifier metadata travels with ciphertext / signature for forward decoding. Naming a function 'crypto-agile' without those structural properties is theater.",
+          "implicated_controls": [
+            "iso-27001-2022-A.8.25",
+            "iso-27001-2022-A.8.28",
+            "nist-800-53-SA-8"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Compliance frameworks treat shipped cryptography as a property of the deploying organization, not the library author. NIST 800-53 SC-13 specifies use of FIPS-validated crypto by the federal system that consumes the library; it does not bind the library author to ship FIPS-friendly defaults or to prevent non-FIPS providers being silently selected. ISO 27001:2022 A.8.24 applies to the using organization; A.8.28 (secure coding) is the closest control to library-author crypto choices but contains no PQC, KDF-iteration, or RNG-source specifics. PCI DSS 4.0 §3.6 / §8.3.2 bind merchants and service providers, not their upstream library vendors — yet a payment library shipping PBKDF2 with 10k iterations is what the merchant inherits. EU CRA Annex I §1 IS the inflection point: it places direct cybersecurity obligations on manufacturers of products with digital elements, including 'state-of-the-art' cryptography, secure-by-default configurations, vulnerability handling, and (via Art.13) SBOM publication with cryptographic attribute disclosure. EU CRA's binding date for vulnerability-handling and SBOM provisions is 2026-09-11; full compliance deadline 2027-12-11. NIS2 Art.21(2)(g) names supply-chain security and cryptography for essential entities, and Art.23 imposes 24-hour early-warning notifications when an exploited vulnerability is in a product they depend on — pushing the obligation upstream to the library author by indirect pressure. UK CAF C.5 + UK PSTI (binding since April 2024) cover connected-product security; ISO 27001:2022 A.8.28 (secure coding) is the longest-laggard on PQC. AU ISM has approved-cryptographic-algorithm lists that library authors must declare conformance to. Bottom line: the framework lag is shrinking due to EU CRA, but for library authors operating today, conformance is largely voluntary — and downstream consumers inherit whatever the author shipped.",
+        "lag_score": 365,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-13",
+            "designed_for": "Use of FIPS-validated cryptographic modules by the operating organization.",
+            "insufficient_because": "Binds the deploying organization, not the library author. A library can ship MD5 by default and remain SC-13-irrelevant — the burden shifts to every downstream consumer to audit and reconfigure. Needs an upstream variant (SC-13 LIBRARY-VARIANT) requiring vendor-shipped defaults to be FIPS-friendly and to fail closed on non-FIPS provider selection when the consumer has asserted FIPS mode."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.24",
+            "designed_for": "Use of cryptography — policy on cryptographic controls by the using organization.",
+            "insufficient_because": "Same upstream gap as SC-13. Published 2022 before FIPS 203/204/205 finalization; no PQC language. A library author can claim 'A.8.24 not in scope, we are a vendor' and downstream consumers inherit the shipped defaults."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.28",
+            "designed_for": "Secure coding — secure coding practices throughout the software development lifecycle.",
+            "insufficient_because": "Closest control to library-author crypto choices. Contains no PQC requirement, no KDF iteration minimum, no RNG-source requirement, no constant-time-implementation requirement. Secure-coding-without-cryptographic-specifics permits MD5-by-default, PBKDF2-10k, Math.random in token generation."
+          },
+          {
+            "framework": "pci-dss-4",
+            "control_id": "3.6 / 8.3.2",
+            "designed_for": "Strong cryptography for cardholder data and PBKDF for password storage.",
+            "insufficient_because": "Binds merchants and service providers, not their upstream library vendors. A payment library shipping PBKDF2-10k is what the merchant inherits without an explicit override. No framework hook to push the obligation upstream."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I §1",
+            "designed_for": "Essential cybersecurity requirements — manufacturers of products with digital elements must ship state-of-the-art cryptography with secure defaults.",
+            "insufficient_because": "Binding date for vulnerability-handling and SBOM provisions: 2026-09-11; full compliance: 2027-12-11. 'State-of-the-art' is interpretive without a NIST PQC reference. Library authors today are not yet legally bound; downstream consumers cannot yet point to a binding requirement when filing remediation requests upstream."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(g)",
+            "designed_for": "Supply-chain security for essential entities — including cryptography in upstream products.",
+            "insufficient_because": "Binds the essential entity, not the library author. Indirect pressure: essential-entity consumers may stop adopting libraries with weak crypto defaults, but the framework provides no upstream enforcement hook."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "C.5 (Connected Products)",
+            "designed_for": "Connected-product security; minimum security periods; vulnerability disclosure.",
+            "insufficient_because": "Targets connected-product manufacturers under UK PSTI Act. Library authors shipping non-product crypto code are outside scope unless their library is incorporated into a regulated connected product, at which point obligations flow through the product manufacturer."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "M8 (Application Control) / M-Patch Apps",
+            "designed_for": "Application control + patching for the operating organization.",
+            "insufficient_because": "No direct library-author obligation. AU ISM's approved-cryptographic-algorithm list IS the relevant upstream signal but is non-binding without procurement teeth."
+          }
+        ]
+      },
+      "skill_preload": [
+        "pqc-first",
+        "supply-chain-integrity",
+        "exploit-scoring",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "global-grc",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Library-author crypto posture mid-2026: FIPS 203/204/205 finalized 2024-08-13. Production ML-KEM / ML-DSA / SLH-DSA reference implementations available via liboqs, pq-crystals, Cloudflare CIRCL, aws-lc-rs, BoringSSL EVP_KEM_*, OpenSSL 3.5 native, noble-post-quantum (JavaScript), pqcrypto crate (Rust), pqcrypto-mlkem (Python). Downstream-consumer pressure: Chrome ships X25519MLKEM768 since v124 (April 2024); npm advisories started flagging classical-only TLS libraries Q4 2025; supply-chain attacks against vendored crypto are an established pattern (event-stream 2018, ua-parser-js 2021, ctx 2022, multiple 2024-2025 incidents where library authors shipped backdoored or trojanized cryptographic primitives). The current dominant failure mode for library authors is not 'ships no crypto' but 'ships crypto with stale defaults': MD5 still appearing as default hash in 14% of npm packages with crypto surface (audit Q1 2026 from npm-audit-trends); PBKDF2 default iterations under 100k in 28% of packages that expose a password-hashing API; Math.random() used in security context in 6% of token-generation libraries audited; vendored PQC without provenance in 41% of packages that advertise PQC support. AI-discovery acceleration: AI-assisted code audit tooling identifies these patterns in seconds across million-line repos. Downstream blast radius: a popular framework with 10M+ weekly installs shipping a weak cryptographic default propagates the vulnerability to every consumer regardless of the consumer's own security posture.",
+      "rwep_threshold": {
+        "escalate": 75,
+        "monitor": 45,
+        "close": 25
+      },
+      "framework_lag_declaration": "Frameworks structurally bind the OPERATING organization, not the library author. NIST 800-53 SC-13, ISO 27001:2022 A.8.24/A.8.28, PCI DSS 4.0 §3.6/§8.3.2 all push obligations downstream to consumers who inherit the shipped defaults. EU CRA Annex I §1 is the first framework with direct upstream obligations on manufacturers of products with digital elements, but its binding date for vulnerability-handling and SBOM provisions is 2026-09-11 (four months from now) with full compliance 2027-12-11. NIS2 Art.21(2)(g) exerts indirect pressure via essential-entity consumers. UK CAF C.5 + UK PSTI covers connected products only. ISO 27001:2022 A.8.28 'secure coding' is silent on PQC, KDF iteration minimums, RNG-source requirements, constant-time-implementation requirements — the longest structural laggard. NIST IR 8547 + OMB M-23-02 + CNSA 2.0 push federal-system PQC migration through 2030 but rely on procurement pressure to flow upstream. Gap = ~365 days from operational PQC readiness (2024-08-13 FIPS finalization) to binding library-author obligations (2026-09-11 EU CRA partial bind). Compensating controls (downstream-consumer adoption pressure, supply-chain auditing tools, voluntary SECURITY.md disclosure of cryptographic provenance) must close this gap pending EU CRA enforcement.",
+      "skill_chain": [
+        {
+          "skill": "pqc-first",
+          "purpose": "Identify hardcoded classical primitives in shipped source; assess feasibility of hybrid PQC migration without breaking downstream-consumer API.",
+          "required": true
+        },
+        {
+          "skill": "supply-chain-integrity",
+          "purpose": "For vendored cryptographic primitives, verify provenance (upstream hash, integrity check, constant-time audit).",
+          "required": true
+        },
+        {
+          "skill": "exploit-scoring",
+          "purpose": "Compute RWEP for each finding using the blast_radius-heavy weighting appropriate to library-author findings.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each shipped-default weakness to the framework controls that fail to bind it upstream and the downstream-consumer obligations it creates.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the seven theater fingerprints in govern.theater_fingerprints; emit verdict per finding.",
+          "required": true
+        },
+        {
+          "skill": "global-grc",
+          "purpose": "Cross-walk findings to per-jurisdiction obligations including EU CRA Art.13/14 notification clocks.",
+          "skip_if": "jurisdiction_obligations.length == 0",
+          "required": false
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for deprecated primitives retained under API-stability promise.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 24000,
+        "breakdown": {
+          "govern": 3200,
+          "direct": 1800,
+          "look": 2800,
+          "detect": 3600,
+          "analyze": 5200,
+          "validate": 4200,
+          "close": 3200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "package-manifests",
+          "type": "config_file",
+          "source": "Read package.json, pyproject.toml, setup.py, go.mod, Cargo.toml, pom.xml, build.gradle, Gemfile, composer.json, mix.exs at repo root and at every nested package boundary. Use Glob `**/{package.json,pyproject.toml,go.mod,Cargo.toml,pom.xml,build.gradle,Gemfile,composer.json}` excluding `node_modules`, `vendor`, `.venv`, `target`, `dist`, `build`.",
+          "description": "Package manifests — establish the language ecosystems present, declared crypto-adjacent dependencies, and the public API surface.",
+          "required": true
+        },
+        {
+          "id": "lockfiles",
+          "type": "config_file",
+          "source": "Read package-lock.json, yarn.lock, pnpm-lock.yaml, poetry.lock, uv.lock, Pipfile.lock, go.sum, Cargo.lock, composer.lock at repo root and at every package boundary.",
+          "description": "Lockfiles — concrete versions of crypto-adjacent deps actually shipped to consumers (openssl, sodium, libsodium-wrappers, tweetnacl, noble-curves, noble-hashes, noble-post-quantum, jsrsasign, node-forge, pqcrypto, oqs-rs, kyber-crystals, dilithium, aws-lc-rs, ring, rustls, rust-openssl).",
+          "required": false
+        },
+        {
+          "id": "hash-primitive-call-sites",
+          "type": "file_path",
+          "source": "Grep across the repo (excluding test/spec/fixture/node_modules/vendor/.venv/target/dist/build) for hash-primitive call sites. Patterns: `crypto.createHash\\(`, `crypto.createHmac\\(`, `hashlib\\.(md5|sha1|sha224|sha256|sha384|sha512|blake2b|blake2s|sha3_)`, `MessageDigest\\.getInstance\\(`, `Digest::(MD5|SHA1|SHA256)`, `hash/md5`, `hash/sha1`, `\"md5\"`, `\"sha1\"`, `\"sha-1\"`, `\"sha256\"`, `\"sha3-256\"`. Use Grep with multiline=true where the algorithm-name string is on a different line from the constructor.",
+          "description": "Every hash-primitive call site. Distinguish security-context usage (signature input, MAC input, integrity check, password derivation, token derivation) from non-security usage (cache key, ETag, dedup). The non-security distinction must be evidenced inline; absent evidence, treat as security-context.",
+          "required": true
+        },
+        {
+          "id": "cipher-and-kex-call-sites",
+          "type": "file_path",
+          "source": "Grep for cipher and KEX call sites: `createCipheriv\\(`, `createDecipheriv\\(`, `crypto\\.publicEncrypt\\(`, `crypto\\.privateDecrypt\\(`, `createDiffieHellman\\(`, `createECDH\\(`, `crypto\\.generateKeyPair`, `Cipher\\.getInstance\\(`, `aesgcm`, `ChaCha20Poly1305`, `\\.(seal|open)\\(`, `OpenSSL::Cipher`, hardcoded curve names `\"P-256\"`, `\"secp256r1\"`, `\"prime256v1\"`, `\"P-384\"`, `\"secp384r1\"`, `\"P-521\"`, `\"secp521r1\"`, `\"secp256k1\"`, `\"X25519\"`, `\"X448\"`.",
+          "description": "Cipher and key-exchange call sites. Identify mode (GCM/CBC/CTR/ECB), curve, key size, IV-generation pattern. ECB mode anywhere is a hard fail. CBC without HMAC is a hard fail. AES-128 without GCM authenticator is a finding.",
+          "required": true
+        },
+        {
+          "id": "signature-call-sites",
+          "type": "file_path",
+          "source": "Grep for signature operations: `crypto\\.sign\\(`, `crypto\\.verify\\(`, `Signature\\.getInstance\\(`, `\\.sign_pss\\(`, `\\.verify_pss\\(`, `RSA-PSS`, `RSA-PKCS1`, `ECDSA`, `Ed25519`, `Ed448`, `ML-DSA`, `Dilithium`, `SLH-DSA`, `SPHINCS`. Capture key sizes for RSA (look for `modulusLength`, `key_size`, `--rsa-2048` literals), curve choice for ECDSA, hash choice paired with signature (RSA-SHA1 is a hard fail).",
+          "description": "Signature scheme inventory. RSA-1024 anywhere is a hard fail; RSA-2048 with > 5-year sensitivity requires PQC roadmap; ECDSA-P256 acceptable today but needs hybrid ML-DSA migration plan; bare RSA-PKCS1 (not PSS) for new signatures is a finding.",
+          "required": true
+        },
+        {
+          "id": "kdf-call-sites",
+          "type": "file_path",
+          "source": "Grep for key-derivation calls: `pbkdf2(Sync)?\\(`, `PBKDF2`, `hashlib\\.pbkdf2_hmac`, `bcrypt\\.(hash|hashSync|compare)`, `scrypt(Sync)?\\(`, `argon2\\.(hash|verify)`, `argon2id`, `hkdf\\(`, `HKDF`, `derive_key`. For each, extract the cost parameters: PBKDF2 iterations, bcrypt cost factor, scrypt N/r/p, argon2 t/m/p.",
+          "description": "Key-derivation parameter inventory. Apply OWASP 2023 minimums: PBKDF2-HMAC-SHA256 >= 600,000; PBKDF2-HMAC-SHA512 >= 210,000; bcrypt cost >= 12; scrypt N >= 2^17, r=8, p=1; argon2id m >= 19 MiB (19456 KiB), t >= 2, p >= 1. Any parameter below minimum is a finding.",
+          "required": true
+        },
+        {
+          "id": "rng-call-sites",
+          "type": "file_path",
+          "source": "Grep for RNG sources: `Math\\.random\\(`, `random\\.random\\(`, `random\\.randint\\(`, `random\\.choice\\(`, `rand\\(`, `srand\\(`, `mt_rand\\(`, `secrets\\.(token_|randbits|choice)`, `crypto\\.randomBytes\\(`, `crypto\\.getRandomValues\\(`, `crypto\\.randomUUID\\(`, `os\\.urandom\\(`, `getrandom\\(`, `SecureRandom`, `OsRng`, `ThreadRng`, `/dev/urandom`, `/dev/random`. Capture file_path:line for each.",
+          "description": "RNG-source inventory. Production-context Math.random / random.random / rand without cryptographic-RNG fallback is CWE-338. Distinguish test/spec/fixture usage explicitly via path allowlist; production usage requires a cryptographic RNG.",
+          "required": true
+        },
+        {
+          "id": "hardcoded-key-material",
+          "type": "file_path",
+          "source": "Grep for hardcoded crypto material: PEM markers `-----BEGIN (RSA |EC |DSA |PRIVATE |PUBLIC |CERTIFICATE )?(PRIVATE|PUBLIC) KEY-----`, SSH key prefixes `ssh-rsa AAAA`, `ssh-ed25519 AAAA`, `ecdsa-sha2-nistp256 AAAA`, hex-blob heuristics for keys (>= 64 hex chars on a single literal line), base64-encoded blobs >= 256 chars in source files. Cross-reference with the `secrets` playbook for the exfil-secret angle; here the focus is library-author shipping defaults that look like keys (e.g. example certs, demo keys, sample HMAC seeds that downstream consumers fail to rotate).",
+          "description": "Hardcoded key material shipped with the library. Library-author angle: any 'demo' or 'example' key that downstream consumers fail to rotate becomes a universal-default vulnerability (cf. embedded-router demo keys, Wi-Fi default WPA keys, IoT bootloader signing keys).",
+          "required": false
+        },
+        {
+          "id": "tls-config-construction",
+          "type": "file_path",
+          "source": "Grep for in-code TLS context construction: `tls\\.createSecureContext`, `tls\\.createServer`, `https\\.createServer`, `ssl\\.SSLContext\\(`, `ssl\\.create_default_context`, `rustls::ServerConfig`, `rustls::ClientConfig`, `tls\\.Config\\{`, `SSL_CTX_new`, options like `minVersion`, `maxVersion`, `secureProtocol`, `ciphers`, `ecdhCurve`, `sigalgs`, `groups`, `ALPNProtocols`.",
+          "description": "In-code TLS configuration. Library authors that construct TLS contexts internally must default to TLS 1.3 minimum, X25519MLKEM768 group preference (when openssl >= 3.5 detected), modern cipher list. Hardcoded `secureProtocol: 'TLSv1_method'` or `minVersion: 'TLSv1'` is a hard fail.",
+          "required": false
+        },
+        {
+          "id": "pqc-adoption-signals",
+          "type": "file_path",
+          "source": "Grep for PQC adoption: `ml[-_]?kem`, `ml[-_]?dsa`, `slh[-_]?dsa`, `kyber`, `dilithium`, `sphincs`, `falcon`, `kemEncapsulate`, `kemDecapsulate`, `EVP_KEM_`, `OQS_KEM_`, `oqsprovider`, `liboqs`, `noble-post-quantum`, `pqcrypto::`, `aws-lc-rs::pqc`, `circl/sign/dilithium`, `circl/kem/kyber`.",
+          "description": "PQC adoption signals. If `pqc-readiness-gap` directive runs, this artifact is the primary input. Distinguish concrete cryptographic operations from configuration strings, feature-flag names, and comments.",
+          "required": false
+        },
+        {
+          "id": "fips-provider-activation",
+          "type": "file_path",
+          "source": "Grep for FIPS-mode activation: `OSSL_PROVIDER_load.*fips`, `crypto\\.setFips\\(`, `openssl::provider::Provider::load_default`, `Provider::load.*\"fips\"`, openssl.cnf or fipsmodule.cnf files in the repo, environment-variable references to `OPENSSL_FIPS`, `OPENSSL_CONF`. Capture whether the activation is conditional (e.g. only if env var set) or unconditional.",
+          "description": "FIPS-provider activation evidence. The `fips-validation-status` directive uses this to distinguish runtime FIPS activation from link-time FIPS claims.",
+          "required": false
+        },
+        {
+          "id": "vendored-crypto-tree",
+          "type": "file_path",
+          "source": "Glob for vendored crypto: `vendor/**/{crypto,openssl,sodium,nacl,kyber,dilithium,sphincs,curve25519,blake2,sha3,argon2}*`, `third_party/**/*crypto*`, `crates/**/*crypto*` (excluding the package's own crypto module). Look for upstream-reference files: `UPSTREAM`, `ORIGIN`, `PROVENANCE.md`, `.upstream-commit`, integrity hashes in lockfiles.",
+          "description": "Vendored cryptographic primitives. Library authors sometimes vendor crypto to reduce dep tree or for licensing reasons. Without provenance + integrity audit, vendored crypto is a supply-chain backdoor opportunity.",
+          "required": false
+        },
+        {
+          "id": "ci-crypto-tests",
+          "type": "file_path",
+          "source": "Glob for CI configs: `.github/workflows/**/*.yml`, `.gitlab-ci.yml`, `.circleci/config.yml`, `azure-pipelines.yml`, `Jenkinsfile`. Grep for crypto-test invocations, FIPS-test runs, constant-time analysis tools (`dudect`, `valgrind --tool=memcheck` on secret-dependent code, `ctgrind`).",
+          "description": "Build-time crypto verification. Absence of constant-time tests on vendored PQC primitives is a finding for the `pqc-readiness-gap` directive.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "entire_source_tree_excluding_vendored_dependencies_and_build_artifacts",
+        "depth": "deep",
+        "sampling": "exhaustive — every production-context source file is grepped. Test, spec, fixture, example, and documentation paths are walked separately and findings annotated with `path_context=test`. Use Glob + Grep with explicit exclusion of `node_modules`, `vendor` (unless the directive specifically targets vendored crypto), `.venv`, `venv`, `target`, `dist`, `build`, `coverage`, `.git`."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "working directory contains a source tree (not a dependency consumer)",
+          "if_false": "If the working directory is a node_modules subtree, a Cargo registry checkout, a Python site-packages directory, etc., halt with visibility_gap=consumer_not_author. This playbook audits what an author SHIPS, not what a consumer INSTALLED. Re-run from the source repository."
+        },
+        {
+          "assumption": "agent has Glob + Grep + Read on the entire source tree",
+          "if_false": "Investigation is unfounded. Downgrade all artifact collection to inconclusive and escalate."
+        },
+        {
+          "assumption": "the library is intended for downstream consumption (published to a registry, distributed as a SDK, embedded in a product)",
+          "if_false": "Blast radius drops by 1-2 tiers in the analyze phase; findings remain but compliance theater verdicts and EU CRA notification clocks may not apply."
+        },
+        {
+          "assumption": "the source tree uses identifiable language conventions (file extensions, package manifest)",
+          "if_false": "Generic Grep patterns still apply but path-context allowlists (test/spec/fixture exclusions) may misclassify findings. Mark findings with `path_classification=heuristic` and request human review."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "package-manifests",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "lockfiles",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "hash-primitive-call-sites",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "cipher-and-kex-call-sites",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "signature-call-sites",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "kdf-call-sites",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "rng-call-sites",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "hardcoded-key-material",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "pqc-adoption-signals",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "fips-provider-activation",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "vendored-crypto-tree",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "weak-hash-import",
+          "type": "file_path",
+          "value": "Any file imports or constructs an MD5 / SHA1 hash and the output flows into a security context. Patterns: `crypto\\.createHash\\(['\"](md5|sha1|sha-1)['\"]\\)`, `hashlib\\.(md5|sha1)\\(`, `MessageDigest\\.getInstance\\(['\"](MD5|SHA-1)['\"]\\)`, `crypto/md5`, `crypto/sha1`, `Digest::(MD5|SHA1)\\.`",
+          "description": "Weak hash primitive shipped in library source. Hard fail unless inline comment justifies non-security usage AND no flow into auth/integrity code path.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "weak-cipher-mode",
+          "type": "file_path",
+          "value": "AES with ECB mode anywhere: `aes-\\d+-ecb`, `AES/ECB/`, `Cipher\\.getInstance\\(['\"]AES['\"]\\)` (default mode ECB). Or DES/3DES anywhere: `des-cbc`, `des-ede3`, `\\\"des\\\"`, `\\\"3des\\\"`, `DES/`, `DESede/`. Or RC4: `\\\"rc4\\\"`, `arc4`, `ARCFOUR`.",
+          "description": "Catastrophic cipher choice. ECB leaks plaintext patterns; DES/3DES is below current security margins; RC4 is broken.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "rsa-1024-anywhere",
+          "type": "file_path",
+          "value": "RSA key size 1024 anywhere in source: `modulusLength:\\s*1024`, `key_size=1024`, `\"rsa\", 1024`, `RSAKeyPairGenerator.*1024`, `Generate(\\w+)Key\\(.*1024`",
+          "description": "RSA-1024 is below current security margin (NIST SP 800-131A disallowed since 2014). Hard fail in any shipped library.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "math-random-in-security-path",
+          "type": "file_path",
+          "value": "`Math\\.random\\(`, `random\\.random\\(`, `random\\.randint\\(`, `random\\.choice\\(`, `mt_rand\\(`, `rand\\(\\)`, `srand\\(` in a production source file (not in test/spec/fixture allowlist) AND the output is assignable to a variable whose name matches `(token|secret|key|salt|nonce|iv|seed|state|jwt|jti|csrf|session)`.",
+          "description": "CWE-338 — non-cryptographic RNG used in security context. Hard fail. Confidence deterministic when the variable-name correlation is present; high otherwise pending data-flow analysis.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "pbkdf2-under-iterated",
+          "type": "file_path",
+          "value": "`pbkdf2(Sync)?\\(.*?(?P<iter>\\d+).*?\\)`, `hashlib\\.pbkdf2_hmac\\(.*?(?P<iter>\\d+)\\s*\\)`, configuration defaults named `iterations` / `pbkdf2_rounds` with literal value. iter < 600000 for SHA256, < 210000 for SHA512, < 1300000 for SHA1.",
+          "description": "PBKDF2 iteration count below OWASP 2023 minimum.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "bcrypt-cost-low",
+          "type": "file_path",
+          "value": "`bcrypt\\.(hash|hashSync|gen_salt)\\([^,]*?,\\s*(\\d+)`, `BCrypt::Password\\.create\\(.*?cost:\\s*(\\d+)`, configuration `cost` / `rounds` default < 12.",
+          "description": "bcrypt cost factor < 12. Below 2026 security margin for password storage in a published library.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "ecdsa-without-pqc-roadmap",
+          "type": "behavioral_signal",
+          "value": "Signature call sites use ECDSA-P256 / ECDSA-P384 / Ed25519 exclusively AND no ML-DSA / SLH-DSA implementation exists in the source tree AND the library README or SECURITY.md does not declare a hybrid-signature migration roadmap.",
+          "description": "Bare ECDSA today is acceptable cryptographically but downstream consumers with > 5y sensitivity horizons inherit the HNDL problem. Library should at minimum publish a hybrid-signature migration roadmap.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1573"
+        },
+        {
+          "id": "no-ml-kem-implementation",
+          "type": "behavioral_signal",
+          "value": "Library claims PQC readiness (README / SECURITY.md / package description / configuration flag named `pqc*` or `postQuantum*`) AND no ML-KEM / Kyber call site exists in the source tree AND no concrete dependency on liboqs / noble-post-quantum / pqcrypto / aws-lc-rs PQC / OpenSSL >= 3.5 with PQC enabled is present in package manifest + lockfile.",
+          "description": "'PQC-ready' claim with no PQC implementation. Marketing theater.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1573"
+        },
+        {
+          "id": "fips-claim-without-runtime-activation",
+          "type": "behavioral_signal",
+          "value": "Library claims FIPS validation / FIPS-compliance / FIPS-mode (README / SECURITY.md / package description / compliance manifest) AND no `OSSL_PROVIDER_load(*, \\\"fips\\\", *)` / `crypto.setFips(true)` / `Provider::load.*\\\"fips\\\"` call site exists in the source tree AND no runtime assertion that the FIPS provider is selected exists.",
+          "description": "Link-time FIPS claim without runtime activation. Theater.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "vendored-pqc-no-provenance",
+          "type": "file_path",
+          "value": "Vendored ML-KEM / Kyber / Dilithium / SLH-DSA / SPHINCS+ implementation exists under vendor/ / third_party/ / crates/ AND no UPSTREAM / ORIGIN / PROVENANCE.md / `.upstream-commit` / integrity hash record is co-located AND no CI step verifies the vendored copy against an upstream hash.",
+          "description": "Vendored PQC without provenance. Supply-chain attack opportunity.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "hardcoded-key-material",
+          "type": "file_path",
+          "value": "PEM markers `-----BEGIN (RSA |EC |DSA )?(PRIVATE|PUBLIC) KEY-----` or `-----BEGIN CERTIFICATE-----` in source files NOT under test/spec/fixture/examples/docs allowlist. Cross-reference with secrets playbook.",
+          "description": "Hardcoded key material in shipped source. If labeled 'example' or 'demo', flag the universal-default-credential risk for downstream consumers.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "tls-old-protocol",
+          "type": "file_path",
+          "value": "`secureProtocol:\\s*['\"](TLSv1_method|TLSv1_1_method|SSLv23_method|SSLv3_method)['\"]`, `minVersion:\\s*['\"](TLSv1(\\.0|\\.1)?)['\"]`, `ssl_version=ssl\\.PROTOCOL_TLSv1(_1)?`, `MinTlsVersion::TLSv1`.",
+          "description": "TLS < 1.2 minimum in shipped TLS-context construction.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "no-crypto-agility-abstraction",
+          "type": "behavioral_signal",
+          "value": "Library claims crypto-agility AND no interface/trait/abstract-class with >= 2 implementations exists for the relevant primitive (signer, KEM, hash) AND no registration hook for downstream consumers to supply implementations exists.",
+          "description": "Crypto-agility claim without structural pluggability.",
+          "confidence": "high",
+          "deterministic": false
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "weak-hash-import",
+          "benign_pattern": "MD5 / SHA1 used for non-security purposes (cache key, ETag, content dedup, git-style object addressing) with inline comment justification and no downstream flow into auth/integrity code.",
+          "distinguishing_test": "Re-grep with -A 5 around each hit. If an inline comment within 5 lines explicitly justifies non-security usage (e.g. '// MD5 is fine: dedup hash, not security') AND a static-analysis annotation is present (e.g. `// eslint-disable-next-line crypto/no-md5`, `# nosec B303`) AND a data-flow trace shows no path into auth/integrity/signature code: downgrade to low and annotate `non_security_use_justified=true`."
+        },
+        {
+          "indicator_id": "math-random-in-security-path",
+          "benign_pattern": "Math.random() used for genuinely non-security purposes (jitter in backoff, UI animation timing, test fixtures, demo data shuffling).",
+          "distinguishing_test": "Trace the variable's downstream usage. If the value never crosses (a) a token boundary, (b) a key/nonce/IV/salt, (c) an authorization decision, (d) a tamper-evident log seed: downgrade to medium. Note: backoff jitter is a known false-positive category — explicit `// non-security: backoff jitter` comment downgrades to low."
+        },
+        {
+          "indicator_id": "rsa-1024-anywhere",
+          "benign_pattern": "RSA-1024 in test fixtures / known-bad test vectors / migration code that decrypts legacy RSA-1024 content to re-encrypt under stronger crypto.",
+          "distinguishing_test": "Check path against test/spec/fixture allowlist. If outside allowlist but inside a clearly-named migration / legacy-decryption module with inline comment justification, downgrade to medium and require the migration code be reachable only from a one-time-migration entry point (not the library's public API)."
+        },
+        {
+          "indicator_id": "ecdsa-without-pqc-roadmap",
+          "benign_pattern": "Library is in a domain where consumer sensitivity horizons are universally < 5 years (transient session tokens, short-lived service auth, ephemeral CI signing).",
+          "distinguishing_test": "Read the library README + package description. If domain is explicitly short-horizon (e.g. 'ephemeral session token library', 'transient OTP signer'), downgrade ECDSA-only to medium and annotate `horizon_documented=short`. If the library is general-purpose, the finding stands — downstream consumers may use it for long-horizon data."
+        },
+        {
+          "indicator_id": "fips-claim-without-runtime-activation",
+          "benign_pattern": "Library does not claim FIPS — the audit re-discovered the absence of FIPS activation, which is unremarkable.",
+          "distinguishing_test": "Grep for FIPS-related claims in README, package description, SECURITY.md, compliance manifests. If no claim exists, suppress the indicator. If a claim exists in any of those locations, the indicator stands."
+        },
+        {
+          "indicator_id": "hardcoded-key-material",
+          "benign_pattern": "Test fixtures, example certs, demo HMAC seeds clearly under test/spec/example/docs paths.",
+          "distinguishing_test": "Path-allowlist check. Additionally, examine whether the example key is reachable from the library's public API or used by default in any code path. If yes, the finding stands (universal-default-credential risk). If no, downgrade to low and annotate `example_key_isolated=true`."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any deterministic indicator fires in a production-context source path (outside test/spec/fixture/example allowlist) AND the library is intended for downstream consumption. Confirmed library-author crypto-debt: shipped defaults will propagate to all downstream consumers regardless of their own security posture.",
+        "inconclusive": "Source tree partially grepped (some files unreadable, or generic-language heuristics applied to an unfamiliar ecosystem) AND at least one heuristic indicator fired without deterministic confirmation. Cannot deny without complete walk.",
+        "not_detected": "Complete source-tree walk completed AND no deterministic indicators fired AND PQC adoption signal is present (concrete ML-KEM / ML-DSA implementation) OR the library is small-surface with explicitly-classical short-horizon scope documented AND FIPS claim (if present) is backed by runtime activation AND vendored crypto (if any) has provenance + integrity + constant-time evidence."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "weak-hash-import",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Library shipping MD5/SHA1 as default propagates to every downstream consumer. Blast radius scaled by library install base."
+        },
+        {
+          "signal_id": "weak-hash-import",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "MD5 collision attacks are public + tooled (HashClash, etc.). SHA1 collisions documented (SHAttered 2017)."
+        },
+        {
+          "signal_id": "weak-cipher-mode",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "ECB / DES / RC4 shipped in a library is catastrophic across the consumer base."
+        },
+        {
+          "signal_id": "weak-cipher-mode",
+          "rwep_factor": "public_poc",
+          "weight": 20,
+          "notes": "ECB visualization attacks, Sweet32 (3DES), RC4 biases — all public and tooled."
+        },
+        {
+          "signal_id": "rsa-1024-anywhere",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "RSA-1024 factorization within reach of state-level adversaries today; NIST disallowed since 2014."
+        },
+        {
+          "signal_id": "math-random-in-security-path",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Predictable tokens / keys / nonces = universal-key vulnerability shipped to every consumer."
+        },
+        {
+          "signal_id": "math-random-in-security-path",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-assisted code audit identifies these instantly; exploitation tooling against weak RNG is mature."
+        },
+        {
+          "signal_id": "pbkdf2-under-iterated",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Under-iterated KDF shipped as default = every consumer's stored passwords are GPU-crackable."
+        },
+        {
+          "signal_id": "ecdsa-without-pqc-roadmap",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "HNDL future-tense exposure for long-horizon downstream consumers."
+        },
+        {
+          "signal_id": "ecdsa-without-pqc-roadmap",
+          "rwep_factor": "active_exploitation",
+          "weight": 10,
+          "notes": "HNDL recording is operational reality. Active exploitation in recording sense."
+        },
+        {
+          "signal_id": "no-ml-kem-implementation",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Marketing-only PQC claim misleads downstream procurement decisions."
+        },
+        {
+          "signal_id": "fips-claim-without-runtime-activation",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Downstream consumers running federal / regulated workloads inherit a false FIPS claim."
+        },
+        {
+          "signal_id": "vendored-pqc-no-provenance",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "Supply-chain attacks on vendored crypto are AI-assistable; provenance gap is exploitable."
+        },
+        {
+          "signal_id": "vendored-pqc-no-provenance",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Backdoored or trojanized vendored crypto propagates to every consumer install."
+        },
+        {
+          "signal_id": "hardcoded-key-material",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Universal-default-credential risk if the example key is used by any default code path."
+        },
+        {
+          "signal_id": "hardcoded-key-material",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Universal-default-credential exploitation is a well-established pattern (Mirai et al.)."
+        },
+        {
+          "signal_id": "tls-old-protocol",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Shipping TLS < 1.2 minimum exposes every consumer to BEAST/Lucky13/POODLE-class downgrade attacks."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a library author ships this crypto choice as a default, how many downstream consumers inherit the vulnerability, and across what cumulative sensitivity horizon?",
+        "scoring_rubric": [
+          {
+            "condition": "library is internal-only, < 5 consumer applications, short-horizon data only",
+            "blast_radius_score": 1,
+            "description": "Limited blast; remediation is single-author + few-consumer coordination."
+          },
+          {
+            "condition": "library is published to a registry with < 10,000 weekly installs OR is an SDK for a small ecosystem (< 100 downstream products)",
+            "blast_radius_score": 2,
+            "description": "Bounded blast; downstream consumer notification feasible by direct outreach."
+          },
+          {
+            "condition": "library is published with 10,000 - 1M weekly installs OR is an SDK for a regulated industry (payments, healthcare, identity)",
+            "blast_radius_score": 3,
+            "description": "Significant blast; coordinated disclosure required; downstream consumers include essential entities under NIS2 or HIPAA-covered entities."
+          },
+          {
+            "condition": "library is published with 1M - 100M weekly installs OR is a framework / language runtime / build tool with industry-wide adoption OR is bundled into a regulated product distribution",
+            "blast_radius_score": 4,
+            "description": "Massive blast; coordinated vulnerability disclosure with regulator notification; downstream consumer base spans jurisdictions and sensitivity horizons. EU CRA Art.14 24h CSIRT notification activates when exploitation is observed."
+          },
+          {
+            "condition": "library is published with > 100M weekly installs OR is a transitively-depended-on cryptographic primitive provider (e.g. shipping MD5 as a default hash in a top-100 npm package, or a default RNG in a major language runtime)",
+            "blast_radius_score": 5,
+            "description": "Ecosystem-defining blast; broadcast notification required; comparable to OpenSSL Heartbleed / log4shell coordination."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Library ships FIPS-validated / NIST-aligned / PQC-ready / strong cryptography. Downstream consumers can rely on the shipped defaults to satisfy their own compliance obligations (NIST 800-53 SC-13, ISO 27001:2022 A.8.24/A.8.28, PCI DSS 4.0 §3.6/§8.3.2, EU CRA Annex I §1).",
+        "audit_evidence": "Library README / SECURITY.md / compliance manifest declarations of FIPS / NIST / PQC posture; SBOM publication; vulnerability-handling policy; supply-chain attestation; CI test logs.",
+        "reality_test": "Run the following against the source tree (no host probe). (1) FIPS claim test: `rg -nP 'OSSL_PROVIDER_load\\(.*\"fips\"|crypto\\.setFips\\(true\\)|Provider::load\\(.*\"fips\"\\)'` — if zero hits, FIPS claim is link-time theater. (2) PQC-ready test: `rg -nP '\\b(MlKem|ML-KEM|ml_kem|Kyber|MlDsa|ML-DSA|ml_dsa|Dilithium)\\b' --type-add 'src:*.{js,ts,py,go,rs,java,rb,c,h,cpp}' -tsrc` — if zero hits in non-doc/non-test files, PQC claim is marketing toggle. (3) Weak-default test: `rg -nP \"createHash\\(['\\\"](md5|sha1|sha-1)['\\\"]\\)|hashlib\\.(md5|sha1)\\(|MessageDigest\\.getInstance\\(['\\\"](MD5|SHA-1)['\\\"]\\)\"` — any hit in a production source path is a shipped weak default. (4) RNG test: `rg -nP '\\bMath\\.random\\b|\\brandom\\.(random|randint)\\b|\\brand\\(\\)|\\bmt_rand\\b'` with test-path exclusion — any hit assignable to a security-named variable is CWE-338. (5) KDF test: `rg -nP 'pbkdf2.*?[, ](\\d{1,5})\\b'` — extract numeric arg, fail if < 600000 for SHA256 default. Theater if ANY of (1)-(5) fails and the library claims FIPS / NIST / PQC / strong-crypto posture.",
+        "theater_verdict_if_gap": "Library ships compliance-toggle declarations whose source code does not implement the claimed primitives or activate the claimed providers. Downstream consumers relying on the library to satisfy SC-13 / A.8.24 / §3.6 / Annex I §1 inherit unvalidated crypto. Remediation paths: (a) implement the runtime activation / primitive call site / parameter floor that backs the claim, (b) retract the claim from README / SECURITY.md / compliance manifest, OR (c) generate a defensible policy exception via policy-exception-gen documenting the time-bound gap, downstream-consumer notification plan, and migration roadmap."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-13 — Cryptographic Protection",
+          "actual_gap": "Binds the operating organization, not the library author. Library can ship MD5 / PBKDF2-10k / RSA-1024 defaults and remain SC-13-irrelevant. Burden shifts entirely to downstream consumers to audit and reconfigure.",
+          "required_control": "Add SC-13(LIB) requiring vendor-shipped cryptographic defaults to (a) match current FIPS-validated algorithm modes, (b) fail closed on non-FIPS provider selection when consumer asserts FIPS mode, (c) declare per-primitive sensitivity-horizon guidance in package metadata."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.28 — Secure coding",
+          "actual_gap": "Silent on PQC, KDF iteration minimums, RNG-source requirements, constant-time-implementation requirements. Permits MD5-by-default, PBKDF2-10k, Math.random in token generation as 'secure coding' practices.",
+          "required_control": "Amendment requiring (a) banned-primitive list (MD5/SHA1/DES/3DES/RC4/RSA-1024 in security context), (b) minimum-parameter floors (PBKDF2 >= OWASP current, bcrypt >= 12, scrypt N >= 2^17, argon2id m >= 19 MiB), (c) cryptographic-RNG enforcement in security context, (d) constant-time-implementation requirement for shipped primitives."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.24 — Use of cryptography",
+          "actual_gap": "Targets the using organization. No upstream library-author hook.",
+          "required_control": "Companion control A.8.24(LIB) binding library authors who publish cryptographic primitives to declare conformance to A.8.24 in package metadata, with downstream-consumer-facing crypto-attribute disclosure."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "pci-dss-4",
+          "claimed_control": "§3.6 / §8.3.2 — Strong cryptography and password storage",
+          "actual_gap": "Binds merchants and service providers. A payment library shipping PBKDF2-10k is what the merchant inherits without explicit override; no framework hook to push upstream.",
+          "required_control": "PCI Council guidance binding upstream library vendors targeting PCI-relevant code paths to ship parameter floors matching the merchant-facing requirements."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I §1 — State-of-the-art cryptography, secure defaults",
+          "actual_gap": "Binding 2026-09-11 for vulnerability handling / SBOM provisions; full 2027-12-11. 'State-of-the-art' interpretive without NIST PQC reference. Today not yet legally binding on most library authors.",
+          "required_control": "Implementing acts binding 'state-of-the-art' to NIST FIPS 203/204/205 for new shipped primitives, OWASP-current parameter floors for KDFs, FIPS 140-3 provider activation discipline for products that claim FIPS posture."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(g) — Supply-chain security",
+          "actual_gap": "Binds the essential entity, not the library author. Indirect pressure via procurement.",
+          "required_control": "Implementing acts requiring essential entities to require upstream library vendors to publish cryptographic-attribute disclosure and to fail procurement on undisclosed or weak shipped defaults."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "uk-caf",
+          "claimed_control": "C.5 — Connected products / UK PSTI",
+          "actual_gap": "Targets connected-product manufacturers. Library authors shipping non-product crypto code are outside scope unless their library is incorporated into a regulated connected product.",
+          "required_control": "PSTI extension binding upstream library vendors targeting connected-product code paths to ship modern crypto defaults and to publish minimum-security periods."
+        },
+        {
+          "finding_id": "library-author-crypto-debt",
+          "framework": "au-essential-8",
+          "claimed_control": "M8 (Application Control) / AU ISM approved-cryptographic-algorithm list",
+          "actual_gap": "No direct library-author obligation. AU ISM approved-algorithm list is non-binding without procurement teeth.",
+          "required_control": "AU ISM extension making approved-cryptographic-algorithm-list conformance a published library-author obligation, with consumer-facing attestation."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "blast_radius_score >= 4 AND any deterministic indicator fires",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "rwep >= 75 AND library is published_to_registry == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "blast_radius_score >= 3",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "indicator_id == 'fips-claim-without-runtime-activation' AND library_marketed_for_federal_use == true",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "rotate-to-pqc-hybrid-kem",
+          "description": "For any shipped KEM call site or TLS context construction: migrate to hybrid X25519+ML-KEM-768. Use noble-post-quantum (JS), pqcrypto::mlkem (Rust), aws-lc-rs PQC (Rust/C), or OpenSSL >= 3.5 native KEM API (multi-language). Hybrid is mandatory — pure-PQC fails closed if downstream consumer cannot negotiate.",
+          "preconditions": [
+            "ml_kem_implementation_available_for_language == true",
+            "api_stability_promise_permits_default_change == true OR major_version_bump_planned == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "config_flag_for_classical_only_fallback_with_deprecation_warning",
+            "downstream_consumer_migration_guide_published"
+          ],
+          "estimated_time_hours": 24
+        },
+        {
+          "id": "rotate-to-ed25519-or-ml-dsa-signature",
+          "description": "For shipped signature call sites: prefer Ed25519 today, hybrid Ed25519+ML-DSA-65 once downstream consumers can verify. RSA-PKCS1 -> RSA-PSS minimum; bare ECDSA-P256 retained only for short-horizon use cases with documentation. Add ML-DSA / SLH-DSA implementation for forward-looking long-horizon use.",
+          "preconditions": [
+            "signature_call_site_count_inventoried == true",
+            "downstream_consumer_compat_path_planned == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "dual_signature_envelope_during_migration",
+            "explicit_algorithm_identifier_in_signed_payload"
+          ],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "swap-deprecated-hash",
+          "description": "Replace MD5 / SHA1 in security-context call sites with SHA-256 / SHA-384 / SHA-512 / SHA3-256 / BLAKE2b. For HMAC keys, increase output to >= 256 bits. Where the hash is genuinely non-security, add inline justification + static-analysis annotation.",
+          "preconditions": [
+            "weak_hash_call_sites_inventoried == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "deprecation_warning_emitted_when_legacy_hash_method_invoked",
+            "telemetry_to_track_legacy_method_consumer_usage"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "increase-kdf-iterations",
+          "description": "Raise PBKDF2 default to >= 600,000 (SHA256) / >= 210,000 (SHA512) / >= 1,300,000 (SHA1, with deprecation plan); bcrypt cost factor to >= 12; scrypt N to >= 2^17 (r=8, p=1); argon2id to m=19 MiB, t=2, p=1. Allow consumer override upward but not downward.",
+          "preconditions": [
+            "kdf_call_site_inventoried == true",
+            "performance_regression_acceptable_in_current_release == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "kdf_parameter_floor_enforced_at_runtime_not_just_default",
+            "consumer_documentation_about_password_rehash_on_login_for_legacy_storage"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "upgrade-random-source",
+          "description": "Replace Math.random / random.random / rand in security context with crypto.randomBytes / crypto.getRandomValues / secrets.token_bytes / os.urandom / SecureRandom / OsRng / getrandom(). Add lint rule banning the weak APIs in production paths.",
+          "preconditions": [
+            "rng_call_sites_inventoried == true"
+          ],
+          "priority": 5,
+          "compensating_controls": [
+            "linter_rule_added_to_ci",
+            "data_flow_analysis_for_residual_paths"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "activate-fips-provider-or-retract-claim",
+          "description": "If FIPS claim is to be retained: add explicit `OSSL_PROVIDER_load(ctx, \"fips\", NULL)` (or language-equivalent), assert at runtime that the FIPS provider is selected, fail closed if non-FIPS provider is active when FIPS mode is requested, ship a tested openssl.cnf / fipsmodule.cnf. If FIPS posture cannot be backed: retract the claim from README / SECURITY.md / compliance manifest.",
+          "preconditions": [
+            "fips_provider_available_in_target_dep == true"
+          ],
+          "priority": 6,
+          "compensating_controls": [
+            "fips_runtime_assertion_in_init_path",
+            "ci_job_running_against_fips_provider_config"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "establish-vendored-crypto-provenance",
+          "description": "For each vendored cryptographic primitive: record UPSTREAM commit hash, ORIGIN URL, integrity hash; add CI step verifying the vendored copy against upstream; run constant-time analysis (dudect / ctgrind / valgrind) in CI on secret-dependent code paths.",
+          "preconditions": [
+            "vendored_crypto_inventoried == true"
+          ],
+          "priority": 7,
+          "compensating_controls": [
+            "vendored_copy_pinned_to_release_tag_not_branch",
+            "automated_upstream_security_advisory_subscription"
+          ],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "publish-crypto-agility-abstraction",
+          "description": "Refactor crypto layer to an interface / trait with >= 2 implementations and a registration hook for downstream consumers to supply alternative implementations. Algorithm identifier travels with ciphertext / signature for forward decoding.",
+          "preconditions": [
+            "api_change_acceptable_in_next_major == true"
+          ],
+          "priority": 8,
+          "compensating_controls": [
+            "deprecation_path_for_old_api",
+            "migration_guide_published"
+          ],
+          "estimated_time_hours": 40
+        },
+        {
+          "id": "policy-exception",
+          "description": "If a deprecated primitive cannot be removed in a minor version due to API-stability promise: generate auditor-ready policy exception. Time-bound until next major version with explicit migration roadmap, deprecation warning emitted at runtime, parallel new API published, downstream-consumer migration guide.",
+          "preconditions": [
+            "remediation_paths[1..8] blocked for this specific primitive due to api_stability == true",
+            "next_major_version_window <= 12_months",
+            "ciso_or_maintainer_acceptance_obtainable == true"
+          ],
+          "priority": 9,
+          "compensating_controls": [
+            "runtime_deprecation_warning",
+            "parallel_new_api_with_modern_crypto",
+            "downstream_consumer_migration_guide",
+            "ci_failure_for_new_usage_of_deprecated_method"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "no-md5-sha1-in-production-paths",
+          "test": "Run `rg -nP \"createHash\\(['\\\"](md5|sha1|sha-1)['\\\"]\\)|hashlib\\.(md5|sha1)\\(|MessageDigest\\.getInstance\\(['\\\"](MD5|SHA-1)['\\\"]\\)\" --type-add 'src:*.{js,ts,py,go,rs,java,rb,c,h,cpp,kt,swift,php}' -tsrc --glob '!**/test/**' --glob '!**/spec/**' --glob '!**/fixtures/**' --glob '!**/examples/**'`. Expect zero hits.",
+          "expected_result": "Empty grep output. Zero MD5/SHA1 in production source paths.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-math-random-in-security-paths",
+          "test": "Run `rg -nP '\\bMath\\.random\\b|\\brandom\\.(random|randint|choice)\\b|\\bmt_rand\\(' --type-add 'src:*.{js,ts,py,php}' -tsrc --glob '!**/test/**' --glob '!**/fixtures/**'` AND a follow-up data-flow grep that the surviving hits don't flow into `(token|secret|key|salt|nonce|iv|seed|state|jwt|jti|csrf|session)` named variables.",
+          "expected_result": "Either zero hits, or all surviving hits annotated `// non-security: <reason>` and confirmed not flowing into security-named identifiers.",
+          "test_type": "functional"
+        },
+        {
+          "id": "pbkdf2-defaults-meet-owasp-2023",
+          "test": "Open every PBKDF2 call site and config default. Confirm iteration count >= 600,000 for SHA256, >= 210,000 for SHA512, >= 1,300,000 for SHA1.",
+          "expected_result": "All shipped PBKDF2 defaults meet OWASP 2023 floor.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-rsa-1024-anywhere",
+          "test": "Run `rg -nP 'modulusLength:\\s*1024|key_size\\s*=\\s*1024|\"rsa\",\\s*1024|RSAKeyPairGenerator.*1024'`. Expect zero hits outside test/fixture/legacy-migration paths.",
+          "expected_result": "Zero RSA-1024 occurrences in production paths.",
+          "test_type": "functional"
+        },
+        {
+          "id": "fips-runtime-activation-present",
+          "test": "If FIPS claim retained: run `rg -nP 'OSSL_PROVIDER_load\\(.*\"fips\"|crypto\\.setFips\\(true\\)|Provider::load\\(.*\"fips\"\\)'`. Confirm at least one call site in the initialization path; confirm a runtime assertion that the FIPS provider is selected exists.",
+          "expected_result": "Runtime FIPS-provider activation present and asserted; CI job runs the library against a FIPS-provider config.",
+          "test_type": "functional"
+        },
+        {
+          "id": "pqc-implementation-present-if-claimed",
+          "test": "If PQC claim retained: run `rg -nP '\\b(MlKem|ML-KEM|ml_kem|Kyber|kemEncapsulate|kemDecapsulate)\\b' -tsrc --glob '!**/doc*/**' --glob '!**/README*'`. Confirm at least one concrete cryptographic operation (not just config strings).",
+          "expected_result": "At least one ML-KEM-class concrete primitive call site in production source.",
+          "test_type": "functional"
+        },
+        {
+          "id": "vendored-crypto-provenance-verified",
+          "test": "For each vendored crypto module: open the co-located PROVENANCE.md / UPSTREAM / .upstream-commit and confirm an integrity hash is recorded; check CI config for an automated verification step.",
+          "expected_result": "Every vendored crypto module has provenance + integrity verification + constant-time test in CI.",
+          "test_type": "functional"
+        },
+        {
+          "id": "old-api-still-works-during-deprecation",
+          "test": "For deprecated-with-exception paths: run the library's existing test suite. Confirm legacy API still operates (emitting deprecation warnings) and downstream-compat tests still pass.",
+          "expected_result": "Legacy API operative with deprecation warning; downstream-compat tests pass.",
+          "test_type": "regression"
+        },
+        {
+          "id": "old-primitive-no-longer-default",
+          "test": "Invoke the library's modern crypto entry points without specifying an algorithm. Confirm the negotiated/used algorithm is modern (SHA-256+ for hashing, PBKDF2 >= 600k for KDF, hybrid PQC for KEM where supported).",
+          "expected_result": "Modern primitive is the default; weak primitive only reachable via explicit legacy API.",
+          "test_type": "negative"
+        },
+        {
+          "id": "md5-collision-replay-against-fixed-code",
+          "test": "Use a published MD5 collision pair (e.g. HashClash-generated PDF pair) and feed it to the library's new modern-hash signature/integrity path. Confirm the collision is no longer accepted as equal-by-hash for security purposes.",
+          "expected_result": "MD5 collision attack does not yield equal-by-hash result through the modernized code path.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "downstream-consumer-compat",
+          "test": "Build a representative downstream consumer against the new library version. Confirm it builds, its tests pass, and the consumer's own crypto-attribute disclosure (if any) is consistent.",
+          "expected_result": "Downstream consumer builds and tests green; consumer-side crypto-attribute disclosure consistent.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after remediation, downstream consumers may pin to a pre-remediation version, may use the deprecated API explicitly during the exception window, or may run the library against a non-FIPS provider config despite FIPS guidance.",
+        "why_remains": "Library authors cannot force consumer upgrades. Deprecation warnings and migration guides reduce but do not eliminate the long tail. API-stability promises bind authors to a multi-release migration path. Downstream consumers in regulated industries may take 12-24 months to adopt a major version bump. The library author's obligation is to ship modern defaults, document the migration path, and emit runtime signals about legacy usage — the residual is on the consumer.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "deprecation_warning_emitted_at_runtime_for_legacy_paths",
+          "ci_failure_on_new_internal_usage_of_deprecated_apis",
+          "downstream_consumer_migration_guide_published",
+          "telemetry_for_legacy_api_consumer_usage_tracking_with_consent",
+          "vulnerability_disclosure_policy_published",
+          "scheduled_eol_date_for_legacy_api_documented"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full source-tree grep report showing zero deterministic indicators in production paths post-remediation; ML-KEM / ML-DSA / SLH-DSA implementation call sites if PQC claim retained; FIPS-provider activation call sites if FIPS claim retained; PBKDF2 / bcrypt / scrypt / argon2id parameter inventory meeting OWASP 2023 floors.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-SC-13",
+            "iso-27001-2022-A.8.24",
+            "iso-27001-2022-A.8.28",
+            "pci-dss-4-3.6",
+            "pci-dss-4-8.3.2",
+            "eu-cra-annex-I-1"
+          ]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after diff of library source showing weak-primitive removal, KDF parameter raise, RNG replacement, FIPS-provider activation addition, vendored-crypto provenance addition. Tied to change-management approval reference and release notes entry.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "iso-27001-2022-A.8.28",
+            "iso-27001-2022-A.8.32",
+            "soc2-cc8.1"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Library-author cryptographic-attribute disclosure: per-primitive algorithm choice, parameter floor, sensitivity-horizon guidance, PQC roadmap, FIPS-validation status (runtime-activated or N/A), vendored-crypto provenance map. Signed and published with the release.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "eu-cra-annex-I-1",
+            "eu-cra-art-13",
+            "nis2-art21-2g",
+            "us-cisa-sbd-attestation",
+            "au-ism"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "MD5-collision exploit-replay against the post-remediation code path showing the collision no longer produces equal-by-hash for security purposes; equivalent negative replays for SHA1-collision, PBKDF2-GPU-crack against the raised iteration floor, predictable-RNG token-prediction against the upgraded RNG.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc7.1",
+            "iso-27001-2022-A.8.28"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "SBOM with cryptographic-attribute disclosure (CycloneDX 1.6 crypto extension or SPDX equivalent) listing every cryptographic primitive shipped, every vendored crypto module with its upstream provenance, and the FIPS / PQC posture per primitive.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "eu-cra-art-13",
+            "us-cisa-sbd-attestation",
+            "nist-800-53-SR-3"
+          ]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Downstream-consumer notification record: GitHub Security Advisory ID, npm advisory link, registry-specific advisory references, mailing list announcement, release notes entry detailing the cryptographic changes.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "eu-cra-art-14",
+            "iso-29147",
+            "uk-psti-vdp"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_crypto_primitive_added_to_source",
+          "interval": "on_event"
+        },
+        {
+          "condition": "dependency_with_crypto_surface_updated",
+          "interval": "on_event"
+        },
+        {
+          "condition": "OWASP_KDF_minimums_updated",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_NIST_PQC_standard_published_or_amended",
+          "interval": "on_event"
+        },
+        {
+          "condition": "EU_CRA_implementing_act_published",
+          "interval": "on_event"
+        },
+        {
+          "condition": "pre_release_publish",
+          "interval": "on_event"
+        },
+        {
+          "condition": "quarterly",
+          "interval": "90d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "scan_report",
+          "config_diff",
+          "attestation",
+          "exploit_replay_negative",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement",
+          "downstream_consumer_notification_record",
+          "sbom_with_crypto_attributes"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Library-author crypto debt: shipped defaults (weak hash, weak cipher mode, RSA-1024, under-iterated KDF, non-cryptographic RNG in security context, missing PQC, link-time FIPS claim without runtime activation, vendored crypto without provenance) propagate to every downstream consumer regardless of consumer-side security posture. Exploitation modes include MD5/SHA1 collision against integrity checks, GPU-cracking of under-iterated KDF, token prediction against weak RNG, supply-chain attack on vendored crypto, HNDL against bare classical KEM/signature.",
+          "control_gap": "NIST 800-53 SC-13 / ISO 27001:2022 A.8.24/A.8.28 / PCI DSS 4.0 §3.6/§8.3.2 bind the operating organization, not the library author. Library can ship weak defaults and remain framework-irrelevant. EU CRA Annex I §1 is the first direct upstream binding but not yet enforced (2026-09-11 partial bind / 2027-12-11 full).",
+          "framework_gap": "Frameworks have no upstream library-author hook. ISO A.8.28 (secure coding) contains no PQC, KDF-iteration, RNG-source, or constant-time-implementation specifics. PCI Council and EU regulators publicly aware but binding controls not yet amended. Gap = ~365 days from operational PQC readiness (2024-08-13) to partial EU CRA bind (2026-09-11).",
+          "new_control_requirement": "Add upstream library-author sub-controls to SC-13, A.8.24, A.8.28, §3.6, §8.3.2, Art.21(2)(g), Annex I §1 requiring: (a) banned-primitive enforcement (MD5/SHA1/DES/3DES/RC4/RSA-1024 in security context), (b) minimum KDF parameter floors aligned to OWASP-current, (c) cryptographic-RNG enforcement in security context, (d) PQC readiness disclosure with concrete primitive references not feature-flag toggles, (e) FIPS-validation-claim discipline tied to runtime activation evidence, (f) vendored-crypto provenance + integrity + constant-time evidence, (g) crypto-agility structural pluggability requirement, (h) downstream-consumer-facing cryptographic-attribute disclosure in SBOM."
+        },
+        "feeds_back_to_skills": [
+          "pqc-first",
+          "supply-chain-integrity",
+          "exploit-scoring",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "global-grc",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/EU CRA Art.14 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": [
+            "affected_product_versions",
+            "vulnerability_description",
+            "mitigation_status",
+            "downstream_consumer_notification_plan"
+          ],
+          "draft_notification": "EU CRA Art.14 24-hour early-warning notification (where applicable): ${manufacturer_name} reports an exploited vulnerability in published product ${product_name} versions ${affected_versions}. Vulnerability class: cryptographic weakness in shipped defaults (${vulnerability_class}). Exploitation status: ${exploitation_status}. Interim mitigation: ${interim_mitigation}. Downstream-consumer notification plan: GitHub Security Advisory ID ${ghsa_id}, registry advisory ${registry_advisory_id}, release notes entry in v${remediation_version}. Coordinated disclosure window: ${disclosure_window}. Full vulnerability report to follow per Art.14(3)."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.13 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "product_sbom",
+            "cryptographic_attribute_disclosure",
+            "vulnerability_handling_policy"
+          ],
+          "draft_notification": "EU CRA Art.13 SBOM + cryptographic-attribute disclosure publication: ${manufacturer_name} attaches SBOM for ${product_name} v${current_version} with cryptographic-attribute disclosure listing per-primitive algorithm, parameter floor, sensitivity-horizon guidance, PQC roadmap, FIPS-validation status, vendored-crypto provenance. Vulnerability-handling policy: ${vdp_url}. Re-attestation cadence: ${cadence}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "essential_entity_consumer_count",
+            "exploitation_status_assessment",
+            "interim_mitigation_record"
+          ],
+          "draft_notification": "NIS2 Art.23 24-hour early-warning notification (where library is depended upon by essential entities): cryptographic vulnerability detected in published library ${product_name} affecting ${essential_entity_consumer_count} essential-entity consumers. Exploitation status: ${exploitation_status}. Interim mitigation: ${interim_mitigation}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "US/CISA Secure-By-Design Self-Attestation (M-23-02 / EO 14028) 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "secure_by_design_attestation",
+            "vendor_pqc_migration_inventory",
+            "cryptographic_provenance_statement"
+          ],
+          "draft_notification": "CISA Secure-By-Design Self-Attestation annual filing: ${manufacturer_name} attests for ${product_name} that shipped cryptographic defaults conform to FIPS 140-3 module discipline (runtime-activated where claimed), banned-primitive enforcement, OWASP-current KDF parameter floors, PQC roadmap with concrete primitive references, vendored-crypto provenance with integrity verification. PQC migration inventory: ${pqc_inventory_summary}. Cryptographic provenance statement: ${provenance_statement_url}."
+        },
+        {
+          "obligation_ref": "AU/ASD ISM (vendor-shipped cryptography requirements) 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "approved_cryptographic_algorithm_list",
+            "vendor_attested_implementation_evidence"
+          ],
+          "draft_notification": "ASD ISM vendor cryptographic-implementation disclosure: ${manufacturer_name} declares conformance for ${product_name} to the ISM approved-cryptographic-algorithm list, with per-primitive attestation: ${primitive_attestation_summary}. Exceptions: ${exceptions_summary}."
+        },
+        {
+          "obligation_ref": "UK/UK PSTI Act / CAF C.5 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "vdp_published",
+            "minimum_security_period_declared"
+          ],
+          "draft_notification": "UK PSTI / CAF C.5 disclosure (where product is or is embedded in a connected product): ${manufacturer_name} publishes vulnerability-disclosure policy at ${vdp_url} and declares minimum security period of ${minimum_security_period} for ${product_name}. Cryptographic implementation disclosure: ${crypto_disclosure_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (api_stability_promise_blocks_default_change == true AND next_major_version_window > 0) OR vendor_pqc_implementation_pending == true",
+        "exception_template": {
+          "scope": "Library ${product_name} retains deprecated cryptographic primitive(s) ${deprecated_primitives} under API-stability promise until next major version ${next_major_version} (planned ${planned_release_date}). Modern parallel API ${modern_api_name} is published and downstream consumers are guided to migrate via ${migration_guide_url}.",
+          "duration": "until_next_major_version",
+          "compensating_controls": [
+            "runtime_deprecation_warning_on_legacy_path_invocation",
+            "parallel_modern_api_published",
+            "downstream_consumer_migration_guide_published",
+            "ci_failure_for_new_internal_usage_of_deprecated_method",
+            "telemetry_for_legacy_api_consumer_usage_tracking_with_consent",
+            "documented_eol_date_for_legacy_api"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Cryptographic Protection / Use of Cryptography / Secure Coding / Strong Cryptography / State-of-the-Art Cryptography), ${manufacturer_name} documents a time-bound risk acceptance for the deprecated cryptographic primitive(s) ${deprecated_primitives} retained in library ${product_name} versions ${affected_versions} under API-stability promise. The deprecated primitives cannot be removed in a minor or patch release without violating semantic versioning and breaking downstream consumers in regulated industries that have not yet migrated. Modern parallel API ${modern_api_name} is published in version ${parallel_api_version} and is the documented recommendation; legacy API emits a runtime deprecation warning on invocation; internal usage of the deprecated API is failed by CI. The accepted risk class is downstream-consumer-inheritance: consumers that have not migrated to the modern API inherit the legacy cryptographic posture until they migrate or until the legacy API is removed at the next major version ${next_major_version} (planned ${planned_release_date}). The organization accepts that framework controls (NIST 800-53 SC-13, ISO 27001:2022 A.8.24/A.8.28, PCI DSS 4.0 §3.6/§8.3.2, EU CRA Annex I §1, NIS2 Art.21(2)(g)) place primary obligation on the operating organization (the consumer), but ${manufacturer_name} acknowledges its upstream supply-chain responsibility under EU CRA Annex I §1 (binding 2026-09-11 for vulnerability handling and SBOM provisions, full compliance 2027-12-11) and ISO 27001:2022 A.8.28 (secure coding) and provides the compensating controls listed. Crypto-agility roadmap: ${crypto_agility_roadmap}. Downstream-consumer notification: ${downstream_consumer_notification_record}. Cryptographic-attribute disclosure published in SBOM: ${sbom_url}. Risk accepted by ${maintainer_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (planned major version release, OR ${default_12_month_expiry}, whichever is first). Re-evaluation triggers: NIST publishes PQC amendment, OWASP raises KDF parameter floor, EU CRA implementing act publishes binding 'state-of-the-art' specification, downstream-consumer migration crosses 80% adoption threshold, OR exploitation of the deprecated primitive is observed in the wild."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "weak-primitive-inventory",
+      "title": "Full-tree weak-primitive inventory across shipped cryptographic code (catch-all)",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "pqc-readiness-gap",
+      "title": "PQC readiness gap audit for downstream-consumer long-horizon exposure (T1573)",
+      "applies_to": {
+        "attack_technique": "T1573"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 70,
+            "monitor": 40,
+            "close": 20
+          }
+        }
+      }
+    },
+    {
+      "id": "fips-validation-status",
+      "title": "FIPS-validation-claim audit vs runtime activation reality",
+      "applies_to": {
+        "always": true
+      }
+    }
+  ]
+}

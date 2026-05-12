@@ -77,6 +77,57 @@ Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/play
 
 Schema reference: `lib/schemas/playbook.schema.json`. Reference playbook (read this before authoring a new one): `data/playbooks/kernel.json`.
 
+### feeds_into threshold matrix
+
+Each playbook's `_meta.feeds_into[]` declares downstream playbooks the host AI should consider chaining into after this run, and the condition that fires the chain. The condition expressions evaluate at `close()` against `analyze` + `validate` + `agentSignals` context. AI assistants surface the suggested next playbook to the operator but never auto-execute; the operator decides.
+
+The current (v0.10.x) matrix:
+
+| From | Triggers | To | Why |
+|---|---|---|---|
+| ai-api | `analyze.compliance_theater_check.verdict == 'theater'` | framework | dotfile-cred-exposure theater pattern |
+| ai-api | `analyze.blast_radius_score >= 4` | sbom | broad blast radius → inventory check |
+| ai-api | `finding.includes_mcp_server_credential_exposure == true` | mcp | MCP creds leaked → MCP fleet audit |
+| containers | `finding.severity >= 'high'` | kernel | container escape → kernel surface |
+| containers | `always` | secrets | manifests routinely embed secrets |
+| cred-stores | `finding.severity >= 'high'` | secrets | leaked creds in store → repo grep |
+| cred-stores | `finding.severity == 'critical'` | runtime | critical exposure → listening-surface audit |
+| crypto | `analyze.compliance_theater_check.verdict == 'theater'` | framework | FIPS-claim vs reality |
+| crypto | `analyze.blast_radius_score >= 4` | sbom | crypto blast → SBOM-cve match |
+| framework | `any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 4` | sbom | theater + breadth → inventory |
+| hardening | `always` | kernel | hardening is corroborator for kernel finding |
+| hardening | `finding.severity >= 'high'` | runtime | weak hardening → check actual exposure |
+| kernel | `finding.severity == 'critical' OR analyze.blast_radius_score >= 4` | sbom | critical kernel → SBOM cross-ref |
+| kernel | `analyze.compliance_theater_check.verdict == 'theater'` | framework | patch-SLA theater |
+| mcp | `finding.severity == 'critical' OR analyze.blast_radius_score >= 4` | sbom | broad MCP impact → inventory |
+| mcp | `analyze.compliance_theater_check.verdict == 'theater'` | framework | MCP-trust theater |
+| mcp | `finding.includes_credential_exposure == true` | ai-api | MCP cred → AI-API cred audit |
+| runtime | `always` | kernel | listener finding always informs kernel triage |
+| runtime | `always` | hardening | runtime exposure pairs with hardening posture |
+| runtime | `finding.severity == 'critical' OR analyze.blast_radius_score >= 3` | cred-stores | critical runtime → check cred stores |
+| sbom | `analyze.compliance_theater_check.verdict == 'theater'` | framework | SBOM-signing theater |
+| sbom | `any matched_cve.attack_class == 'kernel-lpe'` | kernel | kernel CVE in inventory → kernel playbook |
+| sbom | `any matched_cve.attack_class == 'mcp-supply-chain'` | mcp | MCP CVE in inventory → MCP playbook |
+| sbom | `any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']` | ai-api | AI CVE → AI-API playbook |
+| secrets | `finding.severity >= 'high'` | cred-stores | leaked secret in repo → check store posture |
+
+Cross-cutting playbook `framework` is the natural correlation layer — many playbooks chain into it on a theater verdict. `sbom` is the breadth-of-impact follow-up most playbooks suggest when blast radius crosses 4. `kernel` + `hardening` + `runtime` form a tightly-coupled triangle (any one finding raises questions in the other two). When a playbook lists `always` as a feeds_into condition, the chain runs unconditionally — the AI should always at least offer the next playbook to the operator.
+
+### CLI reference
+
+| Verb | What it does |
+|---|---|
+| `exceptd plan` | Default: grouped-by-scope summary of all 13 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. |
+| `exceptd govern <pb>` | Phase 1 — jurisdiction obligations, theater fingerprints, framework gaps, skills to preload. |
+| `exceptd direct <pb>` | Phase 2 — threat context, RWEP thresholds, skill chain, token budget. |
+| `exceptd look <pb>` | Phase 3 — typed artifact-collection spec + `preconditions` array + submission-shape hint. |
+| `exceptd run <pb>` | Phases 4-7 from agent evidence. Auto-detect cwd when no playbook positional. `--scope <type>` or `--all` for multi-playbook. `--vex <file>` to drop CycloneDX/OpenVEX `not_affected` CVEs. `--ci` for exit-code gating. `--diff-from-latest` for drift mode. `--force-stale` to override currency hard-block. |
+| `exceptd ingest` | Alias for `run`; submission JSON may carry `playbook_id` + `directive_id`. |
+| `exceptd reattest [<sid> \| --latest]` | Replay prior session, diff evidence_hash. `--latest [--playbook <id>] [--since <ISO>]` finds the most recent attestation automatically. |
+| `exceptd list-attestations` | Inventory `.exceptd/attestations/<sid>/` — every prior session, newest first. `--playbook <id>` filters. |
+
+All verbs support `--help` for per-verb usage. JSON output by default; `--pretty` for indented.
+
 ---
 
 ## Recurring Drift Rules

@@ -1,0 +1,1792 @@
+{
+  "_meta": {
+    "id": "library-author",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-12",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-12",
+        "summary": "Initial seven-phase library-author / framework-author / SDK-publisher playbook. Audits the upstream / publisher side of the supply chain: vendored dependencies, lockfile pinning depth + integrity, SBOM signing + format + transitive completeness, SLSA build provenance + Sigstore Rekor entries + in-toto attestation chains, npm/PyPI/crates publish-time provenance, VEX issuance posture (am I emitting VEX for CVEs filed against my product?), coordinated-vuln-disclosure path (security.txt + SECURITY.md + CSAF advisory pipeline), tag + branch protection on release branches, GitHub Actions OIDC vs static publishing tokens, reproducible-build claims, and Ed25519 / cosign skill-signing for AI-tool publishers. Distinct from the install-side `sbom` playbook: this one investigates what YOU ship to thousands of downstream consumers, not what's installed on your host.",
+        "framework_gaps_updated": [
+          "nist-800-218-PS-3",
+          "nist-800-218-PW-4",
+          "nist-800-53-SR-3",
+          "nist-800-53-SR-4",
+          "nist-800-53-SR-5",
+          "iso-27001-2022-A.8.30",
+          "iso-27001-2022-A.5.20",
+          "eu-cra-art10",
+          "eu-cra-art13",
+          "eu-cra-art14",
+          "nis2-art21-2d",
+          "dora-art28",
+          "cmmc-SI.L2-3.4.4"
+        ]
+      }
+    ],
+    "owner": "@blamejs/supply-chain",
+    "air_gap_mode": false,
+    "scope": "code",
+    "preconditions": [
+      {
+        "id": "repo-walk-access",
+        "description": "Agent must be able to read the current repo: .git/, .github/workflows/, package.json / pyproject.toml / Cargo.toml / go.mod / Gemfile, lockfiles, SECURITY.md, and any committed SBOM / VEX / signing-key artifacts.",
+        "check": "agent_has_filesystem_read == true AND cwd_is_git_repo == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "publishable-artifact-evidence",
+        "description": "The repo must show some sign that it publishes artifacts (package.json with publishConfig, pyproject.toml with [project] / [tool.poetry] publish metadata, Cargo.toml with [package].publish != false, .github/workflows containing a publish/release step, GoReleaser config, or a tagged-release history). Otherwise this playbook has nothing to audit.",
+        "check": "exists_any('package.json', 'pyproject.toml', 'Cargo.toml', 'go.mod', '*.gemspec', '.goreleaser.yml', '.github/workflows/release*.yml', '.github/workflows/publish*.yml') == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": ["secrets"],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "always"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "compliance-theater",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Library / framework / SDK publisher supply-chain posture",
+    "attack_class": "supply-chain",
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002",
+      "T1554",
+      "T1199"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-1357",
+      "CWE-1395",
+      "CWE-494",
+      "CWE-829",
+      "CWE-353",
+      "CWE-345"
+    ],
+    "d3fend_refs": [
+      "D3-CBAN",
+      "D3-EAL",
+      "D3-EHB"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "eu-cra",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "cmmc"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_actively_exploited_vulnerability",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_product_identification",
+            "exploitation_evidence",
+            "mitigation_status",
+            "csaf_advisory_draft"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_actively_exploited_vulnerability_full",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "full_vulnerability_assessment",
+            "corrective_measures",
+            "published_csaf_advisory"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.13 / Annex I",
+          "obligation": "submit_technical_documentation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "sbom_per_product",
+            "conformity_assessment",
+            "vulnerability_handling_procedure",
+            "security_update_record",
+            "coordinated_disclosure_policy"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.10",
+          "obligation": "maintain_security_update_obligation",
+          "window_hours": 43800,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "five_year_security_update_commitment",
+            "support_lifecycle_record",
+            "end_of_support_notice_template"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21(2)(d)",
+          "obligation": "supply_chain_security_policy",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "supplier_security_policy",
+            "third_party_risk_register",
+            "publisher_attestation_inventory"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.28",
+          "obligation": "submit_third_party_ict_risk_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "ict_third_party_register",
+            "concentration_risk_assessment",
+            "subcontracting_inventory"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "OMB M-22-09 / EO 14028",
+          "obligation": "submit_secure_software_attestation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "cisa_secure_software_attestation_form",
+            "sbom_per_product",
+            "ssdf_alignment_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "CISA Secure-by-Design Pledge",
+          "obligation": "publish_self_attestation",
+          "window_hours": 4320,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "secure_by_design_attestation_text",
+            "measurable_progress_evidence_per_goal"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK CAF (NCSC) C1.b / B4.d",
+          "obligation": "supplier_assurance_posture",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "supplier_assurance_register",
+            "release_pipeline_security_attestation"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "AU ISM (ACSC) Guidelines for Software Development",
+          "obligation": "secure_development_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "secure_development_lifecycle_record",
+            "signed_release_artifacts"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "sbom-published-but-unsigned-and-request-time-generated",
+          "claim": "We publish an SBOM with every release per NIST SSDF PS.3.2 / EU CRA Art.13.",
+          "fast_detection_test": "Locate the most recent release's SBOM artifact. Verify (a) it is a committed / pipeline-published build artifact with a stable URL, NOT regenerated at request time from current state, (b) it carries a Sigstore-cosign or PGP signature, (c) the signature key chain resolves to a known publisher identity, NOT the maintainer's personal laptop key. Theater if SBOM exists but is unsigned OR is regenerated-on-demand from current dep state (which means historical releases have no immutable SBOM).",
+          "implicated_controls": [
+            "nist-800-218-PS-3",
+            "eu-cra-art13",
+            "nist-800-53-SR-4"
+          ]
+        },
+        {
+          "pattern_id": "npm-provenance-flag-but-not-enforced-in-workflow",
+          "claim": "We publish with npm provenance (or PyPI attestations, or cargo attestations) — SLSA Level 3 build provenance.",
+          "fast_detection_test": "Read .github/workflows/*.yml for the release / publish job. Confirm (a) `permissions: id-token: write` is set at the job level, (b) the npm publish command carries `--provenance` (or `publishConfig.provenance: true` in package.json), (c) the workflow runs on a GitHub-hosted runner from a protected tag-triggered event, (d) the workflow itself is pinned by SHA, not by branch / floating tag. Theater if --provenance is documented in README but not in the workflow, OR if the workflow ref is mutable (e.g. uses@actions/checkout@v4 instead of uses@actions/checkout@<sha>).",
+          "implicated_controls": [
+            "nist-800-218-PS-3",
+            "slsa-l3",
+            "nist-800-53-SR-4"
+          ]
+        },
+        {
+          "pattern_id": "release-signing-key-on-maintainer-laptop",
+          "claim": "We sign releases (GPG / cosign / minisign).",
+          "fast_detection_test": "Inspect the signature on the most recent release artifact. Verify the signing identity resolves to an OIDC identity (GitHub Actions workload, Sigstore keyless), NOT a long-lived personal key whose private half lives on a maintainer's laptop. Cross-check the .github/workflows/release*.yml for cosign / sigstore signing steps. Theater if the signature verifies but resolves to a personal email + GPG key whose rotation cadence is 'when the maintainer remembers', AND the key isn't in a managed transparency log (Sigstore Rekor, Web Key Directory).",
+          "implicated_controls": [
+            "nist-800-53-SR-4",
+            "nist-800-218-PW-4",
+            "iso-27001-2022-A.8.24"
+          ]
+        },
+        {
+          "pattern_id": "slsa-l3-claim-without-rekor-entry",
+          "claim": "We follow SLSA Level 3 (or Level 4) build-provenance attestation.",
+          "fast_detection_test": "Take the latest published release artifact. Compute its sha256. Query Sigstore Rekor (`rekor-cli search --sha <hash>`) — confirm a corresponding transparency-log entry exists with the expected workflow identity. For npm: GET https://registry.npmjs.org/<pkg> and inspect the `dist.attestations` field. Theater if SLSA L3 is claimed but Rekor / dist.attestations is empty for shipped releases — there's no immutable third-party-verifiable evidence the build happened the way the README says.",
+          "implicated_controls": [
+            "nist-800-218-PS-3",
+            "slsa-l3",
+            "in-toto-attestation"
+          ]
+        },
+        {
+          "pattern_id": "lockfile-committed-but-mid-build-resolution",
+          "claim": "Our build is reproducible — the lockfile is committed.",
+          "fast_detection_test": "Read the release workflow. Confirm the install step uses the strict mode that fails if the lockfile is stale (`npm ci`, `pnpm install --frozen-lockfile`, `pip install --require-hashes -r requirements.txt`, `cargo build --locked`, `bundle install --frozen`). Theater if the workflow uses non-frozen install commands (`npm install`, `pnpm install`, `pip install -r requirements.txt`) that may resolve mid-build and pull a substitute, OR if no registry-pinning (`registry.npmjs.org`, PyPI index URL pinning) is enforced.",
+          "implicated_controls": [
+            "nist-800-53-SR-3",
+            "slsa-l2",
+            "iso-27001-2022-A.8.30"
+          ]
+        },
+        {
+          "pattern_id": "branch-protection-main-only-tags-unprotected",
+          "claim": "We use branch protection — only reviewed code reaches production.",
+          "fast_detection_test": "Use the GitHub API `GET /repos/{owner}/{repo}/branches/{branch}/protection` AND `GET /repos/{owner}/{repo}/tags/protection`. Confirm (a) main is protected with required reviewers + status checks, (b) release tags pattern (e.g. `v*`) is protected against deletion + force-push, (c) the publish workflow only runs on tag events from protected refs. Theater if main is protected but tags are not — a compromised maintainer pushes `v9.9.9-evil` from a feature branch and the publish workflow ships it.",
+          "implicated_controls": [
+            "nist-800-53-SR-3",
+            "nist-800-218-PW-4",
+            "iso-27001-2022-A.8.32"
+          ]
+        },
+        {
+          "pattern_id": "static-npm-token-instead-of-oidc",
+          "claim": "We use scoped, time-bound publishing credentials.",
+          "fast_detection_test": "Read the release workflow. Confirm publishing uses GitHub Actions OIDC (`id-token: write` + Trusted Publisher configured on the registry side: npm Trusted Publisher, PyPI Trusted Publisher, crates.io Trusted Publisher). Theater if the workflow references `secrets.NPM_TOKEN` / `secrets.PYPI_TOKEN` / `secrets.CARGO_TOKEN` — these are long-lived, broadly-scoped, leak-on-disclosure secrets. Cross-check: list the repo's stored secrets via gh CLI; if NPM_TOKEN exists, the workflow is one log-exfil away from publisher takeover.",
+          "implicated_controls": [
+            "nist-800-53-IA-5",
+            "nist-800-218-PO-3",
+            "slsa-l3"
+          ]
+        },
+        {
+          "pattern_id": "skill-or-plugin-signed-but-verification-not-gated",
+          "claim": "Our AI skills / plugins / extensions are Ed25519-signed for tamper-evidence.",
+          "fast_detection_test": "Inspect the publish workflow. If signing occurs (e.g. `node lib/sign.js sign-all` for Ed25519, or `cosign sign-blob` for sigstore), verify a verification step (`node lib/verify.js` / `cosign verify-blob`) gates the publish step in the SAME workflow run, with `if: failure() || cancelled()` not catching it. Theater if signing happens in one workflow run and verification in a separate one — there's a gap where an unsigned or wrong-signed artifact can be published if the verification workflow is broken or skipped.",
+          "implicated_controls": [
+            "nist-800-53-SR-4",
+            "nist-800-218-PW-4",
+            "openssf-model-signing"
+          ]
+        },
+        {
+          "pattern_id": "vex-claimed-but-no-vex-feed-published",
+          "claim": "We respond to vulnerability reports filed against our product.",
+          "fast_detection_test": "Look for a published VEX feed: a stable URL serving CSAF 2.0 VEX documents, GitHub Security Advisories with VEX justifications, or a `vex.json` / `*.vex.cdx.json` artifact in the release. Cross-reference against the most recent CVE filed against the product (search NVD / GHSA for the product name). Theater if a CVE is filed and no VEX statement exists declaring not_affected / affected / fixed / under_investigation — downstream SBOM-scanning consumers cannot tell whether the CVE applies to their use of the product.",
+          "implicated_controls": [
+            "nist-800-218-RV-2",
+            "vex-csaf-2-1",
+            "eu-cra-art14"
+          ]
+        },
+        {
+          "pattern_id": "no-security-txt-no-disclosure-path",
+          "claim": "We follow coordinated vulnerability disclosure (ISO 29147 / 30111).",
+          "fast_detection_test": "Confirm (a) `/.well-known/security.txt` is served from the product's primary domain with valid Contact + Expires + Encryption fields, (b) `SECURITY.md` or `.github/SECURITY.md` is present in the repo with a documented disclosure path + response SLA, (c) the product has a published PGP key OR an OIDC-authenticated disclosure intake (e.g. GitHub private vulnerability reporting enabled). Theater if any of these are absent — there is no machine-discoverable disclosure path, and security researchers will either disclose publicly or not disclose at all.",
+          "implicated_controls": [
+            "nist-800-218-RV-1",
+            "iso-29147",
+            "iso-30111",
+            "eu-cra-art13"
+          ]
+        },
+        {
+          "pattern_id": "vendored-deps-without-provenance",
+          "claim": "We vendor selected dependencies for reproducibility.",
+          "fast_detection_test": "Walk `vendor/` (or `third_party/`, `external/`, `node_modules/` if vendored). For each vendored directory: locate the upstream source (commit SHA, release tag, sha256 of source archive) recorded in a manifest (e.g. `vendor.json`, `go.mod` vendored mode, `Cargo.lock` with `[[patch]]`, an explicit `THIRD_PARTY_PROVENANCE.md`). Theater if vendored code is present but provenance manifest is missing — there is no machine-verifiable claim about what's bundled, and divergence from upstream (intentional patches or malicious modifications) cannot be detected without a full source-diff.",
+          "implicated_controls": [
+            "nist-800-53-SR-4",
+            "nist-800-218-PS-3",
+            "slsa-l2"
+          ]
+        },
+        {
+          "pattern_id": "ssdf-compliant-but-not-cra-ready",
+          "claim": "We meet NIST 800-218 SSDF — we're CRA-ready.",
+          "fast_detection_test": "Compare current SSDF posture against EU CRA Annex I requirements that go beyond SSDF: (a) Art.10 five-year security update obligation with documented support lifecycle, (b) Art.13 conformity-assessment for Class II products, (c) Art.14 24-hour notification of actively-exploited vulnerabilities with CSAF advisory, (d) signed SBOM distributed with the product (SSDF mandates generation, not signing or distribution), (e) Annex I §3 vulnerability-handling procedure with documented disclosure intake. Theater if SSDF compliance is asserted as CRA-readiness — SSDF is implementable today, CRA is binding from 2027 with stricter Annex I content.",
+          "implicated_controls": [
+            "nist-800-218-PS-3",
+            "eu-cra-art10",
+            "eu-cra-art13",
+            "eu-cra-art14"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Library / framework / SDK publishers occupy the upstream side of the supply chain — every weakness in their release pipeline becomes a weakness in every downstream consumer. Current frameworks (NIST 800-53 SR-3/4/5, NIST 800-218 SSDF, ISO 27001:2022 A.8.30/A.5.20, SOC 2 CC9.x, NIS2 Art.21(2)(d), DORA Art.28) treat the publisher as a 'supplier' rather than as a control surface. NIST SSDF (PS.3.2) mandates SBOM generation but says nothing about signing, distribution, transitive completeness, or VEX issuance — exactly the gaps EU CRA Art.13/14 closes from 2027. The structural lag therefore has two layers: (1) operational tooling (Sigstore, in-toto, SLSA, CycloneDX VEX, npm/PyPI/crates Trusted Publisher OIDC) shipped in 2023-2025 and is broadly available; (2) compliance frameworks are 18+ months behind binding it, with CRA implementing acts arriving 2026-2027. The XZ Utils backdoor (CVE-2024-3094, 2024) is the canonical demonstration that maintainer-position long-game compromise — possible because the publisher's release signing was a personal key on a personal machine — bypasses every framework control that doesn't require OIDC publish, transparency-log attestation, and reproducible builds. Publishers of AI tools (skills, MCP servers, plugin packages) add an additional layer: skill / plugin signatures must be verified at install time, not just at publish time, and the verification step must gate the install — CVE-2026-30615 (Windsurf MCP zero-interaction RCE) is the canonical demonstration of what happens when that gate is missing.",
+        "lag_score": 540,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SR-3",
+            "designed_for": "Supply chain controls and processes.",
+            "insufficient_because": "Procurement-event lens; does not require continuous attestation of every release artifact's provenance to an immutable transparency log."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SR-4",
+            "designed_for": "Provenance.",
+            "insufficient_because": "Names provenance as a control; does not bind in-toto / SLSA / Sigstore as required attestation formats. Implementation-defined leaves room for theater (a README that says 'we sign releases')."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SR-5",
+            "designed_for": "Acquisition strategies, tools, and methods.",
+            "insufficient_because": "Acquirer-side lens. The publisher acquiring its own dependencies needs the same controls; SR-5 doesn't say so."
+          },
+          {
+            "framework": "nist-800-218",
+            "control_id": "PS.3.2",
+            "designed_for": "Archive and protect each software release; produce SBOM.",
+            "insufficient_because": "Mandates SBOM production; does NOT require (a) signing, (b) distribution with the product, (c) transitive completeness, (d) VEX issuance, (e) OIDC-based publish, (f) Rekor / transparency log entry per release."
+          },
+          {
+            "framework": "nist-800-218",
+            "control_id": "PW.4",
+            "designed_for": "Reuse existing, well-secured software components.",
+            "insufficient_because": "Reuse lens; does not address what the publisher's own pipeline must do to BE that well-secured component for downstream."
+          },
+          {
+            "framework": "nist-800-218",
+            "control_id": "RV.2",
+            "designed_for": "Assess, prioritize, and remediate vulnerabilities.",
+            "insufficient_because": "Does not require VEX issuance — downstream consumers cannot tell whether a CVE filed against the publisher's product applies to their use of it."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.30",
+            "designed_for": "Outsourced development.",
+            "insufficient_because": "Outsourcing lens. A library author IS the outsourced developer for thousands of consumers; A.8.30 doesn't address what they must do."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.20",
+            "designed_for": "Information security in supplier agreements.",
+            "insufficient_because": "Contractual lens. Open-source library publishers have no supplier agreement with consumers; A.5.20 doesn't bind them."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC8.1",
+            "designed_for": "Change management.",
+            "insufficient_because": "Internal-change lens. Doesn't require that publish artifacts carry transparency-log entries or that publish keys are OIDC-issued."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC9.2",
+            "designed_for": "Vendor and business partner risk management.",
+            "insufficient_because": "Acquirer-side. Doesn't address the org's role as a publisher to others."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(d)",
+            "designed_for": "Supply chain security, including security-related aspects of relationships with direct suppliers.",
+            "insufficient_because": "Names supply chain security; implementing acts have not bound publisher-side attestation requirements (OIDC publish, Rekor, VEX issuance, SBOM signing)."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.28",
+            "designed_for": "ICT third-party risk management.",
+            "insufficient_because": "Contractual-ICT-third-party lens. Open-source dependency layer + AI-tool plugins are not contractual third parties; Art.28 doesn't capture them."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.10",
+            "designed_for": "Manufacturer's obligation to provide security updates throughout the product's expected use period (default 5 years).",
+            "insufficient_because": "Binds from 2027; until then, publishers have no compliance obligation to maintain a documented support lifecycle. Library authors who EOL packages without a security-update commitment create cliff exposure for downstream consumers."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.13 / Annex I",
+            "designed_for": "Essential cybersecurity requirements for products with digital elements; technical documentation including SBOM.",
+            "insufficient_because": "Binds 2027 with implementing acts in publication. Until then, SBOM format, signing requirement, and transitive completeness are not legally bound. CE marking + conformity assessment for Class II products is structurally new."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.14",
+            "designed_for": "24-hour notification of actively-exploited vulnerabilities to ENISA + national CSIRT.",
+            "insufficient_because": "Publishers without CSAF / advisory-pipeline tooling cannot meet the 24h notification window — they don't have the infrastructure to draft, sign, and distribute an advisory in time."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "C1.b / B4.d",
+            "designed_for": "Supplier assurance and secure development.",
+            "insufficient_because": "Outcome-based; principle-level guidance with no binding attestation format. Implementers default to documentation-of-process over machine-verifiable attestation."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "E1 Application Control",
+            "designed_for": "Allow-list of approved applications.",
+            "insufficient_because": "Consumer-side lens. Doesn't bind the publisher to provide signed, attestable artifacts the consumer can verify against an allow-list."
+          },
+          {
+            "framework": "cmmc",
+            "control_id": "SI.L2-3.4.4",
+            "designed_for": "Configuration change control.",
+            "insufficient_because": "Internal-config lens. DIB publishers shipping artifacts to DoD-adjacent consumers need binding attestation, not change-control records."
+          }
+        ]
+      },
+      "skill_preload": [
+        "supply-chain-integrity",
+        "coordinated-vuln-disclosure",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen",
+        "exploit-scoring"
+      ]
+    },
+    "direct": {
+      "threat_context": "Publisher-side supply-chain landscape Q1-Q2 2026: (1) XZ Utils backdoor (CVE-2024-3094, 2024) remains the load-bearing reference for maintainer-position long-game compromise — a trusted maintainer's release signing key on a personal laptop, no OIDC publish, no Rekor entry, no reproducible build = three-year infiltration. (2) PyPI typosquat + dependency-confusion campaigns continue to exploit publishers that lack namespace protection on internal package names (T1195.002). (3) GitHub Actions cache-poisoning (CVE family Q4-2025) demonstrates that workflow-mutable-by-PR runners can poison release pipelines unless `permissions: contents: read` is set at the workflow root and elevated only on protected events. (4) CVE-2026-30615 (Windsurf MCP zero-interaction RCE, 150M+ download blast radius) demonstrates the AI-tool publisher class: plugin / skill / extension publishers without enforced signature verification at install time hand attackers a developer-endpoint RCE. (5) The OpenSSF Scorecard initiative and Sigstore Trusted Publisher rollout (npm 2024-04, PyPI 2024-04, crates.io 2025-08) have made OIDC publish the new floor — publishers still on long-lived NPM_TOKEN / PYPI_TOKEN secrets are outside the moving baseline. (6) EU CRA Art.10/13/14 binding from 2027 forces publishers shipping products to the EU market into structural changes (5y support obligation, conformity assessment, 24h notification with CSAF advisory) that most are 12-18 months from being able to meet. Compliance trajectory: SSDF compliance today does NOT equal CRA-readiness; the gap is real and time-bound.",
+      "rwep_threshold": {
+        "escalate": 80,
+        "monitor": 50,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 SR-3/4/5, NIST 800-218 SSDF PS.3.2 / PW.4 / RV.2, ISO 27001:2022 A.8.30 / A.5.20, SOC 2 CC8.1 / CC9.2, NIS2 Art.21(2)(d), DORA Art.28, UK CAF C1.b, AU Essential 8 E1, and CMMC SI.L2-3.4.4 all permit publisher posture that omits (a) OIDC-based publish, (b) Sigstore / Rekor transparency-log entries per release, (c) signed + distributed SBOM, (d) transitive completeness, (e) VEX feed for filed CVEs, (f) coordinated-disclosure intake at /.well-known/security.txt, (g) tag-protection on release refs, (h) reproducible builds, (i) skill / plugin signature verification gated in the install path. Operational tooling for (a)-(i) shipped 2023-2025; framework lag = ~540 days behind tooling and ~18 months ahead of EU CRA Art.10/13/14 binding (2027). Compensating controls MUST close (a)-(i) before SSDF-only compliance can be accepted as CRA-readiness.",
+      "skill_chain": [
+        {
+          "skill": "supply-chain-integrity",
+          "purpose": "Walk repo for release pipeline + published artifact + signing + provenance + SBOM + VEX posture. Cross-check claimed SLSA level against Rekor entries.",
+          "required": true
+        },
+        {
+          "skill": "coordinated-vuln-disclosure",
+          "purpose": "Test ISO 29147 / 30111 alignment: security.txt + SECURITY.md + CSAF advisory pipeline + private vulnerability reporting + 24h notification readiness.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map publisher-posture gaps to framework controls insufficient to cover them (SR-3/4/5, SSDF, A.8.30, CC9, CRA Art.10/13/14).",
+          "skip_if": "analyze.framework_gap_mapping.length == 0",
+          "required": false
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the twelve publisher-side theater fingerprints in govern.theater_fingerprints.",
+          "required": true
+        },
+        {
+          "skill": "exploit-scoring",
+          "purpose": "For any CVE filed against the product or for matched vendored deps, compute RWEP using catalog kev / poc / ai-discovery / active-exploitation fields.",
+          "skip_if": "no_cves_filed_against_product AND no_matched_vendored_deps",
+          "required": false
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for publisher-posture gaps that cannot be remediated within the relevant compliance window (e.g. API stability promise prevents removing deprecated transitive dep).",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 28000,
+        "breakdown": {
+          "govern": 3400,
+          "direct": 1900,
+          "look": 3400,
+          "detect": 4200,
+          "analyze": 5800,
+          "validate": 5500,
+          "close": 3800
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "release-workflows",
+          "type": "config_file",
+          "source": "Recursive read of .github/workflows/*.yml — primary focus on files matching release*, publish*, deploy*, cd*",
+          "description": "Release / publish pipeline definitions. Source of truth for OIDC vs static-token publishing, --provenance flag, pinned action SHAs, signing + verification gating.",
+          "required": true
+        },
+        {
+          "id": "package-manifest",
+          "type": "config_file",
+          "source": "package.json, pyproject.toml, Cargo.toml, *.gemspec, go.mod, composer.json, build.gradle, *.podspec",
+          "description": "Primary package manifest — publishConfig.provenance, publishConfig.access, files allow-list, bin entries, repository field, license, scripts (postinstall risk).",
+          "required": true
+        },
+        {
+          "id": "lockfiles",
+          "type": "config_file",
+          "source": "Recursive walk for: package-lock.json, yarn.lock, pnpm-lock.yaml, Pipfile.lock, poetry.lock, requirements*.txt with hashes, Cargo.lock, go.sum, Gemfile.lock, composer.lock, gradle.lockfile",
+          "description": "Lockfiles for the publisher's OWN build — pinning depth + integrity hashes. Determines whether the release pipeline is reproducible.",
+          "required": false
+        },
+        {
+          "id": "security-md",
+          "type": "config_file",
+          "source": "SECURITY.md, .github/SECURITY.md, docs/SECURITY.md",
+          "description": "Coordinated vulnerability disclosure intake documentation.",
+          "required": false
+        },
+        {
+          "id": "security-txt",
+          "type": "api_response",
+          "source": "If product has a primary domain: HTTP GET https://${domain}/.well-known/security.txt (network mode); else mark absent.",
+          "description": "RFC 9116 machine-discoverable disclosure path.",
+          "required": false,
+          "air_gap_alternative": "Skip in air-gap mode; mark inconclusive with low confidence impact."
+        },
+        {
+          "id": "signing-key-material",
+          "type": "file_path",
+          "source": "Locate: cosign.pub, *.pem (public-key signing artifacts), keys/public.pem, .well-known/openpgpkey/, sigstore-cosign metadata in workflow",
+          "description": "Public signing material committed to the repo or referenced from the release workflow.",
+          "required": false
+        },
+        {
+          "id": "intoto-attestations",
+          "type": "file_path",
+          "source": "Glob: *.intoto.jsonl, *.sigstore, *.sbom.json.sig, *.cdx.json.sig, attestations directory; AND for npm packages: GET https://registry.npmjs.org/${pkg} and inspect dist.attestations",
+          "description": "in-toto / Sigstore / SLSA provenance attestations attached to releases.",
+          "required": false,
+          "air_gap_alternative": "Network attestation fetch skipped; use only on-disk artifacts."
+        },
+        {
+          "id": "sbom-artifacts",
+          "type": "config_file",
+          "source": "Glob: *.cdx.json, *.spdx.json, bom.json, sbom.json, *.cyclonedx.json, *.spdx",
+          "description": "Existing SBOM artifacts for the published product.",
+          "required": false
+        },
+        {
+          "id": "vex-feed",
+          "type": "config_file",
+          "source": "Glob: *.vex.json, *.csaf.json, vex/, advisories/, .csaf/, *.openvex.json",
+          "description": "VEX statements / CSAF advisories the publisher issues about CVEs in their product.",
+          "required": false
+        },
+        {
+          "id": "vendored-code",
+          "type": "file_path",
+          "source": "List directories: vendor/, third_party/, external/, deps/, internal/vendor/; AND for each: locate provenance manifest (vendor.json, THIRD_PARTY_PROVENANCE.md, modules.txt for Go vendored)",
+          "description": "Vendored / bundled third-party code carried in the publisher's own release.",
+          "required": false
+        },
+        {
+          "id": "release-history",
+          "type": "config_file",
+          "source": "git tag --list 'v*' --sort=-creatordate | head -20; for each tag: git tag -v <tag> 2>&1 (signature verification); git for-each-ref --format='%(taggerdate) %(taggername) %(refname)' refs/tags/",
+          "description": "Most recent 20 release tags with signature status + tagger identity.",
+          "required": false
+        },
+        {
+          "id": "branch-tag-protection",
+          "type": "api_response",
+          "source": "If gh CLI available: gh api repos/${owner}/${repo}/branches/main/protection AND gh api repos/${owner}/${repo}/rules/branches AND gh api repos/${owner}/${repo}/tags/protection",
+          "description": "Branch + tag protection rules.",
+          "required": false,
+          "air_gap_alternative": "Mark inconclusive; rely on workflow YAML evidence of trigger restrictions."
+        },
+        {
+          "id": "repo-secrets",
+          "type": "api_response",
+          "source": "If gh CLI available: gh secret list --json name,visibility,updatedAt; AND gh secret list --env production --json name; check for NPM_TOKEN / PYPI_TOKEN / CARGO_TOKEN / RUBYGEMS_TOKEN long-lived publish credentials",
+          "description": "Repository-level secrets — presence of long-lived publish tokens is a fingerprint for non-OIDC publishing.",
+          "required": false,
+          "air_gap_alternative": "Mark inconclusive; rely on workflow YAML evidence."
+        },
+        {
+          "id": "release-checklist",
+          "type": "config_file",
+          "source": "RELEASE.md, docs/RELEASE.md, .github/RELEASE.md, .github/PULL_REQUEST_TEMPLATE/release.md",
+          "description": "Documented release checklist (informs whether disclosure / VEX / SBOM steps are even part of the manual process).",
+          "required": false
+        },
+        {
+          "id": "changelog",
+          "type": "config_file",
+          "source": "CHANGELOG.md, HISTORY.md, RELEASES.md, NEWS, docs/CHANGELOG.md",
+          "description": "Changelog — used to confirm whether security entries are tagged + cross-referenced to CVEs / advisories.",
+          "required": false
+        },
+        {
+          "id": "github-security-advisories",
+          "type": "api_response",
+          "source": "If gh CLI available: gh api repos/${owner}/${repo}/security-advisories; AND check repo settings: gh api repos/${owner}/${repo} --jq '.security_and_analysis'",
+          "description": "GitHub Security Advisories published by the project + private-vulnerability-reporting toggle status.",
+          "required": false,
+          "air_gap_alternative": "Mark inconclusive."
+        },
+        {
+          "id": "skill-signing-infrastructure",
+          "type": "file_path",
+          "source": "If repo ships skills / plugins / extensions: locate lib/sign.js, lib/verify.js, scripts/sign-skills.*, signatures/, keys/, AND read package.json scripts for sign/verify entries",
+          "description": "Specific to AI-tool / plugin / skill publishers: Ed25519 / cosign signing scaffolding.",
+          "required": false
+        },
+        {
+          "id": "registry-publisher-config",
+          "type": "api_response",
+          "source": "For npm: GET https://registry.npmjs.org/${pkg} and inspect maintainers + dist.attestations + dist.signatures; for PyPI: GET https://pypi.org/pypi/${pkg}/json and inspect attestations URL; for crates: GET https://crates.io/api/v1/crates/${pkg} and inspect trustpub status",
+          "description": "Registry-side publisher posture: Trusted Publisher enabled, 2FA on maintainer accounts, attestations attached.",
+          "required": false,
+          "air_gap_alternative": "Skip; rely on local workflow evidence."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "publisher_repo_and_release_pipeline",
+        "depth": "deep",
+        "sampling": "Repo-rooted walk + most-recent-20-releases inspection. Multi-package repos require per-package execution. Monorepo support: detect Nx / Lerna / pnpm-workspaces and iterate per published package."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "cwd is the root of a git repo that publishes artifacts",
+          "if_false": "Return visibility_gap=not_a_publisher_repo; this playbook does not apply. Internal-only repos route to `secrets` and `sbom` instead."
+        },
+        {
+          "assumption": "agent has read access to .github/, source manifests, lockfiles",
+          "if_false": "Halt — without workflow + manifest visibility, theater fingerprints cannot be tested."
+        },
+        {
+          "assumption": "gh CLI authenticated for the repo OR public-repo metadata reachable via network",
+          "if_false": "Mark branch/tag protection + repo secrets + security advisories inconclusive; downgrade theater fingerprint confidence for #6, #7, #9."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "release-workflows",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "package-manifest",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "lockfiles",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "security-md",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "security-txt",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "intoto-attestations",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "sbom-artifacts",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "vex-feed",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "vendored-code",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "branch-tag-protection",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "repo-secrets",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "registry-publisher-config",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "skill-signing-infrastructure",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "publish-workflow-uses-static-token",
+          "type": "file_path",
+          "value": "Any .github/workflows/*.yml publish/release job references secrets.NPM_TOKEN / secrets.PYPI_TOKEN / secrets.CARGO_TOKEN / secrets.RUBYGEMS_API_KEY / secrets.GEM_HOST_API_KEY without an OIDC alternative path",
+          "description": "Long-lived publisher credential — fingerprint for non-OIDC publishing (theater #7).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "publish-workflow-no-id-token-write",
+          "type": "file_path",
+          "value": "Publish/release job lacks permissions.id-token: write AND lacks Trusted Publisher configuration",
+          "description": "Cannot use Sigstore keyless or registry Trusted Publisher — OIDC publish is structurally unavailable.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "publish-workflow-action-refs-mutable",
+          "type": "file_path",
+          "value": "Any uses: in the publish/release workflow references a tag or branch (e.g. @v4, @main) rather than a 40-char SHA",
+          "description": "Mutable action reference — upstream owner can substitute action code under the same tag.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.001"
+        },
+        {
+          "id": "package-json-provenance-missing",
+          "type": "file_path",
+          "value": "For npm publishers: package.json has no publishConfig.provenance == true AND publish workflow command does not carry --provenance",
+          "description": "npm provenance not enabled — no dist.attestations on the published package (theater #2).",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "release-workflow-non-frozen-install",
+          "type": "file_path",
+          "value": "Release workflow uses `npm install` / `pnpm install` / `pip install -r` / `bundle install` (not the --frozen / --locked / --require-hashes variant) before the build step",
+          "description": "Mid-build dependency resolution — release artifact is not reproducible (theater #5).",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "lockfile-missing-integrity",
+          "type": "file_path",
+          "value": "Any pinned entry in walked lockfiles lacks an integrity field (sha512/sha384/sha256, sri-integrity, go.sum h1: hash)",
+          "description": "Name-pin only — vulnerable to publisher-key compromise re-publication-over.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "sbom-absent-or-unsigned",
+          "type": "file_path",
+          "value": "No SBOM artifact present in repo OR most-recent-release SBOM is present but no matching .sig / .sigstore / *.intoto.jsonl signature artifact",
+          "description": "SBOM theater #1 — present but unsigned, OR absent entirely.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0010"
+        },
+        {
+          "id": "sbom-regenerated-at-request-time",
+          "type": "behavioral_signal",
+          "value": "SBOM generation script exists in repo (e.g. scripts/generate-sbom.*) but no SBOM artifact is committed AND no release-workflow step uploads an SBOM to release assets",
+          "description": "SBOM-on-demand — historical releases have no immutable SBOM.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "no-rekor-entry-for-latest-release",
+          "type": "behavioral_signal",
+          "value": "Network mode: rekor-cli search by sha256 of latest release artifact returns empty AND project README/docs claim SLSA L3 or higher",
+          "description": "SLSA-claim-without-attestation (theater #4).",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "tag-protection-absent",
+          "type": "api_response",
+          "value": "gh api repos/${owner}/${repo}/tags/protection returns empty array OR 404 AND publish workflow triggers on push tags: ['v*']",
+          "description": "Release tags unprotected (theater #6) — any branch can push v* and trigger publish.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "release-tag-not-signed",
+          "type": "behavioral_signal",
+          "value": "git tag -v <latest_release_tag> returns 'no signature found' OR signature does not verify",
+          "description": "Tag-signing absent — release authenticity rests on push-time access control only.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "release-signed-with-personal-gpg-key",
+          "type": "behavioral_signal",
+          "value": "Tag signature verifies against a PGP key whose UID is a personal email (not an org / project address) AND key is not registered in Sigstore Rekor / Web Key Directory",
+          "description": "Personal-laptop signing key (theater #3) — XZ-class compromise vector.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "no-security-md",
+          "type": "file_path",
+          "value": "Absence of SECURITY.md / .github/SECURITY.md / docs/SECURITY.md from the repo",
+          "description": "No documented disclosure path (theater #10).",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "no-security-txt",
+          "type": "api_response",
+          "value": "If product has a primary domain: HTTP 404 / connection failure on /.well-known/security.txt",
+          "description": "No RFC 9116 machine-discoverable disclosure path (theater #10).",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "private-vuln-reporting-disabled",
+          "type": "api_response",
+          "value": "gh api repos/${owner}/${repo} --jq '.security_and_analysis.private_vulnerability_reporting.status' returns 'disabled'",
+          "description": "GitHub private vulnerability reporting off — no OIDC-authenticated disclosure intake.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "vex-feed-absent",
+          "type": "file_path",
+          "value": "Absence of vex/, *.vex.json, *.csaf.json, *.openvex.json AND project has at least one published GitHub Security Advisory OR at least one filed CVE in NVD",
+          "description": "VEX issuance gap (theater #9) — CVEs filed against the product, no machine-readable exploitability declaration.",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "vendored-no-provenance",
+          "type": "file_path",
+          "value": "vendor/ or third_party/ directories present AND no provenance manifest (vendor.json, THIRD_PARTY_PROVENANCE.md, modules.txt) AND not a Go vendored module",
+          "description": "Vendored code without machine-verifiable upstream provenance (theater #11).",
+          "confidence": "deterministic",
+          "deterministic": true
+        },
+        {
+          "id": "skill-signing-but-verification-not-gated",
+          "type": "file_path",
+          "value": "Repo contains skill / plugin signing infrastructure (sign.js / cosign sign-blob in workflow) AND verify step exists in a separate workflow OR is conditionally skipped on the publish workflow",
+          "description": "Signing-without-gating (theater #8) — AI-tool publisher fingerprint.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "ssdf-claimed-cra-not-ready",
+          "type": "behavioral_signal",
+          "value": "README / docs / SECURITY.md claim NIST SSDF compliance AND no five-year-support-commitment statement AND no CSAF advisory pipeline AND no signed-and-distributed SBOM",
+          "description": "SSDF-as-CRA-readiness theater (theater #12).",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "publish-workflow-runs-on-self-hosted",
+          "type": "file_path",
+          "value": "Publish/release job runs-on includes 'self-hosted' OR a non-GitHub-hosted ephemeral runner",
+          "description": "Self-hosted runner — persistent runner state can be poisoned across runs.",
+          "confidence": "high",
+          "deterministic": false
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "publish-workflow-uses-static-token",
+          "benign_pattern": "Registry does not yet support Trusted Publisher / OIDC (e.g. some private registries, older artifact repos).",
+          "distinguishing_test": "Check registry capability: npm / PyPI / crates / RubyGems all support OIDC since 2024-04, 2024-04, 2025-08, 2025-02 respectively. Private registries (Artifactory, Verdaccio, Nexus) may not — confirm the registry is private and OIDC is genuinely unavailable. If so, downgrade to medium and recommend short-lived token rotation + scope minimization."
+        },
+        {
+          "indicator_id": "publish-workflow-action-refs-mutable",
+          "benign_pattern": "GitHub-authored actions (actions/checkout, actions/setup-node) under the actions/ org are commonly pinned by major version with org-level supply-chain guarantees.",
+          "distinguishing_test": "Distinguish actions/ org (Allow) from third-party orgs (Block) — GitHub-authored actions pinned by major version are accepted by SLSA / OpenSSF guidance; third-party action references MUST be SHA-pinned per OpenSSF Scorecard."
+        },
+        {
+          "indicator_id": "release-signed-with-personal-gpg-key",
+          "benign_pattern": "Long-established maintainer with a well-known PGP key registered in the Web Key Directory for the project's domain (key UID matches @project-domain.org, key is in WKD at the project's well-known URL).",
+          "distinguishing_test": "Look up the project's WKD: curl https://${project_domain}/.well-known/openpgpkey/hu/${wkd_hash} — if the key resolves AND the UID matches a project-domain address, downgrade to medium with rotation-cadence note. If the UID is a free-mail address (gmail / proton / outlook), retain as high-confidence personal-laptop-key fingerprint."
+        },
+        {
+          "indicator_id": "vex-feed-absent",
+          "benign_pattern": "Project is too new to have had a CVE filed against it.",
+          "distinguishing_test": "Cross-check NVD / GHSA / OSV.dev for any CVE / advisory naming the project. If zero results AND project has < 100 stars AND < 6 months since first release, downgrade to low and recommend proactive VEX tooling adoption. Otherwise retain."
+        },
+        {
+          "indicator_id": "no-security-md",
+          "benign_pattern": "Org-level SECURITY.md inherited via GitHub's .github org repo applies to all repos in the org.",
+          "distinguishing_test": "Check ${owner}/.github repo for a top-level SECURITY.md — GitHub's UI inherits this. If present and current, downgrade to low and recommend repo-local override only if disclosure path differs."
+        },
+        {
+          "indicator_id": "vendored-no-provenance",
+          "benign_pattern": "Go modules using `go mod vendor` produce a deterministic vendor/modules.txt that IS the provenance manifest.",
+          "distinguishing_test": "If vendor/modules.txt exists and the project uses Go, this is provenance-present. Do not flag."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any of: (a) publish-workflow-uses-static-token=true, (b) tag-protection-absent=true AND publish triggers on tags, (c) sbom-absent-or-unsigned=true, (d) no-security-md=true AND no-security-txt=true (combined disclosure absence), (e) vex-feed-absent=true with filed CVEs, (f) skill-signing-but-verification-not-gated=true (for AI-tool publishers), (g) no-rekor-entry-for-latest-release=true with SLSA-L3+ claim, (h) release-signed-with-personal-gpg-key=true.",
+        "inconclusive": "Repo walk succeeded but network-mode artifacts (security-txt, rekor entries, registry-publisher-config, branch-tag-protection, security-advisories) unavailable; theater fingerprints #1, #4, #6, #9, #10 cannot be tested. Confidence on detected signals retained; absence-of-detection cannot be asserted.",
+        "not_detected": "All twelve theater fingerprints test negative AND no indicator fires AND a successful Rekor verify exists for the most recent release artifact AND VEX feed is published AND security.txt + SECURITY.md + private vulnerability reporting all present AND tag protection enforced AND OIDC publish in place AND lockfiles integrity-pinned AND SBOM signed + distributed AND vendored code provenance-manifested."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "publish-workflow-uses-static-token",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Token leak = publisher-position takeover. Blast radius scales with downstream consumer count."
+        },
+        {
+          "signal_id": "publish-workflow-no-id-token-write",
+          "rwep_factor": "blast_radius",
+          "weight": 10,
+          "notes": "Structurally cannot use OIDC; signals release-pipeline modernization gap."
+        },
+        {
+          "signal_id": "publish-workflow-action-refs-mutable",
+          "rwep_factor": "active_exploitation",
+          "weight": 10,
+          "notes": "Upstream-substitution attacks against mutable action refs are operational (T1195.001)."
+        },
+        {
+          "signal_id": "tag-protection-absent",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Any-branch v* push triggers publish — single compromised contributor account ships a malicious release."
+        },
+        {
+          "signal_id": "release-tag-not-signed",
+          "rwep_factor": "blast_radius",
+          "weight": 10,
+          "notes": "Authenticity rests on access control only — no out-of-band verification path."
+        },
+        {
+          "signal_id": "release-signed-with-personal-gpg-key",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "XZ-Utils-class fingerprint — personal-laptop key compromise = three-year infiltration."
+        },
+        {
+          "signal_id": "lockfile-missing-integrity",
+          "rwep_factor": "active_exploitation",
+          "weight": 5,
+          "notes": "Re-publication-over campaigns documented in 2024-2026."
+        },
+        {
+          "signal_id": "sbom-absent-or-unsigned",
+          "rwep_factor": "blast_radius",
+          "weight": 10,
+          "notes": "Downstream consumers cannot reliably correlate CVEs against the product — every consumer's CVE-match-time becomes manual."
+        },
+        {
+          "signal_id": "vex-feed-absent",
+          "rwep_factor": "blast_radius",
+          "weight": 10,
+          "notes": "Every downstream consumer's SBOM scanner alerts on the publisher's CVEs with no exploitability context."
+        },
+        {
+          "signal_id": "no-rekor-entry-for-latest-release",
+          "rwep_factor": "ai_weaponization",
+          "weight": 5,
+          "notes": "AI-discovered weaknesses in unverifiable builds are harder for downstream to triage; pairs with claim-vs-reality theater."
+        },
+        {
+          "signal_id": "skill-signing-but-verification-not-gated",
+          "rwep_factor": "active_exploitation",
+          "weight": 15,
+          "notes": "CVE-2026-30615 class — zero-interaction RCE via unverified plugin at install time."
+        },
+        {
+          "signal_id": "no-security-md",
+          "rwep_factor": "patch_available",
+          "weight": -5,
+          "notes": "Inverse — no disclosure path slows time-to-fix because researchers can't report; informational."
+        },
+        {
+          "signal_id": "publish-workflow-runs-on-self-hosted",
+          "rwep_factor": "active_exploitation",
+          "weight": 10,
+          "notes": "Self-hosted-runner-poisoning is operational TTP."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If this publisher's release pipeline is compromised, what scope of downstream compromise does a single malicious release deliver?",
+        "scoring_rubric": [
+          {
+            "condition": "internal-use-only library, single consumer org, < 10 downstream services, no public registry presence",
+            "blast_radius_score": 1,
+            "description": "Single-org blast — internal incident response."
+          },
+          {
+            "condition": "public registry presence with < 10k weekly downloads OR < 50 dependents, no enterprise consumers documented",
+            "blast_radius_score": 2,
+            "description": "Niche library — manageable downstream notification list."
+          },
+          {
+            "condition": "public registry presence with 10k-1M weekly downloads OR known enterprise consumers OR is a build-tool / linter / formatter in widespread CI use",
+            "blast_radius_score": 3,
+            "description": "Mid-tier library — meaningful downstream notification + remediation campaign."
+          },
+          {
+            "condition": "framework / SDK with > 1M weekly downloads OR > 1000 dependents OR is a security-relevant dep (auth, crypto, parsing, serialization) OR is in transitive-dep position for major frameworks",
+            "blast_radius_score": 4,
+            "description": "Widely-distributed framework — XZ-class downstream propagation possible."
+          },
+          {
+            "condition": "developer tooling installed on developer endpoints (IDE plugin, MCP server, AI assistant, CLI installed via pipe-to-shell), OR build-system bootstrap (npm itself, pip itself, cargo itself), OR > 100M downloads, OR is a transitive dep for build-time-execution surfaces",
+            "blast_radius_score": 5,
+            "description": "Developer-endpoint or build-bootstrap surface — CVE-2026-30615 / XZ Utils class. Zero-interaction RCE on developer endpoints; ecosystem-wide rebuild required."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Our release pipeline follows secure-supply-chain best practices: NIST SSDF, SLSA, EU CRA Annex I, ISO 27001 A.8.30 / A.5.20 — and we publish SBOMs and sign releases.",
+        "audit_evidence": "README / SECURITY.md / DPA / customer-facing trust portal naming SSDF / SLSA / CRA compliance; SBOM artifact in release assets; signing-step in release workflow; documented disclosure policy.",
+        "reality_test": "Run all twelve theater fingerprints in govern.theater_fingerprints with concrete cross-checks: (1) cosign verify the most recent release artifact against the documented signing identity AND confirm Rekor entry exists; (2) GET https://registry.npmjs.org/${pkg} and inspect dist.attestations field — if empty, npm-provenance is documentation-only; (3) provenance.json should be fetchable via the registry API (npm: /-/npm/v1/security/audits/quick); (4) compare the lockfile commit referenced in the release tag against the lockfile referenced in the release workflow — must match for the build to be reproducible; (5) gh api repos/${owner}/${repo}/tags/protection — must be non-empty for v*; (6) `cosign verify --certificate-identity-regexp` against the publish workflow's OIDC identity — must match the org / repo / ref; (7) for each CVE filed against the product over the last 24 months, locate the VEX statement — must exist with not_affected / affected / fixed / under_investigation; (8) GET https://${product_domain}/.well-known/security.txt — must return 200 with valid Contact + Expires; (9) for AI-tool publishers (skills, plugins, MCP servers), confirm the signing step AND verification step are in the same workflow run, with verification gating the publish step; (10) confirm five-year-support-commitment in SECURITY.md or product trust portal — required by EU CRA Art.10 from 2027. Theater if any of (1)-(10) fails AND no compensating control with current test exists.",
+        "theater_verdict_if_gap": "Publisher claims secure-supply-chain posture that nonetheless leaves the release pipeline (a) signable by a maintainer's personal laptop key, (b) publishable from any unprotected branch via tag push, (c) reproducible only on paper, (d) auditable only via an unsigned, regenerated-on-request SBOM, (e) unscoped against downstream consumers' CVE-correlation needs (no VEX), (f) unreachable for security researchers (no security.txt + no SECURITY.md + no GitHub private vuln reporting), (g) structurally unable to meet EU CRA Art.14's 24-hour notification window once binding in 2027. Either (i) wire OIDC publish + Sigstore signing + Rekor entry verification + tag protection + signed SBOM distribution + VEX feed + CSAF advisory pipeline + RFC 9116 security.txt + five-year-support-commitment + skill signature verification gate, (ii) generate a defensible policy exception via policy-exception-gen documenting that the API stability promise (or whatever blocker) prevents specific items with compensating controls + sunset date."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "SR-3 — Supply Chain Controls and Processes",
+          "actual_gap": "Procurement / acquirer lens. Does not bind publisher-side OIDC publish, Rekor entry per release, signed SBOM, VEX feed, RFC 9116 disclosure path.",
+          "required_control": "SR-3 publisher-side variant requiring OIDC-based publish to a registry that supports Trusted Publisher, Sigstore Rekor entry per release artifact, signed CycloneDX 1.6 or SPDX 3.0 SBOM distributed with the release, VEX feed maintenance per filed CVE, RFC 9116 security.txt at primary product domain."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "SR-4 — Provenance",
+          "actual_gap": "Names provenance as a control; does not bind SLSA / in-toto / Sigstore as required attestation formats.",
+          "required_control": "SR-4 update binding SLSA v1.0 Level 3 (or higher), in-toto attestation chain, Sigstore transparency-log entry as required provenance evidence formats."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nist-800-218",
+          "claimed_control": "PS.3.2 — Archive software releases, produce SBOM",
+          "actual_gap": "SBOM generation only; no signing, distribution, transitive completeness, or VEX issuance requirement.",
+          "required_control": "PS.3.2+ requiring signed SBOM distributed with every release, transitive-completeness check vs lockfile resolution, VEX issuance for every CVE filed against the product within 14 days."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nist-800-218",
+          "claimed_control": "PW.4 — Reuse existing, well-secured software",
+          "actual_gap": "Reuse lens; does not address publisher-side disciplines that make the org BE the well-secured component for downstream.",
+          "required_control": "PW.4 publisher-side variant requiring tag-protection on release refs, OIDC publish, pinned action SHAs, frozen-lockfile install in release pipeline."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nist-800-218",
+          "claimed_control": "RV.2 — Assess, prioritize, remediate vulnerabilities",
+          "actual_gap": "No VEX issuance requirement — downstream consumers can't tell if a filed CVE applies to their use.",
+          "required_control": "RV.2 update binding VEX issuance per filed CVE (CSAF 2.0 VEX profile), 24-hour notification on actively-exploited matches (aligned to EU CRA Art.14)."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.30 — Outsourced development",
+          "actual_gap": "Outsourcing lens. A library author IS the outsourced developer for downstream; A.8.30 doesn't address their publisher-side disciplines.",
+          "required_control": "A.8.30 publisher-side annex binding OIDC publish + signed releases + VEX feed + RFC 9116 disclosure."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.20 — Information security in supplier agreements",
+          "actual_gap": "Contractual lens; open-source publishers have no supplier agreement with consumers.",
+          "required_control": "A.5.20 amendment for community-maintained publishers binding technical attestation as substitute for contractual obligation."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "soc2",
+          "claimed_control": "CC8.1 / CC9.2 — Change management + vendor risk",
+          "actual_gap": "Internal-change / acquirer lens. Doesn't bind the org's role as publisher.",
+          "required_control": "Trust Services Criteria amendment for change management of published artifacts (tag protection, OIDC publish, signature verification gate)."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(d) — Supply chain security",
+          "actual_gap": "Implementing acts not yet bound to publisher-side attestation.",
+          "required_control": "Implementing acts binding OIDC publish + Rekor entry + signed SBOM + VEX feed for essential entities publishing software."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "dora",
+          "claimed_control": "Art.28 — ICT third-party risk",
+          "actual_gap": "Contractual-third-party lens; open-source dependency layer + AI-tool plugins not captured.",
+          "required_control": "RTS/ITS extending Art.28 to dependency layer with technical attestation substitute."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "eu-cra",
+          "claimed_control": "Art.10 — Five-year security update obligation",
+          "actual_gap": "Binds 2027. Until then, no compliance obligation to maintain documented support lifecycle.",
+          "required_control": "Implementing act binding documented end-of-support timeline + security-update commitment per product."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "eu-cra",
+          "claimed_control": "Art.13 / Annex I — Essential cybersecurity requirements + technical documentation",
+          "actual_gap": "Binds 2027 with implementing acts in publication.",
+          "required_control": "Implementing acts binding SBOM signing + distribution + transitive completeness + conformity assessment for Class II products."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "eu-cra",
+          "claimed_control": "Art.14 — 24-hour notification of actively-exploited vulnerabilities",
+          "actual_gap": "Publishers without CSAF advisory pipeline cannot meet the 24h window.",
+          "required_control": "Operational guidance: pre-deployed CSAF advisory template + automated draft on match + ENISA single-reporting-platform integration."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "uk-caf",
+          "claimed_control": "C1.b / B4.d — Supplier assurance and secure development",
+          "actual_gap": "Outcome-based; no binding attestation format.",
+          "required_control": "CAF profile binding Sigstore + SLSA L3 + signed SBOM + VEX as evidence of outcome."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "au-essential-8",
+          "claimed_control": "E1 — Application Control",
+          "actual_gap": "Consumer-side lens; doesn't bind publisher to provide attestable artifacts.",
+          "required_control": "AU ISM update binding publisher-side attestation for software shipped to AU government / Critical Infrastructure consumers."
+        },
+        {
+          "finding_id": "publisher-posture-gap",
+          "framework": "cmmc",
+          "claimed_control": "SI.L2-3.4.4 — Configuration change control",
+          "actual_gap": "Internal-config lens; DIB publishers need binding attestation.",
+          "required_control": "CMMC L2+ publisher-side practice binding SLSA L3 + signed SBOM + VEX + CSAF for DIB-shipped artifacts."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "(no-rekor-entry-for-latest-release == true OR no-rekor-entry-for-latest-release == inconclusive) AND ssdf-claimed-cra-not-ready == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "sbom-absent-or-unsigned == true AND product_is_eu_cra_class_ii_claimed == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "no-security-md == true AND no-security-txt == true AND product_is_public == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "publish-workflow-uses-static-token == true AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "tag-protection-absent == true AND publish_triggers_on_tags == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "skill-signing-but-verification-not-gated == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "vex-feed-absent == true AND filed_cves_against_product > 0",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "trigger_playbook",
+          "target_playbook": "framework"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "release-signed-with-personal-gpg-key == true AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "adopt-registry-trusted-publisher-oidc",
+          "description": "Replace long-lived publisher tokens (NPM_TOKEN / PYPI_TOKEN / CARGO_TOKEN / RUBYGEMS_API_KEY) with registry Trusted Publisher OIDC. For npm: configure Trusted Publisher in package settings, set permissions.id-token: write + --provenance in workflow. For PyPI: configure Trusted Publisher, use pypa/gh-action-pypi-publish with no API token. For crates: enable trustpub. For RubyGems: enable Trusted Publisher (gem 2025-02+).",
+          "preconditions": [
+            "registry_supports_trusted_publisher == true",
+            "workflow_modifiable == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "delete_static_publisher_secret_post_migration",
+            "audit_recent_publishes_for_token_leak_indicators"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "wire-cosign-signing-and-rekor-verification-into-release-workflow",
+          "description": "Add cosign sign-blob (or sigstore-python / cosign-installer) signing step to the release workflow producing a Sigstore Rekor entry per release artifact. Add a cosign verify-blob step IN THE SAME WORKFLOW RUN gating the publish step. Verify the certificate identity matches the expected workflow OIDC identity (--certificate-identity-regexp).",
+          "preconditions": [
+            "workflow_modifiable == true",
+            "release_pipeline_runs_on_github_hosted_runner == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "rekor_entry_search_documented_in_security_md",
+            "cosign_pub_committed_to_repo_for_offline_verification"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "enforce-tag-protection-and-pinned-action-shas",
+          "description": "Enable tag protection rules on v* pattern via GitHub repo settings; require signed tags. Replace all third-party action references in release / publish workflows with 40-char SHA pins; add Dependabot config for action-sha update PRs. Restrict publish workflow trigger to protected events.",
+          "preconditions": [
+            "repo_admin_access == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "branch_protection_on_main_with_required_reviewers",
+            "codeowners_for_release_workflow_files"
+          ],
+          "estimated_time_hours": 3
+        },
+        {
+          "id": "publish-signed-sbom-with-every-release",
+          "description": "Add SBOM generation step (CycloneDX 1.6 via cyclonedx-cli or syft) producing a transitive-complete SBOM as a build artifact. Sign with cosign. Attach to GitHub release assets AND publish to a stable URL. Verify component count vs lockfile resolution to ensure transitive completeness.",
+          "preconditions": [
+            "workflow_modifiable == true",
+            "sbom_tooling_supports_target_ecosystem == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "sbom_completeness_gate_in_ci",
+            "sbom_signature_verification_documented_in_security_md"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "publish-vex-feed-and-csaf-pipeline",
+          "description": "Stand up CSAF 2.0 VEX feed: a stable URL at https://${product_domain}/.well-known/csaf/ serving signed CSAF 2.1 documents. For each CVE filed against the product (including historical), produce a VEX statement (not_affected / affected / fixed / under_investigation) within 14 days. Pre-deploy CSAF advisory template for EU CRA Art.14 24h notification compliance.",
+          "preconditions": [
+            "security_team_capacity_for_csaf == true",
+            "product_has_primary_domain == true"
+          ],
+          "priority": 5,
+          "compensating_controls": [
+            "github_security_advisory_used_as_interim_vex_carrier",
+            "vex_template_in_security_md"
+          ],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "establish-coordinated-disclosure-path",
+          "description": "Add SECURITY.md to repo root documenting disclosure intake (private vulnerability reporting URL, security@${domain} email, PGP key fingerprint, response SLA per ISO 30111). Add /.well-known/security.txt per RFC 9116 with Contact + Expires + Encryption + Policy + Acknowledgments fields. Enable GitHub private vulnerability reporting on the repo.",
+          "preconditions": [
+            "repo_admin_access == true",
+            "primary_domain_dns_modifiable == true OR static_hosting_modifiable == true"
+          ],
+          "priority": 6,
+          "compensating_controls": [
+            "security_md_linked_from_readme",
+            "security_txt_expires_date_calendared_for_renewal"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "enforce-frozen-lockfile-and-integrity-pins",
+          "description": "Change all release-workflow install commands to frozen-lockfile variants (`npm ci`, `pnpm install --frozen-lockfile`, `pip install --require-hashes -r requirements.txt`, `cargo build --locked`, `bundle install --frozen`). Regenerate any lockfile entries lacking integrity hashes (npm: --package-lock-only; pip: pip-compile --generate-hashes). Add CI gate rejecting any lockfile without integrity.",
+          "preconditions": [
+            "workflow_modifiable == true",
+            "lockfile_regeneration_does_not_break_build == true"
+          ],
+          "priority": 7,
+          "compensating_controls": [
+            "lockfile_review_in_pr_template",
+            "registry_url_pinned_in_install_config"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "wire-skill-or-plugin-signature-verification-into-install-path",
+          "description": "For AI-tool / plugin / skill publishers: add Ed25519 / cosign signature verification step that gates the install step in the SAME workflow run AND in the consumer-side install path. Sign every shipped skill / plugin manifest. Publish public key + Rekor identity in SECURITY.md.",
+          "preconditions": [
+            "publisher_ships_ai_tool_artifacts == true",
+            "consumer_install_path_modifiable == true"
+          ],
+          "priority": 8,
+          "compensating_controls": [
+            "install_time_signature_verification_documented_in_readme",
+            "public_key_committed_to_repo_for_offline_verification"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "document-five-year-support-commitment",
+          "description": "Add an EU CRA Art.10-aligned support-lifecycle statement to SECURITY.md and product trust portal: per-product end-of-support date (minimum 5y from initial sale / first availability), security-update commitment, end-of-support notification template. Calendar the renewal review.",
+          "preconditions": [
+            "product_ships_to_eu_market == true"
+          ],
+          "priority": 9,
+          "compensating_controls": [
+            "support_lifecycle_in_release_notes_per_release"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "policy-exception",
+          "description": "Where a publisher-posture gap cannot be remediated within the compliance window — typical case: API stability promise prevents removing a deprecated transitive dep before next major version; OR registry doesn't yet support Trusted Publisher; OR a Class II conformity assessment is in progress — generate an auditor-ready policy exception via policy-exception-gen with compensating controls and time-bound sunset date.",
+          "preconditions": [
+            "remediation_paths[1..9] blocked for at least one finding",
+            "ciso_or_product_owner_acceptance_obtainable == true"
+          ],
+          "priority": 10,
+          "compensating_controls": [
+            "security_advisory_published_for_known_residual",
+            "parallel_path_or_replacement_dependency_in_roadmap",
+            "documented_sunset_date_for_residual",
+            "enhanced_logging_for_exploitation_indicators_in_residual_area"
+          ],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "publish-workflow-uses-oidc",
+          "test": "Re-read .github/workflows/*.yml release/publish job. Confirm (a) permissions.id-token: write at job level, (b) no secrets.NPM_TOKEN / PYPI_TOKEN / CARGO_TOKEN reference, (c) Trusted Publisher status verified via registry API (npm: package-level config; PyPI: project-level config; crates: trustpub status).",
+          "expected_result": "OIDC publish in place; no long-lived publisher token referenced.",
+          "test_type": "functional"
+        },
+        {
+          "id": "rekor-entry-exists-for-latest-release",
+          "test": "Compute sha256 of latest release artifact. Run `rekor-cli search --sha <hash>` AND `cosign verify-blob --certificate-identity-regexp '^https://github.com/${owner}/${repo}/' --certificate-oidc-issuer https://token.actions.githubusercontent.com <artifact>`.",
+          "expected_result": "Rekor entry returns a UUID matching the publish workflow's OIDC identity; cosign verify succeeds.",
+          "test_type": "functional"
+        },
+        {
+          "id": "tag-protection-rejects-unprotected-tag-push",
+          "test": "Attempt to push a test tag (e.g. v0.0.0-test-rejection) from a non-protected branch via a non-admin actor. Confirm GitHub rejects the push per tag protection.",
+          "expected_result": "Push rejected with tag-protection-rule error.",
+          "test_type": "negative"
+        },
+        {
+          "id": "sbom-signature-verifies",
+          "test": "Download SBOM artifact from the latest release. Run `cosign verify-blob --signature <sbom>.sig <sbom>` against the documented signing identity.",
+          "expected_result": "Signature verifies; SBOM matches the release version.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sbom-transitive-completeness",
+          "test": "Compare SBOM component count against the lockfile transitive resolution (npm ls --depth=Infinity, pip freeze + transitive resolve, cargo tree --depth=Infinity). Allow ±5% tolerance for tooling differences.",
+          "expected_result": "SBOM count >= 95% of transitive count.",
+          "test_type": "functional"
+        },
+        {
+          "id": "vex-statement-coverage-for-filed-cves",
+          "test": "List all CVEs filed against the product (via NVD search by CPE, GHSA, OSV.dev). Confirm each has a published VEX statement (CSAF 2.1 VEX or OpenVEX) within 14 days of CVE publication.",
+          "expected_result": "100% VEX coverage for filed CVEs, with timeline within 14d.",
+          "test_type": "functional"
+        },
+        {
+          "id": "security-txt-and-security-md-present",
+          "test": "HTTP GET https://${product_domain}/.well-known/security.txt — confirm 200 OK with valid RFC 9116 fields. Read repo SECURITY.md — confirm disclosure intake + SLA + PGP key. Confirm GitHub private vulnerability reporting enabled.",
+          "expected_result": "All three present and current; security.txt Expires field > now + 30d.",
+          "test_type": "functional"
+        },
+        {
+          "id": "skill-or-plugin-verification-gates-install",
+          "test": "For AI-tool publishers: attempt to install / load a deliberately-unsigned skill or plugin into the consumer-side install path. Confirm the install / load is rejected with a signature-failure error BEFORE any code from the artifact executes.",
+          "expected_result": "Install rejected pre-execution; no code from the unsigned artifact runs.",
+          "test_type": "negative"
+        },
+        {
+          "id": "release-build-reproducibility",
+          "test": "Run the release build twice from the same tag on two different ephemeral runners (or same runner with clean cache). Compare sha256 of output artifacts.",
+          "expected_result": "Bit-for-bit identical OR documented non-reproducible-fields list bounded to known sources (timestamps, build IDs) that don't carry executable code.",
+          "test_type": "regression"
+        },
+        {
+          "id": "frozen-lockfile-rejects-mid-build-resolution",
+          "test": "Add a deliberately-stale lockfile entry (newer manifest version than lockfile reflects) to a test branch. Run the release workflow.",
+          "expected_result": "Install step fails with lockfile-mismatch / frozen-lockfile error; release does not proceed.",
+          "test_type": "negative"
+        },
+        {
+          "id": "lockfile-substitution-attack-blocked",
+          "test": "Exploit-replay: stage a malicious lockfile entry attempting to substitute a known package with a typosquat (e.g. `react@x.y.z` integrity hash replaced with attacker-crafted package's integrity). Run the release workflow.",
+          "expected_result": "Install step fails on integrity-hash mismatch (legitimate package's expected hash doesn't match attacker's published artifact). Release does not proceed.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "csaf-advisory-template-renders-under-24h",
+          "test": "Run a dry-run of the CSAF advisory pipeline with a synthetic actively-exploited CVE. Confirm draft is rendered, reviewed, signed, and ready for ENISA single-reporting-platform submission in < 24h.",
+          "expected_result": "End-to-end dry-run completes in < 24h with signed CSAF 2.1 advisory.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Publisher posture closes operational supply-chain controls but cannot eliminate (a) maintainer-position long-game compromise (XZ-Utils class — credible insider with multi-year patience bypasses signing because they ARE the signing identity), (b) registry-side compromise (registry takeover affects all OIDC-published packages), (c) downstream consumer mis-verification (consumers who skip signature verification accept any signed-or-not artifact), (d) zero-day in the release toolchain itself (cosign / sigstore / Rekor implementation bugs).",
+        "why_remains": "Signature attestation proves authorship not safety. OIDC publish moves the trust anchor to GitHub / registry — those become the load-bearing surfaces. Reproducible builds detect divergence but require third-party rebuild capacity. Consumers must verify; publishers cannot enforce verification on the consumer side. Transparency-log entries are tamper-evident but not tamper-proof. Five-year support obligations under EU CRA Art.10 introduce sustained cost the publisher must budget for.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "oidc_publish_with_rekor_entry_per_release",
+          "tag_protection_with_signed_tags",
+          "signed_sbom_distributed_with_every_release",
+          "vex_feed_with_csaf_advisory_pipeline",
+          "rfc_9116_security_txt_with_private_vuln_reporting",
+          "skill_or_plugin_signature_verification_gated_in_install_path",
+          "reproducible_build_with_periodic_third_party_rebuild_check",
+          "maintainer_account_2fa_with_hardware_token",
+          "release_workflow_codeowners_with_two-person_review"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full publisher-posture scan output: theater fingerprint test results, RWEP per finding, framework gap mapping.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-SR-3",
+            "nist-800-53-SR-4",
+            "nist-800-218-PS-3",
+            "iso-27001-2022-A.8.30",
+            "nis2-art21-2d",
+            "eu-cra-art13"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Sigstore / in-toto / SLSA build provenance attestation per release artifact, retrievable via Rekor entry UUID.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-SR-4",
+            "nist-800-218-PS-3",
+            "slsa-l3",
+            "eu-cra-art13"
+          ]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after diffs: workflow YAML (token → OIDC), lockfile (no-integrity → integrity), tag protection (absent → enforced), SECURITY.md (absent → present), security.txt (absent → present).",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CM-3",
+            "iso-27001-2022-A.8.32",
+            "soc2-cc8.1"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Lockfile-substitution attack negative test + unsigned-skill install rejection + tag-protection rejection logs.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc7.1",
+            "iso-27001-2022-A.8.8",
+            "nist-800-218-PW-4"
+          ]
+        },
+        {
+          "evidence_type": "patch_record",
+          "description": "Release workflow CI run records for each release with OIDC identity, Rekor UUID, SBOM signature, VEX feed entry timestamp.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-SI-2",
+            "iso-27001-2022-A.8.8",
+            "nis2-art21-2c",
+            "eu-cra-art14"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, theater-fingerprint pass/fail per fingerprint, RWEP at detection vs post-remediation, EU CRA Art.10/13/14 readiness flags.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2d",
+            "dora-art28",
+            "eu-cra-art13"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_release",
+          "interval": "on_event"
+        },
+        {
+          "condition": "release_workflow_modified",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_cve_filed_against_product",
+          "interval": "on_event"
+        },
+        {
+          "condition": "publisher_credential_rotated_or_added",
+          "interval": "on_event"
+        },
+        {
+          "condition": "registry_publisher_settings_changed",
+          "interval": "on_event"
+        },
+        {
+          "condition": "monthly",
+          "interval": "30d"
+        },
+        {
+          "condition": "pre_major_release",
+          "interval": "on_event"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "scan_report",
+          "attestation",
+          "config_diff",
+          "exploit_replay_negative",
+          "patch_record",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement"
+        ],
+        "destination": "grc_platform_api",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Publisher-side supply-chain compromise via (a) long-lived publisher token leak → registry takeover, (b) tag-protection absent → any-branch v* push triggers publish, (c) personal-laptop GPG signing key compromise → XZ-class infiltration, (d) SLSA L3 claim without Rekor entry → unverifiable provenance, (e) skill/plugin signature verification not gated in install path → CVE-2026-30615 class zero-interaction RCE on developer endpoints, (f) VEX feed absent → downstream consumers cannot triage filed CVEs against their use, (g) no disclosure path → researchers disclose publicly or not at all.",
+          "control_gap": "Publisher-side controls in NIST 800-53 SR-3/4/5, NIST 800-218 SSDF, ISO 27001:2022 A.8.30/A.5.20, SOC 2 CC8.1/CC9.2, NIS2 Art.21(2)(d), DORA Art.28, UK CAF C1.b, AU Essential 8 E1, CMMC SI.L2-3.4.4 did not generate signal because they treat the publisher as an acquirer / supplier / change-managed internal rather than as the producer of artifacts thousands of consumers depend on. SBOM-generation, vulnerability-tracking, and procurement-event lenses do not bind OIDC publish, Sigstore Rekor entry, signed SBOM distribution, transitive completeness, VEX issuance, RFC 9116 disclosure path, tag protection, frozen-lockfile install, skill verification gate, or EU CRA Art.10 five-year support commitment.",
+          "framework_gap": "NIST 800-53 SR-3/4/5, NIST 800-218 SSDF PS.3.2/PW.4/RV.2, ISO 27001:2022 A.8.30/A.5.20, SOC 2 CC8.1/CC9.2, PCI DSS 4.0 6.3, NIS2 Art.21(2)(d), DORA Art.28, UK CAF C1.b/B4.d, AU Essential 8 E1, CMMC SI.L2-3.4.4 all permit publisher posture that omits OIDC publish, Rekor attestation, signed SBOM distribution, VEX feed, and disclosure path. Framework lag = ~540 days behind operational tooling (Sigstore, SLSA v1.0, CycloneDX 1.6, CSAF 2.1, npm/PyPI/crates Trusted Publisher); ~18 months ahead of EU CRA Art.10/13/14 binding (2027).",
+          "new_control_requirement": "Add publisher-side control class binding: (a) OIDC publish via registry Trusted Publisher with id-token write permission, (b) Sigstore Rekor transparency-log entry per release artifact, (c) cosign verification step gating the publish step in the SAME workflow run, (d) signed CycloneDX 1.6 or SPDX 3.0 SBOM with transitive completeness distributed in release assets, (e) CSAF 2.1 VEX feed with statement issued within 14d of every filed CVE, (f) RFC 9116 security.txt at primary product domain plus SECURITY.md plus GitHub private vulnerability reporting plus pre-deployed CSAF advisory template for EU CRA Art.14 24h notification, (g) tag protection on v* pattern with signed tags, (h) frozen-lockfile install in release pipeline with integrity-hashed lockfile gate in CI, (i) third-party action references SHA-pinned with Dependabot config, (j) for AI-tool / plugin / skill publishers: Ed25519 or cosign signature verification gated in consumer-side install path with public key + Rekor identity published in SECURITY.md, (k) documented five-year support commitment per product per EU CRA Art.10, (l) reproducible build with periodic third-party rebuild check."
+        },
+        "feeds_back_to_skills": [
+          "supply-chain-integrity",
+          "coordinated-vuln-disclosure",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/EU CRA Art.14 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": [
+            "affected_product_identification",
+            "exploitation_evidence",
+            "mitigation_status",
+            "csaf_advisory_draft"
+          ],
+          "draft_notification": "EU CRA Art.14 24-hour notification: Product ${product_id} (manufacturer: ${entity_name}) contains an actively-exploited vulnerability ${matched_cve_id}. Affected versions: ${affected_versions}. Exploitation evidence: ${exploitation_evidence}. Mitigation status: ${mitigation_status}. Security update URL: ${update_url}. CSAF advisory: ${csaf_advisory_url}. Full assessment to follow within 72 hours."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.14 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "regulator_email",
+          "evidence_attached": [
+            "full_vulnerability_assessment",
+            "corrective_measures",
+            "published_csaf_advisory"
+          ],
+          "draft_notification": "EU CRA Art.14 72-hour full assessment: Product ${product_id}, CVE ${matched_cve_id}. Full vulnerability assessment: ${assessment_summary}. Corrective measures deployed: ${corrective_measures}. Published CSAF advisory: ${csaf_advisory_url}. Downstream consumer notification: ${consumer_notification_status}."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.13 / Annex I 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "sbom_per_product",
+            "conformity_assessment",
+            "vulnerability_handling_procedure",
+            "security_update_record",
+            "coordinated_disclosure_policy"
+          ],
+          "draft_notification": "EU CRA Art.13 / Annex I annual conformity assessment: ${entity_name} attests product cybersecurity requirements for ${product_id}. Signed SBOM: ${sbom_url}. Conformity assessment outcome: ${conformity_status}. Vulnerability handling procedure: ${vh_procedure_url}. Security update record: ${update_record}. Coordinated disclosure policy: ${disclosure_policy_url}."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.10 43800h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "five_year_security_update_commitment",
+            "support_lifecycle_record",
+            "end_of_support_notice_template"
+          ],
+          "draft_notification": "EU CRA Art.10 five-year security update obligation: ${entity_name} attests support-lifecycle commitment for ${product_id}. Initial sale / first availability: ${first_availability_date}. End of support: ${eos_date} (minimum first_availability + 5y). Security update commitment: ${commitment_text}. End-of-support notice template: ${notice_template_url}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.21(2)(d) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "supplier_security_policy",
+            "third_party_risk_register",
+            "publisher_attestation_inventory"
+          ],
+          "draft_notification": "NIS2 Art.21(2)(d) supply chain security policy evidence: ${entity_name} attests publisher-side supply chain security. Supplier security policy: ${policy_url}. Third-party risk register: ${register_summary}. Publisher attestation inventory: Sigstore Rekor entries ${rekor_count}, signed SBOMs ${sbom_count}, VEX statements ${vex_count}, OIDC-published releases ${oidc_count}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.28 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "ict_third_party_register",
+            "concentration_risk_assessment",
+            "subcontracting_inventory"
+          ],
+          "draft_notification": "DORA Art.28 third-party ICT risk submission: ${entity_name} attests publisher-side dependency risk management. Register: ${register_summary}. Concentration risk: ${concentration_summary}. Subcontracting (transitive dep) inventory: ${transitive_inventory_summary}."
+        },
+        {
+          "obligation_ref": "US/OMB M-22-09 / EO 14028 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "cisa_secure_software_attestation_form",
+            "sbom_per_product",
+            "ssdf_alignment_evidence"
+          ],
+          "draft_notification": "OMB M-22-09 / EO 14028 annual secure software attestation: ${entity_name} attests SSDF alignment for ${product_id}. CISA Secure Software Attestation Form: ${form_url}. Signed SBOM per product: ${sbom_url}. SSDF alignment evidence: ${ssdf_evidence_summary}."
+        },
+        {
+          "obligation_ref": "US/CISA Secure-by-Design Pledge 4320h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "secure_by_design_attestation_text",
+            "measurable_progress_evidence_per_goal"
+          ],
+          "draft_notification": "CISA Secure-by-Design Pledge self-attestation: ${entity_name} attests measurable progress on the seven Secure-by-Design goals. Attestation text: ${attestation_text}. Measurable progress evidence: ${progress_evidence_per_goal}."
+        },
+        {
+          "obligation_ref": "UK/UK CAF (NCSC) C1.b / B4.d 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "supplier_assurance_register",
+            "release_pipeline_security_attestation"
+          ],
+          "draft_notification": "UK CAF C1.b / B4.d supplier assurance + release pipeline attestation: ${entity_name}. Supplier assurance register: ${register_summary}. Release pipeline security attestation: ${attestation_summary} (OIDC publish, Rekor entries, signed SBOM, VEX feed)."
+        },
+        {
+          "obligation_ref": "AU/AU ISM (ACSC) Guidelines for Software Development 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "secure_development_lifecycle_record",
+            "signed_release_artifacts"
+          ],
+          "draft_notification": "AU ISM Guidelines for Software Development evidence: ${entity_name}. Secure development lifecycle record: ${sdl_summary}. Signed release artifacts: ${signed_release_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (api_stability_promise_prevents_dependency_removal == true) OR (registry_does_not_support_trusted_publisher == true) OR (eu_cra_class_ii_conformity_assessment_in_progress == true)",
+        "exception_template": {
+          "scope": "Publisher-posture gap(s) ${finding_ids} on product ${product_id} cannot be remediated within the compliance window. Blocking factors: ${blocking_factors} (API stability promise prevents removing deprecated transitive dep before next major version; registry doesn't yet support Trusted Publisher; EU CRA Class II conformity assessment in progress; vendor-side fix pending for cosign/sigstore/Rekor implementation bug; five-year support commitment requires budgeting beyond current cycle).",
+          "duration": "until_vendor_patch",
+          "compensating_controls": [
+            "security_advisory_published_for_known_residual",
+            "parallel_replacement_dependency_path_in_roadmap",
+            "documented_sunset_date_for_residual",
+            "enhanced_logging_for_exploitation_indicators_in_residual_area",
+            "github_security_advisory_used_as_interim_vex_carrier",
+            "short_lived_publisher_token_with_30d_rotation_when_oidc_unavailable",
+            "two-person_review_on_release_workflow_changes",
+            "third_party_rebuild_check_documented_quarterly"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Supply Chain Protection / Provenance / Secure Software Development / Outsourced Development / Supply Chain Security / Manufacturer Obligations under EU CRA Art.10/13/14), the manufacturer documents a time-bound risk acceptance for publisher-posture gap(s) ${finding_ids} on product ${product_id}. Specific gap(s): ${specific_gaps}. Blocking factor(s): ${blocking_factors}. Compensating controls in place during exception window: ${compensating_controls}. VEX statement for any associated CVE: ${vex_statement} (under_investigation / not_affected / affected / fixed). Affected downstream consumer notification path: ${consumer_notification_path}. Detection coverage during exception: continuous publisher-posture monitoring via exceptd library-author playbook, enhanced logging for exploitation indicators in the residual area, KEV-feed integration alerting on new KEV listing for any vendored dep. The manufacturer accepts that current framework controls (NIST 800-53 SR-3/4/5 / NIST 800-218 SSDF / ISO 27001:2022 A.8.30/A.5.20 / SOC 2 CC8.1/CC9.2 / NIS2 Art.21(2)(d) / DORA Art.28 / EU CRA Art.10/13/14 / UK CAF C1.b/B4.d / AU Essential 8 E1 / CMMC SI.L2-3.4.4) permit the structural gap documented in ${exceptd_framework_gap_mapping_ref}, and that the manufacturer's compensating controls during the exception window are operationally sufficient pending closure. Risk accepted by ${ciso_or_product_owner_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (next major version release that permits API-breaking removal; registry Trusted Publisher rollout; conformity assessment completion; OR ${default_90d_expiry}, whichever is first). Sunset path documented in roadmap ticket ${roadmap_ticket_url}. Re-evaluation triggers: blocker resolved, new CVE filed against the residual area, new KEV listing for any vendored dep, active-exploitation indicator fires, OR scheduled expiry. This exception is recorded in the manufacturer's GRC platform and surfaces in EU CRA Art.13 annual conformity assessment + NIS2 Art.21(2)(d) supply chain security policy submission + OMB M-22-09 annual attestation as a documented exception with sunset date."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "published-artifact-audit",
+      "title": "Full publisher-posture audit: release pipeline, signing, SBOM, lockfiles, vendored deps, branch+tag protection, OIDC vs static credentials, disclosure path",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "vex-issuance-gap",
+      "title": "VEX issuance posture: do you publish CSAF 2.1 VEX statements for every CVE filed against your product within 14 days?",
+      "applies_to": {
+        "always": true
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 70,
+            "monitor": 40,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "slsa-level-claim-audit",
+      "title": "SLSA L3 / L4 attestation claim vs reality: Rekor entries, in-toto attestation chain, reproducible build, third-party verification",
+      "applies_to": {
+        "always": true
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 75,
+            "monitor": 45,
+            "close": 28
+          }
+        }
+      }
+    },
+    {
+      "id": "skill-or-plugin-signing-verification-gate",
+      "title": "For AI-tool / plugin / skill publishers: signature verification gated in consumer-side install path (CVE-2026-30615 class prevention)",
+      "applies_to": {
+        "always": true
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 70,
+            "monitor": 40,
+            "close": 25
+          }
+        }
+      }
+    }
+  ]
+}

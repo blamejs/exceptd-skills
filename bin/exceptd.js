@@ -335,7 +335,7 @@ function dispatchPlaybook(cmd, argv) {
   }
 
   const args = parseArgs(argv, {
-    bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives"],
+    bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives", "ci", "latest", "diff-from-latest"],
     multi: ["playbook"],
   });
   const pretty = !!args.pretty;
@@ -429,6 +429,18 @@ Flags:
                             { artifacts, signal_overrides, signals, precondition_checks }
                           Multi-playbook shape:
                             { "<playbook_id>": { artifacts, ... }, ... }
+  --vex <file>            Load a CycloneDX or OpenVEX document. CVEs marked
+                          not_affected | resolved | false_positive (CycloneDX)
+                          or not_affected | fixed (OpenVEX) drop out of
+                          analyze.matched_cves. The disposition is preserved
+                          under analyze.vex.dropped_cves.
+  --diff-from-latest      Compare evidence_hash against the most recent prior
+                          attestation for the same playbook in
+                          .exceptd/attestations/. Emits status: unchanged | drifted.
+  --ci                    Machine-readable verdict for CI gates. Exits non-zero
+                          (code 2) when phases.detect.classification === 'detected'
+                          OR phases.analyze.rwep.adjusted >= rwep_threshold.escalate.
+                          Logs PASS/FAIL reason to stderr.
   --session-id <id>       Reuse a specific session ID.
   --session-key <hex>     HMAC sign the evidence_package with this key.
   --force-stale           Override the threat_currency_score < 50 hard-block.
@@ -444,13 +456,24 @@ Flags:
   --directive <id>        Directive ID (overrides submission.directive_id).
   --evidence <file|->     Submission JSON. May include playbook_id/directive_id.
   --pretty                Indented JSON output.`,
-    reattest: `reattest <session-id> — replay a prior session and diff the evidence_hash.
+    reattest: `reattest [<session-id> | --latest] — replay a prior session and diff the evidence_hash.
 
 Args / flags:
-  <session-id>            Required positional. Looks under .exceptd/attestations/<id>/.
+  <session-id>            Looks under .exceptd/attestations/<id>/attestation.json.
+  --latest                Find the most-recent attestation automatically.
+  --playbook <id>         Restrict --latest to a specific playbook.
+  --since <ISO>           Restrict --latest to attestations after this ISO 8601 timestamp.
   --pretty                Indented JSON output.
 
 Reports: unchanged | drifted | resolved from evidence_hash + classification deltas.`,
+    "list-attestations": `list-attestations [--playbook <id>] — enumerate prior attestations.
+
+Args / flags:
+  --playbook <id>         Filter to one playbook.
+  --pretty                Indented JSON output.
+
+Lists every attestation under .exceptd/attestations/<session_id>/, sorted
+newest-first, with truncated evidence_hash + capture timestamp + file path.`,
   };
   process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
 }
@@ -598,6 +621,19 @@ function cmdRun(runner, args, runOpts, pretty) {
     runOpts.precondition_checks = submission.precondition_checks;
   }
 
+  // --vex <file>: load a CycloneDX/OpenVEX document and pass the not_affected
+  // CVE ID set through to analyze() so matched_cves drops them.
+  if (args.vex) {
+    try {
+      const vexDoc = JSON.parse(fs.readFileSync(args.vex, "utf8"));
+      const vexSet = runner.vexFilterFromDoc(vexDoc);
+      submission.signals = submission.signals || {};
+      submission.signals.vex_filter = [...vexSet];
+    } catch (e) {
+      return emitError(`run: failed to load --vex ${args.vex}: ${e.message}`, null, pretty);
+    }
+  }
+
   const result = runner.run(playbookId, directiveId, submission, runOpts);
 
   // Persist attestation for reattest cycles when the run succeeded.
@@ -624,6 +660,68 @@ function cmdRun(runner, args, runOpts, pretty) {
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
     process.exit(1);
   }
+
+  // --diff-from-latest: compare evidence_hash against the most recent prior
+  // attestation for this playbook. Drift mode for cron baselines.
+  // We've already persisted the CURRENT attestation above, so the find must
+  // skip our session_id to get the actual prior one.
+  if (args["diff-from-latest"] && result && result.evidence_hash) {
+    const prior = findLatestAttestation({ playbookId, excludeSessionId: result.session_id });
+    if (prior) {
+      const priorHash = prior.parsed.evidence_hash;
+      result.diff_from_latest = {
+        prior_session_id: prior.parsed.session_id,
+        prior_captured_at: prior.parsed.captured_at,
+        prior_evidence_hash: priorHash,
+        new_evidence_hash: result.evidence_hash,
+        status: priorHash === result.evidence_hash ? "unchanged" : "drifted",
+      };
+    } else {
+      result.diff_from_latest = { status: "no_prior_attestation_for_playbook", playbook_id: playbookId };
+    }
+  }
+
+  // --ci: machine-readable verdict for CI gates.
+  //
+  // The detect phase classification is the host-specific signal — "is THIS
+  // environment exploitable for the catalogued CVEs". rwep.base is the
+  // worst-known catalog score for the domain, which is roughly constant
+  // regardless of the local environment; we don't fail CI on that alone or
+  // every CI run against a domain with KEV-listed catalog entries would
+  // perma-fail.
+  //
+  // Verdict:
+  //   detected                → FAIL (exit 2)
+  //   inconclusive + rwep ≥ escalate
+  //                           → FAIL (the agent's evidence raised RWEP)
+  //   not_detected            → PASS (exit 0)
+  //   inconclusive + rwep < escalate
+  //                           → PASS with WARN to stderr (visibility gap)
+  if (args.ci && result && result.phases) {
+    const classification = result.phases.detect && result.phases.detect.classification;
+    const rwep = result.phases.analyze && result.phases.analyze.rwep;
+    const threshold = rwep && rwep.threshold && rwep.threshold.escalate;
+    const adjusted = rwep && typeof rwep.adjusted === "number" ? rwep.adjusted : 0;
+    const escalate = typeof threshold === "number" && adjusted >= threshold;
+
+    emit(result, pretty);
+
+    if (classification === "detected") {
+      process.stderr.write(`[exceptd run --ci] FAIL: classification=detected rwep=${adjusted} threshold=${threshold}\n`);
+      process.exit(2);
+    }
+    if (classification === "inconclusive" && escalate) {
+      process.stderr.write(`[exceptd run --ci] FAIL: classification=inconclusive AND rwep=${adjusted} >= threshold=${threshold}\n`);
+      process.exit(2);
+    }
+    if (classification === "inconclusive") {
+      process.stderr.write(`[exceptd run --ci] PASS+WARN: classification=inconclusive rwep=${adjusted} < threshold=${threshold} (visibility gap)\n`);
+    } else {
+      process.stderr.write(`[exceptd run --ci] PASS: classification=${classification} rwep=${adjusted}\n`);
+    }
+    return;
+  }
+
   emit(result, pretty);
 }
 
@@ -760,11 +858,52 @@ function cmdIngest(runner, args, runOpts, pretty) {
   emit(result, pretty);
 }
 
+/**
+ * Find the latest attestation file under .exceptd/attestations/.
+ * Filters: optional playbook ID and optional "since" ISO timestamp.
+ * Returns { sessionId, playbookId, file, parsed } or null.
+ */
+function findLatestAttestation(opts = {}) {
+  const root = path.join(process.cwd(), ".exceptd", "attestations");
+  if (!fs.existsSync(root)) return null;
+  const sessions = fs.readdirSync(root, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name);
+  const candidates = [];
+  for (const sid of sessions) {
+    const sdir = path.join(root, sid);
+    for (const f of fs.readdirSync(sdir).filter(x => x.endsWith(".json"))) {
+      try {
+        const p = path.join(sdir, f);
+        const j = JSON.parse(fs.readFileSync(p, "utf8"));
+        if (opts.playbookId && j.playbook_id !== opts.playbookId) continue;
+        if (opts.since && (j.captured_at || "") < opts.since) continue;
+        if (opts.excludeSessionId && sid === opts.excludeSessionId) continue;
+        candidates.push({ sessionId: sid, playbookId: j.playbook_id, file: p, parsed: j });
+      } catch { /* skip malformed */ }
+    }
+  }
+  candidates.sort((a, b) => (b.parsed.captured_at || "").localeCompare(a.parsed.captured_at || ""));
+  return candidates[0] || null;
+}
+
 function cmdReattest(runner, args, runOpts, pretty) {
-  const sessionId = args._[0];
-  if (!sessionId) return emitError("reattest: missing <session-id> positional argument.", null, pretty);
+  // --latest [--playbook <id>] [--since <ISO>] — find prior attestation
+  // without requiring the operator to know the session-id.
+  let sessionId = args._[0];
+  let attFile = null;
+  if (!sessionId && args.latest) {
+    const found = findLatestAttestation({
+      playbookId: args.playbook ? (Array.isArray(args.playbook) ? args.playbook[0] : args.playbook) : null,
+      since: args.since || null,
+    });
+    if (!found) return emitError("reattest: --latest found no matching attestations.", { filter: { playbook: args.playbook || null, since: args.since || null } }, pretty);
+    sessionId = found.sessionId;
+    attFile = found.file;
+  }
+  if (!sessionId) return emitError("reattest: missing <session-id>. Pass a session-id or --latest [--playbook <id>] [--since <ISO>].", null, pretty);
   const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
-  const attFile = path.join(dir, "attestation.json");
+  if (!attFile) attFile = path.join(dir, "attestation.json");
   if (!fs.existsSync(attFile)) {
     return emitError(`reattest: no attestation found at ${path.relative(process.cwd(), attFile)}`, { session_id: sessionId }, pretty);
   }

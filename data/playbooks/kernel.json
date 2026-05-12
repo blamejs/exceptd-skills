@@ -45,7 +45,7 @@
         "condition": "finding.severity == 'critical' OR analyze.blast_radius_score >= 4"
       },
       {
-        "playbook_id": "compliance-theater",
+        "playbook_id": "framework",
         "condition": "analyze.compliance_theater_check.verdict == 'theater'"
       }
     ]

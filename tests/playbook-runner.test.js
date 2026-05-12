@@ -864,14 +864,19 @@ describe('close', () => {
     assert.ok(c.feeds_into.includes('sbom'), 'sbom downstream chain fired on blast_radius_score>=4');
   });
 
-  it('feeds_into chain identifies compliance-theater when theater verdict fired', () => {
+  it('feeds_into chain identifies framework when theater verdict fired', () => {
+    // v0.10.2 corrected kernel.json's stale "compliance-theater" referent to
+    // "framework" (the playbook ID that actually carries the compliance-theater
+    // attack class). This test was authored against the typo and is updated
+    // to assert the corrected chain target.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
       signal_overrides: { 'kver-in-affected-range': 'hit' }
     });
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes, { theater_verdict: 'theater' });
     const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
     const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, { theater_verdict: 'theater' });
-    assert.ok(c.feeds_into.includes('compliance-theater'));
+    assert.ok(c.feeds_into.includes('framework'),
+      'kernel theater-verdict should chain into the framework playbook (was: compliance-theater typo, fixed in v0.10.2)');
   });
 
   it('learning_loop lesson populated and feeds_back_to_skills present', () => {
