@@ -161,8 +161,13 @@ Examples:
 // --- command implementations ---
 
 async function runScan() {
-  console.log('[orchestrator] Scanning environment...\n');
+  const jsonOut = process.argv.includes('--json');
+  if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
   const result = await scan();
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify(result) + '\n');
+    return result;
+  }
 
   console.log('Host:', JSON.stringify(result.host, null, 2));
   console.log('\nFindings by domain:');
@@ -190,9 +195,15 @@ async function runScan() {
 }
 
 async function runDispatch() {
-  console.log('[orchestrator] Scanning then dispatching...\n');
+  const jsonOut = process.argv.includes('--json');
+  if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
+
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify({ scan: scanResult, dispatch: plan }) + '\n');
+    return plan;
+  }
 
   console.log(`Dispatch plan — ${plan.plan.length} skills to invoke:\n`);
 
@@ -233,7 +244,8 @@ function runSkillContext(skillName) {
 
   const context = getSkillContext(skillName);
   if (!context) {
-    console.error(`Skill not found: ${skillName}`);
+    // Unified error shape across the CLI surface — see v0.10.3 bug #18.
+    process.stderr.write(JSON.stringify({ ok: false, error: `Skill not found: ${skillName}`, verb: "skill", hint: "Run `exceptd plan` or check skills/ for available skill IDs." }) + "\n");
     process.exit(1);
   }
 
@@ -266,8 +278,14 @@ function runPipeline(triggerType, payload) {
 }
 
 function runCurrency() {
+  const jsonOut = process.argv.includes('--json');
   const result = runCurrencyNow();
   const { currency_report, action_required, critical_count } = currencyCheck();
+
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify({ currency_report, action_required, critical_count, generated_at: new Date().toISOString() }) + '\n');
+    return;
+  }
 
   console.log(`\nSkill currency check — ${new Date().toISOString()}\n`);
   console.log('Score | Days | Skill');
@@ -383,13 +401,33 @@ async function runValidateCves(rawArgs = []) {
     process.exit(2);
   }
 
-  const cveIds = Object.keys(catalog).filter(k => /^CVE-\d{4}-\d{4,7}$/.test(k));
+  // --since <ISO|YYYY-MM-DD>: scope-limit validation to CVEs whose
+  // last_updated (or cisa_kev_date when missing) is on or after the given
+  // date. Cuts upstream calls for fleet operators running cron jobs.
+  let sinceDate = null;
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--since' && rawArgs[i + 1]) sinceDate = rawArgs[i + 1];
+    else if (rawArgs[i].startsWith('--since=')) sinceDate = rawArgs[i].slice('--since='.length);
+  }
+
+  let cveIds = Object.keys(catalog).filter(k => /^CVE-\d{4}-\d{4,7}$/.test(k));
+  if (sinceDate) {
+    const since = sinceDate.length === 10 ? `${sinceDate}T00:00:00Z` : sinceDate;
+    const before = cveIds.length;
+    cveIds = cveIds.filter(id => {
+      const e = catalog[id];
+      const stamp = e.last_updated || e.cisa_kev_date || e.first_seen;
+      if (!stamp) return false;
+      return stamp >= since;
+    });
+    console.log(`[validate-cves] --since ${sinceDate} filtered ${before} → ${cveIds.length} CVE(s).`);
+  }
 
   console.log(`\nCVE Validation — ${new Date().toISOString()}`);
   const modeStr = offline
     ? 'offline (local view only)'
     : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (NVD + CISA KEV)');
-  console.log(`${cveIds.length} CVEs in catalog. Mode: ${modeStr}`);
+  console.log(`${cveIds.length} CVEs in catalog. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   // --- Header (fixed-width; works with the existing currency command's style)
@@ -436,7 +474,23 @@ async function runValidateCves(rawArgs = []) {
   // is set. Cache-resolved CVEs short-circuit the network fetch; missing
   // entries fall through to the live validator. Both paths produce the
   // same ValidationResult shape.
-  const { validateAllCves } = require('../sources/validators');
+  //
+  // Graceful fallback when sources/validators isn't shipped (matches the
+  // pattern validate-rfcs uses below). Pre-v0.10.3 this crashed with
+  // MODULE_NOT_FOUND in installed npm packages because sources/ wasn't
+  // in the files allowlist.
+  let validateAllCves;
+  try {
+    ({ validateAllCves } = require('../sources/validators'));
+  } catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+      console.warn('[validate-cves] validator module unavailable (MODULE_NOT_FOUND); falling back to offline mode.');
+      console.log(`\n[validate-cves] offline mode (forced by missing validators) — ${cveIds.length} entries listed from local catalog.`);
+      process.exit(0);
+      return;
+    }
+    throw e;
+  }
   let report;
   if (cacheDir && fs.existsSync(cacheDir)) {
     report = await validateAllCvesPreferCache(catalog, cacheDir);
@@ -568,13 +622,29 @@ async function runValidateRfcs(rawArgs = []) {
     process.exit(2);
   }
 
-  const ids = Object.keys(refs).filter(k => !k.startsWith('_'));
+  // --since <ISO|YYYY-MM-DD>: scope-limit (parity with validate-cves).
+  let sinceDate = null;
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--since' && rawArgs[i + 1]) sinceDate = rawArgs[i + 1];
+    else if (rawArgs[i].startsWith('--since=')) sinceDate = rawArgs[i].slice('--since='.length);
+  }
+  let ids = Object.keys(refs).filter(k => !k.startsWith('_'));
+  if (sinceDate) {
+    const since = sinceDate.length === 10 ? `${sinceDate}T00:00:00Z` : sinceDate;
+    const before = ids.length;
+    ids = ids.filter(id => {
+      const e = refs[id];
+      const stamp = e.last_verified || e.published || e.last_updated;
+      return stamp && stamp >= since;
+    });
+    console.log(`[validate-rfcs] --since ${sinceDate} filtered ${before} → ${ids.length} entry(ies).`);
+  }
 
   console.log(`\nRFC Validation — ${new Date().toISOString()}`);
   const modeStr = offline
     ? 'offline (local view only)'
     : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (IETF Datatracker)');
-  console.log(`${ids.length} RFC / draft entries in catalog. Mode: ${modeStr}`);
+  console.log(`${ids.length} RFC / draft entries in catalog. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   const header = 'ID                              | Status               | Errata | Last verified | Live status';
@@ -751,6 +821,26 @@ function runWatchlist(rawArgs = []) {
       if (!itemToSkills.has(item)) itemToSkills.set(item, []);
       itemToSkills.get(item).push({ skill: entry.name, last_threat_review: reviewDate });
     }
+  }
+
+  const jsonOut = rawArgs.includes('--json');
+  if (jsonOut) {
+    const out = {
+      generated_at: new Date().toISOString(),
+      skills_scanned: skills.length,
+      parse_errors: parseErrors,
+      mode: byskill ? 'by-skill' : 'by-item',
+    };
+    if (byskill) {
+      out.by_skill = Object.fromEntries([...skillToItems.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => [k, v]));
+    } else {
+      out.by_item = Object.fromEntries([...itemToSkills.entries()]
+        .sort(([a], [b]) => a.localeCompare(b)));
+    }
+    process.stdout.write(JSON.stringify(out) + '\n');
+    return;
   }
 
   console.log(`\nForward-Watch Aggregator — ${new Date().toISOString()}`);

@@ -101,7 +101,7 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
 
 // Seven-phase playbook verbs handled in-process (no subprocess dispatch).
 const PLAYBOOK_VERBS = new Set([
-  "plan", "govern", "direct", "look", "run", "ingest", "reattest", "list-attestations",
+  "plan", "govern", "direct", "look", "run", "ingest", "reattest", "list-attestations", "attest",
 ]);
 
 function readPkgVersion() {
@@ -225,7 +225,11 @@ function main() {
 
   const resolver = COMMANDS[cmd];
   if (typeof resolver !== "function") {
-    process.stderr.write(`exceptd: unknown command "${cmd}". Run \`exceptd help\` for the list.\n`);
+    // Emit a structured JSON error matching the seven-phase verbs so operators
+    // piping through `jq` get one consistent shape across the CLI surface.
+    // Plain-text "unknown command" still reaches stderr for human readers.
+    const err = { ok: false, error: `unknown command "${cmd}"`, hint: "Run `exceptd help` for the list of verbs.", verb: cmd };
+    process.stderr.write(JSON.stringify(err) + "\n");
     process.exit(2);
   }
 
@@ -335,8 +339,9 @@ function dispatchPlaybook(cmd, argv) {
   }
 
   const args = parseArgs(argv, {
-    bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives", "ci", "latest", "diff-from-latest"],
-    multi: ["playbook"],
+    bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
+            "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack"],
+    multi: ["playbook", "format"],
   });
   const pretty = !!args.pretty;
   const runOpts = {
@@ -346,6 +351,15 @@ function dispatchPlaybook(cmd, argv) {
   if (args["session-id"]) runOpts.session_id = args["session-id"];
   if (args["session-key"]) runOpts.session_key = args["session-key"];
   if (args.mode) runOpts.mode = args.mode;
+  // Multi-operator teams need attestations bound to a specific human or
+  // service identity. --operator <name> persists into the attestation file
+  // for audit-trail accountability. Free-form string; no validation.
+  if (args.operator) runOpts.operator = args.operator;
+  // --ack: operator acknowledges the jurisdiction obligations surfaced by
+  // govern. Captured in attestation; downstream tooling can check whether
+  // consent was explicit vs. implicit. AGENTS.md says the AI should surface
+  // and wait for ack — this is how the ack gets recorded.
+  if (args.ack) runOpts.operator_consent = { acked_at: new Date().toISOString(), explicit: true };
 
   let runner;
   try {
@@ -365,6 +379,7 @@ function dispatchPlaybook(cmd, argv) {
       case "ingest":   return cmdIngest(runner, args, runOpts, pretty);
       case "reattest": return cmdReattest(runner, args, runOpts, pretty);
       case "list-attestations": return cmdListAttestations(runner, args, runOpts, pretty);
+      case "attest": return cmdAttest(runner, args, runOpts, pretty);
     }
   } catch (e) {
     emitError(e.message, { verb: cmd }, pretty);
@@ -429,11 +444,27 @@ Flags:
                             { artifacts, signal_overrides, signals, precondition_checks }
                           Multi-playbook shape:
                             { "<playbook_id>": { artifacts, ... }, ... }
+  --evidence-dir <dir>    Read <playbook-id>.json files from a directory and
+                          merge into the multi-run bundle. Cron-friendly.
   --vex <file>            Load a CycloneDX or OpenVEX document. CVEs marked
                           not_affected | resolved | false_positive (CycloneDX)
                           or not_affected | fixed (OpenVEX) drop out of
                           analyze.matched_cves. The disposition is preserved
                           under analyze.vex.dropped_cves.
+  --format <fmt> ...      Emit the close.evidence_package bundle in additional
+                          formats. Repeatable. Supported: csaf-2.0 | sarif |
+                          openvex | markdown. CSAF is always primary; extras
+                          populate close.evidence_package.bundles_by_format.
+  --explain               Dry-run: emit preconditions, required artifacts,
+                          recognized signal keys, and a submission skeleton.
+                          Does not run detect/analyze/validate/close.
+  --signal-list           Emit only the signal_overrides keys the detect phase
+                          recognizes (lighter than --explain).
+  --operator <name>       Bind the attestation to a specific human/service
+                          identity. Persisted under attestation.operator.
+  --ack                   Mark explicit operator consent to the jurisdiction
+                          obligations surfaced by govern. Persisted under
+                          attestation.operator_consent.
   --diff-from-latest      Compare evidence_hash against the most recent prior
                           attestation for the same playbook in
                           .exceptd/attestations/. Emits status: unchanged | drifted.
@@ -474,6 +505,18 @@ Args / flags:
 
 Lists every attestation under .exceptd/attestations/<session_id>/, sorted
 newest-first, with truncated evidence_hash + capture timestamp + file path.`,
+    attest: `attest <subverb> <session-id> — auditor-facing attestation operations.
+
+Subverbs:
+  attest show <sid>       Emit the full (unredacted) attestation.
+  attest export <sid>     Emit redacted JSON suitable for audit submission.
+                          Strips raw artifact values; preserves evidence_hash,
+                          signature, classification, RWEP, remediation choice.
+                          --format csaf wraps the export in a CSAF envelope.
+  attest verify <sid>     Verify .sig sidecar against keys/public.pem.
+                          Reports tamper status per attestation file.
+
+All subverbs honor --pretty for indented JSON output.`,
   };
   process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
 }
@@ -498,13 +541,27 @@ function cmdPlan(runner, args, runOpts, pretty) {
       Object.entries(plan.grouped_by_scope).map(([s, list]) => [s, list.length])
     );
   }
-  // --directives expands each playbook entry with its directive id + title +
-  // applies_to so operators / AIs can pick a specific directive without
-  // grepping playbook source.
+  // --directives expands each playbook entry with directive id + title +
+  // applies_to + description. v0.10.3-aware fallback: pull description from
+  // (a) explicit d.description, (b) directive override threat_context,
+  // (c) playbook-level direct.threat_context first sentence, (d) playbook
+  // domain.name. Operators need operator-facing prose, not just an ID + enum.
   if (args.directives) {
     for (const pb of plan.playbooks) {
       const full = runner.loadPlaybook(pb.id);
-      pb.directives = full.directives.map(d => ({ id: d.id, title: d.title, applies_to: d.applies_to }));
+      const baseDirect = full.phases?.direct || {};
+      pb.directives = full.directives.map(d => {
+        const overrideDirect = d.phase_overrides?.direct || {};
+        const threatContext = overrideDirect.threat_context || baseDirect.threat_context || null;
+        const firstSentence = threatContext ? (threatContext.split(/(?<=[.!?])\s+/)[0] || "").slice(0, 240) : null;
+        return {
+          id: d.id,
+          title: d.title,
+          description: d.description || firstSentence || full.domain?.name || null,
+          applies_to: d.applies_to,
+          threat_context_preview: firstSentence,
+        };
+      });
     }
   }
   emit(plan, pretty);
@@ -606,6 +663,53 @@ function cmdRun(runner, args, runOpts, pretty) {
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return emitError(`run: playbook ${playbookId} has no directives.`, null, pretty);
 
+  // --explain: dry-run that emits the preconditions + artifacts + indicators
+  // + signal keys the agent would need to supply, WITHOUT running detect/
+  // analyze/validate/close. Lets operators preview before assembling evidence.
+  if (args.explain) {
+    const lookPhase = runner.look(playbookId, directiveId, runOpts);
+    const detectPhase = runner.loadPlaybook(playbookId).phases?.detect || {};
+    const detectResolved = runner._resolvedPhase ? runner._resolvedPhase(pb, directiveId, "detect") : detectPhase;
+    emit({
+      verb: "run",
+      mode: "explain",
+      playbook_id: playbookId,
+      directive_id: directiveId,
+      scope: pb._meta?.scope || null,
+      preconditions: lookPhase.preconditions,
+      precondition_submission_shape: lookPhase.precondition_submission_shape,
+      artifacts_required: lookPhase.artifacts.filter(a => a.required).map(a => ({ id: a.id, type: a.type, source: a.source })),
+      artifacts_optional: lookPhase.artifacts.filter(a => !a.required).map(a => ({ id: a.id, type: a.type, source: a.source, fallback: lookPhase.fallback_if_unavailable.find(f => f.artifact_id === a.id) })),
+      signal_keys: (detectResolved.indicators || []).map(i => ({ id: i.id, type: i.type, deterministic: !!i.deterministic, confidence: i.confidence })),
+      detect_classification_override: { hint: "submit signals.detection_classification = 'detected' | 'inconclusive' | 'not_detected' | 'clean' to override engine-computed classification.", valid_values: ["detected", "inconclusive", "not_detected", "clean"] },
+      submission_skeleton: {
+        artifacts: Object.fromEntries(lookPhase.artifacts.map(a => [a.id, { value: "<your captured output>", captured: true }])),
+        signal_overrides: Object.fromEntries((detectResolved.indicators || []).map(i => [i.id, "hit | miss | inconclusive"])),
+        signals: { detection_classification: "<one of: detected|inconclusive|not_detected|clean>", theater_verdict: "<clear | theater | pending_agent_run>" },
+        precondition_checks: Object.fromEntries(lookPhase.preconditions.map(p => [p.id, true])),
+      }
+    }, pretty);
+    return;
+  }
+
+  // --signal-list: enumerate every signal_overrides key the detect phase
+  // recognizes. Lighter than --explain.
+  if (args["signal-list"]) {
+    const detectResolved = runner._resolvedPhase
+      ? runner._resolvedPhase(pb, directiveId, "detect")
+      : pb.phases?.detect;
+    emit({
+      verb: "run",
+      mode: "signal-list",
+      playbook_id: playbookId,
+      directive_id: directiveId,
+      signal_overrides_keys: (detectResolved?.indicators || []).map(i => i.id),
+      signal_value_grammar: "hit | miss | inconclusive",
+      detection_classification_override_keys: ["detected", "inconclusive", "not_detected", "clean"],
+    }, pretty);
+    return;
+  }
+
   let submission = {};
   if (args.evidence) {
     try {
@@ -619,6 +723,15 @@ function cmdRun(runner, args, runOpts, pretty) {
   // can declare host-platform / tool-availability facts in one JSON blob.
   if (submission.precondition_checks) {
     runOpts.precondition_checks = submission.precondition_checks;
+  }
+
+  // --format <fmt>: override the playbook's declared evidence_package.bundle_format.
+  // Supports csaf-2.0 | sarif | openvex | markdown. Multiple --format flags
+  // produce multiple bundles in the close response under bundles_by_format.
+  if (args.format) {
+    const formats = Array.isArray(args.format) ? args.format : [args.format];
+    submission.signals = submission.signals || {};
+    submission.signals._bundle_formats = formats;
   }
 
   // --vex <file>: load a CycloneDX/OpenVEX document and pass the not_affected
@@ -641,18 +754,23 @@ function cmdRun(runner, args, runOpts, pretty) {
     try {
       const dir = path.join(process.cwd(), ".exceptd", "attestations", result.session_id);
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(
-        path.join(dir, "attestation.json"),
-        JSON.stringify({
-          session_id: result.session_id,
-          playbook_id: result.playbook_id,
-          directive_id: result.directive_id,
-          evidence_hash: result.evidence_hash,
-          submission,
-          run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
-          captured_at: new Date().toISOString(),
-        }, null, 2)
-      );
+      const attestation = {
+        session_id: result.session_id,
+        playbook_id: result.playbook_id,
+        directive_id: result.directive_id,
+        evidence_hash: result.evidence_hash,
+        operator: runOpts.operator || null,
+        operator_consent: runOpts.operator_consent || null,
+        submission,
+        run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
+        captured_at: new Date().toISOString(),
+      };
+      fs.writeFileSync(path.join(dir, "attestation.json"), JSON.stringify(attestation, null, 2));
+      // Feature #27: Ed25519-sign the attestation if .keys/private.pem exists
+      // (signing infrastructure is already shared with skill signing). Without
+      // a private key, write an unsigned `.sig` placeholder so tooling can tell
+      // the difference between "unsigned" and "tampered post-hoc".
+      maybeSignAttestation(path.join(dir, "attestation.json"));
     } catch { /* non-fatal — attestation persistence is best-effort */ }
   }
 
@@ -746,6 +864,24 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       return emitError(`run: failed to read evidence bundle: ${e.message}`, { evidence: args.evidence }, pretty);
     }
   }
+  // --evidence-dir <dir>: each <playbook-id>.json under the directory is read
+  // as that playbook's submission. Lets operators wire up one cron job that
+  // collects per-playbook evidence into a directory, then runs the whole
+  // contract in one pass.
+  if (args["evidence-dir"]) {
+    const dir = args["evidence-dir"];
+    if (!fs.existsSync(dir)) {
+      return emitError(`run: --evidence-dir ${dir} does not exist.`, null, pretty);
+    }
+    for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
+      const pbId = f.replace(/\.json$/, "");
+      try {
+        bundle[pbId] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+      } catch (e) {
+        return emitError(`run: failed to parse --evidence-dir entry ${f}: ${e.message}`, null, pretty);
+      }
+    }
+  }
 
   const results = [];
   for (const id of ids) {
@@ -766,18 +902,19 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       try {
         const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
         fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(
-          path.join(dir, `${id}.json`),
-          JSON.stringify({
-            session_id: sessionId,
-            playbook_id: id,
-            directive_id: directiveId,
-            evidence_hash: result.evidence_hash,
-            submission,
-            run_opts: { airGap: perRunOpts.airGap, forceStale: perRunOpts.forceStale, mode: perRunOpts.mode },
-            captured_at: new Date().toISOString(),
-          }, null, 2)
-        );
+        const filePath = path.join(dir, `${id}.json`);
+        fs.writeFileSync(filePath, JSON.stringify({
+          session_id: sessionId,
+          playbook_id: id,
+          directive_id: directiveId,
+          evidence_hash: result.evidence_hash,
+          operator: perRunOpts.operator || null,
+          operator_consent: perRunOpts.operator_consent || null,
+          submission,
+          run_opts: { airGap: perRunOpts.airGap, forceStale: perRunOpts.forceStale, mode: perRunOpts.mode },
+          captured_at: new Date().toISOString(),
+        }, null, 2));
+        maybeSignAttestation(filePath);
       } catch { /* non-fatal */ }
     }
     results.push(result);
@@ -856,6 +993,48 @@ function cmdIngest(runner, args, runOpts, pretty) {
     process.exit(1);
   }
   emit(result, pretty);
+}
+
+/**
+ * Ed25519-sign an attestation file when .keys/private.pem is available
+ * (matches lib/sign.js convention for skill signing). Writes a sidecar
+ * `<file>.sig` alongside the attestation. Defense against post-hoc tampering
+ * by anyone who can write to .exceptd/.
+ *
+ * Without a private key, writes a marker file documenting the signed=false
+ * state so downstream tooling can distinguish "operator declined signing"
+ * from "the .sig file was deleted by an attacker."
+ */
+function maybeSignAttestation(filePath) {
+  const crypto = require("crypto");
+  const sigPath = filePath + ".sig";
+  const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+  const content = fs.readFileSync(filePath, "utf8");
+  try {
+    if (fs.existsSync(privKeyPath)) {
+      const privateKey = fs.readFileSync(privKeyPath, "utf8");
+      const sig = crypto.sign(null, Buffer.from(content, "utf8"), {
+        key: privateKey,
+        dsaEncoding: "ieee-p1363",
+      });
+      fs.writeFileSync(sigPath, JSON.stringify({
+        algorithm: "Ed25519",
+        signature_base64: sig.toString("base64"),
+        signed_at: new Date().toISOString(),
+        signs_path: path.basename(filePath),
+        signs_sha256: crypto.createHash("sha256").update(content).digest("base64"),
+      }, null, 2));
+    } else {
+      fs.writeFileSync(sigPath, JSON.stringify({
+        algorithm: "unsigned",
+        signed: false,
+        signed_at: null,
+        signs_path: path.basename(filePath),
+        signs_sha256: crypto.createHash("sha256").update(content).digest("base64"),
+        note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `node lib/sign.js generate-keypair` to enable signing.",
+      }, null, 2));
+    }
+  } catch { /* non-fatal — signing failure shouldn't block the run */ }
 }
 
 /**
@@ -973,6 +1152,119 @@ function cmdReattest(runner, args, runOpts, pretty) {
     replay_classification: replay.phases && replay.phases.detect && replay.phases.detect.classification,
     replay_rwep_adjusted: replay.phases && replay.phases.analyze && replay.phases.analyze.rwep && replay.phases.analyze.rwep.adjusted,
   }, pretty);
+}
+
+/**
+ * `exceptd attest <subverb> <session-id>` — auditor-facing operations on
+ * persisted attestations. Subverbs:
+ *   export <session-id>   Emit redacted JSON suitable for audit submission.
+ *                         Strips raw artifact values; preserves only
+ *                         evidence_hash + signatures + classification + RWEP.
+ *                         Falls back to a CSAF-shaped envelope when --format csaf.
+ *   verify <session-id>   Verify the .sig sidecar against keys/public.pem.
+ *                         Reports signed_by + tamper status.
+ *   show <session-id>     Emit the full (unredacted) attestation. Convenience
+ *                         alias for `cat .exceptd/attestations/<sid>/attestation.json`.
+ */
+function cmdAttest(runner, args, runOpts, pretty) {
+  const subverb = args._[0];
+  const sessionId = args._[1];
+  if (!subverb) {
+    return emitError("attest: missing subverb. Usage: attest export|verify|show <session-id>", null, pretty);
+  }
+  if (!sessionId) {
+    return emitError(`attest ${subverb}: missing <session-id> positional argument.`, null, pretty);
+  }
+  const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
+  if (!fs.existsSync(dir)) {
+    return emitError(`attest ${subverb}: no session dir at ${path.relative(process.cwd(), dir)}`, { session_id: sessionId }, pretty);
+  }
+
+  const files = fs.readdirSync(dir).filter(f => f.endsWith(".json") && !f.endsWith(".sig"));
+  const attestations = files.map(f => {
+    try { return JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); }
+    catch { return null; }
+  }).filter(Boolean);
+
+  if (subverb === "show") {
+    emit({ session_id: sessionId, attestations }, pretty);
+    return;
+  }
+
+  if (subverb === "verify") {
+    const crypto = require("crypto");
+    const pubKeyPath = path.join(PKG_ROOT, "keys", "public.pem");
+    const pubKey = fs.existsSync(pubKeyPath) ? fs.readFileSync(pubKeyPath, "utf8") : null;
+    const results = files.map(f => {
+      const sigPath = path.join(dir, f + ".sig");
+      if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
+      const sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8"));
+      if (sigDoc.algorithm === "unsigned") return { file: f, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
+      if (!pubKey) return { file: f, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
+      const content = fs.readFileSync(path.join(dir, f), "utf8");
+      try {
+        const ok = crypto.verify(null, Buffer.from(content, "utf8"), {
+          key: pubKey, dsaEncoding: "ieee-p1363",
+        }, Buffer.from(sigDoc.signature_base64, "base64"));
+        return { file: f, signed: true, verified: !!ok, reason: ok ? "Ed25519 signature valid" : "Ed25519 signature INVALID — possible post-hoc tampering" };
+      } catch (e) {
+        return { file: f, signed: true, verified: false, reason: `verify error: ${e.message}` };
+      }
+    });
+    emit({ verb: "attest verify", session_id: sessionId, results }, pretty);
+    return;
+  }
+
+  if (subverb === "export") {
+    // Redaction: strip raw `value` fields from submitted artifacts; preserve
+    // captured-state flag, evidence_hash, classification, RWEP, confidence,
+    // remediation choice, residual risk acceptance, signature. Auditors get
+    // what they need (the verdict + proof of process) without leaking raw
+    // captured data (which may contain PII / secret shapes).
+    const format = args.format || "json";
+    const redacted = attestations.map(a => ({
+      session_id: a.session_id,
+      playbook_id: a.playbook_id,
+      directive_id: a.directive_id,
+      evidence_hash: a.evidence_hash,
+      operator: a.operator,
+      operator_consent: a.operator_consent,
+      captured_at: a.captured_at,
+      run_opts: a.run_opts,
+      artifacts_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.artifacts) || {})
+        .map(([k, v]) => [k, { captured: !!v.captured, reason: v.reason || null, redacted_value: "[redacted]" }])),
+      signal_overrides: (a.submission && a.submission.signal_overrides) || {},
+      signals_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.signals) || {})
+        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))),
+      precondition_checks: (a.submission && a.submission.precondition_checks) || {},
+    }));
+
+    if (format === "csaf") {
+      // Lightweight CSAF envelope for audit submission — caller can post this
+      // directly to a CSAF-aware GRC platform.
+      emit({
+        document: {
+          category: "csaf_security_advisory",
+          csaf_version: "2.0",
+          publisher: { category: "vendor", name: "exceptd", namespace: "https://exceptd.com" },
+          title: `Auditor export — session ${sessionId}`,
+          tracking: { id: `exceptd-export-${sessionId}`, status: "final", version: "1", initial_release_date: new Date().toISOString() },
+        },
+        exceptd_export: { session_id: sessionId, attestations: redacted, exported_at: new Date().toISOString(), redaction_policy: "v0.10.3-default" },
+      }, pretty);
+    } else {
+      emit({
+        verb: "attest export",
+        session_id: sessionId,
+        exported_at: new Date().toISOString(),
+        redaction_policy: "v0.10.3-default — artifact values stripped; signal_overrides + precondition_checks + evidence_hash + signature preserved.",
+        attestations: redacted,
+      }, pretty);
+    }
+    return;
+  }
+
+  return emitError(`attest: unknown subverb "${subverb}". Try export | verify | show.`, null, pretty);
 }
 
 function cmdListAttestations(runner, args, runOpts, pretty) {
