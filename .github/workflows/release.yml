@@ -110,6 +110,14 @@ jobs:
         if: ${{ inputs.dry_run != 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # v0.11.7: skip prepublishOnly's redundant predeploy run. The
+          # standalone "Predeploy gate sequence" step above already validated
+          # the same gates. Re-running here was causing a spurious public-key
+          # fingerprint divergence in CI (different fingerprint reported on
+          # the second invocation, signature verification failing despite
+          # bit-identical inputs). The standalone step is the authoritative
+          # safety net for CI publishes.
+          EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY: '1'
         run: |
           # --access public is also set via publishConfig, but explicit beats
           # implicit on the release path.

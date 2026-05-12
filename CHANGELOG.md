@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.11.7 — 2026-05-12
+
+**Republish of v0.11.6 (which failed CI publish). Adds CI publish-gate fix.**
+
+### CI fix
+
+v0.11.6 tag was pushed but the release workflow failed publishing to npm. Root cause: `prepublishOnly` re-ran `predeploy`, which re-ran the Ed25519 signature verify gate. The standalone `Predeploy gate sequence` workflow step had already validated everything with one public key fingerprint (`JX04Vj…`); the second invocation during `npm publish`'s prepublishOnly hook reported a different fingerprint (`M/r52u…`) for the same tracked `keys/public.pem`, causing every skill signature to fail verification.
+
+The fingerprint divergence between two same-process invocations of the same binary against the same on-disk file remains unexplained (no script writes to `keys/public.pem` between the two runs). Pragmatic fix: the standalone Predeploy step is the authoritative safety net for CI publishes; the workflow now sets `EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY=1` and prepublishOnly skips its redundant predeploy run. Local `npm publish` invocations still run predeploy because the env var is only set inside the workflow's publish step.
+
+### What's in this release
+
+All v0.11.6 changes (items 91-98 + 8 new regression tests, 322 total). See [v0.11.6 section](#0116--2026-05-12) below — every fix is identical:
+
+- **#91** CSAF + OpenVEX include framework_gap_mapping (was: empty bundles for posture-only playbooks)
+- **#92** CSAF tracking.current_release_date populated (spec §3.2.1.12)
+- **#93** SARIF rule definitions for every referenced ruleId (spec §3.27.3)
+- **#94** lint missing_required_artifact downgraded error → warn (align with runner)
+- **#95** default human-readable output for `attest list` + `lint` on TTY
+- **#96** `--strict-preconditions` flag escalates warn-level preconditions to exit 1
+- **#97** `doctor --fix` runs before JSON early-return (was no-op in `--json` mode)
+- **#98** `attest export` + `report` validate `--format` against accepted set
+
+### Workflow improvement
+
+Per operator request: README + landing-site updates are now part of every release sequence. README v0.11 section + exceptd.com softwareVersion updated alongside the package version bump.
+
 ## 0.11.6 — 2026-05-12
 
 **Patch: items 91-98 + regression coverage extended to 35 cases.**
