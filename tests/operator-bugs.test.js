@@ -585,6 +585,51 @@ test('#115 ci --required rejects unknown playbook id', () => {
 });
 
 // ===================================================================
+test('#119 result.ack alias for --ack consent state', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'ack119-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.ack, true, 'result.ack must be true when --ack is passed');
+  assert.equal(data?.operator_consent?.explicit, true, 'operator_consent.explicit also true');
+});
+
+test('#119 result.ack is false without --ack', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-id', 'noack-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.ack, false, 'result.ack must be false without --ack');
+});
+
+test('#100 ci with NO --evidence + all inconclusive exits 3 (not 0)', () => {
+  const r = cli(['ci', '--required', 'secrets', '--json']);
+  assert.equal(r.status, 3, 'ci without --evidence + all inconclusive must exit 3 ("ran but no real data")');
+});
+
+test('#102 attest diff includes total_compared field', () => {
+  const sub = JSON.stringify({ observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' } } });
+  const sid1 = 'tc-a-' + Date.now();
+  const sid2 = 'tc-b-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(typeof data?.artifact_diff?.total_compared === 'number',
+    'artifact_diff must include total_compared (disambiguates 0/0 vs 0-of-N)');
+  assert.ok(typeof data?.signal_override_diff?.total_compared === 'number');
+});
+
+test('#104 close emits jurisdiction_notifications alias + clocks count', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected', blast_radius: 4 }
+  });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--session-id', 'jur104-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(Array.isArray(data?.phases?.close?.jurisdiction_notifications),
+    'phases.close.jurisdiction_notifications must be present (alias for notification_actions)');
+  assert.ok(data.phases.close.jurisdiction_clocks_count >= 1,
+    'jurisdiction_clocks_count must be > 0 when classification=detected with detect_confirmed obligations');
+});
+
+// ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
   // We don't want this test to actually generate a keypair — just verify
   // the flag is recognized and doctor doesn't reject it as unknown.

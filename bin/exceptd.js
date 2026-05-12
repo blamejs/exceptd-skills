@@ -1297,8 +1297,15 @@ function cmdRun(runner, args, runOpts, pretty) {
   // v0.11.9 (#113/#114): surface --operator and --ack in the run result so
   // operators see the attribution + consent state without inspecting the
   // attestation file. Pre-0.11.9 these were persisted to disk only.
+  // v0.11.10 (#119): add result.ack alias for consumers reading the
+  // ack state by that name (`result.ack` is shorter + matches the CLI flag).
   if (result && runOpts.operator) result.operator = runOpts.operator;
-  if (result && runOpts.operator_consent) result.operator_consent = runOpts.operator_consent;
+  if (result && runOpts.operator_consent) {
+    result.operator_consent = runOpts.operator_consent;
+    result.ack = !!runOpts.operator_consent.explicit;
+  } else if (result) {
+    result.ack = false;
+  }
 
   // Persist attestation for reattest cycles when the run succeeded.
   if (result && result.ok && result.session_id) {
@@ -2226,7 +2233,10 @@ function normalizedSignalOverrides(submission, runner) {
 function diffArtifacts(a, b) {
   a = a || {}; b = b || {};
   const allIds = new Set([...Object.keys(a), ...Object.keys(b)]);
-  const out = { added: [], removed: [], changed: [], unchanged_count: 0 };
+  // v0.11.10 (#102): total_compared disambiguates the empty-both case.
+  // unchanged_count: 0 + added: 0 + removed: 0 + changed: 0 is ambiguous
+  // ("0 unchanged of how many?"); total_compared answers it.
+  const out = { total_compared: allIds.size, added: [], removed: [], changed: [], unchanged_count: 0 };
   for (const id of allIds) {
     const av = a[id], bv = b[id];
     if (!av && bv) {
@@ -2252,7 +2262,7 @@ function diffArtifacts(a, b) {
 function diffSignalOverrides(a, b) {
   a = a || {}; b = b || {};
   const allIds = new Set([...Object.keys(a), ...Object.keys(b)]);
-  const out = { changed: [], unchanged_count: 0 };
+  const out = { total_compared: allIds.size, changed: [], unchanged_count: 0 };
   for (const id of allIds) {
     if (a[id] !== b[id]) out.changed.push({ id, a: a[id] || null, b: b[id] || null });
     else out.unchanged_count++;
@@ -3377,6 +3387,17 @@ function cmdCi(runner, args, runOpts, pretty) {
   if (fail) {
     process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
     process.exit(2);
+  }
+  // v0.11.10 (#100): ci exits non-zero when NO evidence was supplied AND
+  // every playbook returned inconclusive. Pre-0.11.10 this exited 0,
+  // conflating "ran clean" with "never ran." Operators forgot --evidence /
+  // --evidence-dir and assumed a green CI = real coverage. Now: surface
+  // the gap loudly.
+  const suppliedEvidence = args.evidence || args["evidence-dir"];
+  const allInconclusive = summary.inconclusive === summary.total && summary.total > 0;
+  if (!suppliedEvidence && allInconclusive) {
+    process.stderr.write(`[exceptd ci] WARN: no --evidence supplied and all ${summary.total} playbook(s) returned inconclusive. CI exit 3 = "ran but never had real data." Pass --evidence <file> or --evidence-dir <dir> for a real gate.\n`);
+    process.exit(3);
   }
 }
 

@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.11.10 — 2026-05-12
+
+**Patch: items 119-122 — field-name alignment with operator expectations.**
+
+Pattern recognized across 10 v0.11.x releases: my output field names didn't match what operators were reading for. Several "broken" items were actually present-under-a-different-name. v0.11.10 adds the missing aliases + tightens ci's empty-evidence semantic.
+
+### Bugs
+
+- **#119 `result.ack` alias.** v0.11.9 surfaced `--ack` as `result.operator_consent.explicit`. Operators reading `result.ack` (matching the flag name) saw `undefined` and concluded the flag was dropped. Now: `result.ack` is a top-level boolean mirroring the consent state. `operator_consent.explicit` retains its richer shape.
+
+- **#100 ci with no evidence exits 3.** Pre-0.11.10 `ci --required <pb>` with NO `--evidence`/`--evidence-dir` ran every playbook to inconclusive and exited 0 — operators couldn't distinguish "ran clean" from "never had real data." Now: when no evidence was supplied AND every result is inconclusive, ci exits **3** with a clear stderr warning: "ran but never had real data. Pass --evidence <file> or --evidence-dir <dir>." Exit code matrix: 0 PASS, 2 FAIL (detected/escalate), 3 NO-DATA, 1 framework error.
+
+- **#102 `total_compared` field on attest diff.** Pre-0.11.10 `unchanged_count: 0 + added: 0 + removed: 0 + changed: 0` was ambiguous ("0 unchanged of how many?"). Now both `artifact_diff` and `signal_override_diff` include `total_compared` (set size of the union of both sides' keys). Operators can distinguish "no comparison happened" (total_compared: 0) from "everything matched" (total_compared: N, unchanged_count: N).
+
+- **#104 `phases.close.jurisdiction_notifications` alias + `jurisdiction_clocks_count`.** The runner emitted `notification_actions`; operators expected `jurisdiction_notifications`. Now both names point to the same array (full list), and `jurisdiction_clocks_count` mirrors the ci-aggregate count of notifications whose clock has actually started. Compliance teams reading `phases.close.jurisdiction_notifications.length` (or filtering by `.clock_started_at != null`) get the expected shape.
+
+### Tests
+
+5 new cases in `tests/operator-bugs.test.js` for items 119/100/102/104. 338 total.
+
+### Verified by direct repro before fix
+
+For every item I:
+1. Ran the user's exact CLI invocation
+2. Inspected the actual output shape vs the user's stated expectation
+3. Identified whether the bug was missing logic OR field-name mismatch
+4. Fixed both layers when the answer was "mismatch" (add alias) so subsequent operators reading by either name see the data
+
+Pattern documented in CLAUDE.md (project-side contributor guide).
+
 ## 0.11.9 — 2026-05-12
 
 **Patch: items 99-115 — CLI-shim audit, real fixes.**
