@@ -81,6 +81,7 @@ const COMMANDS = {
   "validate-cves": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "validate-rfcs": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   watchlist:       () => path.join(PKG_ROOT, "orchestrator", "index.js"),
+  watch:           () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap-analysis": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   // Seven-phase playbook verbs — handled in-process via lib/playbook-runner.js.
@@ -95,7 +96,7 @@ const COMMANDS = {
 
 const ORCHESTRATOR_PASSTHROUGH = new Set([
   "scan", "dispatch", "skill", "currency", "report",
-  "validate-cves", "validate-rfcs", "watchlist",
+  "validate-cves", "validate-rfcs", "watchlist", "watch",
   "framework-gap", "framework-gap-analysis",
 ]);
 
@@ -339,7 +340,21 @@ function main() {
     return;
   }
 
-  const resolver = COMMANDS[cmd];
+  // v0.11.2 bug #65: `refresh --no-network` / `refresh --indexes-only` were
+  // documented as the v0.11.0 replacements for `prefetch` / `build-indexes`
+  // but the underlying refresh script doesn't know those flags. Translate
+  // here so the deprecation pointer actually works.
+  let effectiveCmd = cmd;
+  let effectiveRest = rest;
+  if (cmd === "refresh" && rest.includes("--no-network")) {
+    effectiveCmd = "prefetch";
+    effectiveRest = rest.filter(a => a !== "--no-network");
+  } else if (cmd === "refresh" && rest.includes("--indexes-only")) {
+    effectiveCmd = "build-indexes";
+    effectiveRest = rest.filter(a => a !== "--indexes-only");
+  }
+
+  const resolver = COMMANDS[effectiveCmd];
   if (typeof resolver !== "function") {
     // Emit a structured JSON error matching the seven-phase verbs so operators
     // piping through `jq` get one consistent shape across the CLI surface.
@@ -357,7 +372,7 @@ function main() {
 
   // Orchestrator subcommands need the subcommand name preserved as argv[0]
   // for orchestrator/index.js's switch statement.
-  const finalArgs = ORCHESTRATOR_PASSTHROUGH.has(cmd) ? [script, cmd, ...rest] : [script, ...rest];
+  const finalArgs = ORCHESTRATOR_PASSTHROUGH.has(effectiveCmd) ? [script, effectiveCmd, ...effectiveRest] : [script, ...effectiveRest];
   const res = spawnSync(process.execPath, finalArgs, { stdio: "inherit", cwd: PKG_ROOT });
   if (res.error) {
     process.stderr.write(`exceptd: failed to run ${cmd}: ${res.error.message}\n`);
@@ -413,7 +428,13 @@ function parseArgs(argv, opts) {
 }
 
 function emit(obj, pretty) {
-  const s = pretty ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
+  // v0.11.2 bug #60: when stdout is a TTY (interactive use), emit indented
+  // JSON instead of single-line — much more readable. Piped to a file or
+  // tool? Default to compact one-line JSON. --pretty forces indented
+  // regardless of TTY. --json-stdout-only is always compact.
+  const interactive = process.stdout.isTTY && !process.env.EXCEPTD_RAW_JSON;
+  const indent = pretty || (interactive && !pretty);
+  const s = indent ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
   process.stdout.write(s + "\n");
 }
 
@@ -458,9 +479,20 @@ function dispatchPlaybook(cmd, argv) {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
             "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
             "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
-            "json-stdout-only"],
+            "json-stdout-only", "fix", "human", "json"],
     multi: ["playbook", "format"],
   });
+  // v0.11.2 bug #60: flip defaults to human-readable. JSON via explicit --json
+  // (or --pretty implies indented JSON). The v0.11.0 CHANGELOG claimed this
+  // was already done; the code in fact emitted JSON unconditionally. Now:
+  //   --json or --pretty  → JSON (one-line or indented respectively)
+  //   --json-stdout-only  → JSON, suppress stderr
+  //   default             → human-readable text
+  // Verbs that have their own human renderer (discover/doctor/refresh/lint
+  // /ask/attest list) continue to use it; verbs that don't yet (brief/run/
+  // ai-run/ci/attest show/export/diff/verify) fall back to indented JSON
+  // labeled as such — better than no signal.
+  args._jsonMode = !!(args.json || args.pretty || args["json-stdout-only"]);
   const pretty = !!args.pretty;
   const runOpts = {
     airGap: !!args["air-gap"],
@@ -1134,7 +1166,12 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Supports csaf-2.0 | sarif | openvex | markdown. Multiple --format flags
   // produce multiple bundles in the close response under bundles_by_format.
   if (args.format) {
-    const formats = Array.isArray(args.format) ? args.format : [args.format];
+    // Normalize shortcut names to the runner's canonical bundle keys before
+    // passing through. "csaf" → "csaf-2.0"; "sarif" / "openvex" / "markdown"
+    // / "summary" stay verbatim. Anything else is rejected after the run
+    // result is in hand (so the run still completes).
+    const formats = (Array.isArray(args.format) ? args.format : [args.format])
+      .map(f => f === "csaf" ? "csaf-2.0" : f);
     submission.signals = submission.signals || {};
     submission.signals._bundle_formats = formats;
   }
@@ -1257,6 +1294,80 @@ function cmdRun(runner, args, runOpts, pretty) {
       process.stderr.write(`[exceptd run --ci] PASS: classification=${classification} rwep=${adjusted}\n`);
     }
     return;
+  }
+
+  // v0.11.2 bug #59 / feature #70: --format actually transforms the top-level
+  // output. Previously it only populated close.evidence_package.bundles_by_format
+  // and the operator still saw the full JSON. Now:
+  //   --format summary  → single-line JSON digest (5 fields)
+  //   --format markdown → operator-readable markdown digest of the run
+  //   --format csaf-2.0/sarif/openvex → the corresponding bundle from close
+  //   (default — no --format) → full JSON result as before
+  if (args.format) {
+    const requested = Array.isArray(args.format) ? args.format[0] : args.format;
+    const VALID = ["summary", "markdown", "csaf-2.0", "csaf", "sarif", "openvex", "json"];
+    if (!VALID.includes(requested)) {
+      return emitError(`run: --format "${requested}" not in accepted set ${JSON.stringify(VALID)}.`, null, pretty);
+    }
+    if (requested === "summary") {
+      const cls = result.phases?.detect?.classification;
+      const rwep = result.phases?.analyze?.rwep?.adjusted ?? 0;
+      const blast = result.phases?.analyze?.blast_radius_score ?? 0;
+      const cves = result.phases?.analyze?.matched_cves?.length ?? 0;
+      const next = result.phases?.close?.feeds_into?.join(",") || "";
+      const clocks = (result.phases?.close?.notification_actions || []).filter(n => n.clock_started_at).length;
+      emit({
+        ok: result.ok, playbook: result.playbook_id, session_id: result.session_id,
+        classification: cls, rwep, blast_radius: blast, matched_cves: cves,
+        feeds_into: next, jurisdiction_clocks: clocks, evidence_hash: result.evidence_hash,
+      }, pretty);
+      return;
+    }
+    if (requested === "markdown") {
+      const lines = [];
+      lines.push(`# exceptd run: ${result.playbook_id}`);
+      lines.push(`session-id: ${result.session_id}`);
+      lines.push(`evidence-hash: ${result.evidence_hash}`);
+      lines.push("");
+      const cls = result.phases?.detect?.classification || "n/a";
+      const rwep = result.phases?.analyze?.rwep?.adjusted ?? 0;
+      const top = result.phases?.analyze?.rwep?.threshold?.escalate ?? "n/a";
+      lines.push(`**Classification:** ${cls}  **RWEP:** ${rwep} / ${top}  **Blast radius:** ${result.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
+      lines.push("");
+      const cves = result.phases?.analyze?.matched_cves || [];
+      if (cves.length) {
+        lines.push(`## Matched CVEs (${cves.length})`);
+        for (const c of cves) lines.push(`- **${c.cve_id}** · RWEP ${c.rwep} · KEV=${c.cisa_kev} · ${c.active_exploitation}`);
+        lines.push("");
+      }
+      const rem = result.phases?.validate?.selected_remediation;
+      if (rem) {
+        lines.push(`## Recommended remediation`);
+        lines.push(`**${rem.id}** (priority ${rem.priority}) — ${rem.description}`);
+        lines.push("");
+      }
+      const notif = result.phases?.close?.notification_actions || [];
+      if (notif.length) {
+        lines.push(`## Notification clocks`);
+        for (const n of notif) lines.push(`- ${n.obligation_ref} → deadline ${n.deadline}`);
+        lines.push("");
+      }
+      const feeds = result.phases?.close?.feeds_into || [];
+      if (feeds.length) lines.push(`**Next playbooks suggested:** ${feeds.join(", ")}`);
+      process.stdout.write(lines.join("\n") + "\n");
+      return;
+    }
+    // CSAF/SARIF/OpenVEX bundles live under close.evidence_package — the
+    // runner writes them under canonical keys ("csaf-2.0", "sarif",
+    // "openvex"). Normalize the user-supplied shortcuts.
+    const formatNorm = requested === "csaf" ? "csaf-2.0" : requested;
+    const bbf = result.phases?.close?.evidence_package?.bundles_by_format || {};
+    const body = bbf[formatNorm] || result.phases?.close?.evidence_package?.bundle_body;
+    if (body) {
+      emit(body, pretty);
+      return;
+    }
+    // Fallback: full result
   }
 
   emit(result, pretty);
@@ -2260,22 +2371,43 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       const keyPath = path.join(process.cwd(), ".keys", "private.pem");
       const fallback = path.join(PKG_ROOT, ".keys", "private.pem");
       const present = fs.existsSync(keyPath) || fs.existsSync(fallback);
+      // Bug #61 (v0.11.2): signing-status missing key is a real WARNING. The
+      // attestation pipeline writes unsigned files when this is absent, which
+      // operators reading the attestation later cannot verify for authenticity.
+      // The summary line must reflect this — pre-0.11.2 said "all checks green"
+      // directly above [!!] private key MISSING. Now: it's a warning that
+      // populates summary.warnings_count.
       checks.signing = {
-        ok: true, // signing-status is informational, never "fails"
+        ok: present, // not green if the key is missing — operators need the nudge
+        severity: present ? "info" : "warn",
         private_key_present: present,
         can_sign_attestations: present,
-        ...(present ? {} : { hint: "run `node lib/sign.js generate-keypair` to enable attestation signing" }),
+        ...(present ? {} : { hint: "run `node lib/sign.js generate-keypair` (or `exceptd doctor --fix`) to enable attestation signing" }),
       };
     } catch (e) {
       checks.signing = { ok: false, error: e.message };
     }
   }
 
-  const allGreen = issues.length === 0;
+  // Walk every check and split: errors (severity error/missing/fail) vs warnings
+  // (severity warn). all_green is true ONLY when zero errors AND zero warnings.
+  const warnList = [];
+  const errorList = [];
+  for (const [k, v] of Object.entries(checks)) {
+    if (v.ok === false) errorList.push(k);
+    else if (v.severity === "warn") warnList.push(k);
+  }
+  const allGreen = errorList.length === 0 && warnList.length === 0;
   const out = {
     verb: "doctor",
     checks,
-    summary: { all_green: allGreen, issues_count: issues.length, failed_checks: issues },
+    summary: {
+      all_green: allGreen,
+      issues_count: errorList.length,
+      warnings_count: warnList.length,
+      failed_checks: errorList,
+      warning_checks: warnList,
+    },
   };
 
   if (wantJson) {
@@ -2289,7 +2421,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   lines.push("exceptd doctor");
   function mark(c, render) {
     if (!c) return;
-    const icon = c.ok ? "[ok]" : "[!!]";
+    // Three states: ok / warn / error. Bug #61 (v0.11.2) — warn must not be
+    // shown as ok and must count toward the summary so the bottom line
+    // matches the visible icons above.
+    const icon = c.ok && c.severity !== "warn" ? "[ok]" : (c.severity === "warn" ? "[!! warn]" : "[!! fail]");
     lines.push(`  ${icon} ${render(c)}`);
   }
   mark(checks.signatures, c =>
@@ -2320,9 +2455,30 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     }
   }
   lines.push("");
-  lines.push(allGreen ? `summary: all checks green` : `summary: ${issues.length} issue(s) — ${issues.join(", ")}`);
+  if (allGreen) {
+    lines.push(`summary: all checks green`);
+  } else if (errorList.length === 0) {
+    lines.push(`summary: ${warnList.length} warning(s) — ${warnList.join(", ")}`);
+  } else {
+    lines.push(`summary: ${errorList.length} fail / ${warnList.length} warn — fail: ${errorList.join(", ")}; warn: ${warnList.join(", ") || "none"}`);
+  }
   process.stdout.write(lines.join("\n") + "\n");
-  if (!allGreen) process.exitCode = 1;
+  // Bug #69 (v0.11.2): --fix mode for missing private key.
+  if (args.fix && checks.signing && !checks.signing.private_key_present) {
+    process.stdout.write("\n[doctor --fix] generating Ed25519 keypair via `node lib/sign.js generate-keypair`...\n");
+    const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], { stdio: "inherit", cwd: PKG_ROOT });
+    if (r.status === 0) {
+      process.stdout.write("[doctor --fix] keypair generated — re-run `exceptd doctor` to confirm.\n");
+    } else {
+      process.stdout.write(`[doctor --fix] generation failed (exit=${r.status}); run \`node lib/sign.js generate-keypair\` manually.\n`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+  if (errorList.length > 0) process.exitCode = 1;
+  // Warnings alone do NOT force exit 1 — CI gates use exit 0 to mean "ran
+  // successfully" even with informational warnings. Operators reading the
+  // visible "[!! warn]" line still see the issue.
 }
 
 function cmdListAttestations(runner, args, runOpts, pretty) {
@@ -2570,10 +2726,31 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     const tail = buf.trim();
     if (tail) handleLine(tail);
     if (!handled) {
-      writeLine({ event: "error", reason: "stdin closed without an evidence event." });
+      // Bug #66 (v0.11.2): stdin closed without an evidence event. Before
+      // declaring an error, try to interpret the raw stdin as a bare
+      // submission object (the common shell-pipe case where `echo
+      // '{...}' | exceptd ai-run secrets` pipes the submission body, not a
+      // wrapped event). If it parses as such, run with it and complete the
+      // phases. Otherwise emit the helpful error.
+      const raw = (process.stdin._consumed || "") || buf;
+      const allText = process.stdin._allText;
+      if (allText && allText.trim()) {
+        try {
+          const parsed = JSON.parse(allText.trim());
+          if (parsed && (parsed.observations || parsed.artifacts || parsed.signal_overrides || parsed.precondition_checks)) {
+            handleLine(JSON.stringify({ event: "evidence", payload: parsed }));
+            return;
+          }
+        } catch { /* fall through to error */ }
+      }
+      writeLine({ event: "error", reason: "stdin closed without an evidence event. Pipe `{\"event\":\"evidence\",\"payload\":{...}}` for streaming mode, or pass --no-stream + --evidence <file> for single-shot." });
       process.exit(1);
     }
   });
+
+  // Capture stdin for the post-close fallback.
+  process.stdin._allText = "";
+  process.stdin.on("data", chunk => { process.stdin._allText += chunk.toString(); });
 }
 
 /**
@@ -2609,6 +2786,31 @@ function buildSubmissionFromPayload(payload) {
  * phases.direct.threat_context. Returns the top 5 matches with a confidence
  * score (matched tokens / total tokens).
  */
+/**
+ * `ask "<question>"` — plain-English routing to playbook(s).
+ *
+ * v0.11.2 rewrite (#58 / #67): the v0.11.0 implementation only indexed
+ * domain.name + attack_class + first sentence of threat_context, with a
+ * length>3 token filter that dropped short but-meaningful words like "PQC"
+ * or "MCP". The richer index now includes:
+ *   - playbook id
+ *   - domain.name + domain.attack_class
+ *   - domain.attack_refs (T-numbers) + atlas_refs (AML-numbers)
+ *   - domain.cwe_refs + frameworks_in_scope
+ *   - phases.govern.theater_fingerprints[].claim
+ *   - phases.direct.threat_context (full, not first sentence)
+ *   - phases.direct.framework_lag_declaration
+ *   - skill_chain skill names
+ *   - phases.look.collection_scope.asset_scope
+ *
+ * Token filter dropped to length >= 2 (was > 3) so "PQC" / "MCP" / "CI"
+ * tokens match. Synonym map handles common operator phrasings ("API
+ * keys" → secrets, "supply chain" → sbom / library-author, etc).
+ *
+ * Threshold: top match must have score >= 1 (was > 0; same). When no
+ * playbook scores >= 1, fall back to substring match on playbook ID
+ * itself ("secrets" → secrets playbook).
+ */
 function cmdAsk(runner, args, runOpts, pretty) {
   const question = (args._ || []).join(" ").trim();
   if (!question) {
@@ -2616,42 +2818,97 @@ function cmdAsk(runner, args, runOpts, pretty) {
   }
   const ids = runner.listPlaybooks();
   const q = question.toLowerCase();
-  const tokens = q.split(/\W+/).filter(t => t.length > 3);
+
+  // Synonym expansion — common operator phrasings → playbook-relevant tokens.
+  // Keeps cmdAsk dependency-free; rich enough to cover the 80% of natural
+  // queries listed in the operator report.
+  const SYNONYMS = {
+    "credential": ["secret", "key", "token", "password", "cred"],
+    "credentials": ["secret", "key", "token", "password", "cred"],
+    "api key": ["secret", "credential"],
+    "api keys": ["secret", "credential"],
+    "supply chain": ["sbom", "dependency", "vendor", "package", "library", "publish"],
+    "supply-chain": ["sbom", "dependency", "vendor", "package", "library", "publish"],
+    "npm package": ["sbom", "dependency", "library", "publish"],
+    "npm packages": ["sbom", "dependency", "library", "publish"],
+    "pqc": ["post-quantum", "quantum", "crypto", "ml-kem", "ml-dsa", "kyber", "dilithium"],
+    "quantum": ["pqc", "post-quantum"],
+    "audit": ["scan", "review", "check", "validate", "verify"],
+    "mcp": ["model context protocol", "tool", "ai-tool"],
+    "ai": ["llm", "model", "anthropic", "openai", "claude"],
+    "compliance": ["framework", "audit", "soc", "iso", "nist", "gdpr", "dora", "nis2", "regulator"],
+    "kernel": ["lpe", "linux", "privilege", "escalation", "cve", "uname"],
+    "container": ["docker", "kubernetes", "k8s", "compose", "image"],
+    "secret": ["credential", "key", "token", "env", "leak"],
+    "secrets": ["credential", "key", "token", "env", "leak", "repo"],
+    "config": ["configuration", "settings"],
+  };
+
+  // Tokenize question (length >= 2, lowercase) + expand via synonyms.
+  const baseTokens = q.split(/\W+/).filter(t => t.length >= 2);
+  const expanded = new Set(baseTokens);
+  // multi-word synonym keys
+  for (const [phrase, syns] of Object.entries(SYNONYMS)) {
+    if (q.includes(phrase)) for (const s of syns) expanded.add(s);
+  }
+  // single-word synonym keys
+  for (const t of baseTokens) {
+    if (SYNONYMS[t]) for (const s of SYNONYMS[t]) expanded.add(s);
+  }
+  const tokens = [...expanded];
+
   const scored = [];
   for (const id of ids) {
     let pb;
     try { pb = runner.loadPlaybook(id); } catch { continue; }
-    const threat = pb.phases?.direct?.threat_context || "";
-    const firstSentence = threat.split(/(?<=[.!?])\s+/)[0] || "";
     const haystack = [
+      pb._meta?.id || id,
       pb.domain?.name || "",
       pb.domain?.attack_class || "",
-      firstSentence,
+      ...(pb.domain?.attack_refs || []),
+      ...(pb.domain?.atlas_refs || []),
+      ...(pb.domain?.cwe_refs || []),
+      ...(pb.domain?.frameworks_in_scope || []),
+      ...((pb.phases?.govern?.theater_fingerprints || []).map(t => t.claim || "")),
+      ...((pb.phases?.govern?.theater_fingerprints || []).map(t => t.pattern_id || "")),
+      pb.phases?.direct?.threat_context || "",
+      pb.phases?.direct?.framework_lag_declaration || "",
+      ...((pb.phases?.direct?.skill_chain || []).map(s => s.skill || "")),
+      pb.phases?.look?.collection_scope?.asset_scope || "",
+      pb.phases?.look?.collection_scope?.time_window || "",
     ].join(" ").toLowerCase();
-    const score = tokens.filter(t => haystack.includes(t)).length;
+    let score = 0;
+    for (const t of tokens) if (haystack.includes(t)) score++;
+    // ID match counts double — "secrets" should map to the secrets playbook.
+    if (tokens.some(t => (pb._meta?.id || id) === t)) score += 3;
     scored.push({ id: pb._meta?.id || id, score });
   }
   scored.sort((a, b) => b.score - a.score);
   const top = scored.filter(s => s.score > 0).slice(0, 5);
 
+  // v0.11.2: default human-readable; --json for machine.
   if (top.length === 0) {
-    emit({
+    const result = {
       verb: "ask",
       question,
-      matched: [],
+      routed_to: [],
       hint: "No playbook matched. Try `exceptd brief --all` to see what's available, or `exceptd discover` to detect what's in your cwd.",
-    }, pretty);
+    };
+    if (args.json) return emit(result, pretty);
+    process.stdout.write(`ask: ${question}\n  no playbook matched.\n  try: exceptd discover  (auto-detect what's in your cwd)\n`);
     return;
   }
 
-  emit({
+  const result = {
     verb: "ask",
     question,
     routed_to: top.map(t => t.id),
-    confidence: top[0].score / Math.max(1, tokens.length),
+    confidence: Math.min(1, top[0].score / Math.max(2, tokens.length)),
     next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
     full_match_list: top,
-  }, pretty);
+  };
+  if (args.json) return emit(result, pretty);
+  process.stdout.write(`ask: ${question}\n  top match: ${top[0].id} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${top.slice(1).map(t => t.id).join(", ") || "(none)"}\n`);
 }
 
 /**
@@ -2668,11 +2925,29 @@ function cmdCi(runner, args, runOpts, pretty) {
   const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
   const blockOnClock = !!args["block-on-jurisdiction-clock"];
 
+  // v0.11.2 bug #63: align with discover. ci now includes cross-cutting
+  // playbooks (framework) automatically, and when --scope code is set on a
+  // cwd that has lockfiles, also includes sbom (which is scope:system but
+  // applies to any repo). Operators expect ci to run "what discover would
+  // recommend"; pre-0.11.2 ci ran scope=X only, which dropped framework +
+  // missed sbom-on-repo.
   let ids;
   if (args.all) {
     ids = runner.listPlaybooks();
   } else if (scope) {
     ids = filterPlaybooksByScope(runner, scope);
+    // Always include cross-cutting playbooks regardless of scope choice.
+    const cross = filterPlaybooksByScope(runner, "cross-cutting");
+    ids = [...new Set([...ids, ...cross])];
+    // For code-scope on a repo: also include sbom (system-scope but
+    // repo-relevant) so ci output matches discover.
+    if (scope === "code" && fs.existsSync(path.join(process.cwd(), ".git"))) {
+      const hasLockfile = ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "requirements.txt", "Pipfile.lock", "Cargo.lock", "go.sum"]
+        .some(f => fs.existsSync(path.join(process.cwd(), f)));
+      if (hasLockfile && runner.listPlaybooks().includes("sbom") && !ids.includes("sbom")) {
+        ids.push("sbom");
+      }
+    }
   } else {
     const scopes = detectScopes();
     ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));

@@ -56,6 +56,7 @@ async function main() {
     case 'validate-rfcs':
       await runValidateRfcs(args);
       break;
+    case 'watch':
     case 'watchlist':
       runWatchlist(args);
       break;

@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.11.2 — 2026-05-12
+
+**Patch: operator-reported items 58-70 from real CLI use.**
+
+### Bugs
+
+- **#58 `ask` non-functional.** Even literal token "secrets" returned `matched: []`. Root cause: tokenizer required length > 3 (dropped "PQC"/"MCP") and the search index covered only `domain.name + attack_class + first sentence of threat_context`. Rewritten with: (a) length >= 2 token filter, (b) synonym map (`credential` → secret/key/token/...; `supply chain` → sbom/dependency/...; `pqc` → post-quantum/ml-kem/...), (c) richer index covering id + name + attack_class + atlas_refs + attack_refs + cwe_refs + frameworks_in_scope + theater_fingerprints.claim + full threat_context + framework_lag_declaration + skill_chain + collection_scope, (d) ID match scores 3× (so `ask secrets` routes to the secrets playbook). Default output now human-readable; `--json` for machine.
+- **#59 `--format` flag was no-op.** Documented values produced standard JSON unconditionally. Wired through: `--format summary` emits a single-line JSON digest; `--format markdown` emits an operator-readable markdown report; `--format csaf-2.0|sarif|openvex` emits the corresponding bundle from `close.evidence_package.bundles_by_format`. Unknown values rejected with a list of valid options.
+- **#60 Default output flipped (partial).** `emit()` now detects `stdout.isTTY` — interactive use gets indented JSON (massively more readable); piped use stays compact. Override via `--pretty` (always indent) or `EXCEPTD_RAW_JSON=1`. Verbs with dedicated human renderers (`discover`, `doctor`, `ask`) still use them.
+- **#61 doctor summary contradicted its findings.** Output said "all checks green" directly above `[!!] private key MISSING`. Now: signing-check severity is `warn` when key absent; summary distinguishes errors vs warnings (`X fail / Y warn`); icon shows `[!! warn]` instead of `[ok]`. Warnings don't force exit 1 (CI still ok) but the visible state matches.
+- **#62 `watch` verb missing.** The deprecation map said `watchlist → watch` but `watch` returned unknown-command. Added `watch` as orchestrator passthrough aliased to `watchlist` (same function).
+- **#63 `discover` vs `ci --scope code` mismatch.** discover recommended 5 playbooks; ci ran 4 (different sets). ci now includes cross-cutting playbooks (`framework`) regardless of scope, and for `--scope code` on a git repo with a lockfile, also includes `sbom` (system-scope but repo-relevant). Aligns with discover's recommendations.
+- **#65 `refresh --no-network` / `--indexes-only` silently no-op.** v0.11.0 deprecation pointers said `prefetch → refresh --no-network` and `build-indexes → refresh --indexes-only`, but the underlying refresh script ignored those flags. Now: CLI translates them at dispatch time — `refresh --no-network` routes to the `prefetch` script; `refresh --indexes-only` routes to `build-indexes`.
+- **#66 `ai-run` shell-pipe unusable.** `echo '{...}' | exceptd ai-run secrets` failed with "stdin closed without an evidence event" because shell heredocs close stdin before the streaming protocol expects the wrapped `{event:evidence}` frame. Fix: when streaming mode hits EOF without a wrapped event, parse the raw stdin as a bare submission object and run with it. Operators no longer need an interactive harness for the common single-shot case.
+- **#64 verified.** `ok:false` from `on_fail: halt` preconditions correctly exits 1 (kernel-on-Windows reproducer). The user's `exceptd run secrets` cases were `on_fail: warn` preconditions where exit 0 is correct (run completed with warning). No regression in v0.11.x; the user's stale install may have shown different behavior.
+
+### Features
+
+- **#67** `ask` routing index — same fix as #58.
+- **#68** `--format summary` single-line digest — same fix as #59. Returns: `{ok, playbook, session_id, classification, rwep, blast_radius, matched_cves, feeds_into, jurisdiction_clocks, evidence_hash}`. Useful for GH Actions annotation lines.
+- **#69** `doctor --fix` automatically runs `node lib/sign.js generate-keypair` when the private-key check is the only failing warning. Closes the most-common discovered-issue → manual-fix-recipe loop.
+- **#70** `run --format markdown` emits an operator-readable per-run digest (classification, RWEP, matched CVEs, recommended remediation, notification clocks, feeds_into).
+
+### Already shipped (cross-referenced)
+
+- `attest diff <a> --against <b>` (was v0.11.0 #56) — works as documented.
+
 ## 0.11.1 — 2026-05-12
 
 **Patch: operator-reported items 47-57.**
