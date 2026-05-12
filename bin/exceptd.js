@@ -866,6 +866,37 @@ function cmdLint(runner, args, runOpts, pretty) {
     issues.push({ severity: "warn", kind: "unknown_observation_key", key: k });
   }
 
+  // #71 (v0.11.3): when a submission is flat-shape with all captured artifacts
+  // but no indicator+result inline and no verdict.classification — detect()
+  // will return "inconclusive" because nothing drives the indicator decisions.
+  // Lint must surface this so operators don't ship a half-shape evidence file
+  // that passes lint but produces an inconclusive run.
+  if (flat) {
+    const observationsWithoutIndicator = Object.entries(flat).filter(([k, v]) => {
+      if (!knownArtifacts.has(k)) return false; // unknown keys flagged elsewhere
+      if (typeof v !== "object" || v === null) return false;
+      const captured = v.captured !== false;
+      return captured && !(v.indicator && v.result);
+    });
+    const verdictClass = submission.verdict?.classification;
+    const verdictWillDrive = verdictClass === "clean" || verdictClass === "not_detected" || verdictClass === "detected" || verdictClass === "inconclusive";
+    if (observationsWithoutIndicator.length > 0 && !verdictWillDrive && Object.keys(submission.signal_overrides || {}).length === 0) {
+      for (const [k] of observationsWithoutIndicator) {
+        issues.push({
+          severity: "warn",
+          kind: "observation_lacks_indicator_result",
+          observation_key: k,
+          hint: `Artifact "${k}" captured without "indicator" + "result" fields. detect will return 'inconclusive' for this indicator. Either add { "indicator": "<id>", "result": "hit"|"miss"|"inconclusive" } per observation, OR supply verdict.classification at the submission root to drive the overall verdict.`,
+        });
+      }
+      issues.push({
+        severity: "info",
+        kind: "detect_will_be_inconclusive",
+        hint: `Flat submission shape with ${observationsWithoutIndicator.length} captured artifact(s) but no indicator+result inline and no verdict.classification. detect() will return 'inconclusive'. Run \`exceptd run ${playbookId} --signal-list\` to see the indicator IDs the playbook recognizes.`,
+      });
+    }
+  }
+
   const ok = issues.every(i => i.severity !== "error");
   emit({
     verb: "lint",
@@ -1944,7 +1975,12 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // remediation choice, residual risk acceptance, signature. Auditors get
     // what they need (the verdict + proof of process) without leaking raw
     // captured data (which may contain PII / secret shapes).
-    const format = args.format || "json";
+    //
+    // v0.11.3: --format is registered as multi in parseArgs, so args.format
+    // is an array when present. Unwrap for direct comparison.
+    let formatRaw = args.format || "json";
+    if (Array.isArray(formatRaw)) formatRaw = formatRaw[0];
+    const format = formatRaw === "csaf-2.0" ? "csaf" : formatRaw;
     const redacted = attestations.map(a => ({
       session_id: a.session_id,
       playbook_id: a.playbook_id,

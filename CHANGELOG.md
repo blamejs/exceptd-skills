@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.11.3 — 2026-05-12
+
+**Patch: operator-reported item #71 + full feature audit findings.**
+
+A full audit across v0.10.0 → v0.11.2 features (64 surface elements: bug fixes, new verbs, flags, output formats, integration paths) confirmed 62/64 work as documented; this release fixes the 2 real gaps the audit found plus closes operator-reported #71.
+
+### Bugs
+
+- **#71 lint accepted half-shape submissions the runner couldn't drive detect with.** Operators submitting flat-shape evidence with `observations: { "<artifact-id>": { captured, value } }` (no `indicator + result` inline) passed lint with zero warnings, then got `detect.classification: "inconclusive"` from the runner because nothing drove indicator decisions. The flat-shape migration was half-complete: validator accepted the new shape; runner couldn't consume it.
+
+  Fixes:
+  - **Lint** now warns `observation_lacks_indicator_result` per captured artifact that lacks `indicator + result` AND no `verdict.classification` is supplied, plus an `info` saying "detect will be inconclusive". Operators see the gap before paying the run cost.
+  - **`normalizeSubmission`** previously bailed when the submission already had any nested key (`signals`, `artifacts`, `signal_overrides`) — including when the CLI itself had injected `signals._bundle_formats` for `--format` support. Now shape detection prioritizes `observations` / `verdict` and merges any pre-existing nested keys into the normalized output.
+  - **`detect` output** surfaces `observations_received`, `signals_received`, `indicators_evaluated`, `classification_override_applied`, and `submission_shape_seen` so operators can see exactly what the runner consumed from their submission. Pre-0.11.3 an inconclusive verdict was opaque.
+
+- **`attest export --format csaf` was a no-op.** The `--format` flag is registered as a multi-flag (returning an array), but the export subverb compared `format === "csaf"` directly against the array, falsing every time. Operators always got the plain redacted-JSON export regardless of the flag. Now unwrapped + normalizes `csaf-2.0` → `csaf` so both shortcuts hit the CSAF envelope path.
+
+### Audit pass — verified working as documented
+
+Smoke-tested 64 features across v0.10.0–v0.11.2. The full list:
+
+- **Bug regressions:** skill not-found JSON, unknown-command JSON, prefetch --quiet summary, validate-cves --offline, --mode validation, --session-key hex validation, framework-gap NIST normalization, default-stdin on pipe, --json-stdout-only stderr silence, mutex lockfile released after run, session-id collision refusal, --operator persistence, --ack persistence, --diff-from-latest, reattest --latest.
+- **Verbs:** brief (incl. --all / --phase), discover, doctor (all four sub-checks), ask (incl. synonym routing), lint (catches missing artifacts), ci (incl. --scope code alignment with discover), watch, verify-attestation alias, run-all alias, attest list/show/verify/export/diff/diff --against.
+- **Run flags:** --evidence, --evidence-dir, --vex, --explain, --signal-list, --format summary/markdown/sarif/openvex (--format csaf fixed here), --diff-from-latest, --ci, --force-overwrite.
+- **Attestation root:** EXCEPTD_HOME respected, --attestation-root respected, legacy + new root both scanned by `findSessionDir`.
+- **Catalog tooling:** validate-cves --since filter, refresh --no-network / --indexes-only routing, report csaf envelope.
+- **Flat submission shape:** verdict.classification propagates, observation + indicator + result drives detect, smart precondition auto-detect resolves cwd_readable / host.platform / agent_has_command.
+- **First-run welcome.**
+
+### Audit pass — known false positives
+
+- **`exceptd watch`** prints `"[orchestrator] Starting event watcher..."` not `"Listening"` — works correctly; my test string was wrong.
+
 ## 0.11.2 — 2026-05-12
 
 **Patch: operator-reported items 58-70 from real CLI use.**
