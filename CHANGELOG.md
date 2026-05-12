@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.9.3 — 2026-05-12
+
+**Pin: expand RFC auto-discovery seed list for broader project coverage.**
+
+`SEED_RFC_GROUPS` grows from 35 → 48 working groups. The v0.9.2 seed focused on transport/crypto/PKI/identity which is core but missed several IETF areas the project actually depends on:
+
+| Added WG | Why it matters |
+|---|---|
+| `wimse` | Workload Identity in Multi-System Environments — federal zero-trust mandates, cloud-native workload identity. Touches identity-assurance + sector-federal-government skills. |
+| `gnap` | Grant Negotiation and Authorization Protocol — OAuth 2 successor. |
+| `ace` | Authentication & Authorization for Constrained Environments — OT/ICS auth. |
+| `core` | Constrained RESTful Environments (CoAP) — IoT supply chain. |
+| `cbor` | Foundation for COSE, attestation tokens, SCITT receipts. |
+| `trans` | Certificate Transparency — compliance evidence for cert issuance. |
+| `ntp` | Network Time Protocol — audit trails need monotonic time (DORA, NYDFS, NIS2 breach clocks). |
+| `opsawg` | Operations and Management Area WG — operational telemetry. |
+| `opsec` | Operational Security Area — security guidance for operators. |
+| `dance` | DANE Authentication for Named Entities Enhancements — DNS-anchored TLS trust. |
+| `netmod` | NETCONF data modeling — YANG security models. |
+| `jsonschema` | JSON Schema (now an IETF working group) — DB validation, API schemas, security policy serialization. |
+| `httpapi` (existed) → confirmed | HTTP API standards (already there from v0.9.2). |
+
+Test breadth assertion bumped from `>= 30` to `>= 40` WGs. Same dynamic-derivation behavior on top (union with cache-derived WGs from rfc-references.json's Datatracker docs).
+
+**Database coverage rationale**: IETF doesn't have a "database" WG because DB wire protocols (Postgres, MongoDB, etc.) aren't IETF-standardized. The security infrastructure databases USE — TLS for connections, SASL/Kerberos auth, workload identity, field encryption, audit-trail time anchoring, cert validation, access-control sync — is all covered by the WGs above. `jsonschema` adds the DB+API+policy schema validation layer that was previously missing.
+
+201 tests pass; 13/13 predeploy gates green.
+
 ## 0.9.2 — 2026-05-12
 
 **Pin: auto-discovery for KEV + IETF catalogs.** The refresh workflow now adds *new* catalog entries automatically instead of only updating existing ones.

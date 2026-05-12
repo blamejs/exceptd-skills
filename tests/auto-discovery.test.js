@@ -19,15 +19,30 @@ function loadLocalCves() {
 }
 
 test('SEED_RFC_GROUPS covers core security/compliance WGs', () => {
-  // Smoke: seed should include WGs relevant to the project's main coverage
-  // areas — crypto/PKI, identity/auth, supply chain, DNS security.
-  const required = ['tls', 'oauth', 'jose', 'scitt', 'rats', 'dnsop', 'acme', 'lamps', 'mls'];
+  // Smoke: seed should include WGs relevant to the project's main
+  // coverage areas — crypto/PKI, identity/auth, supply chain, DNS
+  // security, AND production-framework concerns (workload identity,
+  // audit-grade time sync, constrained-env auth, CT, CBOR).
+  const required = [
+    // Transport / crypto / PKI
+    'tls', 'cfrg', 'lamps', 'ipsecme',
+    // Identity / auth / workload identity / constrained auth
+    'oauth', 'gnap', 'jose', 'cose', 'cbor', 'scim', 'acme', 'wimse', 'ace',
+    // Supply chain + attestation + transparency
+    'scitt', 'rats', 'suit', 'teep', 'trans',
+    // DNS security + DANE
+    'dnsop', 'dprive', 'dance',
+    // Threat intel + ops
+    'mile', 'opsawg', 'opsec',
+    // Messaging + IoT + time + schema
+    'mls', 'core', 'ntp', 'jsonschema',
+  ];
   for (const wg of required) {
     assert.ok(SEED_RFC_GROUPS.includes(wg), `seed should include "${wg}" WG (relevant to project)`);
   }
   // Sanity: enough breadth to actually catch new RFCs without being too noisy
-  assert.ok(SEED_RFC_GROUPS.length >= 30, `seed should be >= 30 WGs; got ${SEED_RFC_GROUPS.length}`);
-  assert.ok(SEED_RFC_GROUPS.length <= 60, `seed should not exceed ~60 WGs (noisy); got ${SEED_RFC_GROUPS.length}`);
+  assert.ok(SEED_RFC_GROUPS.length >= 40, `seed should be >= 40 WGs (broader project coverage); got ${SEED_RFC_GROUPS.length}`);
+  assert.ok(SEED_RFC_GROUPS.length <= 80, `seed should not exceed ~80 WGs (noisy); got ${SEED_RFC_GROUPS.length}`);
 });
 
 test('getProjectRfcGroups returns seed set when no cache and no rfc-references entries', () => {
