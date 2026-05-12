@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.9.2 — 2026-05-12
+
+**Pin: auto-discovery for KEV + IETF catalogs.** The refresh workflow now adds *new* catalog entries automatically instead of only updating existing ones.
+
+### What changed
+
+- **CISA KEV discovery** — when CISA adds a new CVE to the Known Exploited Vulnerabilities list, the next nightly refresh detects it (cached KEV feed entry, not in local `data/cve-catalog.json`) and emits a draft entry. NVD CVSS metrics + EPSS score pulled from the prefetch cache when available; nulled otherwise. Initial RWEP score computed via `lib/scoring.js` with KEV=true + suspected exploitation + reboot-required = baseline ~55.
+- **IETF RFC discovery** — Datatracker query against project-relevant working groups returns recent RFCs not in `data/rfc-references.json`. WG filter is the union of (a) dynamically derived from cached Datatracker docs on currently-cited RFCs, plus (b) a curated seed list of 35 WGs covering crypto/PKI/TLS, identity/auth/SSO, supply chain/attestation (`scitt` / `rats` / `suit` / `teep`), threat intel (`mile` / `sacm`), DNS security, messaging E2E, and IoT mgmt. Seed list documented in `lib/auto-discovery.js`.
+- **Draft entry annotation** — every auto-imported entry carries an `_auto_imported` block:
+  ```jsonc
+  "_auto_imported": {
+    "source": "KEV discovery",
+    "imported_at": "2026-05-12",
+    "curation_needed": [
+      "type (LPE/RCE/SSRF/etc.)",
+      "framework_control_gaps mapping",
+      "atlas_refs + attack_refs categorization",
+      ...
+    ]
+  }
+  ```
+  Mechanical fields (CVSS, KEV, EPSS, name, vendor) get populated; analytical fields (framework_control_gaps, ATLAS/ATT&CK refs, type classification) stay null and are listed for human curation.
+- **PR body** in `refresh.yml` now splits cleanly: **"New entries (auto-imported — needs human curation)"** table first, then **"Updates to existing entries"** table. New label `needs-curation` added alongside the existing `data-refresh` + `automation`.
+- **Volume cap** — 20 new entries per PR per source (configurable via `DEFAULT_CAP`). Spill is reported in the summary so a CISA mass-add doesn't generate an unreviewable PR.
+
+### `lib/auto-discovery.js` (new module, ~280 lines, zero deps)
+
+- `discoverNewKev(ctx, cap?)` — KEV → array of `op:"add"` diffs
+- `discoverNewRfcs(ctx, opts?)` — RFC discovery via Datatracker WG queries
+- `buildKevDraftEntry(kev, nvd?, epss?)` — pure function, no I/O, easy to test
+- `getProjectRfcGroups(ctx)` — union of cache-derived + `SEED_RFC_GROUPS`
+- `SEED_RFC_GROUPS` — curated WG list (exported for testing + transparency)
+
+### `lib/refresh-external.js` changes
+
+- `KEV_SOURCE.fetchDiff` now merges drift-check + discovery in cache mode (`kevDiffWithDiscoveryFromCache`)
+- `RFC_SOURCE.fetchDiff` same pattern (`rfcDiffWithDiscoveryFromCache` — drift from cache, discovery live)
+- `applyDiff` handlers learn the new `op: "add"` diff shape and insert entries verbatim. Returns enriched stats: `{ updated, added, drift_updated, errors }`.
+
+### Tests
+
+`tests/auto-discovery.test.js` — 9 new tests:
+- Seed WG breadth (must include `tls`, `oauth`, `scitt`, `rats`, `dnsop`, `acme`, `mls`, etc.)
+- `buildKevDraftEntry` populates all required schema fields
+- NVD CVSS + CWE extraction
+- EPSS score extraction
+- Empty result when KEV cache missing
+- New CVE detection (filters out CVEs already in local catalog)
+- Volume cap + spill counting
+- RWEP score bounded 0–100
+
+Total: 192 → **201 tests**. 13/13 predeploy gates green.
+
+### Operational note
+
+The first run after deploy will likely pick up **8 new KEV entries** from the past ~5 days of CISA activity (visible in `/api/intel` already). These appear in the next auto-PR as a curated batch.
+
 ## 0.9.1 — 2026-05-11
 
 **Patch: test-runner concurrency fix for first npm publish.**
