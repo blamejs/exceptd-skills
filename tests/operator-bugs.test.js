@@ -603,6 +603,17 @@ test('#100 ci with NO --evidence + all inconclusive exits 3 (not 0)', () => {
   assert.equal(r.status, 3, 'ci without --evidence + all inconclusive must exit 3 ("ran but no real data")');
 });
 
+test('#100/#103 ci exit-3 path still flushes JSON to stdout', () => {
+  // v0.11.10 regression: process.exit(3) truncated buffered stdout when piped,
+  // so --json consumers saw empty stdout despite the structured emit() call.
+  // v0.11.11 switched to process.exitCode + return so the event loop drains.
+  const r = cli(['ci', '--required', 'secrets', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ci exit-3 path must still flush JSON to stdout (no truncation on piped stdout)');
+  assert.equal(data.verb, 'ci');
+  assert.ok(data.summary, 'JSON body must include summary');
+});
+
 test('#102 attest diff includes total_compared field', () => {
   const sub = JSON.stringify({ observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' } } });
   const sid1 = 'tc-a-' + Date.now();

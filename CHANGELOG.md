@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.11.11 — 2026-05-12
+
+**Patch: CI test-gate hotfix — emit-then-exit stdout flush.**
+
+v0.11.10 #100 used `process.exit(3)` after writing the result JSON to stdout. When stdout is piped (CI, test harnesses, JSON consumers), Node's `process.exit()` can return before the buffered async write drains — so `--json` consumers saw empty stdout despite the structured emit. Fix: switch to `process.exitCode = N; return;` so the event loop ends naturally and stdout drains.
+
+### Bugs
+
+- **`ci` --json with exit 3 truncated output.** Tests passed locally but the GitHub Actions release workflow's test gate failed on `tests/operator-bugs.test.js:#103` ("ci output should be JSON") because the Linux runner exposed the flush race more reliably than Windows. Fixed in two places:
+  - `cmdCi` exit 3 (no evidence + all inconclusive)
+  - `cmdCi` exit 2 (FAIL)
+  - `cmdRun` `--strict-preconditions` exit 1 (same shape; pre-existing latent risk)
+
+### Tests
+
+New regression: `#100/#103 ci exit-3 path still flushes JSON to stdout` — asserts both `r.status === 3` AND `tryJson(r.stdout)` parses. This is the test that would have caught v0.11.10 before CI.
+
+### Lesson
+
+When ending a verb with a non-zero exit AFTER writing structured stdout, prefer `process.exitCode = N; return;` over `process.exit(N)`. The former lets the event loop drain stdout; the latter can truncate. Codified in CLAUDE.md.
+
 ## 0.11.10 — 2026-05-12
 
 **Patch: items 119-122 — field-name alignment with operator expectations.**

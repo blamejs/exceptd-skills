@@ -1362,7 +1362,10 @@ function cmdRun(runner, args, runOpts, pretty) {
     if (warnIssues.length > 0) {
       process.stderr.write(`[exceptd run] --strict-preconditions: ${warnIssues.length} unverified/warn precondition(s) — exit 1.\n`);
       emit(result, pretty);
-      process.exit(1);
+      // v0.11.11: exitCode + return so emit()'s stdout flushes (process.exit
+      // can truncate buffered async stdout writes when piped).
+      process.exitCode = 1;
+      return;
     }
   }
 
@@ -3386,7 +3389,11 @@ function cmdCi(runner, args, runOpts, pretty) {
   }
   if (fail) {
     process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
-    process.exit(2);
+    // v0.11.11: use exitCode + return instead of process.exit() so the
+    // structured stdout JSON has a chance to flush when stdout is piped.
+    // process.exit() can truncate buffered async stdout writes.
+    process.exitCode = 2;
+    return;
   }
   // v0.11.10 (#100): ci exits non-zero when NO evidence was supplied AND
   // every playbook returned inconclusive. Pre-0.11.10 this exited 0,
@@ -3397,7 +3404,7 @@ function cmdCi(runner, args, runOpts, pretty) {
   const allInconclusive = summary.inconclusive === summary.total && summary.total > 0;
   if (!suppliedEvidence && allInconclusive) {
     process.stderr.write(`[exceptd ci] WARN: no --evidence supplied and all ${summary.total} playbook(s) returned inconclusive. CI exit 3 = "ran but never had real data." Pass --evidence <file> or --evidence-dir <dir> for a real gate.\n`);
-    process.exit(3);
+    process.exitCode = 3;
   }
 }
 
