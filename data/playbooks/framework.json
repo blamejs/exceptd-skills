@@ -10,11 +10,26 @@
         "date": "2026-05-11",
         "summary": "Initial seven-phase compliance-theater correlation playbook. Analyze-heavy: ingests findings from upstream playbooks (kernel / mcp / ai-api / crypto / sbom), correlates them to per-framework gaps, fires escalation_criteria when paper-compliance claims fail theater tests. Cross-walks across NIST 800-53, ISO 27001:2022, SOC 2, PCI DSS 4.0, NIS2, DORA, EU AI Act, UK CAF, AU ISM/Essential 8, SG MAS TRM, JP NISC, IN CERT-In, CA OSFI B-10.",
         "cves_added": [],
-        "framework_gaps_updated": ["nist-800-53-meta", "iso-27001-2022-meta", "soc2-meta", "pci-dss-4-meta", "nis2-meta", "dora-meta", "eu-ai-act-meta", "uk-caf-meta", "au-essential-8-meta", "sg-mas-trm-meta", "jp-nisc-meta", "in-cert-meta", "ca-osfi-b10-meta"]
+        "framework_gaps_updated": [
+          "nist-800-53-meta",
+          "iso-27001-2022-meta",
+          "soc2-meta",
+          "pci-dss-4-meta",
+          "nis2-meta",
+          "dora-meta",
+          "eu-ai-act-meta",
+          "uk-caf-meta",
+          "au-essential-8-meta",
+          "sg-mas-trm-meta",
+          "jp-nisc-meta",
+          "in-cert-meta",
+          "ca-osfi-b10-meta"
+        ]
       }
     ],
     "owner": "@blamejs/grc",
     "air_gap_mode": false,
+    "scope": "cross-cutting",
     "preconditions": [
       {
         "id": "upstream-findings-available",
@@ -31,7 +46,6 @@
       }
     ]
   },
-
   "domain": {
     "name": "Compliance theater correlation and framework-gap mapping",
     "attack_class": "compliance-theater",
@@ -41,15 +55,29 @@
     "cwe_refs": [],
     "d3fend_refs": [],
     "frameworks_in_scope": [
-      "nist-800-53", "nist-800-82", "nist-csf-2", "iso-27001-2022",
-      "soc2", "pci-dss-4", "nis2", "dora", "eu-ai-act", "eu-cra",
-      "uk-caf", "au-ism", "au-essential-8", "sg-mas-trm",
-      "jp-nisc", "in-cert", "ca-osfi-b10", "hipaa", "nerc-cip", "cmmc"
+      "nist-800-53",
+      "nist-800-82",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "pci-dss-4",
+      "nis2",
+      "dora",
+      "eu-ai-act",
+      "eu-cra",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "sg-mas-trm",
+      "jp-nisc",
+      "in-cert",
+      "ca-osfi-b10",
+      "hipaa",
+      "nerc-cip",
+      "cmmc"
     ]
   },
-
   "phases": {
-
     "govern": {
       "jurisdiction_obligations": [
         {
@@ -58,7 +86,12 @@
           "obligation": "submit_governance_evidence",
           "window_hours": 720,
           "clock_starts": "manual",
-          "evidence_required": ["compliance_theater_verdicts", "framework_gap_mapping", "exception_register", "risk_acceptance_records"]
+          "evidence_required": [
+            "compliance_theater_verdicts",
+            "framework_gap_mapping",
+            "exception_register",
+            "risk_acceptance_records"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -66,7 +99,11 @@
           "obligation": "submit_governance_evidence",
           "window_hours": 720,
           "clock_starts": "manual",
-          "evidence_required": ["ict_risk_governance_evidence", "framework_lag_declarations", "compensating_controls_register"]
+          "evidence_required": [
+            "ict_risk_governance_evidence",
+            "framework_lag_declarations",
+            "compensating_controls_register"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -74,7 +111,11 @@
           "obligation": "notify_regulator",
           "window_hours": 24,
           "clock_starts": "detect_confirmed",
-          "evidence_required": ["theater_detected_summary", "affected_controls", "interim_compensating_control_record"]
+          "evidence_required": [
+            "theater_detected_summary",
+            "affected_controls",
+            "interim_compensating_control_record"
+          ]
         },
         {
           "jurisdiction": "UK",
@@ -82,7 +123,11 @@
           "obligation": "submit_governance_evidence",
           "window_hours": 8760,
           "clock_starts": "manual",
-          "evidence_required": ["caf_outcome_assessment", "gap_register", "remediation_roadmap"]
+          "evidence_required": [
+            "caf_outcome_assessment",
+            "gap_register",
+            "remediation_roadmap"
+          ]
         },
         {
           "jurisdiction": "AU",
@@ -90,7 +135,10 @@
           "obligation": "notify_regulator",
           "window_hours": 72,
           "clock_starts": "validate_complete",
-          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+          "evidence_required": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ]
         },
         {
           "jurisdiction": "SG",
@@ -98,7 +146,10 @@
           "obligation": "submit_governance_evidence",
           "window_hours": 8760,
           "clock_starts": "manual",
-          "evidence_required": ["technology_risk_management_evidence", "gap_register"]
+          "evidence_required": [
+            "technology_risk_management_evidence",
+            "gap_register"
+          ]
         }
       ],
       "theater_fingerprints": [
@@ -106,37 +157,57 @@
           "pattern_id": "audit-clean-but-finding-active",
           "claim": "Audit opinion is unqualified (SOC 2 clean, ISO 27001:2022 certified, NIS2 compliant) — controls are operating effectively.",
           "fast_detection_test": "For each upstream playbook finding with active exploitation indicator or RWEP >= 75: identify the framework control(s) the org claims address the finding. Compare the audit opinion date to the finding's RWEP date. If the audit opinion is clean AND was issued after the threat became operational reality AND the finding remains unremediated, the audit is structurally non-informative about this exposure.",
-          "implicated_controls": ["soc2-clean-opinion", "iso-27001-2022-cert", "nis2-art21"]
+          "implicated_controls": [
+            "soc2-clean-opinion",
+            "iso-27001-2022-cert",
+            "nis2-art21"
+          ]
         },
         {
           "pattern_id": "framework-lag-without-compensating-control",
           "claim": "Framework lag is acknowledged; compensating controls are in place.",
           "fast_detection_test": "For each framework with declared lag (govern phase of upstream playbook): confirm the org has documented compensating controls AND those controls were tested in the last 90 days. Theater if lag declared but compensating controls absent OR untested OR last test predates the most recent operational threat.",
-          "implicated_controls": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36"]
+          "implicated_controls": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36"
+          ]
         },
         {
           "pattern_id": "policy-exception-without-expiry",
           "claim": "Policy exceptions are documented and managed.",
           "fast_detection_test": "Pull the exception register. For each exception, verify: (a) explicit duration with calendar expiry, (b) named risk-acceptance owner at correct authority level (CISO+ for high-RWEP), (c) compensating controls listed AND tested, (d) re-evaluation triggers documented. Theater if any high-RWEP exception lacks expiry, named owner, or tested compensating controls.",
-          "implicated_controls": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "soc2-CC9"]
+          "implicated_controls": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "soc2-CC9"
+          ]
         },
         {
           "pattern_id": "framework-jurisdictional-monoculture",
           "claim": "We are SOC 2 / ISO 27001:2022 / NIST 800-53 compliant — our compliance posture is comprehensive.",
           "fast_detection_test": "If the org operates in EU / UK / AU / SG / JP / IN / CA / HK / TW / IL / CH / ID / VN: confirm at least one binding jurisdictional framework is in scope (NIS2 / DORA / EU AI Act for EU; NCSC CAF for UK; APRA CPS 234 / Essential 8 for AU; MAS TRM for SG; NISC / FISC for JP; CERT-In Directions for IN; OSFI B-10 for CA). Theater if US-centric compliance program operates in a regulated jurisdiction without jurisdictional framework mapping.",
-          "implicated_controls": ["global-grc-meta"]
+          "implicated_controls": [
+            "global-grc-meta"
+          ]
         },
         {
           "pattern_id": "control-mapping-without-tempo",
           "claim": "We have a control-mapping matrix — every control mapped across frameworks.",
           "fast_detection_test": "Pick any control row in the org's framework-mapping matrix. Confirm it carries: (a) framework-specific tempo (patch SLA, notification window, audit cycle), (b) measured operational performance against tempo, (c) gap declaration where tempo lags operational reality. Theater if the matrix is presence-of-control only with no tempo and no gap.",
-          "implicated_controls": ["nist-800-53-meta", "iso-27001-2022-meta"]
+          "implicated_controls": [
+            "nist-800-53-meta",
+            "iso-27001-2022-meta"
+          ]
         },
         {
           "pattern_id": "ai-controls-deferred-to-future-framework",
           "claim": "AI security controls are tracked for inclusion when frameworks publish guidance.",
           "fast_detection_test": "Check whether the org has operational controls for: (a) MCP server trust, (b) prompt injection as access-control bypass, (c) AI-API egress baseline, (d) AI-generated-code provenance, (e) model-weights supply-chain integrity. Theater if none of these are operational AND the org uses AI coding assistants / AI APIs / AI workloads in production. Deferring to future framework guidance is theater when the threat is current.",
-          "implicated_controls": ["eu-ai-act-art15", "iso-27001-2022-A.8.30", "nist-800-53-SA-12"]
+          "implicated_controls": [
+            "eu-ai-act-art15",
+            "iso-27001-2022-A.8.30",
+            "nist-800-53-SA-12"
+          ]
         }
       ],
       "framework_context": {
@@ -235,9 +306,13 @@
           }
         ]
       },
-      "skill_preload": ["framework-gap-analysis", "compliance-theater", "global-grc", "policy-exception-gen"]
+      "skill_preload": [
+        "framework-gap-analysis",
+        "compliance-theater",
+        "global-grc",
+        "policy-exception-gen"
+      ]
     },
-
     "direct": {
       "threat_context": "Compliance theater landscape mid-2026: every framework in scope is structurally lagged for the operational threats documented in upstream exceptd playbooks. The dominant operational pattern: organizations carry clean audit opinions (SOC 2 Type II unqualified, ISO 27001:2022 certified, NIST 800-53 ATO, NIS2 self-attestation, DORA submission, etc.) while simultaneously exposed to KEV-listed kernel LPEs (kernel.json), unsigned MCP servers (mcp.json), AI-API C2 vulnerability (ai-api.json), classical-only HNDL-vulnerable crypto (crypto.json), and SBOM-blind supply chain (sbom.json). Three canonical 2026 cases: (1) CVE-2026-31431 'Copy Fail' KEV-listed kernel LPE — SOC 2 CC7.1 clean opinion issued during the active-exploitation window. (2) CVE-2026-30615 Windsurf MCP zero-interaction RCE — CC9 vendor management 'operating effectively' across the affected estate. (3) CVE-2025-53773 GitHub Copilot prompt-injection RCE — CC6 logical access controls 'passed' while prompt injection executes attacker-chosen actions using the AI service account. Each case demonstrates that current-TTP exposure can persist under audit-clean controls. This playbook is the correlation layer: it ingests upstream findings, maps them per-framework, and emits theater verdicts the GRC team must surface to risk acceptance authorities.",
       "rwep_threshold": {
@@ -247,10 +322,27 @@
       },
       "framework_lag_declaration": "All 20 frameworks listed in domain.frameworks_in_scope are structurally insufficient for at least one upstream-playbook threat class. ISO 27001:2022, SOC 2 TSC, and PCI DSS 4.0 are the longest-laggard for AI/MCP/PQC threats (no scheduled amendments). NIST 800-53, NIS2, DORA, EU AI Act, and EU CRA have publishing cadences but lag the threat tempo by 90-365 days. UK CAF (outcome-based) and AU Essential 8 are partially forward-compatible but inconsistent across regulators/sectors. SG MAS TRM, JP FISC, IN CERT-In, CA OSFI B-10 are sector- and jurisdiction-specific with tempo varying by sector. Compound effect: an org running all current threat-class exposures under a single audit opinion is the modal state in mid-2026, not an outlier.",
       "skill_chain": [
-        { "skill": "framework-gap-analysis", "purpose": "For each upstream finding, produce a per-framework gap declaration including the specific control(s) that should have caught it and why they didn't.", "required": true },
-        { "skill": "compliance-theater", "purpose": "Run the six theater fingerprints in govern.theater_fingerprints against the ingested finding set. Emit theater verdicts per pattern.", "required": true },
-        { "skill": "global-grc", "purpose": "Cross-walk findings to per-jurisdiction obligations. Identify orgs that operate in regulated jurisdictions without framework mapping for those jurisdictions (theater pattern #4).", "required": true },
-        { "skill": "policy-exception-gen", "purpose": "Generate auditor-ready policy exception language for findings that cannot be remediated within the compliance window of any framework in scope.", "skip_if": "no high-RWEP findings remain unremediated", "required": false }
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "For each upstream finding, produce a per-framework gap declaration including the specific control(s) that should have caught it and why they didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the six theater fingerprints in govern.theater_fingerprints against the ingested finding set. Emit theater verdicts per pattern.",
+          "required": true
+        },
+        {
+          "skill": "global-grc",
+          "purpose": "Cross-walk findings to per-jurisdiction obligations. Identify orgs that operate in regulated jurisdictions without framework mapping for those jurisdictions (theater pattern #4).",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready policy exception language for findings that cannot be remediated within the compliance window of any framework in scope.",
+          "skip_if": "no high-RWEP findings remain unremediated",
+          "required": false
+        }
       ],
       "token_budget": {
         "estimated_total": 24000,
@@ -265,7 +357,6 @@
         }
       }
     },
-
     "look": {
       "artifacts": [
         {
@@ -330,15 +421,38 @@
         }
       ],
       "fallback_if_unavailable": [
-        { "artifact_id": "audit-evidence-inventory", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
-        { "artifact_id": "compensating-controls-register", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
-        { "artifact_id": "framework-mapping-matrix", "fallback_action": "mark_inconclusive", "confidence_impact": "low" },
-        { "artifact_id": "jurisdictional-footprint", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
-        { "artifact_id": "ai-usage-attestation", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
-        { "artifact_id": "upstream-findings", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+        {
+          "artifact_id": "audit-evidence-inventory",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "compensating-controls-register",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "framework-mapping-matrix",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "jurisdictional-footprint",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "ai-usage-attestation",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "upstream-findings",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
       ]
     },
-
     "detect": {
       "indicators": [
         {
@@ -421,24 +535,73 @@
         "not_detected": "Zero theater fingerprints fire AND all GRC artifacts available AND every upstream finding has documented remediation or accepted residual with current acceptance record."
       }
     },
-
     "analyze": {
       "rwep_inputs": [
-        { "signal_id": "audit-clean-with-active-finding", "rwep_factor": "blast_radius", "weight": 30, "notes": "Clean audit over active exposure = compounded regulatory + technical risk." },
-        { "signal_id": "framework-lag-no-compensating-control", "rwep_factor": "blast_radius", "weight": 20, "notes": "Lag without compensation = exposure persists." },
-        { "signal_id": "exception-missing-expiry-or-owner", "rwep_factor": "blast_radius", "weight": 15, "notes": "Indefinite exception = open-ended risk acceptance." },
-        { "signal_id": "jurisdiction-without-framework", "rwep_factor": "blast_radius", "weight": 25, "notes": "Operating in regulated jurisdiction without framework mapping = direct regulatory exposure (NIS2 / DORA / etc.)." },
-        { "signal_id": "ai-use-without-ai-controls", "rwep_factor": "active_exploitation", "weight": 20, "notes": "AI in production without AI controls = active threat exposure inherited from upstream playbooks." },
-        { "signal_id": "compound-theater", "rwep_factor": "blast_radius", "weight": 30, "notes": "Compound theater on single control = structural insufficiency across threat classes." }
+        {
+          "signal_id": "audit-clean-with-active-finding",
+          "rwep_factor": "blast_radius",
+          "weight": 30,
+          "notes": "Clean audit over active exposure = compounded regulatory + technical risk."
+        },
+        {
+          "signal_id": "framework-lag-no-compensating-control",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Lag without compensation = exposure persists."
+        },
+        {
+          "signal_id": "exception-missing-expiry-or-owner",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Indefinite exception = open-ended risk acceptance."
+        },
+        {
+          "signal_id": "jurisdiction-without-framework",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Operating in regulated jurisdiction without framework mapping = direct regulatory exposure (NIS2 / DORA / etc.)."
+        },
+        {
+          "signal_id": "ai-use-without-ai-controls",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "AI in production without AI controls = active threat exposure inherited from upstream playbooks."
+        },
+        {
+          "signal_id": "compound-theater",
+          "rwep_factor": "blast_radius",
+          "weight": 30,
+          "notes": "Compound theater on single control = structural insufficiency across threat classes."
+        }
       ],
       "blast_radius_model": {
         "scope_question": "If compliance theater is sustained (audit-clean opinion over actual exposure), what is the realistic regulatory + technical impact across the org?",
         "scoring_rubric": [
-          { "condition": "theater confined to one framework + one domain + low-RWEP upstream findings", "blast_radius_score": 1, "description": "Local theater; risk acceptable at manager level." },
-          { "condition": "theater in one framework across two or more upstream domains, medium-RWEP findings", "blast_radius_score": 2, "description": "Framework-localized structural issue; CISO awareness required." },
-          { "condition": "theater across multiple frameworks + multiple upstream domains, high-RWEP findings", "blast_radius_score": 3, "description": "Org-wide GRC pattern; structural program redesign warranted." },
-          { "condition": "theater + jurisdictional exposure (operating in NIS2/DORA/EU AI Act jurisdiction without framework mapping) + active findings", "blast_radius_score": 4, "description": "Regulatory enforcement risk + technical exposure; CISO + Legal + Board notification." },
-          { "condition": "theater + jurisdictional exposure + KEV-listed active finding + jurisdiction-specific notification clock active (NIS2 24h / DORA 4h / IN CERT-In 6h)", "blast_radius_score": 5, "description": "Missed notification window + active regulatory enforcement risk + named-incident exposure." }
+          {
+            "condition": "theater confined to one framework + one domain + low-RWEP upstream findings",
+            "blast_radius_score": 1,
+            "description": "Local theater; risk acceptable at manager level."
+          },
+          {
+            "condition": "theater in one framework across two or more upstream domains, medium-RWEP findings",
+            "blast_radius_score": 2,
+            "description": "Framework-localized structural issue; CISO awareness required."
+          },
+          {
+            "condition": "theater across multiple frameworks + multiple upstream domains, high-RWEP findings",
+            "blast_radius_score": 3,
+            "description": "Org-wide GRC pattern; structural program redesign warranted."
+          },
+          {
+            "condition": "theater + jurisdictional exposure (operating in NIS2/DORA/EU AI Act jurisdiction without framework mapping) + active findings",
+            "blast_radius_score": 4,
+            "description": "Regulatory enforcement risk + technical exposure; CISO + Legal + Board notification."
+          },
+          {
+            "condition": "theater + jurisdictional exposure + KEV-listed active finding + jurisdiction-specific notification clock active (NIS2 24h / DORA 4h / IN CERT-In 6h)",
+            "blast_radius_score": 5,
+            "description": "Missed notification window + active regulatory enforcement risk + named-incident exposure."
+          }
         ]
       },
       "compliance_theater_check": {
@@ -492,21 +655,41 @@
         }
       ],
       "escalation_criteria": [
-        { "condition": "compound-theater == true", "action": "raise_severity" },
-        { "condition": "jurisdiction-without-framework == true AND upstream_finding.rwep >= 75", "action": "notify_legal" },
-        { "condition": "audit-clean-with-active-finding == true AND any active_finding.kev_listed == true", "action": "notify_legal" },
-        { "condition": "blast_radius_score >= 4", "action": "page_on_call" },
-        { "condition": "ai-use-without-ai-controls == true", "action": "raise_severity" },
-        { "condition": "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 3", "action": "trigger_playbook", "target_playbook": "sbom" }
+        {
+          "condition": "compound-theater == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "jurisdiction-without-framework == true AND upstream_finding.rwep >= 75",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "audit-clean-with-active-finding == true AND any active_finding.kev_listed == true",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "ai-use-without-ai-controls == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 3",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        }
       ]
     },
-
     "validate": {
       "remediation_paths": [
         {
           "id": "close-operational-fix",
           "description": "Where upstream findings remain unremediated, escalate the upstream playbook's validate-phase remediation paths to the responsible team with a deadline tied to the relevant framework's notification clock.",
-          "preconditions": ["upstream_findings_actionable == true"],
+          "preconditions": [
+            "upstream_findings_actionable == true"
+          ],
           "priority": 1,
           "compensating_controls": [],
           "estimated_time_hours": 16
@@ -514,31 +697,45 @@
         {
           "id": "establish-tested-compensating-controls",
           "description": "For each framework lag declaration without compensating control: establish a documented compensating control with explicit test cadence. First test within 30 days of establishment; ongoing test cadence at least quarterly.",
-          "preconditions": ["compensating_control_design_feasible == true"],
+          "preconditions": [
+            "compensating_control_design_feasible == true"
+          ],
           "priority": 2,
-          "compensating_controls": ["test_cadence_recorded_in_change_management"],
+          "compensating_controls": [
+            "test_cadence_recorded_in_change_management"
+          ],
           "estimated_time_hours": 24
         },
         {
           "id": "exception-register-cleanup",
           "description": "Audit the exception register. For each entry lacking expiry / named owner / tested compensating controls: either (a) bring into compliance with the exception template, or (b) close the exception by remediating the underlying issue, or (c) escalate to next-higher authority for re-acceptance.",
-          "preconditions": ["exception_register_exists == true"],
+          "preconditions": [
+            "exception_register_exists == true"
+          ],
           "priority": 3,
-          "compensating_controls": ["exception_review_cadence_documented"],
+          "compensating_controls": [
+            "exception_review_cadence_documented"
+          ],
           "estimated_time_hours": 8
         },
         {
           "id": "jurisdictional-framework-mapping",
           "description": "Extend control-mapping matrix to include every binding framework for the org's operational jurisdictions. Cross-walk per-control to NIS2 / DORA / EU AI Act / CAF / Essential 8 / APRA / MAS TRM / NISC / CERT-In / OSFI B-10 as applicable.",
-          "preconditions": ["jurisdictional_footprint_documented == true"],
+          "preconditions": [
+            "jurisdictional_footprint_documented == true"
+          ],
           "priority": 4,
-          "compensating_controls": ["mapping_review_cadence_documented"],
+          "compensating_controls": [
+            "mapping_review_cadence_documented"
+          ],
           "estimated_time_hours": 40
         },
         {
           "id": "ai-controls-operational",
           "description": "Make AI controls operational: MCP server trust (per mcp.json), prompt-injection access control, AI-API egress baseline (per ai-api.json), AI-generated code provenance, model-weights supply chain integrity (per sbom.json).",
-          "preconditions": ["ai_in_production == true"],
+          "preconditions": [
+            "ai_in_production == true"
+          ],
           "priority": 5,
           "compensating_controls": [],
           "estimated_time_hours": 80
@@ -546,9 +743,15 @@
         {
           "id": "board-level-acknowledgement",
           "description": "Where multiple framework-gap declarations cannot be closed within compliance windows: escalate to board-level acknowledgement of the GRC posture with documented framework-lag declaration and accepted residual risk.",
-          "preconditions": ["remediation_paths[1..5] cannot close all findings within compliance windows", "board_acceptance_obtainable == true"],
+          "preconditions": [
+            "remediation_paths[1..5] cannot close all findings within compliance windows",
+            "board_acceptance_obtainable == true"
+          ],
           "priority": 6,
-          "compensating_controls": ["board_review_cadence_documented", "executive_summary_for_each_framework_lag"],
+          "compensating_controls": [
+            "board_review_cadence_documented",
+            "executive_summary_for_each_framework_lag"
+          ],
           "estimated_time_hours": 16
         }
       ],
@@ -594,47 +797,94 @@
         "risk": "Framework lag is structural and persistent. Even with all theater fingerprints closed at one point in time, new threat classes (new CVEs, new AI/agentic attack patterns, new PQC standards) emerge faster than frameworks can amend. The GRC posture is therefore an ongoing program, not a checkpoint.",
         "why_remains": "Frameworks publish on annual-to-quintennial cycles. Operational threats publish on hour-to-day cycles. The structural gap cannot be closed by re-audit; only by sustained compensating control + exception discipline + program-level acknowledgement of the lag at board level.",
         "acceptance_level": "board",
-        "compensating_controls_in_place": ["continuous_upstream_playbook_execution", "monthly_theater_fingerprint_re-test", "quarterly_compensating_controls_test", "annual_board_review_of_framework_lag_register", "named_owner_per_framework_lag_at_ciso_level"]
+        "compensating_controls_in_place": [
+          "continuous_upstream_playbook_execution",
+          "monthly_theater_fingerprint_re-test",
+          "quarterly_compensating_controls_test",
+          "annual_board_review_of_framework_lag_register",
+          "named_owner_per_framework_lag_at_ciso_level"
+        ]
       },
       "evidence_requirements": [
         {
           "evidence_type": "scan_report",
           "description": "Compound theater verdict report mapping each fired fingerprint to upstream findings, implicated framework controls, and remediation status.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "soc2-CC1", "nis2-art21", "dora-art5"]
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "soc2-CC1",
+            "nis2-art21",
+            "dora-art5"
+          ]
         },
         {
           "evidence_type": "attestation",
           "description": "Signed exceptd attestation file with evidence_hash, count of theater fingerprints fired at detection, count post-remediation, RWEP delta, list of newly-mapped frameworks for any added jurisdictions.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21", "dora-art5"]
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21",
+            "dora-art5"
+          ]
         },
         {
           "evidence_type": "config_diff",
           "description": "Before/after diff of control-mapping matrix and exception register showing additions, expirations, ownership changes.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-CM-3", "iso-27001-2022-A.5.36"]
+          "framework_satisfied": [
+            "nist-800-53-CM-3",
+            "iso-27001-2022-A.5.36"
+          ]
         },
         {
           "evidence_type": "ticket_reference",
           "description": "Board-acceptance record (where path 6 invoked): signed board resolution acknowledging framework lag with named owner and re-evaluation cadence.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21", "dora-art5", "uk-caf-principle-a"]
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21",
+            "dora-art5",
+            "uk-caf-principle-a"
+          ]
         }
       ],
       "regression_trigger": [
-        { "condition": "new_upstream_playbook_finding == true", "interval": "on_event" },
-        { "condition": "new_framework_amendment_published == true", "interval": "on_event" },
-        { "condition": "new_jurisdiction_entered == true", "interval": "on_event" },
-        { "condition": "monthly", "interval": "30d" },
-        { "condition": "audit_cycle_begin", "interval": "on_event" }
+        {
+          "condition": "new_upstream_playbook_finding == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_framework_amendment_published == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_jurisdiction_entered == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "monthly",
+          "interval": "30d"
+        },
+        {
+          "condition": "audit_cycle_begin",
+          "interval": "on_event"
+        }
       ]
     },
-
     "close": {
       "evidence_package": {
         "bundle_format": "csaf-2.0",
-        "contents": ["scan_report", "attestation", "config_diff", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "contents": [
+          "scan_report",
+          "attestation",
+          "config_diff",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement"
+        ],
         "destination": "grc_platform_api",
         "signed": true
       },
@@ -646,49 +896,79 @@
           "framework_gap": "All 20 frameworks in scope are structurally insufficient for at least one upstream-playbook threat class. ISO 27001:2022 / SOC 2 TSC / PCI DSS 4.0 are longest-laggard for AI/MCP/PQC. NIST / NIS2 / DORA / EU AI Act / EU CRA lag by 90-365 days. UK CAF / AU Essential 8 are partially forward-compatible. Jurisdictional frameworks (MAS TRM, FISC, CERT-In, OSFI B-10) vary by sector.",
           "new_control_requirement": "Sustained GRC program with: (a) continuous upstream-playbook execution, (b) monthly theater fingerprint re-test, (c) quarterly compensating-controls test, (d) annual board review of framework-lag register, (e) named owner per framework lag at CISO level. Theater detection cannot be one-shot; it is a recurring obligation."
         },
-        "feeds_back_to_skills": ["framework-gap-analysis", "compliance-theater", "global-grc", "policy-exception-gen", "zeroday-gap-learn", "security-maturity-tiers"]
+        "feeds_back_to_skills": [
+          "framework-gap-analysis",
+          "compliance-theater",
+          "global-grc",
+          "policy-exception-gen",
+          "zeroday-gap-learn",
+          "security-maturity-tiers"
+        ]
       },
       "notification_actions": [
         {
           "obligation_ref": "EU/NIS2 Art.21 720h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["compliance_theater_verdicts", "framework_gap_mapping", "exception_register", "risk_acceptance_records"],
+          "evidence_attached": [
+            "compliance_theater_verdicts",
+            "framework_gap_mapping",
+            "exception_register",
+            "risk_acceptance_records"
+          ],
           "draft_notification": "NIS2 Art.21 governance evidence submission: ${entity_name} attests its risk management measures per Art.21(2)(a-i). Theater fingerprints fired at last assessment: ${theater_count}; remediation status: ${remediation_summary}. Framework lag declarations: ${lag_count}. Named owners: ${named_owners}."
         },
         {
           "obligation_ref": "EU/DORA Art.5 720h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["ict_risk_governance_evidence", "framework_lag_declarations", "compensating_controls_register"],
+          "evidence_attached": [
+            "ict_risk_governance_evidence",
+            "framework_lag_declarations",
+            "compensating_controls_register"
+          ],
           "draft_notification": "DORA Art.5 ICT governance submission: ${entity_name} (financial entity) attests ICT risk management framework per Art.5. Framework lag declarations: ${lag_summary}. Compensating controls tested within cadence: ${tested_count}/${total_count}. Board-acceptance record: ${board_record_ref}."
         },
         {
           "obligation_ref": "EU/NIS2 Art.23 24h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["theater_detected_summary", "affected_controls", "interim_compensating_control_record"],
+          "evidence_attached": [
+            "theater_detected_summary",
+            "affected_controls",
+            "interim_compensating_control_record"
+          ],
           "draft_notification": "NIS2 Art.23 24-hour early-warning notification: compliance-theater finding confirmed on ${affected_controls}. Underlying upstream findings: ${upstream_finding_refs}. Interim compensating controls: ${compensating_controls}. Full assessment to follow within 72 hours per Art.23(4)."
         },
         {
           "obligation_ref": "UK/NCSC CAF Principle B 8760h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["caf_outcome_assessment", "gap_register", "remediation_roadmap"],
+          "evidence_attached": [
+            "caf_outcome_assessment",
+            "gap_register",
+            "remediation_roadmap"
+          ],
           "draft_notification": "NCSC CAF Principle B (Protecting against cyber attack) outcome assessment: ${entity_name} attests outcome achievement. Gap register: ${gap_register_summary}. Remediation roadmap: ${roadmap_summary}."
         },
         {
           "obligation_ref": "AU/APRA CPS 234 72h",
           "deadline": "computed_at_runtime",
           "recipient": "regulator_email",
-          "evidence_attached": ["materiality_assessment", "remediation_completed_evidence"],
+          "evidence_attached": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ],
           "draft_notification": "APRA CPS 234 notification: material information security incident — compliance theater detected on ${affected_controls}. Materiality justification: ${materiality_justification}. Remediation summary: ${remediation_summary}."
         },
         {
           "obligation_ref": "SG/MAS TRM Notice 8760h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["technology_risk_management_evidence", "gap_register"],
+          "evidence_attached": [
+            "technology_risk_management_evidence",
+            "gap_register"
+          ],
           "draft_notification": "MAS TRM Notice attestation: ${entity_name} (FI) attests technology risk management framework. Identified gaps: ${gap_summary}. Remediation roadmap: ${roadmap_summary}."
         }
       ],
@@ -697,7 +977,14 @@
         "exception_template": {
           "scope": "Framework lag(s) ${framework_list} cannot be closed within compliance windows. Affected upstream findings: ${affected_findings}. Multiple-framework structural insufficiency requires board-level acknowledgement.",
           "duration": "until_next_audit",
-          "compensating_controls": ["sustained_continuous_upstream_playbook_execution", "monthly_theater_fingerprint_re-test", "quarterly_compensating_controls_test_with_documented_results", "annual_board_review_of_framework_lag_register", "named_owner_per_framework_lag_at_ciso_level", "engagement_with_framework_standards_bodies_for_amendment_advocacy"],
+          "compensating_controls": [
+            "sustained_continuous_upstream_playbook_execution",
+            "monthly_theater_fingerprint_re-test",
+            "quarterly_compensating_controls_test_with_documented_results",
+            "annual_board_review_of_framework_lag_register",
+            "named_owner_per_framework_lag_at_ciso_level",
+            "engagement_with_framework_standards_bodies_for_amendment_advocacy"
+          ],
           "risk_acceptance_owner": "board",
           "auditor_ready_language": "Pursuant to the organization's enterprise risk management framework and the governance obligations of NIST 800-53 CA-7 (Continuous Monitoring), ISO 27001:2022 A.5.36 (Compliance with policies, rules and standards), NIS2 Art.21 (Risk management measures), DORA Art.5 (Governance and organisation), and UK NCSC CAF Principle A (Managing security risk), the organization records a board-level acknowledgement of structural framework lag across ${framework_list}. The accepted lag class is: framework controls published on annual-to-quintennial cycles cannot keep pace with operational threats publishing on hour-to-day cycles. The organization accepts that current framework controls do not adequately address the operational threats documented in exceptd playbooks ${upstream_playbook_refs}, that this gap is documented in ${exceptd_framework_gap_mapping_ref}, and that the organization's compensating controls during the exception window are: ${compensating_controls}. Detection coverage: continuous upstream playbook execution with theater fingerprint re-test on monthly cadence. Engagement plan: ${standards_engagement_plan}. Risk accepted by the Board on ${acceptance_date}. Time-bound until ${duration_expiry} (next audit cycle, OR ${default_365d_expiry}, whichever is first). Re-evaluation triggers: new framework amendment publication, new upstream-playbook finding above RWEP 75, new jurisdiction entered, OR scheduled expiry."
         }
@@ -709,17 +996,20 @@
       }
     }
   },
-
   "directives": [
     {
       "id": "correlate-all-upstream-findings",
       "title": "Correlate all upstream playbook findings to framework gaps and theater fingerprints",
-      "applies_to": { "always": true }
+      "applies_to": {
+        "always": true
+      }
     },
     {
       "id": "baseline-framework-gap-inventory",
       "title": "Baseline framework-gap inventory when no upstream findings available",
-      "applies_to": { "always": true }
+      "applies_to": {
+        "always": true
+      }
     }
   ]
 }

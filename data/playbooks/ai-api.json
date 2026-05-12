@@ -10,11 +10,19 @@
         "date": "2026-05-11",
         "summary": "Initial seven-phase AI-API C2 + credential-exposure playbook. Covers SesameOp / PROMPTFLUX / PROMPTSTEAL behavioral signatures (ATLAS AML.T0096), dotfile API-key inventory (Anthropic / OpenAI / Gemini), and cloud credential exposure (~/.aws/credentials, ~/.config/gcloud, ~/.kube/config) that an AI-API C2 adversary would harvest. Full GRC closure with EU AI Act + NIS2 + DORA notification clocks.",
         "cves_added": [],
-        "framework_gaps_updated": ["nist-800-53-SI-3", "nist-800-53-SC-7", "nist-800-53-AC-2", "iso-27001-2022-A.8.16", "soc2-CC7", "eu-ai-act-art15"]
+        "framework_gaps_updated": [
+          "nist-800-53-SI-3",
+          "nist-800-53-SC-7",
+          "nist-800-53-AC-2",
+          "iso-27001-2022-A.8.16",
+          "soc2-CC7",
+          "eu-ai-act-art15"
+        ]
       }
     ],
     "owner": "@blamejs/ai-security",
     "air_gap_mode": false,
+    "scope": "service",
     "preconditions": [
       {
         "id": "filesystem-read",
@@ -45,24 +53,51 @@
       }
     ]
   },
-
   "domain": {
     "name": "AI-API as covert command-and-control + dotfile credential exposure",
     "attack_class": "ai-c2",
-    "atlas_refs": ["AML.T0096", "AML.T0017"],
-    "attack_refs": ["T1071", "T1102", "T1568", "T1552.001", "T1555"],
+    "atlas_refs": [
+      "AML.T0096",
+      "AML.T0017"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1102",
+      "T1568",
+      "T1552.001",
+      "T1555"
+    ],
     "cve_refs": [],
-    "cwe_refs": ["CWE-522", "CWE-256", "CWE-798", "CWE-312"],
-    "d3fend_refs": ["D3-CA", "D3-NTA", "D3-NTPM", "D3-IOPR", "D3-NI"],
+    "cwe_refs": [
+      "CWE-522",
+      "CWE-256",
+      "CWE-798",
+      "CWE-312"
+    ],
+    "d3fend_refs": [
+      "D3-CA",
+      "D3-NTA",
+      "D3-NTPM",
+      "D3-IOPR",
+      "D3-NI"
+    ],
     "frameworks_in_scope": [
-      "nist-800-53", "nist-csf-2", "iso-27001-2022",
-      "soc2", "pci-dss-4", "nis2", "dora", "eu-ai-act",
-      "uk-caf", "au-ism", "au-essential-8", "hipaa", "cmmc"
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "pci-dss-4",
+      "nis2",
+      "dora",
+      "eu-ai-act",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "hipaa",
+      "cmmc"
     ]
   },
-
   "phases": {
-
     "govern": {
       "jurisdiction_obligations": [
         {
@@ -71,7 +106,12 @@
           "obligation": "notify_regulator",
           "window_hours": 24,
           "clock_starts": "detect_confirmed",
-          "evidence_required": ["affected_host_inventory", "ai_api_endpoint_beaconing_evidence", "credential_exposure_scope", "interim_isolation_record"]
+          "evidence_required": [
+            "affected_host_inventory",
+            "ai_api_endpoint_beaconing_evidence",
+            "credential_exposure_scope",
+            "interim_isolation_record"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -79,7 +119,11 @@
           "obligation": "notify_regulator",
           "window_hours": 72,
           "clock_starts": "analyze_complete",
-          "evidence_required": ["full_incident_assessment", "credential_rotation_record", "remediation_plan"]
+          "evidence_required": [
+            "full_incident_assessment",
+            "credential_rotation_record",
+            "remediation_plan"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -87,7 +131,11 @@
           "obligation": "notify_regulator",
           "window_hours": 4,
           "clock_starts": "detect_confirmed",
-          "evidence_required": ["initial_notification", "ict_third_party_dependencies", "financial_data_exposure_scope"]
+          "evidence_required": [
+            "initial_notification",
+            "ict_third_party_dependencies",
+            "financial_data_exposure_scope"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -95,7 +143,11 @@
           "obligation": "notify_regulator",
           "window_hours": 360,
           "clock_starts": "analyze_complete",
-          "evidence_required": ["serious_incident_assessment", "ai_system_misuse_evidence", "tool_provenance_audit"]
+          "evidence_required": [
+            "serious_incident_assessment",
+            "ai_system_misuse_evidence",
+            "tool_provenance_audit"
+          ]
         },
         {
           "jurisdiction": "EU",
@@ -103,7 +155,11 @@
           "obligation": "notify_supervisory_authority",
           "window_hours": 72,
           "clock_starts": "detect_confirmed",
-          "evidence_required": ["personal_data_scope_assessment", "high_risk_to_data_subjects_determination", "containment_measures"]
+          "evidence_required": [
+            "personal_data_scope_assessment",
+            "high_risk_to_data_subjects_determination",
+            "containment_measures"
+          ]
         },
         {
           "jurisdiction": "AU",
@@ -111,7 +167,10 @@
           "obligation": "notify_regulator",
           "window_hours": 72,
           "clock_starts": "validate_complete",
-          "evidence_required": ["materiality_assessment", "remediation_completed_evidence"]
+          "evidence_required": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ]
         }
       ],
       "theater_fingerprints": [
@@ -119,25 +178,39 @@
           "pattern_id": "egress-allowlist-with-ai-vendors-open",
           "claim": "Egress is allowlisted — only approved domains permitted (SC-7 / A.8.16 / CC7).",
           "fast_detection_test": "Walk the egress allowlist. If api.openai.com, api.anthropic.com, generativelanguage.googleapis.com, *.azure.com, or equivalent AI-vendor endpoints are wholesale-permitted with no per-process restriction or no DLP on payloads, the allowlist gates business websites and leaves the AI-API C2 channel wide open. Theater unless AI-API endpoints are gated by (a) per-process allowlist, (b) bearer-token attribution, AND (c) request/response content inspection or rate baselining.",
-          "implicated_controls": ["nist-800-53-SC-7", "iso-27001-2022-A.8.16", "soc2-CC7"]
+          "implicated_controls": [
+            "nist-800-53-SC-7",
+            "iso-27001-2022-A.8.16",
+            "soc2-CC7"
+          ]
         },
         {
           "pattern_id": "ac-2-passes-when-ai-account-misused",
           "claim": "Logical access control (AC-2 / CC6) is operating — only authorized identities access sensitive resources.",
           "fast_detection_test": "Pick any AI-API-using service account on the host. Confirm whether that account's API key has been used for unexpected workloads (extremely high token count, response sizes far from baseline, time-of-day pattern outside normal usage). If anomalies exist, the AC-2 audit was checking that the account was authorized — not that the authorization wasn't abused as a C2 vehicle.",
-          "implicated_controls": ["nist-800-53-AC-2", "soc2-CC6"]
+          "implicated_controls": [
+            "nist-800-53-AC-2",
+            "soc2-CC6"
+          ]
         },
         {
           "pattern_id": "secrets-scan-of-repos-only",
           "claim": "Secrets scanning is in place — all repositories scanned for committed keys (CM-7 / A.8.30).",
           "fast_detection_test": "Inspect the runtime developer endpoint, not the repo. Read ~/.bashrc, ~/.zshrc, ~/.profile, ~/.config/fish/, ~/.aws/credentials, ~/.config/gcloud/credentials.db, ~/.kube/config, ~/.netrc, ~/.docker/config.json, ~/.npmrc, and assistant-specific dotfiles (~/.codeium, ~/.cursor, ~/.claude). If long-lived API keys exist in any of these but the org's secrets-scanning program only scans repos, the program is structurally blind to where exfiltration actually originates.",
-          "implicated_controls": ["nist-800-53-IA-5", "iso-27001-2022-A.8.30", "soc2-CC6"]
+          "implicated_controls": [
+            "nist-800-53-IA-5",
+            "iso-27001-2022-A.8.30",
+            "soc2-CC6"
+          ]
         },
         {
           "pattern_id": "ai-traffic-classified-as-business-as-usual",
           "claim": "SOC 2 CC7 anomaly detection covers all egress — baseline established.",
           "fast_detection_test": "Ask the SOC for an example anomaly that was triaged in the last 30 days where the source was AI-API traffic. If they cannot produce one, the baseline is treating AI-API traffic as legitimate by definition — which is exactly the SesameOp adversary's bet. Theater unless AI-API egress has its own behavioral baseline distinct from SaaS API traffic.",
-          "implicated_controls": ["soc2-CC7", "iso-27001-2022-A.8.16"]
+          "implicated_controls": [
+            "soc2-CC7",
+            "iso-27001-2022-A.8.16"
+          ]
         }
       ],
       "framework_context": {
@@ -188,9 +261,14 @@
           }
         ]
       },
-      "skill_preload": ["ai-c2-detection", "framework-gap-analysis", "compliance-theater", "global-grc", "policy-exception-gen"]
+      "skill_preload": [
+        "ai-c2-detection",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "global-grc",
+        "policy-exception-gen"
+      ]
     },
-
     "direct": {
       "threat_context": "AI-as-C2 landscape mid-2026: SesameOp campaign (ATLAS AML.T0096) — the canonical pattern of adversaries repurposing AI agent APIs as covert C2 — has been replicated and expanded across multiple threat actor sets through Q1-Q2 2026. PROMPTFLUX (Mandiant attribution, late 2025) demonstrated polymorphic AI-API C2 with rotating encoding schemes per session. PROMPTSTEAL extended the pattern to RAG-pipeline poisoning where stored AI conversations carry exfiltrated content. The technical pattern: compromised host encodes commands or exfiltrated data as base64 (or homoglyphs, or natural-language-shaped payloads) inside semantically valid prompts to OpenAI / Anthropic / Google / Azure AI endpoints; attacker reads the relayed payload via the legitimate API. The AI API is transport — not the attacker's infrastructure. Detection at the network layer: nearly impossible without behavioral baselining specific to AI-API traffic. Detection at the host layer: requires monitoring the process that originates the API calls (rogue process talking to api.openai.com from an unexpected service account is the strongest signal). Companion attack: credential harvesting from dotfiles. Once userland code execution is achieved (via MCP supply-chain, prompt injection, or AI-API C2 delivered payload), attacker reads ~/.aws/credentials, ~/.config/gcloud, ~/.kube/config, ~/.netrc, ~/.docker/config.json, vendor dotfiles, npm tokens — the modern developer endpoint is a credential warehouse. Cleartext API keys in dotfiles are documented in ~70% of developer-endpoint forensic reviews. Compliance frameworks have not caught up: NIST SI-3/SC-7, ISO A.8.16, SOC 2 CC7 do not have AI-API baselines and treat the channel as business-as-usual.",
       "rwep_threshold": {
@@ -200,11 +278,33 @@
       },
       "framework_lag_declaration": "NIST 800-53 SI-3/SC-7/AC-2, ISO 27001:2022 A.8.16, SOC 2 CC6/CC7, EU AI Act Art.15 are all structurally insufficient for AI-API C2. The shared failure: each control treats the AI API endpoint as a legitimate authorized SaaS, the service account using it as authorized, and the traffic over it as business-as-usual. The SesameOp pattern operates entirely inside that authorized envelope. Until frameworks add 'AI-API egress baseline + content inspection + bearer-token-to-process attribution' controls, anomaly-detection audit opinions provide zero signal about AI-as-C2 exposure. Companion gap: secrets-management controls (IA-5, A.8.5) focus on repository-committed keys and ignore the dotfile credential surface where most developer keys actually live. Lag = ~190 days behind the SesameOp pattern's first documentation; no framework body has issued draft language as of 2026-05-11.",
       "skill_chain": [
-        { "skill": "ai-c2-detection", "purpose": "Inventory installed AI SDKs (anthropic, openai, google-generativeai, azure-ai), enumerate processes communicating with AI-API endpoints, baseline behavior, detect SesameOp / PROMPTFLUX behavioral signatures.", "required": true },
-        { "skill": "framework-gap-analysis", "purpose": "Map each detected exposure to the specific framework control that should have caught it and why it didn't.", "required": true },
-        { "skill": "compliance-theater", "purpose": "Run the four theater tests in govern.theater_fingerprints; emit verdict.", "required": true },
-        { "skill": "global-grc", "purpose": "Cross-walk findings to per-jurisdiction notification obligations including GDPR Art.33 (personal data exfil), EU AI Act Art.73 (serious incident), NIS2 Art.23, DORA Art.19.", "skip_if": "jurisdiction_obligations.length == 0", "required": false },
-        { "skill": "policy-exception-gen", "purpose": "If AI-API egress cannot be gated within compliance window, generate defensible exception with compensating controls.", "skip_if": "close.exception_generation.trigger_condition == false", "required": false }
+        {
+          "skill": "ai-c2-detection",
+          "purpose": "Inventory installed AI SDKs (anthropic, openai, google-generativeai, azure-ai), enumerate processes communicating with AI-API endpoints, baseline behavior, detect SesameOp / PROMPTFLUX behavioral signatures.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each detected exposure to the specific framework control that should have caught it and why it didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the four theater tests in govern.theater_fingerprints; emit verdict.",
+          "required": true
+        },
+        {
+          "skill": "global-grc",
+          "purpose": "Cross-walk findings to per-jurisdiction notification obligations including GDPR Art.33 (personal data exfil), EU AI Act Art.73 (serious incident), NIS2 Art.23, DORA Art.19.",
+          "skip_if": "jurisdiction_obligations.length == 0",
+          "required": false
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "If AI-API egress cannot be gated within compliance window, generate defensible exception with compensating controls.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
       ],
       "token_budget": {
         "estimated_total": 22000,
@@ -219,7 +319,6 @@
         }
       }
     },
-
     "look": {
       "artifacts": [
         {
@@ -337,14 +436,33 @@
         }
       ],
       "fallback_if_unavailable": [
-        { "artifact_id": "ai-api-egress-baseline", "fallback_action": "use_compensating_artifact", "confidence_impact": "medium" },
-        { "artifact_id": "egress-policy", "fallback_action": "mark_inconclusive", "confidence_impact": "medium" },
-        { "artifact_id": "ai-sdk-inventory", "fallback_action": "use_compensating_artifact", "confidence_impact": "low" },
-        { "artifact_id": "dotfile-api-keys", "fallback_action": "escalate_to_human", "confidence_impact": "high" },
-        { "artifact_id": "aws-credentials", "fallback_action": "escalate_to_human", "confidence_impact": "high" }
+        {
+          "artifact_id": "ai-api-egress-baseline",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "egress-policy",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "ai-sdk-inventory",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "dotfile-api-keys",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "aws-credentials",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
       ]
     },
-
     "detect": {
       "indicators": [
         {
@@ -447,25 +565,79 @@
         "not_detected": "No cleartext API keys in any inventoried dotfile AND no AI-API egress from unexpected processes AND no anomalous volume / beaconing. Document as not-detected with a 'new dotfile credential or new unexpected process re-opens this' caveat."
       }
     },
-
     "analyze": {
       "rwep_inputs": [
-        { "signal_id": "cleartext-api-key-in-dotfile", "rwep_factor": "blast_radius", "weight": 20, "notes": "Each cleartext key is a separate exfil vector; tally to blast radius." },
-        { "signal_id": "long-lived-aws-keys", "rwep_factor": "blast_radius", "weight": 25, "notes": "Long-lived AWS keys = cloud-account compromise on extraction." },
-        { "signal_id": "gcp-service-account-json", "rwep_factor": "blast_radius", "weight": 25, "notes": "GCP service-account JSON = GCP account compromise on extraction." },
-        { "signal_id": "kubeconfig-with-static-token", "rwep_factor": "blast_radius", "weight": 20, "notes": "Static kube token = cluster control on extraction." },
-        { "signal_id": "ai-api-egress-from-unexpected-process", "rwep_factor": "active_exploitation", "weight": 25, "notes": "Direct match for SesameOp / PROMPTFLUX TTPs; active exploitation documented." },
-        { "signal_id": "ai-api-beaconing-cadence", "rwep_factor": "ai_weaponization", "weight": 10, "notes": "AI-API C2 is, by definition, AI-assisted attack infrastructure." },
-        { "signal_id": "base64-or-encoded-payload-in-prompts", "rwep_factor": "active_exploitation", "weight": 20, "notes": "Content-level SesameOp signature; high confidence active exploitation." }
+        {
+          "signal_id": "cleartext-api-key-in-dotfile",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Each cleartext key is a separate exfil vector; tally to blast radius."
+        },
+        {
+          "signal_id": "long-lived-aws-keys",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Long-lived AWS keys = cloud-account compromise on extraction."
+        },
+        {
+          "signal_id": "gcp-service-account-json",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "GCP service-account JSON = GCP account compromise on extraction."
+        },
+        {
+          "signal_id": "kubeconfig-with-static-token",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Static kube token = cluster control on extraction."
+        },
+        {
+          "signal_id": "ai-api-egress-from-unexpected-process",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Direct match for SesameOp / PROMPTFLUX TTPs; active exploitation documented."
+        },
+        {
+          "signal_id": "ai-api-beaconing-cadence",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-API C2 is, by definition, AI-assisted attack infrastructure."
+        },
+        {
+          "signal_id": "base64-or-encoded-payload-in-prompts",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Content-level SesameOp signature; high confidence active exploitation."
+        }
       ],
       "blast_radius_model": {
         "scope_question": "If an attacker harvests this host's dotfile credentials AND uses AI-API egress as C2, what scope of compromise does this host realistically deliver?",
         "scoring_rubric": [
-          { "condition": "host has only AI API keys (no cloud / no kube), interactive-developer use only", "blast_radius_score": 1, "description": "AI service abuse + token-cost burn. Vendor abuse-team detection plausible." },
-          { "condition": "host has AI API keys + personal git tokens, no production access", "blast_radius_score": 2, "description": "Source-code theft via git tokens; commit-rewrite vector." },
-          { "condition": "host has AI API keys + non-prod AWS/GCP/kube credentials", "blast_radius_score": 3, "description": "Non-prod cloud read + IAM enumeration; staging data exfil." },
-          { "condition": "host has AI API keys + production cloud / kube admin credentials OR signing keys", "blast_radius_score": 4, "description": "Production tenancy + supply-chain-publishing capability + AI-API C2 covert channel." },
-          { "condition": "host has AI API keys + cross-account / cross-tenant administrative roles OR CI/CD bootstrap rights", "blast_radius_score": 5, "description": "Org-wide pivot. AI-API channel makes the lateral movement covert at the network layer." }
+          {
+            "condition": "host has only AI API keys (no cloud / no kube), interactive-developer use only",
+            "blast_radius_score": 1,
+            "description": "AI service abuse + token-cost burn. Vendor abuse-team detection plausible."
+          },
+          {
+            "condition": "host has AI API keys + personal git tokens, no production access",
+            "blast_radius_score": 2,
+            "description": "Source-code theft via git tokens; commit-rewrite vector."
+          },
+          {
+            "condition": "host has AI API keys + non-prod AWS/GCP/kube credentials",
+            "blast_radius_score": 3,
+            "description": "Non-prod cloud read + IAM enumeration; staging data exfil."
+          },
+          {
+            "condition": "host has AI API keys + production cloud / kube admin credentials OR signing keys",
+            "blast_radius_score": 4,
+            "description": "Production tenancy + supply-chain-publishing capability + AI-API C2 covert channel."
+          },
+          {
+            "condition": "host has AI API keys + cross-account / cross-tenant administrative roles OR CI/CD bootstrap rights",
+            "blast_radius_score": 5,
+            "description": "Org-wide pivot. AI-API channel makes the lateral movement covert at the network layer."
+          }
         ]
       },
       "compliance_theater_check": {
@@ -526,63 +698,116 @@
         }
       ],
       "escalation_criteria": [
-        { "condition": "rwep >= 75 AND ai-api-egress-from-unexpected-process == true", "action": "page_on_call" },
-        { "condition": "any credential indicator deterministic AND blast_radius_score >= 4", "action": "page_on_call" },
-        { "condition": "ai-api-beaconing-cadence == true AND base64-or-encoded-payload-in-prompts == true", "action": "raise_severity" },
-        { "condition": "blast_radius_score >= 4", "action": "trigger_playbook", "target_playbook": "sbom" },
-        { "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", "action": "notify_legal" },
-        { "condition": "personal_data_exfil_suspected == true", "action": "notify_legal" }
+        {
+          "condition": "rwep >= 75 AND ai-api-egress-from-unexpected-process == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "any credential indicator deterministic AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "ai-api-beaconing-cadence == true AND base64-or-encoded-payload-in-prompts == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "personal_data_exfil_suspected == true",
+          "action": "notify_legal"
+        }
       ]
     },
-
     "validate": {
       "remediation_paths": [
         {
           "id": "rotate-exposed-credentials-now",
           "description": "Immediately rotate every API key and cloud credential found in dotfile inventory. Revoke at vendor side; verify revocation effective.",
-          "preconditions": ["operator_authorized_for_key_rotation == true"],
+          "preconditions": [
+            "operator_authorized_for_key_rotation == true"
+          ],
           "priority": 1,
-          "compensating_controls": ["service_disruption_window_acknowledged", "rotation_audit_trail"],
+          "compensating_controls": [
+            "service_disruption_window_acknowledged",
+            "rotation_audit_trail"
+          ],
           "estimated_time_hours": 2
         },
         {
           "id": "isolate-and-investigate-c2",
           "description": "If AI-API C2 indicators fired: isolate the host from network (preserving forensic state), capture process tree + memory if possible, dump current AI-API session content via local proxy.",
-          "preconditions": ["ai_api_c2_signal == true", "incident_response_authorized == true"],
+          "preconditions": [
+            "ai_api_c2_signal == true",
+            "incident_response_authorized == true"
+          ],
           "priority": 1,
-          "compensating_controls": ["forensic_preservation", "vendor_abuse_team_notification"],
+          "compensating_controls": [
+            "forensic_preservation",
+            "vendor_abuse_team_notification"
+          ],
           "estimated_time_hours": 4
         },
         {
           "id": "migrate-to-credential-broker",
           "description": "Replace dotfile cleartext keys with OS keychain (macOS Keychain / Linux Secret Service / Windows DPAPI) or vendor-issued short-lived credential (AWS SSO, GCP gcloud auth login + workload identity, kube exec-credential).",
-          "preconditions": ["broker_available_for_each_credential_class == true"],
+          "preconditions": [
+            "broker_available_for_each_credential_class == true"
+          ],
           "priority": 2,
-          "compensating_controls": ["legacy_dotfile_still_present_until_keychain_validated", "developer_workflow_regression_test"],
+          "compensating_controls": [
+            "legacy_dotfile_still_present_until_keychain_validated",
+            "developer_workflow_regression_test"
+          ],
           "estimated_time_hours": 6
         },
         {
           "id": "deploy-egress-proxy-with-attribution",
           "description": "Route all AI-API egress through a per-process-attributed proxy that logs (a) initiating process, (b) bearer token used, (c) request/response size + cadence + content-shape metrics. Build a per-service-account baseline and alert on deviation.",
-          "preconditions": ["proxy_infrastructure_authorizable == true", "tls_termination_acceptable_per_policy == true"],
+          "preconditions": [
+            "proxy_infrastructure_authorizable == true",
+            "tls_termination_acceptable_per_policy == true"
+          ],
           "priority": 3,
-          "compensating_controls": ["proxy_failure_mode_defined", "developer_traffic_baseline_collection"],
+          "compensating_controls": [
+            "proxy_failure_mode_defined",
+            "developer_traffic_baseline_collection"
+          ],
           "estimated_time_hours": 16
         },
         {
           "id": "enforce-allowlisted-ai-clients",
           "description": "Enforce a per-host allowlist of processes permitted to speak to AI-API endpoints (binary paths, signatures). Block all other processes from reaching AI-vendor domains.",
-          "preconditions": ["host-level_firewall_or_endpoint_egress_control_available == true"],
+          "preconditions": [
+            "host-level_firewall_or_endpoint_egress_control_available == true"
+          ],
           "priority": 4,
-          "compensating_controls": ["allowlist_change_management", "monitoring_for_blocked_attempts"],
+          "compensating_controls": [
+            "allowlist_change_management",
+            "monitoring_for_blocked_attempts"
+          ],
           "estimated_time_hours": 4
         },
         {
           "id": "policy-exception",
           "description": "Where business-critical interactive use makes egress proxying or process allowlisting infeasible, generate a defensible policy exception with compensating controls (rate quota per service account, vendor-side abuse alerting integration, weekly dotfile re-audit).",
-          "preconditions": ["remediation_paths[1..5] partially or fully blocked", "ciso_acceptance_obtainable == true"],
+          "preconditions": [
+            "remediation_paths[1..5] partially or fully blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
           "priority": 5,
-          "compensating_controls": ["per_token_rate_quota_at_vendor", "vendor_abuse_alerting_integration", "weekly_dotfile_re-audit", "endpoint_egress_anomaly_baseline_with_alerting"],
+          "compensating_controls": [
+            "per_token_rate_quota_at_vendor",
+            "vendor_abuse_alerting_integration",
+            "weekly_dotfile_re-audit",
+            "endpoint_egress_anomaly_baseline_with_alerting"
+          ],
           "estimated_time_hours": 8
         }
       ],
@@ -628,46 +853,89 @@
         "risk": "AI-API C2 attack surface remains because the legitimate channel cannot be closed. Detection is the residual layer. Behavioral baselines drift; attackers adapt encoding shape; new AI vendors enter the egress allowlist. Credential exposure recurs whenever a developer onboards a new tool that wants a cleartext key.",
         "why_remains": "AI APIs are infrastructure-of-record for AI-assisted development. The org cannot block them. Detection requires sustained baselining and per-process attribution; both degrade without active maintenance.",
         "acceptance_level": "ciso",
-        "compensating_controls_in_place": ["dotfile_credential_periodic_re-audit", "ai_api_egress_proxy_with_per-process_attribution", "ai_api_behavioral_baseline_with_alerting", "vendor_abuse_team_integration", "credential_broker_default_for_new_keys"]
+        "compensating_controls_in_place": [
+          "dotfile_credential_periodic_re-audit",
+          "ai_api_egress_proxy_with_per-process_attribution",
+          "ai_api_behavioral_baseline_with_alerting",
+          "vendor_abuse_team_integration",
+          "credential_broker_default_for_new_keys"
+        ]
       },
       "evidence_requirements": [
         {
           "evidence_type": "scan_report",
           "description": "Dotfile credential inventory snapshot pre- and post-remediation, showing zero cleartext keys remaining.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-IA-5", "iso-27001-2022-A.8.30", "soc2-CC6", "pci-dss-4-8.3"]
+          "framework_satisfied": [
+            "nist-800-53-IA-5",
+            "iso-27001-2022-A.8.30",
+            "soc2-CC6",
+            "pci-dss-4-8.3"
+          ]
         },
         {
           "evidence_type": "log_excerpt",
           "description": "AI-API egress proxy logs showing per-process attribution for a sample of requests during remediation validation.",
           "retention_period": "1_year",
-          "framework_satisfied": ["nist-800-53-SC-7", "soc2-CC7", "iso-27001-2022-A.8.16"]
+          "framework_satisfied": [
+            "nist-800-53-SC-7",
+            "soc2-CC7",
+            "iso-27001-2022-A.8.16"
+          ]
         },
         {
           "evidence_type": "exploit_replay_negative",
           "description": "Negative test results: old rotated keys rejected by vendor; unexpected-process egress blocked; synthetic beaconing pattern triggered baseline alert.",
           "retention_period": "1_year",
-          "framework_satisfied": ["soc2-CC7", "nist-800-53-SI-3", "iso-27001-2022-A.8.16"]
+          "framework_satisfied": [
+            "soc2-CC7",
+            "nist-800-53-SI-3",
+            "iso-27001-2022-A.8.16"
+          ]
         },
         {
           "evidence_type": "attestation",
           "description": "Signed exceptd attestation file with evidence_hash, credential count at detection, credential count post-remediation, AI-API egress baseline established date, RWEP delta.",
           "retention_period": "7_years",
-          "framework_satisfied": ["nist-800-53-CA-7", "iso-27001-2022-A.5.36", "nis2-art21-2d", "eu-ai-act-art15"]
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2d",
+            "eu-ai-act-art15"
+          ]
         }
       ],
       "regression_trigger": [
-        { "condition": "new_ai_vendor_added_to_allowlist", "interval": "on_event" },
-        { "condition": "new_cve_in_class == true", "interval": "on_event" },
-        { "condition": "new_developer_endpoint_provisioned", "interval": "on_event" },
-        { "condition": "monthly", "interval": "30d" }
+        {
+          "condition": "new_ai_vendor_added_to_allowlist",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_cve_in_class == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_developer_endpoint_provisioned",
+          "interval": "on_event"
+        },
+        {
+          "condition": "monthly",
+          "interval": "30d"
+        }
       ]
     },
-
     "close": {
       "evidence_package": {
         "bundle_format": "csaf-2.0",
-        "contents": ["scan_report", "log_excerpt", "exploit_replay_negative", "attestation", "framework_gap_mapping", "compliance_theater_verdict", "residual_risk_statement"],
+        "contents": [
+          "scan_report",
+          "log_excerpt",
+          "exploit_replay_negative",
+          "attestation",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement"
+        ],
         "destination": "local_only",
         "signed": true
       },
@@ -679,49 +947,79 @@
           "framework_gap": "NIST 800-53 SI-3/SC-7/AC-2/IA-5, ISO 27001:2022 A.8.16, SOC 2 CC6/CC7, EU AI Act Art.15 all permit clean audits over a fully-exposed AI-API C2 + dotfile credential surface. Lag = ~190 days behind SesameOp's first documentation; no framework body has issued draft language as of 2026-05-11.",
           "new_control_requirement": "Add an AI-API governance control class spanning: (a) per-process attribution of AI-API egress via dedicated proxy, (b) bearer-token-to-process binding, (c) AI-API behavioral baseline (rate, cadence, content-shape) with alerting, (d) credential-broker mandate for any long-lived API/cloud key on a developer endpoint, (e) provider-side telemetry sharing obligation for AI vendors (rate per key, content statistics) to enable customer-side detection."
         },
-        "feeds_back_to_skills": ["ai-c2-detection", "framework-gap-analysis", "compliance-theater", "global-grc", "zeroday-gap-learn"]
+        "feeds_back_to_skills": [
+          "ai-c2-detection",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "global-grc",
+          "zeroday-gap-learn"
+        ]
       },
       "notification_actions": [
         {
           "obligation_ref": "EU/NIS2 Art.23 24h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["affected_host_inventory", "ai_api_endpoint_beaconing_evidence", "credential_exposure_scope", "interim_isolation_record"],
+          "evidence_attached": [
+            "affected_host_inventory",
+            "ai_api_endpoint_beaconing_evidence",
+            "credential_exposure_scope",
+            "interim_isolation_record"
+          ],
           "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: AI-API C2 + credential exposure detected on ${affected_host_count} host(s). Behavioral indicators: ${behavioral_indicators}. Credential exposure: ${cred_summary}. Interim isolation: ${interim_isolation_status}. Full incident assessment to follow within 72 hours per Art.23(4)."
         },
         {
           "obligation_ref": "EU/NIS2 Art.23 72h",
           "deadline": "computed_at_runtime",
           "recipient": "regulator_email",
-          "evidence_attached": ["full_incident_assessment", "credential_rotation_record", "remediation_plan"],
+          "evidence_attached": [
+            "full_incident_assessment",
+            "credential_rotation_record",
+            "remediation_plan"
+          ],
           "draft_notification": "NIS2 Art.23 incident notification (72-hour): Full assessment of AI-API C2 / credential-exposure incident. Affected systems: ${affected_systems}. Credentials rotated: ${rotated_count}. Remediation plan: dotfile credential migration to broker, AI-API egress proxy deployment, behavioral baseline establishment. ETA: ${remediation_eta}."
         },
         {
           "obligation_ref": "EU/DORA Art.19 4h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["initial_notification", "ict_third_party_dependencies", "financial_data_exposure_scope"],
+          "evidence_attached": [
+            "initial_notification",
+            "ict_third_party_dependencies",
+            "financial_data_exposure_scope"
+          ],
           "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — AI-API C2 / credential exposure on ${affected_host_count} host(s) within financial-entity scope. AI vendor ICT dependencies: ${ict_dependencies}. Financial-data exposure scope: ${financial_data_scope}. Full classification + impact assessment to follow within statutory windows."
         },
         {
           "obligation_ref": "EU/EU AI Act Art.73 360h",
           "deadline": "computed_at_runtime",
           "recipient": "regulator_email",
-          "evidence_attached": ["serious_incident_assessment", "ai_system_misuse_evidence", "tool_provenance_audit"],
+          "evidence_attached": [
+            "serious_incident_assessment",
+            "ai_system_misuse_evidence",
+            "tool_provenance_audit"
+          ],
           "draft_notification": "EU AI Act Art.73 serious-incident notification: AI API misused as covert C2 channel against ${affected_ai_system}. Provider: ${ai_provider}. Evidence of misuse: ${behavioral_evidence}. Tool provenance audit: ${tool_provenance_summary}."
         },
         {
           "obligation_ref": "EU/GDPR Art.33 72h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
-          "evidence_attached": ["personal_data_scope_assessment", "high_risk_to_data_subjects_determination", "containment_measures"],
+          "evidence_attached": [
+            "personal_data_scope_assessment",
+            "high_risk_to_data_subjects_determination",
+            "containment_measures"
+          ],
           "draft_notification": "GDPR Art.33 supervisory authority notification: Personal data breach via AI-API C2 channel and/or credential exfil. Affected data categories: ${data_categories}. Approximate number of data subjects affected: ${affected_count}. High-risk determination per Art.34: ${high_risk_determination}. Containment measures: ${containment_summary}."
         },
         {
           "obligation_ref": "AU/APRA CPS 234 72h",
           "deadline": "computed_at_runtime",
           "recipient": "regulator_email",
-          "evidence_attached": ["materiality_assessment", "remediation_completed_evidence"],
+          "evidence_attached": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ],
           "draft_notification": "APRA CPS 234 notification: Material information security incident — AI-API C2 / credential exposure on ${affected_host_count} host(s). Materiality: ${materiality_justification}. Remediation summary: ${remediation_summary}."
         }
       ],
@@ -730,7 +1028,14 @@
         "exception_template": {
           "scope": "AI-API egress for asset(s) ${asset_list} cannot be routed through a per-process-attributed proxy in this remediation cycle, OR dotfile credential migration is blocked by vendor SDK constraints. Remediation paths 3-5 partially blocked.",
           "duration": "30d",
-          "compensating_controls": ["per_token_rate_quota_enforced_at_vendor_side", "vendor_abuse_alerting_subscription", "weekly_dotfile_credential_re-audit_with_diff_alerting", "endpoint_egress_anomaly_baseline_with_per-host_alerting", "ai_api_destination_dns_logging_with_cadence_analysis", "isolation_capability_pre-tested_with_runbook"],
+          "compensating_controls": [
+            "per_token_rate_quota_enforced_at_vendor_side",
+            "vendor_abuse_alerting_subscription",
+            "weekly_dotfile_credential_re-audit_with_diff_alerting",
+            "endpoint_egress_anomaly_baseline_with_per-host_alerting",
+            "ai_api_destination_dns_logging_with_cadence_analysis",
+            "isolation_capability_pre-tested_with_runbook"
+          ],
           "risk_acceptance_owner": "ciso",
           "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (System Operations / Anomaly Detection / Boundary Protection / Authenticator Management), the organization documents a time-bound risk acceptance for AI-API egress on asset(s) ${asset_list} that cannot be brought under per-process-attributed proxy control within the current remediation cycle. The accepted threat class is AI-as-C2 (SesameOp pattern / ATLAS AML.T0096) and dotfile credential exfiltration. The organization accepts that current framework controls (NIST 800-53 SI-3/SC-7/AC-2/IA-5, ISO 27001:2022 A.8.16, SOC 2 CC6/CC7, EU AI Act Art.15) treat AI-vendor endpoints as authorized SaaS and AI service accounts as legitimately authorized identities, that this structural blind spot is documented in ${exceptd_framework_gap_mapping_ref}, and that the organization's compensating controls during the exception window are: ${compensating_controls}. Detection coverage: AI-API destination DNS logging with cadence analysis, endpoint egress anomaly baseline, weekly dotfile re-audit. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (proxy infrastructure ready, vendor SDK supports brokered credentials, OR ${default_30d_expiry}, whichever is first). Re-evaluation triggers: new SesameOp variant published, new AI vendor added to scope, dotfile credential count above zero in weekly audit, OR scheduled expiry."
         }
@@ -742,22 +1047,27 @@
       }
     }
   },
-
   "directives": [
     {
       "id": "all-ai-api-and-credential-exposure",
       "title": "Full AI-API C2 + dotfile credential exposure audit",
-      "applies_to": { "always": true }
+      "applies_to": {
+        "always": true
+      }
     },
     {
       "id": "sesameop-aml-t0096",
       "title": "ATLAS AML.T0096 — AI as C2 (SesameOp / PROMPTFLUX / PROMPTSTEAL)",
-      "applies_to": { "atlas_ttp": "AML.T0096" }
+      "applies_to": {
+        "atlas_ttp": "AML.T0096"
+      }
     },
     {
       "id": "t1552-001-credentials-in-files",
       "title": "T1552.001 — Unsecured Credentials: Credentials in Files",
-      "applies_to": { "attack_technique": "T1552.001" }
+      "applies_to": {
+        "attack_technique": "T1552.001"
+      }
     }
   ]
 }

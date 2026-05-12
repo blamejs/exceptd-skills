@@ -101,7 +101,7 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
 
 // Seven-phase playbook verbs handled in-process (no subprocess dispatch).
 const PLAYBOOK_VERBS = new Set([
-  "plan", "govern", "direct", "look", "run", "ingest", "reattest",
+  "plan", "govern", "direct", "look", "run", "ingest", "reattest", "list-attestations",
 ]);
 
 function readPkgVersion() {
@@ -149,8 +149,9 @@ Analyst:
 
 Playbook runner — seven-phase contract
 (govern → direct → look → detect → analyze → validate → close):
-  plan [--playbook id]...    List playbooks + directives (planning JSON).
-                             [--mode m] [--session-id id] [--pretty]
+  plan [--playbook id]...    List playbooks + directives, grouped by scope.
+                             [--scope system|code|service|cross-cutting|all]
+                             [--flat] [--mode m] [--session-id id] [--pretty]
   govern <playbook>          Phase 1: GRC context (jurisdictions, theater,
                              framework gaps, skill_preload).
                              [--directive id] [--mode m] [--air-gap]
@@ -160,8 +161,14 @@ Playbook runner — seven-phase contract
   look <playbook>            Phase 3: artifact-collection spec the host AI
                              should execute.
                              [--directive id] [--air-gap]
-  run <playbook>             Phases 4-7: detect → analyze → validate → close
-                             from an agent submission JSON.
+  run [playbook]             Phases 4-7: detect → analyze → validate → close.
+                             Three invocation modes:
+                               run <playbook>           single playbook (explicit)
+                               run --scope <type>       run all playbooks of that scope
+                               run --all                run every playbook
+                               run                      auto-detect from cwd:
+                                                          .git/         → code
+                                                          /proc + os-release → system
                              [--directive id] [--evidence file|-]
                              [--session-id id] [--session-key hex]
                              [--force-stale] [--air-gap]
@@ -320,8 +327,15 @@ function firstDirectiveId(runner, playbookId) {
 }
 
 function dispatchPlaybook(cmd, argv) {
+  // Per-verb --help / -h before any positional-arg validation so users always
+  // get usage text instead of an error about missing arguments.
+  if (argv.includes("--help") || argv.includes("-h")) {
+    printPlaybookVerbHelp(cmd);
+    process.exit(0);
+  }
+
   const args = parseArgs(argv, {
-    bool:  ["pretty", "air-gap", "force-stale"],
+    bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives"],
     multi: ["playbook"],
   });
   const pretty = !!args.pretty;
@@ -350,22 +364,165 @@ function dispatchPlaybook(cmd, argv) {
       case "run":      return cmdRun(runner, args, runOpts, pretty);
       case "ingest":   return cmdIngest(runner, args, runOpts, pretty);
       case "reattest": return cmdReattest(runner, args, runOpts, pretty);
+      case "list-attestations": return cmdListAttestations(runner, args, runOpts, pretty);
     }
   } catch (e) {
     emitError(e.message, { verb: cmd }, pretty);
   }
 }
 
+function printPlaybookVerbHelp(verb) {
+  const cmds = {
+    plan: `plan — list playbooks + directives, grouped by scope.
+
+Flags:
+  --playbook <id> ...     Filter to one or more playbook IDs.
+  --scope <type>          Filter by scope: system | code | service | cross-cutting | all
+  --flat                  Disable grouped-by-scope output; emit flat list.
+  --directives            Include directive id + title + applies_to per playbook.
+  --session-id <id>       Reuse a specific session ID for the planning output.
+  --mode <m>              Investigation mode forwarded into govern.
+  --pretty                Indented JSON output.`,
+    govern: `govern <playbook> — phase 1, load GRC context for a playbook.
+
+Args / flags:
+  <playbook>              Playbook ID. Required positional.
+  --directive <id>        Specific directive (default: first one).
+  --mode <m>              Investigation mode forwarded into govern policy.
+  --air-gap               Honor _meta.air_gap_mode + air_gap_alternative paths.
+  --pretty                Indented JSON output.
+
+Output: jurisdiction_obligations, theater_fingerprints, framework_context, skill_preload.`,
+    direct: `direct <playbook> — phase 2, threat context + skill chain + token budget.
+
+Args / flags:
+  <playbook>              Required positional.
+  --directive <id>        Specific directive (default: first one).
+  --pretty                Indented JSON output.`,
+    look: `look <playbook> — phase 3, artifact-collection spec the host AI executes.
+
+Args / flags:
+  <playbook>              Required positional.
+  --directive <id>        Specific directive (default: first one).
+  --air-gap               Honor air_gap_alternative paths.
+  --pretty                Indented JSON output.
+
+Output includes a 'preconditions' array — the host AI MUST verify each
+precondition with its own probes and declare results back in the submission as:
+  { "precondition_checks": { "<id>": true | false } }
+The runner refuses the run if a precondition with on_fail=halt is unverified.`,
+    run: `run [playbook] — phases 4-7 (detect → analyze → validate → close).
+
+Invocation modes:
+  run <playbook>          Single playbook (explicit).
+  run --scope <type>      Run all playbooks of that scope.
+  run --all               Run every playbook.
+  run                     Auto-detect from cwd:
+                            .git/                  → code playbooks
+                            /proc + os-release     → system playbooks
+                          Always includes cross-cutting playbooks.
+
+Flags:
+  --directive <id>        Specific directive (default: first one per playbook).
+  --evidence <file|->     Path to submission JSON or '-' for stdin.
+                          Single-playbook shape:
+                            { artifacts, signal_overrides, signals, precondition_checks }
+                          Multi-playbook shape:
+                            { "<playbook_id>": { artifacts, ... }, ... }
+  --session-id <id>       Reuse a specific session ID.
+  --session-key <hex>     HMAC sign the evidence_package with this key.
+  --force-stale           Override the threat_currency_score < 50 hard-block.
+  --air-gap               Honor air_gap_alternative paths.
+  --pretty                Indented JSON output.
+
+Attestation is persisted to .exceptd/attestations/<session_id>/ on every
+successful run (single: attestation.json; multi: <playbook_id>.json).`,
+    ingest: `ingest — alias for 'run' matching AGENTS.md terminology.
+
+Flags:
+  --domain <id>           Playbook ID (overrides submission.playbook_id).
+  --directive <id>        Directive ID (overrides submission.directive_id).
+  --evidence <file|->     Submission JSON. May include playbook_id/directive_id.
+  --pretty                Indented JSON output.`,
+    reattest: `reattest <session-id> — replay a prior session and diff the evidence_hash.
+
+Args / flags:
+  <session-id>            Required positional. Looks under .exceptd/attestations/<id>/.
+  --pretty                Indented JSON output.
+
+Reports: unchanged | drifted | resolved from evidence_hash + classification deltas.`,
+  };
+  process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
+}
+
 function cmdPlan(runner, args, runOpts, pretty) {
-  const playbookIds = args.playbook
+  let playbookIds = args.playbook
     ? (Array.isArray(args.playbook) ? args.playbook : [args.playbook])
     : null;
+  // --scope filters playbook list by _meta.scope.
+  if (!playbookIds && args.scope) {
+    playbookIds = filterPlaybooksByScope(runner, args.scope);
+  }
   const plan = runner.plan({
     playbookIds: playbookIds || undefined,
     mode: runOpts.mode,
     session_id: runOpts.session_id,
   });
+  // Default UX: group by scope unless --flat or a filter was applied.
+  if (!args.flat && !playbookIds) {
+    plan.grouped_by_scope = groupPlaybooksByScope(plan.playbooks);
+    plan.scope_summary = Object.fromEntries(
+      Object.entries(plan.grouped_by_scope).map(([s, list]) => [s, list.length])
+    );
+  }
+  // --directives expands each playbook entry with its directive id + title +
+  // applies_to so operators / AIs can pick a specific directive without
+  // grepping playbook source.
+  if (args.directives) {
+    for (const pb of plan.playbooks) {
+      const full = runner.loadPlaybook(pb.id);
+      pb.directives = full.directives.map(d => ({ id: d.id, title: d.title, applies_to: d.applies_to }));
+    }
+  }
   emit(plan, pretty);
+}
+
+function filterPlaybooksByScope(runner, scope) {
+  const ids = runner.listPlaybooks();
+  return ids.filter(id => {
+    try {
+      const pb = runner.loadPlaybook(id);
+      return scope === "all" || pb._meta.scope === scope;
+    } catch { return false; }
+  });
+}
+
+function groupPlaybooksByScope(playbooks) {
+  const groups = {};
+  for (const pb of playbooks) {
+    const scope = pb.scope || pb._meta?.scope || "unscoped";
+    (groups[scope] = groups[scope] || []).push(pb.id);
+  }
+  return groups;
+}
+
+/**
+ * Auto-detect which scopes apply to the cwd. Returns an array of scope strings.
+ * - `code`     when the cwd looks like a git repo
+ * - `system`   when /proc + /etc/os-release exist (Linux host)
+ * - `service`  always included as advisory — service investigations don't
+ *              depend on cwd; the operator/AI decides whether to run them
+ *
+ * Returns at minimum `['cross-cutting']` so framework correlation can always
+ * run after other findings land.
+ */
+function detectScopes() {
+  const detected = [];
+  if (fs.existsSync(path.join(process.cwd(), ".git"))) detected.push("code");
+  if (fs.existsSync("/proc") && fs.existsSync("/etc/os-release")) detected.push("system");
+  // service playbooks need explicit invocation — they have side effects
+  // (probing remote endpoints) so we don't auto-include them.
+  return detected.length ? detected : ["cross-cutting"];
 }
 
 function cmdGovern(runner, args, runOpts, pretty) {
@@ -396,8 +553,32 @@ function cmdLook(runner, args, runOpts, pretty) {
 }
 
 function cmdRun(runner, args, runOpts, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("run: missing <playbookId> positional argument.", null, pretty);
+  const positional = args._[0];
+
+  // Multi-playbook dispatch path. Triggered by --all, --scope <type>, or by
+  // a bare `exceptd run` (no positional, no flags) which auto-detects scopes
+  // from the cwd.
+  if (!positional && (args.all || args.scope)) {
+    let ids;
+    if (args.all) {
+      ids = runner.listPlaybooks();
+    } else {
+      ids = filterPlaybooksByScope(runner, args.scope);
+    }
+    return cmdRunMulti(runner, ids, args, runOpts, pretty, { trigger: args.all ? "--all" : `--scope ${args.scope}` });
+  }
+  if (!positional && !args.all && !args.scope) {
+    const scopes = detectScopes();
+    const ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) {
+      return emitError("run: no playbook resolved. Pass <playbookId>, --scope <type>, or --all.", null, pretty);
+    }
+    return cmdRunMulti(runner, unique, args, runOpts, pretty, { trigger: "auto-detect", detected_scopes: scopes });
+  }
+
+  // Single-playbook path (existing behavior).
+  const playbookId = positional;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return emitError(`run: playbook ${playbookId} has no directives.`, null, pretty);
@@ -444,6 +625,81 @@ function cmdRun(runner, args, runOpts, pretty) {
     process.exit(1);
   }
   emit(result, pretty);
+}
+
+/**
+ * Multi-playbook run. Iterates `ids` (already filtered by scope or auto-detect),
+ * runs each through runner.run with a shared session_id, persists each
+ * attestation under .exceptd/attestations/<session_id>/<playbook_id>.json, and
+ * emits a single aggregate bundle. Refuses if no evidence is provided (the
+ * host AI MUST submit observations per playbook — the engine can't synthesize them).
+ *
+ * Evidence shape for multi-run: { <playbook_id>: { artifacts, signal_overrides, signals, precondition_checks } }
+ * Falls back to running every playbook with empty evidence (engine returns
+ * inconclusive findings + visibility gaps) when no --evidence is given.
+ */
+function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
+  const sessionId = runOpts.session_id || require("crypto").randomBytes(8).toString("hex");
+  runOpts.session_id = sessionId;
+
+  let bundle = {};
+  if (args.evidence) {
+    try { bundle = readEvidence(args.evidence); } catch (e) {
+      return emitError(`run: failed to read evidence bundle: ${e.message}`, { evidence: args.evidence }, pretty);
+    }
+  }
+
+  const results = [];
+  for (const id of ids) {
+    const pb = runner.loadPlaybook(id);
+    const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
+    if (!directiveId) {
+      results.push({ playbook_id: id, ok: false, error: "no directives" });
+      continue;
+    }
+    const submission = bundle[id] || {};
+    const perRunOpts = { ...runOpts };
+    if (submission.precondition_checks) perRunOpts.precondition_checks = submission.precondition_checks;
+
+    const result = runner.run(id, directiveId, submission, perRunOpts);
+
+    // Persist per-playbook attestation under the shared session.
+    if (result && result.ok) {
+      try {
+        const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+          path.join(dir, `${id}.json`),
+          JSON.stringify({
+            session_id: sessionId,
+            playbook_id: id,
+            directive_id: directiveId,
+            evidence_hash: result.evidence_hash,
+            submission,
+            run_opts: { airGap: perRunOpts.airGap, forceStale: perRunOpts.forceStale, mode: perRunOpts.mode },
+            captured_at: new Date().toISOString(),
+          }, null, 2)
+        );
+      } catch { /* non-fatal */ }
+    }
+    results.push(result);
+  }
+
+  emit({
+    ok: results.every(r => r.ok !== false),
+    session_id: sessionId,
+    trigger: meta.trigger,
+    detected_scopes: meta.detected_scopes || null,
+    playbooks_run: ids,
+    summary: {
+      total: results.length,
+      succeeded: results.filter(r => r.ok !== false).length,
+      blocked: results.filter(r => r.ok === false).length,
+      detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
+      inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
+    },
+    results,
+  }, pretty);
 }
 
 function cmdIngest(runner, args, runOpts, pretty) {
@@ -577,6 +833,44 @@ function cmdReattest(runner, args, runOpts, pretty) {
     replayed_at: new Date().toISOString(),
     replay_classification: replay.phases && replay.phases.detect && replay.phases.detect.classification,
     replay_rwep_adjusted: replay.phases && replay.phases.analyze && replay.phases.analyze.rwep && replay.phases.analyze.rwep.adjusted,
+  }, pretty);
+}
+
+function cmdListAttestations(runner, args, runOpts, pretty) {
+  const root = path.join(process.cwd(), ".exceptd", "attestations");
+  if (!fs.existsSync(root)) {
+    return emit({ ok: true, attestations: [], note: `No attestations directory at ${path.relative(process.cwd(), root)}` }, pretty);
+  }
+  const sessions = fs.readdirSync(root, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name);
+
+  const entries = [];
+  for (const sid of sessions) {
+    const sdir = path.join(root, sid);
+    const files = fs.readdirSync(sdir).filter(f => f.endsWith(".json"));
+    for (const f of files) {
+      try {
+        const j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8"));
+        // Apply --playbook filter if supplied.
+        if (args.playbook && j.playbook_id !== args.playbook) continue;
+        entries.push({
+          session_id: sid,
+          playbook_id: j.playbook_id,
+          directive_id: j.directive_id,
+          evidence_hash: j.evidence_hash ? j.evidence_hash.slice(0, 16) + "..." : null,
+          captured_at: j.captured_at || null,
+          file: path.relative(process.cwd(), path.join(sdir, f)),
+        });
+      } catch { /* skip malformed */ }
+    }
+  }
+  entries.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
+  emit({
+    ok: true,
+    attestations: entries,
+    count: entries.length,
+    filter: { playbook: args.playbook || null },
   }, pretty);
 }
 

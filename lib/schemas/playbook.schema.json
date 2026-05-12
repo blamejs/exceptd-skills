@@ -36,6 +36,11 @@
         },
         "owner": { "type": "string", "description": "GitHub handle or team responsible for currency." },
         "air_gap_mode": { "type": "boolean", "description": "When true, all artifact collection and lookups use offline fallbacks. No network." },
+        "scope": {
+          "type": "string",
+          "description": "Primary investigation scope. Drives CLI auto-detect + --scope filtering. system = host/kernel/packages/sysctl; code = repo walk / lockfiles / IaC; service = network APIs / MCP / AI providers; cross-cutting = pure-analyze correlation layer.",
+          "enum": ["system", "code", "service", "cross-cutting"]
+        },
         "preconditions": {
           "type": "array",
           "description": "Must hold before the playbook runs.",
