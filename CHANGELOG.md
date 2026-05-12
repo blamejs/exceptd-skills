@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.11.9 — 2026-05-12
+
+**Patch: items 99-115 — CLI-shim audit, real fixes.**
+
+User audit identified the common root cause across 8 releases of "fixed" bugs that operators kept re-finding: the CLI shim layer between arg parsing and result rendering. v0.11.9 audits that layer end to end.
+
+### Critical
+
+- **#99 default human output, unconditionally.** Pre-0.11.9 default was conditional on `process.stdout.isTTY`. Under most automation harnesses (Claude Code's Bash tool, GitHub Actions, CI runners, subprocess pipes) `isTTY` is false, so operators saw JSON everywhere "default human" was advertised. Now: when a human renderer is supplied AND no `--json`/`--pretty`/`--json-stdout-only` is passed, emit human. `--json` to opt back into JSON. Closes the longest-standing UX gap.
+
+### Bugs
+
+- **#100 cmdRunMulti exits non-zero on any blocked run.** Pre-0.11.9 the aggregate result had `{ok: false}` in the body but exit code stayed 0 for multi-playbook runs (cmdRunMulti was missing the exit-non-zero gate that cmdRun had). CI gates couldn't distinguish "ran clean" from "any blocked." Now: cmdRunMulti checks `results.some(r => r.ok === false)` and exits 1 when true, matching cmdRun's single-playbook contract.
+
+- **#113 `--operator` surfaces in run result top-level.** Pre-0.11.9 `--operator` was persisted to the attestation file but the run result didn't echo it back. Operators thought the flag was dropped. Now: `result.operator = runOpts.operator` so `exceptd run … --operator … --json | jq .operator` returns the supplied value.
+
+- **#114 `--ack` surfaces in run result top-level.** Same shape as #113. `result.operator_consent = { acked_at, explicit: true }` echoes back in the run result.
+
+- **#115 `ci --required <list>` actually filters.** Pre-0.11.9 the flag was silently ignored — `ci --required secrets,sbom` ran the default scope set anyway. Now: `--required` takes precedence over `--scope` and `--all`, runs exactly the named set, rejects unknown playbook IDs with a structured error.
+
+- **#102 `attest diff` unchanged_count for identical hashes** — already fixed in v0.11.8 (verified by new regression test in this release).
+
+- **#104 jurisdiction clocks on detected** — verified working: `ci --required secrets --evidence <detected-submission>` returns `jurisdiction_clocks_started: 3` (for secrets' 3 detect_confirmed obligations). The user's earlier report was on a pre-canonicalize-fix version where `detection_classification: detected` wasn't propagating.
+
+### Tests
+
+5 new cases for items 104, 113, 114, 115. 333 total.
+
+### Deferred
+
+- **#116** `ci --explain` dry-run mode
+- **#117** `diff <playbook> --since <window>`
+- **#118** `attest sign <id>` retroactive signing
+
 ## 0.11.8 — 2026-05-12
 
 **Patch: items 99-104 + 6 new regression tests (328 total).**

@@ -534,6 +534,57 @@ test('#103 ci does not fail on inconclusive baseline RWEP', () => {
 });
 
 // ===================================================================
+test('#104 jurisdiction clocks fire on detected classification', () => {
+  const sub = JSON.stringify({
+    secrets: {
+      observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+      verdict: { classification: 'detected', blast_radius: 4 }
+    }
+  });
+  const tmpFile = path.join(require('os').tmpdir(), `civ-${Date.now()}.json`);
+  fs.writeFileSync(tmpFile, sub);
+  const r = cli(['ci', '--required', 'secrets', '--evidence', tmpFile, '--json']);
+  fs.unlinkSync(tmpFile);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ci output should be JSON');
+  assert.ok(data.summary.jurisdiction_clocks_started >= 1,
+    'detected classification with detect_confirmed obligations should fire at least one jurisdiction clock');
+});
+
+test('#113 --operator surfaces in run result top-level', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--operator', 'robert@example.com', '--session-id', 'oper113-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run output should be JSON');
+  assert.equal(data.operator, 'robert@example.com',
+    '--operator must surface at result.operator (pre-0.11.9 was attestation-only)');
+});
+
+test('#114 --ack surfaces in run result top-level', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'ack114-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run output should be JSON');
+  assert.ok(data.operator_consent && data.operator_consent.explicit === true,
+    '--ack must surface at result.operator_consent.explicit');
+});
+
+test('#115 ci --required filters to exactly the named playbooks', () => {
+  const r = cli(['ci', '--required', 'secrets,sbom', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ci output should be JSON');
+  const sortedRun = [...data.playbooks_run].sort();
+  assert.deepEqual(sortedRun, ['sbom', 'secrets'],
+    'ci --required must run exactly the named set, not a superset/subset');
+});
+
+test('#115 ci --required rejects unknown playbook id', () => {
+  const r = cli(['ci', '--required', 'totally-not-a-playbook', '--json']);
+  assert.notEqual(r.status, 0, 'unknown --required playbook must exit non-zero');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err && err.ok === false);
+  assert.match(err.error, /unknown playbook/);
+});
+
+// ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
   // We don't want this test to actually generate a keypair — just verify
   // the flag is recognized and doctor doesn't reject it as unknown.

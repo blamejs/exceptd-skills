@@ -437,17 +437,22 @@ function parseArgs(argv, opts) {
 }
 
 function emit(obj, pretty, humanRenderer) {
-  // v0.11.6 (#95): real default-human flip. When stdout is a TTY AND no
-  // --json/--pretty was passed AND a custom human renderer was supplied,
-  // render the human form. Otherwise: indented JSON on TTY (improvement
-  // over compact), compact JSON when piped. --pretty forces indented JSON
-  // regardless. --json forces JSON (overrides human renderer).
-  const interactive = process.stdout.isTTY && !process.env.EXCEPTD_RAW_JSON;
-  const wantHuman = humanRenderer && interactive && !pretty && !global.__exceptdWantJson;
-  if (wantHuman) {
+  // v0.11.9 (#99): default to HUMAN-readable unconditionally when a renderer
+  // is provided. Pre-0.11.9 the default depended on process.stdout.isTTY,
+  // which is false under most automation harnesses (Claude Code's Bash tool,
+  // GitHub Actions, CI runners, subprocess pipes). Operators saw JSON
+  // everywhere "default human" was advertised. Now:
+  //   --json or --json-stdout-only   → compact JSON
+  //   --pretty                       → indented JSON
+  //   default (no flag, renderer present) → HUMAN
+  //   default (no flag, no renderer)      → indented JSON when TTY else compact
+  // This closes the longest-standing UX gap across 8 releases.
+  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
+  if (humanRenderer && !wantJson && !pretty) {
     process.stdout.write(humanRenderer(obj) + "\n");
     return;
   }
+  const interactive = process.stdout.isTTY && !process.env.EXCEPTD_RAW_JSON;
   const indent = pretty || (interactive && !pretty);
   const s = indent ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
   process.stdout.write(s + "\n");
@@ -1289,6 +1294,12 @@ function cmdRun(runner, args, runOpts, pretty) {
 
   const result = runner.run(playbookId, directiveId, submission, runOpts);
 
+  // v0.11.9 (#113/#114): surface --operator and --ack in the run result so
+  // operators see the attribution + consent state without inspecting the
+  // attestation file. Pre-0.11.9 these were persisted to disk only.
+  if (result && runOpts.operator) result.operator = runOpts.operator;
+  if (result && runOpts.operator_consent) result.operator_consent = runOpts.operator_consent;
+
   // Persist attestation for reattest cycles when the run succeeded.
   if (result && result.ok && result.session_id) {
     const persistResult = persistAttestation({
@@ -1626,6 +1637,12 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     },
     results,
   }, pretty);
+  // v0.11.9 (#100): cmdRunMulti exits non-zero when any individual run
+  // returned ok:false. Pre-0.11.9 the aggregate result had {ok:false} in
+  // the body but exit code stayed 0 — CI gates couldn't distinguish "ran
+  // clean" from "blocked." Now matches cmdRun's single-playbook contract.
+  const anyBlocked = results.some(r => r.ok === false);
+  if (anyBlocked) process.exit(1);
 }
 
 function cmdIngest(runner, args, runOpts, pretty) {
@@ -3187,14 +3204,20 @@ function cmdCi(runner, args, runOpts, pretty) {
   const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
   const blockOnClock = !!args["block-on-jurisdiction-clock"];
 
-  // v0.11.2 bug #63: align with discover. ci now includes cross-cutting
-  // playbooks (framework) automatically, and when --scope code is set on a
-  // cwd that has lockfiles, also includes sbom (which is scope:system but
-  // applies to any repo). Operators expect ci to run "what discover would
-  // recommend"; pre-0.11.2 ci ran scope=X only, which dropped framework +
-  // missed sbom-on-repo.
+  // v0.11.9 (#115): --required <playbook,playbook,...> takes precedence over
+  // --scope and --all. Operators specifying an explicit set get exactly that
+  // set, no more, no less. Pre-0.11.9 the flag was silently ignored.
   let ids;
-  if (args.all) {
+  if (args.required) {
+    const requestedRaw = Array.isArray(args.required) ? args.required.join(",") : args.required;
+    const requested = requestedRaw.split(",").map(s => s.trim()).filter(Boolean);
+    const all = runner.listPlaybooks();
+    const unknown = requested.filter(r => !all.includes(r));
+    if (unknown.length > 0) {
+      return emitError(`ci --required: unknown playbook ID(s) ${JSON.stringify(unknown)}. Known: ${all.join(", ")}.`, null, pretty);
+    }
+    ids = requested;
+  } else if (args.all) {
     ids = runner.listPlaybooks();
   } else if (scope) {
     ids = filterPlaybooksByScope(runner, scope);
