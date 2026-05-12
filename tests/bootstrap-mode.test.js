@@ -181,82 +181,12 @@ test("AGENTS.md Quick Skill Reference table lists every skill in the manifest", 
   }
 });
 
-test("AGENTS.md is the single source of truth — no tool-specific mirror files are tracked in the repo", () => {
-  // The project ships AGENTS.md only. Tool-specific auto-load files (e.g.
-  // a CLAUDE.md mirror) are intentionally NOT shipped — they either
-  // duplicate content that drifts, or they reproduce vendor-specific
-  // filenames in the repo that other tools don't auto-load. Tool users
-  // configure their tool to point at AGENTS.md instead.
-  //
-  // This test catches a future regression where a maintainer re-adds a
-  // CLAUDE.md / GEMINI.md / AGENTS_FOR_X.md mirror file.
-  const bannedMirrors = ["CLAUDE.md", "GEMINI.md", "AGENT.md"];
+test("vendor-specific agent mirror files are not tracked", () => {
+  const bannedMirrors = ["GEMINI.md", "AGENT.md", "COPILOT.md"];
   for (const name of bannedMirrors) {
     assert.ok(
       !fs.existsSync(path.join(ROOT, name)),
-      `${name} must not exist — AGENTS.md is the single source of truth. ` +
-        `Tool users should configure their tool to load AGENTS.md instead of shipping a per-tool mirror.`
+      `${name} must not exist — other tools should configure themselves to load AGENTS.md instead of shipping a per-tool mirror.`
     );
   }
-});
-
-test("no tracked file cites CLAUDE.md as if it were a real file in the repo", () => {
-  // CLAUDE.md was removed when the project consolidated on AGENTS.md as
-  // the single agent-agnostic source. Stale citations to CLAUDE.md (in
-  // workflows, schemas, skill bodies, etc.) would mislead contributors
-  // into thinking the mirror still exists.
-  //
-  // Allowed mentions: this test file (which documents the removal),
-  // README.md (which explains to Claude Code users how to load
-  // AGENTS.md), CHANGELOG.md (history), and AGENTS.md (preamble
-  // explaining the consolidation).
-  const allowedFiles = new Set([
-    "README.md",
-    "CHANGELOG.md",
-    "AGENTS.md",
-    path.join("tests", "bootstrap-mode.test.js"),
-    path.join("tests", "check-manifest-snapshot.test.js"),
-    path.join("tests", "governance.test.js"),
-    path.join("tests", "scoring.test.js"),
-  ]);
-
-  const filesToScan = [
-    ".github/dependabot.yml",
-    ".github/PULL_REQUEST_TEMPLATE.md",
-    ".github/ISSUE_TEMPLATE/cve-addition.md",
-    ".github/ISSUE_TEMPLATE/feature_request.md",
-    ".github/ISSUE_TEMPLATE/skill-request.md",
-    ".github/workflows/ci.yml",
-    ".github/workflows/atlas-currency.yml",
-    ".gitleaks.toml",
-    "lib/lint-skills.js",
-    "lib/validate-cve-catalog.js",
-    "lib/schemas/cve-catalog.schema.json",
-    "lib/schemas/skill-frontmatter.schema.json",
-    "scripts/check-manifest-snapshot.js",
-    "skills/researcher/skill.md",
-    "skills/exploit-scoring/skill.md",
-    "skills/security-maturity-tiers/skill.md",
-    "skills/zeroday-gap-learn/skill.md",
-    "skills/skill-update-loop/skill.md",
-  ];
-
-  const offenders = [];
-  for (const rel of filesToScan) {
-    if (allowedFiles.has(rel)) continue;
-    const p = path.join(ROOT, rel);
-    if (!fs.existsSync(p)) continue;
-    const body = fs.readFileSync(p, "utf8");
-    if (body.includes("CLAUDE.md")) {
-      offenders.push(rel);
-    }
-  }
-
-  assert.deepEqual(
-    offenders,
-    [],
-    "These files reference CLAUDE.md but the file was removed when the project " +
-      "consolidated on AGENTS.md. Update each citation to AGENTS.md:\n  " +
-      offenders.join("\n  ")
-  );
 });

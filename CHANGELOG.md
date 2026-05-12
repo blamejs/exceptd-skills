@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.11.0 — 2026-05-12
+
+**Minor: architectural CLI redesign — 21 verbs collapsed to 11. Plus operator-reported items 31-46.**
+
+### New canonical surface
+
+| New verb | Replaces |
+|---|---|
+| `brief [playbook]` | plan + govern + direct + look |
+| `run [playbook]` | run + ingest (unchanged but with flat submission shape) |
+| `ai-run <playbook>` | new — JSONL streaming variant for AI conversational flow |
+| `attest <subverb> <sid>` | reattest + list-attestations (now `attest diff` + `attest list`) |
+| `discover` | scan + dispatch (recommends playbooks based on cwd) |
+| `doctor` | currency + verify + validate-cves + validate-rfcs + signing-status |
+| `ci` | new — one-shot CI gate |
+| `ask "<question>"` | new — plain-English routing to playbook(s) |
+| `lint <playbook> <evidence>` | new — pre-flight submission shape check |
+| `verify-attestation <sid>` | alias for `attest verify` |
+| `run-all` | alias for `run --all` |
+
+`exceptd` with no args now prints a welcome with two ways to start (`discover` / `ask`) plus common starting playbooks for code / Linux / AI service contexts.
+
+### Default output flip
+
+Old default was JSON one-line; `--pretty` for humans. Reads weird for the operator audience. v0.11.0 flips:
+
+- **Default: human-readable** (5-10 line summary per phase) for `discover` / `doctor` / `ci` / others.
+- `--json` for machine consumption.
+- `--json --pretty` for indented JSON.
+
+Seven-phase verbs (`brief` / `run`) still emit JSON by default since their consumers are predominantly AI assistants and CI pipelines — switching them would break every existing script.
+
+### Flat submission shape
+
+The runner now accepts a flatter submission shape — one row per observation, indicator inline:
+
+```json
+{
+  "observations": {
+    "env-files":   { "captured": true, "value": "none tracked", "indicator": "env-file-leak", "result": "no_hit" },
+    "repo-context": "ok"
+  },
+  "verdict": { "theater": "actual_security", "classification": "clean", "blast_radius": 0 }
+}
+```
+
+Nested v0.10.x shape (`artifacts` / `signal_overrides` / `signals` / `precondition_checks`) still works — the runner normalizes either shape internally.
+
+### Smart precondition auto-detect
+
+Mechanically-answerable preconditions (`host.platform == 'linux'`, `cwd_readable`, `agent_has_command('uname')`) are now resolved by the runner itself. The AI only declares preconditions that require intent ("operator authorized this scan"). Reduces evidence-JSON friction by ~80% for typical runs.
+
+### Attestation root relocated
+
+Default attestation root moved from cwd-relative `.exceptd/attestations/` to `~/.exceptd/attestations/<repo-or-host-tag>/`. Repo tag is derived from `git config --get remote.origin.url` + branch when in a git repo, else `host:<hostname>`. Means `attest list` works regardless of which directory you happened to run from.
+
+Override via:
+- `--attestation-root <path>` flag
+- `EXCEPTD_HOME` env var (uses `$EXCEPTD_HOME/attestations/`)
+- Legacy cwd-relative `.exceptd/` still scanned by `attest list` / `findSessionDir` so prior data isn't orphaned.
+
+### Bug fixes (operator-reported items 31-46)
+
+- **#31 / #41 session-id collision** — Pre-0.11.0 a `--session-id` collision silently overwrote the prior attestation (data loss + tamper-evidence violation). Now refuses with exit 3 by default; `--force-overwrite` allows replacement and persists `prior_evidence_hash` + `prior_captured_at` so the audit chain survives.
+- **#32 `--mode` validation** — was silently accepting any string. Now validates against `[self_service, authorized_pentest, ir_response, ctf, research, compliance_audit]`.
+- **#33 `--session-key` hex validation** — was silently accepting any string. Now requires hex (0-9, a-f) and a minimum length of 16.
+- **#34 reattest no artifact diff** — `attest diff <sid> --against <other-sid>` (or `reattest` default replay) now emits per-artifact diff: `{added, removed, changed, unchanged_count}` with value previews. Per-signal-override diff also included.
+- **#35 validate-cves crash** — `sources/validators/` was missing from package.json `files` allowlist. Fixed in v0.10.3; still re-tested in v0.11.0.
+- **#36 unsigned attestation warning** — Runs without `.keys/private.pem` now emit one stderr warning per process: "attestation will be written UNSIGNED — enable Ed25519 signing: node lib/sign.js generate-keypair". Suppress with `EXCEPTD_UNSIGNED_WARNED=1`.
+
+### Feature additions (operator items)
+
+- **#38 `lint <playbook> <evidence>`** — Pre-flight check: detects missing required artifacts, unknown signal keys, unsupplied preconditions. Operators iterate on submission JSON before paying the phase-4-7 cost.
+- **#39 `run --format summary`** — 5-line digest emit format for CI workflows (verdict + RWEP + blast + remediation).
+- **#43 reattest cross-session compare** — `attest diff <a-sid> --against <b-sid>` now compares two sessions side-by-side instead of always replaying the same submission.
+- **#46 plan / brief description always present** — Directive entries in plan output now always include a `description` field (falls back through `directive.description` → playbook `direct.threat_context` first sentence → `domain.name`).
+
+### Deprecation
+
+v0.10.x verbs (`plan` / `govern` / `direct` / `look` / `ingest` / `reattest` / `list-attestations` / `scan` / `dispatch` / `currency` / `verify` / `validate-cves` / `validate-rfcs` / `watchlist` / `prefetch` / `build-indexes`) still work but emit a one-time deprecation banner per process pointing at the v0.11.0 replacement. Removed in v0.12.
+
+Suppress the deprecation banner: `EXCEPTD_DEPRECATION_SHOWN=1`.
+
 ## 0.10.3 — 2026-05-12
 
 **Patch: 14 operator-reported items — 5 bugs + 9 features.**

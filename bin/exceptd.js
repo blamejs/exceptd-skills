@@ -100,9 +100,37 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
 ]);
 
 // Seven-phase playbook verbs handled in-process (no subprocess dispatch).
+// v0.11.0 introduces: brief (collapses plan/govern/direct/look), discover (scan + dispatch),
+// doctor (currency + verify + validate-cves + validate-rfcs), ci (CI gate),
+// ai-run (streaming JSONL), ask (plain-English routing).
 const PLAYBOOK_VERBS = new Set([
-  "plan", "govern", "direct", "look", "run", "ingest", "reattest", "list-attestations", "attest",
+  // v0.11.0 canonical surface:
+  "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
+  "verify-attestation", "run-all", "lint",
+  // v0.10.x legacy verbs — kept as aliases with deprecation banner, removed in v0.12+:
+  "plan", "govern", "direct", "look", "ingest", "reattest", "list-attestations",
 ]);
+
+// Map legacy verb names to their v0.11.0 replacement so the dispatcher can
+// emit a single deprecation banner per session.
+const LEGACY_VERB_REPLACEMENTS = {
+  plan: "brief --all",
+  govern: "brief <pb> --phase govern",
+  direct: "brief <pb> --phase direct",
+  look: "brief <pb> --phase look",
+  ingest: "run",
+  reattest: "attest diff",
+  "list-attestations": "attest list",
+  scan: "discover --scan-only",
+  dispatch: "discover",
+  currency: "doctor --currency",
+  verify: "doctor --signatures",
+  "validate-cves": "doctor --cves",
+  "validate-rfcs": "doctor --rfcs",
+  watchlist: "watch",
+  prefetch: "refresh --no-network",
+  "build-indexes": "refresh --indexes-only",
+};
 
 function readPkgVersion() {
   try {
@@ -112,82 +140,133 @@ function readPkgVersion() {
   }
 }
 
+function printWelcome() {
+  // v0.11.0 redesign #4 — first-run experience. `exceptd` with no args used to
+  // print full help (a wall of text). Now it shows two ways in and where to
+  // go from there.
+  console.log(`exceptd — @blamejs/exceptd-skills v${readPkgVersion()}
+
+Welcome. Two ways to start:
+
+  exceptd discover           # scan this directory + recommend playbooks
+  exceptd ask "<question>"   # plain-English routing to a playbook
+
+If you know what you want:
+
+  exceptd brief <playbook>   # what does this playbook check?
+  exceptd run <playbook>     # run it
+  exceptd ci --scope code    # CI gate against every code-scoped playbook
+
+Common starting playbooks
+  code repos:    secrets, sbom, library-author, crypto-codebase
+  Linux hosts:   kernel, hardening, runtime, cred-stores
+  AI / service:  ai-api, mcp, crypto
+
+Full reference: exceptd help
+Per-verb help:  exceptd <verb> --help
+`);
+}
+
 function printHelp() {
   console.log(`exceptd — @blamejs/exceptd-skills v${readPkgVersion()}
 
 Usage: exceptd <command> [args]
        npx @blamejs/exceptd-skills <command> [args]
 
-Discovery:
-  path                       Print absolute path to the installed package.
-                             Point your AI assistant here:
-                               $(exceptd path)/AGENTS.md
-                               $(exceptd path)/data/_indexes/summary-cards.json
+v0.11.0 canonical surface
+─────────────────────────
 
-External data:
-  prefetch [args]            Warm local cache of upstream artifacts
-                             (KEV / NVD / EPSS / IETF / GitHub releases).
-                             Try: exceptd prefetch --no-network --quiet
-  refresh [args]             Refresh against cache + apply upserts.
-                             Try: exceptd refresh --from-cache --swarm
+  brief [playbook]           Unified info doc — jurisdictions + threat context
+                             + preconditions + artifacts + indicators. Replaces
+                             plan + govern + direct + look.
+                             --all                  every playbook
+                             --scope <type>         system | code | service | cross-cutting
+                             --directives           expand directive metadata
+                             --phase <name>         emit only one phase (legacy compat)
 
-Build / verify:
-  build-indexes [args]       Regenerate data/_indexes/*.json.
-                             Try: exceptd build-indexes --changed
-  verify                     Verify every skill's Ed25519 signature.
+  run [playbook]             Phases 4-7. Auto-detects cwd context when no
+                             playbook positional.
+                             --scope <type> | --all | run-all (alias)
+                             --evidence <file|->    flat or nested submission
+                             --evidence-dir <dir>   per-playbook submission files
+                             --vex <file>           CycloneDX / OpenVEX filter
+                             --format <fmt> ...     csaf-2.0 | sarif | openvex | markdown | summary
+                             --diff-from-latest     drift vs prior attestation
+                             --ci                   exit-code gate (use \`exceptd ci\` instead)
+                             --operator <name>      bind attestation to identity
+                             --ack                  explicit jurisdiction-consent
+                             --session-id <id>      reuse session id (collision refused)
+                             --force-overwrite      override session collision refusal
+                             --session-key <hex>    HMAC sign evidence_package
+                             --force-stale          override threat_currency_score<50 gate
+                             --air-gap              honor air_gap_alternative paths
 
-Analyst:
-  scan                       Scan environment for findings.
-  dispatch                   Scan then route findings to skills.
+  ai-run <playbook>          JSONL streaming variant of run. AI emits events
+                             back on stdin; runner streams phase events on stdout.
+                             --no-stream            single-shot mode
+
+  attest <subverb> <sid>     Auditor-facing operations:
+                             attest show          full attestation
+                             attest list          inventory all sessions
+                             attest export        redacted bundle (--format csaf)
+                             attest verify        Ed25519 signature check
+                             attest diff          drift vs prior or --against <other-sid>
+
+  discover                   Scan cwd → recommend playbooks. Replaces scan + dispatch.
+
+  doctor                     Health check: signatures + currency + cve catalog
+                             + rfc catalog + attestation-signing status.
+                             --signatures | --currency | --cves | --rfcs
+
+  ci                         One-shot CI gate. Exits 2 on detected or rwep≥escalate.
+                             --all | --scope <type> | (auto-detect)
+                             --max-rwep <n>         cap below playbook default
+                             --block-on-jurisdiction-clock
+                             --evidence-dir <dir>
+
+  ask "<question>"           Plain-English routing to playbook(s).
+
+  lint <pb> <evidence>       Pre-flight check submission shape vs playbook
+                             (preconditions / artifacts / indicators) without
+                             executing phases 4-7.
+
+  verify-attestation <sid>   Alias for \`attest verify\`.
+  run-all                    Alias for \`run --all\`.
+
   skill <name>               Show context for a specific skill.
-  currency                   Skill currency report.
-  report [format]            Compliance / executive / technical report.
-  validate-cves [args]       Cross-check CVE catalog vs NVD/KEV/EPSS.
-                             Add --from-cache to read from prefetch cache.
-  validate-rfcs [args]       Cross-check RFC catalog vs IETF Datatracker.
-  watchlist [args]           Forward-watch aggregator across skills.
-
-Playbook runner — seven-phase contract
-(govern → direct → look → detect → analyze → validate → close):
-  plan [--playbook id]...    List playbooks + directives, grouped by scope.
-                             [--scope system|code|service|cross-cutting|all]
-                             [--flat] [--mode m] [--session-id id] [--pretty]
-  govern <playbook>          Phase 1: GRC context (jurisdictions, theater,
-                             framework gaps, skill_preload).
-                             [--directive id] [--mode m] [--air-gap]
-  direct <playbook>          Phase 2: scope (threat_context, rwep_threshold,
-                             skill_chain, token_budget).
-                             [--directive id]
-  look <playbook>            Phase 3: artifact-collection spec the host AI
-                             should execute.
-                             [--directive id] [--air-gap]
-  run [playbook]             Phases 4-7: detect → analyze → validate → close.
-                             Three invocation modes:
-                               run <playbook>           single playbook (explicit)
-                               run --scope <type>       run all playbooks of that scope
-                               run --all                run every playbook
-                               run                      auto-detect from cwd:
-                                                          .git/         → code
-                                                          /proc + os-release → system
-                             [--directive id] [--evidence file|-]
-                             [--session-id id] [--session-key hex]
-                             [--force-stale] [--air-gap]
-  ingest                     Alias for 'run' matching AGENTS.md terminology.
-                             [--domain id] [--directive id] [--evidence f|-]
-  reattest <session-id>      Re-run prior attestation, diff evidence_hash,
-                             report unchanged | drifted | resolved.
-
-Output flags (playbook verbs): default JSON one-line; --pretty for indented.
-
-Common:
-  help                       This help.
+  framework-gap <fw> <ref>   Programmatic gap analysis (one framework, one CVE/scenario).
+  path                       Absolute path to the installed package.
   version                    Package version.
 
+  refresh [args]             Refresh upstream catalogs + indexes. Replaces
+                             prefetch + refresh + build-indexes.
+
+v0.10.x compatibility (will be removed in v0.12)
+────────────────────────────────────────────────
+
+These verbs still work but emit a one-time deprecation banner. Migrate to
+the v0.11.0 verb shown:
+
+  plan → brief --all                govern → brief <pb> --phase govern
+  direct → brief <pb> --phase direct  look → brief <pb> --phase look
+  ingest → run                       reattest → attest diff
+  list-attestations → attest list   scan → discover --scan-only
+  dispatch → discover                currency → doctor --currency
+  verify → doctor --signatures      validate-cves → doctor --cves
+  validate-rfcs → doctor --rfcs     watchlist → watch
+  prefetch → refresh --no-network   build-indexes → refresh --indexes-only
+
+Output: default human-readable (v0.11.0). --json for machine output.
+        --pretty for indented JSON.
+
 Examples:
-  npx @blamejs/exceptd-skills path
-  npx @blamejs/exceptd-skills prefetch
-  npx @blamejs/exceptd-skills validate-cves --from-cache --no-fail
-  npx @blamejs/exceptd-skills skill kernel-lpe-triage
+  exceptd discover                                  # what's in this dir?
+  exceptd brief secrets --pretty                    # what does secrets check?
+  exceptd run secrets --evidence ev.json --ci       # run + CI gate
+  exceptd attest list --playbook secrets            # prior attestations
+  exceptd attest verify <session-id>                # tamper check
+  exceptd ci --scope code --max-rwep 70             # gate every code playbook
+  exceptd ask "I think someone replaced npm packages"   # natural-language route
 
 Full documentation: ${PKG_ROOT}/README.md
 Project rules:      ${PKG_ROOT}/AGENTS.md
@@ -197,7 +276,7 @@ Project rules:      ${PKG_ROOT}/AGENTS.md
 function main() {
   const argv = process.argv.slice(2);
   if (argv.length === 0) {
-    printHelp();
+    printWelcome();
     process.exit(0);
   }
   const cmd = argv[0];
@@ -219,6 +298,15 @@ function main() {
   // Seven-phase playbook verbs run in-process — they emit JSON to stdout
   // rather than dispatch to a script.
   if (PLAYBOOK_VERBS.has(cmd)) {
+    // One-time deprecation banner per process when a legacy verb is invoked.
+    if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
+      process.stderr.write(
+        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (v0.11.0). ` +
+        `Legacy verbs remain functional through this release; they will be removed in v0.12. ` +
+        `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
+      );
+      process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+    }
     dispatchPlaybook(cmd, rest);
     return;
   }
@@ -340,7 +428,8 @@ function dispatchPlaybook(cmd, argv) {
 
   const args = parseArgs(argv, {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
-            "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack"],
+            "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
+            "force-overwrite", "no-stream", "block-on-jurisdiction-clock"],
     multi: ["playbook", "format"],
   });
   const pretty = !!args.pretty;
@@ -349,8 +438,28 @@ function dispatchPlaybook(cmd, argv) {
     forceStale: !!args["force-stale"],
   };
   if (args["session-id"]) runOpts.session_id = args["session-id"];
-  if (args["session-key"]) runOpts.session_key = args["session-key"];
-  if (args.mode) runOpts.mode = args.mode;
+  if (args["attestation-root"]) runOpts.attestationRoot = args["attestation-root"];
+  if (args["session-key"]) {
+    // Bug #33: validate that --session-key is hex. Previously any string was
+    // silently accepted; HMAC signing then either failed silently or produced
+    // an unverifiable signature.
+    if (!/^[0-9a-fA-F]+$/.test(args["session-key"])) {
+      return emitError("run: --session-key must be hex characters only (0-9, a-f). Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"", { provided_length: args["session-key"].length }, pretty);
+    }
+    if (args["session-key"].length < 16) {
+      return emitError("run: --session-key is too short (need at least 16 hex chars / 64 bits of entropy).", { provided_length: args["session-key"].length }, pretty);
+    }
+    runOpts.session_key = args["session-key"];
+  }
+  if (args.mode) {
+    // Bug #32: validate --mode against the accepted set. Previously
+    // `--mode garbage` was silently accepted.
+    const VALID_MODES = ["self_service", "authorized_pentest", "ir_response", "ctf", "research", "compliance_audit"];
+    if (!VALID_MODES.includes(args.mode)) {
+      return emitError(`run: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.`, { provided: args.mode }, pretty);
+    }
+    runOpts.mode = args.mode;
+  }
   // Multi-operator teams need attestations bound to a specific human or
   // service identity. --operator <name> persists into the attestation file
   // for audit-trail accountability. Free-form string; no validation.
@@ -380,6 +489,15 @@ function dispatchPlaybook(cmd, argv) {
       case "reattest": return cmdReattest(runner, args, runOpts, pretty);
       case "list-attestations": return cmdListAttestations(runner, args, runOpts, pretty);
       case "attest": return cmdAttest(runner, args, runOpts, pretty);
+      case "brief": return cmdBrief(runner, args, runOpts, pretty);
+      case "run-all": return cmdRunAll(runner, args, runOpts, pretty);
+      case "verify-attestation": return cmdVerifyAttestation(runner, args, runOpts, pretty);
+      case "lint": return cmdLint(runner, args, runOpts, pretty);
+      case "discover": return cmdDiscover(runner, args, runOpts, pretty);
+      case "doctor": return cmdDoctor(runner, args, runOpts, pretty);
+      case "ai-run": return cmdAiRun(runner, args, runOpts, pretty);
+      case "ask":    return cmdAsk(runner, args, runOpts, pretty);
+      case "ci":     return cmdCi(runner, args, runOpts, pretty);
     }
   } catch (e) {
     emitError(e.message, { verb: cmd }, pretty);
@@ -517,8 +635,259 @@ Subverbs:
                           Reports tamper status per attestation file.
 
 All subverbs honor --pretty for indented JSON output.`,
+    discover: `discover — context-aware playbook recommender (v0.11.0).
+
+Replaces: scan + dispatch + recommend.
+
+Sniffs the cwd (.git/, package.json, pyproject.toml, requirements.txt,
+Cargo.toml, go.mod, Dockerfile, docker-compose.yml, *.tf, k8s/, .env) and
+on Linux reads /etc/os-release to detect host distro. Emits a list of
+recommended exceptd playbooks tailored to what was found.
+
+Flags:
+  --scan-only             Also include legacy \`scan\` output under legacy_scan.
+  --json                  Emit JSON (default is human-readable text).
+  --pretty                Indented JSON output (implies --json).
+
+Output: context + recommended_playbooks[] + next_steps[].`,
+    doctor: `doctor — one-shot health check (v0.11.0).
+
+Replaces: currency + verify + validate-cves + validate-rfcs + signing-status.
+
+Subchecks:
+  --signatures            Ed25519 signature verification across all skills.
+  --currency              Skill currency report (last_threat_review).
+  --cves                  CVE catalog validation (offline view).
+  --rfcs                  RFC catalog validation (offline view).
+  (no flag)               All four, plus signing-status (private key presence).
+
+Flags:
+  --json                  Emit JSON (default is human-readable text).
+  --pretty                Indented JSON output (implies --json).
+
+Output: checks{} per subcheck + summary{all_green, issues_count}.`,
+    "ai-run": `ai-run <playbook> — streaming JSONL contract for AI-driven runs (v0.11.0).
+
+Emits one JSON event per line as the seven phases progress, and reads
+evidence events back on stdin. Single pipe instead of brief → look → run.
+
+Flags:
+  <playbook>              Required positional.
+  --directive <id>        Specific directive (default: first one).
+  --no-stream             Single-shot mode: emit all phases as one JSON doc
+                          without reading stdin (uses runner.run directly).
+  --pretty                Indented JSON output (single-shot only).
+
+Stdin event grammar (one JSON object per line):
+  {"event":"evidence","payload":{"observations":{},"verdict":{}}}
+
+Emits phases: govern → direct → look → await_evidence → detect → analyze
+→ validate → close, then {"event":"done","ok":true,"session_id":"..."}.
+Errors emit {"event":"error","reason":"..."} and exit non-zero.`,
+    ask: `ask "<plain-English question>" — keyword routing to playbooks (v0.11.0).
+
+Tokenises the question (words > 3 chars), scores every playbook by overlap
+against domain.name + domain.attack_class + the first sentence of
+phases.direct.threat_context, returns the top 5 matches with a confidence
+score.
+
+Args / flags:
+  "<question>"            Plain-English question. Wrap in quotes.
+  --pretty                Indented JSON output.
+
+Output: { verb, question, routed_to:[ids], confidence, next_step,
+full_match_list }. Empty match list when no token overlap — surfaces a
+hint pointing at \`exceptd brief --all\` / \`exceptd discover\`.`,
+    ci: `ci [--all|--scope <type>] — one-shot CI gate (v0.11.0).
+
+Top-level CI verb. Equivalent to \`run --all --ci\` but with a clean
+exit-code contract designed for one-line .github/workflows entries.
+
+Flags:
+  --all                   Run every playbook.
+  --scope <type>          Filter: system | code | service | cross-cutting.
+  (no flag)               Auto-detect scopes from cwd (same logic as run).
+  --evidence <file>       Submission bundle (multi-playbook shape).
+  --evidence-dir <dir>    Read <playbook-id>.json files from a directory.
+  --max-rwep <int>        Override RWEP escalate threshold (default: per-playbook).
+  --block-on-jurisdiction-clock
+                          Fail when any close.notification_actions started a
+                          regulatory clock (GDPR 72h, HIPAA breach, etc.).
+  --pretty                Indented JSON output.
+
+Exit codes: 0 PASS, 2 FAIL (detected | rwep ≥ cap | clock started w/ block flag).
+Output: verb, session_id, playbooks_run, summary{total, detected,
+max_rwep_observed, jurisdiction_clocks_started, verdict}, results[].`,
   };
   process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
+}
+
+/**
+ * `brief` — collapses plan + govern + direct + look into one informational
+ * document. Phases 1-3 of the seven-phase contract are entirely informational
+ * (no state mutation), so the AI reads ONE document instead of three CLI
+ * round-trips.
+ *
+ * Modes:
+ *   brief <playbook>          → one playbook, all three info phases unified
+ *   brief --all               → every playbook (replaces `plan`)
+ *   brief <playbook> --phase <name>
+ *                             → emit only the named phase (compat with
+ *                               legacy `govern`/`direct`/`look` callers)
+ */
+/**
+ * `lint <playbook> <evidence-file>` — pre-flight check the submission shape
+ * against the playbook's expected indicators / preconditions / artifacts
+ * WITHOUT executing detect/analyze/validate/close. Lets the AI iterate on
+ * its evidence JSON before going through phases 4-7. Returns a categorized
+ * list: ok / missing_required / unknown_keys / type_mismatch / suggestions.
+ */
+function cmdLint(runner, args, runOpts, pretty) {
+  const playbookId = args._[0];
+  const evidencePath = args._[1] || args.evidence;
+  if (!playbookId || !evidencePath) {
+    return emitError("lint: usage: exceptd lint <playbook> <evidence-file|->", null, pretty);
+  }
+  let pb;
+  try { pb = runner.loadPlaybook(playbookId); }
+  catch (e) { return emitError(`lint: ${e.message}`, { playbook: playbookId }, pretty); }
+
+  let submission;
+  try { submission = readEvidence(evidencePath); }
+  catch (e) { return emitError(`lint: failed to read evidence: ${e.message}`, { evidence: evidencePath }, pretty); }
+
+  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
+  const resolved = runner._resolvedPhase;
+  const lookPhase = pb.phases?.look || {};
+  const detectPhase = pb.phases?.detect || {};
+
+  const requiredArtifacts = (lookPhase.artifacts || []).filter(a => a.required).map(a => a.id);
+  const knownArtifacts = new Set((lookPhase.artifacts || []).map(a => a.id));
+  const knownIndicators = new Set((detectPhase.indicators || []).map(i => i.id));
+  const knownPreconditions = new Set((pb._meta?.preconditions || []).map(p => p.id));
+
+  // Support both flat (observations) and nested (artifacts/signal_overrides) shapes.
+  const flat = submission.observations || null;
+  const artifactsKey = flat ? flat : (submission.artifacts || {});
+  const signalsKey = flat ? flat : (submission.signal_overrides || {});
+
+  const missingRequired = requiredArtifacts.filter(id => {
+    const a = artifactsKey[id];
+    return !a || (flat ? !a.captured : !a.captured);
+  });
+
+  const unknownArtifactKeys = Object.keys(submission.artifacts || {})
+    .filter(k => !knownArtifacts.has(k));
+  const unknownSignalKeys = Object.keys(submission.signal_overrides || {})
+    .filter(k => !knownIndicators.has(k));
+  const unknownObservationKeys = flat
+    ? Object.keys(flat).filter(k => !knownArtifacts.has(k) && !knownIndicators.has(k) && !knownPreconditions.has(k))
+    : [];
+
+  const unsuppliedPreconditions = [...knownPreconditions].filter(
+    p => !((submission.precondition_checks || {}).hasOwnProperty(p) || (flat || {}).hasOwnProperty(p))
+  );
+
+  const issues = [];
+  for (const id of missingRequired) {
+    issues.push({ severity: "error", kind: "missing_required_artifact", artifact_id: id, hint: `Add to submission.artifacts.${id} = { value, captured: true } (or under observations in the flat shape).` });
+  }
+  for (const k of unknownArtifactKeys) {
+    issues.push({ severity: "warn", kind: "unknown_artifact_key", key: k, hint: `Not in playbook ${playbookId} look.artifacts[]. Recognized: ${[...knownArtifacts].slice(0, 10).join(", ")}…` });
+  }
+  for (const k of unknownSignalKeys) {
+    issues.push({ severity: "warn", kind: "unknown_signal_override_key", key: k, hint: `Not in playbook ${playbookId} detect.indicators[]. Run \`exceptd run ${playbookId} --signal-list\` to enumerate.` });
+  }
+  for (const p of unsuppliedPreconditions) {
+    issues.push({ severity: "info", kind: "precondition_unverified", precondition_id: p, hint: `Add submission.precondition_checks.${p} = true|false (or under observations in the flat shape).` });
+  }
+  for (const k of unknownObservationKeys) {
+    issues.push({ severity: "warn", kind: "unknown_observation_key", key: k });
+  }
+
+  const ok = issues.every(i => i.severity !== "error");
+  emit({
+    verb: "lint",
+    ok,
+    playbook_id: playbookId,
+    directive_id: directiveId,
+    submission_shape: flat ? "flat (v0.11.0)" : "nested (v0.10.x)",
+    summary: {
+      errors: issues.filter(i => i.severity === "error").length,
+      warnings: issues.filter(i => i.severity === "warn").length,
+      info: issues.filter(i => i.severity === "info").length,
+    },
+    issues,
+  }, pretty);
+  if (!ok) process.exitCode = 1;
+}
+
+function cmdBrief(runner, args, runOpts, pretty) {
+  const playbookId = args._[0];
+  const onlyPhase = args.phase || null;
+
+  if (!playbookId || args.all) {
+    // Multi-playbook brief (replaces `plan`). Reuses cmdPlan output shape.
+    return cmdPlan(runner, args, runOpts, pretty);
+  }
+
+  const pb = runner.loadPlaybook(playbookId);
+  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
+
+  const govern = runner.govern(playbookId, directiveId, runOpts);
+  const direct = runner.direct(playbookId, directiveId);
+  const look = runner.look(playbookId, directiveId, runOpts);
+
+  // If --phase was passed, emit only that phase to ease legacy migration.
+  if (onlyPhase === "govern") return emit(govern, pretty);
+  if (onlyPhase === "direct") return emit(direct, pretty);
+  if (onlyPhase === "look") return emit(look, pretty);
+
+  emit({
+    verb: "brief",
+    playbook_id: playbookId,
+    directive_id: directiveId,
+    scope: pb._meta?.scope || null,
+    threat_currency_score: pb._meta?.threat_currency_score,
+
+    // From govern phase:
+    jurisdiction_obligations: govern.jurisdiction_obligations,
+    theater_fingerprints: govern.theater_fingerprints,
+    framework_context: govern.framework_context,
+    skill_preload: govern.skill_preload,
+
+    // From direct phase:
+    threat_context: direct.threat_context,
+    rwep_threshold: direct.rwep_threshold,
+    framework_lag_declaration: direct.framework_lag_declaration,
+    skill_chain: direct.skill_chain,
+    token_budget: direct.token_budget,
+
+    // From look phase:
+    preconditions: look.preconditions,
+    precondition_submission_shape: look.precondition_submission_shape,
+    artifacts: look.artifacts,
+    collection_scope: look.collection_scope,
+    environment_assumptions: look.environment_assumptions,
+    fallback_if_unavailable: look.fallback_if_unavailable,
+
+    // Forward references — what the AI will see during run:
+    detect_indicators_preview: (pb.phases?.detect?.indicators || []).map(i => ({
+      id: i.id, type: i.type, confidence: i.confidence, deterministic: !!i.deterministic
+    })),
+  }, pretty);
+}
+
+/** `run-all` alias for `run --all`. */
+function cmdRunAll(runner, args, runOpts, pretty) {
+  args.all = true;
+  return cmdRun(runner, args, runOpts, pretty);
+}
+
+/** `verify-attestation <sid>` alias for `attest verify <sid>`. */
+function cmdVerifyAttestation(runner, args, runOpts, pretty) {
+  args._ = ["verify", ...(args._ || [])];
+  return cmdAttest(runner, args, runOpts, pretty);
 }
 
 function cmdPlan(runner, args, runOpts, pretty) {
@@ -751,27 +1120,41 @@ function cmdRun(runner, args, runOpts, pretty) {
 
   // Persist attestation for reattest cycles when the run succeeded.
   if (result && result.ok && result.session_id) {
-    try {
-      const dir = path.join(process.cwd(), ".exceptd", "attestations", result.session_id);
-      fs.mkdirSync(dir, { recursive: true });
-      const attestation = {
-        session_id: result.session_id,
-        playbook_id: result.playbook_id,
-        directive_id: result.directive_id,
-        evidence_hash: result.evidence_hash,
-        operator: runOpts.operator || null,
-        operator_consent: runOpts.operator_consent || null,
-        submission,
-        run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
-        captured_at: new Date().toISOString(),
+    const persistResult = persistAttestation({
+      sessionId: result.session_id,
+      playbookId: result.playbook_id,
+      directiveId: result.directive_id,
+      evidenceHash: result.evidence_hash,
+      operator: runOpts.operator,
+      operatorConsent: runOpts.operator_consent,
+      submission,
+      runOpts,
+      forceOverwrite: !!args["force-overwrite"],
+      filename: "attestation.json",
+    });
+    if (!persistResult.ok) {
+      // Session-id collision without --force-overwrite. Refuse, surface the
+      // existing path so the operator can decide, and emit JSON to stderr
+      // matching the unified error shape. Exit non-zero — a silent overwrite
+      // is a tamper-evidence violation.
+      const err = {
+        ok: false,
+        error: persistResult.error,
+        existing_attestation: persistResult.existingPath,
+        hint: "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
+        verb: "run",
       };
-      fs.writeFileSync(path.join(dir, "attestation.json"), JSON.stringify(attestation, null, 2));
-      // Feature #27: Ed25519-sign the attestation if .keys/private.pem exists
-      // (signing infrastructure is already shared with skill signing). Without
-      // a private key, write an unsigned `.sig` placeholder so tooling can tell
-      // the difference between "unsigned" and "tampered post-hoc".
-      maybeSignAttestation(path.join(dir, "attestation.json"));
-    } catch { /* non-fatal — attestation persistence is best-effort */ }
+      process.stderr.write(JSON.stringify(err) + "\n");
+      process.exit(3);
+    }
+    if (persistResult.prior_session_id) {
+      // Force-overwrite happened — surface the prior_session_id in the
+      // returned result so the operator/AI can see what the new attestation
+      // replaced and link back via the prior_session_id field persisted on
+      // disk.
+      result.prior_session_id = persistResult.prior_session_id;
+      result.overwrote_at = persistResult.overwrote_at;
+    }
   }
 
   if (result && result.ok === false) {
@@ -899,23 +1282,26 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
 
     // Persist per-playbook attestation under the shared session.
     if (result && result.ok) {
-      try {
-        const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
-        fs.mkdirSync(dir, { recursive: true });
-        const filePath = path.join(dir, `${id}.json`);
-        fs.writeFileSync(filePath, JSON.stringify({
-          session_id: sessionId,
-          playbook_id: id,
-          directive_id: directiveId,
-          evidence_hash: result.evidence_hash,
-          operator: perRunOpts.operator || null,
-          operator_consent: perRunOpts.operator_consent || null,
-          submission,
-          run_opts: { airGap: perRunOpts.airGap, forceStale: perRunOpts.forceStale, mode: perRunOpts.mode },
-          captured_at: new Date().toISOString(),
-        }, null, 2));
-        maybeSignAttestation(filePath);
-      } catch { /* non-fatal */ }
+      const persisted = persistAttestation({
+        sessionId,
+        playbookId: id,
+        directiveId,
+        evidenceHash: result.evidence_hash,
+        operator: perRunOpts.operator,
+        operatorConsent: perRunOpts.operator_consent,
+        submission,
+        runOpts: perRunOpts,
+        forceOverwrite: !!args["force-overwrite"],
+        filename: `${id}.json`,
+      });
+      if (!persisted.ok) {
+        // Multi-run collision: don't abort the whole bundle; surface in the
+        // per-playbook result so the operator can see exactly which
+        // playbook's attestation refused to overwrite.
+        result.attestation_persist = { ok: false, error: persisted.error };
+      } else if (persisted.prior_session_id) {
+        result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
+      }
     }
     results.push(result);
   }
@@ -971,7 +1357,7 @@ function cmdIngest(runner, args, runOpts, pretty) {
 
   if (result && result.ok && result.session_id) {
     try {
-      const dir = path.join(process.cwd(), ".exceptd", "attestations", result.session_id);
+      const dir = path.join(resolveAttestationRoot(runOpts), result.session_id);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(
         path.join(dir, "attestation.json"),
@@ -996,6 +1382,113 @@ function cmdIngest(runner, args, runOpts, pretty) {
 }
 
 /**
+ * Resolve the attestation root for a given run. Resolution order (most-specific
+ * first):
+ *   1. --attestation-root <path>    explicit caller override
+ *   2. EXCEPTD_HOME env var         operator-level configuration
+ *   3. ~/.exceptd/attestations/<repo-or-host-tag>/   default (v0.11.0+)
+ *   4. .exceptd/attestations/       legacy cwd-relative fallback when ~/.exceptd
+ *                                    can't be created (read-only home / sandbox)
+ *
+ * Repo tag is derived from `git config --get remote.origin.url` + branch when
+ * available, else a hostname tag. This means `attest list` works regardless of
+ * which directory you happened to run from. Operators can override via env.
+ */
+function resolveAttestationRoot(runOpts) {
+  if (runOpts && runOpts.attestationRoot) return runOpts.attestationRoot;
+  if (process.env.EXCEPTD_HOME) return path.join(process.env.EXCEPTD_HOME, "attestations");
+  const home = require("os").homedir();
+  if (!home) return path.join(process.cwd(), ".exceptd", "attestations");
+  const root = path.join(home, ".exceptd", "attestations", deriveRunTag());
+  try {
+    fs.mkdirSync(root, { recursive: true });
+    return root;
+  } catch {
+    return path.join(process.cwd(), ".exceptd", "attestations");
+  }
+}
+
+/**
+ * Derive a stable tag for attestations: `<repo-name>@<branch>` when in a git
+ * repo, else `host:<hostname>`. Used as the per-context directory under
+ * ~/.exceptd/attestations/ so multi-repo operators don't conflate sessions.
+ */
+function deriveRunTag() {
+  const { spawnSync } = require("child_process");
+  try {
+    const remote = spawnSync("git", ["config", "--get", "remote.origin.url"], { encoding: "utf8" });
+    if (remote.status === 0 && remote.stdout.trim()) {
+      const url = remote.stdout.trim();
+      const repoName = (url.match(/[\/:]([^/]+?)(?:\.git)?$/) || [, "unknown"])[1];
+      const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" });
+      const branchName = branch.status === 0 ? branch.stdout.trim() : "head";
+      return `${repoName}@${branchName}`.replace(/[^A-Za-z0-9._@-]/g, "_");
+    }
+  } catch {}
+  return `host:${require("os").hostname()}`.replace(/[^A-Za-z0-9._@:-]/g, "_");
+}
+
+/**
+ * Persist an attestation file. Refuses to overwrite an existing file unless
+ * `forceOverwrite` is true. When force-overwriting, the new attestation
+ * records `prior_session_id` (== current session_id; the prior content is
+ * what's being replaced) plus a `prior_evidence_hash` link extracted from
+ * the file on disk before clobbering — so the audit-trail chain survives.
+ *
+ * Returns { ok: true, prior_session_id?, overwrote_at?, persist_path } on
+ * success; or { ok: false, error, existingPath } when the operator hit a
+ * collision without --force-overwrite.
+ */
+function persistAttestation(args) {
+  const { sessionId, playbookId, directiveId, evidenceHash, operator,
+          operatorConsent, submission, runOpts, forceOverwrite, filename } = args;
+  const root = resolveAttestationRoot(runOpts);
+  const dir = path.join(root, sessionId);
+  const filePath = path.join(dir, filename);
+
+  let prior = null;
+  if (fs.existsSync(filePath)) {
+    try { prior = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch {}
+    if (!forceOverwrite) {
+      return {
+        ok: false,
+        error: `Attestation already exists at ${path.relative(process.cwd(), filePath)}. Session-id collision (${sessionId}) — refusing to overwrite to preserve audit trail.`,
+        existingPath: path.relative(process.cwd(), filePath),
+      };
+    }
+  }
+
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const attestation = {
+      session_id: sessionId,
+      playbook_id: playbookId,
+      directive_id: directiveId,
+      evidence_hash: evidenceHash,
+      operator: operator || null,
+      operator_consent: operatorConsent || null,
+      submission,
+      run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
+      captured_at: new Date().toISOString(),
+      // When overwriting (with --force-overwrite), link to the prior content
+      // by evidence_hash + capture timestamp. session_id is the same (that's
+      // why we collided), so it's the hash + timestamp that distinguish.
+      prior_evidence_hash: prior ? (prior.evidence_hash || null) : null,
+      prior_captured_at: prior ? (prior.captured_at || null) : null,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2));
+    maybeSignAttestation(filePath);
+    return {
+      ok: true,
+      prior_session_id: prior ? sessionId : null,
+      overwrote_at: prior ? prior.captured_at : null,
+    };
+  } catch (e) {
+    return { ok: false, error: `Failed to write attestation: ${e.message}`, existingPath: null };
+  }
+}
+
+/**
  * Ed25519-sign an attestation file when .keys/private.pem is available
  * (matches lib/sign.js convention for skill signing). Writes a sidecar
  * `<file>.sig` alongside the attestation. Defense against post-hoc tampering
@@ -1010,6 +1503,19 @@ function maybeSignAttestation(filePath) {
   const sigPath = filePath + ".sig";
   const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
   const content = fs.readFileSync(filePath, "utf8");
+  // One-time-per-process unsigned warning so cron jobs don't spam stderr.
+  // Operators who set `.keys/private.pem` get tamper-evident attestations;
+  // operators without the keypair get a single nudge per session telling them
+  // exactly how to enable signing.
+  if (!fs.existsSync(privKeyPath) && !process.env.EXCEPTD_UNSIGNED_WARNED) {
+    process.stderr.write(
+      "[attest] attestation will be written UNSIGNED (no private key at .keys/private.pem). " +
+      "Operators reading the attestation later can verify the SHA-256 hash but not authenticity. " +
+      "Enable Ed25519 signing: `node lib/sign.js generate-keypair`. " +
+      "Suppress this notice: export EXCEPTD_UNSIGNED_WARNED=1.\n"
+    );
+    process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+  }
   try {
     if (fs.existsSync(privKeyPath)) {
       const privateKey = fs.readFileSync(privKeyPath, "utf8");
@@ -1038,20 +1544,48 @@ function maybeSignAttestation(filePath) {
 }
 
 /**
+ * Resolve a session-id to its on-disk directory. Searches both the v0.11.0
+ * default root and the legacy cwd-relative root; returns whichever exists.
+ * Returns null if neither has the session.
+ */
+function findSessionDir(sessionId, runOpts) {
+  const candidates = [
+    path.join(resolveAttestationRoot(runOpts), sessionId),
+    path.join(process.cwd(), ".exceptd", "attestations", sessionId),
+  ];
+  for (const c of candidates) if (fs.existsSync(c)) return c;
+  return null;
+}
+
+/**
  * Find the latest attestation file under .exceptd/attestations/.
  * Filters: optional playbook ID and optional "since" ISO timestamp.
  * Returns { sessionId, playbookId, file, parsed } or null.
  */
 function findLatestAttestation(opts = {}) {
-  const root = path.join(process.cwd(), ".exceptd", "attestations");
-  if (!fs.existsSync(root)) return null;
+  // Search both the v0.11.0 default root (~/.exceptd/) and the legacy cwd-
+  // relative root so operators with prior attestations don't lose their
+  // history when the default moved.
+  const roots = [resolveAttestationRoot(opts), path.join(process.cwd(), ".exceptd", "attestations")];
+  const seen = new Set();
+  const candidates = [];
+  for (const root of roots) {
+    if (seen.has(root) || !fs.existsSync(root)) continue;
+    seen.add(root);
+    walkAttestationDir(root, opts, candidates);
+  }
+  candidates.sort((a, b) => (b.parsed.captured_at || "").localeCompare(a.parsed.captured_at || ""));
+  return candidates[0] || null;
+}
+
+function walkAttestationDir(root, opts, candidates) {
+  if (!fs.existsSync(root)) return;
   const sessions = fs.readdirSync(root, { withFileTypes: true })
     .filter(d => d.isDirectory())
     .map(d => d.name);
-  const candidates = [];
   for (const sid of sessions) {
     const sdir = path.join(root, sid);
-    for (const f of fs.readdirSync(sdir).filter(x => x.endsWith(".json"))) {
+    for (const f of fs.readdirSync(sdir).filter(x => x.endsWith(".json") && !x.endsWith(".sig"))) {
       try {
         const p = path.join(sdir, f);
         const j = JSON.parse(fs.readFileSync(p, "utf8"));
@@ -1062,8 +1596,6 @@ function findLatestAttestation(opts = {}) {
       } catch { /* skip malformed */ }
     }
   }
-  candidates.sort((a, b) => (b.parsed.captured_at || "").localeCompare(a.parsed.captured_at || ""));
-  return candidates[0] || null;
 }
 
 function cmdReattest(runner, args, runOpts, pretty) {
@@ -1081,10 +1613,10 @@ function cmdReattest(runner, args, runOpts, pretty) {
     attFile = found.file;
   }
   if (!sessionId) return emitError("reattest: missing <session-id>. Pass a session-id or --latest [--playbook <id>] [--since <ISO>].", null, pretty);
-  const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
+  const dir = findSessionDir(sessionId, runOpts) || path.join(resolveAttestationRoot(runOpts), sessionId);
   if (!attFile) attFile = path.join(dir, "attestation.json");
   if (!fs.existsSync(attFile)) {
-    return emitError(`reattest: no attestation found at ${path.relative(process.cwd(), attFile)}`, { session_id: sessionId }, pretty);
+    return emitError(`reattest: no attestation found at ${attFile}`, { session_id: sessionId }, pretty);
   }
   let prior;
   try {
@@ -1170,14 +1702,18 @@ function cmdAttest(runner, args, runOpts, pretty) {
   const subverb = args._[0];
   const sessionId = args._[1];
   if (!subverb) {
-    return emitError("attest: missing subverb. Usage: attest export|verify|show <session-id>", null, pretty);
+    return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> | diff <sid>", null, pretty);
+  }
+  // `list` doesn't require a session-id positional.
+  if (subverb === "list") {
+    return cmdListAttestations(runner, args, runOpts, pretty);
   }
   if (!sessionId) {
     return emitError(`attest ${subverb}: missing <session-id> positional argument.`, null, pretty);
   }
-  const dir = path.join(process.cwd(), ".exceptd", "attestations", sessionId);
-  if (!fs.existsSync(dir)) {
-    return emitError(`attest ${subverb}: no session dir at ${path.relative(process.cwd(), dir)}`, { session_id: sessionId }, pretty);
+  const dir = findSessionDir(sessionId, runOpts);
+  if (!dir) {
+    return emitError(`attest ${subverb}: no session dir for ${sessionId}. Searched: ${resolveAttestationRoot(runOpts)} + .exceptd/attestations/`, { session_id: sessionId }, pretty);
   }
 
   const files = fs.readdirSync(dir).filter(f => f.endsWith(".json") && !f.endsWith(".sig"));
@@ -1189,6 +1725,46 @@ function cmdAttest(runner, args, runOpts, pretty) {
   if (subverb === "show") {
     emit({ session_id: sessionId, attestations }, pretty);
     return;
+  }
+
+  if (subverb === "diff") {
+    // `attest diff <session-id> [--against <other-session-id>]` — drift
+    // comparison. Without --against, replays current state against prior
+    // session (= reattest). With --against, compares two sessions A vs B
+    // by evidence_hash + artifact-level field diff.
+    if (args.against) {
+      const otherDir = findSessionDir(args.against, runOpts);
+      if (!otherDir) {
+        return emitError(`attest diff --against ${args.against}: no session dir found.`, null, pretty);
+      }
+      const otherFiles = fs.readdirSync(otherDir).filter(f => f.endsWith(".json") && !f.endsWith(".sig"));
+      if (otherFiles.length === 0) {
+        return emitError(`attest diff --against ${args.against}: no attestations under that session id.`, null, pretty);
+      }
+      const other = JSON.parse(fs.readFileSync(path.join(otherDir, otherFiles[0]), "utf8"));
+      const self = attestations[0];
+      emit({
+        verb: "attest diff",
+        a_session: sessionId,
+        b_session: args.against,
+        a_captured: self.captured_at,
+        b_captured: other.captured_at,
+        a_evidence_hash: self.evidence_hash,
+        b_evidence_hash: other.evidence_hash,
+        status: self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted",
+        artifact_diff: diffArtifacts((self.submission || {}).artifacts, (other.submission || {}).artifacts),
+        signal_override_diff: diffSignalOverrides((self.submission || {}).signal_overrides, (other.submission || {}).signal_overrides),
+      }, pretty);
+      return;
+    }
+    // Fall through to reattest-style replay below by setting subverb to a
+    // sentinel and re-dispatching via cmdReattest.
+    args._ = [sessionId];
+    return cmdReattest(runner, args, {}, pretty);
+  }
+
+  if (subverb === "list") {
+    return cmdListAttestations(runner, args, {}, pretty);
   }
 
   if (subverb === "verify") {
@@ -1267,33 +1843,483 @@ function cmdAttest(runner, args, runOpts, pretty) {
   return emitError(`attest: unknown subverb "${subverb}". Try export | verify | show.`, null, pretty);
 }
 
-function cmdListAttestations(runner, args, runOpts, pretty) {
-  const root = path.join(process.cwd(), ".exceptd", "attestations");
-  if (!fs.existsSync(root)) {
-    return emit({ ok: true, attestations: [], note: `No attestations directory at ${path.relative(process.cwd(), root)}` }, pretty);
+/**
+ * Per-artifact diff between two submissions. Returns { added, removed, changed }
+ * keyed by artifact id. Used by `attest diff` (bug #34 fix) so operators get
+ * field-level context instead of a binary evidence_hash signal.
+ */
+function diffArtifacts(a, b) {
+  a = a || {}; b = b || {};
+  const allIds = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const out = { added: [], removed: [], changed: [], unchanged_count: 0 };
+  for (const id of allIds) {
+    const av = a[id], bv = b[id];
+    if (!av && bv) out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
+    else if (av && !bv) out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
+    else if (JSON.stringify(av) !== JSON.stringify(bv)) {
+      out.changed.push({
+        id,
+        a_captured: !!av.captured, b_captured: !!bv.captured,
+        a_value_preview: previewValue(av.value), b_value_preview: previewValue(bv.value),
+      });
+    } else { out.unchanged_count++; }
   }
-  const sessions = fs.readdirSync(root, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  return out;
+}
 
+function diffSignalOverrides(a, b) {
+  a = a || {}; b = b || {};
+  const allIds = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const out = { changed: [], unchanged_count: 0 };
+  for (const id of allIds) {
+    if (a[id] !== b[id]) out.changed.push({ id, a: a[id] || null, b: b[id] || null });
+    else out.unchanged_count++;
+  }
+  return out;
+}
+
+function previewValue(v) {
+  if (v === null || v === undefined) return null;
+  const s = typeof v === "string" ? v : JSON.stringify(v);
+  return s.length > 80 ? s.slice(0, 80) + "…" : s;
+}
+
+// ---------------------------------------------------------------------------
+// v0.11.0: cmdDiscover — context-aware playbook recommender.
+// Collapses scan + dispatch + recommend into one verb. Sniffs the cwd, reads
+// /etc/os-release on Linux, and outputs a list of recommended playbooks.
+// ---------------------------------------------------------------------------
+function cmdDiscover(runner, args, runOpts, pretty) {
+  const cwd = process.cwd();
+  const wantJson = !!args.json || !!args.pretty;
+  const indent = !!args.pretty;
+
+  // File-presence sniffer. Each probe is independently fault-tolerant so a
+  // permission error on one path can't poison the whole detection.
+  const detected = [];
+  function probe(rel, label) {
+    try {
+      if (fs.existsSync(path.join(cwd, rel))) detected.push(label || rel);
+    } catch { /* swallow */ }
+  }
+  probe(".git", ".git/");
+  probe("package.json");
+  probe("package-lock.json");
+  probe("yarn.lock");
+  probe("pnpm-lock.yaml");
+  probe("pyproject.toml");
+  probe("requirements.txt");
+  probe("Pipfile");
+  probe("Cargo.toml");
+  probe("go.mod");
+  probe("Dockerfile");
+  probe("docker-compose.yml");
+  probe("docker-compose.yaml");
+  probe("kustomization.yaml");
+  probe("k8s", "k8s/");
+  probe(".env");
+  probe(".envrc");
+
+  // Terraform / IaC — glob the top level for *.tf.
+  try {
+    const tfFiles = fs.readdirSync(cwd).filter(f => f.endsWith(".tf"));
+    if (tfFiles.length) detected.push(`*.tf (${tfFiles.length})`);
+  } catch { /* swallow */ }
+
+  // Git remote (best-effort, never fatal).
+  let gitRemote = null;
+  if (detected.includes(".git/")) {
+    try {
+      const headPath = path.join(cwd, ".git", "config");
+      if (fs.existsSync(headPath)) {
+        const cfg = fs.readFileSync(headPath, "utf8");
+        const m = cfg.match(/\[remote "origin"\][\s\S]*?url\s*=\s*(\S+)/);
+        if (m) gitRemote = m[1];
+      }
+    } catch { /* swallow */ }
+  }
+
+  // Host platform / distro.
+  const hostPlatform = process.platform;
+  let hostDistro = null;
+  if (hostPlatform === "linux") {
+    try {
+      const res = spawnSync("cat", ["/etc/os-release"], { encoding: "utf8" });
+      if (res.status === 0 && res.stdout) {
+        const idMatch = res.stdout.match(/^ID=(.+)$/m);
+        const verMatch = res.stdout.match(/^VERSION_ID=(.+)$/m);
+        const prettyMatch = res.stdout.match(/^PRETTY_NAME=(.+)$/m);
+        hostDistro = {
+          id: idMatch ? idMatch[1].replace(/^"|"$/g, "") : null,
+          version_id: verMatch ? verMatch[1].replace(/^"|"$/g, "") : null,
+          pretty_name: prettyMatch ? prettyMatch[1].replace(/^"|"$/g, "") : null,
+        };
+      }
+    } catch { /* swallow */ }
+  }
+
+  // Build recommendation set. Dedup by playbook id so multi-trigger rules
+  // don't double-list.
+  const isRepo = detected.includes(".git/");
+  const hasNode = detected.includes("package.json") || detected.includes("package-lock.json")
+    || detected.includes("yarn.lock") || detected.includes("pnpm-lock.yaml");
+  const hasPython = detected.includes("pyproject.toml") || detected.includes("requirements.txt")
+    || detected.includes("Pipfile");
+  const hasRust = detected.includes("Cargo.toml");
+  const hasGo = detected.includes("go.mod");
+  const hasLockfile = hasNode || hasPython || hasRust || hasGo;
+  const hasContainers = detected.includes("Dockerfile") || detected.includes("docker-compose.yml")
+    || detected.includes("docker-compose.yaml");
+  const isLinux = hostPlatform === "linux";
+
+  const recs = [];
+  const seen = new Set();
+  function recommend(id, reason) {
+    if (seen.has(id)) return;
+    seen.add(id);
+    recs.push({ id, reason });
+  }
+
+  if (isRepo && hasLockfile) {
+    const langs = [hasNode && "node", hasPython && "python", hasRust && "rust", hasGo && "go"]
+      .filter(Boolean).join("/");
+    recommend("secrets", `git repo + ${langs} lockfile → check for committed credentials`);
+    recommend("sbom", `git repo + ${langs} lockfile → SBOM + supply-chain integrity`);
+    recommend("library-author", `git repo + ${langs} lockfile → publisher-side audit`);
+    recommend("crypto-codebase", `git repo + ${langs} lockfile → cryptographic primitive review`);
+  }
+  if (hasContainers) {
+    recommend("containers", "Dockerfile / docker-compose present → container security review");
+  }
+  if (isLinux) {
+    recommend("kernel", "Linux host detected → kernel LPE / privilege escalation triage");
+    recommend("hardening", "Linux host detected → system hardening review");
+    recommend("runtime", "Linux host detected → runtime behavior review");
+    recommend("cred-stores", "Linux host detected → credential store review");
+  }
+  // Always include cross-cutting framework correlation.
+  recommend("framework", "cross-cutting: framework correlation always applicable");
+
+  const nextSteps = [
+    "exceptd brief <playbook>       # learn what a playbook checks",
+    "exceptd run <playbook>          # run it",
+    "exceptd run --scope code        # run all code-scoped playbooks (auto-detected)",
+    "exceptd ci --scope code         # CI-gate against all code-scoped playbooks",
+  ];
+
+  const out = {
+    verb: "discover",
+    context: {
+      cwd,
+      git_remote: gitRemote,
+      detected_files: detected,
+      host_platform: hostPlatform,
+      host_distro: hostDistro,
+    },
+    recommended_playbooks: recs,
+    next_steps: nextSteps,
+  };
+
+  // --scan-only: also run legacy `scan` and embed under legacy_scan. Use
+  // spawnSync against orchestrator/index.js — the orchestrator was designed
+  // to be invoked as a subprocess, and isolating it via spawn prevents one
+  // bad scanner from killing the whole discover verb.
+  if (args["scan-only"]) {
+    const orchPath = path.join(PKG_ROOT, "orchestrator", "index.js");
+    try {
+      const res = spawnSync(process.execPath, [orchPath, "scan", "--json"], {
+        encoding: "utf8",
+        cwd,
+        timeout: 30000,
+      });
+      if (res.status === 0 && res.stdout) {
+        try { out.legacy_scan = JSON.parse(res.stdout); }
+        catch { out.legacy_scan = { ok: false, raw: res.stdout.slice(0, 2000), parse_error: true }; }
+      } else {
+        out.legacy_scan = {
+          ok: false,
+          exit_code: res.status,
+          stderr: (res.stderr || "").slice(0, 2000),
+        };
+      }
+    } catch (e) {
+      out.legacy_scan = { ok: false, error: e.message };
+    }
+  }
+
+  if (wantJson) {
+    emit(out, indent);
+    return;
+  }
+
+  // Default: human-readable text. (v0.11.0 redesign #5 — flipped defaults.)
+  const lines = [];
+  lines.push("exceptd discover");
+  lines.push(`  cwd:            ${cwd}`);
+  if (gitRemote) lines.push(`  git remote:     ${gitRemote}`);
+  lines.push(`  platform:       ${hostPlatform}${hostDistro && hostDistro.pretty_name ? "  (" + hostDistro.pretty_name + ")" : ""}`);
+  lines.push(`  detected:       ${detected.length ? detected.join(", ") : "(nothing recognized)"}`);
+  lines.push("");
+  lines.push(`Recommended playbooks (${recs.length}):`);
+  for (const r of recs) {
+    lines.push(`  - ${r.id.padEnd(20)} ${r.reason}`);
+  }
+  lines.push("");
+  lines.push("Next steps:");
+  for (const s of nextSteps) lines.push(`  ${s}`);
+  if (out.legacy_scan) {
+    lines.push("");
+    lines.push(`legacy scan: ${out.legacy_scan.ok === false ? "FAILED" : "ok"}`);
+  }
+  process.stdout.write(lines.join("\n") + "\n");
+}
+
+// ---------------------------------------------------------------------------
+// v0.11.0: cmdDoctor — one-shot health check.
+// Collapses verify + currency + validate-cves + validate-rfcs + signing-status.
+// Each subcheck is independently fault-tolerant: a single failure surfaces
+// in the JSON but never crashes the verb.
+// ---------------------------------------------------------------------------
+function cmdDoctor(runner, args, runOpts, pretty) {
+  const wantJson = !!args.json || !!args.pretty;
+  const indent = !!args.pretty;
+
+  // Selective subchecks. If any of the four flags is passed, run only those.
+  // If none are passed, run all four plus signing-status.
+  const onlySigs = !!args.signatures;
+  const onlyCurrency = !!args.currency;
+  const onlyCves = !!args.cves;
+  const onlyRfcs = !!args.rfcs;
+  const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs;
+  const runSigs = !anySelected || onlySigs;
+  const runCurrency = !anySelected || onlyCurrency;
+  const runCves = !anySelected || onlyCves;
+  const runRfcs = !anySelected || onlyRfcs;
+  const runSigning = !anySelected;
+
+  const checks = {};
+  const issues = [];
+
+  if (runSigs) {
+    try {
+      const verifyPath = path.join(PKG_ROOT, "lib", "verify.js");
+      const res = spawnSync(process.execPath, [verifyPath], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 30000,
+      });
+      const text = (res.stdout || "") + (res.stderr || "");
+      const okMatch = text.match(/(\d+)\/(\d+)\s+skills?\s+passed/i);
+      const fpMatch = text.match(/SHA256:\s*([A-Za-z0-9+/=]+)/);
+      const ok = res.status === 0;
+      checks.signatures = {
+        ok,
+        skills_passed: okMatch ? Number(okMatch[1]) : null,
+        skills_total: okMatch ? Number(okMatch[2]) : null,
+        fingerprint_sha256: fpMatch ? fpMatch[1] : null,
+        ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
+      };
+      if (!ok) issues.push("signatures");
+    } catch (e) {
+      checks.signatures = { ok: false, error: e.message };
+      issues.push("signatures");
+    }
+  }
+
+  if (runCurrency) {
+    try {
+      const orchPath = path.join(PKG_ROOT, "orchestrator", "index.js");
+      const res = spawnSync(process.execPath, [orchPath, "currency", "--json"], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 30000,
+      });
+      let parsed = null;
+      if (res.stdout) {
+        const m = res.stdout.match(/\{[\s\S]*\}\s*$/);
+        if (m) {
+          try { parsed = JSON.parse(m[0]); } catch { /* fall through */ }
+        }
+      }
+      if (parsed && Array.isArray(parsed.currency_report)) {
+        const stale = parsed.currency_report.filter(s => s.action_required || s.currency_label !== "current");
+        const critical = parsed.currency_report.filter(s => s.currency_score !== undefined && s.currency_score < 50);
+        const ok = stale.length === 0 && !parsed.action_required;
+        checks.currency = {
+          ok,
+          total_skills: parsed.currency_report.length,
+          stale_skills: stale.map(s => s.skill),
+          critical_stale: critical.map(s => s.skill),
+          critical_count: parsed.critical_count || 0,
+        };
+        if (!ok) issues.push("currency");
+      } else {
+        checks.currency = {
+          ok: res.status === 0,
+          exit_code: res.status,
+          raw: (res.stdout || res.stderr || "").slice(0, 500),
+          parse_error: true,
+        };
+        if (res.status !== 0) issues.push("currency");
+      }
+    } catch (e) {
+      checks.currency = { ok: false, error: e.message };
+      issues.push("currency");
+    }
+  }
+
+  if (runCves) {
+    try {
+      const orchPath = path.join(PKG_ROOT, "orchestrator", "index.js");
+      // validate-cves doesn't emit JSON; parse text for row count + drift.
+      const res = spawnSync(process.execPath, [orchPath, "validate-cves", "--offline"], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 30000,
+      });
+      const text = (res.stdout || "") + (res.stderr || "");
+      const totalMatch = text.match(/(\d+)\s+CVEs?\s+in\s+catalog/i);
+      const driftMatch = text.match(/drift[:\s]+(\d+)/i);
+      const ok = res.status === 0;
+      checks.cves = {
+        ok,
+        total: totalMatch ? Number(totalMatch[1]) : null,
+        drift: driftMatch ? Number(driftMatch[1]) : 0,
+        ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
+      };
+      if (!ok) issues.push("cves");
+    } catch (e) {
+      checks.cves = { ok: false, error: e.message };
+      issues.push("cves");
+    }
+  }
+
+  if (runRfcs) {
+    try {
+      const orchPath = path.join(PKG_ROOT, "orchestrator", "index.js");
+      const res = spawnSync(process.execPath, [orchPath, "validate-rfcs", "--offline"], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 30000,
+      });
+      const text = (res.stdout || "") + (res.stderr || "");
+      const rfcRows = (text.match(/^RFC-\d+/gm) || []).length;
+      const driftMatch = text.match(/drift[:\s]+(\d+)/i);
+      const ok = res.status === 0;
+      checks.rfcs = {
+        ok,
+        total: rfcRows,
+        drift: driftMatch ? Number(driftMatch[1]) : 0,
+        ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
+      };
+      if (!ok) issues.push("rfcs");
+    } catch (e) {
+      checks.rfcs = { ok: false, error: e.message };
+      issues.push("rfcs");
+    }
+  }
+
+  if (runSigning) {
+    try {
+      const keyPath = path.join(process.cwd(), ".keys", "private.pem");
+      const fallback = path.join(PKG_ROOT, ".keys", "private.pem");
+      const present = fs.existsSync(keyPath) || fs.existsSync(fallback);
+      checks.signing = {
+        ok: true, // signing-status is informational, never "fails"
+        private_key_present: present,
+        can_sign_attestations: present,
+        ...(present ? {} : { hint: "run `node lib/sign.js generate-keypair` to enable attestation signing" }),
+      };
+    } catch (e) {
+      checks.signing = { ok: false, error: e.message };
+    }
+  }
+
+  const allGreen = issues.length === 0;
+  const out = {
+    verb: "doctor",
+    checks,
+    summary: { all_green: allGreen, issues_count: issues.length, failed_checks: issues },
+  };
+
+  if (wantJson) {
+    emit(out, indent);
+    if (!allGreen) process.exitCode = 1;
+    return;
+  }
+
+  // Default: human checklist. v0.11.0 redesign #5.
+  const lines = [];
+  lines.push("exceptd doctor");
+  function mark(c, render) {
+    if (!c) return;
+    const icon = c.ok ? "[ok]" : "[!!]";
+    lines.push(`  ${icon} ${render(c)}`);
+  }
+  mark(checks.signatures, c =>
+    c.ok
+      ? `skill signatures verified (${c.skills_passed ?? "?"}/${c.skills_total ?? "?"})`
+      : `skill signatures FAILED (exit=${c.exit_code ?? "?"})`
+  );
+  mark(checks.currency, c =>
+    c.ok
+      ? `skill currency: all green (${c.total_skills ?? "?"} skills)`
+      : `skill currency: ${c.stale_skills?.length || "?"} stale, ${c.critical_count ?? 0} critical`
+  );
+  mark(checks.cves, c =>
+    c.ok
+      ? `CVE catalog: ${c.total ?? "?"} entries, drift ${c.drift ?? 0}`
+      : `CVE catalog FAILED (exit=${c.exit_code ?? "?"})`
+  );
+  mark(checks.rfcs, c =>
+    c.ok
+      ? `RFC catalog: ${c.total ?? "?"} entries, drift ${c.drift ?? 0}`
+      : `RFC catalog FAILED (exit=${c.exit_code ?? "?"})`
+  );
+  if (checks.signing) {
+    if (checks.signing.private_key_present) {
+      lines.push(`  [ok] attestation signing: private key present (.keys/private.pem)`);
+    } else {
+      lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`node lib/sign.js generate-keypair\` to enable`);
+    }
+  }
+  lines.push("");
+  lines.push(allGreen ? `summary: all checks green` : `summary: ${issues.length} issue(s) — ${issues.join(", ")}`);
+  process.stdout.write(lines.join("\n") + "\n");
+  if (!allGreen) process.exitCode = 1;
+}
+
+function cmdListAttestations(runner, args, runOpts, pretty) {
+  // Enumerate sessions across both v0.11.0 default root and legacy cwd-
+  // relative root, so operators with prior attestations still see them.
+  const roots = [resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")];
   const entries = [];
-  for (const sid of sessions) {
-    const sdir = path.join(root, sid);
-    const files = fs.readdirSync(sdir).filter(f => f.endsWith(".json"));
-    for (const f of files) {
-      try {
-        const j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8"));
-        // Apply --playbook filter if supplied.
-        if (args.playbook && j.playbook_id !== args.playbook) continue;
-        entries.push({
-          session_id: sid,
-          playbook_id: j.playbook_id,
-          directive_id: j.directive_id,
-          evidence_hash: j.evidence_hash ? j.evidence_hash.slice(0, 16) + "..." : null,
-          captured_at: j.captured_at || null,
-          file: path.relative(process.cwd(), path.join(sdir, f)),
-        });
-      } catch { /* skip malformed */ }
+  const seenRoots = new Set();
+  for (const root of roots) {
+    if (seenRoots.has(root) || !fs.existsSync(root)) continue;
+    seenRoots.add(root);
+    const sessions = fs.readdirSync(root, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
+    for (const sid of sessions) {
+      const sdir = path.join(root, sid);
+      const files = fs.readdirSync(sdir).filter(f => f.endsWith(".json") && !f.endsWith(".sig"));
+      for (const f of files) {
+        try {
+          const j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8"));
+          if (args.playbook && j.playbook_id !== args.playbook) continue;
+          if (args.since && (j.captured_at || "") < args.since) continue;
+          entries.push({
+            session_id: sid,
+            playbook_id: j.playbook_id,
+            directive_id: j.directive_id,
+            evidence_hash: j.evidence_hash ? j.evidence_hash.slice(0, 16) + "..." : null,
+            captured_at: j.captured_at || null,
+            attestation_root: root,
+            file: path.join(sdir, f),
+          });
+        } catch { /* skip malformed */ }
+      }
     }
   }
   entries.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
@@ -1301,8 +2327,421 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     ok: true,
     attestations: entries,
     count: entries.length,
-    filter: { playbook: args.playbook || null },
+    filter: { playbook: args.playbook || null, since: args.since || null },
+    roots_searched: [...seenRoots],
   }, pretty);
+}
+
+// ---------------------------------------------------------------------------
+// v0.11.0 verbs: ai-run, ask, ci
+// ---------------------------------------------------------------------------
+
+/**
+ * `ai-run <playbook>` — streaming JSONL contract for AI-driven runs.
+ *
+ * Emits one JSON object per line over stdout as the seven phases progress;
+ * reads {"event":"evidence","payload":{observations,verdict}} from stdin
+ * once it's announced the await_evidence phase. Designed so a host AI can
+ * pipe one bidirectional channel instead of doing brief → look → run as
+ * three CLI round-trips with an intermediate evidence file.
+ *
+ * --no-stream falls back to a single JSON document combining every phase
+ * for callers that don't want event-driven I/O (smoke tests, batch jobs).
+ */
+function cmdAiRun(runner, args, runOpts, pretty) {
+  const playbookId = args._[0];
+  if (!playbookId) {
+    return emitError("ai-run: missing <playbook> positional argument.", null, pretty);
+  }
+  let pb;
+  try { pb = runner.loadPlaybook(playbookId); }
+  catch (e) { return emitError(`ai-run: ${e.message}`, { playbook: playbookId }, pretty); }
+  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
+  if (!directiveId) {
+    return emitError(`ai-run: playbook ${playbookId} has no directives.`, null, pretty);
+  }
+
+  // Compute the informational phases up front — both stream and no-stream
+  // modes share them.
+  let governPhase, directPhase, lookPhase;
+  try {
+    governPhase = runner.govern(playbookId, directiveId, runOpts);
+    directPhase = runner.direct(playbookId, directiveId);
+    lookPhase = runner.look(playbookId, directiveId, runOpts);
+  } catch (e) {
+    process.stdout.write(JSON.stringify({ event: "error", reason: e.message, phase: "info" }) + "\n");
+    process.exit(1);
+  }
+
+  const governEvent = {
+    phase: "govern",
+    playbook_id: playbookId,
+    directive_id: directiveId,
+    jurisdiction_obligations: governPhase.jurisdiction_obligations || [],
+    theater_fingerprints: governPhase.theater_fingerprints || [],
+    framework_context: governPhase.framework_context || null,
+    skill_preload: governPhase.skill_preload || [],
+  };
+  const directEvent = {
+    phase: "direct",
+    threat_context: directPhase.threat_context || null,
+    rwep_threshold: directPhase.rwep_threshold || null,
+    framework_lag_declaration: directPhase.framework_lag_declaration || null,
+    skill_chain: directPhase.skill_chain || [],
+    token_budget: directPhase.token_budget || null,
+  };
+  const lookEvent = {
+    phase: "look",
+    artifacts_required: (lookPhase.artifacts || []).filter(a => a.required),
+    artifacts_optional: (lookPhase.artifacts || []).filter(a => !a.required),
+    preconditions: lookPhase.preconditions || [],
+    precondition_submission_shape: lookPhase.precondition_submission_shape || null,
+    collection_scope: lookPhase.collection_scope || null,
+  };
+  const submissionShape = {
+    observations: {},
+    verdict: {},
+    note: "Send back as {\"event\":\"evidence\",\"payload\":{\"observations\":{...},\"verdict\":{...}}}.",
+  };
+
+  // ----- single-shot path -----
+  if (args["no-stream"]) {
+    // Read any pre-supplied evidence from stdin OR from --evidence flag.
+    let payload = { observations: {}, verdict: {} };
+    if (args.evidence) {
+      try { payload = readEvidence(args.evidence); }
+      catch (e) { return emitError(`ai-run: failed to read --evidence: ${e.message}`, null, pretty); }
+    } else if (!process.stdin.isTTY) {
+      // Drain stdin for any evidence event.
+      try {
+        const buf = fs.readFileSync(0, "utf8");
+        if (buf.trim()) {
+          // Accept either a bare submission object or a single evidence event.
+          for (const line of buf.split(/\r?\n/)) {
+            const t = line.trim();
+            if (!t) continue;
+            try {
+              const parsed = JSON.parse(t);
+              if (parsed && parsed.event === "evidence" && parsed.payload) {
+                payload = parsed.payload;
+                break;
+              }
+              // Bare submission fallback.
+              if (parsed && (parsed.observations || parsed.artifacts || parsed.signal_overrides)) {
+                payload = parsed.observations
+                  ? parsed
+                  : { observations: { ...(parsed.artifacts || {}), ...(parsed.signal_overrides || {}) }, verdict: parsed.signals || {} };
+                break;
+              }
+            } catch { /* skip non-JSON lines */ }
+          }
+        }
+      } catch { /* stdin empty / unreadable — fall through with empty payload */ }
+    }
+    const submission = buildSubmissionFromPayload(payload);
+    let result;
+    try {
+      result = runner.run(playbookId, directiveId, submission, runOpts);
+    } catch (e) {
+      return emitError(`ai-run: runner threw: ${e.message}`, { playbook: playbookId }, pretty);
+    }
+    if (!result || result.ok === false) {
+      process.stderr.write((pretty ? JSON.stringify(result || {}, null, 2) : JSON.stringify(result || {})) + "\n");
+      process.exit(1);
+    }
+    emit({
+      verb: "ai-run",
+      mode: "no-stream",
+      playbook_id: playbookId,
+      directive_id: directiveId,
+      govern: governEvent,
+      direct: directEvent,
+      look: lookEvent,
+      detect: result.phases?.detect || null,
+      analyze: result.phases?.analyze || null,
+      validate: result.phases?.validate || null,
+      close: result.phases?.close || null,
+      session_id: result.session_id,
+      evidence_hash: result.evidence_hash,
+    }, pretty);
+    return;
+  }
+
+  // ----- streaming path -----
+  // Emit info phases immediately, then wait for an evidence event on stdin.
+  const writeLine = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
+  writeLine(governEvent);
+  writeLine(directEvent);
+  writeLine(lookEvent);
+  writeLine({ phase: "await_evidence", submission_shape: submissionShape });
+
+  let handled = false;
+  let buf = "";
+
+  const handleLine = (line) => {
+    if (handled) return;
+    let parsed;
+    try { parsed = JSON.parse(line); }
+    catch (e) {
+      writeLine({ event: "error", reason: `invalid JSON on stdin: ${e.message}`, line_preview: line.slice(0, 120) });
+      process.exit(1);
+    }
+    if (!parsed || parsed.event !== "evidence" || !parsed.payload) {
+      // Ignore non-evidence chatter so the host AI can interleave its own
+      // status events; only an "evidence" event triggers phases 4-7.
+      return;
+    }
+    handled = true;
+    const submission = buildSubmissionFromPayload(parsed.payload);
+    let result;
+    try {
+      result = runner.run(playbookId, directiveId, submission, runOpts);
+    } catch (e) {
+      writeLine({ event: "error", reason: `runner threw: ${e.message}` });
+      process.exit(1);
+    }
+    if (!result || result.ok === false) {
+      writeLine({ event: "error", reason: result?.reason || "runner returned ok:false", result });
+      process.exit(1);
+    }
+    writeLine({ phase: "detect", ...result.phases?.detect });
+    writeLine({ phase: "analyze", ...result.phases?.analyze });
+    writeLine({ phase: "validate", ...result.phases?.validate });
+    writeLine({ phase: "close", ...result.phases?.close });
+    writeLine({ event: "done", ok: true, session_id: result.session_id, evidence_hash: result.evidence_hash });
+    process.exit(0);
+  };
+
+  // Handle empty/closed stdin: emit a hint then exit cleanly so AI agents
+  // calling ai-run without piping anything see a useful message rather than
+  // a hung process.
+  if (process.stdin.isTTY) {
+    writeLine({ event: "error", reason: "ai-run streaming mode requires evidence on stdin; pipe {\"event\":\"evidence\",\"payload\":{...}} or use --no-stream." });
+    process.exit(1);
+  }
+
+  process.stdin.on("data", (chunk) => {
+    buf += chunk.toString();
+    let nl;
+    while ((nl = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (line) handleLine(line);
+    }
+  });
+  process.stdin.on("end", () => {
+    // Final flush — handle a trailing line without a newline.
+    const tail = buf.trim();
+    if (tail) handleLine(tail);
+    if (!handled) {
+      writeLine({ event: "error", reason: "stdin closed without an evidence event." });
+      process.exit(1);
+    }
+  });
+}
+
+/**
+ * Coerce a stdin payload into the runner submission shape. Accepts both the
+ * v0.11.0 ai-run shape (observations + verdict) and the nested v0.10.x shape
+ * (artifacts + signal_overrides + signals) for forward/back compat.
+ */
+function buildSubmissionFromPayload(payload) {
+  if (!payload || typeof payload !== "object") return { artifacts: {}, signal_overrides: {}, signals: {} };
+  // Nested v0.10.x shape passthrough.
+  if (payload.artifacts || payload.signal_overrides || payload.signals) {
+    return {
+      artifacts: payload.artifacts || {},
+      signal_overrides: payload.signal_overrides || {},
+      signals: payload.signals || {},
+      precondition_checks: payload.precondition_checks || undefined,
+    };
+  }
+  // v0.11.0 flat shape: observations becomes the artifacts+signal_overrides
+  // union (the runner normalises both via normalizeSubmission), verdict
+  // becomes signals.
+  return {
+    artifacts: payload.observations || {},
+    signal_overrides: payload.observations || {},
+    signals: payload.verdict || {},
+    precondition_checks: payload.precondition_checks || undefined,
+  };
+}
+
+/**
+ * `ask "<question>"` — plain-English routing. Scores every playbook by token
+ * overlap against domain.name + domain.attack_class + first sentence of
+ * phases.direct.threat_context. Returns the top 5 matches with a confidence
+ * score (matched tokens / total tokens).
+ */
+function cmdAsk(runner, args, runOpts, pretty) {
+  const question = (args._ || []).join(" ").trim();
+  if (!question) {
+    return emitError("ask: usage: exceptd ask \"<plain-English question>\"", null, pretty);
+  }
+  const ids = runner.listPlaybooks();
+  const q = question.toLowerCase();
+  const tokens = q.split(/\W+/).filter(t => t.length > 3);
+  const scored = [];
+  for (const id of ids) {
+    let pb;
+    try { pb = runner.loadPlaybook(id); } catch { continue; }
+    const threat = pb.phases?.direct?.threat_context || "";
+    const firstSentence = threat.split(/(?<=[.!?])\s+/)[0] || "";
+    const haystack = [
+      pb.domain?.name || "",
+      pb.domain?.attack_class || "",
+      firstSentence,
+    ].join(" ").toLowerCase();
+    const score = tokens.filter(t => haystack.includes(t)).length;
+    scored.push({ id: pb._meta?.id || id, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.filter(s => s.score > 0).slice(0, 5);
+
+  if (top.length === 0) {
+    emit({
+      verb: "ask",
+      question,
+      matched: [],
+      hint: "No playbook matched. Try `exceptd brief --all` to see what's available, or `exceptd discover` to detect what's in your cwd.",
+    }, pretty);
+    return;
+  }
+
+  emit({
+    verb: "ask",
+    question,
+    routed_to: top.map(t => t.id),
+    confidence: top[0].score / Math.max(1, tokens.length),
+    next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
+    full_match_list: top,
+  }, pretty);
+}
+
+/**
+ * `ci [--all|--scope <type>]` — top-level CI gate. Effectively
+ * `run --all --ci` packaged as a verb so .github/workflows lines are short.
+ *
+ * Exit codes:
+ *   0   PASS  — no detected findings, no rwep ≥ cap, no clock started (when
+ *               --block-on-jurisdiction-clock is set).
+ *   2   FAIL  — any of the above tripped.
+ */
+function cmdCi(runner, args, runOpts, pretty) {
+  const scope = args.scope;
+  const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
+  const blockOnClock = !!args["block-on-jurisdiction-clock"];
+
+  let ids;
+  if (args.all) {
+    ids = runner.listPlaybooks();
+  } else if (scope) {
+    ids = filterPlaybooksByScope(runner, scope);
+  } else {
+    const scopes = detectScopes();
+    ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
+    ids = [...new Set(ids)];
+  }
+  if (!ids || ids.length === 0) {
+    return emitError("ci: no playbooks matched. Pass --all, --scope <type>, or run from a repo/Linux-host context.", null, pretty);
+  }
+
+  const sessionId = runOpts.session_id || require("crypto").randomBytes(8).toString("hex");
+
+  // Evidence: --evidence <file> or --evidence-dir <dir>. Both produce a
+  // bundle keyed by playbook id; ids without a key get an empty submission.
+  let bundle = {};
+  if (args.evidence) {
+    try { bundle = readEvidence(args.evidence); }
+    catch (e) { return emitError(`ci: failed to read --evidence: ${e.message}`, null, pretty); }
+  }
+  if (args["evidence-dir"]) {
+    const dir = args["evidence-dir"];
+    if (!fs.existsSync(dir)) {
+      return emitError(`ci: --evidence-dir ${dir} does not exist.`, null, pretty);
+    }
+    for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
+      try {
+        bundle[f.replace(/\.json$/, "")] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+      } catch (e) {
+        return emitError(`ci: failed to parse evidence-dir entry ${f}: ${e.message}`, null, pretty);
+      }
+    }
+  }
+
+  const results = [];
+  let fail = false;
+  let failReasons = [];
+
+  for (const id of ids) {
+    let pb;
+    try { pb = runner.loadPlaybook(id); }
+    catch (e) { results.push({ playbook_id: id, ok: false, error: e.message }); fail = true; continue; }
+    const directiveId = (pb.directives[0] && pb.directives[0].id);
+    if (!directiveId) {
+      results.push({ playbook_id: id, ok: false, error: "no directives" });
+      fail = true;
+      continue;
+    }
+    const submission = bundle[id] || {};
+    const perOpts = { ...runOpts, session_id: sessionId };
+    if (submission.precondition_checks) perOpts.precondition_checks = submission.precondition_checks;
+    let result;
+    try { result = runner.run(id, directiveId, submission, perOpts); }
+    catch (e) { result = { ok: false, error: e.message, playbook_id: id }; }
+    results.push(result);
+    if (!result || result.ok === false) {
+      fail = true;
+      failReasons.push(`${id}: blocked (${result?.reason || result?.error || "unknown"})`);
+      continue;
+    }
+    const cls = result.phases?.detect?.classification;
+    const rwepAdj = result.phases?.analyze?.rwep?.adjusted ?? 0;
+    const cap = maxRwep !== null
+      ? maxRwep
+      : (result.phases?.analyze?.rwep?.threshold?.escalate ?? 90);
+    const clockStarted = (result.phases?.close?.notification_actions || [])
+      .some(n => n && n.clock_started_at != null);
+    if (cls === "detected") {
+      fail = true;
+      failReasons.push(`${id}: classification=detected`);
+    }
+    if (cls !== "not_detected" && cls !== "clean" && rwepAdj >= cap) {
+      fail = true;
+      failReasons.push(`${id}: rwep=${rwepAdj} >= cap=${cap} (classification=${cls})`);
+    }
+    if (blockOnClock && clockStarted) {
+      fail = true;
+      failReasons.push(`${id}: jurisdiction clock started`);
+    }
+  }
+
+  const rwepValues = results.map(r => r.phases?.analyze?.rwep?.adjusted ?? 0);
+  const maxRwepObserved = rwepValues.length ? Math.max(...rwepValues) : 0;
+
+  emit({
+    verb: "ci",
+    session_id: sessionId,
+    playbooks_run: ids,
+    summary: {
+      total: results.length,
+      detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
+      inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
+      not_detected: results.filter(r => ["not_detected", "clean"].includes(r.phases?.detect?.classification)).length,
+      blocked: results.filter(r => r && r.ok === false).length,
+      max_rwep_observed: maxRwepObserved,
+      jurisdiction_clocks_started: results
+        .flatMap(r => r.phases?.close?.notification_actions || [])
+        .filter(n => n && n.clock_started_at != null).length,
+      verdict: fail ? "FAIL" : "PASS",
+      fail_reasons: failReasons,
+    },
+    results,
+  }, pretty);
+  if (fail) {
+    process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
+    process.exit(2);
+  }
 }
 
 if (require.main === module) main();
