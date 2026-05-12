@@ -275,6 +275,25 @@ Project rules:      ${PKG_ROOT}/AGENTS.md
 
 function main() {
   const argv = process.argv.slice(2);
+
+  // --json-stdout-only: silence ALL stderr emissions (deprecation banners,
+  // unsigned-attestation warnings, hook output). Operators piping the JSON
+  // result through `jq` or scripting around exit codes want clean stdout
+  // exclusively. Handled here at top of main so the deprecation banner +
+  // unsigned warning are suppressed before they fire.
+  if (argv.includes("--json-stdout-only")) {
+    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+    process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+    const origStderrWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (chunk, encoding, cb) => {
+      // Let actual error frames through (uncaught exceptions need to surface
+      // for debugging); suppress framework stderr.
+      if (typeof chunk === "string" && chunk.startsWith("Error")) return origStderrWrite(chunk, encoding, cb);
+      if (typeof cb === "function") cb();
+      return true;
+    };
+  }
+
   if (argv.length === 0) {
     printWelcome();
     process.exit(0);
@@ -300,8 +319,17 @@ function main() {
   if (PLAYBOOK_VERBS.has(cmd)) {
     // One-time deprecation banner per process when a legacy verb is invoked.
     if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
+      // Mention the installed version explicitly so an operator on v0.10.x
+      // who reads "Prefer brief..." doesn't go looking for a verb that
+      // doesn't exist in their install. v0.11.0+ has the replacement; v0.10.x
+      // users see this with the explicit "upgrade to v0.11.0 first" note.
+      const ver = readPkgVersion();
+      const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
       process.stderr.write(
-        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (v0.11.0). ` +
+        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
+        (haveBrief
+          ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
+          : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
         `Legacy verbs remain functional through this release; they will be removed in v0.12. ` +
         `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
       );
@@ -429,7 +457,8 @@ function dispatchPlaybook(cmd, argv) {
   const args = parseArgs(argv, {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
             "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
-            "force-overwrite", "no-stream", "block-on-jurisdiction-clock"],
+            "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
+            "json-stdout-only"],
     multi: ["playbook", "format"],
   });
   const pretty = !!args.pretty;
@@ -1080,6 +1109,13 @@ function cmdRun(runner, args, runOpts, pretty) {
   }
 
   let submission = {};
+  // v0.11.1: auto-detect piped stdin (process.stdin.isTTY === false means
+  // something is piping into us). If no --evidence flag and stdin is a pipe,
+  // assume `--evidence -`. Operators forgetting the flag previously got a
+  // confusing precondition halt; now the common case "just works."
+  if (!args.evidence && process.stdin.isTTY === false) {
+    args.evidence = "-";
+  }
   if (args.evidence) {
     try {
       submission = readEvidence(args.evidence);

@@ -304,12 +304,62 @@ function runCurrency() {
 }
 
 async function runReport(format) {
+  // v0.11.1 feature #55: `report csaf` emits a CSAF 2.0 envelope covering
+  // every scanned finding + dispatched plan + currency posture. Useful for
+  // VEX downstreams that ingest CSAF JSON.
+  if (format === 'csaf') {
+    const scanResult = await scan();
+    const plan = dispatch(scanResult.findings);
+    const { currency_report } = currencyCheck();
+    const ver = (function(){try{return require('../package.json').version;}catch{return 'unknown';}})();
+    const csaf = {
+      document: {
+        category: 'csaf_security_advisory',
+        csaf_version: '2.0',
+        publisher: { category: 'vendor', name: 'exceptd', namespace: 'https://exceptd.com' },
+        title: `exceptd assessment report — ${scanResult.summary.total_findings} finding(s) across ${plan.plan.length} skill(s)`,
+        tracking: {
+          id: `exceptd-report-${Date.now()}`,
+          status: 'final',
+          version: ver,
+          initial_release_date: new Date().toISOString(),
+          revision_history: [{ number: '1', date: new Date().toISOString(), summary: 'Initial report emission' }],
+        },
+      },
+      vulnerabilities: scanResult.findings
+        .filter(f => f.cve_id)
+        .map(f => ({
+          cve: f.cve_id,
+          notes: [{ category: 'description', text: f.action_required || f.signal }],
+          scores: [{ products: [], cvss_v3: { base_score: 0 } }],
+          threats: f.severity === 'critical' ? [{ category: 'exploit_status', details: f.action_required }] : [],
+        })),
+      exceptd_extension: {
+        scan_summary: scanResult.summary,
+        dispatch_plan: plan,
+        skill_currency: currency_report,
+        host: scanResult.host,
+      },
+    };
+    process.stdout.write(JSON.stringify(csaf, null, 2) + '\n');
+    return;
+  }
+
   console.log(`[orchestrator] Generating ${format} report...\n`);
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
   const { currency_report } = currencyCheck();
 
-  console.log('# exceptd Security Assessment Report');
+  // Bug #48: header now self-describes the report flavor so a piped-to-file
+  // report carries its provenance internally. Previously only stderr
+  // (`[orchestrator] Generating <X> report`) distinguished the three.
+  const flavorTitle = {
+    executive: 'Executive Report',
+    technical: 'Technical Report',
+    compliance: 'Compliance Report',
+  }[format] || 'Report';
+  console.log(`# exceptd ${flavorTitle}`);
+  console.log(`<!-- exceptd-report:flavor=${format} version=${(function(){try{return require('../package.json').version;}catch{return 'unknown';}})()} -->`);
   console.log(`Generated: ${new Date().toISOString()}\n`);
 
   console.log('## Executive Summary');
