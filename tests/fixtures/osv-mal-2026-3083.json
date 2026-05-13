@@ -1,0 +1,49 @@
+[
+  {
+    "id": "MAL-2026-3083",
+    "summary": "Malicious code in elementary-data (PyPI) — Elementary-Data Worm via forged GitHub Actions release",
+    "details": "elementary-data 0.23.3 was published from a malicious orphan commit produced via GitHub Actions script-injection in update_pylon_issue.yml. The release ships an `elementary.pth` file that auto-executes a base64-encoded harvester on every python invocation. Window: 2026-04-24 22:20Z through 2026-04-25 06:30Z.",
+    "aliases": [],
+    "modified": "2026-04-28T00:00:00Z",
+    "published": "2026-04-24T22:30:00Z",
+    "severity": [
+      { "type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }
+    ],
+    "affected": [
+      {
+        "package": { "ecosystem": "PyPI", "name": "elementary-data" },
+        "versions": ["0.23.3"],
+        "ranges": [
+          { "type": "ECOSYSTEM", "events": [{ "introduced": "0.23.3" }, { "fixed": "0.23.4" }] }
+        ]
+      }
+    ],
+    "references": [
+      { "type": "ADVISORY", "url": "https://osv.dev/vulnerability/MAL-2026-3083" },
+      { "type": "WEB", "url": "https://www.stepsecurity.io/blog/elementary-data-compromised-on-pypi-and-ghcr-forged-release-pushed-via-github-actions" },
+      { "type": "WEB", "url": "https://security.snyk.io/vuln/SNYK-PYTHON-ELEMENTARYDATA-16316110" }
+    ],
+    "database_specific": {
+      "iocs": {
+        "domains": ["skyhanni.cloud"],
+        "urls": ["https://api.skyhanni.cloud/exfil"]
+      }
+    }
+  },
+  {
+    "id": "RUSTSEC-2025-0099",
+    "summary": "Synthetic test advisory — never published, used to exercise the Rust ecosystem import path",
+    "aliases": ["CVE-9999-99998"],
+    "modified": "2026-05-13T00:00:00Z",
+    "published": "2026-05-12T00:00:00Z",
+    "severity": [
+      { "type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N" }
+    ],
+    "affected": [
+      { "package": { "ecosystem": "crates.io", "name": "synthetic-rust-package" }, "versions": ["1.0.0"] }
+    ],
+    "references": [
+      { "type": "ADVISORY", "url": "https://osv.dev/vulnerability/RUSTSEC-2025-0099" }
+    ]
+  }
+]
