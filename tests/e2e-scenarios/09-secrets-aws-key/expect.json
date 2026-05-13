@@ -1,0 +1,16 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "phases.detect.classification": "detected"
+  },
+  "json_path_min": {
+    "phases.close.jurisdiction_clocks_count": 1,
+    "phases.analyze.rwep.adjusted": 30
+  },
+  "json_path_present": [
+    "phases.close.jurisdiction_notifications",
+    "phases.analyze.rwep.adjusted",
+    "session_id",
+    "evidence_hash"
+  ]
+}

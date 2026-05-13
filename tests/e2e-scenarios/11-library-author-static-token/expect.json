@@ -1,0 +1,14 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "phases.detect.classification": "detected"
+  },
+  "json_path_min": {
+    "phases.analyze.rwep.adjusted": 20
+  },
+  "json_path_present": [
+    "phases.analyze.rwep.adjusted",
+    "phases.close.notification_actions",
+    "session_id"
+  ]
+}

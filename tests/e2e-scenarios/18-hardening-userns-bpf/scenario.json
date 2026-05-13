@@ -1,0 +1,7 @@
+{
+  "name": "18-hardening-userns-bpf",
+  "description": "Stages a synthetic /proc/sys/kernel snapshot indicating unprivileged_userns_clone=1 and unprivileged_bpf_disabled=0. hardening playbook must classify detected via unprivileged-userns-enabled + unprivileged-bpf-allowed.",
+  "verb": "run",
+  "args": ["hardening", "--evidence", "evidence.json", "--session-id", "e2e-18", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

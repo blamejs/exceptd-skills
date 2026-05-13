@@ -627,7 +627,7 @@
         {
           "id": "package-matches-catalogued-cve",
           "type": "log_pattern",
-          "value": "Any inventoried package version falls inside any catalogued CVE's affected_versions range, where the CVE's framework and category match the package's class",
+          "value": "Across the union of inventoried packages — dpkg-packages, rpm-packages, brew-packages, npm-global-packages, pip-packages, cargo-installed, gem-packages, go-binaries, repo-lockfiles entries, AND container-image-layers package manifests — any version falls inside any affected_versions range in the cve-catalog artifact, where the cve-catalog entry's framework and category match the inventoried package's class",
           "description": "Primary detector — installed-package version matches a catalogued CVE.",
           "confidence": "high",
           "deterministic": false,
@@ -636,7 +636,7 @@
         {
           "id": "lockfile-no-integrity",
           "type": "log_pattern",
-          "value": "Any pinned dependency in walked lockfiles lacks an integrity field (sha512/sha384/sha256, sri-integrity, go.sum-style hash)",
+          "value": "Within the repo-lockfiles artifact: any pinned dependency lacks an integrity field (sha512/sha384/sha256, sri-integrity, go.sum-style hash)",
           "description": "Theater fingerprint #2 detection — name-pinned without integrity.",
           "confidence": "deterministic",
           "deterministic": true
@@ -644,7 +644,7 @@
         {
           "id": "transitive-deps-incomplete-sbom",
           "type": "log_pattern",
-          "value": "SBOM artifact present AND transitive dep count > SBOM component count * 1.05",
+          "value": "The sbom-artifacts artifact has at least one entry present AND the transitive dep count (computed from repo-lockfiles + container-image-layers) > SBOM component count * 1.05",
           "description": "Theater fingerprint #3 — SBOM lists direct deps only.",
           "confidence": "high",
           "deterministic": false
@@ -652,7 +652,7 @@
         {
           "id": "matched-cve-without-vex",
           "type": "log_pattern",
-          "value": "package-matches-catalogued-cve == true AND no VEX statement exists for the matched CVE in the org's VEX register",
+          "value": "package-matches-catalogued-cve == true AND no entry in the vex-statements artifact covers the matched CVE (no *.vex.json / *.csaf.json statement carrying status_notes for the CVE id) — and the cve-catalog entry for that CVE is not marked vendor-rejected",
           "description": "Theater fingerprint #4 detection — matched CVE without exploitability declaration.",
           "confidence": "deterministic",
           "deterministic": true
@@ -660,7 +660,7 @@
         {
           "id": "ai-code-no-provenance",
           "type": "behavioral_signal",
-          "value": "ai-coding-assistant-inventory shows at least one installed assistant AND SBOM has no fields capturing AI-emitted code (no ml-bom, no spdx ai-profile, no commit-trailer convention)",
+          "value": "ai-coding-assistant-inventory shows at least one installed assistant AND the sbom-artifacts artifact has no fields capturing AI-emitted code (no ml-bom, no spdx ai-profile, no commit-trailer convention)",
           "description": "Theater fingerprint #5 detection — AI in use, AI-emitted code not in SBOM.",
           "confidence": "high",
           "deterministic": false
@@ -694,7 +694,7 @@
         {
           "id": "tanstack-worm-payload-files",
           "type": "file_path",
-          "value": "node_modules/@tanstack/*/router_init.js exists OR node_modules/@tanstack/*/router_runtime.js exists",
+          "value": "Within the tanstack-payload-sweep artifact: node_modules/@tanstack/*/router_init.js exists OR node_modules/@tanstack/*/router_runtime.js exists",
           "description": "CVE-2026-45321 (Mini Shai-Hulud) payload markers — these files do not exist in clean TanStack packages.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -703,7 +703,7 @@
         {
           "id": "tanstack-worm-resolved-during-publish-window",
           "type": "log_pattern",
-          "value": "Lockfile entry for any @tanstack/* package resolved within 2026-05-11T19:20Z..2026-05-11T19:26Z (the malicious publish window)",
+          "value": "Within the repo-lockfiles artifact: any @tanstack/* entry resolved within 2026-05-11T19:20Z..2026-05-11T19:26Z (the malicious publish window)",
           "description": "CVE-2026-45321 timing match — any @tanstack/* package whose lockfile-recorded resolution timestamp falls inside the 6-minute attacker publish window is suspect even if the payload markers were since cleaned.",
           "confidence": "high",
           "deterministic": false,
@@ -712,7 +712,7 @@
         {
           "id": "agent-persistence-claude-session-start-hook",
           "type": "file_path",
-          "value": ".claude/settings.json contains hooks.SessionStart referencing .vscode/setup.mjs OR any non-blamejs-installed script",
+          "value": "Within the agent-persistence-claude-settings artifact: .claude/settings.json contains hooks.SessionStart referencing .vscode/setup.mjs OR any non-blamejs-installed script",
           "description": "CVE-2026-45321 persistence vector — worm installs a SessionStart hook to re-arm on next Claude Code launch. Any SessionStart hook running an in-repo .mjs that the operator didn't author is suspect.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -721,7 +721,7 @@
         {
           "id": "agent-persistence-vscode-folder-open-task",
           "type": "file_path",
-          "value": ".vscode/tasks.json contains a runOptions.runOn=folderOpen task pointing at .vscode/setup.mjs or similar",
+          "value": "Within the agent-persistence-vscode-tasks artifact: .vscode/tasks.json contains a runOptions.runOn=folderOpen task pointing at .vscode/setup.mjs or similar",
           "description": "CVE-2026-45321 persistence vector — folder-open hook re-arms on every VS Code re-open of the directory.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -739,7 +739,7 @@
         {
           "id": "ci-cache-poisoning-co-residency",
           "type": "log_pattern",
-          "value": "Repo .github/workflows/ contains BOTH (a) a workflow with `on: pull_request_target` AND (b) any workflow with `permissions: id-token: write` AND (c) any actions/cache step shared between the two",
+          "value": "Within the github-workflows artifact: the .github/workflows/ set contains BOTH (a) a workflow with `on: pull_request_target` AND (b) any workflow with `permissions: id-token: write` AND (c) any actions/cache step shared between the two",
           "description": "Architectural pre-condition for CVE-2026-45321-style chained-primitives attacks. Even without the payload, this co-residency means any successful fork-PR exploit can poison the cache that the publish workflow restores. Mitigation: separate cache namespaces, or remove pull_request_target.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -748,7 +748,7 @@
         {
           "id": "npm-registry-no-cooldown",
           "type": "file_path",
-          "value": ".npmrc and ~/.npmrc both lack `before=` or `minimumReleaseAge=` settings, AND project consumes any npm package",
+          "value": "Within the npmrc-cooldown-policy artifact: .npmrc and ~/.npmrc both lack `before=` or `minimumReleaseAge=` settings, AND the project consumes any npm package (any repo-lockfiles entry of class npm/yarn/pnpm exists)",
           "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `before=72h` (npm 11+) or `minimumReleaseAge=4320` minutes. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
           "confidence": "high",
           "deterministic": false

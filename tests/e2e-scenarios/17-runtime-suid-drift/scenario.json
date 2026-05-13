@@ -1,0 +1,7 @@
+{
+  "name": "17-runtime-suid-drift",
+  "description": "Stages runtime evidence indicating a non-baseline setuid binary and a NOPASSWD wildcard sudoers entry. runtime playbook must classify detected via non-baseline-suid + sudoers-nopasswd-wildcard.",
+  "verb": "run",
+  "args": ["runtime", "--evidence", "evidence.json", "--session-id", "e2e-17", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

@@ -37,7 +37,13 @@ framework_gaps:
   - NIST-800-53-AC-2
   - ISO-27001-2022-A.8.16
   - SOC2-CC7-anomaly-detection
-rfc_refs: []
+  - NIS2-Art21-incident-handling
+  - UK-CAF-D1
+  - AU-Essential-8-Backup
+rfc_refs:
+  - RFC-6545
+  - RFC-6546
+  - RFC-7970
 cwe_refs: []
 d3fend_refs:
   - D3-RPA
@@ -120,7 +126,7 @@ This skill is response-shaped — the TTPs below name the incident classes the p
 |---|---|---|---|---|
 | **T1486** | Data Encrypted for Impact | Ransomware | Identification: EDR file-encryption telemetry, share-mass-write pattern. Containment: network-segment isolation, identity revocation. Eradication: backup-validation-before-restore. Recovery: validated-restore + service-level verification. Lessons: feed to `zeroday-gap-learn` if initial access was a known CVE. | Detection coverage strong; identity-rotation maturity weak. NYDFS 24h ransom-payment clock and OFAC sanctions screening intersect at decision-to-pay. |
 | **T1041** | Exfiltration Over C2 Channel | Data exfiltration via established C2 | Identification: DLP egress, anomalous outbound bandwidth, beaconing patterns. Containment: egress filtering, certificate-pinned proxy. Eradication: C2 artifact removal. Recovery: identity + secrets rotation. Lessons: detection-engineering gap analysis. | EDR coverage variable; encrypted exfiltration to legitimate services (Box, OneDrive, S3) often missed by signature-based DLP. |
-| **T1567** | Exfiltration Over Web Service | Exfiltration via legitimate web/SaaS services including AI-API | Identification: web-egress to anomalous services or anomalous-volume to legitimate services; for AI-API channel pair with `ai-c2-detection`. Containment: egress block of identified channel, AI-API key revocation, MCP-server scope reduction. Eradication: identify exfiltrated dataset, follow data-incident sub-playbook. Recovery: re-key + re-issue access. | AI-API exfiltration (sub-technique T1567.xxx pattern; ATLAS overlap with AML.T0017) typically blends with legitimate traffic — see `ai-c2-detection` for content-layer detection. |
+| **T1567** | Exfiltration Over Web Service | Exfiltration via legitimate web/SaaS services including AI-API | Identification: web-egress to anomalous services or anomalous-volume to legitimate services; for AI-API channel pair with `ai-c2-detection`. Containment: egress block of identified channel, AI-API key revocation, MCP-server scope reduction. Eradication: identify exfiltrated dataset, follow data-incident sub-playbook. Recovery: re-key + re-issue access. | AI-API exfiltration (sub-technique T1567.<sub-technique-id> pattern; ATLAS overlap with AML.T0017) typically blends with legitimate traffic — see `ai-c2-detection` for content-layer detection. |
 | **T1078** | Valid Accounts | Identity compromise as initial access | Identification: anomalous-sign-in UEBA, impossible-travel, MFA-fatigue patterns. Containment: account disable + session revocation + re-authentication for affected blast radius. Eradication: credential rotation, token revocation, OAuth-grant audit, AI-agent service-account rotation. Recovery: re-issue under zero-trust posture. Lessons: identity-control gap analysis. | Dominant initial-access vector mid-2026; coverage strong for human accounts, weak for AI-agent / service-account / OAuth-app identities. |
 | **AML.T0096** | LLM API as C2 | AI-API as command-and-control channel (SesameOp pattern) | Identification: see `ai-c2-detection` skill — content-layer detection at the AI API egress boundary, prompt-and-response correlation, anomalous AI-API usage shape. Containment: AI-API egress block or proxy-mediated allowlist. Eradication: identify the agent or workload abusing the channel. Recovery: re-issue AI-API keys under scoped least-privilege. | Detection coverage near-absent in legacy SOC stacks; the AI traffic shape is novel and signatures do not exist for most enterprise SIEMs. |
 | **AML.T0017** | ML Model Exfiltration | Model weights, training data, or system-prompt extraction | Identification: anomalous inference-API usage patterns (high-volume queries, structured probing, membership-inference signatures, repeated training-data extraction prompts). Containment: rate-limit + API-key revocation + IP block. Eradication: identify attacker access surface; assess data sensitivity. Recovery: re-key, consider model-rotation if proprietary weights are at risk; for training-data exfiltration consider differential-privacy retraining. | No standardized detection signatures; org must build custom telemetry over AI inference APIs. |

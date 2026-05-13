@@ -36,6 +36,9 @@ framework_gaps:
   - IEC-62443-3-3
   - NERC-CIP-007-6-R4
   - NIS2-Art21-patch-management
+  - ISO-27001-2022-A.8.8
+  - UK-CAF-B2
+  - AU-Essential-8-App-Hardening
 rfc_refs: []
 cwe_refs:
   - CWE-287

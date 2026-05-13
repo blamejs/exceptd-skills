@@ -39,6 +39,9 @@ framework_gaps:
   - OWASP-LLM-Top-10-2025-LLM01
   - OWASP-LLM-Top-10-2025-LLM02
   - SOC2-CC6-logical-access
+  - EU-AI-Act-Art-15
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 cwe_refs:
   - CWE-1039
   - CWE-1426
@@ -46,7 +49,7 @@ cwe_refs:
 d3fend_refs:
   - D3-IOPR
   - D3-NTA
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-13"
 ---
 
 # AI Attack Surface Assessment

@@ -1,0 +1,26 @@
+{
+  "precondition_checks": {
+    "linux-platform": true,
+    "proc-readable": true
+  },
+  "observations": {
+    "sysctl-kernel-hardening": {"captured": true, "value": "kernel.unprivileged_userns_clone=1; kernel.unprivileged_bpf_disabled=0; kernel.kptr_restrict=2; kernel.yama.ptrace_scope=1", "indicator": "unprivileged-userns-enabled", "result": "hit"},
+    "kernel-cmdline": {"captured": true, "value": "BOOT_IMAGE=/vmlinuz-6.11.4-generic root=UUID=... ro quiet"},
+    "cpu-vulnerabilities": {"captured": true, "value": "All mitigations active"},
+    "kernel-lockdown": {"captured": true, "value": "lockdown=none"},
+    "selinux-state": {"captured": true, "value": "SELinux not installed (Ubuntu)"},
+    "apparmor-state": {"captured": true, "value": "AppArmor enforcing"},
+    "sshd-config": {"captured": true, "value": "PermitRootLogin no; PasswordAuthentication no"},
+    "sudoers-structure": {"captured": true, "value": "sudoers + sudoers.d/ baseline"},
+    "pam-stack": {"captured": true, "value": "baseline PAM stack"},
+    "audit-rules": {"captured": true, "value": "auditd loaded, default rule set"},
+    "umask-defaults": {"captured": true, "value": "umask 0022"}
+  },
+  "signal_overrides": {
+    "unprivileged-bpf-allowed": "hit"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

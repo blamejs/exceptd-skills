@@ -509,7 +509,7 @@
     },
     "skill-update-loop": {
       "description": "Meta-skill for keeping all exceptd skills current — CISA KEV triggers, ATLAS version updates, framework amendments, forward_watch resolution, currency scoring",
-      "threat_context_excerpt": null,
+      "threat_context_excerpt": "The threat context this skill defends against is not a specific adversary technique — it is the **drift attack against the platform's own currency**: an exceptd installation whose skills, catalogs, framework references, and ATLAS pins age silently between releases until the operator-facing analysis is calibrated to a threat model that no longer exists.",
       "produces": "```\n## Skill Update Loop Report\n\n**Date:** YYYY-MM-DD\n**Last Full Review:** [date from manifest.json]\n\n### Unprocessed Triggers\n| Trigger Type | Item | Affected Skills | Urgency |\n|---|---|---|---|\n\n### Skill Currency Scores\n| Skill | Last Review | Currency Score | Status |\n|---|---|---|---|\n\n### Prioritized Update Tasks\n[Ordered by urgency: specific skill, specific section, specific required change]\n\n### Forward Watch Status\n[Per skill's forward_watch items: resolved/pending/newly added]\n```\n\n---",
       "key_xrefs": {
         "cwe_refs": [],
@@ -787,7 +787,7 @@
     "defensive-countermeasure-mapping": {
       "description": "Map offensive findings (CVE / TTP / framework gap) to MITRE D3FEND defensive countermeasures with explicit defense-in-depth, least-privilege, and zero-trust layering",
       "threat_context_excerpt": "ATT&CK and ATLAS are now load-bearing in SOC detection engineering. Detection content is written against technique IDs; red-team reports are mapped to technique IDs; threat intel feeds emit technique IDs. The result: the offensive side of every blue-team discussion is technique-grained and crisp.",
-      "produces": "```\n# Defensive Countermeasure Map — <input>\n\n## What this is\n<one-line classification + canonical reference>\nExample: \"CVE — Linux kernel LPE. Canonical: CVE-2026-31431 (Copy Fail).\"\n\n## Offensive technique set (input to D3FEND query)\n- <AML.Txxxx / Txxxx / CWE-xxx list, with one-line descriptions>\n\n## Defensive-coverage map\n| D3FEND ID | Name | Tactic (DiD layer) | Privilege scope | ZT posture | Deployed? | AI-pipeline applicable? | Framework controls partially mapped | Live-tunable? |\n|-----------|------|--------------------|-----------------|------------|-----------|----------------------- ...",
+      "produces": "```\n# Defensive Countermeasure Map — <input>\n\n## What this is\n<one-line classification + canonical reference>\nExample: \"CVE — Linux kernel LPE. Canonical: CVE-2026-31431 (Copy Fail).\"\n\n## Offensive technique set (input to D3FEND query)\n- <AML.T0001-or-similar / T0001-or-similar / CWE-<id> list, with one-line descriptions>\n\n## Defensive-coverage map\n| D3FEND ID | Name | Tactic (DiD layer) | Privilege scope | ZT posture | Deployed? | AI-pipeline applicable? | Framework controls partially mapped | Live-tunable? |\n|-----------|------|--------------------|-----------------|------------|-----------| ...",
       "key_xrefs": {
         "cwe_refs": [],
         "d3fend_refs": [

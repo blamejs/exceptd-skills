@@ -1,0 +1,7 @@
+{
+  "name": "09-secrets-aws-key",
+  "description": "Stages a tracked source file carrying a non-example AWS Access Key ID (AKIA shape) plus its 40-char secret half. secrets playbook must classify detected, fire aws-access-key-id + aws-secret-access-key indicators, start a notification clock.",
+  "verb": "run",
+  "args": ["secrets", "--evidence", "evidence.json", "--session-id", "e2e-09", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

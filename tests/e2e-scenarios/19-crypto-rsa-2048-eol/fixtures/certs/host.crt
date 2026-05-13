@@ -1,0 +1,8 @@
+-----BEGIN CERTIFICATE-----
+# Synthetic placeholder for the e2e fixture. The crypto playbook reads
+# attribute summaries from openssl x509 -text rather than reparsing the
+# DER, so this fixture's value is the file's presence + the captured
+# metadata in evidence.json (RSA-2048, 3-year validity, no PQC hybrid).
+# Replacing this with a real certificate is not necessary for detection;
+# the indicator fires on the metadata.
+-----END CERTIFICATE-----

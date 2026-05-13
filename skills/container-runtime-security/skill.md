@@ -38,6 +38,9 @@ framework_gaps:
   - NIST-800-53-CM-7
   - ISO-27001-2022-A.8.28
   - SLSA-v1.0-Build-L3
+  - NIS2-Art21-incident-handling
+  - UK-CAF-B2
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8446
   - RFC-8032

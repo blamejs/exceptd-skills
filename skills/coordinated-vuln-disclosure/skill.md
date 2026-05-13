@@ -29,7 +29,14 @@ framework_gaps:
   - NIST-800-218-SSDF
   - ISO-27001-2022-A.8.8
   - SOC2-CC9-vendor-management
-rfc_refs: []
+  - NIS2-Art21-incident-handling
+  - UK-CAF-D1
+  - AU-Essential-8-Patch
+rfc_refs:
+  - ISO-29147
+  - ISO-30111
+  - RFC-9116
+  - CSAF-2.0
 cwe_refs:
   - CWE-1357
 d3fend_refs: []

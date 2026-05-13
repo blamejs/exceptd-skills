@@ -1,0 +1,25 @@
+{
+  "precondition_checks": {
+    "home-dir-readable": true
+  },
+  "observations": {
+    "aws-credentials": {"captured": true, "value": "[default] aws_access_key_id=AKIA2RFBQHJK7MNPQR4S aws_secret_access_key=<40 chars>; no sso_session block", "indicator": "aws-static-key-present", "result": "hit"},
+    "aws-sso-cache": {"captured": true, "value": "~/.aws/sso/cache/ empty"},
+    "kube-config": {"captured": true, "value": "no ~/.kube/config"},
+    "gcloud-credentials": {"captured": true, "value": "no gcloud credentials"},
+    "docker-config": {"captured": true, "value": "~/.docker/config.json present with credsStore=desktop"},
+    "npmrc": {"captured": true, "value": "no ~/.npmrc"},
+    "pypirc": {"captured": true, "value": "no ~/.pypirc"},
+    "gpg-keys": {"captured": true, "value": "no gpg secret keys"},
+    "ssh-keys-inventory": {"captured": true, "value": "no id_* files"},
+    "ssh-config": {"captured": true, "value": "no ~/.ssh/config"},
+    "keychain-inventory": {"captured": true, "value": "secret-tool empty"}
+  },
+  "signal_overrides": {
+    "credentials-file-bad-perms": "miss"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

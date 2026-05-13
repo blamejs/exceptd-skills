@@ -1,0 +1,24 @@
+{
+  "precondition_checks": {
+    "linux-platform": true,
+    "exec-allowed": true,
+    "non-destructive": true
+  },
+  "observations": {
+    "listening-sockets": {"captured": true, "value": "no unexpected listeners"},
+    "listening-sockets-udp": {"captured": true, "value": "no unexpected UDP listeners"},
+    "sudo-rules": {"captured": true, "value": "/etc/sudoers.d/deploy contains: deploy ALL=(ALL) NOPASSWD: /usr/bin/*", "indicator": "sudoers-nopasswd-wildcard", "result": "hit"},
+    "suid-binaries": {"captured": true, "value": "/usr/local/bin/agent.sh setuid-root, owner uid=1001, sha256 not in distro package db", "indicator": "non-baseline-suid", "result": "hit"},
+    "cron-entries": {"captured": true, "value": "baseline /etc/cron.* entries"},
+    "user-cron": {"captured": true, "value": "no user crontabs"},
+    "systemd-timers": {"captured": true, "value": "baseline timers only"},
+    "systemd-services": {"captured": true, "value": "baseline services only"},
+    "process-tree": {"captured": true, "value": "no orphan privileged processes"},
+    "passwd-shadow-baseline": {"captured": true, "value": "single uid=0 entry (root); no duplicates"},
+    "world-writable-paths": {"captured": true, "value": "/tmp only"}
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

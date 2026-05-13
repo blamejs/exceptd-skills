@@ -1,0 +1,7 @@
+{
+  "name": "example-lib",
+  "version": "1.4.0",
+  "description": "Example library staged for the library-author e2e scenario.",
+  "main": "index.js",
+  "license": "MIT"
+}

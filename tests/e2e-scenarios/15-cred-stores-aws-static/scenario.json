@@ -1,0 +1,7 @@
+{
+  "name": "15-cred-stores-aws-static",
+  "description": "Stages a ~/.aws/credentials fixture containing a long-lived [default] block with aws_access_key_id + aws_secret_access_key. cred-stores playbook must classify detected via aws-static-key-present indicator and surface the SSO migration recommendation.",
+  "verb": "run",
+  "args": ["cred-stores", "--evidence", "evidence.json", "--session-id", "e2e-15", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

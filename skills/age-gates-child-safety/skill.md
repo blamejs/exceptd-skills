@@ -39,6 +39,9 @@ framework_gaps:
   - ISO-27001-2022-A.8.30
   - NIST-800-53-AC-2
   - SOC2-CC6-logical-access
+  - NIS2-Art21-incident-handling
+  - UK-CAF-B2
+  - AU-Essential-8-MFA
 rfc_refs: []
 cwe_refs:
   - CWE-200

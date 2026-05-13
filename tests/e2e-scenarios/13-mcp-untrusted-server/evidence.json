@@ -1,0 +1,20 @@
+{
+  "observations": {
+    "claude-code-mcp-config": {"captured": true, "value": ".claude/settings.local.json declares mcpServer 'untrusted-fs' command=npx -y untrusted-fs-mcp@latest with no integrity hash", "indicator": "mcp-version-without-integrity", "result": "hit"},
+    "cursor-mcp-config": {"captured": true, "value": "no Cursor MCP config"},
+    "windsurf-mcp-config": {"captured": true, "value": "no Windsurf MCP config"},
+    "vscode-copilot-mcp-config": {"captured": true, "value": "no VS Code Copilot MCP config"},
+    "gemini-cli-mcp-config": {"captured": true, "value": "no Gemini CLI MCP config"},
+    "mcp-process-list": {"captured": true, "value": "no MCP processes currently running"},
+    "npm-global-mcp": {"captured": true, "value": "no global npm MCP packages"},
+    "pip-global-mcp": {"captured": true, "value": "no global pip MCP packages"},
+    "mcp-manifest-signatures": {"captured": true, "value": "untrusted-fs-mcp ships no signed manifest", "indicator": "unsigned-mcp-manifest", "result": "hit"},
+    "mcp-allowlist-policy": {"captured": true, "value": "no allowlist file in repo or org config", "indicator": "mcp-allowlist-missing", "result": "hit"},
+    "vscode-copilot-yolo-mode": {"captured": true, "value": "n/a"},
+    "mcp-tool-response-log": {"captured": true, "value": "no tool-response log available"}
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

@@ -134,6 +134,29 @@ jobs:
         # build. Re-vendor instructions: vendor/blamejs/README.md.
         run: node lib/validate-vendor.js
 
+  # ── Diff coverage (no-MVP for tests) ────────────────────────────────────────
+  # AGENTS.md hard rule #15: every changed CLI verb, CLI flag,
+  # module export, playbook indicator, or CVE iocs field must land
+  # with a covering test reference in the same PR. Runs in --warn-only
+  # mode during the v0.12.8 rollout window; flip blocking in v0.12.9.
+  diff-coverage:
+    name: Diff coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for diff base)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Run diff coverage analyzer
+        run: node scripts/check-test-coverage.js --base origin/main --warn-only
+
   # ── Skill lint (frontmatter + body sections + cross-refs) ───────────────────
   # AGENTS.md hard rules #4 (no orphaned controls), #7 (skills are
   # instructions, not descriptions), #10 (no placeholders), #11 (no-MVP

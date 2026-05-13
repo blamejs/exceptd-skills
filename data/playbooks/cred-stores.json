@@ -414,7 +414,7 @@
         {
           "id": "aws-static-key-present",
           "type": "log_pattern",
-          "value": "~/.aws/credentials contains a [profile] block with aws_access_key_id = AKIA* AND no sso_session / credential_process",
+          "value": "Within the aws-credentials artifact (~/.aws/credentials): a [profile] block with aws_access_key_id = AKIA* AND no sso_session / credential_process; cross-reference the aws-sso-cache artifact — if aws-sso-cache is empty AND aws-credentials carries an AKIA* key, the workstation has zero federated session coverage for that profile",
           "description": "Long-lived AWS IAM user key. AAL1-equivalent. Static credential.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -423,7 +423,7 @@
         {
           "id": "kube-static-token",
           "type": "log_pattern",
-          "value": "~/.kube/config users[].user.token: field present AND no exec: federated flow alongside",
+          "value": "Within the kube-config artifact (~/.kube/config): users[].user.token: field present AND no exec: federated flow alongside",
           "description": "Static Kubernetes service-account or admin token. Long-lived bearer. Indistinguishable from a federated kube context that uses cached token unless exec: is also present.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -432,7 +432,7 @@
         {
           "id": "gcp-service-account-json-adc",
           "type": "log_pattern",
-          "value": "~/.config/gcloud/application_default_credentials.json contains \"type\": \"service_account\"",
+          "value": "Within the gcloud-credentials artifact: ~/.config/gcloud/application_default_credentials.json contains \"type\": \"service_account\" — OR the credentials.db SQLite query returns rows where type='service_account' for any active configuration",
           "description": "ADC pointing at a service-account JSON private key. Long-lived. The recommended posture is type=external_account (workforce identity) or type=authorized_user (federated user creds).",
           "confidence": "deterministic",
           "deterministic": true,
@@ -441,7 +441,7 @@
         {
           "id": "docker-cleartext-auth",
           "type": "log_pattern",
-          "value": "~/.docker/config.json contains auths[].auth: field with base64(user:password) AND no credHelpers / credsStore for that registry",
+          "value": "Within the docker-config artifact (~/.docker/config.json): auths[].auth field with base64(user:password) AND no credHelpers / credsStore for that registry",
           "description": "Docker registry credentials in cleartext (base64 is not encryption). credHelpers/credsStore would route to OS keychain or cloud-IAM-federated path.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -468,7 +468,7 @@
         {
           "id": "ssh-key-rsa-short-bits",
           "type": "log_pattern",
-          "value": "ssh-keygen reports RSA key with bit-length < 3072 OR DSA key of any size",
+          "value": "Within the ssh-keys-inventory artifact: ssh-keygen reports any RSA key with bit-length < 3072 OR DSA key of any size",
           "description": "Weak SSH key. RSA-2048 is acceptable but trending out; RSA-1024 / DSA are deprecated. Cryptographic posture issue.",
           "confidence": "high",
           "deterministic": false
@@ -476,7 +476,7 @@
         {
           "id": "ssh-key-old",
           "type": "behavioral_signal",
-          "value": "Any ~/.ssh/id_* file with mtime > 365 days ago",
+          "value": "Within the ssh-keys-inventory artifact: any ~/.ssh/id_* file with mtime > 365 days ago; cross-reference the ssh-config artifact — if ssh-config carries no CertificateFile / ProxyJump bastion-mediated entry covering the same host, the stale raw key is the sole auth path",
           "description": "Stale SSH key. Predates likely org rotation cadence; predates likely AAL/FIDO2 enrollment.",
           "confidence": "high",
           "deterministic": false
@@ -484,7 +484,7 @@
         {
           "id": "gpg-key-old-or-weak",
           "type": "log_pattern",
-          "value": "gpg --list-secret-keys reports a secret key with algorithm DSA OR RSA<3072 OR creation date > 5 years AND no expiration set",
+          "value": "Within the gpg-keys artifact: any secret key reported with algorithm DSA OR RSA<3072 OR creation date > 5 years AND no expiration set",
           "description": "Weak or never-expiring GPG private key. Long-lived signing credential outside any rotation cadence.",
           "confidence": "high",
           "deterministic": false
@@ -501,8 +501,8 @@
         {
           "id": "all-stores-empty-or-federated",
           "type": "behavioral_signal",
-          "value": "Inventory shows zero static credentials AND every present store uses exec: / sso_session / credsStore / type=external_account (federated paths) OR is empty",
-          "description": "Clean federated posture. AAL3-equivalent. Not a finding; emit as positive evidence.",
+          "value": "Across the union of aws-credentials, aws-sso-cache, kube-config, gcloud-credentials, docker-config, npmrc, pypirc, gpg-keys, ssh-keys-inventory, ssh-config, and keychain-inventory artifacts: inventory shows zero static credentials AND every present store uses exec: / sso_session / credsStore / type=external_account (federated paths) OR is empty",
+          "description": "Clean federated posture. AAL3-equivalent. Not a finding; emit as positive evidence. The keychain-inventory artifact serves as the compensating-store check — when OS-keychain-resident items account for the credential surface, the on-disk stores can legitimately be empty.",
           "confidence": "high",
           "deterministic": false
         }

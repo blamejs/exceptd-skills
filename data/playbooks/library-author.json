@@ -52,10 +52,6 @@
       {
         "playbook_id": "framework",
         "condition": "analyze.compliance_theater_check.verdict == 'theater'"
-      },
-      {
-        "playbook_id": "compliance-theater",
-        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
       }
     ]
   },
@@ -755,7 +751,7 @@
         {
           "id": "publish-workflow-uses-static-token",
           "type": "file_path",
-          "value": "Any .github/workflows/*.yml publish/release job references secrets.NPM_TOKEN / secrets.PYPI_TOKEN / secrets.CARGO_TOKEN / secrets.RUBYGEMS_API_KEY / secrets.GEM_HOST_API_KEY without an OIDC alternative path",
+          "value": "Within the release-workflows artifact: any .github/workflows/*.yml publish/release job references secrets.NPM_TOKEN / secrets.PYPI_TOKEN / secrets.CARGO_TOKEN / secrets.RUBYGEMS_API_KEY / secrets.GEM_HOST_API_KEY without an OIDC alternative path; corroborate via the repo-secrets artifact — the listed secret name is also present in the org/repo-level secret inventory",
           "description": "Long-lived publisher credential — fingerprint for non-OIDC publishing (theater #7).",
           "confidence": "deterministic",
           "deterministic": true,
@@ -764,7 +760,7 @@
         {
           "id": "publish-workflow-no-id-token-write",
           "type": "file_path",
-          "value": "Publish/release job lacks permissions.id-token: write AND lacks Trusted Publisher configuration",
+          "value": "Within the release-workflows artifact: publish/release job lacks permissions.id-token: write AND lacks Trusted Publisher configuration",
           "description": "Cannot use Sigstore keyless or registry Trusted Publisher — OIDC publish is structurally unavailable.",
           "confidence": "deterministic",
           "deterministic": true
@@ -772,7 +768,7 @@
         {
           "id": "publish-workflow-action-refs-mutable",
           "type": "file_path",
-          "value": "Any uses: in the publish/release workflow references a tag or branch (e.g. @v4, @main) rather than a 40-char SHA",
+          "value": "Within the release-workflows artifact: any uses: in the publish/release workflow references a tag or branch (e.g. @v4, @main) rather than a 40-char SHA",
           "description": "Mutable action reference — upstream owner can substitute action code under the same tag.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -781,7 +777,7 @@
         {
           "id": "package-json-provenance-missing",
           "type": "file_path",
-          "value": "For npm publishers: package.json has no publishConfig.provenance == true AND publish workflow command does not carry --provenance",
+          "value": "Within the package-manifest artifact (for npm publishers): package.json has no publishConfig.provenance == true AND within the release-workflows artifact the publish command does not carry --provenance; corroborate via the registry-publisher-config artifact — dist.attestations should be absent on the latest registry-published version",
           "description": "npm provenance not enabled — no dist.attestations on the published package (theater #2).",
           "confidence": "deterministic",
           "deterministic": true
@@ -789,7 +785,7 @@
         {
           "id": "release-workflow-non-frozen-install",
           "type": "file_path",
-          "value": "Release workflow uses `npm install` / `pnpm install` / `pip install -r` / `bundle install` (not the --frozen / --locked / --require-hashes variant) before the build step",
+          "value": "Within the release-workflows artifact: release workflow uses `npm install` / `pnpm install` / `pip install -r` / `bundle install` (not the --frozen / --locked / --require-hashes variant) before the build step",
           "description": "Mid-build dependency resolution — release artifact is not reproducible (theater #5).",
           "confidence": "high",
           "deterministic": false
@@ -805,7 +801,7 @@
         {
           "id": "sbom-absent-or-unsigned",
           "type": "file_path",
-          "value": "No SBOM artifact present in repo OR most-recent-release SBOM is present but no matching .sig / .sigstore / *.intoto.jsonl signature artifact",
+          "value": "Within the sbom-artifacts artifact: no SBOM file present in repo OR most-recent-release SBOM is present but no matching .sig / .sigstore artifact AND no entry in the intoto-attestations artifact carries an in-toto predicateType referencing the SBOM digest",
           "description": "SBOM theater #1 — present but unsigned, OR absent entirely.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -814,7 +810,7 @@
         {
           "id": "sbom-regenerated-at-request-time",
           "type": "behavioral_signal",
-          "value": "SBOM generation script exists in repo (e.g. scripts/generate-sbom.*) but no SBOM artifact is committed AND no release-workflow step uploads an SBOM to release assets",
+          "value": "SBOM generation script exists in repo (e.g. scripts/generate-sbom.*) but the sbom-artifacts artifact has no committed SBOM file AND the release-workflows artifact has no step that uploads an SBOM to release assets",
           "description": "SBOM-on-demand — historical releases have no immutable SBOM.",
           "confidence": "high",
           "deterministic": false
@@ -822,7 +818,7 @@
         {
           "id": "no-rekor-entry-for-latest-release",
           "type": "behavioral_signal",
-          "value": "Network mode: rekor-cli search by sha256 of latest release artifact returns empty AND project README/docs claim SLSA L3 or higher",
+          "value": "Network mode: rekor-cli search by sha256 of the latest entry in the release-history artifact returns empty AND project README/docs claim SLSA L3 or higher",
           "description": "SLSA-claim-without-attestation (theater #4).",
           "confidence": "high",
           "deterministic": false
@@ -830,7 +826,7 @@
         {
           "id": "tag-protection-absent",
           "type": "api_response",
-          "value": "gh api repos/${owner}/${repo}/tags/protection returns empty array OR 404 AND publish workflow triggers on push tags: ['v*']",
+          "value": "Within the branch-tag-protection artifact: gh api repos/${owner}/${repo}/tags/protection returns empty array OR 404 AND the release-workflows artifact contains a publish workflow that triggers on push tags: ['v*']",
           "description": "Release tags unprotected (theater #6) — any branch can push v* and trigger publish.",
           "confidence": "deterministic",
           "deterministic": true
@@ -838,7 +834,7 @@
         {
           "id": "release-tag-not-signed",
           "type": "behavioral_signal",
-          "value": "git tag -v <latest_release_tag> returns 'no signature found' OR signature does not verify",
+          "value": "Within the release-history artifact: `git tag -v <latest_release_tag>` returns 'no signature found' OR signature does not verify",
           "description": "Tag-signing absent — release authenticity rests on push-time access control only.",
           "confidence": "deterministic",
           "deterministic": true
@@ -846,7 +842,7 @@
         {
           "id": "release-signed-with-personal-gpg-key",
           "type": "behavioral_signal",
-          "value": "Tag signature verifies against a PGP key whose UID is a personal email (not an org / project address) AND key is not registered in Sigstore Rekor / Web Key Directory",
+          "value": "From the release-history artifact: tag signature verifies against a PGP key whose UID is a personal email (not an org / project address) AND that key (located via the signing-key-material artifact) is not registered in Sigstore Rekor / Web Key Directory",
           "description": "Personal-laptop signing key (theater #3) — XZ-class compromise vector.",
           "confidence": "high",
           "deterministic": false
@@ -878,7 +874,7 @@
         {
           "id": "vex-feed-absent",
           "type": "file_path",
-          "value": "Absence of vex/, *.vex.json, *.csaf.json, *.openvex.json AND project has at least one published GitHub Security Advisory OR at least one filed CVE in NVD",
+          "value": "Within the vex-feed artifact: absence of vex/, *.vex.json, *.csaf.json, *.openvex.json AND the github-security-advisories artifact lists at least one published advisory for the repo (or NVD has at least one filed CVE against the product)",
           "description": "VEX issuance gap (theater #9) — CVEs filed against the product, no machine-readable exploitability declaration.",
           "confidence": "deterministic",
           "deterministic": true
@@ -886,7 +882,7 @@
         {
           "id": "vendored-no-provenance",
           "type": "file_path",
-          "value": "vendor/ or third_party/ directories present AND no provenance manifest (vendor.json, THIRD_PARTY_PROVENANCE.md, modules.txt) AND not a Go vendored module",
+          "value": "Within the vendored-code artifact: vendor/ or third_party/ directories present AND no provenance manifest (vendor.json, THIRD_PARTY_PROVENANCE.md, modules.txt) AND not a Go vendored module",
           "description": "Vendored code without machine-verifiable upstream provenance (theater #11).",
           "confidence": "deterministic",
           "deterministic": true
@@ -894,7 +890,7 @@
         {
           "id": "skill-signing-but-verification-not-gated",
           "type": "file_path",
-          "value": "Repo contains skill / plugin signing infrastructure (sign.js / cosign sign-blob in workflow) AND verify step exists in a separate workflow OR is conditionally skipped on the publish workflow",
+          "value": "The skill-signing-infrastructure artifact reports sign.js / cosign sign-blob present AND within the release-workflows artifact the verify step exists in a separate workflow OR is conditionally skipped on the publish workflow",
           "description": "Signing-without-gating (theater #8) — AI-tool publisher fingerprint.",
           "confidence": "high",
           "deterministic": false
@@ -902,7 +898,7 @@
         {
           "id": "ssdf-claimed-cra-not-ready",
           "type": "behavioral_signal",
-          "value": "README / docs / SECURITY.md claim NIST SSDF compliance AND no five-year-support-commitment statement AND no CSAF advisory pipeline AND no signed-and-distributed SBOM",
+          "value": "README / docs / SECURITY.md (security-md artifact) claim NIST SSDF compliance AND the changelog artifact + release-checklist artifact carry no documented five-year-support-commitment statement AND no CSAF advisory pipeline (github-security-advisories artifact shows no CSAF-formatted disclosures) AND no signed-and-distributed SBOM (cross-references the sbom-absent-or-unsigned finding)",
           "description": "SSDF-as-CRA-readiness theater (theater #12).",
           "confidence": "high",
           "deterministic": false
@@ -910,7 +906,7 @@
         {
           "id": "publish-workflow-runs-on-self-hosted",
           "type": "file_path",
-          "value": "Publish/release job runs-on includes 'self-hosted' OR a non-GitHub-hosted ephemeral runner",
+          "value": "Within the release-workflows artifact: publish/release job runs-on includes 'self-hosted' OR a non-GitHub-hosted ephemeral runner",
           "description": "Self-hosted runner — persistent runner state can be poisoned across runs.",
           "confidence": "high",
           "deterministic": false

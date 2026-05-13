@@ -39,7 +39,15 @@ framework_gaps:
   - NIST-800-53-SI-3
   - ISO-27001-2022-A.8.16
   - SOC2-CC7-anomaly-detection
-rfc_refs: []
+  - NIS2-Art21-incident-handling
+  - UK-CAF-C1
+  - AU-Essential-8-App-Hardening
+rfc_refs:
+  - RFC-7489
+  - RFC-6376
+  - RFC-7208
+  - RFC-8616
+  - RFC-8461
 cwe_refs: []
 d3fend_refs:
   - D3-NTA

@@ -7148,5 +7148,243 @@
       "CVE-2025-53773",
       "CVE-2026-30615"
     ]
+  },
+  "CWE-250": {
+    "name": "Execution with Unnecessary Privileges",
+    "category": "Privilege Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-256": {
+    "name": "Plaintext Storage of a Password",
+    "category": "Credentials Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-284": {
+    "name": "Improper Access Control",
+    "category": "Access Control",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-310": {
+    "name": "Cryptographic Issues",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-312": {
+    "name": "Cleartext Storage of Sensitive Information",
+    "category": "Data Protection",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-326": {
+    "name": "Inadequate Encryption Strength",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-328": {
+    "name": "Use of Weak Hash",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-329": {
+    "name": "Generation of Predictable IV with CBC Mode",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-330": {
+    "name": "Use of Insufficiently Random Values",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-331": {
+    "name": "Insufficient Entropy",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-338": {
+    "name": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-353": {
+    "name": "Missing Support for Integrity Check",
+    "category": "Integrity",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-426": {
+    "name": "Untrusted Search Path",
+    "category": "Privilege Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-522": {
+    "name": "Insufficiently Protected Credentials",
+    "category": "Credentials Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-759": {
+    "name": "Use of a One-Way Hash without a Salt",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-760": {
+    "name": "Use of a One-Way Hash with a Predictable Salt",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-916": {
+    "name": "Use of Password Hash With Insufficient Computational Effort",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
   }
 }

@@ -41,9 +41,13 @@ test("data/rfc-references.json exists and has the _meta + entry shape", () => {
   assert.ok(ids.length > 0, "catalog has at least one entry");
 
   for (const id of ids) {
+    // v0.12.8: catalog also carries non-RFC standards that the CVD + IR skills
+    // legitimately cite (ISO 29147 / 30111 vulnerability handling, OASIS
+    // CSAF-2.0 advisory format). Schema name stays `rfc-references.json` for
+    // back-compat, but the key shape recognises the broader standards set.
     assert.match(
       id,
-      /^(RFC-\d+|DRAFT-[A-Z0-9-]+)$/,
+      /^(RFC-\d+|DRAFT-[A-Z0-9-]+|ISO-\d+|CSAF-\d+\.\d+)$/,
       `catalog key shape must match validator expectation: ${id}`
     );
     const e = catalog[id];

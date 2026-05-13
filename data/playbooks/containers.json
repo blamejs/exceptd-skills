@@ -395,7 +395,7 @@
         {
           "id": "dockerfile-from-latest",
           "type": "file_path",
-          "value": "Dockerfile FROM directive with :latest tag OR no tag at all (defaults to :latest)",
+          "value": "For each file in the dockerfile-inventory artifact, scan dockerfile-content lines: FROM directive with :latest tag OR no tag at all (defaults to :latest)",
           "description": "Image base resolves differently between scan and deploy. Image scanning attestation does not apply to the deployed image.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -404,7 +404,7 @@
         {
           "id": "dockerfile-no-digest-pin",
           "type": "log_pattern",
-          "value": "Dockerfile FROM directive without @sha256:* digest",
+          "value": "For each file in the dockerfile-inventory artifact, scan dockerfile-content lines: FROM directive without @sha256:* digest",
           "description": "Tag-only base reference. Tag mutability means provenance cannot be verified.",
           "confidence": "high",
           "deterministic": false,
@@ -431,7 +431,7 @@
         {
           "id": "compose-privileged",
           "type": "log_pattern",
-          "value": "docker-compose service block containing `privileged: true`",
+          "value": "Within any compose-files artifact: docker-compose service block containing `privileged: true`",
           "description": "Container has full host kernel access. Container escape is built in by configuration.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -467,7 +467,7 @@
         {
           "id": "k8s-privileged",
           "type": "log_pattern",
-          "value": "k8s manifest containers[].securityContext.privileged: true",
+          "value": "Within any k8s-manifests artifact (including templates rendered from helm-charts or kustomize-overlays): containers[].securityContext.privileged: true",
           "description": "K8s container with privileged: true. Same risk class as compose-privileged.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -521,11 +521,29 @@
         {
           "id": "k8s-cluster-admin-binding",
           "type": "log_pattern",
-          "value": "k8s manifest kind: ClusterRoleBinding referencing cluster-admin role AND subjects include a ServiceAccount in a workload namespace",
+          "value": "Within service-account-manifests artifact entries (or any k8s-manifests artifact containing RBAC kinds): kind: ClusterRoleBinding referencing cluster-admin role AND subjects include a ServiceAccount in a workload namespace",
           "description": "Workload SA bound to cluster-admin. Pod compromise = cluster compromise.",
           "confidence": "deterministic",
           "deterministic": true,
           "attack_ref": "T1078.004"
+        },
+        {
+          "id": "psa-policy-permissive-or-absent",
+          "type": "log_pattern",
+          "value": "pod-security-admission-config artifact missing OR enforces only `pod-security.kubernetes.io/enforce: privileged` (the most permissive level) on a workload namespace; OR no PodSecurity admission configuration exists for namespaces hosting deployable manifests",
+          "description": "Without PodSecurity admission enforcement at baseline or restricted level on workload namespaces, the cluster will accept manifests that the other detect indicators (k8s-privileged, k8s-host-namespaces, k8s-run-as-root, k8s-hostpath-sensitive) flag — admission control is the gate that turns those manifest findings into rejections at apply time.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1611"
+        },
+        {
+          "id": "network-policies-absent-from-workload-namespace",
+          "type": "log_pattern",
+          "value": "For each workload namespace observed in k8s-manifests: zero entries in the network-policies artifact target that namespace (no NetworkPolicy / CiliumNetworkPolicy / CalicoNetworkPolicy with metadata.namespace == workload_ns). Kubernetes default is allow-all pod-to-pod traffic.",
+          "description": "Absent NetworkPolicy on a workload namespace leaves East-West traffic unrestricted: a compromised pod can reach every other pod, including the API server, etcd, and management planes. Closes the lateral-movement primitive that container escape playbooks rely on.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1610"
         }
       ],
       "false_positive_profile": [

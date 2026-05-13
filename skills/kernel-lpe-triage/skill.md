@@ -26,6 +26,8 @@ framework_gaps:
   - NIS2-Art21-patch-management
   - NIST-800-53-SC-8
   - CIS-Controls-v8-Control7
+  - UK-CAF-D1
+  - AU-Essential-8-Patch
 rfc_refs:
   - RFC-4301
   - RFC-4303
@@ -41,7 +43,7 @@ d3fend_refs:
   - D3-EAL
   - D3-PHRA
   - D3-PSEP
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-13"
 ---
 
 # Kernel LPE Triage
@@ -134,6 +136,24 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 
 ---
 
+## Compliance Theater Check
+
+Run this check for any org claiming patch-management compliance for kernel LPE class CVEs:
+
+> "Your patch-management control (NIST SI-2 / ISO 27001:2022 A.8.8 / PCI-DSS v4 6.3.3 / NIS2 Art. 21(2)(g) / UK-CAF B4 / AU-ISM-1493) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public deterministic exploit requiring no privileges and KEV listing dated 2026-03-15. What is the actual time, on this fleet, between KEV listing and confirmed patch-or-mitigate for the affected kernel versions? If that interval exceeds 72 hours without live-patching as a deployed capability for the affected hosts, the patch-management control is theater for the KEV-class kernel-LPE threat surface."
+
+**Theater fingerprints (any of these reduces the control to paper compliance):**
+
+- Patch SLA is measured against advisory-publication date, not KEV-listing date — KEV listings are the operational signal that exploitation is happening now, and the SLA must trigger from there.
+- The fleet inventory cannot answer "which hosts run the affected kernel version" within minutes — without live inventory, the SLA cannot be measured.
+- Live-patching is described as "available" but no kernel was live-patched in the last 30 days — capability without operation is theater.
+- The compensating-controls plan for hosts that cannot be rebooted within SLA is undocumented or relies on controls the CVE PoC bypasses (e.g. AppArmor profiles where the exploit runs as the legitimate user).
+- "Patch management" includes only OS vendor patches, not third-party kernel modules or out-of-tree drivers — Dirty Frag RxRPC class lives in the network subsystem and is often patched on an asymmetric cadence.
+
+**Real requirement:** patch SLA anchored to KEV listing date, fleet inventory live enough to answer "affected hosts" in under 5 minutes, live-patching deployed and exercised in the prior 30 days, written compensating-controls plan that survives the PoC test, third-party kernel modules in scope.
+
+---
+
 ## Analysis Procedure
 
 When a user invokes this skill, perform this assessment in order:
@@ -156,10 +176,10 @@ Ask for or assess:
 Exposed if: kernel >= 4.14 AND kernel < [patched version for distribution]
 Patched versions:
   RHEL 8/9:        kernel-4.18.0-553.xx.el8 / kernel-5.14.0-427.xx.el9
-  Ubuntu 22.04:    linux-image-5.15.0-xxx (check USN-7xxx)
-  Ubuntu 24.04:    linux-image-6.8.0-xxx (check USN-7xxx)
+  Ubuntu 22.04:    linux-image-5.15.0-<patch-revision> (check USN-7<advisory-number>)
+  Ubuntu 24.04:    linux-image-6.8.0-xxx (check USN-7<advisory-number>)
   Debian 12:       6.1.xxx (check DSA-5xxx)
-  Amazon Linux 2:  kernel 5.10.xxx (check ALAS-2026-xxx)
+  Amazon Linux 2:  kernel 5.10.xxx (check ALAS-2026-<advisory-number>)
   SUSE 15:         kernel 5.14.xxx (check SUSE-SU-2026:xxx)
 ```
 

@@ -1,0 +1,18 @@
+{
+  "observations": {
+    "repo-tree": {"captured": true, "value": "src/config.py + README.md present"},
+    "env-files": {"captured": true, "value": "no .env files present"},
+    "auth-config-files": {"captured": true, "value": "no .npmrc / .pypirc"},
+    "ssh-private-keys": {"captured": true, "value": "no private key material"},
+    "iac-credential-bearers": {"captured": true, "value": "no IaC files"},
+    "world-writable-secret-files": {"captured": true, "value": "n/a"},
+    "secret-regex-scan-text-files": {"captured": true, "value": "src/config.py:3 AKIA2RFBQHJK7MNPQR4S (live-shape, not the AWS example key)", "indicator": "aws-access-key-id", "result": "hit"}
+  },
+  "signal_overrides": {
+    "aws-secret-access-key": "hit"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

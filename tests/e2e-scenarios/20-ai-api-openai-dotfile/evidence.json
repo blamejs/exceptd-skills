@@ -1,0 +1,25 @@
+{
+  "precondition_checks": {
+    "filesystem-read": true,
+    "network-baseline-available": true
+  },
+  "observations": {
+    "shell-rc-files": {"captured": true, "value": "~/.zshrc line 14: export OPENAI_API_KEY=sk-proj-3rT9XQ4VfWp2YnLh6Zb8KsM1AaCdEeFfGgHhIiJjKkLlMmNnOoPp", "indicator": "cleartext-api-key-in-dotfile", "result": "hit"},
+    "dotfile-api-keys": {"captured": true, "value": "no per-vendor dotfile tokens"},
+    "aws-credentials": {"captured": true, "value": "[default] aws_access_key_id=AKIA2RFBQHJK7MNPQR4S aws_secret_access_key=<40 chars>; no sso_session", "indicator": "long-lived-aws-keys", "result": "hit"},
+    "gcp-credentials": {"captured": true, "value": "no gcloud credentials"},
+    "kube-config": {"captured": true, "value": "no ~/.kube/config"},
+    "docker-config": {"captured": true, "value": "credsStore=desktop"},
+    "npmrc-pyrc-cargo": {"captured": true, "value": "no registry tokens"},
+    "netrc": {"captured": true, "value": "no ~/.netrc"},
+    "ai-sdk-inventory": {"captured": true, "value": "openai 1.55.0 (pip), @anthropic-ai/sdk 0.32.0 (npm global)"},
+    "ai-api-egress-baseline": {"captured": true, "value": "established connections: python(pid=4211) → api.openai.com:443; node(pid=4799) → api.anthropic.com:443"},
+    "process-list": {"captured": true, "value": "baseline + ai SDK processes attributed"},
+    "assistant-config": {"captured": true, "value": "~/.claude/settings.local.json present"},
+    "egress-policy": {"captured": true, "value": "no allowlist; default-allow egress"}
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

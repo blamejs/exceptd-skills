@@ -36,6 +36,9 @@ framework_gaps:
   - NIST-800-82r3
   - IEC-62443-3-3
   - NIS2-Art21-patch-management
+  - ISO-27001-2022-A.8.8
+  - UK-CAF-D1
+  - AU-Essential-8-Backup
 rfc_refs: []
 cwe_refs:
   - CWE-287

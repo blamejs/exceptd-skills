@@ -29,6 +29,9 @@ framework_gaps:
   - ISO-IEC-23894-2023-clause-7
   - ISO-IEC-42001-2023-clause-6.1.2
   - NIST-800-218-SSDF
+  - NIS2-Art21-incident-handling
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 rfc_refs: []
 cwe_refs: []
 d3fend_refs: []
