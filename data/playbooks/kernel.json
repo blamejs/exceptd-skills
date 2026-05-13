@@ -1,10 +1,17 @@
 {
   "_meta": {
     "id": "kernel",
-    "version": "1.0.0",
-    "last_threat_review": "2026-05-11",
-    "threat_currency_score": 92,
+    "version": "1.1.0",
+    "last_threat_review": "2026-05-13",
+    "threat_currency_score": 95,
     "changelog": [
+      {
+        "version": "1.1.0",
+        "date": "2026-05-13",
+        "summary": "Primary-source IoC audit (v0.12.6 / AGENTS.md Hard Rule #14). CVE-2026-31431 (Copy Fail) gains runtime_syscall + kernel_trace + behavioral + livepatch_gap IoCs cross-referenced against Dirty Pipe (CVE-2022-0847) + Dirty COW (CVE-2016-5195) + DirtyCred prior art. CVE-2026-43284 + CVE-2026-43500 (Dirty Frag pair) gain subsystem_anchors (kernel symbols esp_input / xfrm_input / rxrpc_recvmsg, kernel modules esp4/esp6/xfrm_user/af_rxrpc/kafs, procfs paths /proc/net/xfrm_stat + /proc/net/rxrpc/*) + behavioral IoCs (ESP module loaded with no policy + non-AFS process opening AF_RXRPC). Catches active exploitation, not just vulnerable kernel version match.",
+        "cves_added": [],
+        "framework_gaps_updated": []
+      },
       {
         "version": "1.0.0",
         "date": "2026-05-11",

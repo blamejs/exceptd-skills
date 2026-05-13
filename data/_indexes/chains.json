@@ -689,12 +689,12 @@
     }
   },
   "CVE-2025-53773": {
-    "name": "GitHub Copilot Prompt Injection RCE",
-    "rwep": 42,
-    "cvss": 9.6,
+    "name": "GitHub Copilot / VS Code 'YOLO mode' Prompt Injection RCE",
+    "rwep": 30,
+    "cvss": 7.8,
     "cisa_kev": false,
-    "epss_score": 0.32,
-    "epss_percentile": 0.92,
+    "epss_score": 0.046,
+    "epss_percentile": 0.893,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
