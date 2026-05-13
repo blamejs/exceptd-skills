@@ -36,6 +36,9 @@ framework_gaps:
   - CMMC-2.0-Level-2
   - NIST-800-218-SSDF
   - SLSA-v1.0-Build-L3
+  - NIS2-Art21-incident-handling
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8032
   - RFC-8446

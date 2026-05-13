@@ -41,6 +41,9 @@ framework_gaps:
   - SWIFT-CSCF-v2026-1.1
   - NIST-800-53-AC-2
   - SOC2-CC6-logical-access
+  - NIS2-Art21-incident-handling
+  - UK-CAF-A1
+  - AU-Essential-8-MFA
 rfc_refs:
   - RFC-8446
   - RFC-7519

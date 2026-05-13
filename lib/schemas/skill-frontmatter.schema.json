@@ -71,9 +71,9 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^(RFC-[0-9]+|DRAFT-[A-Z0-9-]+)$"
+        "pattern": "^(RFC-[0-9]+|DRAFT-[A-Z0-9-]+|ISO-[0-9]+|CSAF-[0-9]+\\.[0-9]+)$"
       },
-      "description": "Optional. IETF RFC numbers (e.g. RFC-8446) or Internet-Draft slugs (e.g. DRAFT-IETF-TLS-ECDHE-MLKEM) the skill depends on. Each must resolve in data/rfc-references.json."
+      "description": "Optional. IETF RFC numbers (e.g. RFC-8446), Internet-Draft slugs (e.g. DRAFT-IETF-TLS-ECDHE-MLKEM), ISO standards (e.g. ISO-29147), or OASIS CSAF advisory format (CSAF-2.0). Each must resolve in data/rfc-references.json."
     },
     "cwe_refs": {
       "type": "array",

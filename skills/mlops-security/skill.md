@@ -41,6 +41,9 @@ framework_gaps:
   - ISO-IEC-42001-2023-clause-6.1.2
   - NIST-AI-RMF-MEASURE-2.5
   - OWASP-LLM-Top-10-2025-LLM08
+  - EU-AI-Act-Art-15
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8032
 cwe_refs:

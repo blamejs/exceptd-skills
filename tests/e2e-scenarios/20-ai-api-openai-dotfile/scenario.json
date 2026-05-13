@@ -1,0 +1,7 @@
+{
+  "name": "20-ai-api-openai-dotfile",
+  "description": "Stages a cleartext OPENAI_API_KEY export in .zshrc plus a long-lived AWS static-key block in ~/.aws/credentials. ai-api playbook must classify detected via cleartext-api-key-in-dotfile + long-lived-aws-keys.",
+  "verb": "run",
+  "args": ["ai-api", "--evidence", "evidence.json", "--session-id", "e2e-20", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

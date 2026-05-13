@@ -28,6 +28,11 @@ framework_gaps:
   - NIST-800-53-SC-7
   - ISO-27001-2022-A.8.16
   - SOC2-CC7-anomaly-detection
+  - NIS2-Art21-incident-handling
+  - UK-CAF-C1
+  - AU-Essential-8-App-Hardening
+cwe_refs:
+  - CWE-918
 rfc_refs:
   - RFC-8446
   - RFC-9180
@@ -43,7 +48,7 @@ d3fend_refs:
   - D3-NI
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-13"
 ---
 
 # AI C2 Detection

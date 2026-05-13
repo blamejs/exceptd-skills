@@ -37,6 +37,9 @@ framework_gaps:
   - HITRUST-CSF-v11.4-09.l
   - ISO-27001-2022-A.8.30
   - NIST-800-53-AC-2
+  - NIS2-Art21-incident-handling
+  - UK-CAF-D1
+  - AU-Essential-8-Backup
 rfc_refs:
   - RFC-7519
   - RFC-9421

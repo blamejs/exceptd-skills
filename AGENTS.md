@@ -34,6 +34,20 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
 
 14. **Primary-source IoC review** — Any CVE entry in `data/cve-catalog.json` whose `poc_available: true` AND whose exploit code is publicly available (published PoC repo, vendor advisory with attached payload, researcher blog with reproducer) must include `iocs` populated from a line-level cross-reference of the published source — not from secondary-source paraphrase. The `iocs` block records which IoC categories were extracted (`payload_artifacts`, `persistence_artifacts`, `credential_paths_scanned`, `c2_indicators`, `host_recon`, `behavioral`, `runtime_syscall`, `kernel_trace`, `livepatch_gap`, `destructive`, `payload_content_patterns`, `supply_chain_entry_vectors`), and each IoC must be traceable to a specific source URL or commit hash. v0.12.6 audit reviewed CVE-2026-45321 (Mini Shai-Hulud), CVE-2026-31431 (Copy Fail / Dirty Pipe / Dirty COW family), CVE-2026-43284 + CVE-2026-43500 (Dirty Frag pair), CVE-2025-53773 (Copilot YOLO mode), and CVE-2026-30615 (Windsurf MCP) against primary sources from Aikido, StepSecurity, Socket, Wiz, Datadog, Sysdig, Trail of Bits, Invariant Labs, Embrace the Red, NVD, MSRC. Catalog updates landed in v0.12.6 changelog. Skipping this audit is equivalent to shipping "untested security advice" — the IoC list IS the operator-facing detection contract.
 
+15. **Test coverage on every diff** — Every feature change (added, removed, or modified) must land with a covering test reference in the same PR. The shapes the gate enforces:
+
+    | Change                                                | Required test reference                                                          |
+    | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+    | New / removed CLI verb in `bin/exceptd.js`            | Quoted verb literal in a `tests/*.test.js` file                                  |
+    | New / removed CLI flag                                | Flag literal (e.g. `--my-flag`) somewhere under `tests/`                         |
+    | New / removed / renamed `module.exports` identifier   | `require('…/<lib>')` plus a reference to the identifier in `tests/`              |
+    | New `phases.detect.indicators[].id` in a playbook     | Quoted indicator id literal in `tests/e2e-scenarios/*/expect.json` or `tests/*.test.js` |
+    | New / changed `iocs` field on a CVE entry             | CVE id and the word `iocs` in the same test file                                 |
+
+    Mechanical enforcement lives in `scripts/check-test-coverage.js` and runs as the 15th gate of `npm run predeploy` (also the `Diff coverage` job in `ci.yml`). Docs (`*.md`), workflow YAML, and skill body changes are allowlisted — skill bodies are covered by the Ed25519 signature gate (Hard Rule #13), workflows surface a manual-review flag rather than a hard finding. Whitespace-only diffs are ignored.
+
+    The gate ships in v0.12.8 as `--warn-only` during the rollout window; it flips to blocking in v0.12.9. Once blocking, never bypass with `--no-verify` or `--warn-only` — add the covering test first. This rule is additive to Hard Rule #11 (no-MVP ban): a new playbook indicator or CLI surface that ships without a regression test is the same shape of incomplete-feature ship that #11 forbids, applied to the test layer.
+
 ---
 
 ## Seven-phase playbook contract

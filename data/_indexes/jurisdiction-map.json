@@ -2,6 +2,8 @@
   "EU": {
     "skills": [
       "age-gates-child-safety",
+      "ai-attack-surface",
+      "ai-c2-detection",
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
@@ -24,6 +26,7 @@
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "rag-pipeline-security",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -38,11 +41,13 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 35
+    "skill_count": 38
   },
   "UK": {
     "skills": [
       "age-gates-child-safety",
+      "ai-attack-surface",
+      "ai-c2-detection",
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
@@ -59,9 +64,11 @@
       "identity-assurance",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "mcp-agent-trust",
       "mlops-security",
       "ot-ics-security",
       "pqc-first",
+      "rag-pipeline-security",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -75,11 +82,13 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 31
+    "skill_count": 35
   },
   "AU": {
     "skills": [
       "age-gates-child-safety",
+      "ai-attack-surface",
+      "ai-c2-detection",
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
@@ -101,6 +110,7 @@
       "mlops-security",
       "ot-ics-security",
       "pqc-first",
+      "rag-pipeline-security",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -115,7 +125,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 34
+    "skill_count": 37
   },
   "SG": {
     "skills": [

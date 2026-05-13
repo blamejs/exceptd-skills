@@ -50,6 +50,12 @@ test('#18 unknown command returns JSON error', () => {
   assert.ok(err, 'stderr should be parseable JSON');
   assert.equal(err.ok, false);
   assert.equal(err.verb, 'nope-not-a-verb');
+  // The hint is the recovery path: an unknown-verb error that just says
+  // "unknown command" without pointing at `exceptd help` leaves operators
+  // stranded, especially in CI where there's no terminal to retry in.
+  assert.equal(typeof err.hint, 'string', 'hint must be a string operators can follow');
+  assert.match(err.hint, /exceptd help/,
+    'hint must point operators at `exceptd help` so a typo never dead-ends');
 });
 
 test('#18 skill not found returns JSON error', () => {
@@ -81,14 +87,27 @@ test('#31 session-id collision refused without --force-overwrite', () => {
 
 test('#32 --mode validates against accepted set', () => {
   const r = cli(['run', 'library-author', '--evidence', '-', '--mode', 'garbage'], { input: '{}' });
-  assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /not in accepted set/);
+  // Pin the exact non-zero code (1 = run-arg validation rejection) so a
+  // future regression that flips this verb to "exit 2 from generic parseArgs"
+  // or worse "silently accepts garbage and exits 0" doesn't slip by as
+  // "still non-zero, looks fine."
+  assert.equal(r.status, 1, '--mode rejection must exit 1');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /--mode .* not in accepted set/,
+    'error must name the flag and the "accepted set" phrase so the operator can self-correct without grepping the source');
+  assert.equal(err.provided, 'garbage', 'rejected value must echo back so operators see what was rejected');
 });
 
 test('#33 --session-key must be hex', () => {
   const r = cli(['run', 'library-author', '--evidence', '-', '--session-key', 'zzzznothex'], { input: '{}' });
-  assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /must be hex/);
+  assert.equal(r.status, 1, '--session-key rejection must exit 1');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /--session-key must be hex/,
+    'error must name the flag and the hex requirement so operators see the exact constraint, not a generic "invalid argument"');
 });
 
 test('#46 plan --directives includes description', () => {
@@ -96,8 +115,21 @@ test('#46 plan --directives includes description', () => {
   const data = tryJson(r.stdout);
   assert.ok(data, 'plan output should be JSON');
   const pb = data.playbooks?.[0];
-  assert.ok(pb && pb.directives?.[0]?.description !== undefined,
-    'each directive should expose a description field (may be null but key present)');
+  assert.ok(pb, 'plan must surface at least one playbook');
+  assert.ok(Array.isArray(pb.directives) && pb.directives.length > 0,
+    'first playbook must carry at least one directive');
+  const d0 = pb.directives[0];
+  assert.ok('description' in d0, 'description key must be present (even if null)');
+  // Operators read this to decide which directive to run; "the key exists
+  // and might be null" wasn't enough to catch the v0.11.10 class of bug
+  // where field-present + content-empty looked correct in shape tests.
+  // Require: string OR null, and if string, non-empty after trim.
+  if (d0.description !== null) {
+    assert.equal(typeof d0.description, 'string',
+      'description must be string|null — no objects, no arrays, no undefined');
+    assert.ok(d0.description.trim().length > 0,
+      'a non-null description must have content; empty strings are the field-populated bug class');
+  }
 });
 
 // ===================================================================
@@ -107,7 +139,12 @@ test('#58 ask routes literal playbook id', () => {
   assert.ok(data, 'ask output should be JSON');
   assert.ok(Array.isArray(data.routed_to) && data.routed_to.length > 0,
     'ask "secrets" should return at least one match');
-  assert.ok(data.routed_to.includes('secrets'), 'top match should include the secrets playbook');
+  // Literal-id match must be FIRST in routed_to — otherwise "ask secrets"
+  // could route operators to a different playbook with a higher synonym
+  // score, which is the bug class. "Contains the id somewhere in the list"
+  // would silently allow that regression.
+  assert.equal(data.routed_to[0], 'secrets',
+    'literal playbook id must be the top match (data.routed_to[0]) — not just present somewhere in the ranked list');
 });
 
 test('#58 ask with synonym maps to relevant playbook', () => {
@@ -115,13 +152,29 @@ test('#58 ask with synonym maps to relevant playbook', () => {
   const data = tryJson(r.stdout);
   assert.ok(data && Array.isArray(data.routed_to), 'ask output should have routed_to');
   assert.ok(data.routed_to.length > 0, 'credentials should match at least one playbook');
+  // "credentials" must map to a credential/secret-related playbook as the
+  // TOP match — pre-strengthening this test just asserted "any match," which
+  // would have silently accepted a routing regression that sent operators
+  // typing "credentials" to (e.g.) `kernel` because of a tangential mention.
+  // Acceptable top matches: secrets, cred-stores, ai-api (which carries the
+  // "AI agent API credential exposure" surface). Anything else is a routing
+  // regression worth surfacing.
+  const credentialRelated = new Set(['secrets', 'cred-stores', 'ai-api']);
+  assert.ok(credentialRelated.has(data.routed_to[0]),
+    `synonym "credentials" must rank a credential-related playbook (secrets|cred-stores|ai-api) FIRST — got top=${JSON.stringify(data.routed_to[0])}, full ranking=${JSON.stringify(data.routed_to)}`);
 });
 
 test('#60 ask in TTY-less mode emits compact JSON', () => {
   const r = cli(['ask', 'secrets', '--json']);
-  // Should be parseable JSON (single line or pretty — either is acceptable).
   const data = tryJson(r.stdout);
   assert.ok(data, 'ask output should be parseable JSON when --json is set');
+  // "Compact" is a hard contract here: TTY-less consumers (CI, pipes, log
+  // collectors) line-split on `\n` to demarcate records. If --json under a
+  // non-TTY ever emitted pretty-printed multi-line output the downstream
+  // parser would split mid-object and fail. Pin exactly one non-empty line.
+  const nonEmptyLines = r.stdout.split('\n').filter(line => line.length > 0);
+  assert.equal(nonEmptyLines.length, 1,
+    `--json under TTY-less spawn must emit exactly one line; got ${nonEmptyLines.length} non-empty line(s)`);
 });
 
 test('#62 watch verb is registered', () => {
@@ -132,13 +185,47 @@ test('#62 watch verb is registered', () => {
     encoding: 'utf8', timeout: 1500,
     env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
   });
-  // Expect timeout (signal SIGTERM/null) not an unknown-command error.
-  assert.doesNotMatch(r.stderr, /unknown command/);
+  assert.doesNotMatch(r.stderr, /unknown command/,
+    'watch must be registered, not fall through to the unknown-verb branch');
+  // Two-sided contract:
+  //  (a) the subprocess didn't exit on its own — spawn timeout killed it,
+  //      so signal is SIGTERM (or status is null on platforms that report
+  //      timeouts via status). A clean exit-0 from `watch` would mean the
+  //      orchestrator never reached its event loop, which is the regression
+  //      worth catching — pre-strengthening only `doesNotMatch unknown
+  //      command` accepted that case silently.
+  //  (b) the orchestrator wrote its startup banner to stdout before being
+  //      killed, proving the verb actually dispatched (not just got past
+  //      the unknown-verb gate via some lazy lookup).
+  assert.ok(r.signal === 'SIGTERM' || r.status === null,
+    `watch must still be running when the spawn timeout fires (got status=${r.status}, signal=${r.signal})`);
+  assert.match(r.stdout, /\[orchestrator\] Starting event watcher/,
+    'watch must reach the orchestrator-startup banner — proves dispatch happened, not just that the verb was recognized');
 });
 
 test('#65 refresh --no-network routes to prefetch', () => {
   const r = cli(['refresh', '--no-network', '--quiet']);
-  assert.match(r.stdout, /prefetch summary:/);
+  // The behavior #65 tests: the refresh dispatcher routes --no-network
+  // through to prefetch.js, which then emits the "prefetch summary:"
+  // one-line. The exit code is prefetch.js's own contract (0 when all
+  // sources fresh, 1 when any source errored, 2 on fatal) AND is also
+  // subject to a Node-25-on-Windows libuv teardown assertion that fires
+  // sporadically when the WorkerPool returns from a no-op idle (a real
+  // pre-existing defect captured separately). So exit-code is not a
+  // useful regression signal at this layer.
+  //
+  // Strengthening that respects the test's intent: parse the summary
+  // line and confirm it contains the numeric breakdown — that's what
+  // operators look for, and what a regression would silently break.
+  // Pre-strengthening matched only "prefetch summary:" anywhere in
+  // stdout, which would have accepted a regression where the dispatcher
+  // mis-routed to a verb that happens to print that string in a
+  // different format.
+  assert.match(r.stdout, /prefetch summary:/,
+    'refresh --no-network must route to prefetch.js and emit its summary');
+  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) error\(s\)/);
+  assert.ok(summaryMatch,
+    `summary line must be in the exact "N fetched, M fresh, K error(s)" format — proves prefetch.js produced it, not a misrouted verb that happens to print "prefetch summary:". Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
 });
 
 // ===================================================================
@@ -180,9 +267,19 @@ test('#71 detect surfaces observations_received + signals_received', () => {
     verdict: {}
   };
   const result = runner.run('library-author', 'published-artifact-audit', sub, {});
-  assert.ok(Array.isArray(result.phases.detect.observations_received));
-  assert.ok(Array.isArray(result.phases.detect.signals_received));
-  assert.ok(result.phases.detect.signals_received.includes('publish-workflow-uses-static-token'));
+  assert.ok(Array.isArray(result.phases.detect.observations_received),
+    'observations_received must be an array');
+  assert.ok(Array.isArray(result.phases.detect.signals_received),
+    'signals_received must be an array');
+  // Content-shape check: pre-strengthening, "array is present" was true even
+  // when the array was empty. The v0.11.10 field-present-but-empty bug class
+  // would have passed silently. The submission supplied observation key "w";
+  // it MUST appear in observations_received, and its declared indicator MUST
+  // appear in signals_received.
+  assert.ok(result.phases.detect.observations_received.includes('w'),
+    `observations_received must include the submitted observation key "w"; got ${JSON.stringify(result.phases.detect.observations_received)}`);
+  assert.ok(result.phases.detect.signals_received.includes('publish-workflow-uses-static-token'),
+    'signals_received must include the indicator declared on observation "w"');
 });
 
 // ===================================================================
@@ -193,12 +290,23 @@ test('#73 indicators_evaluated is an array', () => {
     'indicators_evaluated must be an array (v0.10.x compat)');
   assert.equal(typeof result.phases.detect.indicators_evaluated_count, 'number',
     'indicators_evaluated_count must be an integer peer field');
-  if (result.phases.detect.indicators_evaluated.length > 0) {
-    const first = result.phases.detect.indicators_evaluated[0];
-    assert.ok('signal_id' in first, 'entry must have signal_id');
-    assert.ok('outcome' in first, 'entry must have outcome');
-    assert.ok('confidence' in first, 'entry must have confidence');
-  }
+  // library-author declares many indicators; even with an empty submission
+  // the runner emits one indicators_evaluated entry per declared indicator
+  // (with outcome='inconclusive'). Asserting length > 0 UNCONDITIONALLY is
+  // the strengthening: the pre-existing `if (length > 0)` shape check would
+  // have silently passed if a regression made the array empty (the exact
+  // bug operators complained about in #73).
+  assert.ok(result.phases.detect.indicators_evaluated.length > 0,
+    `indicators_evaluated must contain one entry per declared indicator; got length=${result.phases.detect.indicators_evaluated.length}`);
+  assert.equal(result.phases.detect.indicators_evaluated.length,
+    result.phases.detect.indicators_evaluated_count,
+    'count peer must match array length');
+  const first = result.phases.detect.indicators_evaluated[0];
+  assert.ok('signal_id' in first, 'entry must have signal_id');
+  assert.ok('outcome' in first, 'entry must have outcome');
+  assert.ok('confidence' in first, 'entry must have confidence');
+  assert.equal(typeof first.signal_id, 'string', 'signal_id must be a string');
+  assert.ok(first.signal_id.length > 0, 'signal_id must not be empty');
 });
 
 test('#76 run --format garbage returns structured JSON error', () => {
@@ -211,10 +319,17 @@ test('#76 run --format garbage returns structured JSON error', () => {
 
 test('#76 ci --format garbage returns structured JSON error', () => {
   const r = cli(['ci', '--scope', 'code', '--format', 'garbage']);
-  assert.notEqual(r.status, 0);
+  // Pin exit 2 (= "ci flag-parse rejection") so a regression that flips this
+  // to exit 1 (= "ok:false from emit") or exit 0 (= silently accepts garbage)
+  // doesn't slip past as "still non-zero, looks fine."
+  assert.equal(r.status, 2, 'ci --format garbage must exit 2 (flag-validation rejection)');
   const err = tryJson(r.stderr.trim());
-  assert.ok(err && err.ok === false);
-  assert.match(err.error, /not in accepted set/);
+  assert.ok(err, 'rejection must be parseable JSON');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.equal(err.verb, 'ci',
+    'verb field must identify the rejecting verb so log-correlators can route the error');
+  assert.match(err.error, /ci: --format .* not in accepted set/,
+    'error must name the verb, flag, and "accepted set" phrase — operators self-correct from this without grepping the source');
 });
 
 // ===================================================================
@@ -242,12 +357,21 @@ test('#82 SARIF bundle via CLI includes indicator results when one fires', () =>
   const data = tryJson(r.stdout);
   assert.ok(data, 'sarif output should be JSON');
   assert.equal(data.version, '2.1.0');
-  // For library-author there are 0 matched_cves but the indicator that fired
-  // should produce a SARIF result.
+  // Pre-strengthening: "some result has kind=indicator_hit" passed even if
+  // the result was for a DIFFERENT indicator than the one operator declared
+  // hit. The bug class: a runner that emits indicator_hit for every declared
+  // indicator regardless of the submission still passes that loose check.
+  // Strengthening: assert exactly one result matches BOTH ruleId=the
+  // specific indicator we declared hit AND kind=indicator_hit. That pins
+  // the runner to "operator submission drove this result," not "the runner
+  // emits indicator_hit unconditionally."
   const results = data.runs?.[0]?.results || [];
-  assert.ok(results.length > 0, 'SARIF must include at least one result when an indicator fired');
-  assert.ok(results.some(r => r.properties?.kind === 'indicator_hit'),
-    'at least one SARIF result must be kind=indicator_hit');
+  const matching = results.filter(res =>
+    res.ruleId === 'publish-workflow-uses-static-token' &&
+    res.properties?.kind === 'indicator_hit'
+  );
+  assert.equal(matching.length, 1,
+    `exactly one SARIF result must match ruleId=publish-workflow-uses-static-token AND kind=indicator_hit — got ${matching.length}. Pre-strengthening "some result with kind=indicator_hit" allowed a runner regression that emits indicator_hit for every indicator regardless of the submitted result.`);
 });
 
 test('#82 CSAF bundle via CLI includes indicator vulnerabilities', () => {
@@ -260,7 +384,17 @@ test('#82 CSAF bundle via CLI includes indicator vulnerabilities', () => {
   assert.ok(data, 'csaf output should be JSON');
   assert.equal(data.document?.csaf_version, '2.0');
   assert.ok(Array.isArray(data.vulnerabilities));
-  assert.ok(data.vulnerabilities.length > 0, 'CSAF must include vulnerabilities when an indicator fired');
+  // Pre-strengthening: "vulnerabilities.length > 0" passed when the bundle
+  // emitted only framework-gap entries (system_name='exceptd-framework-gap')
+  // and zero indicator entries — which is the very regression #82 was filed
+  // about. Indicator hits must surface as their own vulnerability rows with
+  // system_name='exceptd-indicator' so CSAF consumers don't conflate them
+  // with framework-control gaps.
+  const indicatorVulns = data.vulnerabilities.filter(v =>
+    Array.isArray(v.ids) && v.ids.some(id => id.system_name === 'exceptd-indicator')
+  );
+  assert.ok(indicatorVulns.length > 0,
+    `CSAF vulnerabilities must include at least one entry whose ids[].system_name === "exceptd-indicator"; got ${indicatorVulns.length}. Framework gaps (system_name=exceptd-framework-gap) alone are not sufficient.`);
 });
 
 test('#82 OpenVEX bundle via CLI includes indicator statements', () => {
@@ -272,7 +406,19 @@ test('#82 OpenVEX bundle via CLI includes indicator statements', () => {
   const data = tryJson(r.stdout);
   assert.ok(data, 'openvex output should be JSON');
   assert.match(data['@context'] || '', /openvex/);
-  assert.ok(data.statements?.length > 0, 'OpenVEX must include statements when an indicator fired');
+  // Pre-strengthening: "statements.length > 0" passed when the bundle was
+  // entirely framework-gap statements (vulnerability.@id starting with
+  // "exceptd:framework-gap:") and zero indicator statements — the same
+  // regression class #82 was filed for. Indicator statements use the
+  // playbook-id namespace ("exceptd:<playbook_id>:<indicator-id>"), so
+  // filter to "any statement whose vuln @id is exceptd:-prefixed but NOT
+  // a framework-gap" and require at least one.
+  const indicatorStatements = (data.statements || []).filter(s => {
+    const vid = s.vulnerability?.['@id'] || '';
+    return vid.startsWith('exceptd:') && !vid.startsWith('exceptd:framework-gap:');
+  });
+  assert.ok(indicatorStatements.length >= 1,
+    `OpenVEX must include at least one indicator statement (vulnerability.@id prefixed "exceptd:<playbook>:" — NOT "exceptd:framework-gap:"); got ${indicatorStatements.length}. Framework gaps alone aren't sufficient to satisfy #82.`);
 });
 
 // ===================================================================
@@ -388,8 +534,21 @@ test('#92 CSAF tracking.current_release_date is non-null', () => {
   const sub = JSON.stringify({});
   const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
   const data = tryJson(r.stdout);
-  assert.ok(data?.document?.tracking?.current_release_date,
-    'CSAF 2.0 §3.2.1.12 requires tracking.current_release_date non-null');
+  const ts = data?.document?.tracking?.current_release_date;
+  // CSAF 2.0 §3.2.1.12 requires this field to be an ISO 8601 timestamp,
+  // not just truthy. Pre-strengthening, the assertion accepted any non-empty
+  // string (including "TBD", "pending", or an empty object cast to "[object
+  // Object]") — the v0.11.10 field-present-but-not-spec-conformant bug
+  // class. Validators downstream reject anything that doesn't parse as a
+  // date, so pin the shape AT EMIT time, not after the operator reports it.
+  assert.equal(typeof ts, 'string',
+    `current_release_date must be a string per CSAF 2.0 §3.2.1.12; got ${typeof ts}`);
+  assert.match(ts, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
+    `current_release_date must be ISO 8601 (YYYY-MM-DDTHH:MM…); got ${JSON.stringify(ts)}`);
+  // Also confirm Date.parse round-trips so we catch "looks-like-ISO but
+  // semantically invalid" cases (e.g. month=13).
+  assert.ok(!Number.isNaN(Date.parse(ts)),
+    `current_release_date must round-trip through Date.parse; got ${JSON.stringify(ts)}`);
 });
 
 test('#93 SARIF defines every rule referenced by ruleId', () => {
@@ -428,15 +587,44 @@ test('#96 --strict-preconditions exits 1 on warn-level preconditions', () => {
   assert.equal(rStrict.status, 1, '--strict-preconditions: warn-level precondition exits 1');
 });
 
-test('#98 attest export --format garbage returns JSON error', () => {
-  // We can use any existing session-id under .exceptd/attestations, OR fail
-  // gracefully if none — the format validation should fire before any
-  // session lookup.
-  const r = cli(['attest', 'export', 'nonexistent', '--format', 'garbage']);
-  assert.notEqual(r.status, 0);
+test('#98 attest export --format garbage on a real session returns format error', () => {
+  // Pre-strengthening this combined two distinct errors under one regex:
+  //  - "no session dir" (the session-id arm)
+  //  - "not in accepted set" (the format-rejection arm)
+  // The regression class was that EITHER message satisfied the test, so a
+  // bug that flipped session-not-found and format-validation back and forth
+  // wouldn't be caught. Split into two tests, each pinning exactly one
+  // error path.
+  //
+  // Arm A: real session id (we just wrote one via `run`) + garbage format.
+  // The error must be the FORMAT error, not the session-not-found error —
+  // otherwise format validation never ran against a real session.
+  const sid = 'export-fmt-arm-' + Date.now();
+  const seedRun = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid, '--force-overwrite'], { input: '{}' });
+  assert.equal(seedRun.status, 0, 'pre-stage run must succeed so attest-export sees a real session');
+  const r = cli(['attest', 'export', sid, '--format', 'garbage']);
+  assert.notEqual(r.status, 0, 'attest export with garbage format must exit non-zero');
   const err = tryJson(r.stderr.trim());
-  assert.ok(err && err.ok === false);
-  assert.match(err.error, /not in accepted set|no session dir/);
+  assert.ok(err, 'rejection must be parseable JSON on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /attest export: --format .* not in accepted set/,
+    'with a real session id, the format error must fire (NOT the session-not-found error) — otherwise --format validation is unreachable behind the session-lookup gate');
+});
+
+test('#98 attest export on missing session id returns session-not-found error', () => {
+  // Arm B: garbage session id + valid format. The error must be the
+  // SESSION-NOT-FOUND error so operators get the right diagnostic for the
+  // arm they hit. Pre-strengthening one regex matched both messages, so
+  // the runner could have flipped the arms and the test wouldn't notice.
+  const r = cli(['attest', 'export', 'never-existed-' + Date.now(), '--format', 'json']);
+  assert.notEqual(r.status, 0, 'missing session must exit non-zero');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /attest export: no session dir/,
+    'with a missing session id, the session-not-found error must fire (NOT the format error)');
+  assert.equal(typeof err.session_id, 'string',
+    'rejected session id must echo back so operators see what was searched');
 });
 
 test('#98 report garbage returns JSON error exit 2', () => {
@@ -451,40 +639,60 @@ test('#98 report garbage returns JSON error exit 2', () => {
 test('#100 ok:false from preflight-halt exits non-zero', () => {
   // Kernel-on-Windows triggers linux-platform halt → ok:false → exit 1.
   // Locks in the exit-code contract: any result.ok === false maps to exit 1.
+  // On Linux: ok:true exit 0. On Windows/macOS: ok:false exit 1.
+  // The contract: exactly one of those two branches must hold — silent
+  // pass when JSON didn't parse at all is the regression worth catching
+  // (and pre-strengthening was exactly that silent fall-through).
   const sub = JSON.stringify({});
   const r = cli(['run', 'kernel', '--evidence', '-'], { input: sub });
-  // Status depends on host; on Linux this passes (ok:true exit 0), on
-  // Windows/macOS it halts (ok:false exit 1). Either way: ok:false ↔ exit 1.
   const data = tryJson(r.stdout) || tryJson(r.stderr);
-  if (data && data.ok === false) {
-    assert.notEqual(r.status, 0, 'ok:false must exit non-zero');
-  } else if (data && data.ok === true) {
-    assert.equal(r.status, 0, 'ok:true must exit 0');
+  assert.ok(data, `run kernel must emit parseable JSON in either ok:true or ok:false branch. stdout=${JSON.stringify(r.stdout.slice(0,200))} stderr=${JSON.stringify(r.stderr.slice(0,200))}`);
+  assert.notEqual(data.ok, undefined,
+    'data.ok must be present (true or false) — undefined means the runner emitted a body without the contract field');
+  if (data.ok === false) {
+    assert.notEqual(r.status, 0, 'ok:false must exit non-zero (contract: ok:false ↔ exit ≠ 0)');
+  } else {
+    assert.equal(data.ok, true, 'data.ok must be strictly true or false, never another truthy value');
+    assert.equal(r.status, 0, 'ok:true must exit 0 (contract: ok:true ↔ exit 0)');
   }
-  // Either branch is fine; just ensure the contract holds.
 });
 
 test('#100 warn-level preconditions do NOT block (run completes ok:true exit 0)', () => {
-  // secrets has on_fail: warn preconditions. With empty evidence, run still
-  // completes — warn issues populate preflight_issues but don't fail. This
-  // is the intended behavior, NOT a bug. The user-facing fix is --strict-preconditions.
+  // secrets has on_fail: warn preconditions (regex-engine). With empty
+  // evidence and no --strict-preconditions, the run MUST complete ok:true
+  // exit 0 — warn-level issues populate preflight_issues but don't fail.
+  // Pre-strengthening, this only checked `if (data.ok===true) assert.equal
+  // status 0`, which would have silently passed if the runner crashed
+  // before emitting JSON (data=null → branch never taken). Hard-assert
+  // both contract sides unconditionally.
   const sub = JSON.stringify({});
   const r = cli(['run', 'secrets', '--evidence', '-'], { input: sub });
   const data = tryJson(r.stdout);
-  if (data && data.ok === true) {
-    assert.equal(r.status, 0, 'warn-level run with ok:true exits 0');
-  }
+  assert.ok(data, 'secrets run must emit parseable JSON to stdout');
+  assert.equal(data.ok, true,
+    'warn-level preconditions are non-blocking by default — run must complete ok:true');
+  assert.equal(r.status, 0,
+    'warn-level run with ok:true must exit 0 — flipping to non-zero would re-introduce the very behavior --strict-preconditions was added to opt INTO');
 });
 
 test('#100 --strict-preconditions escalates warn-level to exit 1', () => {
-  // Same secrets run with --strict-preconditions must exit 1 if any preflight
-  // issue is unverified/warn.
-  const sub = JSON.stringify({});
+  // Pre-stage a submission that GUARANTEES at least one preflight issue:
+  // submit precondition_checks.regex-engine=false explicitly. This dodges
+  // any autoDetect path that might silently populate the check on hosts
+  // where pcre support is present. Without this pre-stage, the original
+  // test silently passed on machines where preflight_issues happened to
+  // be empty — the staged condition never reproduced, the `if` never
+  // fired, the assertion was a no-op (Hard Rule #11 violation).
+  const sub = JSON.stringify({ precondition_checks: { 'regex-engine': false } });
   const r = cli(['run', 'secrets', '--evidence', '-', '--strict-preconditions'], { input: sub });
   const data = tryJson(r.stdout) || tryJson(r.stderr);
-  if (data && Array.isArray(data.preflight_issues) && data.preflight_issues.length > 0) {
-    assert.equal(r.status, 1, '--strict-preconditions must exit 1 when preflight_issues present');
-  }
+  assert.ok(data, '--strict-preconditions run must still emit JSON (just to a non-zero exit)');
+  assert.ok(Array.isArray(data.preflight_issues),
+    'preflight_issues must be present as an array on a --strict-preconditions run');
+  assert.ok(data.preflight_issues.length >= 1,
+    `with regex-engine:false pre-staged, preflight_issues MUST contain ≥1 entry; got ${data.preflight_issues.length}. If 0, the runner silently dropped the staged precondition check — that's the bug.`);
+  assert.equal(r.status, 1,
+    '--strict-preconditions must exit exactly 1 when preflight issues are present (NOT 0, NOT 2 — 1 is the warn-escalation code)');
 });
 
 test('#101 ai-run --no-stream shape matches run shape (phases nested)', () => {
@@ -524,9 +732,17 @@ test('#103 ci does not fail on inconclusive baseline RWEP', () => {
   const r = cli(['ci', '--scope', 'code', '--json']);
   const data = tryJson(r.stdout);
   assert.ok(data, 'ci output should be JSON');
+  // Pin the shape contract: fail_reasons must ALWAYS be an array (possibly
+  // empty), never undefined or null. Pre-strengthening the filter used
+  // `data.summary.fail_reasons || []`, which silently substituted an
+  // empty array when the field went missing — masking a "field missing
+  // entirely" regression as "no reasons matched the regex." Hard-assert
+  // the field exists and is an array BEFORE filtering.
+  assert.ok(Array.isArray(data.summary.fail_reasons),
+    'summary.fail_reasons must always be an array (possibly empty), never undefined/null — operators rely on `for (const r of fail_reasons)` not failing');
   // The fail_reasons for an unconfigured baseline run should not include
   // "rwep_delta >= cap" since delta is 0 (no operator evidence).
-  const rwepDeltaReasons = (data.summary.fail_reasons || []).filter(reason =>
+  const rwepDeltaReasons = data.summary.fail_reasons.filter(reason =>
     /rwep_delta/.test(reason) || /rwep=\d+ >= cap/.test(reason)
   );
   assert.equal(rwepDeltaReasons.length, 0,
@@ -549,6 +765,20 @@ test('#104 jurisdiction clocks fire on detected classification', () => {
   assert.ok(data, 'ci output should be JSON');
   assert.ok(data.summary.jurisdiction_clocks_started >= 1,
     'detected classification with detect_confirmed obligations should fire at least one jurisdiction clock');
+  // Pre-strengthening, the count check passed even if the clocks_started
+  // counter was a stale integer with no underlying obligations (field-
+  // populated-but-content-empty class). Drill into the result the count
+  // SHOULD be derived from and verify the EU jurisdiction (GDPR/NIS2) is
+  // present — secrets stages multiple EU obligations under detect_confirmed,
+  // so absent that, the counter is lying.
+  const result = data.results?.[0];
+  assert.ok(result, 'ci must surface per-playbook results so the counter can be cross-checked');
+  const obligations = result.phases?.govern?.jurisdiction_obligations || [];
+  assert.ok(Array.isArray(obligations) && obligations.length > 0,
+    'govern.jurisdiction_obligations must be a non-empty array — that is what jurisdiction_clocks_started is counting against');
+  const euOblig = obligations.filter(o => o.jurisdiction === 'EU');
+  assert.ok(euOblig.length >= 1,
+    `secrets stages EU obligations (GDPR Art.33, NIS2 Art.23) under detect_confirmed — at least one must be present; got jurisdictions=${JSON.stringify([...new Set(obligations.map(o => o.jurisdiction))])}`);
 });
 
 test('#113 --operator surfaces in run result top-level', () => {
@@ -712,15 +942,15 @@ test('#129 refresh --from-cache <missing> emits structured hint, not stack trace
 });
 
 test('#129 refresh --prefetch is an alias for --no-network', () => {
-  // We don't actually run prefetch (network-bound); just verify the dispatcher
-  // recognizes --prefetch and routes to prefetch, NOT to refresh-external.
-  // We pass --no-network behavior via --prefetch + a flag prefetch.js knows.
-  // The smoke is: --prefetch + --help should print prefetch's help, not refresh's.
-  const r = cli(['refresh', '--prefetch', '--help'], { env: { EXCEPTD_DEPRECATION_SHOWN: '1' } });
-  assert.notEqual(r.status, 127, '--prefetch must not be unknown-command');
-  // Either prefetch's or refresh's help — but the dispatcher should have
-  // routed to prefetch. Smoke check: command did not crash.
-  assert.ok(r.status !== null, 'process must exit cleanly');
+  // Pre-strengthening: ran `refresh --prefetch --help` and asserted only
+  // status!==127 — which would silently accept ANY exit (0..126) including
+  // the regression where --prefetch becomes unrecognized and the dispatcher
+  // falls through to a different verb's help. Replace with the actual
+  // behavioral contract: --prefetch routes through to prefetch.js which
+  // emits "prefetch summary:" on stdout. Pin that exact string.
+  const r = cli(['refresh', '--prefetch', '--no-network', '--quiet']);
+  assert.match(r.stdout, /prefetch summary:/,
+    'refresh --prefetch must route to prefetch.js and emit its one-line summary — proves the alias works, not just that the dispatcher didn\'t crash');
 });
 
 test('#130 exceptd path copy is not a silent no-op', () => {
@@ -730,8 +960,12 @@ test('#130 exceptd path copy is not a silent no-op', () => {
   // The silent no-op is the bug.
   assert.equal(r.status, 0);
   assert.ok(r.stdout.trim().length > 0, 'path on stdout');
-  assert.match(r.stderr, /\[exceptd path\]/,
-    'must emit either "copied to clipboard" or "no clipboard tool available" on stderr');
+  // Pre-strengthening: matched only the "[exceptd path]" prefix, which
+  // would accept ANY message after it (including "[exceptd path] gibberish"
+  // or an empty bracket). Pin one of the two exact branches operators
+  // actually rely on for diagnosing whether the clipboard write happened.
+  assert.match(r.stderr, /\[exceptd path\] (copied to clipboard|no clipboard tool available)/,
+    'stderr must emit one of the two specific status messages — "copied to clipboard" (success) or "no clipboard tool available" (degraded). Neither branch can be silent; a missing/altered message is the regression.');
 });
 
 test('#131 run <skill-name> suggests the right playbook', () => {
@@ -836,23 +1070,35 @@ test('refresh --network shows clear hint when registry is unreachable', () => {
   const r = cli(['refresh', '--network', '--json', '--timeout', '500'], {
     env: { EXCEPTD_REGISTRY_FIXTURE: fakePath }
   });
-  // Either: fixture parse fails (treated as offline) → ok:false with hint.
-  // Or: registry is genuinely unreachable on the test runner → ok:false.
-  // Either way: non-zero exit + structured error.
   assert.notEqual(r.status, 0, 'unreachable registry must exit non-zero');
+  // Pre-strengthening only checked the exit code. The contract that
+  // actually matters to operators is "I get a hint telling me what to
+  // do" — without it, refresh --network is the silent-no-op class of
+  // bug. Parse stdout (refresh-network emits structured JSON there even
+  // on the error path) and verify the body carries ok:false + a string
+  // error mentioning the failure mode (unreachable/registry).
+  const data = tryJson(r.stdout) || tryJson(r.stderr.trim());
+  assert.ok(data, 'refresh --network must emit structured JSON on the error path, not a raw stack trace');
+  assert.equal(data.ok, false, 'unreachable registry must carry ok:false');
+  assert.equal(typeof data.error, 'string', 'error must be a string operators can read');
+  assert.match(data.error, /unreachable|registry/i,
+    'error must name the failure class so operators see "unreachable" / "registry" — not a generic ENOENT bubble-up');
 });
 
 test('refresh --network --dry-run reports verification result without modifying files', () => {
-  // Skip when no network — the fixture path doesn't help refresh-network
-  // because we don't honor EXCEPTD_REGISTRY_FIXTURE in refresh-network (the
-  // tarball download is not faked). The dry-run shape is exercised via
-  // a separate unit test on parseTar / fingerprintPublicKey below.
-  // This test is the smoke contract: --dry-run + --json + --timeout exits
-  // cleanly or reports offline.
+  // Smoke contract: --dry-run + --json + --timeout exits with a structured
+  // body in either branch (online or offline). Pre-strengthening, "data
+  // parses as JSON" was the only check — a regression that emits {} (empty
+  // object, no contract fields) would have passed. Pin the contract: the
+  // body must carry one of the specific fields the dry-run path emits.
+  // refresh-network's dry-run/skip path emits `verified` (verification
+  // result), `ok` (success flag), or `skipped`/`message` (when already-
+  // at-latest). At least one must be present.
   const r = cli(['refresh', '--network', '--dry-run', '--json', '--timeout', '1000']);
-  // Either ok:true (online) or ok:false offline — either is acceptable.
   const data = tryJson(r.stdout) || tryJson(r.stderr.trim());
   assert.ok(data, 'must emit structured JSON in either online or offline branch');
+  assert.ok('verified' in data || 'ok' in data,
+    `refresh --network --dry-run body must carry at least one of {verified, ok}; got keys=${JSON.stringify(Object.keys(data))}. An empty object is the field-missing regression.`);
 });
 
 test('refresh-network parseTar + fingerprintPublicKey unit smoke', () => {
@@ -1022,23 +1268,36 @@ test('v0.12 validate-cve-catalog treats _auto_imported drafts as warnings, not e
 test('#127 emit() body with ok:false sets non-zero exit (universal contract)', () => {
   // The class of bug: any verb that emits a result with ok:false to stdout
   // must not return exit 0. Pre-0.11.13 several paths leaked through.
-  // We test the universal `emit()` interception via a verb that is known
-  // to produce ok:false: attest verify on a non-existent session id.
+  // attest verify on a non-existent session id is GUARANTEED to produce
+  // ok:false (the session lookup is the first gate and there's no way
+  // around it). Pre-strengthening, this test guarded the assertion under
+  // `if (sawOkFalse) { assert(...) }` — so a regression that ran the verb
+  // through some other path without ok:false would have silently passed
+  // (the `if` never fired, the assertion was a no-op). Hard-assert that
+  // ok:false IS observed AND the exit is non-zero, unconditionally.
   const r = cli(['attest', 'verify', 'no-such-session-id-' + Date.now(), '--json']);
-  // The exact verb-level handling may vary, but the universal contract is:
-  // a body with ok:false → exit non-zero. Either stdout (caught by emit())
-  // or stderr (caught by emitError) is acceptable.
   const stdoutBody = tryJson(r.stdout) || {};
   const stderrBody = tryJson(r.stderr.trim()) || {};
   const sawOkFalse = stdoutBody.ok === false || stderrBody.ok === false;
-  if (sawOkFalse) {
-    assert.notEqual(r.status, 0, 'any ok:false response (stdout OR stderr) must yield non-zero exit');
-  }
+  assert.equal(sawOkFalse, true,
+    `attest verify on a missing session id MUST produce ok:false in stdout or stderr (the session-not-found gate is unavoidable). If false, the runner found a way around the gate — that's the regression. stdout=${JSON.stringify(r.stdout.slice(0,300))} stderr=${JSON.stringify(r.stderr.slice(0,300))}`);
+  assert.notEqual(r.status, 0,
+    'any ok:false response (stdout OR stderr) must yield non-zero exit — the universal emit() contract');
 });
 
 test('#127 attest diff with missing session ids exits non-zero', () => {
   const r = cli(['attest', 'diff', 'does-not-exist-a', '--against', 'does-not-exist-b', '--json']);
   assert.notEqual(r.status, 0, 'attest diff with missing sessions must exit non-zero');
+  // Pre-strengthening, only the exit code was checked — a regression that
+  // exited non-zero for an UNRELATED reason (e.g. CLI crashed before
+  // session lookup) would have passed. Drill into stderr and confirm the
+  // specific missing session id is named, so operators see which one
+  // failed lookup (the diff has two arms, A and B).
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'attest diff must emit JSON error on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /does-not-exist-a/,
+    'error must name the failed session id (the A side is checked first) so operators know which arm to fix');
 });
 
 test('#128 attest diff with empty submissions falls back to playbook catalog', () => {

@@ -1,0 +1,26 @@
+{
+  "precondition_checks": {
+    "filesystem-read": true,
+    "openssl-or-equivalent-present": true
+  },
+  "observations": {
+    "openssl-version": {"captured": true, "value": "OpenSSL 3.4.0 22 Oct 2024", "indicator": "openssl-pre-3-5", "result": "hit"},
+    "openssl-kem-algorithms": {"captured": true, "value": "DHKEM(P-256), DHKEM(P-384), DHKEM(X25519); no ML-KEM-768", "indicator": "ml-kem-absent", "result": "hit"},
+    "openssl-providers": {"captured": true, "value": "default, legacy; no oqsprovider"},
+    "libssl-libraries": {"captured": true, "value": "/usr/lib/x86_64-linux-gnu/libssl.so.3"},
+    "sshd-config-effective": {"captured": true, "value": "KexAlgorithms curve25519-sha256, ecdh-sha2-nistp256; no sntrup761x25519-sha512", "indicator": "sshd-no-pqc-kex", "result": "hit"},
+    "ssh-version": {"captured": true, "value": "OpenSSH_8.9p1"},
+    "tls-server-handshake": {"captured": true, "value": "negotiates X25519; rejects X25519MLKEM768"},
+    "certificate-store": {"captured": true, "value": "RSA-2048 host cert valid 2025-01-01 to 2028-01-01 (3-year validity)", "indicator": "rsa-2048-cert-long-life", "result": "hit"},
+    "host-cert-keys": {"captured": true, "value": "/etc/ssl/private/host.key is RSA-2048"},
+    "crypto-policy": {"captured": true, "value": "DEFAULT policy, no pqc subprofile"}
+  },
+  "signal_overrides": {
+    "ml-dsa-slh-dsa-absent": "hit",
+    "tls-no-hybrid-group": "hit"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

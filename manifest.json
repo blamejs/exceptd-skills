@@ -1,6 +1,6 @@
 {
   "name": "exceptd-security",
-  "version": "0.12.7",
+  "version": "0.12.8",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
   "homepage": "https://exceptd.com",
   "license": "Apache-2.0",
@@ -51,8 +51,8 @@
         "RFC-7296"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "Xk593pj7my6wPJbQBE47khpIUrPsp6N1lW7cE2T/VPPF5T+8C1yGKc9B8VphD7Q08yWFcbwF6HoWpA/+4uG9DA==",
-      "signed_at": "2026-05-13T04:36:44.441Z",
+      "signature": "GfdaqLFofMiou8doFBE68J+ll50MU3EfJh6N6mNL6RwjABmHsbyfOXCeEpR3NlhbDrYJaG4hpZg4PwhN+t9QAA==",
+      "signed_at": "2026-05-13T13:49:35.661Z",
       "cwe_refs": [
         "CWE-125",
         "CWE-362",
@@ -115,8 +115,8 @@
         "SOC2-CC6-logical-access"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "nOgUu+LK9fy6ASTCoRGtx3ttgjZCl7WIkKu2wu06JEKVSpL2cKU3ex2tmVAvv11LBmpTH+b/0zvqXlzcxzHnCw==",
-      "signed_at": "2026-05-13T04:36:44.444Z",
+      "signature": "nLX2BIN16cSk0wLO9f9lXrZgX8Xg1LTsewq2PUEdv96BTV/SmEWt9jsdHus7X+8bnBX24pGTVBA4lLkOcc1MCQ==",
+      "signed_at": "2026-05-13T13:49:35.664Z",
       "cwe_refs": [
         "CWE-1039",
         "CWE-1426",
@@ -178,8 +178,8 @@
         "RFC-9700"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "7FH1J9PlOyvcRCzRmggmenX9fIR0pi/veXihb3TeStcq1Rpuz1KHdOcJLqA9su4t2goYukKKCXHV6hx8hzplAA==",
-      "signed_at": "2026-05-13T04:36:44.444Z",
+      "signature": "BfqANngtx1dcIgPqVbO1KkDV8MS4EjJrUM71zs7F9EdCnIA7/EO2tH/e1e5LKbx3K+XcUSrNKHCP/vjLDdU4Cg==",
+      "signed_at": "2026-05-13T13:49:35.664Z",
       "cwe_refs": [
         "CWE-22",
         "CWE-345",
@@ -225,7 +225,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "FqTRjHfEgw56pyHnyWzNtnhzDMEePBtmuamtW/iyX+h4yqbvP4Fyr7NRjRs3EgqT4j7oHuEZhV9Jt6ZTBgN4AA==",
-      "signed_at": "2026-05-13T04:36:44.444Z"
+      "signed_at": "2026-05-13T13:49:35.664Z"
     },
     {
       "name": "compliance-theater",
@@ -256,7 +256,7 @@
       ],
       "last_threat_review": "2026-05-01",
       "signature": "3fN4yotiIIq76PVTHwozCu28TzDZvWule6vX8SXUT3XXbIBSuvAO0M/euvc3pw3TdZ2UNf78dI18lOCNdJ0aAg==",
-      "signed_at": "2026-05-13T04:36:44.445Z"
+      "signed_at": "2026-05-13T13:49:35.665Z"
     },
     {
       "name": "exploit-scoring",
@@ -285,7 +285,7 @@
       ],
       "last_threat_review": "2026-05-01",
       "signature": "yZfpk4lQMRXegj2ADWjMmZTchUN6Lxpv587O/0JMzbNkXQtD6FrSAQOBWjx8S7uQ/sTntxgGN7aQQDLxL9RWAA==",
-      "signed_at": "2026-05-13T04:36:44.445Z"
+      "signed_at": "2026-05-13T13:49:35.665Z"
     },
     {
       "name": "rag-pipeline-security",
@@ -321,8 +321,8 @@
         "OWASP-LLM-Top-10-2025-LLM08"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "ABHkoqee67KdUyDZ3bvF+/DNxjGhPR/ehT6pfOnmUIMmkcQFHpZ0OUVXKiFUANaLgKLP1vg0VEmHOoxpNA3vAA==",
-      "signed_at": "2026-05-13T04:36:44.446Z",
+      "signature": "jftNQxDKXpcJQg5iZz2y0wNw7N6ZC3XuRrHsgxCv9bq5Mrke+L6sLyiYxcxOHZ/8Z0g7ThwBuyLEtnQOAyUvBQ==",
+      "signed_at": "2026-05-13T13:49:35.665Z",
       "cwe_refs": [
         "CWE-1395",
         "CWE-1426"
@@ -378,8 +378,8 @@
         "RFC-9000"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "+Nd/2tgBnW+mEGX84QvkgR2To2J7kA+lB63BsADDKeCXeebFv6Vo9H1P4vyUkKHfe4fP0ndpy3agIZcUO/e/Dg==",
-      "signed_at": "2026-05-13T04:36:44.446Z",
+      "signature": "y2SJLIuK/2QRD+hJxlANS0/fJUahvqbSCWEL+RCy7HpVOacpGZ7KyiVKYPAwbjc7MwRYIOfhcPixATMENV2TAA==",
+      "signed_at": "2026-05-13T13:49:35.666Z",
       "d3fend_refs": [
         "D3-CA",
         "D3-CSPP",
@@ -414,7 +414,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "VMNGFvowXLbBjZp5nvWloKkqyqHKhnSzbVRU3gX9quOZJHH56w2M4id+oDsXIjR0CfRRb7eXl/so0Hq4xLBuBQ==",
-      "signed_at": "2026-05-13T04:36:44.446Z",
+      "signed_at": "2026-05-13T13:49:35.666Z",
       "cwe_refs": [
         "CWE-1188"
       ]
@@ -442,7 +442,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "5MaJs7gPCuFlK4oAttLulAPOA1noeV+xD/UqVWaVyRedXZgebBGKjnlE2t1qmTugvxlNIfeAnBZapk+Wz3VAAg==",
-      "signed_at": "2026-05-13T04:36:44.447Z"
+      "signed_at": "2026-05-13T13:49:35.666Z"
     },
     {
       "name": "global-grc",
@@ -474,7 +474,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "S/YXUpI/mcG2FpdUTgMsccWBtTaR5A4Ph4QFQw31S9w9Hn/z3sOFHLkb1B5YSwlg+mMOtSIxMdet1eLGSZkTDg==",
-      "signed_at": "2026-05-13T04:36:44.447Z"
+      "signed_at": "2026-05-13T13:49:35.667Z"
     },
     {
       "name": "zeroday-gap-learn",
@@ -501,7 +501,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "AKS+JsmhhBtytY2eIMuydjkZOYprWCmQ+RqxyxcVG9XcEI29ZSM/JbVIINQHozFl7OPPrOu1ouiTnk7LOJ86Bg==",
-      "signed_at": "2026-05-13T04:36:44.447Z"
+      "signed_at": "2026-05-13T13:49:35.667Z"
     },
     {
       "name": "pqc-first",
@@ -553,7 +553,7 @@
       ],
       "last_threat_review": "2026-05-01",
       "signature": "oEkK5bLS/G5RIHnxlNFJYdzhTJbKZnkJv+W4iS9UJ/uszZHgZGoxygELPc4kn3FowV5eE988SQYG4WKlXtNzCg==",
-      "signed_at": "2026-05-13T04:36:44.448Z",
+      "signed_at": "2026-05-13T13:49:35.668Z",
       "cwe_refs": [
         "CWE-327"
       ],
@@ -599,8 +599,8 @@
         "Framework publication updates"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "nPV6YTo1rsNH49qUnZpfoNLEQZXuLNyV05QMUOgXKHYeVDjotYpWhLgyVXlRhjV/fStiA2sWQ0MOnEJ4FBIfDg==",
-      "signed_at": "2026-05-13T04:36:44.448Z"
+      "signature": "yX9SfZAba8XA8qIYHVtY8je6Jju40Y5ZnoOoWsze1vWlh++wO6OwDWdd2gXie78K6VjeGq8OzGRnSB49IOtXCQ==",
+      "signed_at": "2026-05-13T13:49:35.668Z"
     },
     {
       "name": "security-maturity-tiers",
@@ -636,8 +636,8 @@
         "PQC tooling maturity shifting overkill to practical"
       ],
       "last_threat_review": "2026-05-01",
-      "signature": "7rirSEONz6O9Yyf46eTyuwkGizCj9FRcNHe5p7Qz6nhJoZQRW5FwW7n9opL0WlbIw8FDBYn1f22zgNUV87L5AQ==",
-      "signed_at": "2026-05-13T04:36:44.449Z",
+      "signature": "43fjE2TSziIncgs+TssBWtY6dHGsmAWfLMsqecDd25Jj3gWruRMDBWe3IpGTE8PGbd27v7ySWGPPrz/kF/FTAQ==",
+      "signed_at": "2026-05-13T13:49:35.668Z",
       "cwe_refs": [
         "CWE-1188"
       ]
@@ -672,7 +672,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-11",
       "signature": "+evehnd2wSBb8uMTlTr5/aTN4bfLjsKzZJk/+OMLMOJrjCt+OuMU7EQC6xMUGeSc4cPEGajghDvq3xVaacV2Dw==",
-      "signed_at": "2026-05-13T04:36:44.449Z"
+      "signed_at": "2026-05-13T13:49:35.669Z"
     },
     {
       "name": "attack-surface-pentest",
@@ -742,8 +742,8 @@
         "OWASP WSTG v5.x AI/MCP test cases (currently in working-group draft)",
         "PTES revision incorporating AI-surface enumeration"
       ],
-      "signature": "KHOXxloAYf7xqXjm2BaL3HVAZOmb7rMiMh20H/oaIkjN0WD1CnKCrRGPJn867uSFhCh/timkXolaiqD1L/h8Dg==",
-      "signed_at": "2026-05-13T04:36:44.449Z"
+      "signature": "6YqZpHsmUz1/aTyOPNDUgJquKaacOqEqTIELHc5wlaydDz4bYboutEu/YiTYy+wF/nYo2nOyuJfMdR8jsYwEDQ==",
+      "signed_at": "2026-05-13T13:49:35.669Z"
     },
     {
       "name": "fuzz-testing-strategy",
@@ -803,7 +803,7 @@
         "OSS-Fuzz-Gen / AI-assisted harness generation becoming the default expectation for OSS maintainers"
       ],
       "signature": "+ELdD+1AY5DymBitH7wU65CS60NY1nDoLowJAFn7cE5Gr/5jy9BTkyxsm7PEXaSlXWMOkTf/HQ+uyzyxUVD/Bw==",
-      "signed_at": "2026-05-13T04:36:44.449Z"
+      "signed_at": "2026-05-13T13:49:35.669Z"
     },
     {
       "name": "dlp-gap-analysis",
@@ -877,8 +877,8 @@
         "MCP gateway / proxy standardisation (Anthropic enterprise MCP gateway, Portkey MCP) — tool-call argument inspection is the missing primary control",
         "Quebec Law 25, India DPDPA, KSA PDPL enforcement actions naming AI-tool prompt data as in-scope personal information"
       ],
-      "signature": "8tFAhXAS8zZN3SUOdn+ZIu7lQ48JMOyBQ8SaObR3L/fDyFmDhufqleY2VzI3yigqlT/D4Y8FYxZHKmzXiALjDw==",
-      "signed_at": "2026-05-13T04:36:44.450Z"
+      "signature": "H1N113M/YhnEPQptJ2B88wwAOB4eMPKuVABQ4DSlMjFMsX0ts1DBCupHHDoHcJHbi8vs+Wi10ekpL5SnsroZDQ==",
+      "signed_at": "2026-05-13T13:49:35.669Z"
     },
     {
       "name": "supply-chain-integrity",
@@ -954,8 +954,8 @@
         "EU CRA (Regulation 2024/2847) — implementing acts for technical documentation and SBOM submission expected through 2027",
         "OpenSSF model-signing — emerging Sigstore-based signing standard for ML model weights; track for production adoption"
       ],
-      "signature": "YhvlD+6gdFGg7P6QtpWeb0n54/Ujlxc7I6o/bXtpkfPiy/JY4OJo5xdreb+mbytHkasmUErL5LsDtTCAVq0QAA==",
-      "signed_at": "2026-05-13T04:36:44.450Z"
+      "signature": "TmV9ZBDYqp2pHIbNZKQYf+kZLNAiyagnH/pjK9+LiSd7OdFIN3KEpFHPUNzcivB/CT5q7nl7Tsmvc9UvGo8WDg==",
+      "signed_at": "2026-05-13T13:49:35.670Z"
     },
     {
       "name": "defensive-countermeasure-mapping",
@@ -1011,8 +1011,8 @@
         "D3-SCP"
       ],
       "last_threat_review": "2026-05-11",
-      "signature": "AMdLkDx/e3ESI4NAnJhhcaas+Ru8VjrSn6v6RBbmmzoLCGo/vFxGraa1p/qF9udhVG+DdkbwHfbfKK5Im19KDw==",
-      "signed_at": "2026-05-13T04:36:44.450Z"
+      "signature": "XZigwq8X/csfrdG10O6Q1V5q0zUqSQGd3QrjRKkZ4fkaodG4mZahYuIQqxc8rU9jjtGAm9LtBXYB+I5csqj9Bw==",
+      "signed_at": "2026-05-13T13:49:35.670Z"
     },
     {
       "name": "identity-assurance",
@@ -1078,8 +1078,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "pSMHKkyWoZvRIuVtN7Vue51sP5MIy9lSaQa2YSAMhxjptx81cUnPt3S11/Tb9Ea1/eluMNQ+5F25eF2njr4mBQ==",
-      "signed_at": "2026-05-13T04:36:44.450Z"
+      "signature": "pCvavMUh5wR/TFl03Vh6ggKJHWPjakOEPDh7IjaD/U3WLBGPF3eyLBzieNLrPDXxIBbCJqnt9E79Bd4e73xCCg==",
+      "signed_at": "2026-05-13T13:49:35.670Z"
     },
     {
       "name": "ot-ics-security",
@@ -1134,8 +1134,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "qjky+ZTX1DP7uRRMQZq7S7P9/uaJEoB1dy4RZ1l37Q4OO3k2ryfL+7o0Cgm/piuafJfH+dqUeNCRrVefj4r8Dw==",
-      "signed_at": "2026-05-13T04:36:44.451Z"
+      "signature": "3V0ZpDLRTmCBx5Li+9m3XKA+k9QR+l0aE55cRPMX+UTDRlStKSG5PgrSGcL2ZKJog9hKaUPmjIVh7kkn54SfAg==",
+      "signed_at": "2026-05-13T13:49:35.670Z"
     },
     {
       "name": "coordinated-vuln-disclosure",
@@ -1186,8 +1186,8 @@
         "UK NCSC Vulnerability Disclosure Toolkit revisions and AU ISM CVD guidance updates",
         "NYDFS 23 NYCRR 500 amendments potentially adding explicit CVD program requirements"
       ],
-      "signature": "F86Zl/I+dBzHYRUuGWsjDQI2F/I/vhzwZUFMqhNfKUzRbMf6mafOX2APCPYTp3eP1DvvvfL3Yc0hb1R5Q4nOAg==",
-      "signed_at": "2026-05-13T04:36:44.451Z"
+      "signature": "UCiNjncvhkZItmLQA/Sm1/NCsOiLMwdCjfUw+067v4NIxhaMMaqRrAeD3KgMyEtov7m2Hq2kfwYSt5+DQsYDCQ==",
+      "signed_at": "2026-05-13T13:49:35.671Z"
     },
     {
       "name": "threat-modeling-methodology",
@@ -1236,8 +1236,8 @@
         "LINDDUN-GO and LINDDUN-PRO updates incorporating LLM privacy threats",
         "PASTA v2 updates incorporating AI/ML application threats"
       ],
-      "signature": "D/4d5NcJScNH58ADXsSrVzTmLSWZpUZTdyhtDkJlC0twSMNczOiDsXgYFitBaZgGdv5nVd00viR45mNrsaZ4BQ==",
-      "signed_at": "2026-05-13T04:36:44.452Z"
+      "signature": "i8ZUFT7hwTQJyqYXWh8rchdEUNv1kk0bzkF3BHOANFwuVoM0+mukOPr+rhKdOWCPjTX72EG+0Mbs6hBTSfBBAg==",
+      "signed_at": "2026-05-13T13:49:35.671Z"
     },
     {
       "name": "webapp-security",
@@ -1310,8 +1310,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "UOXaUtpcFjXyDQ70z2PaGu6K3pABtXp+7YzO6eGVGpN1CxXpPq/xW/CnTng6B7wk9WSsqD0OORBJp4VCjiVfAQ==",
-      "signed_at": "2026-05-13T04:36:44.452Z"
+      "signature": "3d+Hs8yfERF/NUuVhO3YFYCY+bVn7aAGbNCCyGeqYM2VIt7q/nzNXGfbNfJbSPezClwutOyxbzPwXMj+TjmMDA==",
+      "signed_at": "2026-05-13T13:49:35.671Z"
     },
     {
       "name": "ai-risk-management",
@@ -1360,8 +1360,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "IVKygsrFjiM64fQVbd2PT6jDjs6fm5nKwJSqGfK53gG0S9wdHC4QYuh+LWlI/2ftvIKjjedLQ6FRyTrqpDEuDw==",
-      "signed_at": "2026-05-13T04:36:44.452Z"
+      "signature": "runa3PkfcThZmv5I+F6D1hOR/kfBeVOcdDZHsJ/59WOjsPj4BPi4d9MtP1vV7G9qq9daGGz6YzZGnejjin4pCA==",
+      "signed_at": "2026-05-13T13:49:35.672Z"
     },
     {
       "name": "sector-healthcare",
@@ -1420,8 +1420,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "P+CdSu8ZJCNUU4nTa09Voh2PcYF3y/AFJn4v7cjVIGo9FbbqO7MwvGN7cJ+aSRs2/3NMUXX4eupcODslxYyJDw==",
-      "signed_at": "2026-05-13T04:36:44.453Z"
+      "signature": "58fEAPnojhmGSpEIIyWIwfj65A2KB4SMyUCoieJ28OZaUktUF+56wLHQOdAW6v2fSeiriFqZEqGyKyLryGGcBg==",
+      "signed_at": "2026-05-13T13:49:35.672Z"
     },
     {
       "name": "sector-financial",
@@ -1501,8 +1501,8 @@
         "OSFI B-13 (Technology and Cyber Risk Management) post-2024 examination findings",
         "TIBER-EU framework v2.0 alignment with DORA TLPT RTS (JC 2024/40); cross-recognition with CBEST and iCAST"
       ],
-      "signature": "zpEfh181Sc0b0cvRf/31Ir1f8lD4V5tehTogO3TJMxdKmXu06IAK7hrhBcLA/jFBv3xDDwrWW3sHzChVhWDeDA==",
-      "signed_at": "2026-05-13T04:36:44.453Z"
+      "signature": "wByxWUburbU5PB7EHLDVAByCpMbhKRTWqSoVsBmxIDsz2jCiKb3ogJutFnAV2r2oXuQIUaffGvrvACIrJ2GlBQ==",
+      "signed_at": "2026-05-13T13:49:35.672Z"
     },
     {
       "name": "sector-federal-government",
@@ -1570,8 +1570,8 @@
         "EU Cybersecurity Certification Scheme on Common Criteria (EUCC) operational — first certificates issued 2024; high-assurance level for government use cases ramping",
         "Australia PSPF 2024 revision and ISM quarterly updates — track for Essential Eight Maturity Level requirements for federal entities"
       ],
-      "signature": "7NpQlPu1DkpY9f+Frv/LLBHWUUe/qTM80c+xeYDxOzweXhvJGE/dnDCjglYHTjxT82L9cVxzBezvLEne20UpBg==",
-      "signed_at": "2026-05-13T04:36:44.453Z"
+      "signature": "gdiwq/+AQxxNJ2t90dITyLd2ZWdDKHxbyS2I+AVRdM45VVKQEAY4XyheGZW8m5wdDF7N9X2ENIE5CRMfP5jnCA==",
+      "signed_at": "2026-05-13T13:49:35.673Z"
     },
     {
       "name": "sector-energy",
@@ -1635,8 +1635,8 @@
         "MadIoT-class research on consumer-IoT-driven grid frequency manipulation moving from proof-of-concept to attributed campaigns",
         "ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI"
       ],
-      "signature": "4rhyHN5HykK7MQUmhvaTeDGj6Qf5swDd5ry8foh4KBvTkRKxTI/XyxconFGm5FASnySGPLMxX6m4JZAq5wiNBg==",
-      "signed_at": "2026-05-13T04:36:44.454Z"
+      "signature": "3M6nshB0ZNfr3H/rpcy58+/yve91u8kiTOhwUBePTZ0lQeuzlXZZV6/36i/NTWKC4SwgMn8fsZCpLxA5llRaCg==",
+      "signed_at": "2026-05-13T13:49:35.673Z"
     },
     {
       "name": "api-security",
@@ -1704,8 +1704,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "hS1izPhETclITK7fp6R67dhy+wFDti/YsJ2M5I1gDjeWZYK41WuxeYSyt5xEHbCr3WCGDFJe77jkK1MWkxk2BA==",
-      "signed_at": "2026-05-13T04:36:44.454Z"
+      "signature": "rLOJBYVELFSVT2zLEByuko5Z1+HwGY99pQOC1XIVHs9l7gmY7F8N8luU/EBvVDcnT9w6nPiC5YKmCy/50LbxBQ==",
+      "signed_at": "2026-05-13T13:49:35.673Z"
     },
     {
       "name": "cloud-security",
@@ -1785,8 +1785,8 @@
         "eBPF-based runtime detection coverage of confidential-computing enclaves (AWS Nitro Enclaves, Azure Confidential VMs, GCP Confidential Space) — partial visibility is a tracked detection gap",
         "CISA KEV additions for cloud-control-plane CVEs (IMDSv1 abuses, federation token mishandling, cross-tenant boundary failures); CISA Cybersecurity Advisories for cross-cloud advisories"
       ],
-      "signature": "kuatqNZoRnv+oeyrxbnk+m37JRBIgRAWnDp0/IYLnoBOybiG09RzLILJraxjhvdSNCgo7WXTeBO3Y6a3Ji9MAA==",
-      "signed_at": "2026-05-13T04:36:44.455Z"
+      "signature": "PyA9IHcGNrCLC0AJW2jF5D5XheA60igeirjHb3IOz/HitBEg3t2g/siP6pAUImx3IUmwp9vh+A6k+KBuyHRgBQ==",
+      "signed_at": "2026-05-13T13:49:35.674Z"
     },
     {
       "name": "container-runtime-security",
@@ -1847,8 +1847,8 @@
       ],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "Btb3/7fjPFopFVdxP7+E6n322gnAAwd7OPrnuqatq6c1rXTD9aXKxiBeCmWxs8zYbIbE/lFoe9R2g6uTp8ZDBg==",
-      "signed_at": "2026-05-13T04:36:44.455Z"
+      "signature": "/RQD2SZghTsrG7qurGb1uabyJ2IL9nmbqd412k8tqZw6nzdvvNFWcYDUGBACEQLbSlJvuaJeQdMHQH5ZzzkNDA==",
+      "signed_at": "2026-05-13T13:49:35.674Z"
     },
     {
       "name": "mlops-security",
@@ -1918,8 +1918,8 @@
         "EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing",
         "MITRE ATLAS v5.2 — track AML.T0010 sub-technique expansion and any new MLOps-pipeline-specific TTPs"
       ],
-      "signature": "TBWnlgdllW7K1F10HCJ7p4dbLeS3lyNWm+7mNNtyZu7jB1V5AauG1P7sb1nLLqwKqeGlHS1F0eh/BNiuAvkABg==",
-      "signed_at": "2026-05-13T04:36:44.455Z"
+      "signature": "BeACZFTsTRZyGuOEc7NPGnGUQ84ZrFbYRsg+yqJxCH7QOM69jYJTnExyAyxXfiJyoytzSffJQNK3h0E48rm0BQ==",
+      "signed_at": "2026-05-13T13:49:35.674Z"
     },
     {
       "name": "incident-response-playbook",
@@ -1980,8 +1980,8 @@
         "IL INCD Incident Response Process v4 (slated for 2026-2027) consolidating AI-incident sub-class",
         "NYDFS 23 NYCRR 500.17 amendments tightening ransom-payment 24h disclosure operationalization"
       ],
-      "signature": "FVAXpD6sIoOLQSPtZSLLsXQnc2o2hRwiFj4xK8zEWJVkUWGqvAWRrngie7O2DRKIbWqjO5h9EevVYSzhwYHCAA==",
-      "signed_at": "2026-05-13T04:36:44.456Z"
+      "signature": "oy63A4wX5g9rYq3wWYGSS9L7wndNaa1+wJPRPtiHMvQ6CNhTzN8kCs9Ur2SkT7U9BKYdfPLni0gGMjoeDbx+AA==",
+      "signed_at": "2026-05-13T13:49:35.675Z"
     },
     {
       "name": "email-security-anti-phishing",
@@ -2033,8 +2033,8 @@
       "cwe_refs": [],
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
-      "signature": "0HDt3Qklee4FQeKoZfwr+8qdq2pVDS0a+c7JxVw1hV/bl8+YTPaPjPTAhQUnbhUCa5cGo7G4MBQ1AifQTMJdDA==",
-      "signed_at": "2026-05-13T04:36:44.456Z"
+      "signature": "EFhMVyQdiLRtYPHsMADrX3aDXyWd/F5sjnGoWtUTeTiIOmrhFMOCHsvpTPotfsLt0u3LgRK5ACgjgeON8PgQAg==",
+      "signed_at": "2026-05-13T13:49:35.675Z"
     },
     {
       "name": "age-gates-child-safety",
@@ -2101,8 +2101,8 @@
         "France SREN (Securing and Regulating the Digital Space) Act 2024 — ARCOM age-verification referential for adult content services; double-anonymity model under deployment",
         "US state adult-site age-verification laws — 19+ states by mid-2026 (TX HB 18 upheld by SCOTUS June 2025 in Free Speech Coalition v. Paxton); track ongoing challenges in remaining states"
       ],
-      "signature": "UyPSKUztZI/daHCRTnAh6ryoKLX4xyjuG+EaNMPRVuCz2gANGl1F/NozDsw7R2koMUwSFoiYTzwqDvo1tpuKAg==",
-      "signed_at": "2026-05-13T04:36:44.456Z"
+      "signature": "MMWvg3lIf5ygm31zyf1E43t3W9MfRbMBBPrqlj1wOa8AxVJL8LICnAXfmyJ/TNJXwpF+rfZeDdoxXkql8wmtBA==",
+      "signed_at": "2026-05-13T13:49:35.675Z"
     }
   ]
 }

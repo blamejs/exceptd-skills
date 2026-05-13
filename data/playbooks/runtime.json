@@ -406,7 +406,7 @@
         {
           "id": "non-baseline-suid",
           "type": "file_path",
-          "value": "Any SUID/SGID binary not in /var/lib/exceptd/suid-baseline.txt AND not in the distro's official SUID list for the running version",
+          "value": "Within the suid-binaries artifact: any SUID/SGID binary not in /var/lib/exceptd/suid-baseline.txt AND not in the distro's official SUID list for the running version",
           "description": "Non-baseline SUID binary. Could be (a) post-install drift, (b) attacker-planted persistence, or (c) third-party install. All three need a finding.",
           "confidence": "high",
           "deterministic": false,
@@ -415,7 +415,7 @@
         {
           "id": "sudoers-nopasswd-wildcard",
           "type": "log_pattern",
-          "value": "sudoers entry matching regex `NOPASSWD:\\s*(ALL|/[^,]*\\*)` for non-root user",
+          "value": "Within the sudo-rules artifact: any sudoers entry matching regex `NOPASSWD:\\s*(ALL|/[^,]*\\*)` for non-root user",
           "description": "Wildcard NOPASSWD entry for a non-root user is an LPE primitive. Indistinguishable on the host from an attacker-planted backdoor.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -424,7 +424,7 @@
         {
           "id": "duplicate-uid-zero",
           "type": "log_pattern",
-          "value": "/etc/passwd contains more than one entry with UID 0",
+          "value": "Within the passwd-shadow-baseline artifact: /etc/passwd contains more than one entry with UID 0",
           "description": "Multiple UID=0 accounts. T1136.001 persistence pattern. Outside legitimate installs.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -433,7 +433,7 @@
         {
           "id": "listening-socket-unknown-bind",
           "type": "network_pattern",
-          "value": "Listening TCP/UDP socket bound to 0.0.0.0 or :: on a port not in the host's documented service inventory",
+          "value": "Within the union of listening-sockets and listening-sockets-udp artifacts: any TCP/UDP socket bound to 0.0.0.0 or :: on a port not in the host's documented service inventory",
           "description": "Unknown external-bound listener. Could be a forgotten test service, a rogue agent, or a C2 listener.",
           "confidence": "high",
           "deterministic": false,
@@ -442,7 +442,7 @@
         {
           "id": "cron-or-timer-outside-policy",
           "type": "file_path",
-          "value": "Cron entry in /etc/cron.{d,hourly,daily,weekly,monthly} OR systemd timer in /etc/systemd/system/ NOT in the org's scheduled-task inventory",
+          "value": "Across the cron-entries, user-cron, systemd-timers, and systemd-services artifacts: any unit / cron entry NOT in the org's scheduled-task inventory (system-wide cron under /etc/cron.{d,hourly,daily,weekly,monthly}, per-user crontab from user-cron, OR systemd .timer / enabled .service in systemd-timers/systemd-services)",
           "description": "Scheduled task not in change-management record. T1053.003 / T1053.006 persistence.",
           "confidence": "high",
           "deterministic": false,
@@ -451,7 +451,7 @@
         {
           "id": "world-writable-in-trusted-path",
           "type": "file_path",
-          "value": "World-writable file under /etc, /usr/local/bin, /usr/local/sbin, /opt",
+          "value": "Within the world-writable-paths artifact: any world-writable file under /etc, /usr/local/bin, /usr/local/sbin, /opt",
           "description": "Hijack-execution-flow primitive. Any non-root process can replace the file.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -460,7 +460,7 @@
         {
           "id": "orphan-privileged-process",
           "type": "process_name",
-          "value": "Process running as UID 0 with PPID 1 AND parent != systemd/init AND executable path under /tmp, /dev/shm, /var/tmp, /home",
+          "value": "Within the process-tree artifact: any process running as UID 0 with PPID 1 AND parent != systemd/init AND executable path under /tmp, /dev/shm, /var/tmp, /home",
           "description": "Privileged orphan in a writable temp path. Common implant shape.",
           "confidence": "deterministic",
           "deterministic": true,

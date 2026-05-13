@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-11",
+    "last_updated": "2026-05-13",
     "d3fend_version": "1.0.0",
     "d3fend_release_date": "2024-06-01",
     "source": "https://d3fend.mitre.org",
@@ -734,5 +734,167 @@
     "ai_pipeline_applicability": "Applies to persistent hosts running MCP servers, AI coding assistants, or AI build agents. For serverless invocations, equivalent is per-invocation runtime telemetry (Lambda extension hooks, Cloud Run service workload identity logs) correlated with the AI-API call graph.",
     "lag_notes": "SI-4 / AU-2 require monitoring but do not require parent-child process-tree analytics. Most enterprise audits accept 'we have EDR' as evidence regardless of whether behavioral rules are tuned. Lag is in operationalization — control existence vs. detection quality.",
     "last_verified": "2026-05-11"
+  },
+  "D3-ANCI": {
+    "id": "D3-ANCI",
+    "name": "Authentication Cache Invalidation",
+    "tactic": "Evict",
+    "subtactic": "Credential Eviction",
+    "description": "Forcibly invalidating cached or active authentication artifacts (tokens, session IDs, cached Kerberos tickets, browser SSO cookies) so that a compromised credential cannot be reused after detection. Distinct from credential rotation in that it acts on the live session state, not just the stored material.",
+    "counters_attack_techniques": ["T1078", "T1550", "T1539", "AML.T0055"],
+    "digital_artifacts_addressed": ["Authentication Session", "Access Token", "Browser Session", "Kerberos Ticket"],
+    "skills_referencing": ["cred-stores", "identity-assurance", "incident-response-playbook"],
+    "implementation_examples": [
+      "OAuth refresh-token revocation on detected credential compromise",
+      "klist purge + ticket-granting-service revocation on suspicious Kerberos use",
+      "Browser-side single-sign-on cookie invalidation pushed via IDP signal",
+      "Service-account JWT issuer kid-rotation followed by global verifier refresh"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-IA-5(1)", "NIST-800-53-AC-12", "ISO-27001-2022-A.5.18"],
+    "ai_pipeline_applicability": "Applies to AI assistant identities (MCP server tokens, model-provider API keys). For ephemeral AI agents the cache invalidation is per-invocation; for long-lived AI sessions (assistant subscriptions), provider must expose a revoke API the operator can call.",
+    "lag_notes": "AC-12 (session termination) speaks to user sessions; service-to-service token invalidation under credential compromise is rarely audited. Operationalization gap: most orgs lack the integration to actively invalidate on detection.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-CAA": {
+    "id": "D3-CAA",
+    "name": "Credential Access Auditing",
+    "tactic": "Detect",
+    "subtactic": "Credential Activity Analysis",
+    "description": "Recording and analyzing every access to credential stores (cloud secret managers, password vaults, KMS, environment-variable reads on privileged processes) to detect anomalous read patterns indicating credential theft or misuse.",
+    "counters_attack_techniques": ["T1555", "T1552", "T1078", "AML.T0055"],
+    "digital_artifacts_addressed": ["Credential Store Access Log", "Process Environment Variable Access"],
+    "skills_referencing": ["cred-stores", "secrets", "dlp-gap-analysis"],
+    "implementation_examples": [
+      "AWS Secrets Manager + CloudTrail GetSecretValue audit with anomaly baseline per principal",
+      "HashiCorp Vault audit log forwarded to SIEM with per-policy read-rate alerting",
+      "Linux audit on /proc/<pid>/environ reads outside the owning process",
+      "GitHub Actions secret-access audit + repository-event correlation"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-AU-2", "NIST-800-53-AU-12", "ISO-27001-2022-A.8.15"],
+    "ai_pipeline_applicability": "Applies wherever AI agents fetch credentials at runtime (MCP server bootstrap, fine-tuning job startup). Serverless equivalent: cloud-provider native secret-fetch audit (Secrets Manager VPC endpoint logs, GCP Secret Manager IAM audit logs).",
+    "lag_notes": "AU-2 prescribes audit event categories; framework controls do not require per-secret access baselining. Compliance audits accept 'logging is enabled' without requiring detection rules on read anomalies.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-CH": {
+    "id": "D3-CH",
+    "name": "Credential Hardening",
+    "tactic": "Harden",
+    "subtactic": "Credential Hardening",
+    "description": "Increasing the cryptographic and operational strength of credentials at rest and in transit — memory-hard password hashing, hardware-backed key storage, short credential lifetime, mandatory MFA on high-impact identities.",
+    "counters_attack_techniques": ["T1110", "T1555", "T1552"],
+    "digital_artifacts_addressed": ["Password Hash", "Private Key", "API Token", "Session Token"],
+    "skills_referencing": ["crypto-codebase", "identity-assurance", "cred-stores"],
+    "implementation_examples": [
+      "Argon2id password hashing with tuned m/t/p",
+      "TPM/HSM-backed private keys (Windows Hello for Business, Apple Secure Enclave, AWS CloudHSM)",
+      "Short-lived OIDC tokens with mandatory refresh-token rotation",
+      "WebAuthn/passkey adoption replacing password authentication"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-IA-5", "NIST-800-53-SC-12", "NIST-SP-800-63B"],
+    "ai_pipeline_applicability": "Applies to credentials issued to AI agents — model-provider keys should be short-lived and rotated; MCP server tokens should use mTLS or signed JWTs rather than long-lived bearer secrets.",
+    "lag_notes": "IA-5 covers authenticator strength categorically; framework audit rarely samples the actual KDF in use. SP 800-63B's 2022 iteration-count update (PBKDF2 ≥ 600,000) lags in many compliance attestations citing the 2017 numbers.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-EI": {
+    "id": "D3-EI",
+    "name": "Execution Isolation",
+    "tactic": "Isolate",
+    "subtactic": "Execution Isolation",
+    "description": "Constraining a process so that even successful exploitation cannot reach resources outside the isolation boundary — containers with read-only rootfs, sandboxed renderers, seccomp-restricted syscall sets, namespace-isolated workers, gVisor / Firecracker microVMs.",
+    "counters_attack_techniques": ["T1611", "T1068", "T1055", "T1106"],
+    "digital_artifacts_addressed": ["Process", "Container", "Sandbox", "Namespace"],
+    "skills_referencing": ["container-runtime-security", "hardening"],
+    "implementation_examples": [
+      "Read-only container rootfs + tmpfs for ephemeral state",
+      "seccomp-bpf default-deny syscall profiles per workload",
+      "gVisor (runsc) for untrusted-tenant workloads",
+      "Firecracker microVMs for multi-tenant SaaS execution",
+      "Linux user namespaces dropping CAP_SYS_ADMIN at process start"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-SC-39", "NIST-800-53-AC-4", "ISO-27001-2022-A.8.22"],
+    "ai_pipeline_applicability": "Critical for AI agent execution: untrusted-code-execution tools (interpreter, code-runner MCP servers) must run in a microVM or gVisor sandbox, not in the host AI's process. Serverless platforms provide this implicitly (Lambda firecracker, Cloud Run gVisor).",
+    "lag_notes": "SC-39 covers process isolation conceptually; framework controls do not specify required isolation primitives. 'Containers' alone do not satisfy isolation without read-only rootfs + seccomp + capability dropping — controls rarely audit which container hardening is actually enforced.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-FCR": {
+    "id": "D3-FCR",
+    "name": "File Content Rules",
+    "tactic": "Detect",
+    "subtactic": "File Analysis",
+    "description": "Inspecting file contents against rule sets (YARA, Sigma, custom regex, ML classifier) to detect malicious patterns, embedded secrets, or unauthorized content classes at rest or at egress.",
+    "counters_attack_techniques": ["T1552.001", "T1552.004", "T1567", "AML.T0055"],
+    "digital_artifacts_addressed": ["File Content", "Source Code", "Configuration File"],
+    "skills_referencing": ["secrets", "dlp-gap-analysis", "cred-stores"],
+    "implementation_examples": [
+      "gitleaks / trufflehog pre-commit and CI-time secret scanning",
+      "YARA rules on uploaded files at SaaS file-upload boundaries",
+      "DLP content-classification on outbound email + cloud-storage uploads",
+      "AI prompt-content classification before egress to public LLM endpoints"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-SI-3", "NIST-800-53-SI-4", "ISO-27001-2022-A.8.12"],
+    "ai_pipeline_applicability": "Critical for AI exfil prevention: prompt content rules block sending sensitive data to public AI endpoints; retrieval-corpus content rules block injection of attacker-controlled documents. For RAG: per-document content classification at ingest.",
+    "lag_notes": "SI-3 / SI-4 cover monitoring categorically; rule-set freshness and tuning are operational concerns rarely audited. DLP frameworks lag in covering AI prompts as an egress channel.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-KBPI": {
+    "id": "D3-KBPI",
+    "name": "Kernel-Based Process Isolation",
+    "tactic": "Isolate",
+    "subtactic": "Execution Isolation",
+    "description": "Using kernel primitives (namespaces, cgroups, seccomp, capabilities, LSMs, eBPF) to enforce isolation boundaries between processes that share the same kernel. Distinct from D3-EI in that the isolation is enforced inside a shared kernel rather than across a hypervisor or microVM boundary.",
+    "counters_attack_techniques": ["T1055", "T1068", "T1611"],
+    "digital_artifacts_addressed": ["Process", "Namespace", "cgroup", "LSM Profile"],
+    "skills_referencing": ["kernel-lpe-triage", "hardening", "container-runtime-security"],
+    "implementation_examples": [
+      "SELinux / AppArmor confinement profiles per workload",
+      "Linux user namespaces + capability dropping (CAP_SYS_ADMIN removed)",
+      "Landlock for application-level filesystem restriction",
+      "eBPF LSM hooks for fine-grained policy enforcement",
+      "systemd hardening directives (ProtectSystem=strict, RestrictSUIDSGID, NoNewPrivileges)"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-SC-39", "NIST-800-53-AC-6"],
+    "ai_pipeline_applicability": "Less applicable on managed serverless (no kernel-tuning surface). Critical on self-managed hosts running MCP servers, AI build agents, training pipelines. Containerized AI runtimes still rely on kernel isolation primitives — a kernel LPE escapes the container.",
+    "lag_notes": "SC-39 process isolation is named but not parameterized; framework controls accept 'containers are used' as evidence without auditing the kernel-level confinement layer. KASLR + SMEP + SMAP + KPTI presence is implicit not explicit in any framework control.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-SCA": {
+    "id": "D3-SCA",
+    "name": "System Call Analysis",
+    "tactic": "Detect",
+    "subtactic": "Process Analysis",
+    "description": "Recording and analyzing system calls made by processes to detect malicious behavior — unusual syscall patterns, attempts to disable security mechanisms, kernel exploitation primitives (e.g. unshare(2), ptrace(2) on unrelated PIDs, bpf(2) on unprivileged contexts).",
+    "counters_attack_techniques": ["T1055", "T1068", "T1562", "T1106"],
+    "digital_artifacts_addressed": ["System Call", "Process Behavior"],
+    "skills_referencing": ["runtime", "kernel-lpe-triage"],
+    "implementation_examples": [
+      "Linux auditd with syscall rules (ausearch -k privesc)",
+      "Falco runtime rules on suspicious syscall sequences",
+      "eBPF-based tools (tetragon, tracee) for kernel-level visibility",
+      "Sysdig / inspector for container-syscall-anomaly detection"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-SI-4", "NIST-800-53-AU-2", "ISO-27001-2022-A.8.16"],
+    "ai_pipeline_applicability": "Self-managed AI hosts: standard syscall monitoring applies. Serverless: equivalent is provider-side runtime telemetry (Lambda runtime API, GVisor sentry events). MCP server hosts especially: malicious MCP plugins often hit suspicious syscalls (ptrace, bpf, unshare).",
+    "lag_notes": "SI-4 prescribes monitoring at the system level abstractly; specific syscall analytics (which calls, which thresholds, which response) are deployment-team choices that framework audits do not sample.",
+    "last_verified": "2026-05-13"
+  },
+  "D3-SFA": {
+    "id": "D3-SFA",
+    "name": "System File Analysis",
+    "tactic": "Detect",
+    "subtactic": "File Analysis",
+    "description": "Monitoring critical system files (auth databases, audit configurations, init scripts, boot loaders, sudoers, SSH authorized_keys) for unauthorized modification — file integrity monitoring with cryptographic baselines and immutable-write enforcement.",
+    "counters_attack_techniques": ["T1543", "T1547", "T1098", "T1562.001"],
+    "digital_artifacts_addressed": ["System File", "Configuration File", "File Hash"],
+    "skills_referencing": ["runtime", "hardening", "incident-response-playbook"],
+    "implementation_examples": [
+      "AIDE / Tripwire / OSSEC file-integrity baselines on /etc, /usr/bin, /sbin",
+      "Auditd watch rules on /etc/passwd, /etc/shadow, /etc/sudoers, ~/.ssh/authorized_keys",
+      "Linux IMA-EVM measured boot extending into runtime FIM",
+      "AWS Config rules monitoring IAM policy file analogs (managed-policy versions)"
+    ],
+    "framework_controls_partially_mapped": ["NIST-800-53-SI-7", "NIST-800-53-AU-2", "ISO-27001-2022-A.8.13"],
+    "ai_pipeline_applicability": "Self-managed AI hosts: standard FIM applies to MCP server configs, ~/.claude, ~/.cursor settings. Serverless: equivalent is image-immutability + read-only rootfs (modifications outside writable tmpfs are structurally impossible).",
+    "lag_notes": "SI-7 covers software/firmware integrity; user-space configuration FIM is implicit not explicit. Framework audits accept 'FIM is deployed' without sampling whether the rule set covers AI-assistant config paths that have become high-value targets.",
+    "last_verified": "2026-05-13"
   }
 }

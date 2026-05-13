@@ -1,0 +1,5 @@
+{
+  "frameworks_mapped": ["NIST-800-53"],
+  "jurisdictions_active": ["EU-IE", "UK", "AU"],
+  "missing_bindings_acknowledged": false
+}

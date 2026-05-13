@@ -1,0 +1,7 @@
+[tool.poetry]
+name = "example-auth"
+version = "0.3.0"
+description = "Example auth library staged for the crypto-codebase e2e scenario."
+
+[tool.poetry.dependencies]
+python = "^3.12"

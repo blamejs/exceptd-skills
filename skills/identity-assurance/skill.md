@@ -38,6 +38,9 @@ framework_gaps:
   - ISO-27001-2022-A.8.30
   - SOC2-CC6-logical-access
   - PSD2-RTS-SCA
+  - NIS2-Art21-incident-handling
+  - UK-CAF-B2
+  - AU-Essential-8-MFA
 rfc_refs:
   - RFC-7519
   - RFC-8725
@@ -52,7 +55,9 @@ cwe_refs:
   - CWE-798
   - CWE-862
   - CWE-863
-d3fend_refs: []
+d3fend_refs:
+  - D3-MFA
+  - D3-CSPP
 last_threat_review: "2026-05-11"
 ---
 

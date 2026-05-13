@@ -1,0 +1,19 @@
+{
+  "precondition_checks": {
+    "linux-platform": true,
+    "uname-available": true
+  },
+  "observations": {
+    "kernel-release": {"captured": true, "value": "6.11.4-generic", "indicator": "kver-in-affected-range", "result": "hit"},
+    "kernel-full": {"captured": true, "value": "Linux version 6.11.4-generic (builder@build-host) #1 SMP PREEMPT_DYNAMIC Mon Mar 17 12:00:00 UTC 2026"},
+    "os-release": {"captured": true, "value": "Ubuntu 24.04.2 LTS"},
+    "livepatch-state": {"captured": true, "value": "canonical-livepatch status: kernel-version 6.11.4-generic fixes: [] — CVE-2026-31431 not listed", "indicator": "livepatch-active", "result": "miss"},
+    "kernel-modules": {"captured": true, "value": "no rxrpc / esp modules loaded"},
+    "sysctl-hardening": {"captured": true, "value": "kernel.unprivileged_userns_clone=1", "indicator": "unpriv-userns-enabled", "result": "hit"},
+    "cpu-vulnerabilities": {"captured": true, "value": "Mitigations enabled"}
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 5
+  }
+}

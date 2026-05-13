@@ -1,0 +1,20 @@
+{
+  "precondition_checks": {
+    "upstream-findings-available": true
+  },
+  "observations": {
+    "upstream-findings": {"captured": true, "value": "1 prior run — kernel playbook, classification=detected, rwep_adjusted=82, matched CVE-2026-31431, framework_lag declared for NIST-800-53-SI-2"},
+    "audit-evidence-inventory": {"captured": true, "value": "ISO 27001:2022 unqualified opinion dated 2026-03-01; kernel finding remains unremediated as of 2026-05-13", "indicator": "audit-clean-with-active-finding", "result": "hit"},
+    "compensating-controls-register": {"captured": true, "value": "register has no entry for NIST-800-53-SI-2 patch SLA lag; one exception entry 'kernel-patch-deferral' has no calendar expiry and no named owner", "indicator": "exception-missing-expiry-or-owner", "result": "hit"},
+    "framework-mapping-matrix": {"captured": true, "value": "matrix lists NIST-800-53 only; no NIS2, DORA, CAF, ISO 27001 rows", "indicator": "mapping-without-tempo", "result": "hit"},
+    "jurisdictional-footprint": {"captured": true, "value": "operating entities in EU (Ireland), UK, AU; framework mapping lacks NIS2 / CAF / Essential 8 bindings", "indicator": "jurisdiction-without-framework", "result": "hit"},
+    "ai-usage-attestation": {"captured": true, "value": "AI coding assistants in production developer workflow; no MCP trust controls operational", "indicator": "ai-use-without-ai-controls", "result": "hit"}
+  },
+  "signal_overrides": {
+    "framework-lag-no-compensating-control": "hit"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 5
+  }
+}

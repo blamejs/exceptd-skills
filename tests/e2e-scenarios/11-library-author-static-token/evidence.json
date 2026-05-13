@@ -1,0 +1,30 @@
+{
+  "observations": {
+    "release-workflows": {"captured": true, "value": ".github/workflows/publish.yml uses NODE_AUTH_TOKEN=${{ secrets.NPM_TOKEN }}; no id-token: write permission declared", "indicator": "publish-workflow-uses-static-token", "result": "hit"},
+    "package-manifest": {"captured": true, "value": "package.json present, no publishConfig.provenance: true"},
+    "lockfiles": {"captured": true, "value": "package-lock.json present"},
+    "security-md": {"captured": true, "value": "SECURITY.md absent", "indicator": "no-security-md", "result": "hit"},
+    "security-txt": {"captured": true, "value": "/.well-known/security.txt absent"},
+    "signing-key-material": {"captured": true, "value": "no signing keys committed"},
+    "intoto-attestations": {"captured": true, "value": "no in-toto attestations"},
+    "sbom-artifacts": {"captured": true, "value": "no SBOM artifact"},
+    "vex-feed": {"captured": true, "value": "no VEX feed"},
+    "vendored-code": {"captured": true, "value": "no vendored code"},
+    "release-history": {"captured": true, "value": "8 releases"},
+    "branch-tag-protection": {"captured": true, "value": "no tag protection rules"},
+    "repo-secrets": {"captured": true, "value": "NPM_TOKEN, RELEASE_KEY at repo scope"},
+    "release-checklist": {"captured": true, "value": "no formal checklist"},
+    "changelog": {"captured": true, "value": "CHANGELOG.md present"},
+    "github-security-advisories": {"captured": true, "value": "no advisories"},
+    "skill-signing-infrastructure": {"captured": true, "value": "n/a"},
+    "registry-publisher-config": {"captured": true, "value": "npm registry, single publisher"}
+  },
+  "signal_overrides": {
+    "publish-workflow-no-id-token-write": "hit",
+    "package-json-provenance-missing": "hit"
+  },
+  "verdict": {
+    "classification": "detected",
+    "blast_radius": 4
+  }
+}

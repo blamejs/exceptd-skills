@@ -1,0 +1,7 @@
+{
+  "name": "14-framework-jurisdiction-gap",
+  "description": "Stages an org operating in EU + UK jurisdictions whose framework-mapping matrix references only NIST-800-53 and an upstream kernel finding with rwep>=75 that has no compensating control. framework playbook must classify detected via jurisdiction-without-framework + framework-lag-no-compensating-control + exception-missing-expiry-or-owner.",
+  "verb": "run",
+  "args": ["framework", "--evidence", "evidence.json", "--session-id", "e2e-14", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

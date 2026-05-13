@@ -36,6 +36,9 @@ framework_gaps:
   - OWASP-LLM-Top-10-2025-LLM01
   - NIST-800-218-SSDF
   - ISO-27001-2022-A.8.28
+  - NIS2-Art21-incident-handling
+  - UK-CAF-B2
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8446
   - RFC-9114

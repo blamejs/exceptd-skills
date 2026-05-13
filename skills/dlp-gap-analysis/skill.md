@@ -41,6 +41,9 @@ framework_gaps:
   - HIPAA-Security-Rule-164.312(a)(1)
   - SOC2-CC7-anomaly-detection
   - NIST-800-53-SC-28
+  - NIS2-Art21-incident-handling
+  - UK-CAF-C1
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8446
   - RFC-9458

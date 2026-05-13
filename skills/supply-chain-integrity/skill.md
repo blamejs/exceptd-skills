@@ -42,6 +42,9 @@ framework_gaps:
   - SWIFT-CSCF-v2026-1.1
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
+  - NIS2-Art21-incident-handling
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-8032
 forward_watch:

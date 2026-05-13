@@ -25,6 +25,9 @@ framework_gaps:
   - NIST-800-53-SI-12
   - NIST-AI-RMF-MEASURE-2.5
   - OWASP-LLM-Top-10-2025-LLM08
+  - EU-AI-Act-Art-15
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 cwe_refs:
   - CWE-1395
   - CWE-1426

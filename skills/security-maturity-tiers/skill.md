@@ -73,7 +73,7 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
    uname -r
    # Cross-reference against patched versions for your distro
    # RHEL: kernel >= 4.18.0-553.xx = patched
-   # Ubuntu 22.04: linux-image-5.15.0-xxx (check latest USN)
+   # Ubuntu 22.04: linux-image-5.15.0-<patch-revision> (check latest USN)
    ```
 
 2. **Deploy live kernel patches on exposed systems** (same day)
@@ -370,6 +370,24 @@ Year 1+:  Tier 3 — by domain, starting with highest-sensitivity data
 ### What to Skip (and Why)
 [If any Tier 3 items are inappropriate for this environment: say so explicitly]
 ```
+
+---
+
+## Compliance Theater Check
+
+Apply this check to every maturity-tier engagement before recommending a roadmap:
+
+> "Your security program currently sits at Tier <N> by self-assessment for domain <D>. The compliance framework you cite (e.g. NIST CSF 2.0 / ISO 27001:2022 / NIS2 Art. 21 / UK-CAF / AU Essential 8) classifies your posture as <attested-tier>. If the threats now in scope for this domain (specific CVE / TTP from `data/cve-catalog.json` and `data/atlas-ttps.json`) include a class where the framework control is structurally insufficient (Hard Rule #2 framework-lag), then your attested tier and your operational tier diverge by exactly that gap. Which of the controls you would cite for your attested tier would survive a primary-source IoC test against the highest-RWEP CVE in scope?"
+
+**Theater fingerprints for tier conflation:**
+
+- The org has Tier 3 controls in one domain (e.g. SIEM with hundreds of alerts) but Tier 1 gaps in an adjacent domain (e.g. no kernel-LPE patch SLA on the SIEM host). The Tier 3 alert never fires because the underlying integrity is missing.
+- "Mature" is asserted on the basis of tool ownership, not behavior — HSMs purchased, never operationally rotated; ZTA architecture documented, default-allow policies in force; PQC algorithms in code, no key-rotation playbook.
+- The maturity model used is the org's own framework-attestation tier, not the lived operational tier — the audit report says Tier 3, the on-call says "what's that runbook again."
+- Tier-3 controls audited annually, Tier-1 controls (patching, MFA on privileged identities, secrets in git) never re-audited because they "passed once."
+- The roadmap promotes the org from Tier 1 to Tier 3 in a single budget cycle, skipping the Tier 2 operational work that converts point-in-time controls into continuous ones.
+
+**Real requirement:** maturity assessed per domain, not org-wide; the assessed tier matches operational behavior (not the audit attestation); promotion happens domain-by-domain with explicit Tier-2 instrumentation between Tier-1 controls and Tier-3 sophistication; the same CVE-anchored primary-source IoC test (Hard Rule #14) applies at every tier — if a Tier-3 control cannot defend against the published PoC of the highest-RWEP CVE in scope, the tier classification is theater.
 
 ---
 

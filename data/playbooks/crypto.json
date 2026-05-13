@@ -442,7 +442,7 @@
         {
           "id": "ml-kem-absent",
           "type": "log_pattern",
-          "value": "openssl list -kem-algorithms does NOT contain ML-KEM-768 (or ML-KEM-512 / ML-KEM-1024)",
+          "value": "Within the openssl-kem-algorithms artifact: `openssl list -kem-algorithms` output does NOT contain ML-KEM-768 (or ML-KEM-512 / ML-KEM-1024); cross-reference openssl-providers artifact — if no oqsprovider / pqc provider is loaded the KEM absence is library-wide not provider-conditional",
           "description": "Primary detector — TLS library cannot negotiate ML-KEM. Entire stack is classical-only.",
           "confidence": "deterministic",
           "deterministic": true
@@ -450,7 +450,7 @@
         {
           "id": "ml-dsa-slh-dsa-absent",
           "type": "log_pattern",
-          "value": "openssl list -signature-algorithms does NOT contain ML-DSA-44/65/87 AND does NOT contain SLH-DSA-*",
+          "value": "Within the openssl-kem-algorithms artifact (its `openssl list -signature-algorithms` half): output does NOT contain ML-DSA-44/65/87 AND does NOT contain SLH-DSA-*",
           "description": "TLS library cannot use PQC signatures. Certificate-chain PQC migration is blocked.",
           "confidence": "deterministic",
           "deterministic": true
@@ -458,7 +458,7 @@
         {
           "id": "openssl-pre-3-5",
           "type": "log_pattern",
-          "value": "openssl version starts with 'OpenSSL 1.', 'OpenSSL 2.', 'OpenSSL 3.0', 'OpenSSL 3.1', 'OpenSSL 3.2', 'OpenSSL 3.3', or 'OpenSSL 3.4'",
+          "value": "Within the openssl-version artifact: output starts with 'OpenSSL 1.', 'OpenSSL 2.', 'OpenSSL 3.0', 'OpenSSL 3.1', 'OpenSSL 3.2', 'OpenSSL 3.3', or 'OpenSSL 3.4'; cross-check libssl-libraries artifact to detect coexisting older libcrypto.so loaded via LD_LIBRARY_PATH or vendored builds (LibreSSL, BoringSSL, vendored OpenSSL under /usr/local/lib)",
           "description": "Pre-3.5 OpenSSL lacks native ML-KEM. Requires oqsprovider or upgrade.",
           "confidence": "deterministic",
           "deterministic": true
@@ -466,7 +466,7 @@
         {
           "id": "sshd-no-pqc-kex",
           "type": "log_pattern",
-          "value": "sshd -T effective KexAlgorithms does NOT contain sntrup761x25519-sha512@openssh.com AND does NOT contain mlkem768x25519-sha256",
+          "value": "Within the sshd-config-effective artifact: KexAlgorithms does NOT contain sntrup761x25519-sha512@openssh.com AND does NOT contain mlkem768x25519-sha256; cross-check ssh-version artifact — OpenSSH 9.0+ supports sntrup761 hybrid, so an older ssh-version reading explains why even an updated sshd-config-effective would lack it",
           "description": "SSH daemon cannot negotiate PQC hybrid KEX. All SSH session keys HNDL-recordable.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -475,7 +475,7 @@
         {
           "id": "tls-no-hybrid-group",
           "type": "network_pattern",
-          "value": "openssl s_client -groups X25519MLKEM768 fails to negotiate (server returns 'no shared group' or downgrades to X25519)",
+          "value": "Within the tls-server-handshake artifact: `openssl s_client -groups X25519MLKEM768` against each locally-terminated TLS port fails to negotiate (server returns 'no shared group' or downgrades to X25519)",
           "description": "Local TLS service cannot negotiate hybrid PQC group. HNDL-recordable handshake.",
           "confidence": "high",
           "deterministic": false,
@@ -484,7 +484,7 @@
         {
           "id": "rsa-2048-cert-long-life",
           "type": "file_path",
-          "value": "Any cert in trust chain or as host cert uses RSA <= 2048 AND validity period > 10 years (or signs long-retention data)",
+          "value": "Across the certificate-store and host-cert-keys artifacts: any cert in the trust chain or serving as a TLS host cert uses RSA <= 2048 AND validity period > 10 years (or signs long-retention data)",
           "description": "Classical RSA cert with sensitivity horizon exceeding CRQC estimate.",
           "confidence": "deterministic",
           "deterministic": true
@@ -492,7 +492,7 @@
         {
           "id": "weak-mac-or-cipher",
           "type": "log_pattern",
-          "value": "sshd MACs contain hmac-sha1, hmac-md5, or *-cbc, OR sshd Ciphers contain 3des-cbc / aes*-cbc / arcfour*",
+          "value": "Within the sshd-config-effective artifact: MACs contain hmac-sha1, hmac-md5, or *-cbc, OR Ciphers contain 3des-cbc / aes*-cbc / arcfour*",
           "description": "Weak symmetric or MAC algorithms accepted by sshd.",
           "confidence": "deterministic",
           "deterministic": true
@@ -500,7 +500,7 @@
         {
           "id": "no-crypto-inventory",
           "type": "behavioral_signal",
-          "value": "No /etc/crypto-inventory, no centralized PQC migration tracker, no per-asset cryptography mapping",
+          "value": "The crypto-policy artifact returns empty / no /etc/crypto-policies/config, no /etc/crypto-inventory, no /etc/ssl/openssl.cnf-derived organisation-level policy, no centralized PQC migration tracker, no per-asset cryptography mapping",
           "description": "NIS2 Art.21(2)(h) requires cryptographic asset inventory. Absence is itself a finding.",
           "confidence": "high",
           "deterministic": false

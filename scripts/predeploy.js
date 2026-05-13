@@ -118,7 +118,7 @@ const GATES = [
   {
     name: "SBOM currency check (sbom.cdx.json vs. live surface)",
     command: process.execPath,
-    args: ["-e", sbomCurrencyChecker()],
+    args: [path.join(ROOT, "scripts", "check-sbom-currency.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
@@ -151,36 +151,22 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
     requiresKeys: true,
   },
+  {
+    // v0.12.8 — AGENTS.md hard rule #15 (e2e no-MVP). Every diff that
+    // touches a CLI verb, CLI flag, lib/orchestrator/scripts export,
+    // playbook indicator, or CVE iocs field must land with a covering
+    // test reference in the same PR. The analyzer parses git diff against
+    // origin/main, classifies each change shape, and fails if a covered
+    // surface lacks a test literal anywhere under tests/. Run with
+    // --warn-only during the v0.12.8 → v0.12.9 rollout window so the gate
+    // surfaces gaps without blocking; flip to blocking after one release
+    // cycle.
+    name: "Diff coverage (feature changes require test coverage)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-test-coverage.js"), "--warn-only"],
+    ciJobName: "Diff coverage",
+  },
 ];
-
-/* Inline checker, run as `node -e`, so the predeploy gate stays one
- * file and the SBOM regen logic stays in scripts/refresh-sbom.js
- * (single source of truth). Compares the persisted sbom.cdx.json
- * against the live skill_count + catalog_count derived from
- * manifest.json + data/. Exits nonzero on drift, with a hint to run
- * `npm run refresh-sbom`. */
-function sbomCurrencyChecker() {
-  return [
-    "const fs=require('fs');const path=require('path');",
-    "const root=" + JSON.stringify(ROOT) + ";",
-    "const sbomPath=path.join(root,'sbom.cdx.json');",
-    "if(!fs.existsSync(sbomPath)){console.error('sbom.cdx.json not found — run `npm run refresh-sbom`.');process.exit(1);}",
-    "const sbom=JSON.parse(fs.readFileSync(sbomPath,'utf8'));",
-    "const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));",
-    "const dataDir=path.join(root,'data');",
-    "const liveCatalogs=fs.readdirSync(dataDir).filter(f=>f.endsWith('.json')).length;",
-    "const liveSkills=Array.isArray(manifest.skills)?manifest.skills.length:0;",
-    "const props=Object.fromEntries((sbom.metadata&&sbom.metadata.properties||[]).map(p=>[p.name,p.value]));",
-    "const sbomCatalogs=Number(props['exceptd:catalog:count']);",
-    "const sbomSkills=Number(props['exceptd:skill:count']);",
-    "let drift=false;",
-    "if(sbomCatalogs!==liveCatalogs){console.error(`SBOM catalog count ${sbomCatalogs} != live ${liveCatalogs}`);drift=true;}",
-    "if(sbomSkills!==liveSkills){console.error(`SBOM skill count ${sbomSkills} != live ${liveSkills}`);drift=true;}",
-    "if(sbom.bomFormat!=='CycloneDX'||sbom.specVersion!=='1.6'){console.error('SBOM is not CycloneDX 1.6');drift=true;}",
-    "if(drift){console.error('Run `npm run refresh-sbom` to regenerate sbom.cdx.json.');process.exit(1);}",
-    "console.log(`SBOM current — ${sbomSkills} skills, ${sbomCatalogs} catalogs.`);",
-  ].join("");
-}
 
 function runGate(gate) {
   if (gate.requiresKeys) {

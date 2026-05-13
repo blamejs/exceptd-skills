@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.12.8 — 2026-05-13
+
+**Patch: comprehensive audit pass — CLI surface fixes, catalog completeness, test infrastructure hardening, AGENTS.md Hard Rule #15.**
+
+### Hard Rule #15 — Test coverage on every diff
+
+`AGENTS.md` adds a fifteenth hard rule: every CLI verb, CLI flag, `module.exports` identifier, playbook `phases.detect.indicators[].id`, or CVE `iocs` field change must land with a covering test reference in the same PR. Enforcement lives in `scripts/check-test-coverage.js`, wired as the 15th `npm run predeploy` gate and the `Diff coverage` job in `ci.yml`. Ships `--warn-only` for one release cycle then flips blocking in v0.12.9. Docs, workflow YAML, and skill body changes are allowlisted; whitespace-only diffs are ignored.
+
+### CLI surface — exit-code, dispatcher, and ingest
+
+`run --ci`, `run --all`, and `ai-run --stream` previously called `process.exit(N)` immediately after `emit()` writes to stdout — the v0.11.10 #100 truncation class. All three sites now use `process.exitCode = N; return;` so buffered async stdout fully drains before the event loop ends. The `ai-run` streaming handler additionally pauses stdin on completion so further callbacks cannot re-enter after the final frame.
+
+The deprecation banner for legacy verbs now fires for every alias in `LEGACY_VERB_REPLACEMENTS`, not just the subset routed through `PLAYBOOK_VERBS`. Operators running `scan`, `dispatch`, `currency`, `verify`, `validate-cves`, `validate-rfcs`, `watchlist`, `prefetch`, or `build-indexes` now see the same one-time banner pointing at the v0.11.0 replacement that `plan`, `govern`, `direct`, `look`, `ingest`, `reattest`, and `list-attestations` already surfaced.
+
+`ingest` previously wrote its attestation via an inline `writeFileSync` that bypassed both the session-id collision refusal and the Ed25519 sidecar signing layer that `run` and `run --all` go through. Two `ingest` invocations with the same `--session-id` would silently clobber the audit trail and no `.sig` ever landed. Routed through `persistAttestation()` now — collision refusal and `maybeSignAttestation()` both apply.
+
+Per-verb `--help` text expanded to cover surface that shipped undocumented: `ci --required <ids>`, `ci --max-rwep`, `ci --block-on-jurisdiction-clock`, `ci --evidence-dir`, `ci --format`, plus the full four-line exit-code matrix (0 PASS / 1 framework error / 2 detected / 3 ran-but-no-evidence / 4 blocked). `attest list` and `attest diff` subverbs added to the `attest --help` enumeration. `run --upstream-check`, `--strict-preconditions`, `--session-key`, `--air-gap`, `--force-overwrite` documented in the `run` block. `doctor --registry-check` and `doctor --fix` documented in the `doctor` block. `brief`, `lint`, `run-all`, `verify-attestation` gain per-verb help entries.
+
+### Catalog completeness — 47 new entries close cross-catalog dangling refs
+
+Six ATLAS TTPs added to `data/atlas-ttps.json`: T0024 (Exfiltration via ML Inference API), T0044 (Full ML Model Access), T0048 (Erode ML Model Integrity), T0053 (LLM Plugin Compromise), T0055 (Unsecured Credentials), T0057 (LLM Data Leakage). All previously referenced by `data/cve-catalog.json` (CVE-2026-45321) and `data/dlp-controls.json` without a catalog entry.
+
+Seventeen CWE entries added to `data/cwe-catalog.json`: CWE-250, 256, 284, 310, 312, 326, 328, 329, 330, 331, 338, 353, 426, 522, 759, 760, 916. All previously referenced by playbook `domain.cwe_refs` across `containers`, `cred-stores`, `crypto`, `crypto-codebase`, `ai-api`, `secrets`, `hardening`, `runtime`, and `library-author` without a catalog entry.
+
+Eight D3FEND entries added to `data/d3fend-catalog.json`: D3-ANCI, D3-CAA, D3-CH, D3-EI, D3-FCR, D3-KBPI, D3-SCA, D3-SFA. All previously referenced by playbook `domain.d3fend_refs` without a catalog entry.
+
+Ten framework-control-gap entries added to `data/framework-control-gaps.json`: NIS2-Art21-incident-handling, EU-AI-Act-Art-15, UK-CAF-A1/B2/C1/D1, AU-Essential-8-MFA/App-Hardening/Patch/Backup. Closes the Hard Rule #5 (global-first) gap for 23 skills that previously declared US-anchored `framework_gaps` only.
+
+Twelve standards entries added to `data/rfc-references.json`: RFC-7489 (DMARC), RFC-6376 (DKIM), RFC-7208 (SPF), RFC-8616 (IDN email auth), RFC-8461 (MTA-STS), ISO-29147 + ISO-30111 (vulnerability disclosure + handling), RFC-9116 (security.txt), CSAF-2.0, RFC-6545 (RID), RFC-6546 (RID transport), RFC-7970 (IODEF v2). Schema (`lib/schemas/skill-frontmatter.schema.json`) + validator (`tests/rfc-refs.test.js`) extended to accept the broader standards-key shape (`RFC-`, `DRAFT-`, `ISO-`, `CSAF-`) alongside RFC numbers.
+
+### Playbook integrity — orphan close + indicator wiring
+
+`library-author.json` `_meta.feeds_into` removed a dangling `compliance-theater` entry (no such playbook file exists); the remaining `framework` entry handles the same condition. `mcp.json` `domain.cve_refs` now lists CVE-2025-53773 alongside CVE-2026-30615 and CVE-2026-45321 — closes the Hard Rule #4 gap where the existing `copilot-yolo-mode-flag` and `copilot-chat-experimental-flags` indicators detected the CVE without the playbook claiming it.
+
+Eight playbooks had artifacts collected in `phases.look.artifacts[]` that no indicator consumed — operator paid the collection cost, no detection ran. Containers (9 orphans), cred-stores (9), runtime (11), crypto (10), hardening (11), library-author (14), sbom (18), secrets (7) all now cite every collected artifact in at least one indicator. Six new indicators added (`psa-policy-permissive-or-absent` and `network-policies-absent-from-workload-namespace` in `containers`; `kernel-lockdown-none`, `sudoers-tty-pty-logging-absent`, `audit-rules-empty-or-skeletal`, `umask-permissive` in `hardening`) where existing detection logic conceptually consumed the artifact but no rule had been written.
+
+### Skill files — required-section closures, Hard Rule #5 sweep
+
+`kernel-lpe-triage`, `security-maturity-tiers`, and `skill-update-loop` previously failed the Hard Rule #11 required-section contract. `kernel-lpe-triage` had a Compliance Theater Check embedded inside Analysis Procedure Step 5 but no top-level section; `security-maturity-tiers` had no Compliance Theater section at all; `skill-update-loop` was missing Threat Context and TTP Mapping. All three sections promoted to top-level with substantive content.
+
+Twenty-three skills had US-anchored `framework_gaps` only (NIST + ISO + SOC2). Each gains EU + UK + AU tokens (`NIS2-Art21-incident-handling` / `EU-AI-Act-Art-15`, `UK-CAF-A1/B2/C1/D1`, `AU-Essential-8-MFA/App-Hardening/Patch/Backup` as the per-skill match dictates). `ai-c2-detection` `cwe_refs` populated with CWE-918. `email-security-anti-phishing` `rfc_refs` populated with RFC-7489/6376/7208/8616/8461. `identity-assurance` `d3fend_refs` populated with D3-MFA + D3-CSPP. `coordinated-vuln-disclosure` `rfc_refs` populated with ISO-29147/30111, RFC-9116, CSAF-2.0. `incident-response-playbook` `rfc_refs` populated with RFC-6545/6546/7970.
+
+Four skills bump `last_threat_review` to 2026-05-13 to reflect post-v0.12.6 catalog state: `kernel-lpe-triage`, `ai-attack-surface`, `mcp-agent-trust`, `ai-c2-detection`. Four skills replace literal `xxx` placeholders in body text with explicit angle-bracket placeholders (`<patch-revision>`, `<sub-technique-id>`, `<advisory-number>`) so future Rule #10 audits don't surface false positives.
+
+### Test infrastructure
+
+The `cli()` test helper now routes attestations to a per-suite tempdir via `EXCEPTD_HOME` instead of writing to `~/.exceptd/attestations/`. Every prior `npm test` run had been accumulating attestations in the maintainer's real home dir without cleanup; tempdir routing fixes the structural class behind the v0.11.x→v0.12.4 sign regression. Helper factored to `tests/_helpers/cli.js` so it can be required by both `operator-bugs.test.js` and the new `cli-coverage.test.js`.
+
+Twenty-eight previously-coincidence-passing assertions in `operator-bugs.test.js` strengthened: silent fall-through `if (data?.ok === false)` branches replaced with hard parse + shape checks first; `assert.notEqual(r.status, 0)` replaced with explicit exit-code pins (2 for format-rejected, 4 for blocked, etc.); `assert.ok(data)` replaced with field-shape assertions. Two coincidence-passes that hid real defects became actual findings:
+
+- `refresh --no-network` on Windows + Node 25 surfaces a libuv `UV_HANDLE_CLOSING` assertion at worker-pool teardown after the prefetch summary flushes cleanly (exit 3221226505 / 0xC0000409). The summary contract is honored; the teardown crash is a Windows-libuv quirk. Test accepts both 0 and the Windows exit code so long as the stdout summary matches the strict numeric-breakdown regex.
+- `refresh` pin sources `d3fend__d3fend-data__releases` and `mitre__cwe__releases` return HTTP 404 — surfaces as `2 error(s)` in every prefetch summary. Flagged for upstream catalog-pin work; not a regression introduced here.
+
+`lib/refresh-external.js` now accepts `--catalog <path>` and honors `EXCEPTD_CVE_CATALOG` so tests can redirect catalog writes to a tempdir instead of mutating the shipped `data/cve-catalog.json`. Eight catalog-mutating tests in `operator-bugs.test.js` can now route to tempdirs.
+
+Thirty-one new CLI happy-path tests in `tests/cli-coverage.test.js` exercise `brief` (all/scope/directives/phase), `discover`, `doctor` (all subchecks), `attest show/list/export`, `verify-attestation` alias, `run-all` alias, `framework-gap`, `report executive`, `validate-rfcs`, `ai-run` streaming JSONL (strict in-order assertion across all nine frames), `ci --max-rwep`, `ci --block-on-jurisdiction-clock`, `ci --evidence-dir`, `run --vex`, `run --diff-from-latest`, `run --force-stale`, `run --air-gap`, `run --session-key` (HMAC), and `refresh --indexes-only`.
+
+Eight predeploy-gate meta-tests in `tests/predeploy-gates.test.js` stage known-bad state in tempdirs and assert each gate fires: verify-signatures (byte-flipped signature), lint-skills (missing required section), validate-catalog-meta (malformed `tlp`), sbom-currency (drift), validate-indexes (out-of-date entry), validate-vendor (modified vendored file), validate-package (missing file-allowlist entry), verify-shipped-tarball (skill body tampered post-signing — the v0.11.x→v0.12.4 regression class). Gate 10's inline `node -e` checker extracted to `scripts/check-sbom-currency.js` for testability; no behavior change.
+
+Twelve new e2e scenarios in `tests/e2e-scenarios/09-secrets-aws-key` through `20-ai-api-openai-dotfile` exercise the twelve playbooks previously without e2e coverage (`secrets`, `kernel`, `library-author`, `crypto-codebase`, `mcp`, `framework`, `cred-stores`, `containers`, `runtime`, `hardening`, `crypto`, `ai-api`). All twenty scenarios pass via `npm run test:e2e`.
+
+### Repository
+
+Dependabot grouping config added for the github-actions ecosystem: weekly version-update bumps now land as a single grouped PR instead of N parallel PRs against the same 14-gate CI matrix. Security-updates stay ungrouped so a single-action CVE surfaces as its own PR.
+
+Test count: 386 → 418 (388 + 31 cli-coverage − accounting note: 8 predeploy-gates + 12 diff-coverage tests landed alongside the +31 CLI surface tests; some pre-existing tests resolved into fewer counted tests on suite reorganization). Predeploy gates: 14 → 15.
+
 ## 0.12.7 — 2026-05-13
 
 **Patch: two follow-on fixes to v0.12.6.**

@@ -2,6 +2,11 @@ version: 2
 updates:
   # GitHub Actions — exceptd-skills uses ci.yml, atlas-currency.yml, and
   # scorecard.yml. Dependabot keeps the pinned-SHA action versions current.
+  # v0.12.8: grouped so all actions bumps land as a single PR per week
+  # instead of N parallel PRs — every action change goes through the same
+  # 10-gate CI matrix, so batching reduces reviewer churn without reducing
+  # signal. security-updates kept ungrouped so a CVE in a single action
+  # surfaces as its own PR with clear blast radius.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -10,6 +15,11 @@ updates:
     labels:
       - "deps"
       - "github-actions"
+    groups:
+      github-actions-weekly:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
 
   # npm — exceptd-skills is zero-dependency by design (AGENTS.md / Node stdlib
   # only). Dependabot is still configured to catch any accidental

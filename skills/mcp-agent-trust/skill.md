@@ -33,6 +33,9 @@ framework_gaps:
   - OWASP-LLM-Top-10-2025-LLM06
   - SOC2-CC9-vendor-management
   - SWIFT-CSCF-v2026-1.1
+  - EU-AI-Act-Art-15
+  - UK-CAF-A1
+  - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-6749
   - RFC-7519
@@ -56,7 +59,7 @@ d3fend_refs:
   - D3-EAL
   - D3-EHB
   - D3-MFA
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-13"
 ---
 
 # MCP Agent Trust Assessment

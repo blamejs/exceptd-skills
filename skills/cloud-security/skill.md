@@ -38,6 +38,9 @@ framework_gaps:
   - ISO-27001-2022-A.8.30
   - SOC2-CC9-vendor-management
   - FedRAMP-Rev5-Moderate
+  - NIS2-Art21-incident-handling
+  - UK-CAF-B2
+  - AU-Essential-8-MFA
 rfc_refs:
   - RFC-8446
   - RFC-9180

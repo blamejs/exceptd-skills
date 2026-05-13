@@ -9,7 +9,7 @@
       "path": "data/atlas-ttps.json",
       "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.1.0 (November 2025).",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-01",
+      "last_updated": "2026-05-13",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -18,7 +18,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 9,
+      "entry_count": 15,
       "sample_keys": [
         "AML.T0043",
         "AML.T0010",
@@ -53,7 +53,7 @@
       "path": "data/cwe-catalog.json",
       "purpose": "MITRE CWE entries used by the project (subset with skill citations), with severity hint and category. Pinned to a CWE catalog version.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-05-13",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 34,
+      "entry_count": 51,
       "sample_keys": [
         "CWE-787",
         "CWE-79",
@@ -75,7 +75,7 @@
       "path": "data/d3fend-catalog.json",
       "purpose": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.0.0 release.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-05-13",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 20,
+      "entry_count": 28,
       "sample_keys": [
         "D3-EAL",
         "D3-EHB",
@@ -150,7 +150,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 49,
+      "entry_count": 59,
       "sample_keys": [
         "NIST-800-53-SI-2",
         "NIST-800-53-SC-8",
@@ -194,7 +194,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 19,
+      "entry_count": 31,
       "sample_keys": [
         "RFC-8446",
         "DRAFT-IETF-TLS-ECDHE-MLKEM",

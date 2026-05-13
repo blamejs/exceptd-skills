@@ -41,6 +41,38 @@ This meta-skill manages the evolution of all other exceptd skills. It is the loo
 
 ---
 
+## Threat Context
+
+The threat context this skill defends against is not a specific adversary technique — it is the **drift attack against the platform's own currency**: an exceptd installation whose skills, catalogs, framework references, and ATLAS pins age silently between releases until the operator-facing analysis is calibrated to a threat model that no longer exists.
+
+Real-world manifestations in mid-2026:
+
+- ATLAS v5.1.0 (November 2025) added TTPs that bind to operational reality (AML.T0096 AI-API C2, AML.T0048 erode-integrity-via-drift). A skill pinned to ATLAS v4 cannot route these. **AML.T0010** family was expanded to cover MCP supply-chain compromise mid-cycle.
+- CVE-2026-31431 (Copy Fail) joined CISA KEV in 2026-03-15. Any skill whose `last_threat_review` predates that date and whose body recommends "patch on 30-day SLA" is recommending against a threat model that KEV escalated to days, not weeks.
+- NIST SP 800-63B updated PBKDF2 iteration guidance to ≥ 600,000 in 2022; many compliance attestations still cite the 2017 numbers. A skill that does not track that lag perpetuates the theater.
+- IETF RFC 9116 (security.txt) and the CSAF 2.0 transition both have hard cutover signals that change how `coordinated-vuln-disclosure` should advise.
+
+The decay is silent — no alert fires, no signature breaks, no test fails. Skill currency is only verifiable by running this update loop on a published cadence. Without it, **every other skill ships with a hidden expiration date.**
+
+---
+
+## TTP Mapping
+
+This skill defends against drift; the TTPs that EXPLOIT a drifted skill are:
+
+| Tactic | TTP | What drift enables |
+|---|---|---|
+| Defense Evasion | T1562.001 (Disable or Modify Tools) | Stale skill recommends only the controls the current adversary class already evades |
+| Resource Development | AML.T0016 (Develop Capabilities) | Attacker capability outpaces the catalog the skill cites |
+| Initial Access | AML.T0010 (Supply Chain Compromise) | New attack class (e.g. MCP plugin compromise) isn't yet a skill |
+| Defense Evasion | T1027 (Obfuscated Files or Information) | Detection rules in a skill are for an older obfuscation generation |
+| Impact | AML.T0048 (Erode ML Model Integrity) | Drift in the threat-context section means the operator's mental model is wrong by months |
+| Discovery | T1518 (Software Discovery) | The catalog the skill scans doesn't recognize the adversary's current tool inventory |
+
+The update loop does not detect these TTPs — it prevents the skill set from being *vulnerable* to them by structural staleness.
+
+---
+
 ## Why Skills Decay
 
 Security skills have a half-life. The specific decay mechanisms are:

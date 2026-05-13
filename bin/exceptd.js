@@ -378,27 +378,29 @@ function main() {
     process.exit(0);
   }
 
+  // v0.12.8: emit the deprecation banner BEFORE branching on PLAYBOOK_VERBS
+  // so that legacy aliases routed through STANDALONE_VERBS or the orchestrator
+  // (scan, dispatch, currency, verify, validate-cves, validate-rfcs,
+  // watchlist, prefetch, build-indexes) also surface the rename.
+  // Previously the banner only fired for PLAYBOOK_VERBS-resident aliases
+  // (plan, govern, direct, look, ingest, reattest, list-attestations).
+  if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
+    const ver = readPkgVersion();
+    const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
+    process.stderr.write(
+      `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
+      (haveBrief
+        ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
+        : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
+      `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
+      `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
+    );
+    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+  }
+
   // Seven-phase playbook verbs run in-process — they emit JSON to stdout
   // rather than dispatch to a script.
   if (PLAYBOOK_VERBS.has(cmd)) {
-    // One-time deprecation banner per process when a legacy verb is invoked.
-    if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
-      // Mention the installed version explicitly so an operator on v0.10.x
-      // who reads "Prefer brief..." doesn't go looking for a verb that
-      // doesn't exist in their install. v0.11.0+ has the replacement; v0.10.x
-      // users see this with the explicit "upgrade to v0.11.0 first" note.
-      const ver = readPkgVersion();
-      const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
-      process.stderr.write(
-        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
-        (haveBrief
-          ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
-          : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
-        `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
-        `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
-      );
-      process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
-    }
     dispatchPlaybook(cmd, rest);
     return;
   }
@@ -798,10 +800,24 @@ Flags:
                           (code 2) when phases.detect.classification === 'detected'
                           OR phases.analyze.rwep.adjusted >= rwep_threshold.escalate.
                           Logs PASS/FAIL reason to stderr.
-  --session-id <id>       Reuse a specific session ID.
+  --upstream-check        (v0.11.14) Opt-in: query npm registry for the latest
+                          published @blamejs/exceptd-skills version before
+                          detect. Warns to stderr (no exit-code change) when
+                          the local install is behind, so an operator using a
+                          stale catalog finds out before the run completes.
+  --strict-preconditions  Escalate warn-level precondition failures to halt.
+                          Without this flag, only on_fail=halt preconditions
+                          block; warn-level surface in stderr but the run
+                          proceeds. With it, any precondition_check returning
+                          false fails the run and exits non-zero.
+  --session-id <id>       Reuse a specific session ID. Collisions refused
+                          unless --force-overwrite is also passed.
+  --force-overwrite       Override the session-id collision refusal.
   --session-key <hex>     HMAC sign the evidence_package with this key.
+                          Output carries an 'hmac' field the verifier can check.
   --force-stale           Override the threat_currency_score < 50 hard-block.
-  --air-gap               Honor air_gap_alternative paths.
+  --air-gap               Honor air_gap_alternative paths in look.artifacts[]
+                          and skip the network-touching collection variants.
   --pretty                Indented JSON output.
 
 Attestation is persisted to .exceptd/attestations/<session_id>/ on every
@@ -835,12 +851,22 @@ newest-first, with truncated evidence_hash + capture timestamp + file path.`,
 
 Subverbs:
   attest show <sid>       Emit the full (unredacted) attestation.
+  attest list             Inventory every prior attestation under
+                          ~/.exceptd/attestations/ (or EXCEPTD_HOME when set).
+                          Filter with --playbook <id> or --since <ISO>. Newest
+                          first; truncated evidence_hash + capture timestamp +
+                          path per entry.
   attest export <sid>     Emit redacted JSON suitable for audit submission.
                           Strips raw artifact values; preserves evidence_hash,
                           signature, classification, RWEP, remediation choice.
-                          --format csaf wraps the export in a CSAF envelope.
+                          --format <csaf|sarif|openvex> wraps the export in the
+                          named envelope (default: redacted JSON).
   attest verify <sid>     Verify .sig sidecar against keys/public.pem.
                           Reports tamper status per attestation file.
+  attest diff <sid>       Diff <sid> against the most-recent prior attestation
+                          for the same playbook, or against --against <other-sid>
+                          for an explicit pair. Reports unchanged | drifted |
+                          resolved per evidence_hash + classification deltas.
 
 All subverbs honor --pretty for indented JSON output.`,
     discover: `discover — context-aware playbook recommender (v0.11.0).
@@ -867,7 +893,20 @@ Subchecks:
   --currency              Skill currency report (last_threat_review).
   --cves                  CVE catalog validation (offline view).
   --rfcs                  RFC catalog validation (offline view).
-  (no flag)               All four, plus signing-status (private key presence).
+  --registry-check        (v0.11.14) Opt-in: query the npm registry for the
+                          latest published version + days-since-publish.
+                          Surfaces under checks.registry.{local_version,
+                          published_version, same, behind, days_since_latest_publish}.
+                          Off by default — keeps doctor offline-clean unless
+                          asked.
+  --fix                   (v0.12.5) Attempt to auto-remediate detected gaps.
+                          Currently scoped to: regenerate the local Ed25519
+                          private key when keys/public.pem exists but
+                          .keys/private.pem is absent. Does NOT modify any
+                          file outside .keys/.
+  (no flag)               All four subchecks above (sans --registry-check
+                          unless explicitly requested), plus signing-status
+                          (private key presence under .keys/).
 
 Flags:
   --json                  Emit JSON (default is human-readable text).
@@ -914,6 +953,9 @@ exit-code contract designed for one-line .github/workflows entries.
 Flags:
   --all                   Run every playbook.
   --scope <type>          Filter: system | code | service | cross-cutting.
+  --required <ids>        Comma-separated playbook ids that MUST run, even if
+                          scope-detection would exclude them. Fails if a
+                          required id is unknown.
   (no flag)               Auto-detect scopes from cwd (same logic as run).
   --evidence <file>       Submission bundle (multi-playbook shape).
   --evidence-dir <dir>    Read <playbook-id>.json files from a directory.
@@ -921,11 +963,77 @@ Flags:
   --block-on-jurisdiction-clock
                           Fail when any close.notification_actions started a
                           regulatory clock (GDPR 72h, HIPAA breach, etc.).
+  --format <fmt>          Output shape. Supported: json (default, single-line),
+                          summary (5-field digest), markdown (human digest).
+                          Bundles (csaf-2.0/sarif/openvex) live on per-run
+                          attestations, not the aggregate ci verdict.
+  --json                  Force single-line JSON (overrides any TTY heuristics).
+  --pretty                Indented JSON output (implies --json).
+
+Exit codes:
+  0  PASS                  All scoped playbooks ran and verdict is clean.
+  1  Framework error       Runner threw, unreadable evidence, etc.
+  2  FAIL (detected)       At least one playbook returned
+                           classification=detected, OR rwep ≥ escalate, OR
+                           --max-rwep cap exceeded.
+  3  Ran-but-no-evidence   Every result was inconclusive AND no evidence was
+                           submitted (visibility gap — CI should fail loud).
+  4  Blocked               Result returned ok:false (preflight halt, missing
+                           preconditions with on_fail=halt, etc.) OR
+                           --block-on-jurisdiction-clock fired.
+
+Output: verb, session_id, playbooks_run, summary{total, detected,
+max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
+results[].`,
+    brief: `brief [playbook] — unified info doc (v0.11.0).
+
+Collapses the three info-only phases plan + govern + direct + look into a
+single document. Phases 1-3 of the seven-phase contract are entirely
+informational; brief reads them in one CLI invocation instead of three.
+
+Modes:
+  brief                   Auto-detect playbooks for the cwd. Returns a list.
+  brief <playbook>        Single-playbook brief with jurisdiction obligations
+                          + threat context + preconditions + artifacts +
+                          indicators.
+  brief --all             Every shipped playbook.
+  brief --scope <type>    Filter: system | code | service | cross-cutting.
+  brief <pb> --phase <p>  Emit only the named phase (govern | direct | look).
+                          Compat for legacy callers.
+
+Flags:
+  --directives            Expand directive metadata per playbook.
+  --pretty                Indented JSON output.
+  --json                  Force single-line JSON.
+
+Output (single-playbook): playbook_id, directives[], jurisdiction_obligations[],
+threat_context, preconditions[], artifacts[], indicators[].`,
+    lint: `lint <playbook> <evidence-file> — pre-flight check submission shape.
+
+Validates the submission JSON against the playbook's expected indicators /
+preconditions / artifacts WITHOUT executing detect/analyze/validate/close.
+Lets the AI iterate on its evidence before going through phases 4-7.
+
+Args / flags:
+  <playbook>              Playbook id. Required.
+  <evidence-file>         Submission JSON path. Required.
   --pretty                Indented JSON output.
 
-Exit codes: 0 PASS, 2 FAIL (detected | rwep ≥ cap | clock started w/ block flag).
-Output: verb, session_id, playbooks_run, summary{total, detected,
-max_rwep_observed, jurisdiction_clocks_started, verdict}, results[].`,
+Output categories: ok, missing_required, missing_required_artifact,
+unknown_keys, type_mismatch, suggestions.`,
+    "verify-attestation": `verify-attestation <session-id> — alias for \`attest verify\`.
+
+See \`exceptd attest --help\` for the full attest verb. This alias matches
+the historical verify-attestation entry-point name used by some downstream
+consumers.
+
+Flags: --pretty.`,
+    "run-all": `run-all — alias for \`run --all\`.
+
+Identical exit-code and output contract as \`run --all\`. Maintained for
+operators who script the verb form rather than the flag.
+
+See \`exceptd run --help\` for the full flag list.`,
   };
   process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
 }
@@ -1562,13 +1670,20 @@ function cmdRun(runner, args, runOpts, pretty) {
 
     emit(result, pretty);
 
+    // v0.12.8: use process.exitCode + return instead of process.exit() so
+    // buffered async stdout (which `emit` writes to) is allowed to drain
+    // before the event loop ends. v0.11.10 (#100) is the canonical class:
+    // process.exit(N) immediately after a stdout write can truncate output
+    // under piped consumers (CI runners, jq, test harnesses).
     if (classification === "detected") {
       process.stderr.write(`[exceptd run --ci] FAIL: classification=detected rwep=${adjusted} threshold=${threshold}\n`);
-      process.exit(2);
+      process.exitCode = 2;
+      return;
     }
     if (classification === "inconclusive" && escalate) {
       process.stderr.write(`[exceptd run --ci] FAIL: classification=inconclusive AND rwep=${adjusted} >= threshold=${threshold}\n`);
-      process.exit(2);
+      process.exitCode = 2;
+      return;
     }
     if (classification === "inconclusive") {
       process.stderr.write(`[exceptd run --ci] PASS+WARN: classification=inconclusive rwep=${adjusted} < threshold=${threshold} (visibility gap)\n`);
@@ -1798,9 +1913,10 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // v0.11.9 (#100): cmdRunMulti exits non-zero when any individual run
   // returned ok:false. Pre-0.11.9 the aggregate result had {ok:false} in
   // the body but exit code stayed 0 — CI gates couldn't distinguish "ran
-  // clean" from "blocked." Now matches cmdRun's single-playbook contract.
+  // clean" from "blocked." v0.12.8: use exitCode (not process.exit()) so
+  // the aggregate JSON emitted above is allowed to fully drain.
   const anyBlocked = results.some(r => r.ok === false);
-  if (anyBlocked) process.exit(1);
+  if (anyBlocked) { process.exitCode = 1; return; }
 }
 
 function cmdIngest(runner, args, runOpts, pretty) {
@@ -1835,28 +1951,38 @@ function cmdIngest(runner, args, runOpts, pretty) {
 
   const result = runner.run(playbookId, directiveId, cleanedSubmission, runOpts);
 
+  // v0.12.8: route ingest's attestation persistence through persistAttestation
+  // — the same path cmdRun + cmdRunMulti use — so the session-id collision
+  // refusal AND the Ed25519 sidecar signing both apply. Pre-v0.12.8 ingest
+  // had its own inline writeFileSync with neither check, meaning two ingest
+  // calls with the same session-id silently clobbered the audit trail and no
+  // .sig sidecar was written.
   if (result && result.ok && result.session_id) {
-    try {
-      const dir = path.join(resolveAttestationRoot(runOpts), result.session_id);
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(
-        path.join(dir, "attestation.json"),
-        JSON.stringify({
-          session_id: result.session_id,
-          playbook_id: result.playbook_id,
-          directive_id: result.directive_id,
-          evidence_hash: result.evidence_hash,
-          submission: cleanedSubmission,
-          run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
-          captured_at: new Date().toISOString(),
-        }, null, 2)
-      );
-    } catch { /* non-fatal */ }
+    const persisted = persistAttestation({
+      sessionId: result.session_id,
+      playbookId: result.playbook_id,
+      directiveId: result.directive_id,
+      evidenceHash: result.evidence_hash,
+      operator: runOpts.operator,
+      operatorConsent: runOpts.operator_consent,
+      submission: cleanedSubmission,
+      runOpts,
+      forceOverwrite: !!args["force-overwrite"],
+      filename: "attestation.json",
+    });
+    if (!persisted.ok) {
+      // Surface the collision; do not silently clobber.
+      return emitError(persisted.error, { session_id: result.session_id, existing_path: persisted.existingPath }, pretty);
+    }
+    if (persisted.prior_session_id) {
+      result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
+    }
   }
 
   if (result && result.ok === false) {
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   emit(result, pretty);
 }
@@ -3196,13 +3322,22 @@ function cmdAiRun(runner, args, runOpts, pretty) {
   let handled = false;
   let buf = "";
 
+  // v0.12.8: every writeLine() in this handler writes to stdout. Replacing
+  // process.exit() with exitCode + closing stdin lets the JSONL frames
+  // drain before the event loop ends. `handled` plus process.stdin.pause()
+  // prevents further callbacks from re-entering the handler.
+  const finish = (code) => {
+    process.exitCode = code;
+    try { process.stdin.pause(); } catch { /* non-fatal */ }
+  };
   const handleLine = (line) => {
     if (handled) return;
     let parsed;
     try { parsed = JSON.parse(line); }
     catch (e) {
+      handled = true;
       writeLine({ event: "error", reason: `invalid JSON on stdin: ${e.message}`, line_preview: line.slice(0, 120) });
-      process.exit(1);
+      return finish(1);
     }
     if (!parsed || parsed.event !== "evidence" || !parsed.payload) {
       // Ignore non-evidence chatter so the host AI can interleave its own
@@ -3216,18 +3351,18 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       result = runner.run(playbookId, directiveId, submission, runOpts);
     } catch (e) {
       writeLine({ event: "error", reason: `runner threw: ${e.message}` });
-      process.exit(1);
+      return finish(1);
     }
     if (!result || result.ok === false) {
       writeLine({ event: "error", reason: result?.reason || "runner returned ok:false", result });
-      process.exit(1);
+      return finish(1);
     }
     writeLine({ phase: "detect", ...result.phases?.detect });
     writeLine({ phase: "analyze", ...result.phases?.analyze });
     writeLine({ phase: "validate", ...result.phases?.validate });
     writeLine({ phase: "close", ...result.phases?.close });
     writeLine({ event: "done", ok: true, session_id: result.session_id, evidence_hash: result.evidence_hash });
-    process.exit(0);
+    return finish(0);
   };
 
   // Handle empty/closed stdin: emit a hint then exit cleanly so AI agents
@@ -3235,7 +3370,8 @@ function cmdAiRun(runner, args, runOpts, pretty) {
   // a hung process.
   if (process.stdin.isTTY) {
     writeLine({ event: "error", reason: "ai-run streaming mode requires evidence on stdin; pipe {\"event\":\"evidence\",\"payload\":{...}} or use --no-stream." });
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   process.stdin.on("data", (chunk) => {
@@ -3270,7 +3406,8 @@ function cmdAiRun(runner, args, runOpts, pretty) {
         } catch { /* fall through to error */ }
       }
       writeLine({ event: "error", reason: "stdin closed without an evidence event. Pipe `{\"event\":\"evidence\",\"payload\":{...}}` for streaming mode, or pass --no-stream + --evidence <file> for single-shot." });
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 

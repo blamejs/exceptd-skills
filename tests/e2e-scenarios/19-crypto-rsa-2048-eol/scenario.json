@@ -1,0 +1,7 @@
+{
+  "name": "19-crypto-rsa-2048-eol",
+  "description": "Stages an RSA-2048 host certificate with multi-year validity on a host whose OpenSSL is 3.4 (pre-ML-KEM). crypto playbook must classify detected via rsa-2048-cert-long-life + ml-kem-absent + openssl-pre-3-5.",
+  "verb": "run",
+  "args": ["crypto", "--evidence", "evidence.json", "--session-id", "e2e-19", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

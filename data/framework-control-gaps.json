@@ -1251,5 +1251,248 @@
     "attack_refs": [
       "T1059"
     ]
+  },
+  "NIS2-Art21-incident-handling": {
+    "framework": "EU NIS2 Directive (2022/2555)",
+    "control_id": "Art. 21(2)(b)",
+    "control_name": "Incident handling",
+    "designed_for": "Essential and important entities operating in critical sectors across the EU; sets minimum cybersecurity risk-management measures including incident handling, business continuity, and supply chain security",
+    "misses": [
+      "Incident-handling 24-hour early-warning + 72-hour notification clock starts from awareness, not from detection — gap covers AI-mediated incidents detected only after material harm",
+      "No explicit AI/ML incident category — prompt injection RCE, MCP supply-chain compromise, AI-API C2 not enumerated as in-scope incident classes",
+      "'State of the art' wording leaves the framework lag-permissive — operators can claim compliance without AI-specific incident playbooks",
+      "Cross-border supply-chain incidents (Shai-Hulud-class) span multiple competent authorities; coordination requirements are weakly specified"
+    ],
+    "real_requirement": "Incident-handling playbook enumerates AI-specific classes (LLM prompt injection RCE, MCP plugin compromise, AI-API C2 beaconing) with detection sources, evidence requirements, and the cross-jurisdiction notification matrix (NIS2 24h early-warning + 72h full report alongside DORA 4h + GDPR 72h). Continuity plans assume AI-assistant denial-of-service alongside classical IT outages.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615",
+      "CVE-2026-45321"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1567"
+    ]
+  },
+  "EU-AI-Act-Art-15": {
+    "framework": "EU Artificial Intelligence Act (2024/1689)",
+    "control_id": "Art. 15",
+    "control_name": "Accuracy, robustness and cybersecurity",
+    "designed_for": "Providers of high-risk AI systems; requires AI systems to achieve appropriate accuracy, robustness, and cybersecurity throughout their lifecycle",
+    "misses": [
+      "'Appropriate level of cybersecurity' is undefined operationally — no benchmark for prompt-injection resistance, RAG-poisoning robustness, or supply-chain attack resilience",
+      "No required testing methodology — adversarial robustness assessment is recommended but not mandated with specific test classes",
+      "Scope binds providers of high-risk AI systems; downstream operators integrating non-high-risk-classified AI (e.g. coding assistants) inherit no Art. 15 obligations even when they reach equivalent threat exposure",
+      "Cybersecurity reporting integrates with NIS2 but does not specify AI-specific incident classes (prompt injection, model theft, RAG poisoning)"
+    ],
+    "real_requirement": "AI-systems-in-scope undergo prompt-injection red-team (per OWASP LLM Top 10), RAG corpus integrity testing, MCP plugin trust verification, model-extraction-resistance assessment, and continuous adversarial regression. Cybersecurity reporting bridges to NIS2 + DORA notification clocks. Downstream operators apply equivalent diligence to AI tools used in their pipeline even when the AI itself isn't classified high-risk.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0057"
+    ],
+    "attack_refs": []
+  },
+  "UK-CAF-A1": {
+    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "control_id": "Objective A — Principle A1",
+    "control_name": "Governance",
+    "designed_for": "Operators of essential services and critical national infrastructure; sets a board-level governance expectation for cyber risk management",
+    "misses": [
+      "Governance principle is intentionally outcome-focused; without published Indicators of Good Practice (IGPs) for AI-specific governance, boards have no specific test for AI risk awareness",
+      "No requirement to enumerate AI/ML supply-chain trust dependencies as a governance artefact",
+      "AI-procurement governance overlap with NCSC AI Cyber Code of Practice is recommended but not enforced through CAF assessment criteria"
+    ],
+    "real_requirement": "Board-level governance includes an AI-systems-in-use inventory, an MCP/plugin trust register with provenance attestation, and a documented assignment of accountability for AI security outcomes that maps to the NIS2/CCRA scope.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": []
+  },
+  "UK-CAF-B2": {
+    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "control_id": "Objective B — Principle B2",
+    "control_name": "Identity and access control",
+    "designed_for": "Restricting access to systems and data to authorised users, devices, and systems",
+    "misses": [
+      "AI agent identity is not addressed — AI assistants operate under user identity but execute attacker-controlled actions when prompt-injected (the access decision is correct at IAM layer; the action is not)",
+      "MCP server / plugin trust is access-control-adjacent but framework treats plugins as part of the user's process, not as separate identities requiring authorization",
+      "Service-account credentials for AI providers (OpenAI/Anthropic/HuggingFace) are not enumerated as a regulated credential class with rotation policy"
+    ],
+    "real_requirement": "Identity controls treat AI agents as distinct principals where they execute tools; MCP plugin invocations log model decision + tool name + arguments + user identity; AI-provider service credentials are short-lived, rotated, and excluded from cleartext storage policy exceptions; passkeys/WebAuthn for human-operator-to-AI authentication where supported.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1078"
+    ]
+  },
+  "UK-CAF-C1": {
+    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "control_id": "Objective C — Principle C1",
+    "control_name": "Security monitoring",
+    "designed_for": "Detecting and analysing events that may indicate a cybersecurity incident on the operator's essential function",
+    "misses": [
+      "AI-API traffic monitoring is not a recognised security-monitoring discipline — egress logs typically allowlist AI providers, leaving AI-API C2 (SesameOp / PROMPTFLUX class) invisible",
+      "Prompt/response content classification is absent from typical SOC tooling — DLP on AI prompts is structurally outside C1's monitored event set",
+      "MCP server invocations are not enumerated as a monitored event source"
+    ],
+    "real_requirement": "Security monitoring includes prompt/response content classification on egress to AI providers, MCP tool-call audit trail (model decision + tool name + arguments + result), AI-API traffic baselines per service identity with anomaly alerts, and unified retention covering AI events alongside classical telemetry.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0096",
+      "AML.T0024",
+      "AML.T0057"
+    ],
+    "attack_refs": [
+      "T1567"
+    ]
+  },
+  "UK-CAF-D1": {
+    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "control_id": "Objective D — Principle D1",
+    "control_name": "Response and recovery planning",
+    "designed_for": "Maintaining the ability to respond and recover from cybersecurity incidents affecting the operator's essential function",
+    "misses": [
+      "Response planning treats patch deployment as a routine activity; CISA KEV class kernel-LPE timelines (hours-not-days) demand a live-patch workflow that response plans rarely include",
+      "AI-incident response (model rollback, prompt blocklist updates, MCP allowlist tightening) is not a standard response-plan category",
+      "Backup-and-recovery validation does not include AI-system artefacts (fine-tuned model weights, RAG corpora, MCP server inventories)"
+    ],
+    "real_requirement": "Response plans include live kernel patching as a documented capability with operator drill cadence; AI-incident playbooks cover model rollback, prompt classifier updates, MCP allowlist tightening; backups validate AI-system artefacts; recovery clocks align to NIS2 24h + DORA 4h + GDPR 72h notification matrix.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2026-31431",
+      "CVE-2026-43284",
+      "CVE-2026-43500"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "AU-Essential-8-MFA": {
+    "framework": "ASD Essential Eight (AU)",
+    "control_id": "Multi-factor authentication",
+    "control_name": "Multi-factor authentication",
+    "designed_for": "Reducing the impact of compromised credentials on Australian Government and broader essential-service identities; Maturity Levels 1-3",
+    "misses": [
+      "MFA on AI-provider service accounts (OpenAI, Anthropic, HuggingFace API tokens) is not addressed — these are bearer tokens, not user identities, but carry equivalent or greater blast radius",
+      "Phishing-resistance criterion (ML2+) does not specify resistance to AI-generated social engineering — deepfake-grade phishing breaks SMS/voice MFA categorically",
+      "MCP server / plugin authentication is silent; bearer tokens with no rotation policy commonly stored alongside developer credentials"
+    ],
+    "real_requirement": "MFA covers human identities at ML2+ with phishing-resistant factors (WebAuthn/passkeys, FIDO2). AI-provider credentials use short-lived OIDC tokens with mandatory rotation, never long-lived bearer keys. MCP server authentication uses signed JWTs / mTLS in production. Deepfake-grade phishing assumed; MFA decisions treat SMS/voice as insufficient.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0055"
+    ],
+    "attack_refs": [
+      "T1078",
+      "T1556"
+    ]
+  },
+  "AU-Essential-8-App-Hardening": {
+    "framework": "ASD Essential Eight (AU)",
+    "control_id": "User application hardening",
+    "control_name": "User application hardening",
+    "designed_for": "Reducing the attack surface of common user applications (browsers, office, PDF readers) on Australian Government and essential-service endpoints",
+    "misses": [
+      "AI coding assistants (Copilot, Cursor, Windsurf, Claude) are not enumerated in the standard hardened-application list, yet they are the highest-value attack surface on developer endpoints (CVE-2025-53773, CVE-2026-30615 class)",
+      "MCP server runtime is not addressed — these are user-mode processes with capabilities that exceed typical productivity applications",
+      "Hardening focuses on browser/Java/Flash legacy classes; the equivalent for AI tools (default-deny MCP servers, plugin signing, capability-grant prompts) has no Essential-Eight analogue"
+    ],
+    "real_requirement": "User-application hardening enumerates AI assistants and MCP servers in scope; sets default-deny on tool grants with explicit per-tool acknowledgement; pins MCP server versions with signature verification; treats AI-tool config files (.claude/settings.json, .cursor/mcp.json, .vscode/settings.json's chat.tools.autoApprove) as integrity-monitored configuration with the same protection profile as security-sensitive files.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1204"
+    ]
+  },
+  "AU-Essential-8-Patch": {
+    "framework": "ASD Essential Eight (AU)",
+    "control_id": "Patch operating systems",
+    "control_name": "Patch operating systems",
+    "designed_for": "Maintaining current security patches on operating systems on Australian Government and essential-service endpoints; ML3 target is 48 hours for critical exploits",
+    "misses": [
+      "ML3 '48 hours for public exploit' is the closest framework target to KEV reality, but still assumes a reboot is acceptable within that window — live-patching deployment is not a required capability",
+      "Linux kernel patching cadence differs from OS-vendor patch cadence; third-party kernel modules (OOT drivers, runtime hardening modules) are silent in scope",
+      "Patch-management metrics rarely measure 'time from CISA KEV listing to patched on fleet' as the operational SLA"
+    ],
+    "real_requirement": "Patch operating systems with KEV-anchored SLA (≤48h for critical with public PoC, live-patching mandatory on hosts that can't accept a reboot within window); kernel patching pipeline distinct from userspace patch pipeline; third-party kernel module patches tracked alongside vendor patches; SLA metric is 'time from KEV listing to deployed', not 'time from advisory publication'.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2026-31431",
+      "CVE-2026-43284",
+      "CVE-2026-43500"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ]
+  },
+  "AU-Essential-8-Backup": {
+    "framework": "ASD Essential Eight (AU)",
+    "control_id": "Regular backups",
+    "control_name": "Regular backups",
+    "designed_for": "Ensuring critical data and configuration can be restored after a cybersecurity incident; coverage spans daily backups with off-network retention",
+    "misses": [
+      "AI-system artefacts (fine-tuned model weights, RAG corpora, MCP server inventories, .claude/settings.json local-override files) are not enumerated as backup scope",
+      "Backup-integrity verification typically targets data restoration; AI-corpus poisoning detection requires per-document hash comparison against backup state, which is not standard practice",
+      "Incident-driven 'restore to last-known-good' for AI systems implies a known-good baseline that the backup process must maintain — workflow rarely documented"
+    ],
+    "real_requirement": "Backups cover AI-system artefacts (model weights, RAG corpora, plugin registries, AI-tool configuration files) with off-network retention; backup-integrity verification includes per-document hash comparison for RAG corpora to detect corpus poisoning; documented 'AI-system restore to last-known-good' workflow that maps to detected AI-incident classes.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2026-45321"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0020",
+      "AML.T0048"
+    ],
+    "attack_refs": []
   }
 }

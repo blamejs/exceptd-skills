@@ -1,0 +1,7 @@
+{
+  "name": "16-containers-root-user",
+  "description": "Stages a Dockerfile that uses a floating FROM tag, runs as root, and pipes a curl install into bash. containers playbook must classify detected via dockerfile-from-latest + dockerfile-runs-as-root + dockerfile-curl-pipe-bash.",
+  "verb": "run",
+  "args": ["containers", "--evidence", "evidence.json", "--session-id", "e2e-16", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

@@ -397,7 +397,7 @@
         {
           "id": "kptr-restrict-disabled",
           "type": "behavioral_signal",
-          "value": "kernel.kptr_restrict == 0",
+          "value": "Within the sysctl-kernel-hardening artifact: kernel.kptr_restrict == 0",
           "description": "/proc/kallsyms is world-readable; KASLR is effectively defeated for any local user. Decisive for kernel LPE exploitability.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -406,7 +406,7 @@
         {
           "id": "unprivileged-userns-enabled",
           "type": "behavioral_signal",
-          "value": "kernel.unprivileged_userns_clone == 1",
+          "value": "Within the sysctl-kernel-hardening artifact: kernel.unprivileged_userns_clone == 1",
           "description": "Unprivileged user namespaces enabled. Required primitive for CVE-2026-31431 and userns-class LPEs.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -415,7 +415,7 @@
         {
           "id": "unprivileged-bpf-allowed",
           "type": "behavioral_signal",
-          "value": "kernel.unprivileged_bpf_disabled == 0",
+          "value": "Within the sysctl-kernel-hardening artifact: kernel.unprivileged_bpf_disabled == 0",
           "description": "Unprivileged BPF allowed. Required primitive for BPF-class LPEs.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -424,7 +424,7 @@
         {
           "id": "yama-ptrace-permissive",
           "type": "behavioral_signal",
-          "value": "kernel.yama.ptrace_scope == 0",
+          "value": "Within the sysctl-kernel-hardening artifact: kernel.yama.ptrace_scope == 0",
           "description": "Yama ptrace_scope=0 allows any process to ptrace any same-UID process. Credential-theft + privilege-pivot primitive.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -433,7 +433,7 @@
         {
           "id": "kaslr-disabled-at-boot",
           "type": "log_pattern",
-          "value": "/proc/cmdline contains 'nokaslr' OR 'kaslr=off'",
+          "value": "Within the kernel-cmdline artifact: /proc/cmdline contains 'nokaslr' OR 'kaslr=off'",
           "description": "Boot-time KASLR disabled. Makes catalogued kernel LPEs deterministic.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -442,7 +442,7 @@
         {
           "id": "mitigations-off",
           "type": "log_pattern",
-          "value": "/proc/cmdline contains 'mitigations=off'",
+          "value": "Within the kernel-cmdline artifact: /proc/cmdline contains 'mitigations=off'; corroborate against cpu-vulnerabilities artifact which should then report 'Vulnerable' for at least one of Spectre v1/v2, Meltdown, MDS, L1TF, Retbleed, Downfall, GDS, RFDS, or Reptar",
           "description": "Boot-time CPU mitigations disabled. Spectre/Meltdown/MDS/Retbleed/Downfall class becomes exploitable.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -451,7 +451,7 @@
         {
           "id": "selinux-not-enforcing",
           "type": "behavioral_signal",
-          "value": "getenforce != 'Enforcing' AND aa-status reports no enforcing profiles",
+          "value": "Within the selinux-state artifact: getenforce != 'Enforcing' AND within the apparmor-state artifact: aa-status reports no enforcing profiles",
           "description": "No MAC enforcement. Several catalogued LPEs that would be blocked by an Enforcing MAC layer are open.",
           "confidence": "high",
           "deterministic": false
@@ -459,7 +459,7 @@
         {
           "id": "sshd-permitrootlogin-yes",
           "type": "log_pattern",
-          "value": "sshd_config effective: PermitRootLogin yes (or 'without-password' on legacy)",
+          "value": "Within the sshd-config artifact: effective PermitRootLogin yes (or 'without-password' on legacy)",
           "description": "Direct root SSH login enabled. Eliminates the privilege-escalation step.",
           "confidence": "deterministic",
           "deterministic": true,
@@ -468,7 +468,7 @@
         {
           "id": "sshd-password-auth-enabled",
           "type": "log_pattern",
-          "value": "sshd_config effective: PasswordAuthentication yes AND no MFA via PAM",
+          "value": "Within the sshd-config artifact: effective PasswordAuthentication yes AND within the pam-stack artifact: no MFA module loaded (pam_google_authenticator / pam_u2f / pam_oath / pam_yubico absent from common-auth or system-auth)",
           "description": "Password-only SSH authentication. Credential-spray primitive.",
           "confidence": "high",
           "deterministic": false,
@@ -477,10 +477,46 @@
         {
           "id": "core-pid-dumpable",
           "type": "behavioral_signal",
-          "value": "fs.suid_dumpable >= 1",
+          "value": "Within the sysctl-kernel-hardening artifact: fs.suid_dumpable >= 1",
           "description": "SUID binaries can produce core dumps. Credential leakage primitive (cores can contain decrypted secrets in memory).",
           "confidence": "high",
           "deterministic": false
+        },
+        {
+          "id": "kernel-lockdown-none",
+          "type": "behavioral_signal",
+          "value": "Within the kernel-lockdown artifact: /sys/kernel/security/lockdown reports 'none' (no integrity / no confidentiality bracket), OR the file is absent AND the kernel-cmdline artifact contains no `lockdown=integrity` / `lockdown=confidentiality` parameter",
+          "description": "Lockdown 'none' leaves /dev/mem-style reads, kexec_load, BPF tracing of kernel addresses, kprobe attach, and unsigned-module loading all available — each is a primitive that catalogued kernel-LPE chains rely on.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1068"
+        },
+        {
+          "id": "sudoers-tty-pty-logging-absent",
+          "type": "log_pattern",
+          "value": "Within the sudoers-structure artifact: Defaults line does NOT include `requiretty` AND does NOT include `use_pty` AND does NOT include `log_input,log_output` (or `logfile=` directive)",
+          "description": "Sudo missing pty enforcement + I/O logging means privileged-session forensics is unrecoverable post-incident: no record of what root commands were executed by which operator, which defeats CMMC AU.L2-3.3.1 / NIST 800-53 AU-2 / NIS2 Art.21(2)(j) accountability obligations.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1548.003"
+        },
+        {
+          "id": "audit-rules-empty-or-skeletal",
+          "type": "log_pattern",
+          "value": "Within the audit-rules artifact: `auditctl -l` returns 'No rules' OR the loaded ruleset has fewer than 10 rules AND does NOT include watches on /etc/passwd, /etc/shadow, /etc/sudoers, /etc/sudoers.d/, OR -a always,exit -F arch=b64 -S execve",
+          "description": "Skeletal audit ruleset means none of the catalogued kernel LPE chains (sudoers tampering, execve under attacker-controlled paths, /etc/shadow read) leave a trail. Detection coverage for the very anti-patterns this playbook enumerates is missing.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1562.006"
+        },
+        {
+          "id": "umask-permissive",
+          "type": "log_pattern",
+          "value": "Within the umask-defaults artifact: effective default UMASK is 022 OR a more permissive value (000, 002) in /etc/login.defs, /etc/profile, /etc/bash.bashrc, or /etc/profile.d/*.sh — and no shell-rc override tightens it",
+          "description": "Permissive default umask leaves new files world-readable; combined with credentials-file-bad-perms class findings (cred-stores playbook), permissive umask is the upstream cause that produces those file modes in the first place.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1552.004"
         }
       ],
       "false_positive_profile": [

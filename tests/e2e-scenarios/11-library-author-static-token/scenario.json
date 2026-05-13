@@ -1,0 +1,7 @@
+{
+  "name": "11-library-author-static-token",
+  "description": "Stages a .github/workflows/publish.yml that authenticates to npm with a long-lived secrets.NPM_TOKEN instead of OIDC trusted publishing. library-author playbook must fire publish-workflow-uses-static-token and classify detected.",
+  "verb": "run",
+  "args": ["library-author", "--evidence", "evidence.json", "--session-id", "e2e-11", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}
