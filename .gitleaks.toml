@@ -75,8 +75,14 @@ description = "Test fixtures and example cache snapshots"
 # in any captured-output assertion are test fixtures, never operational
 # keys. sources/feeds/cve-cache.example.json is a clearly-labeled
 # example with `_example: true` showing the cached feed shape.
+# E2E scenario fixtures under tests/e2e-scenarios/ stage synthetic
+# credentials (AWS AKIA keys, OpenAI sk-proj-* tokens) on disk so the
+# detectors in secrets / cred-stores / ai-api playbooks have something
+# to fire on — these strings are deliberately-planted decoys, never
+# operational keys. The scenarios themselves carry the IoC text inline.
 paths = [
   '''tests/.*\.test\.js''',
+  '''tests/e2e-scenarios/.*''',
   '''sources/feeds/cve-cache\.example\.json''',
 ]
 

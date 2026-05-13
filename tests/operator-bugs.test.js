@@ -964,8 +964,11 @@ test('#130 exceptd path copy is not a silent no-op', () => {
   // would accept ANY message after it (including "[exceptd path] gibberish"
   // or an empty bracket). Pin one of the two exact branches operators
   // actually rely on for diagnosing whether the clipboard write happened.
-  assert.match(r.stderr, /\[exceptd path\] (copied to clipboard|no clipboard tool available)/,
-    'stderr must emit one of the two specific status messages — "copied to clipboard" (success) or "no clipboard tool available" (degraded). Neither branch can be silent; a missing/altered message is the regression.');
+  // Two branches the CLI emits: success path is `[exceptd path] copied to clipboard: <path>`
+  // (no `copy:` infix), degraded path is `[exceptd path] copy: no clipboard tool available (tried: ...)`
+  // (with `copy:` infix because the verb name disambiguates the warning from the success path).
+  assert.match(r.stderr, /\[exceptd path\] (copied to clipboard|copy: no clipboard tool available)/,
+    'stderr must emit one of the two specific status messages — "copied to clipboard" (success) or "copy: no clipboard tool available" (degraded). Neither branch can be silent; a missing/altered message is the regression.');
 });
 
 test('#131 run <skill-name> suggests the right playbook', () => {
