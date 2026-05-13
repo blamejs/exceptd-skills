@@ -1,0 +1,7 @@
+{
+  "_note": "Frozen fixture for refresh-external OSV source. Drives deterministic test output without network. Empty diffs by default so existing refresh tests that iterate every source don't gain unexpected new-entry imports. Tests that exercise OSV-import explicitly use EXCEPTD_OSV_FIXTURE on the raw source module.",
+  "status": "ok",
+  "diffs": [],
+  "errors": 0,
+  "summary": "osv fixture: 0 new advisories (test default)"
+}

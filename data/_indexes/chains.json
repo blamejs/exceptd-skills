@@ -1768,6 +1768,57 @@
       "rfc_refs": []
     }
   },
+  "MAL-2026-3083": {
+    "name": "Elementary-Data PyPI Worm (Forged Release via GitHub Actions Script Injection)",
+    "rwep": 45,
+    "cvss": 9.3,
+    "cisa_kev": false,
+    "epss_score": null,
+    "epss_percentile": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-42208": {
+    "name": "BerriAI LiteLLM Proxy Auth SQL Injection",
+    "rwep": 65,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.37368,
+    "epss_percentile": 0.9722,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-39884": {
+    "name": "Flux159 mcp-server-kubernetes Argument Injection via port_forward",
+    "rwep": 20,
+    "cvss": 8.3,
+    "cisa_kev": false,
+    "epss_score": 0.00039,
+    "epss_percentile": 0.11727,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-787": {
     "name": "Out-of-bounds Write",
     "category": "Memory Safety",
@@ -7376,6 +7427,34 @@
   "CWE-916": {
     "name": "Use of Password Hash With Insufficient Computational Effort",
     "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-506": {
+    "name": "Embedded Malicious Code",
+    "category": "Supply Chain",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-88": {
+    "name": "Improper Neutralization of Argument Delimiters in a Command",
+    "category": "Injection",
     "referencing_skills": [],
     "skill_count": 0,
     "chain": {

@@ -1302,5 +1302,39 @@
     "real_requirement": "Argon2id (memory-hard, RFC 9106) with tuned m/t/p; scrypt as fallback; bcrypt with work factor ≥ 12 acceptable for legacy. PBKDF2 only with iteration count ≥ 600,000 (NIST SP 800-63B 2022 update).",
     "lag_notes": "SP 800-63B updated iteration guidance in 2022; many compliance attestations still cite the 2017 numbers. Argon2id is RFC-9106 (2021) but absent from FIPS-approved lists, creating policy friction in federal contexts.",
     "last_verified": "2026-05-13"
+  },
+  "CWE-506": {
+    "id": "CWE-506",
+    "name": "Embedded Malicious Code",
+    "abstraction": "Class",
+    "category": "Supply Chain",
+    "description": "The application contains code that appears to perform a legitimate function but actually contains a payload that performs an additional, attacker-controlled action — typically credential theft, persistence, or remote loader logic. The class covers package-registry malware (PyPI / npm / RubyGems / Cargo / Maven typosquats, compromised maintainer accounts, forged-release-via-CI vectors).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": ["CWE-1000"],
+    "related_attack_patterns_capec": ["CAPEC-442", "CAPEC-446", "CAPEC-538"],
+    "skills_referencing": ["library-author", "supply-chain-integrity"],
+    "evidence_cves": ["CVE-2026-45321", "MAL-2026-3083"],
+    "framework_controls_partially_addressing": ["NIST-800-53-SA-12", "NIST-800-218-PS.1", "ISO-27001-2022-A.8.30", "SLSA-Level-3"],
+    "real_requirement": "Provenance attestation at install time (Sigstore, in-toto, SLSA L3+); registry-side malware scanning on every uploaded artifact; install-time .pth / postinstall / preinstall hook auditing; differential analysis between consecutive releases of the same package (added files, new network egress, new file reads); cooldown periods on new releases of high-download packages so registry scanners and community detection have time to fire before mass install.",
+    "lag_notes": "SA-12 contemplates the traditional supply chain but does not require differential-analysis between adjacent releases. The elementary-data 0.23.3 attack (April 2026) added exactly one file (a `.pth` install-time payload) versus 0.23.2 — a difference any naive diff would catch but no registry-side scanner currently runs at upload time by default.",
+    "last_verified": "2026-05-13"
+  },
+  "CWE-88": {
+    "id": "CWE-88",
+    "name": "Improper Neutralization of Argument Delimiters in a Command",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product constructs a string for a downstream command (typically by concatenating user input into a shell command line, then splitting on whitespace to argv) without escaping argument-delimiter characters. Distinguished from CWE-77 (Command Injection) by the narrower attack surface: the attacker cannot run arbitrary commands but CAN inject additional flags / arguments to a command the application already invokes, which is often sufficient to break the security model (redirect kubectl to attacker-control, change kubectl namespace, etc.).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": ["CWE-1000", "CWE-1003"],
+    "related_attack_patterns_capec": ["CAPEC-460"],
+    "skills_referencing": ["mcp-agent-trust", "container-runtime-security"],
+    "evidence_cves": ["CVE-2026-39884"],
+    "framework_controls_partially_addressing": ["NIST-800-53-SI-10"],
+    "real_requirement": "Pass arguments to spawned processes as an array, not a string. When a string-form command is unavoidable, use the runtime's argument-list API (Node `child_process.spawn(cmd, argsArray)`, Python `subprocess.run([cmd, ...args])`) or a vetted escape function. Linter rule that flags any `.split(' ')` followed by `spawn`/`exec` on user-tainted input.",
+    "lag_notes": "SI-10 addresses input validation categorically but does not specify the argv-vs-string boundary that argument injection exploits. Many MCP servers and CI runners string-concatenate user input into shell commands without registering this as a code-review failure mode.",
+    "last_verified": "2026-05-13"
   }
 }

@@ -37,6 +37,10 @@ const INDICATORS = [
   { playbook: 'mcp', id: 'mcp-response-unicode-tag-smuggling' },
   { playbook: 'mcp', id: 'mcp-response-instruction-coercion' },
   { playbook: 'mcp', id: 'mcp-response-sensitive-path-reference' },
+  // v0.12.10 — added in library-author for the GitHub Actions script
+  // injection sink the elementary-data 0.23.3 supply chain attack
+  // (April 2026) exploited.
+  { playbook: 'library-author', id: 'gha-workflow-script-injection-sink' },
 ];
 
 for (const { playbook, id } of INDICATORS) {

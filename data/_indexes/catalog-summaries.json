@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 6,
+      "entry_count": 9,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2026-43284",
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 51,
+      "entry_count": 53,
       "sample_keys": [
         "CWE-787",
         "CWE-79",
@@ -207,7 +207,7 @@
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-01",
+      "last_updated": "2026-05-13",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 6,
+      "entry_count": 9,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

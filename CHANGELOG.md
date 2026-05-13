@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.12.10 — 2026-05-13
+
+**Patch: OSV.dev wired as an upstream source, three new catalog entries, one new library-author indicator.**
+
+### OSV.dev as a new upstream source
+
+`lib/source-osv.js` + `OSV_SOURCE` in `lib/refresh-external.js` add OSV.dev (https://api.osv.dev/) as a recognised upstream pull. Operators run `exceptd refresh --source osv` to import advisories from the OSV-aggregated dataset, which covers the OSSF Malicious Packages namespace (`MAL-*`), Snyk advisories (`SNYK-*`), GitHub Advisory Database (`GHSA-*`), RustSec (`RUSTSEC-*`), Mageia (`MGASA-*`), Go Vuln DB (`GO-*`), Ubuntu USN (`USN-*`), PYSEC, and UVI — one unauthenticated API in place of N per-vendor feeds.
+
+The `--advisory <id>` flag now routes non-CVE / non-GHSA identifiers (`MAL-*`, `SNYK-*`, `RUSTSEC-*`, `USN-*`, `UVI-*`, `GO-*`, `MGASA-*`, `PYSEC-*`) through `source-osv`. CVE-* and GHSA-* continue routing through `source-ghsa` because the GitHub Advisory Database carries richer field coverage for those namespaces. Imported entries land as `_auto_imported: true` / `_draft: true` drafts, the same shape GHSA imports use — editorial fields (framework_control_gaps, full iocs, atlas_refs, attack_refs, rwep_factors) remain null until a human or AI assistant runs the cve-curation skill.
+
+When an OSV record carries a `CVE-*` value in its `aliases`, the catalog key is the CVE form and the OSV identifier moves to an `aliases` array on the entry. When no CVE is assigned (e.g. MAL-* malicious-package compromises), the OSV identifier IS the catalog key. The previous identifier convention (CVE-only keys) is preserved as the default; the new identifier shapes are an extension.
+
+Fixture support: `EXCEPTD_OSV_FIXTURE` env var (path to a JSON file with one or many OSV records) enables offline testing — same convention as the existing `EXCEPTD_GHSA_FIXTURE`.
+
+### Three new catalog entries
+
+- **`MAL-2026-3083`** (OSV-native key for the **elementary-data PyPI worm**, April 2026). 1.1M-monthly-downloads package compromised via a GitHub Actions script-injection sink in the project's own workflow (`update_pylon_issue.yml` interpolated `${{ github.event.comment.body }}` directly into a `run:` shell, escalated via the workflow's `GITHUB_TOKEN` to forge an orphan-commit release). Payload was a single `elementary.pth` file in the wheel (Python auto-exec at install time, not import time); infostealer sweeping dbt warehouse creds, AWS/GCP/Azure credentials, SSH keys, Kubernetes configs, cryptocurrency wallets to `igotnofriendsonlineorirl-imgonnakmslmao.skyhanni.cloud` with second-stage at `litter.catbox.moe/iqesmbhukgd2c7hq.sh`. Cataloged from OSV's OSSF Malicious Packages dataset (which published 2026-04-24, 4 days before the Snyk advisory). Aliases retained: `SNYK-PYTHON-ELEMENTARYDATA-16316110`, `pypi/2026-04-compr-elementary-data/elementary-data`. Full Hard Rule #14 IoC block; precedent-setting first MAL-* entry in the catalog.
+
+- **`CVE-2026-42208`** (BerriAI LiteLLM Proxy Auth SQL Injection). CVSS 9.3, **on CISA KEV** (dateAdded 2026-05-08). Crafted Authorization header to any LLM API route reaches a SQL query through the error-logging pathway with the attacker value concatenated rather than parameterised — read/modify the LiteLLM-managed-credentials database without prior auth. Affected: `litellm >= 1.81.16, < 1.83.7`. Patched: 1.83.7+ (parameterised query). Temporary workaround: `general_settings: disable_error_logs: true`. RWEP 65 (P1 / 72h timeline). Operator IoCs: Authorization header > 100 chars or carrying SQL metacharacters; mass key-mint events in LiteLLM logs without admin-UI sessions.
+
+- **`CVE-2026-39884`** (Flux159 mcp-server-kubernetes Argument Injection). CVSS 8.3. The `port_forward` MCP tool builds a kubectl command string and `.split(' ')`s it instead of using an argv array, so an AI assistant feeding `resourceName: "pod-name --address=0.0.0.0"` (typically via prompt injection upstream) lands attacker flags in kubectl's argv — binds port-forward to all interfaces or redirects to attacker namespace. Affected: `mcp-server-kubernetes <= 3.4.0`. Patched: 3.5.0+ (argv-array refactor). Operator IoCs: MCP audit logs showing port_forward calls with spaces or `--`/`-n` in resourceName; kubectl port-forward processes with `--address=0.0.0.0` on hosts that don't manually port-forward.
+
+Three matching `data/zeroday-lessons.json` entries follow the CVE-2026-45321 lesson shape. Five new control requirements derived from the lessons: NEW-CTRL-011 (GHA script-injection-sink ban), NEW-CTRL-012 (orphan-commit release detection), NEW-CTRL-013 (AI-gateway credential-store isolation), NEW-CTRL-014 (MCP-server argv not shellstring), NEW-CTRL-015 (MCP tool allowlist enforcement).
+
+### One new library-author indicator
+
+`gha-workflow-script-injection-sink` flags any `.github/workflows/*.yml` workflow that interpolates an attacker-controllable `${{ github.event.* }}` field directly into a `run:` shell script — the exact sink the elementary-data attack exploited. Detection grep covers `github.event.comment.body`, `github.event.issue.body`, `github.event.issue.title`, `github.event.pull_request.body`, `github.event.pull_request.title`, `github.event.review.body`, `github.event.head_commit.message`, `github.head_ref`, `github.event.discussion.body`, `github.event.discussion.title`. False-positive demotion path: if the workflow captures the value into an `env:` variable first OR runs only on `pull_request` (sandboxed, not `pull_request_target`) with default-read permissions, the sink isn't exploitable. Cross-referenced to MAL-2026-3083.
+
+### Catalog extensions
+
+- `data/cwe-catalog.json` gains CWE-506 (Embedded Malicious Code) and CWE-88 (Improper Neutralization of Argument Delimiters). Both backed by the new catalog entries.
+- `data/cve-catalog.json` `_meta.id_conventions` documents the MAL-*/SNYK-*/GHSA-*/RUSTSEC-* identifier shapes the catalog now accepts, the alias-retention convention when MITRE issues a CVE later, and the EPSS limitation (FIRST only indexes CVE identifiers).
+
+### Repository
+
+Test count: 441 → 459 (+18: OSV source tests + matching test references for Hard Rule #15 coverage). Predeploy gates: 15/15. Skills: 38/38 signed and verified. No skill bodies changed in this patch.
+
 ## 0.12.9 — 2026-05-13
 
 **Patch: post-v0.12.8 audit pass — Hard Rule #15 gate flips blocking, sbom evidence-correlation fix, CVE catalog freshness corrections, and recovery of two v0.12.8 stash-restore casualties.**

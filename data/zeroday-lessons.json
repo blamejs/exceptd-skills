@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-01",
+    "last_updated": "2026-05-13",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
     "tlp": "CLEAR",
@@ -465,6 +465,228 @@
       "percent_audit_passing_orgs_still_exposed": 95,
       "basis": "SLSA L3 + provenance + signing all pass on the malicious package. Standard supply-chain audits (SBOM check, provenance verify, signature verify) all give green. The architectural pre-condition (pull_request_target + id-token:write + shared actions/cache) is not in any compliance framework's control catalog. Combined ~150M+ weekly downloads across 42 packages = extremely broad exposure.",
       "theater_pattern": "provenance_signed_therefore_safe"
+    }
+  },
+  "MAL-2026-3083": {
+    "name": "Elementary-Data PyPI Worm (Forged Release via GitHub Actions Script Injection)",
+    "lesson_date": "2026-05-13",
+    "attack_vector": {
+      "description": "GitHub Actions script-injection sink in `.github/workflows/update_pylon_issue.yml`. The workflow interpolated `${{ github.event.comment.body }}` directly into a `run:` block — any commenter could execute attacker-controlled shell with the workflow's elevated GITHUB_TOKEN. The attacker forged an orphan commit (b1e4b1f3...) and tagged v0.23.3, causing the project's legitimate publishing pipeline to emit a properly-signed PyPI release of code the maintainers never saw. The wheel differed from 0.23.2 by exactly one file: an `elementary.pth` Python startup hook that auto-executed on every interpreter invocation and harvested cloud + dbt + git credentials, exfiltrating to a single subdomain on skyhanni.cloud during an 8-hour in-the-wild window (2026-04-24 22:20Z → 2026-04-25 ~06:30Z).",
+      "privileges_required": "Any GitHub account that can comment on a public PR or issue in the target repo.",
+      "complexity": "low — comment-driven; no maintainer access required",
+      "ai_factor": "None observed. Conventional GitHub Actions script-injection tradecraft. The compounding factor is workflow-shaped: `${{ github.event.* }}` interpolated directly into `run:` is a documented anti-pattern, but it remains widespread."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Treat `${{ github.event.* }}` as untrusted; pass it via env: into the script body rather than interpolating directly. Forbid workflows triggered by issue_comment / pull_request_target from holding `contents: write` permissions. Block release tags whose target is not an ancestor of the default branch (orphan-commit-driven release detection).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Architectural — eliminates the primitive entirely. Auditing every workflow file for the anti-pattern is the hard part; this is what the library-author playbook's `gha-workflow-script-injection-sink` indicator looks for."
+      },
+      "detection": {
+        "what_would_have_worked": "Consumer-side fresh-publish cooldown (PyPI's pip --require-hashes against a known-good lockfile, or registry-mirror cooldown windows). Comparison-by-content: any pip install of a major-version-pinned package returning a wheel whose extracted contents differ from the previous patch version by an added .pth file should fail loud.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Defense in depth — the malicious 0.23.3 was caught within hours. A 24-72h cooldown would have shielded most consumers."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate every credential under the credential_paths_scanned list for any host that pip-installed elementary-data during the 8h window — dbt warehouse creds especially. The package was yanked, but extracted .pth files persist on disk until the affected venv is wiped.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Reduces blast radius post-exploitation. Upgrading to 0.23.4 does NOT remove the planted elementary.pth from the existing site-packages — a venv recreate is required."
+      }
+    },
+    "framework_coverage": {
+      "SLSA-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Provenance valid, payload malicious — same shape as CVE-2026-45321. SLSA-L3 attests WHICH pipeline built the artifact, not that the pipeline was driven by trusted inputs."
+      },
+      "NIST-800-53-SA-12": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain protection treats signed release as the trust anchor. The signature was valid; the input to the signing pipeline was attacker-controlled."
+      },
+      "NIST-800-218-PO.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Define and use secure development security checks. Direct interpolation of github.event.* into run: scripts is a documented anti-pattern but is not framework-enforced."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerability handling provisions don't address the case where the maintainer was an unwitting publisher."
+      },
+      "NIS2-Art21-2d": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain risk management presumes detectable signal at consumption. Valid signature neutralizes consumer-side checks."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-011",
+        "name": "GHA-WORKFLOW-SCRIPT-INJECTION-SINK-BAN",
+        "description": "Forbid direct interpolation of `${{ github.event.* }}` (comment.body, issue.body, review.body, pull_request.title, head_ref, etc.) into any `run:` block. Pass via `env:` so the shell sees a quoted variable, not an interpolated string. Enforced via repository linter / required CI check.",
+        "evidence": "MAL-2026-3083 — the entire compromise hinges on this single primitive; no other infrastructure was breached.",
+        "gap_closes": [
+          "NIST-800-218-PO.4",
+          "SLSA-L3"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-012",
+        "name": "ORPHAN-COMMIT-RELEASE-DETECTION",
+        "description": "Reject release tags whose target commit is not reachable from the default branch (`git merge-base --is-ancestor`). Forged orphan-commit releases are a signature of the maintainer-impersonation supply chain pattern.",
+        "evidence": "MAL-2026-3083 — the malicious release pointed at orphan commit b1e4b1f3aad0d489ab0e9208031c67402bbb8480, never on main.",
+        "gap_closes": [
+          "NIST-800-53-SA-12",
+          "EU-CRA-Art13"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 92,
+      "basis": "PyPI signature + maintainer trust + provenance all pass on the malicious package. Audit programs measure SBOM presence, package-signing posture, and dependency-pin discipline — none of which catch a maintainer's own pipeline being weaponized via a comment. ~1.1M monthly downloads broaden the consumer footprint.",
+      "theater_pattern": "signed_release_therefore_safe"
+    }
+  },
+  "CVE-2026-42208": {
+    "name": "BerriAI LiteLLM Proxy Auth SQL Injection",
+    "lesson_date": "2026-05-13",
+    "attack_vector": {
+      "description": "Authorization header value passed directly into a SQL query in the LiteLLM proxy's auth path. Crafted bearer-token-shape strings reach an error-logging pathway that executes SQL with the attacker-controlled value as a string-concatenated parameter — full pre-auth read/modify of the managed-credentials database. CISA KEV-listed 2026-05-08; in-wild exploitation evidence is the listing criterion.",
+      "privileges_required": "Network reachability to the LiteLLM proxy endpoint. No prior authentication.",
+      "complexity": "low — curl-able. POST /chat/completions with a SQLi payload in Authorization.",
+      "ai_factor": "Conventional human-security-research SQLi tradecraft. AI-stack relevance is downstream: LiteLLM IS the gateway in front of the model-provider keys that operators DO NOT want exfiltrated. The vulnerability is conventional; the impact class is AI-infrastructure."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Parameterised queries throughout the auth path — no caller-supplied string ever string-concatenated into SQL. The 1.83.7 patch is exactly this: caller-supplied value becomes a SQL parameter, not part of the statement.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-10",
+        "adequacy": "Eliminates the class. SI-10's text requirement is satisfied by 'we validate inputs' regardless of whether the validation runs before the parameter binding — the framework gap is operational, not conceptual."
+      },
+      "detection": {
+        "what_would_have_worked": "WAF rule on Authorization headers containing SQL metacharacters or exceeding 100 bytes of non-base64-shape characters. LiteLLM error logs surface the injection string verbatim pre-1.83.7 — a log-pattern alert would have fired on the first probe.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection layer. Operators running LiteLLM behind a default-deny WAF would not have been compromised."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate every virtual key minted on the proxy since the patch ship date. Rotate every model-provider key the proxy held (openai, anthropic, etc.). Rotate LITELLM_MASTER_KEY and DATABASE_URL credentials. Audit LiteLLM_VerificationToken / LiteLLM_UserTable for admin-event-less inserts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Reduces blast radius post-exploitation. The DB primitive is read+write — assume tampering, not just disclosure."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation control doesn't address argument-vs-statement distinction in SQL libraries."
+      },
+      "OWASP-LLM01": {
+        "covered": false,
+        "adequate": false,
+        "gap": "Prompt-injection control set doesn't address the AI-PROXY backend SQL surface — LiteLLM is the substrate that gates LLM API access, not the LLM itself."
+      },
+      "EU-AI-Act-Art-15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Robustness + cybersecurity requirement is undefined operationally for AI gateway infrastructure."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-013",
+        "name": "AI-GATEWAY-CREDENTIAL-STORE-ISOLATION",
+        "description": "AI-API gateway substrates (LiteLLM, Portkey, Helicone, similar) must isolate the managed-credentials DB on a network segment unreachable from the API plane. The auth path may read but the API plane MUST NOT have raw-SQL connectivity to the credential store.",
+        "evidence": "CVE-2026-42208 — a single SQLi reaches the entire model-provider credential vault because the API plane and credential store share a process.",
+        "gap_closes": [
+          "OWASP-LLM01",
+          "EU-AI-Act-Art-15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "SI-10 audits accept 'we validate inputs' as compliance. Most operators run LiteLLM internet-reachable behind a thin proxy without a SQL-injection-aware WAF. KEV listing imposes a 21-day patch SLA on federal orgs; private-sector adoption lags.",
+      "theater_pattern": "input_validation_checkbox_without_parameterised_queries"
+    }
+  },
+  "CVE-2026-39884": {
+    "name": "Flux159 mcp-server-kubernetes Argument Injection via port_forward",
+    "lesson_date": "2026-05-13",
+    "attack_vector": {
+      "description": "AI assistant invokes the mcp-server-kubernetes `port_forward` MCP tool with a tainted resourceName (e.g. 'pod-name --address=0.0.0.0'). The server builds a string-form kubectl command and uses `.split(' ')` instead of an argv array, so the attacker-controlled flag lands as a distinct argv entry to kubectl. `--address=0.0.0.0` binds the port-forward to all interfaces; `-n kube-system` redirects to attacker-chosen namespaces. Exploitation is mediated by the AI assistant — adversarial input via prompt injection in retrieved docs / commit messages / upstream MCP tool responses is the upstream gate.",
+      "privileges_required": "AI assistant with mcp-server-kubernetes installed and port_forward enabled. Attacker needs only to influence the AI's input (PR comment, doc, retrieved RAG chunk).",
+      "complexity": "low — once the tainted string is in the AI's context, the tool call propagates it unchanged.",
+      "ai_factor": "AI-assistant-mediated argument injection. The vuln is conventional argv-injection; the AI is the channel that converts adversarial document content into infrastructure-tool flags."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "argv-array spawn — `execFile('kubectl', ['port-forward', resourceName, ...])` with no `.split(' ')` and no shell interpretation. The 3.5.0 patch does exactly this.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-10",
+        "adequacy": "Architectural fix — the class disappears."
+      },
+      "detection": {
+        "what_would_have_worked": "MCP audit log alerting on port_forward tool calls where resourceName contains whitespace or kubectl flag prefixes (`--`, `-n`). Process-level alerting on kubectl port-forward processes with --address=0.0.0.0 on hosts that should only port-forward to localhost.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection layer — catches the exploit attempt before the listener binds externally."
+      },
+      "response": {
+        "what_would_have_worked": "Disable the port_forward tool in the MCP allowlist until upgraded to 3.5.0+. Most operator deployments don't rely on port_forward for routine work.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective tool-disable mitigation; low operator cost."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation control doesn't address the argv-vs-string boundary that argument injection exploits."
+      },
+      "OWASP-LLM01": {
+        "covered": false,
+        "adequate": false,
+        "gap": "Prompt-injection control set doesn't model the AI-assistant-as-channel pattern — the attacker doesn't compromise the MCP server, they feed adversarial input that the AI dutifully passes through."
+      },
+      "NIS2-Art21-2g": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch management presumes traditional CVE timelines; MCP plugin ecosystem patch awareness lags."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-014",
+        "name": "MCP-SERVER-ARGV-NOT-SHELLSTRING",
+        "description": "MCP servers spawning subprocesses MUST use argv-array spawn primitives (execFile / spawn with array args / posix_spawn) — never .split(' ') or shell concatenation of caller-supplied input. Treats every MCP tool argument as untrusted by default.",
+        "evidence": "CVE-2026-39884 — the entire vulnerability is .split(' ') on a caller-supplied string. The 3.5.0 patch is the argv-array refactor.",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "OWASP-LLM01"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-015",
+        "name": "MCP-TOOL-ALLOWLIST-ENFORCEMENT",
+        "description": "AI agent stacks must enforce an explicit allowlist of MCP tools — tools default to denied. High-risk tools (port_forward, exec, write_file, shell, kubectl) require operator consent per session.",
+        "evidence": "CVE-2026-39884 — temporary mitigation is exactly 'disable port_forward in the allowlist'. The control closes the class across future MCP plugins.",
+        "gap_closes": [
+          "OWASP-LLM01",
+          "NIS2-Art21-2g"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "MCP ecosystem patch hygiene lags traditional CVE timelines. Most AI-agent operators do not maintain an explicit MCP tool allowlist; SI-10 audits accept the MCP plugin as a vendored dependency without auditing its argv handling.",
+      "theater_pattern": "vendored_mcp_plugin_inherits_vendor_trust"
     }
   }
 }
