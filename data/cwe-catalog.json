@@ -115,7 +115,7 @@
     "skills_referencing": [
       "exploit-scoring"
     ],
-    "evidence_cves": [],
+    "evidence_cves": ["CVE-2026-42208"],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "ISO-27001-2022-A.8.28",
@@ -247,7 +247,8 @@
     ],
     "evidence_cves": [
       "CVE-2025-53773",
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -392,7 +393,7 @@
       "mcp-agent-trust",
       "ai-attack-surface"
     ],
-    "evidence_cves": [],
+    "evidence_cves": ["MAL-2026-3083"],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "ISO-27001-2022-A.8.28"
