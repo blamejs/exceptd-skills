@@ -16,6 +16,14 @@ name: Release
 # published tarball via npm provenance. Requires `id-token: write`
 # permission on the publish job and `--provenance` on `npm publish`
 # (handled by publishConfig.provenance: true in package.json).
+#
+# Job split (v0.12.7): `validate` runs every trigger including
+# branch-based workflow_dispatch dry-runs; `publish` is gated by the
+# `npm-publish` deployment environment (tag-only protection) AND by
+# `needs: validate`. GitHub evaluates environment rules BEFORE the
+# job is scheduled — placing the environment on the entire release
+# job (the v0.12.6 shape) blocked every branch-based workflow_dispatch
+# at scheduling time, defeating dry-runs.
 
 on:
   push:
@@ -32,14 +40,15 @@ on:
         required: false
         default: 'false'
 
-permissions:
-  contents: write
-  id-token: write          # required for npm provenance via GitHub OIDC
-
 jobs:
-  release:
-    name: Validate + publish + GitHub Release
+  validate:
+    name: Validate (gates + e2e + npm pack preview)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version_check.outputs.version }}
+      tag: ${{ steps.version_check.outputs.tag }}
 
     steps:
       - name: Checkout (full history for changelog extraction)
@@ -49,15 +58,11 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Set up Node 24 + npm provenance support
+      - name: Set up Node 24
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          # `always-auth: true` makes the published .npmrc authenticate
-          # against NPM_TOKEN — required because we don't `npm install`
-          # any deps but we DO need a writable auth token at publish time.
-          always-auth: true
 
       - name: Verify tag matches package.json version
         id: version_check
@@ -79,8 +84,6 @@ jobs:
         run: |
           set -e
           npm install --no-audit --no-fund
-          # If anything got pulled in transitively, that's a supply-chain
-          # surprise and we want to know.
           DEP_COUNT="$(node -p "Object.keys(require('./package.json').dependencies || {}).length")"
           DEV_COUNT="$(node -p "Object.keys(require('./package.json').devDependencies || {}).length")"
           echo "dependencies: $DEP_COUNT, devDependencies: $DEV_COUNT"
@@ -95,21 +98,29 @@ jobs:
       - name: Predeploy gate sequence
         # 14 gates: verify, tests, catalog validate, manifest snapshot,
         # lint, watchlist, catalog-meta, sbom, indexes, vendor, package
-        # tarball shape, sign+pack+extract+verify round-trip (added v0.12.3
-        # to catch the regression where verify-on-source-tree passes but
-        # verify-on-shipped-tarball fails), plus the offline cve/rfc gates.
+        # tarball shape, sign+pack+extract+verify round-trip (v0.12.3),
+        # plus the offline cve/rfc gates.
         run: npm run predeploy
 
       - name: End-to-end scenarios (staged-IoC harness)
-        # v0.12.2: iterate tests/e2e-scenarios/* — each scenario stages a
-        # synthetic file tree (CVE-2026-45321 payload files, Claude
+        # v0.12.2: iterate tests/e2e-scenarios/* — each scenario stages
+        # a synthetic file tree (CVE-2026-45321 payload files, Claude
         # SessionStart hooks, VS Code folder-open tasks, GitHub Actions
         # cache co-residency, missing .npmrc cooldown, etc.) and asserts
         # the CLI catches it. Unit tests prove the engine works in
         # isolation; this proves the seven-phase contract catches real
-        # IoCs against a real filesystem. A regression here blocks the
-        # release before npm publish.
+        # IoCs against a real filesystem.
         run: npm run test:e2e
+
+      - name: Forensic — working-tree drift since checkout
+        # If any predeploy gate / test mutated tracked files, dump the
+        # exact files that differ from checkout. Runs even on failure.
+        if: always()
+        run: |
+          echo '== git status --porcelain =='
+          git status --porcelain || true
+          echo '== git diff --stat HEAD =='
+          git diff --stat HEAD || true
 
       - name: npm pack (dry-run preview)
         run: |
@@ -119,17 +130,57 @@ jobs:
           FILE_COUNT="$(node -e 'const j=require("/tmp/pack.json"); console.log(Array.isArray(j)?j[0].files.length:j.files.length)')"
           echo "Tarball: $PACKED_SIZE bytes packed / $UNPACKED_SIZE bytes unpacked / $FILE_COUNT files"
 
+  publish:
+    name: Publish to npm + GitHub Release
+    runs-on: ubuntu-latest
+    needs: validate
+    # Skip publish on dry-run dispatches — validate still ran.
+    if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
+    # Deployment-environment gate: `npm-publish` is restricted to tag refs
+    # matching `v*.*.*` (configured in repo Settings → Environments).
+    # Branch-based workflow_dispatch cannot reach this job. The dispatched
+    # dry-run path skips this job entirely via the `if:` above.
+    environment:
+      name: npm-publish
+      url: https://www.npmjs.com/package/@blamejs/exceptd-skills
+    permissions:
+      contents: write
+      id-token: write          # required for npm provenance via GitHub OIDC
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Node 24 + npm provenance support
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          # `always-auth: true` makes the published .npmrc authenticate
+          # against NPM_TOKEN — required because we don't `npm install`
+          # any deps but we DO need a writable auth token at publish time.
+          always-auth: true
+
+      - name: Install dependencies (none — sanity check zero-dep claim)
+        run: npm install --no-audit --no-fund
+
+      - name: Bootstrap (verify-only path) — needed for prepublishOnly hooks
+        run: npm run bootstrap
+
       - name: npm publish (with provenance)
-        if: ${{ inputs.dry_run != 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           # v0.11.7: skip prepublishOnly's redundant predeploy run. The
-          # standalone "Predeploy gate sequence" step above already validated
-          # the same gates. Re-running here was causing a spurious public-key
-          # fingerprint divergence in CI (different fingerprint reported on
-          # the second invocation, signature verification failing despite
-          # bit-identical inputs). The standalone step is the authoritative
-          # safety net for CI publishes.
+          # `validate` job above already ran the same gates. Re-running
+          # here caused a spurious public-key fingerprint divergence in
+          # CI (different fingerprint reported on the second invocation,
+          # signature verification failing despite bit-identical inputs).
+          # The validate job is the authoritative safety net for CI
+          # publishes.
           EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY: '1'
         run: |
           # --access public is also set via publishConfig, but explicit beats
@@ -141,7 +192,7 @@ jobs:
       - name: Extract CHANGELOG section for this version
         id: changelog
         run: |
-          VERSION="${{ steps.version_check.outputs.version }}"
+          VERSION="${{ needs.validate.outputs.version }}"
           # Pull the section between "## <version>" and the next "## ".
           # awk handles multiline + preserves formatting.
           awk -v v="$VERSION" '
@@ -159,11 +210,10 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        if: ${{ inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8  # v2.3.2
         with:
-          tag_name: ${{ steps.version_check.outputs.tag }}
-          name: ${{ steps.version_check.outputs.tag }}
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ${{ needs.validate.outputs.tag }}
           body: ${{ steps.changelog.outputs.body }}
           draft: false
           prerelease: false

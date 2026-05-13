@@ -25,13 +25,18 @@
 #   npm run test:docker:fresh    → fresh-bootstrap target
 #
 # Why pinned image:
-#   node:24.14.1-alpine3.21 — pinned to the same Node version CI uses
+#   node:24.14.1-alpine3.23 — pinned to the same Node version CI uses
 #   in `.github/workflows/ci.yml`. A drift here lets a Node-version-
-#   sensitive bug pass local Docker and fail CI (or vice versa). When
-#   the CI workflow bumps Node, bump this tag in the same commit.
+#   sensitive bug pass local Docker and fail CI (or vice versa). The
+#   tag is additionally pinned by digest so a registry-side mutation
+#   (rare but possible) cannot change the image under us — Scorecard's
+#   Pinned-Dependencies check requires this for a contributor-facing
+#   reproducer image. When the CI workflow bumps Node, bump this tag
+#   AND its digest in the same commit (look up via
+#   `docker buildx imagetools inspect node:<new-tag>`).
 
 # ── base ───────────────────────────────────────────────────────────────────
-FROM node:24.14.1-alpine3.21 AS base
+FROM node:24.14.1-alpine3.23@sha256:8510330d3eb72c804231a834b1a8ebb55cb3796c3e4431297a24d246b8add4d5 AS base
 
 # Run as a non-root user to match GitHub Actions runner behavior.
 # `node` is the upstream image's existing non-root user.

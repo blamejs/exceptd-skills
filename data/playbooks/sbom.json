@@ -1,10 +1,17 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "last_threat_review": "2026-05-13",
-    "threat_currency_score": 97,
+    "threat_currency_score": 98,
     "changelog": [
+      {
+        "version": "1.2.0",
+        "date": "2026-05-13",
+        "summary": "Primary-source IoC audit (v0.12.6 / AGENTS.md Hard Rule #14). CVE-2026-45321 (Mini Shai-Hulud) IoC block expanded from 4 categories to 8: adds SHA-256 hashes for router_init.js + tanstack_runner.js, attacker-fork commit (79ac49ee), tarball-size anomaly threshold, gh-token-monitor daemon family, C2 domains (git-tanstack.com, filev2.getsession.org, api.masscan.cloud), GitHub dead-drop description strings ('A Mini Shai-Hulud has Appeared'), cloud-metadata recon endpoints, credential search paths (~/.aws, ~/.ssh, ~/.kube, AI tool credentials, crypto wallets), worm propagation via .github/workflows/codeql_analysis.yml, ransom string 'IfYouRevokeThisTokenItWillWipeTheComputerOfTheOwner'. Cross-referenced against Aikido / StepSecurity / Socket / Wiz / Datadog / Sysdig / Pulsedive primary sources on the original Sept 2025 Shai-Hulud worm and the May 2026 Mini variant.",
+        "cves_added": [],
+        "framework_gaps_updated": []
+      },
       {
         "version": "1.1.0",
         "date": "2026-05-13",

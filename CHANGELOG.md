@@ -1,5 +1,93 @@
 # Changelog
 
+## 0.12.7 — 2026-05-13
+
+**Patch: two follow-on fixes to v0.12.6.**
+
+### Release workflow — environment scoping
+
+The job-level `environment: npm-publish` in `.github/workflows/release.yml` blocked every branch-based `workflow_dispatch` at scheduling time, including dry-run predeploy invocations. GitHub evaluates environment branch/tag protection BEFORE a job is sent to a runner; the dispatched `GITHUB_REF` for a branch-based dry-run failed the tag-only environment rule before any step ran.
+
+Fix: split the workflow into two jobs.
+
+- `validate` — predeploy + e2e + npm pack preview. No environment. Runs on every trigger including branch-based dry-runs.
+- `publish` — npm publish + GitHub Release. `needs: validate` + `environment: npm-publish` + `if: github.event_name == 'push' || inputs.dry_run != 'true'`. The environment gate now only applies to the actual publish step, leaving dry-runs free to exercise the gates.
+
+This is consistent with the existing tag-only protection on the `npm-publish` environment — branch-based workflow_dispatch still cannot reach `npm publish`, but it CAN reach `validate` for dry-run gate checks.
+
+### mcp playbook — indicators wired to v0.12.6 artifacts
+
+v0.12.6 added two new look.artifacts (`vscode-copilot-yolo-mode`, `mcp-tool-response-log`) but did not add detect.indicators keyed to them, so the collected telemetry never influenced `phases.detect.classification`. The IoC coverage was non-operational in `exceptd run` outputs.
+
+Fix: 6 new detect.indicators in `data/playbooks/mcp.json`:
+
+1. **`copilot-yolo-mode-flag`** — keyed off `vscode-copilot-yolo-mode`. Matches `chat.tools.autoApprove: true` in any settings.json variant. Deterministic. Primary IoC for CVE-2025-53773.
+2. **`copilot-chat-experimental-flags`** — broader sweep for `chat.{experimental,tools}.*: true` other than the autoApprove key.
+3. **`mcp-response-ansi-escape`** — keyed off `mcp-tool-response-log`. Matches byte 0x1B in tools/list field or tools/call response. Deterministic. CVE-2026-30615 IoC class.
+4. **`mcp-response-unicode-tag-smuggling`** — keyed off `mcp-tool-response-log`. Matches U+E0000..U+E007F codepoints. Deterministic.
+5. **`mcp-response-instruction-coercion`** — keyed off `mcp-tool-response-log`. Regex match against `<IMPORTANT>` blocks, "Before using this tool, read", "Do not mention to user", compliance-urgency manipulation, etc.
+6. **`mcp-response-sensitive-path-reference`** — keyed off `mcp-tool-response-log`. Matches `~/.ssh/id_rsa`, `~/.aws/credentials`, cross-tool credential paths, `process.env.{AWS_SECRET*, GITHUB_TOKEN, ...}`. Cross-server credential-shadow signature.
+
+mcp playbook bumped 1.2.0 → 1.3.0. threat_currency_score stays at 98. `last_threat_review: 2026-05-13`.
+
+## 0.12.6 — 2026-05-13
+
+**Patch: primary-source IoC audit across the catalog — five CVEs reviewed line-level against published exploit source. AGENTS.md Hard Rule #14 added.**
+
+Five research agents dispatched in parallel to cross-reference our IoC list for each catalogued CVE against published exploit source / vendor advisories / researcher writeups. Roughly 60 IoCs added, one major CVSS correction, two CVEs gained an `iocs` block where they previously had `null`.
+
+### CVE-2025-53773 (Copilot YOLO mode) — major correction
+
+The catalog entry was directionally right (prompt-injection RCE in an AI tool) but factually wrong on the specifics defenders need:
+- **CVSS corrected 9.6 → 7.8** (AV:N → AV:L). The attack is local-vector via developer-side IDE interaction; the attacker doesn't reach in over the network. NVD authoritative.
+- **Vector corrected** from "PR descriptions" to **`.vscode/settings.json:chat.tools.autoApprove` write coerced by any agent-readable content** (source comments, README, issue bodies, MCP tool responses).
+- **iocs populated** (was null) with primary post-exploitation indicator: `.vscode/settings.json` containing `"chat.tools.autoApprove": true`. Workspace AND user-global. Includes invisible Unicode Tag-block (U+E0000–U+E007F) variant detection.
+- **affected_versions** specified: Visual Studio 2022 `>=17.14.0, <17.14.12` + Copilot Chat extension predating August 2025 Patch Tuesday.
+- **CWE-77** added.
+- **Worm propagation** documented (Rehberger demonstrated git-commit + push of malicious settings file).
+
+Source: Embrace the Red (Rehberger, August 2025), NVD, MSRC, Wiz vulnerability database.
+
+### CVE-2026-45321 (Mini Shai-Hulud) — expanded from 4 to 8 IoC categories
+
+Added: payload SHA-256 hashes (`ab4fcadaec49c0...` for router_init.js, `2ec78d556d696...` for tanstack_runner.js), attacker fork commit (`79ac49eedf774dd...`), tarball-size anomaly threshold (~3.7× = ~900KB vs ~190KB), `gh-token-monitor` daemon family (LaunchAgent label is `com.user.gh-token-monitor`, NOT `com.tanstack.*` as previously cataloged), three C2 channels (`git-tanstack.com`, `filev2.getsession.org`, `api.masscan.cloud`), GitHub dead-drop description strings (`A Mini Shai-Hulud has Appeared`, `Sha1-Hulud: The Second Coming.`, `Shai-Hulud Migration`), full credential-search-path corpus (~/.aws, ~/.ssh, ~/.kube, ~/.claude.json, crypto wallets), env-var harvest list, worm-propagated workflow signature (`.github/workflows/codeql_analysis.yml`), ransom string (`IfYouRevokeThisTokenItWillWipeTheComputerOfTheOwner` — zero-FP campaign signature).
+
+Source: Aikido / StepSecurity / Socket / Wiz / Datadog / Sysdig / Pulsedive primary writeups on the original September 2025 Shai-Hulud worm and the May 2026 Mini variant.
+
+### CVE-2026-31431 (Copy Fail) — iocs added (was missing)
+
+Catalog had no `iocs` field. Added: `/etc/passwd` multiple-uid-zero post-exploit signal; setuid binary drift via `rpm -Va` / `debsums -c`; runtime syscall indicators (splice from RO fd into pipe — Dirty Pipe primitive; userfaultfd from unprivileged when sysctl permits; ptrace POKEDATA against /proc/<pid>/mem); kernel-trace indicators (ftrace `splice_write`, eBPF kprobe on `copy_page_to_iter`, auditd `splice_unpriv` rule, dmesg BUG in mm/filemap.c+mm/memory.c+fs/splice.c); behavioral (process Uid transition without setuid-execve = DirtyCred signal; root shell with non-suid parent); livepatch-evasion-window gap (kernel in affected range + `/sys/kernel/livepatch/*/cve-ids` doesn't contain this CVE → treat as EXPOSED regardless of generic livepatch-active flag).
+
+Source: Max Kellermann (Dirty Pipe disclosure), Phil Oester (Dirty COW), Arinerron PoC repo, DirtyCred CCS 2022 paper.
+
+### CVE-2026-43284 + CVE-2026-43500 (Dirty Frag pair) — subsystem_anchors added
+
+Both entries previously had no per-subsystem detection guidance. Added `subsystem_anchors` block: kernel modules (esp4/esp6/xfrm_user for IPsec half; rxrpc/af_rxrpc/kafs for RxRPC half), kernel symbols (`esp_input`/`xfrm_input` and `rxrpc_recvmsg`/`afs_make_call`), procfs paths (`/proc/net/xfrm_stat`, `/proc/net/rxrpc/{calls,conns,peers,locals}`), syscall surface (NETLINK_XFRM=6 with non-root user-namespace caller; AF_RXRPC socket on non-AFS host). IoCs surface "vulnerable kernel" → "actively exposed kernel": ESP module loaded with no policies + non-zero XfrmInNoStates; any non-AFS-allowlist process opening AF_RXRPC; rxrpc-active-call-on-non-AFS-host.
+
+Source: Linux kernel source (`net/ipv4/esp4.c`, `net/rxrpc/proc.c`), historical bugs CVE-2022-29581/CVE-2023-32233/CVE-2024-26581 (xfrm UAF family), kafs documentation.
+
+### CVE-2026-30615 (Windsurf MCP) — iocs added (was missing)
+
+Catalog had `iocs: null`. Added: ANSI escape sequence detection (any byte 0x1B in tools/list field or tools/call response — SGR, cursor-movement, OSC-8 subclasses), Unicode Tag-block smuggling (U+E0000–U+E007F), instruction-coercion grammar (`<IMPORTANT>` blocks, "Before using this tool, read", "Do not mention to user", "THIS TOOL IS REQUIRED FOR GDPR/SOC2/COMPLIANCE" urgency manipulation, `chmod -R 0666 ~` prefix coercion), sensitive-path references in tool responses (cross-server credential-shadow), unprompted-tool-chain behavioral (≥2 tools/call within one user turn, second target not in user prompt, second target in {exec, shell, fetch, write_file}), MCP egress beyond manifest (postmark-mcp class — only signal is unexpected destination), invocation-count anomaly (compromised-legitimate-publisher detector). Added `atlas_refs`: AML.T0051 (indirect prompt injection — the canonical mapping), AML.T0096. Added `attack_refs`: T1552.001 (credentials in files), T1041 (exfil over C2).
+
+Source: Trail of Bits (line-jumping + ANSI escape research), Invariant Labs (tool poisoning), Embrace the Red (Unicode Tag smuggling), Acuvity/Semgrep (postmark-mcp), Palo Alto Unit 42 (sampling/createMessage).
+
+### AGENTS.md Hard Rule #14
+
+> **Primary-source IoC review** — Any CVE entry whose `poc_available: true` AND whose exploit code is publicly available must include `iocs` populated from a line-level cross-reference of the published source — not from secondary-source paraphrase. Each IoC must be traceable to a specific source URL or commit hash. Skipping this audit is equivalent to shipping "untested security advice" — the IoC list IS the operator-facing detection contract.
+
+### Playbook bumps
+
+- `sbom` 1.1.0 → 1.2.0 — threat_currency_score 97 → 98
+- `mcp` 1.1.0 → 1.2.0 — threat_currency_score 97 → 98 — new look artifacts (vscode-copilot-yolo-mode, mcp-tool-response-log)
+- `kernel` 1.0.0 → 1.1.0 — threat_currency_score 92 → 95
+
+All three `last_threat_review: 2026-05-13`.
+
+### Method
+
+Five parallel researcher agents dispatched via the project's multi-agent pattern (CLAUDE.md "Parallel agent dispatch for large patches"). Each agent owned one CVE; each returned a structured gap report with category, pattern, source citation (URL + quote), and ready-to-paste JSON. Main thread integrated. Hard Rule #14 codifies the pattern for every subsequent catalog addition.
+
 ## 0.12.5 — 2026-05-13
 
 **Patch: root cause of the signature regression — a test was generating a fresh keypair mid-suite.**
