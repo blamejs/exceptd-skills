@@ -1074,12 +1074,41 @@ test('#104 close emits jurisdiction_notifications alias + clocks count', () => {
 
 // ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
-  // We don't want this test to actually generate a keypair — just verify
-  // the flag is recognized and doctor doesn't reject it as unknown.
-  const r = cli(['doctor', '--fix', '--json'], { env: { EXCEPTD_RAW_JSON: '1' } });
-  // Doctor should return JSON; --fix may have been a no-op (key already
-  // present) or generated one. Either way, the verb shouldn't crash.
-  assert.notEqual(r.status, 2, 'doctor --fix should not be an unknown-flag error');
-  const data = tryJson(r.stdout);
-  assert.ok(data, 'doctor --fix should emit JSON');
+  // v0.12.4 ROOT-CAUSE FIX: this test previously invoked `exceptd doctor --fix`
+  // directly. On any machine where `.keys/private.pem` was missing (every CI
+  // run, every fresh clone), `--fix` would synchronously spawn
+  // `lib/sign.js generate-keypair`, which OVERWRITES `keys/public.pem` with
+  // a fresh Ed25519 public key. After that, every committed manifest signature
+  // (signed against the OLD key) fails to verify against the NEW public.pem.
+  // Result: every v0.11.x and v0.12.x release shipped a tarball where 0/38
+  // skills verified on fresh `npm install`. The bug was invisible because
+  // CI's verify step (gate 1) ran BEFORE this test (gate 2), so verify saw
+  // the original key. The new verify-shipped-tarball gate (gate 14) ran
+  // AFTER this test, and packed/verified against the overwritten key.
+  //
+  // Fix: pre-stage a dummy `.keys/private.pem` so `--fix` sees "private key
+  // already present" and short-circuits without generating. Restore the
+  // pre-test state in finally{}. The test still verifies that the verb is
+  // registered + emits JSON, which is all the smoke check needs to assert.
+  const keysDir = path.join(ROOT, '.keys');
+  const privPath = path.join(keysDir, 'private.pem');
+  const hadKey = fs.existsSync(privPath);
+  let stashed = null;
+  if (hadKey) {
+    // Already maintainer-state — test passes through doctor's short-circuit.
+  } else {
+    fs.mkdirSync(keysDir, { recursive: true });
+    // Empty file is sufficient: lib/sign.js generate-keypair checks
+    // `fs.existsSync(PRIVATE_KEY_PATH)` and exits before any key write.
+    fs.writeFileSync(privPath, '');
+    stashed = privPath;
+  }
+  try {
+    const r = cli(['doctor', '--fix', '--json'], { env: { EXCEPTD_RAW_JSON: '1' } });
+    assert.notEqual(r.status, 2, 'doctor --fix should not be an unknown-flag error');
+    const data = tryJson(r.stdout);
+    assert.ok(data, 'doctor --fix should emit JSON');
+  } finally {
+    if (stashed && fs.existsSync(stashed)) fs.unlinkSync(stashed);
+  }
 });
