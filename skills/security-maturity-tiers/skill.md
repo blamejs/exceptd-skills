@@ -38,6 +38,12 @@ Three tiers. Each is complete, not a stepping stone to the next. An organization
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill produces a roadmap shape that applies to *every* security domain the project covers (kernel patching, AI systems, cryptography, MCP, RAG, identity, supply chain, etc.). The three-tier roadmap is domain-agnostic; the domain-specific TTPs and framework gaps live in the downstream skill that owns the domain. Pinning a fixed subset here would falsely imply tier-mapping applies only to that subset.
+
+---
+
 ## How to Use This Skill
 
 This skill produces a three-column roadmap for any security domain. Tell it:

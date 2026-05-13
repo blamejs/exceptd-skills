@@ -46,7 +46,7 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
 
     Mechanical enforcement lives in `scripts/check-test-coverage.js` and runs as the 15th gate of `npm run predeploy` (also the `Diff coverage` job in `ci.yml`). Docs (`*.md`), workflow YAML, and skill body changes are allowlisted — skill bodies are covered by the Ed25519 signature gate (Hard Rule #13), workflows surface a manual-review flag rather than a hard finding. Whitespace-only diffs are ignored.
 
-    The gate ships in v0.12.8 as `--warn-only` during the rollout window; it flips to blocking in v0.12.9. Once blocking, never bypass with `--no-verify` or `--warn-only` — add the covering test first. This rule is additive to Hard Rule #11 (no-MVP ban): a new playbook indicator or CLI surface that ships without a regression test is the same shape of incomplete-feature ship that #11 forbids, applied to the test layer.
+    The gate is blocking: a covered surface change without a covering test reference fails the predeploy run and the `Diff coverage` CI job. Never bypass with `--no-verify` or `--warn-only` — add the covering test first. This rule is additive to Hard Rule #11 (no-MVP ban): a new playbook indicator or CLI surface that ships without a regression test is the same shape of incomplete-feature ship that #11 forbids, applied to the test layer.
 
 ---
 
@@ -97,7 +97,7 @@ Schema reference: `lib/schemas/playbook.schema.json`. Reference playbook (read t
 
 Each playbook's `_meta.feeds_into[]` declares downstream playbooks the host AI should consider chaining into after this run, and the condition that fires the chain. The condition expressions evaluate at `close()` against `analyze` + `validate` + `agentSignals` context. AI assistants surface the suggested next playbook to the operator but never auto-execute; the operator decides.
 
-The current (v0.10.x) matrix:
+The current matrix:
 
 | From | Triggers | To | Why |
 |---|---|---|---|

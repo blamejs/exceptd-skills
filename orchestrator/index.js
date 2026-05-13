@@ -246,7 +246,7 @@ function runSkillContext(skillName) {
   const context = getSkillContext(skillName);
   if (!context) {
     // Unified error shape across the CLI surface — see v0.10.3 bug #18.
-    process.stderr.write(JSON.stringify({ ok: false, error: `Skill not found: ${skillName}`, verb: "skill", hint: "Run `exceptd plan` or check skills/ for available skill IDs." }) + "\n");
+    process.stderr.write(JSON.stringify({ ok: false, error: `Skill not found: ${skillName}`, verb: "skill", hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
     process.exit(1);
   }
 

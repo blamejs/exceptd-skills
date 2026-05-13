@@ -152,18 +152,16 @@ const GATES = [
     requiresKeys: true,
   },
   {
-    // v0.12.8 — AGENTS.md hard rule #15 (e2e no-MVP). Every diff that
-    // touches a CLI verb, CLI flag, lib/orchestrator/scripts export,
-    // playbook indicator, or CVE iocs field must land with a covering
-    // test reference in the same PR. The analyzer parses git diff against
+    // AGENTS.md hard rule #15 (e2e no-MVP). Every diff that touches a
+    // CLI verb, CLI flag, lib/orchestrator/scripts export, playbook
+    // indicator, or CVE iocs field must land with a covering test
+    // reference in the same PR. The analyzer parses git diff against
     // origin/main, classifies each change shape, and fails if a covered
-    // surface lacks a test literal anywhere under tests/. Run with
-    // --warn-only during the v0.12.8 → v0.12.9 rollout window so the gate
-    // surfaces gaps without blocking; flip to blocking after one release
-    // cycle.
+    // surface lacks a test literal anywhere under tests/. Blocking — a
+    // covered surface change without a covering test fails the gate.
     name: "Diff coverage (feature changes require test coverage)",
     command: process.execPath,
-    args: [path.join(ROOT, "scripts", "check-test-coverage.js"), "--warn-only"],
+    args: [path.join(ROOT, "scripts", "check-test-coverage.js")],
     ciJobName: "Diff coverage",
   },
 ];

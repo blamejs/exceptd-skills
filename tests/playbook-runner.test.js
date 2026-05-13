@@ -557,28 +557,73 @@ describe('analyze', () => {
   let runner;
   before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
 
-  it('matched_cves resolved from domain.cve_refs via cross-ref-api', () => {
+  it('catalog_baseline_cves enumerate every CVE from domain.cve_refs', () => {
+    // Catalog baseline is always populated regardless of evidence. This is
+    // the scan-coverage enumeration, not the operator-affected list.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    const ids = an.matched_cves.map(c => c.cve_id);
+    const ids = an.catalog_baseline_cves.map(c => c.cve_id);
     assert.ok(ids.includes('CVE-2026-31431'));
-    assert.equal(an.matched_cves.length, 3, 'all three catalogued kernel CVEs matched');
+    assert.equal(an.catalog_baseline_cves.length, 3, 'all three catalogued kernel CVEs present in baseline');
+    assert.ok(an.catalog_baseline_cves.every(c => c.correlated_via === null), 'baseline entries carry correlated_via=null');
   });
 
-  it('RWEP base is max of matched cve rwep scores (Copy Fail = 90)', () => {
+  it('matched_cves is empty when no evidence correlates (no indicator hits, no CVE signals)', () => {
+    // Empty submission → no indicator hits → no correlation → matched_cves
+    // must be empty. Pre-fix this enumerated catalog-baseline CVEs and
+    // misled operators into thinking they were affected.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
+    assert.equal(an.matched_cves.length, 0,
+      'matched_cves must be empty without evidence correlation; catalog enumeration belongs in catalog_baseline_cves');
+  });
+
+  it('matched_cves populated when an indicator hit shares attack_ref with a catalog CVE', () => {
+    // kver-in-affected-range has attack_ref T1068; kernel CVEs all reference T1068.
+    const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
+    assert.equal(an.matched_cves.length, 3, 'all three kernel CVEs correlate via the fired indicator');
+    assert.ok(an.matched_cves.every(c => Array.isArray(c.correlated_via) && c.correlated_via.length > 0),
+      'every matched CVE entry must carry a non-empty correlated_via');
+    assert.ok(an.matched_cves[0].correlated_via.some(v => v.startsWith('indicator_hit:')),
+      'correlation reason must reference the indicator that fired');
+  });
+
+  it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 90 when indicator fires)', () => {
+    // With the fix, RWEP base reflects the evidence-correlated maximum, not
+    // the catalog-baseline maximum. Fire the indicator that ties the kernel
+    // CVEs into matched_cves so the base resolves to Copy Fail's 90.
+    const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
     assert.equal(an.rwep.base, 90);
   });
 
+  it('RWEP base is 0 when no evidence correlates (no inflated catalog-ceiling)', () => {
+    // Without evidence correlation, base must be 0 — operators are not
+    // affected by a catalog enumeration, so RWEP base shouldn't carry the
+    // weight of the worst-case catalog entry.
+    const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
+    assert.equal(an.rwep.base, 0);
+  });
+
   it('rwep_inputs only apply weight when the signal fired', () => {
-    // No detect hits, no agentSignals → adjusted == base (no weights applied)
+    // No detect hits, no agentSignals → adjusted == base (no weights applied).
+    // Base is 0 in this scenario because no CVE correlates to the empty
+    // evidence — and adjusted == base == 0 still proves "weights don't apply
+    // without firing signals."
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const anQuiet = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
     assert.equal(anQuiet.rwep.adjusted, anQuiet.rwep.base);
     assert.ok(anQuiet.rwep.breakdown.every(b => b.fired === false && b.weight_applied === 0));
 
-    // Now: kver-in-affected-range hit. Adjusted = 90 + 25+20+15+10-10 = 150 → clamped to 100.
+    // Now: kver-in-affected-range hit. Indicator correlates to all kernel
+    // CVEs (shared attack_ref T1068), so RWEP base resolves to 90 (Copy Fail).
+    // Adjusted = 90 + 25+20+15+10-10 = 150 → clamped to 100.
     const detHit = runner.detect('kernel', 'all-catalogued-kernel-cves', {
       signal_overrides: { 'kver-in-affected-range': 'hit' }
     });
@@ -810,6 +855,14 @@ describe('close', () => {
       writePlaybook(dir, 'p', synthPlaybook({
         domain: { cve_refs: ['CVE-2026-31431'], frameworks_in_scope: ['nist-800-53'] },
         phases: {
+          // Fire an indicator that correlates to CVE-2026-31431 via shared
+          // attack_ref T1068 so matched_cves is populated and the exception
+          // template's ${matched_cve_ids} interpolation has content. Pre-fix
+          // matched_cves enumerated catalog-baseline; post-fix it requires
+          // evidence correlation.
+          detect: {
+            indicators: [{ id: 'kev-trigger', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false, attack_ref: 'T1068' }]
+          },
           analyze: {
             framework_gap_mapping: [{ finding_id: 'f', framework: 'nist-800-53', claimed_control: 'SI-2', actual_gap: 'g', required_control: 'r' }]
           },
@@ -829,7 +882,7 @@ describe('close', () => {
         }
       }));
       const local = freshRunner(dir);
-      const detRes = local.detect('p', 'default', {});
+      const detRes = local.detect('p', 'default', { signal_overrides: { 'kev-trigger': 'hit' } });
       const an = local.analyze('p', 'default', detRes);
       const v = local.validate('p', 'default', an, {});
       const c = local.close('p', 'default', an, v, { remediation_blocked: true, ciso_name: 'Jane Doe', affected_host_count: 5 });
@@ -1093,12 +1146,21 @@ describe('edge cases', () => {
   });
 
   it('playbook with empty rwep_inputs → adjusted RWEP == base RWEP', () => {
+    // Fire an indicator that correlates to CVE-2026-31431 via shared
+    // attack_ref T1068 so base RWEP resolves to the catalog's 90. Post-fix
+    // RWEP base reflects evidence-correlated matches, not catalog-baseline,
+    // so the indicator hit is needed to surface base=90.
     writePlaybook(dir, 'p', synthPlaybook({
       domain: { cve_refs: ['CVE-2026-31431'] },
-      phases: { analyze: { rwep_inputs: [] } }
+      phases: {
+        detect: {
+          indicators: [{ id: 'kev', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false, attack_ref: 'T1068' }]
+        },
+        analyze: { rwep_inputs: [] }
+      }
     }));
     const runner = freshRunner(dir);
-    const detRes = runner.detect('p', 'default', {});
+    const detRes = runner.detect('p', 'default', { signal_overrides: { kev: 'hit' } });
     const an = runner.analyze('p', 'default', detRes);
     assert.equal(an.rwep.base, 90);
     assert.equal(an.rwep.adjusted, 90);
@@ -1157,22 +1219,28 @@ describe('edge cases', () => {
     assert.deepEqual(govern.jurisdiction_obligations, []);
   });
 
-  it('matched_cves empty when domain.cve_refs is empty', () => {
+  it('matched_cves and catalog_baseline_cves both empty when domain.cve_refs is empty', () => {
     writePlaybook(dir, 'p', synthPlaybook({ domain: { cve_refs: [] } }));
     const runner = freshRunner(dir);
     const detRes = runner.detect('p', 'default', {});
     const an = runner.analyze('p', 'default', detRes);
     assert.deepEqual(an.matched_cves, []);
+    assert.deepEqual(an.catalog_baseline_cves, []);
     assert.equal(an.rwep.base, 0);
     assert.equal(an.rwep.adjusted, 0);
   });
 
   it('rwep is floor-clamped at 0 when negative weights drive it below', () => {
     writePlaybook(dir, 'p', synthPlaybook({
-      domain: { cve_refs: ['CVE-2026-43500'] }, // base rwep 32
+      domain: { cve_refs: ['CVE-2026-43500'] }, // base rwep 32 (when evidence correlates)
       phases: {
         detect: {
-          indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false }]
+          // attack_ref T1068 matches CVE-2026-43500's attack_refs in the catalog,
+          // so a hit on `sig` correlates the CVE into matched_cves and base RWEP
+          // resolves to the catalog's 32. Without this attack_ref the indicator
+          // would fire but no CVE would correlate (post-fix matched_cves is
+          // evidence-gated), and base would be 0 — defeating the floor-clamp test.
+          indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false, attack_ref: 'T1068' }]
         },
         analyze: {
           rwep_inputs: [

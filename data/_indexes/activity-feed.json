@@ -16,6 +16,14 @@
     {
       "date": "2026-05-13",
       "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 6
+    },
+    {
+      "date": "2026-05-13",
+      "type": "catalog_update",
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
@@ -189,14 +197,6 @@
       "artifact": "age-gates-child-safety",
       "path": "skills/age-gates-child-safety/skill.md",
       "note": "Age-related gates and child online safety for mid-2026 — COPPA + CIPA + California AADC + GDPR Art. 8 + DSA Art. 28 + UK Online Safety Act + UK Children's Code + AU Online Safety Act + IN DPDPA child provisions + KOSA pending; age verification standards (IEEE 2089-2021, OpenID Connect age claims); AI product age policies"
-    },
-    {
-      "date": "2026-05-11",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 6
     },
     {
       "date": "2026-05-11",

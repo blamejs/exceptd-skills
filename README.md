@@ -167,7 +167,7 @@ You're adding a skill, updating a catalog, or cutting a release. Clone + bootstr
 git clone https://github.com/blamejs/exceptd-skills
 cd exceptd-skills
 npm run bootstrap          # auto-detects: verify-only / re-sign / first-init
-npm run predeploy          # full 13-gate CI sequence locally
+npm run predeploy          # full 15-gate CI sequence locally
 ```
 
 `bootstrap` auto-detects the right mode based on which keys exist on disk:

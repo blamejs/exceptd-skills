@@ -31,7 +31,7 @@
       "path": "data/cve-catalog.json",
       "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-05-13",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {

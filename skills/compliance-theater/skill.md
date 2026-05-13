@@ -32,6 +32,12 @@ This skill identifies the specific, testable conditions where audit-passing cont
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a meta-analysis that correlates findings *across* every other playbook and skill in the project — it has no native TTP attachment because its input is the existing TTP-to-control evidence base produced elsewhere. The `framework_gaps` array is populated because each theater pattern below points at specific named controls (FedRAMP-Rev5-Moderate, CMMC-2.0-Level-2, and the two ALL- gaps) whose mid-2026 inadequacy is the skill's primary subject. Defensive Countermeasure Mapping is not present as a body section because this skill produces a *coverage-gap* output, not a defensive-control prescription — the D3FEND mapping is the responsibility of the downstream skills the gap-findings route into.
+
+---
+
 ## Threat Context (mid-2026)
 
 The defining mid-2026 reality is that an organization can pass a clean ISO 27001:2022, SOC 2 Type II, or PCI DSS 4.0 audit while remaining exposed to KEV-listed deterministic LPEs and zero-interaction RCEs. The contrast cases drive every theater pattern below:

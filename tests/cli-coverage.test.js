@@ -184,6 +184,27 @@ test('doctor --signatures emits only the signatures subcheck', () => {
     'signatures.ok must be a boolean verdict, not undefined');
 });
 
+test('doctor --signatures --shipped-tarball opts into tarball-verify round-trip', () => {
+  // v0.12.9: --shipped-tarball runs scripts/verify-shipped-tarball.js
+  // alongside the source-tree signature check, populating
+  // checks.signatures.shipped_tarball. On an installed (npm) tree the
+  // script may be absent — accept either a populated sub-check or a
+  // documented skip reason so the test runs in both contexts.
+  const r = cli(['doctor', '--signatures', '--shipped-tarball', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data?.checks?.signatures, 'checks.signatures must be present');
+  assert.ok(data.checks.signatures.shipped_tarball,
+    'checks.signatures.shipped_tarball must be populated when --shipped-tarball is passed');
+  const st = data.checks.signatures.shipped_tarball;
+  if (st.skipped === true) {
+    assert.equal(typeof st.reason, 'string',
+      'when skipped, shipped_tarball must document why (e.g. installed package without verify-shipped-tarball.js)');
+  } else {
+    assert.equal(typeof st.ok, 'boolean',
+      'when run, shipped_tarball.ok must be a boolean verdict');
+  }
+});
+
 test('doctor --currency emits only the currency subcheck', () => {
   const r = cli(['doctor', '--currency', '--json']);
   const data = tryJson(r.stdout);

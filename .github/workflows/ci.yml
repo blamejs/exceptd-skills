@@ -137,8 +137,8 @@ jobs:
   # ── Diff coverage (no-MVP for tests) ────────────────────────────────────────
   # AGENTS.md hard rule #15: every changed CLI verb, CLI flag,
   # module export, playbook indicator, or CVE iocs field must land
-  # with a covering test reference in the same PR. Runs in --warn-only
-  # mode during the v0.12.8 rollout window; flip blocking in v0.12.9.
+  # with a covering test reference in the same PR. Blocking — a covered
+  # surface change without a covering test fails the gate.
   diff-coverage:
     name: Diff coverage
     runs-on: ubuntu-latest
@@ -155,7 +155,7 @@ jobs:
           node-version: '24.14.1'
 
       - name: Run diff coverage analyzer
-        run: node scripts/check-test-coverage.js --base origin/main --warn-only
+        run: node scripts/check-test-coverage.js --base origin/main
 
   # ── Skill lint (frontmatter + body sections + cross-refs) ───────────────────
   # AGENTS.md hard rules #4 (no orphaned controls), #7 (skills are

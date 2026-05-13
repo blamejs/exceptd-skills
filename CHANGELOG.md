@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.12.9 — 2026-05-13
+
+**Patch: post-v0.12.8 audit pass — Hard Rule #15 gate flips blocking, sbom evidence-correlation fix, CVE catalog freshness corrections, and recovery of two v0.12.8 stash-restore casualties.**
+
+### Hard Rule #15 — diff-coverage gate is now blocking
+
+`scripts/check-test-coverage.js` flips from `--warn-only` to a blocking gate. The 15th `npm run predeploy` gate and the `Diff coverage` CI job now fail a run if any change to a CLI verb, CLI flag, `module.exports` identifier, playbook indicator, or CVE `iocs` field lands without a covering test reference. Two analyzer bugs that would have made the gate unreliable under blocking are fixed in the same release:
+
+- `coversLibExport` now recognises subprocess-based test invocations (e.g. `spawnSync(... "scripts/check-sbom-currency.js" ...)`) alongside `require(...)`-form coverage.
+- `extractLibExports` strips block and line comments before matching `module.exports = {...}`, eliminating the doc-comment shadow bug where the analyzer's regex captured a JSDoc banner and returned an empty export set.
+
+`tests/playbook-indicators.test.js` lands as a table-driven test referencing all 12 indicator ids added in v0.12.7 (`mcp.json` × 6) and v0.12.8 (`containers.json` × 2, `hardening.json` × 4). The new tests cover the Hard Rule #15 surface the analyzer flagged.
+
+### sbom `matched_cves` now evidence-correlated
+
+`exceptd run sbom` previously surfaced every CVE in the playbook's `domain.cve_refs` under `analyze.matched_cves`, regardless of whether the operator's submitted evidence correlated to any of them. Operators reading the output assumed they were affected by the listed CVEs. The analyze phase now splits into two fields:
+
+- `analyze.matched_cves` — only CVEs correlated to operator evidence (indicator hit whose `attack_ref`/`atlas_ref` intersects the CVE's refs, or an explicit `signals[cveId]` set to `true`/`hit`/`detected`/`affected`). Each entry carries a `correlated_via` reason.
+- `analyze.catalog_baseline_cves` — the playbook's CVE catalog (informational; not an affected-status list). Each entry carries `correlated_via: null` and a note documenting the distinction.
+
+CSAF / SARIF / OpenVEX bundles consume `matched_cves` only — they correctly omit catalog-only CVEs as vulnerabilities. RWEP base now derives from evidence-correlated CVEs rather than the catalog ceiling, so inconclusive runs no longer inherit a misleading high score.
+
+The `run` human renderer shows "No CVEs correlated to your evidence. Playbook catalog (informational): N CVE(s) this playbook scans for." when no evidence correlated.
+
+### CLI surface — ci verdict / exit reconcile, signing-key resolution, fuzzy matches
+
+`ci --scope <type>` with no evidence and all-inconclusive results now emits `verdict: "NO_EVIDENCE"` (was `"PASS"`) so the body and exit code 3 agree. Operators reading either field alone now see the same answer. The verdict computation is hoisted before the result emit so BLOCKED / FAIL / NO_EVIDENCE / PASS are all consistent end-to-end.
+
+`ci` result top-level gains `framework_gap_rollup` aggregating per-playbook `framework_gap_mapping` entries across all scoped playbooks. Each rollup entry lists `{framework, claimed_control, why_insufficient, playbooks[]}` so a CI gate surfaces "what gaps did this run uncover" without the operator having to walk every per-playbook result.
+
+`maybeSignAttestation()` now resolves `.keys/private.pem` cwd-first, package-root fallback — matching how `doctor --signatures` resolves the same key. Pre-v0.12.9, operators running `exceptd run` from a repo with their private key at the cwd-relative `.keys/private.pem` would see `doctor` report the key as present while attestations from the same directory were silently written UNSIGNED. The two surfaces now agree.
+
+`run <typo>` error path adds Levenshtein-distance suggestions for misspelled playbook ids when no substring match fits. `run secrt` now suggests `secrets`; `run cret-stores` suggests `cred-stores`.
+
+`brief --phase <value>` rejects unknown phases with a structured JSON error (accepted set: `govern | direct | look`). Pre-v0.12.9 any string was accepted silently and the full brief was emitted.
+
+`doctor --signatures --shipped-tarball` runs the `verify-shipped-tarball` round-trip alongside the source-tree signature check, surfacing the integrity layer that closed the v0.11.x → v0.12.4 signature regression class. Opt-in; routine `doctor --signatures` stays fast.
+
+`doctor --registry-check` text-mode output now surfaces the registry comparison alongside the other check lines. Pre-v0.12.9 the flag only populated `checks.registry.*` in the JSON output, leaving the text-mode operator with no signal the flag did anything.
+
+`run` precondition renderer no longer prints `[undefined]` for preconditions without an `on_fail` field — the bracket is omitted and the description falls back to `check | description | reason` in order.
+
+### CVE catalog freshness corrections
+
+Five entries reconciled against authoritative public sources as of 2026-05-13:
+
+- **CVE-2026-30615** (Windsurf MCP): CVSS corrected 9.8 → 8.0; vector AV:N → AV:L (the attack is local-vector via adversarial HTML content the Windsurf MCP client processes, not a network-vector zero-interaction RCE). Source: NVD authoritative metric block (`vulnStatus: Deferred`, last_modified 2026-04-27).
+- **CVE-2026-31431** (Copy Fail): KEV `dateAdded` corrected 2026-03-15 → 2026-05-01, `dueDate` 2026-04-05 → 2026-05-15. The catalog was running six weeks ahead of the real KEV listing; downstream framework-SLA computations were anchored on a date that hadn't yet been authoritative. CWE-669 added. Source: CISA KEV JSON feed.
+- **CVE-2026-43284** (Dirty Frag ESP): CVSS authoritative is 8.8 / `Scope:C` (kernel→user-namespace breakout — supports container-escape framing); 7.8 / `Scope:U` preserved as `cvss_score_alternate` for compatibility readers. CWE-123 added.
+- **CVE-2026-43500** (Dirty Frag RxRPC): CWE-787 added.
+- **EPSS values refreshed** for four CVEs (CVE-2026-31431, -43284, -43500, -45321) from live FIRST API values. Catalog previously stored cold-start estimates that overstated newly-published-CVE exposure.
+
+Each correction carries an inline `*_correction_note` field with the source URL and the rationale for downstream auditors. Two new CVEs surfaced by the freshness sweep (CVE-2026-42208 LiteLLM SQLi on KEV; CVE-2026-39884 mcp-server-kubernetes argument injection) are deferred to a follow-up patch — each warrants its own Hard Rule #14 primary-source IoC review.
+
+### v0.12.8 stash-restore casualties recovered
+
+Two claims in the v0.12.8 CHANGELOG were not actually on disk in the squash commit, lost during the v0.12.8 recovery flow:
+
+- `data/playbooks/mcp.json` `domain.cve_refs` now includes CVE-2025-53773 alongside CVE-2026-30615 and CVE-2026-45321. The Hard Rule #4 mismatch (the `copilot-yolo-mode-flag` / `copilot-chat-experimental-flags` indicators detected this CVE without the playbook claiming it) is now genuinely closed.
+- `tests/operator-bugs.test.js` is now refactored to use `tests/_helpers/cli.js` for `makeCli` / `makeSuiteHome` / `tryJson`. The per-suite `EXCEPTD_HOME` tempdir routing applies to all 80+ tests in the file. Pre-v0.12.9 the inline helper continued writing attestations to the maintainer's real `~/.exceptd/attestations/` — 2,819 leaked attestations cleaned up alongside the refactor.
+
+### Two real defects deferred from v0.12.8 fixed
+
+- **Libuv `UV_HANDLE_CLOSING` crash on Windows + Node 25.** `lib/prefetch.js` `main()` called `process.exit(N)` after the summary `console.log` — same v0.11.10 #100 class as the run/ci sites already fixed. Replaced with `process.exitCode = N; return;` so undici / AbortController teardown completes before the event loop ends. Strengthened `#65 refresh --no-network` test asserts exit 0 AND no `Assertion failed` / `UV_HANDLE_CLOSING` lines on stderr.
+- **Two 404'd pin sources.** `d3fend/d3fend-data` and `mitre/cwe` were registered as `SOURCES.pins` GitHub-Releases sources, but neither repository publishes Releases via that path (D3FEND distributes from `d3fend.mitre.org`; CWE from `cwe.mitre.org`). Both sources removed from `lib/prefetch.js` and `lib/refresh-external.js` `pinsDiffFromCache()` `PIN_REPOS`. `prefetch summary` now reports `0 error(s)` on a clean cache. A new regression test asserts every pins source URL matches `^https://api.github.com/repos/<org>/<repo>/releases\?`.
+
+### Skill body second pass
+
+Four priority skills gain a `## Defensive Countermeasure Mapping` body section per Hard Rule #11's post-2026-05-11 grandfathered-skill closeout: `ai-c2-detection`, `ai-attack-surface`, `mcp-agent-trust`, `rag-pipeline-security`. Each maps the skill's offensive findings to 3-7 D3FEND IDs from `data/d3fend-catalog.json` with rationale + ephemeral/serverless-workload alternatives per Hard Rule #9.
+
+Eight meta skills (`researcher`, `threat-model-currency`, `skill-update-loop`, `zeroday-gap-learn`, `policy-exception-gen`, `security-maturity-tiers`, `exploit-scoring`, `compliance-theater`) gain a `## Frontmatter Scope` section documenting why their `atlas_refs` / `attack_refs` / `framework_gaps` lists are intentionally empty.
+
+`rag-pipeline-security` `framework_gaps` token refined `UK-CAF-A1` → `UK-CAF-B2` — the RAG attack class resolves to retrieval-time access-control failure, which is the B2 (Identity and Access Control) surface, not the A1 (Governance) parent concern.
+
+### Repository
+
+- README "13 gates" → "15 gates"; ARCHITECTURE catalog counts refreshed (CWE 30→51, D3FEND 21→28, RFC 19→31, jurisdictions "22+" → "35"); ARCHITECTURE Logic Layer gains entries for `scripts/check-test-coverage.js`, `scripts/check-sbom-currency.js`, `scripts/verify-shipped-tarball.js`, `tests/_helpers/cli.js`.
+- AGENTS.md feeds_into matrix heading drops the residual `(v0.10.x)` tag; Hard Rule #15 wording flips from `--warn-only` rollout language to present-tense blocking.
+- CONTRIBUTING.md adds `npm run diff-coverage` to the pre-push gate list so contributors run the same Hard Rule #15 check CI does.
+- Dependabot grouping for github-actions (already landed in v0.12.8) confirmed intact.
+
+Test count: 418 → 439. Predeploy gates: 15/15 (gate 15 now blocking). Skills: 38/38 signed and verified.
+
 ## 0.12.8 — 2026-05-13
 
 **Patch: comprehensive audit pass — CLI surface fixes, catalog completeness, test infrastructure hardening, AGENTS.md Hard Rule #15.**
