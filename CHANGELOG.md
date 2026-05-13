@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.12.4 — 2026-05-13
+
+**Patch: forensic instrumentation for the signature-regression gate. v0.12.3 publish was blocked by the gate; v0.12.4 adds the diagnostic data needed to pinpoint the root cause on the next CI run.**
+
+The v0.12.3 release was blocked at the new `verify-shipped-tarball` gate — exactly the behavior intended (better blocked publish than silent broken tarball). But the gate didn't log enough detail to pinpoint WHICH files diverge between source-tree and npm-packed tarball in CI. v0.12.4 adds per-file forensics + a working-tree drift dump.
+
+### What's new
+
+- `scripts/verify-shipped-tarball.js`: on signature-fail, logs the size + sha256 of both the tarball-extracted content AND the source-tree content, plus whether the bytes are equal. Local pass-paths unchanged.
+- `.github/workflows/release.yml`: new "Forensic — working-tree drift since checkout" step (runs `if: always()` so it fires even when prior gates fail). Dumps `git status --porcelain` + `git diff --stat HEAD` + `ls -la` of the case-mixed skill directory. The next CI failure surfaces the exact file-level divergence.
+
+### Why this isn't the root-cause fix
+
+The bug is platform-specific: local `npm pack` on Windows produces a tarball that verifies 38/38. CI's `npm pack` on Ubuntu produces a tarball that verifies 0/38 — even though pubkey fingerprints match between source and tarball. The content drift has to be in a file the manifest signatures cover, but the signed bytes match between Windows and Linux (`.gitattributes` LF-normalizes). Forensics on the next run should make it obvious; this release ships the instrumentation, not the underlying fix.
+
+### Operator impact
+
+v0.12.2 remains the latest npm-published version. Operators who ran `npm install -g @blamejs/exceptd-skills` see 0/38 verify on `exceptd doctor --signatures`. Until v0.12.4 (or later) publishes successfully, the integrity gate is open. Mitigations:
+
+- `exceptd run`, `exceptd ci`, etc. do NOT block on signature verification — they continue to function with the catalog content as installed. The skill bytes themselves are intact (npm has its own tarball integrity check; only the per-skill Ed25519 attestation layer is broken).
+- For audit purposes: the supply-chain trust anchor through npm provenance (OIDC + sigstore via `npm publish --provenance`) is unaffected. Confirm with `npm view @blamejs/exceptd-skills attestations`.
+
+### Shai-Hulud source audit (open question, not in this release)
+
+The original Shai-Hulud campaign (2024) and Mini Shai-Hulud (CVE-2026-45321, 2026-05-11) are documented in public security research. v0.11.15 added CVE-2026-45321 to the catalog based on the description of the attack, not from a line-by-line reading of the published payload. Cross-referencing the actual payload source for IoCs we may have missed is scoped for v0.12.5:
+
+- Walk the published worm source line-by-line; enumerate every credential path, every persistence vector, every C2 indicator.
+- Compare against `data/cve-catalog.json:CVE-2026-45321.iocs` and the seven detect indicators in `data/playbooks/sbom.json` we ship.
+- Add any missing patterns as additional indicators; update CHANGELOG with the line-level diff.
+
+Same audit pattern should be applied to Copy Fail (CVE-2026-31431) and other open-sourced CVEs the catalog references — currently every CVE entry was assembled from secondary sources (advisories, NVD descriptions) rather than primary-source code review. v0.12.5 codifies the "primary-source review required before catalog entry" rule in AGENTS.md Hard Rule #14.
+
 ## 0.12.3 — 2026-05-13
 
 **Patch: critical signature-verification regression fix + 14th predeploy gate to prevent recurrence.**

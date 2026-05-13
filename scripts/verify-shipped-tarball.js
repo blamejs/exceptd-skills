@@ -112,6 +112,7 @@ try {
   const failures = [];
   for (const s of (manifest.skills || [])) {
     const skillPath = path.join(pkgRoot, s.path);
+    const sourceSkillPath = path.join(ROOT, s.path);
     if (!fs.existsSync(skillPath)) {
       miss++;
       failures.push(`${s.name}: file not found at ${s.path}`);
@@ -120,7 +121,20 @@ try {
     const content = fs.readFileSync(skillPath);
     const ok = crypto.verify(null, content, pubKey, Buffer.from(s.signature, "base64"));
     if (ok) pass++;
-    else { fail_count++; failures.push(`${s.name}: signature did not verify`); }
+    else {
+      fail_count++;
+      // Forensic detail: log size + sha256 of tarball-extracted content vs source-tree content
+      // so we can pinpoint which bytes changed between npm pack and what was signed.
+      const tarSha = crypto.createHash("sha256").update(content).digest("hex").slice(0, 16);
+      let srcSha = "<missing>", srcSize = 0, srcContent;
+      if (fs.existsSync(sourceSkillPath)) {
+        srcContent = fs.readFileSync(sourceSkillPath);
+        srcSize = srcContent.length;
+        srcSha = crypto.createHash("sha256").update(srcContent).digest("hex").slice(0, 16);
+      }
+      const equal = srcContent && content.equals(srcContent) ? "equal" : "DIFFER";
+      failures.push(`${s.name}: signature did not verify (tarball size=${content.length} sha=${tarSha}; source size=${srcSize} sha=${srcSha}; bytes ${equal})`);
+    }
   }
 
   const total = (manifest.skills || []).length;
