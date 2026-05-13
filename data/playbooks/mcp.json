@@ -1,10 +1,17 @@
 {
   "_meta": {
     "id": "mcp",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "last_threat_review": "2026-05-13",
-    "threat_currency_score": 97,
+    "threat_currency_score": 98,
     "changelog": [
+      {
+        "version": "1.2.0",
+        "date": "2026-05-13",
+        "summary": "Primary-source IoC audit (v0.12.6 / AGENTS.md Hard Rule #14). CVE-2026-30615 (Windsurf MCP RCE) IoC block populated from null to full: ANSI escape sequences in tool descriptions (Trail of Bits 2025-04-29), Unicode Tag-block smuggling U+E0000-U+E007F (Embrace the Red 2025), instruction-coercion grammar (<IMPORTANT>, 'Before using this tool, read ~/.ssh', 'Do not mention to user' — Invariant Labs tool-poisoning), sensitive-path references in tool responses (cross-server credential-shadow signature), unprompted-tool-chain behavioral, MCP egress beyond manifest (postmark-mcp class — Acuvity/Semgrep), invocation-count anomaly post-update (compromised-legitimate-publisher detector — Trail of Bits TOFU). Adds atlas_refs AML.T0051 (indirect prompt injection) + AML.T0096; attack_refs T1552.001 + T1041. CVE-2025-53773 (Copilot YOLO mode, CVSS corrected 9.6→7.8) now cross-references this playbook for the .vscode/settings.json:chat.tools.autoApprove IoC.",
+        "cves_added": [],
+        "framework_gaps_updated": []
+      },
       {
         "version": "1.1.0",
         "date": "2026-05-13",
@@ -414,6 +421,20 @@
           "type": "config_file",
           "source": "$HOME/.claude/settings.json (permissions.allow), Cursor's .cursorrules, Windsurf workspace policy, VS Code chat.mcp.allowlist",
           "description": "Per-tool allowlist policy — the operator's documented set of authorized tools.",
+          "required": false
+        },
+        {
+          "id": "vscode-copilot-yolo-mode",
+          "type": "config_file",
+          "source": "Read .vscode/settings.json (workspace) AND $HOME/.vscode/settings.json (user-global) AND $HOME/.config/Code/User/settings.json AND $HOME/Library/Application Support/Code/User/settings.json — extract any key matching chat.tools.* OR chat.experimental.* OR github.copilot.advanced.*",
+          "description": "v0.12.6: CVE-2025-53773 (Copilot YOLO mode) post-exploitation IoC. The exploit chain coerces Copilot agent mode to write \"chat.tools.autoApprove\": true silently — no diff-approval UI is shown. Source: Embrace the Red (Rehberger) Aug 2025.",
+          "required": false
+        },
+        {
+          "id": "mcp-tool-response-log",
+          "type": "log_pattern",
+          "source": "AI client MCP-protocol logs: ~/.claude/logs/mcp/*.jsonl (Claude Code), ~/.cursor/logs/mcp-*.log (Cursor), ~/.codeium/windsurf/logs/mcp_*.log (Windsurf)",
+          "description": "v0.12.6: Verbatim tools/list and tools/call response capture. The only artifact that lets ANSI-escape, Unicode-Tag-smuggling, instruction-coercion-grammar, and sensitive-path-reference indicators fire. If client doesn't log MCP responses, mark inconclusive and recommend enabling MCP request/response verbose logging in client settings.",
           "required": false
         }
       ],

@@ -87,8 +87,8 @@ test("Dockerfile pins a SPECIFIC Node version (not :latest, not :24)", () => {
   for (const line of baseImageFroms) {
     assert.match(
       line,
-      /node:\d+\.\d+\.\d+(?:-[a-z0-9.]+)*\s+AS\s+\S+/i,
-      `external FROM must pin Node by exact major.minor.patch: ${line}`
+      /node:\d+\.\d+\.\d+(?:-[a-z0-9.]+)*(?:@sha256:[a-f0-9]{64})?\s+AS\s+\S+/i,
+      `external FROM must pin Node by exact major.minor.patch (optional @sha256: digest pin allowed): ${line}`
     );
     assert.doesNotMatch(
       line,
@@ -105,7 +105,7 @@ test("Dockerfile Node version matches the CI workflow Node version", () => {
   const df = read(DOCKERFILE);
   const ci = read(CI_WORKFLOW);
 
-  const dfMatch = df.match(/node:(\d+\.\d+\.\d+)(?:-[a-z0-9.]+)*\s+AS/i);
+  const dfMatch = df.match(/node:(\d+\.\d+\.\d+)(?:-[a-z0-9.]+)*(?:@sha256:[a-f0-9]{64})?\s+AS/i);
   assert.ok(dfMatch, "Dockerfile FROM must have a parseable node:X.Y.Z tag");
   const dockerNode = dfMatch[1];
 

@@ -19,15 +19,14 @@ on:
         required: false
         default: ''
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
 jobs:
   refresh:
     name: Refresh + open PR on diffs
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout repository

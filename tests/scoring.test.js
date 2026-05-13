@@ -55,21 +55,24 @@ test('scoreCustom() reproduces Copy Fail (CVE-2026-31431) at 90', () => {
   assert.equal(s, 90);
 });
 
-test('scoreCustom() reproduces Copilot prompt-injection (CVE-2025-53773) at 42 — below CVSS-equivalent of 96', () => {
+test('scoreCustom() reproduces Copilot prompt-injection (CVE-2025-53773) at 30 — below CVSS-equivalent of 78', () => {
+  // v0.12.6: CVE-2025-53773 CVSS corrected 9.6 → 7.8 (AV:N → AV:L per NVD). blast_radius
+  // dropped 22 → 10 because the exploit is local-vector (developer-side IDE interaction;
+  // the attacker doesn't reach in over the network). RWEP recomputed accordingly.
   const s = scoreCustom({
     cisa_kev: false,
     poc_available: true,
     ai_assisted_weapon: true,
     active_exploitation: 'suspected',
-    blast_radius: 22,
+    blast_radius: 10,
     patch_available: true,
     live_patch_available: true,
     reboot_required: false
   });
-  // 0 + 20 + 15 + 10 + 22 - 15 - 10 + 0 = 42
-  assert.equal(s, 42);
-  // CVSS 9.6 → cvssEquivalent 96 — RWEP must be substantially lower for this CVE
-  assert.ok(s < 96, 'RWEP should be lower than CVSS-equivalent for over-CVSS-scored prompt-injection');
+  // 0 + 20 + 15 + 10 + 10 - 15 - 10 + 0 = 30
+  assert.equal(s, 30);
+  // CVSS 7.8 → cvssEquivalent 78 — RWEP still lower than the CVSS-equivalent ceiling
+  assert.ok(s < 78, 'RWEP should be lower than CVSS-equivalent for prompt-injection CVE (patch + live-patch reduce RWEP substantially)');
 });
 
 test('scoreCustom() reproduces Dirty Frag (CVE-2026-43284) at 38', () => {
@@ -209,11 +212,12 @@ test('compare() flags Copy Fail as RWEP-higher-than-CVSS-equivalent', () => {
 });
 
 test('compare() flags Copilot prompt-injection as RWEP-lower-than-CVSS-equivalent (overscored)', () => {
+  // v0.12.6: CVSS corrected 9.6 → 7.8 (AV:N → AV:L per NVD); RWEP recomputed 42 → 30.
+  // cvssEquivalent = 78; delta = 30 - 78 = -48; still well below -20 threshold.
   const r = compare('CVE-2025-53773', catalog);
-  assert.equal(r.cvss, 9.6);
-  assert.equal(r.rwep, 42);
-  // cvssEquivalent = 96; delta = 42 - 96 = -54 < -20 → "RWEP lower than CVSS equivalent"
-  assert.equal(r.delta, -54);
+  assert.equal(r.cvss, 7.8);
+  assert.equal(r.rwep, 30);
+  assert.equal(r.delta, -48);
   assert.match(r.explanation, /lower than CVSS equivalent/);
 });
 
