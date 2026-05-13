@@ -1,5 +1,79 @@
 # Changelog
 
+## 0.12.0 — 2026-05-13
+
+**Minor: catalog freshness from minutes-old disclosures, not days.**
+
+Today's refresh sources (KEV / NVD / EPSS / IETF / MITRE) don't see a fresh-disclosure npm worm. KEV listing takes days; NVD takes ~10 days. The CVE-2026-45321 TanStack worm was caught publicly within 20 minutes — but the only feed that fired in that window was the GitHub Advisory Database. v0.12.0 adds GHSA as a refresh source, plus operator-driven single-advisory seeding, plus an editorial-enrichment helper.
+
+### GHSA as a refresh source
+
+`exceptd refresh` now pulls from GitHub Advisory Database (covers npm, PyPI, RubyGems, Maven, NuGet, Go, Composer, Swift, Erlang, Pub, Rust). Unauthenticated 60 req/hr; authenticated 5000 req/hr via `GITHUB_TOKEN` env var. New CVE IDs land as **drafts** flagged `_auto_imported: true` + `_draft: true`. The strict catalog validator treats drafts as warnings, not errors — so the nightly auto-PR pipeline can ship them without blocking on editorial review. Framework gaps + IoCs + ATLAS/ATT&CK refs are explicit nulls awaiting human or AI-assisted enrichment.
+
+(Note: npm Inc. does not publish a standalone JSON advisory feed; npm advisories are surfaced via GHSA. Adding `npm-advisories` as a separate source would duplicate GHSA data with no fidelity gain.)
+
+### `exceptd refresh --advisory <id>`
+
+Operator-driven single-advisory seeding. Accepts CVE-* or GHSA-* identifiers. Fetches the advisory from GHSA, normalizes to the catalog draft shape, prints (default) or writes (`--apply`). Always exits **3** ("draft prepared, editorial review pending") so CI pipelines surface the next step.
+
+```
+exceptd refresh --advisory CVE-2026-45321               # dry-run, prints draft
+exceptd refresh --advisory CVE-2026-45321 --apply       # writes draft into data/cve-catalog.json
+exceptd refresh --advisory GHSA-xxxx-xxxx-xxxx --json   # JSON output
+```
+
+Refuses to overwrite a human-curated entry. Honors `EXCEPTD_GHSA_FIXTURE` env var for offline tests.
+
+### `exceptd refresh --curate <CVE-ID>`
+
+Editorial-enrichment helper. Reads the draft entry from `data/cve-catalog.json`, cross-references against `data/atlas-ttps.json` + `data/attack-ttps.json` + `data/cwe-catalog.json` + `data/framework-control-gaps.json`, and emits structured **editorial questions** — one per null field — each with ranked candidates and a specific ASK for the reviewer.
+
+```
+{
+  "editorial_questions": [
+    {
+      "field": "atlas_refs",
+      "current_value": [],
+      "candidates": [{"id": "AML.T0010", "score": 68, "reason": "..."}],
+      "ask": "Which MITRE ATLAS techniques are present in the attack chain?"
+    },
+    {
+      "field": "framework_control_gaps",
+      "ask": "Which framework controls CLAIM to cover this CVE's category, and where do they fall short? Per AGENTS.md Hard Rule #6, every framework finding must include a test that distinguishes paper compliance from actual security."
+    },
+    ...
+  ]
+}
+```
+
+Pure heuristic — deterministic keyword-overlap scoring against existing catalogs. The reviewer (human or AI assistant) makes the final call on each candidate. Always exits **3** because editorial review is, by definition, pending.
+
+(The natural-language form `exceptd run cve-curation --advisory <id>` — wrapping this helper in a full seven-phase playbook with GRC closure — is scoped for v0.13. The helper itself ships in v0.12 so operators can use it now.)
+
+### Catalog schema
+
+- `data/cve-catalog.json` entries may now carry `_auto_imported`, `_draft`, `_draft_reason`, `_source_ghsa_id`, `_source_published_at` fields.
+- `lib/validate-cve-catalog.js` recognizes drafts: prints them as `DRAFT` lines (not `FAIL`), does not exit-fail. The summary line includes a `<N> draft(s) (auto-imported)` count.
+- `lib/schemas/cve-catalog.schema.json` is unchanged; the draft fields are absorbed by `additionalProperties: true`.
+
+### Tests
+
+7 new regression cases. 366 total. Coverage: ghsa fixture fetch, advisory normalization (draft shape + cisa_kev_pending heuristic for critical), `refresh --advisory` dry-run + apply paths, `refresh --curate` editorial-question generation, refusal-on-human-curated, validator draft-tolerance.
+
+### Operator workflow
+
+The end-to-end flow for a fresh-disclosure CVE the nightly job hasn't caught yet:
+
+```
+$ exceptd refresh --advisory CVE-2026-XXXXX --apply       # seeds draft from GHSA
+$ exceptd refresh --curate CVE-2026-XXXXX                  # surfaces editorial questions + candidates
+# review the questions, fill the catalog entry, add a zeroday-lessons.json entry,
+# remove _auto_imported and _draft flags, then:
+$ npm run predeploy                                        # strict gate now passes
+```
+
+The nightly auto-PR mechanism handles the GHSA pull automatically; this surface is for "I want this CVE today, not tomorrow."
+
 ## 0.11.15 — 2026-05-13
 
 **Patch: CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) — catalog + playbook + IoC sweep.**

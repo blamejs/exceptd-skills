@@ -72,6 +72,7 @@ const COMMANDS = {
   prefetch:        () => path.join(PKG_ROOT, "lib", "prefetch.js"),
   refresh:         () => path.join(PKG_ROOT, "lib", "refresh-external.js"),
   "refresh-network": () => path.join(PKG_ROOT, "lib", "refresh-network.js"),
+  "refresh-curate":  () => path.join(PKG_ROOT, "lib", "cve-curation.js"),
   "build-indexes": () => path.join(PKG_ROOT, "scripts", "build-indexes.js"),
   verify:          () => path.join(PKG_ROOT, "lib", "verify.js"),
   scan:            () => path.join(PKG_ROOT, "orchestrator", "index.js"),
@@ -252,9 +253,19 @@ v0.11.0 canonical surface
                                                     catalog snapshot from npm registry,
                                                     verify against local keys/public.pem,
                                                     swap data/ in place (no CLI/lib reload)
+                             --advisory <id>        (v0.12.0) seed a catalog entry from a
+                                                    CVE-* or GHSA-* ID via GitHub Advisory
+                                                    Database. Writes draft with
+                                                    _auto_imported:true. Use --apply to
+                                                    write to disk.
+                             --curate <CVE-ID>      (v0.12.0) emit editorial questions +
+                                                    ranked candidates (ATLAS/ATT&CK/CWE/
+                                                    framework gaps) for a draft entry.
                              --prefetch             populate offline cache
                              --from-cache           consume offline cache
                              --indexes-only         rebuild indexes only
+                             Sources: kev|epss|nvd|rfc|pins|ghsa (v0.12.0).
+                                                    ghsa drafts pass validator as warnings.
 
 v0.10.x compatibility (will be removed in v0.12)
 ────────────────────────────────────────────────
@@ -414,6 +425,12 @@ function main() {
     // data slice without requiring a full package upgrade.
     effectiveCmd = "refresh-network";
     effectiveRest = rest.filter(a => a !== "--network");
+  } else if (cmd === "refresh" && rest.includes("--curate")) {
+    // v0.12.0: --curate <CVE-ID> emits editorial questions + ranked
+    // candidates (atlas/attack/cwe/framework) for a draft catalog entry.
+    // Operator or AI assistant fills the null editorial fields.
+    effectiveCmd = "refresh-curate";
+    effectiveRest = rest;
   }
 
   const resolver = COMMANDS[effectiveCmd];

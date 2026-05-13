@@ -868,6 +868,157 @@ test('refresh-network parseTar + fingerprintPublicKey unit smoke', () => {
   assert.match(fp, /^[A-Za-z0-9+/=]+$/, 'fingerprint is base64');
 });
 
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+test('v0.12 source-ghsa.fetchAdvisoryById finds CVE in fixture', async () => {
+  const ghsa = require(path.join(ROOT, 'lib', 'source-ghsa.js'));
+  process.env.EXCEPTD_GHSA_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  try {
+    const r = await ghsa.fetchAdvisoryById('CVE-2026-45321');
+    assert.equal(r.ok, true);
+    assert.equal(r.source, 'fixture');
+    assert.equal(r.advisories[0].cve_id, 'CVE-2026-45321');
+    assert.equal(r.advisories[0].severity, 'critical');
+  } finally { delete process.env.EXCEPTD_GHSA_FIXTURE; }
+});
+
+test('v0.12 source-ghsa.normalizeAdvisory produces draft shape with editorial nulls', () => {
+  const ghsa = require(path.join(ROOT, 'lib', 'source-ghsa.js'));
+  const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json'), 'utf8'));
+  const out = ghsa.normalizeAdvisory(fixture[0]);
+  assert.ok(out);
+  const entry = out['CVE-2026-45321'];
+  assert.equal(entry._auto_imported, true);
+  assert.equal(entry._draft, true);
+  assert.equal(entry.framework_control_gaps, null, 'framework_control_gaps must be null on a draft');
+  assert.equal(entry.atlas_refs.length, 0, 'editorial atlas_refs starts empty');
+  assert.equal(entry.cvss_score, 9.6);
+  assert.equal(entry.cisa_kev_pending, true, 'critical-severity drafts mark cisa_kev_pending');
+  assert.equal(entry._source_ghsa_id, 'GHSA-tnsk-tnsk-tnsk');
+});
+
+test('v0.12 refresh --advisory <CVE> dry-run emits draft + exits 3', () => {
+  const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'refresh-external.js'), '--advisory', 'CVE-9999-99999', '--json'], {
+    encoding: 'utf8',
+    env: { ...process.env, EXCEPTD_GHSA_FIXTURE: fix, EXCEPTD_DEPRECATION_SHOWN: '1', EXCEPTD_UNSIGNED_WARNED: '1' },
+  });
+  assert.equal(r.status, 3, '--advisory dry-run must exit 3 ("draft prepared, not applied")');
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'JSON output must parse');
+  assert.equal(data.mode, 'advisory-seed-dry-run');
+  assert.equal(data.cve_id, 'CVE-9999-99999');
+  assert.equal(data.draft._auto_imported, true);
+});
+
+test('v0.12 refresh --advisory --apply writes draft to a copy of the catalog', () => {
+  const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  // Work on a copy of the catalog so we don't mutate the real one.
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'cve-cat-'));
+  fs.mkdirSync(path.join(tmpDir, 'data'));
+  fs.copyFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), path.join(tmpDir, 'data', 'cve-catalog.json'));
+  // Symlink/copy the other catalogs needed by loadCtx — quickest is to run
+  // in the real ROOT and just revert the catalog after.
+  const catBefore = fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8');
+  try {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'refresh-external.js'), '--advisory', 'CVE-9999-99999', '--apply', '--json'], {
+      encoding: 'utf8',
+      env: { ...process.env, EXCEPTD_GHSA_FIXTURE: fix, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    assert.equal(r.status, 3, '--advisory --apply exits 3 (applied, editorial-review pending)');
+    const data = tryJson(r.stdout);
+    assert.ok(data?.ok);
+    assert.equal(data.mode, 'advisory-seed-applied');
+    const catAfter = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+    assert.ok(catAfter['CVE-9999-99999'], 'draft entry must be written');
+    assert.equal(catAfter['CVE-9999-99999']._auto_imported, true);
+  } finally {
+    fs.writeFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), catBefore, 'utf8');
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('v0.12 refresh --curate <CVE> surfaces editorial questions for a draft', () => {
+  // Write a synthetic draft to the catalog (then restore).
+  const catBefore = fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8');
+  const cat = JSON.parse(catBefore);
+  cat['CVE-9999-99999'] = {
+    name: 'Synthetic curation test',
+    type: 'supply-chain-npm',
+    cvss_score: 9.6,
+    affected: 'synthetic-test-package',
+    _auto_imported: true,
+    _draft: true,
+    atlas_refs: [],
+    attack_refs: [],
+    framework_control_gaps: null,
+    iocs: null,
+    poc_available: null,
+    ai_discovered: null,
+    ai_assisted_weaponization: null,
+    rwep_score: null,
+    rwep_factors: null,
+    vector: null,
+  };
+  fs.writeFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), JSON.stringify(cat, null, 2), 'utf8');
+  try {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'cve-curation.js'), '--curate', 'CVE-9999-99999', '--json'], {
+      encoding: 'utf8',
+      env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    assert.equal(r.status, 3, 'curation always exits 3 — editorial review pending');
+    const data = tryJson(r.stdout);
+    assert.ok(data?.ok);
+    assert.equal(data.mode, 'cve-curation');
+    assert.ok(data.editorial_questions.length >= 4,
+      'must surface at least: atlas_refs, attack_refs, framework_control_gaps, iocs, rwep questions');
+    const fields = data.editorial_questions.map(q => q.field);
+    assert.ok(fields.includes('framework_control_gaps'));
+    assert.ok(fields.includes('iocs'));
+  } finally {
+    fs.writeFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), catBefore, 'utf8');
+  }
+});
+
+test('v0.12 refresh --curate refuses to curate a human-curated entry', () => {
+  // CVE-2026-45321 was added in v0.11.15 as a human-curated entry (no _auto_imported flag).
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'cve-curation.js'), '--curate', 'CVE-2026-45321', '--json'], {
+    encoding: 'utf8',
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
+  });
+  assert.equal(r.status, 2, 'must refuse curating human-curated entries');
+  const data = tryJson(r.stdout);
+  assert.equal(data.ok, false);
+  assert.match(data.error, /human-curated/);
+});
+
+test('v0.12 validate-cve-catalog treats _auto_imported drafts as warnings, not errors', () => {
+  // Inject a minimal draft, run the validator, restore.
+  const catBefore = fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8');
+  const cat = JSON.parse(catBefore);
+  cat['CVE-9999-88888'] = {
+    name: 'Draft synthetic',
+    type: 'supply-chain-npm',
+    _auto_imported: true,
+    _draft: true,
+    cvss_score: null,
+    last_updated: '2026-05-13',
+  };
+  fs.writeFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), JSON.stringify(cat, null, 2), 'utf8');
+  try {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'validate-cve-catalog.js'), '--quiet'], {
+      encoding: 'utf8',
+      env: { ...process.env },
+    });
+    // Drafts are warnings, not errors — exit 0 if no non-draft entry failed.
+    assert.equal(r.status, 0, 'draft entry must not break the catalog gate (exit 0)');
+  } finally {
+    fs.writeFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), catBefore, 'utf8');
+  }
+});
+
 test('#127 emit() body with ok:false sets non-zero exit (universal contract)', () => {
   // The class of bug: any verb that emits a result with ok:false to stdout
   // must not return exit 0. Pre-0.11.13 several paths leaked through.
