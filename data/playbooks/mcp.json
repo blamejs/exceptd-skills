@@ -1,10 +1,17 @@
 {
   "_meta": {
     "id": "mcp",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "last_threat_review": "2026-05-13",
     "threat_currency_score": 98,
     "changelog": [
+      {
+        "version": "1.3.0",
+        "date": "2026-05-13",
+        "summary": "v0.12.7 fix: wires the v0.12.6-added look.artifacts (vscode-copilot-yolo-mode, mcp-tool-response-log) into detect.indicators so the new IoC coverage actually influences phases.detect.classification. Six new indicators: copilot-yolo-mode-flag (chat.tools.autoApprove == true), copilot-chat-experimental-flags, mcp-response-ansi-escape (byte 0x1B in tool payload), mcp-response-unicode-tag-smuggling (U+E0000..U+E007F), mcp-response-instruction-coercion (<IMPORTANT> + coercion grammar), mcp-response-sensitive-path-reference (cross-server credential-shadow). Without this wiring, the v0.12.6 telemetry was collected but ignored.",
+        "cves_added": [],
+        "framework_gaps_updated": []
+      },
       {
         "version": "1.2.0",
         "date": "2026-05-13",
@@ -543,6 +550,62 @@
           "description": "MCP server with elevated privileges turns a tool-response RCE into immediate root.",
           "confidence": "deterministic",
           "deterministic": true
+        },
+        {
+          "id": "copilot-yolo-mode-flag",
+          "type": "log_pattern",
+          "value": "vscode-copilot-yolo-mode artifact contains a JSON object with `chat.tools.autoApprove` == true (workspace .vscode/settings.json OR user-global ~/.vscode/settings.json OR Code/User/settings.json)",
+          "description": "Primary post-exploitation IoC for CVE-2025-53773 (Copilot YOLO mode). The setting is experimental + off by default; the entire exploit chain bottlenecks on this single key flipping to true. The agent writes it silently (no diff-approval UI), so file-level presence is the authoritative signal. Source: Embrace the Red (Rehberger, August 2025).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0051",
+          "attack_ref": "T1059"
+        },
+        {
+          "id": "copilot-chat-experimental-flags",
+          "type": "log_pattern",
+          "value": "vscode-copilot-yolo-mode artifact contains any key matching `chat\\.(experimental|tools)\\..*: true` other than chat.tools.autoApprove already covered above",
+          "description": "Broader sweep for any auto-approve / experimental Copilot flag flipped on in workspace-scoped settings. Catches future variants where the YOLO-mode toggle gets renamed or split.",
+          "confidence": "high",
+          "deterministic": false,
+          "atlas_ref": "AML.T0051"
+        },
+        {
+          "id": "mcp-response-ansi-escape",
+          "type": "log_pattern",
+          "value": "mcp-tool-response-log artifact contains any byte 0x1B inside a tools/list field (description, inputSchema.properties.*.description) OR tools/call response content[].text — subclasses: SGR color invisibility (\\\\x1B\\\\[38;5;...m), cursor movement (\\\\x1B\\\\[nF/G/H), screen clear (\\\\x1B\\\\[0J), OSC-8 hyperlink (\\\\x1B\\\\]8;;<url>\\\\x1B\\\\\\\\)",
+          "description": "ANSI escape sequence in MCP payload — hidden from user, tokenized by LLM. Source: Trail of Bits 2025-04-29.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0051",
+          "attack_ref": "T1059"
+        },
+        {
+          "id": "mcp-response-unicode-tag-smuggling",
+          "type": "log_pattern",
+          "value": "mcp-tool-response-log artifact contains any codepoint in U+E0000..U+E007F in any tools/list or tools/call string field",
+          "description": "Unicode Tag-range smuggling — zero-width to humans, tokenized by the model. Source: Embrace the Red (Rehberger, 2025).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0051"
+        },
+        {
+          "id": "mcp-response-instruction-coercion",
+          "type": "log_pattern",
+          "value": "mcp-tool-response-log artifact matches any of: <IMPORTANT>[\\\\s\\\\S]*?</IMPORTANT>, (?i)before using this tool,? read, (?i)do not (mention|tell) the user, (?i)pass (its|the) content as ['\"]\\\\w+['\"], (?i)THIS TOOL IS REQUIRED FOR (INTERNAL AUDITING|GDPR|SOC2|COMPLIANCE), (?i)ALWAYS CONSULT THIS TOOL IMMEDIATELY, chmod -R 0666 ~, (?i)after answering the previous question,? please ENSURE",
+          "description": "Tool-poisoning instruction grammar — composite of Invariant Labs <IMPORTANT> blocks, Trail of Bits line-jumping, and Palo Alto Unit 42 sampling injection patterns.",
+          "confidence": "high",
+          "deterministic": false,
+          "atlas_ref": "AML.T0051"
+        },
+        {
+          "id": "mcp-response-sensitive-path-reference",
+          "type": "log_pattern",
+          "value": "mcp-tool-response-log contains references to ~/.ssh/id_rsa, ~/.aws/credentials, ~/.config/gcloud, ~/.kube/config, ~/.cursor/mcp.json, ~/.codeium/windsurf/mcp_config.json, ~/.config/claude/config.json, ~/.claude/settings.json, ~/.npmrc OR process.env.{AWS_SECRET*, GITHUB_TOKEN, NPM_TOKEN, OPENAI_API_KEY, ANTHROPIC_API_KEY}",
+          "description": "Cross-server credential-shadow signature — one MCP server's tool response naming another server's credential store is the Invariant Labs sidenote-exfil operational fingerprint.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1552.001"
         }
       ],
       "false_positive_profile": [

@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.12.7 — 2026-05-13
+
+**Patch: two follow-on fixes to v0.12.6.**
+
+### Release workflow — environment scoping
+
+The job-level `environment: npm-publish` in `.github/workflows/release.yml` blocked every branch-based `workflow_dispatch` at scheduling time, including dry-run predeploy invocations. GitHub evaluates environment branch/tag protection BEFORE a job is sent to a runner; the dispatched `GITHUB_REF` for a branch-based dry-run failed the tag-only environment rule before any step ran.
+
+Fix: split the workflow into two jobs.
+
+- `validate` — predeploy + e2e + npm pack preview. No environment. Runs on every trigger including branch-based dry-runs.
+- `publish` — npm publish + GitHub Release. `needs: validate` + `environment: npm-publish` + `if: github.event_name == 'push' || inputs.dry_run != 'true'`. The environment gate now only applies to the actual publish step, leaving dry-runs free to exercise the gates.
+
+This is consistent with the existing tag-only protection on the `npm-publish` environment — branch-based workflow_dispatch still cannot reach `npm publish`, but it CAN reach `validate` for dry-run gate checks.
+
+### mcp playbook — indicators wired to v0.12.6 artifacts
+
+v0.12.6 added two new look.artifacts (`vscode-copilot-yolo-mode`, `mcp-tool-response-log`) but did not add detect.indicators keyed to them, so the collected telemetry never influenced `phases.detect.classification`. The IoC coverage was non-operational in `exceptd run` outputs.
+
+Fix: 6 new detect.indicators in `data/playbooks/mcp.json`:
+
+1. **`copilot-yolo-mode-flag`** — keyed off `vscode-copilot-yolo-mode`. Matches `chat.tools.autoApprove: true` in any settings.json variant. Deterministic. Primary IoC for CVE-2025-53773.
+2. **`copilot-chat-experimental-flags`** — broader sweep for `chat.{experimental,tools}.*: true` other than the autoApprove key.
+3. **`mcp-response-ansi-escape`** — keyed off `mcp-tool-response-log`. Matches byte 0x1B in tools/list field or tools/call response. Deterministic. CVE-2026-30615 IoC class.
+4. **`mcp-response-unicode-tag-smuggling`** — keyed off `mcp-tool-response-log`. Matches U+E0000..U+E007F codepoints. Deterministic.
+5. **`mcp-response-instruction-coercion`** — keyed off `mcp-tool-response-log`. Regex match against `<IMPORTANT>` blocks, "Before using this tool, read", "Do not mention to user", compliance-urgency manipulation, etc.
+6. **`mcp-response-sensitive-path-reference`** — keyed off `mcp-tool-response-log`. Matches `~/.ssh/id_rsa`, `~/.aws/credentials`, cross-tool credential paths, `process.env.{AWS_SECRET*, GITHUB_TOKEN, ...}`. Cross-server credential-shadow signature.
+
+mcp playbook bumped 1.2.0 → 1.3.0. threat_currency_score stays at 98. `last_threat_review: 2026-05-13`.
+
 ## 0.12.6 — 2026-05-13
 
 **Patch: primary-source IoC audit across the catalog — five CVEs reviewed line-level against published exploit source. AGENTS.md Hard Rule #14 added.**
