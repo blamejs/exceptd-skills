@@ -448,6 +448,16 @@ function emit(obj, pretty, humanRenderer) {
   //   default (no flag, renderer present) → HUMAN
   //   default (no flag, no renderer)      → indented JSON when TTY else compact
   // This closes the longest-standing UX gap across 8 releases.
+  //
+  // v0.11.13 (#127): emit() now ALSO sets process.exitCode = 1 when the body
+  // carries `ok: false` at top level (unless a caller already set a different
+  // non-zero exitCode). Pre-0.11.13 verbs that emitted ok:false to stdout
+  // without explicitly setting the exit code returned 0, defeating `set -e`
+  // and CI gates. The previous fix was per-verb; this is a universal catch
+  // so new verbs / new ok:false paths can't regress the contract.
+  if (obj && obj.ok === false && !process.exitCode) {
+    process.exitCode = 1;
+  }
   const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
   if (humanRenderer && !wantJson && !pretty) {
     process.stdout.write(humanRenderer(obj) + "\n");
@@ -2206,16 +2216,35 @@ function cmdAttest(runner, args, runOpts, pretty) {
  * canonical nested view of both shapes lets `attest diff` produce meaningful
  * counts regardless of which shape the operator submitted.
  */
+function _playbookArtifactCatalog(runner, playbookId) {
+  if (!playbookId) return null;
+  try {
+    const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
+    if (!pb) return null;
+    const arts = (pb.phases?.look?.artifacts || []).filter(a => a && a.id);
+    if (arts.length === 0) return null;
+    return Object.fromEntries(arts.map(a => [a.id, { captured: false, _catalog_stub: true }]));
+  } catch { return null; }
+}
+function _playbookSignalCatalog(runner, playbookId) {
+  if (!playbookId) return null;
+  try {
+    const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
+    if (!pb) return null;
+    const inds = (pb.phases?.look?.indicators || []).filter(i => i && i.id);
+    if (inds.length === 0) return null;
+    return Object.fromEntries(inds.map(i => [i.id, 'inconclusive']));
+  } catch { return null; }
+}
 function normalizedArtifacts(submission, runner, playbookId) {
-  if (!submission || typeof submission !== "object") return {};
-  if (submission.artifacts) return submission.artifacts;
-  if (submission.observations) {
-    // v0.11.12 (#126): the prior stub playbook (look.artifacts: []) caused
-    // normalizeSubmission to produce {}, so attest diff reported
-    // total_compared: 0 even when both submissions held real observations.
-    // Try to load the real playbook from the attestation's playbook_id; if
-    // that fails (renamed/removed), fall back to treating each observation
-    // key as its own artifact id with `{ captured: true, value: <indicator|value> }`.
+  if (!submission || typeof submission !== "object") {
+    return _playbookArtifactCatalog(runner, playbookId) || {};
+  }
+  if (submission.artifacts && Object.keys(submission.artifacts).length > 0) return submission.artifacts;
+  if (submission.observations && Object.keys(submission.observations).length > 0) {
+    // v0.11.12 (#126): load real playbook so look.artifacts catalog can map
+    // observations. v0.11.13 (#128): when normalize succeeds but produces an
+    // empty map, fall through to direct mapping instead of returning empty.
     if (playbookId) {
       try {
         const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
@@ -2223,23 +2252,26 @@ function normalizedArtifacts(submission, runner, playbookId) {
           const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
           if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) return norm.artifacts;
         }
-      } catch { /* fall through to direct mapping */ }
+      } catch { /* fall through */ }
     }
-    // Direct mapping: observation keys are the artifact ids by convention.
     const out = {};
     for (const [k, v] of Object.entries(submission.observations)) {
       out[k] = (v && typeof v === "object") ? v : { value: v };
     }
     return out;
   }
-  return {};
+  // v0.11.13 (#128): empty submission ({} or {observations:{}}). Identical
+  // hashes still mean "no operator data was supplied, same on both sides."
+  // Fall back to the playbook's look.artifacts catalog so total_compared
+  // reflects "N catalog artifacts, all uniformly empty on both sides."
+  return _playbookArtifactCatalog(runner, playbookId) || {};
 }
 function normalizedSignalOverrides(submission, runner, playbookId) {
-  if (!submission || typeof submission !== "object") return {};
-  if (submission.signal_overrides) return submission.signal_overrides;
-  if (submission.observations) {
-    // v0.11.12 (#126): same fix as normalizedArtifacts — load the real
-    // playbook so look.indicators can map observation results to signal IDs.
+  if (!submission || typeof submission !== "object") {
+    return _playbookSignalCatalog(runner, playbookId) || {};
+  }
+  if (submission.signal_overrides && Object.keys(submission.signal_overrides).length > 0) return submission.signal_overrides;
+  if (submission.observations && Object.keys(submission.observations).length > 0) {
     if (playbookId) {
       try {
         const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
@@ -2247,16 +2279,15 @@ function normalizedSignalOverrides(submission, runner, playbookId) {
           const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
           if (norm && norm.signal_overrides && Object.keys(norm.signal_overrides).length > 0) return norm.signal_overrides;
         }
-      } catch { /* fall through to direct mapping */ }
+      } catch { /* fall through */ }
     }
-    // Direct mapping: observation key -> result (canonical hit/miss/inconclusive).
     const out = {};
     for (const [k, v] of Object.entries(submission.observations)) {
       if (v && typeof v === "object" && v.result !== undefined) out[k] = v.result;
     }
     return out;
   }
-  return {};
+  return _playbookSignalCatalog(runner, playbookId) || {};
 }
 
 /**

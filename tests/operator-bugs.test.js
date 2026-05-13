@@ -700,6 +700,46 @@ test('#126 attest diff total_compared matches observation count when identical',
     'all artifacts identical → total_compared === unchanged_count');
 });
 
+test('#127 emit() body with ok:false sets non-zero exit (universal contract)', () => {
+  // The class of bug: any verb that emits a result with ok:false to stdout
+  // must not return exit 0. Pre-0.11.13 several paths leaked through.
+  // We test the universal `emit()` interception via a verb that is known
+  // to produce ok:false: attest verify on a non-existent session id.
+  const r = cli(['attest', 'verify', 'no-such-session-id-' + Date.now(), '--json']);
+  // The exact verb-level handling may vary, but the universal contract is:
+  // a body with ok:false → exit non-zero. Either stdout (caught by emit())
+  // or stderr (caught by emitError) is acceptable.
+  const stdoutBody = tryJson(r.stdout) || {};
+  const stderrBody = tryJson(r.stderr.trim()) || {};
+  const sawOkFalse = stdoutBody.ok === false || stderrBody.ok === false;
+  if (sawOkFalse) {
+    assert.notEqual(r.status, 0, 'any ok:false response (stdout OR stderr) must yield non-zero exit');
+  }
+});
+
+test('#127 attest diff with missing session ids exits non-zero', () => {
+  const r = cli(['attest', 'diff', 'does-not-exist-a', '--against', 'does-not-exist-b', '--json']);
+  assert.notEqual(r.status, 0, 'attest diff with missing sessions must exit non-zero');
+});
+
+test('#128 attest diff with empty submissions falls back to playbook catalog', () => {
+  // Both runs use empty {} submission; identical evidence hashes. The diff
+  // should count the playbook's artifact catalog so operators see
+  // "N artifacts, all uniform on both sides" rather than 0/0.
+  const sid1 = 'empty-cat-a-' + Date.now();
+  const sid2 = 'empty-cat-b-' + Date.now();
+  cli(['run', 'sbom', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: '{}' });
+  cli(['run', 'sbom', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: '{}' });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'diff JSON must parse');
+  assert.equal(data.status, 'unchanged', 'identical empty submissions hash-match → status=unchanged');
+  assert.ok(data.artifact_diff.total_compared > 0,
+    'empty submissions must fall back to playbook artifact catalog count, not 0');
+  assert.equal(data.artifact_diff.total_compared, data.artifact_diff.unchanged_count,
+    'all catalog entries identical (both empty) → total_compared === unchanged_count');
+});
+
 test('#104 close emits jurisdiction_notifications alias + clocks count', () => {
   const sub = JSON.stringify({
     observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },

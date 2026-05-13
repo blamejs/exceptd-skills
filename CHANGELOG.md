@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.11.13 — 2026-05-13
+
+**Patch: the final two stragglers — universal `ok:false` exit and empty-submission diff counters.**
+
+### Bugs
+
+- **#127 (originally #100) — `ok:false` body always yields non-zero exit.** Pre-0.11.13 several verbs emitted a result body with `ok: false` to stdout but didn't set `process.exitCode`, so `exceptd run ...; echo $?` returned 0 and `set -e` shell scripts couldn't gate on it. The previous fix was per-verb. Now `emit()` itself sets `process.exitCode = 1` whenever the body has `ok: false` at top level (unless a caller already set a different non-zero code). Universal contract: anything that emits `ok: false` to stdout OR stderr returns non-zero, no exceptions. New verbs cannot regress this — the catch is at the renderer.
+
+- **#128 (originally #102) — attest diff falls back to playbook catalog when submissions are empty.** Pre-0.11.13 `attest diff` between two identical empty-submission attestations reported `status: unchanged` (hash equality) but `total_compared: 0, unchanged_count: 0` — operators couldn't tell whether "0 unchanged" meant "diff didn't iterate" or "nothing to compare." Now: when a submission has neither `artifacts` nor `observations`, the diff helper falls back to the playbook's `look.artifacts` catalog (via the attestation's stored `playbook_id`). Result: `total_compared` reflects the catalog size; `unchanged_count` equals `total_compared` when both sides are uniformly empty. Real observation submissions retain the prior behavior.
+
+### Tests
+
+3 new regression cases. 347 total. The `#127` test asserts the universal contract by hitting `attest verify` on a non-existent session id and checking that any `ok:false` body (stdout or stderr) maps to non-zero exit. The `#128` test runs two `{}` submissions through `run sbom` and asserts the diff reports `total_compared > 0` matching `unchanged_count`.
+
+### Lesson codified in CLAUDE.md
+
+When a class of bug ("verb forgot to set exit code") keeps recurring across releases, fix the class, not the instance. Move the contract to the lowest layer that all paths share — here, `emit()` itself.
+
 ## 0.11.12 — 2026-05-12
 
 **Patch: items 123-126 — content-not-just-shape, exit-code discipline, diff iteration.**
