@@ -55,6 +55,20 @@ paths = [
 ]
 
 [[allowlists]]
+description = "Playbook JSON files — control IDs, signal_ids, compensating_controls strings"
+# data/playbooks/*.json carries dash-separated descriptive identifiers
+# like `cloudtrail-monitor-on-old-key-for-residual-use`,
+# `gcp-audit-log-monitor-on-old-key`, signal_ids, indicator IDs,
+# remediation_paths, prose threat descriptions. These are not secrets,
+# but their length + mixed character classes trip gitleaks'
+# generic-api-key entropy heuristic. The whole directory is
+# descriptive-content territory; the catalog file allowlists above
+# cover credentials we genuinely have nowhere else.
+paths = [
+  '''data/playbooks/[^/]+\.json''',
+]
+
+[[allowlists]]
 description = "Test fixtures and example cache snapshots"
 # Tests under tests/ exercise sign/verify round-trips using temporary
 # keypairs generated at test time. The literal PEM strings that appear
