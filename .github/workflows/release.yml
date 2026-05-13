@@ -93,9 +93,11 @@ jobs:
         run: npm run bootstrap
 
       - name: Predeploy gate sequence
-        # 13 gates: verify, tests, catalog validate, manifest snapshot,
+        # 14 gates: verify, tests, catalog validate, manifest snapshot,
         # lint, watchlist, catalog-meta, sbom, indexes, vendor, package
-        # (plus the offline cve/rfc gates that mirror data-integrity).
+        # tarball shape, sign+pack+extract+verify round-trip (added v0.12.3
+        # to catch the regression where verify-on-source-tree passes but
+        # verify-on-shipped-tarball fails), plus the offline cve/rfc gates.
         run: npm run predeploy
 
       - name: End-to-end scenarios (staged-IoC harness)

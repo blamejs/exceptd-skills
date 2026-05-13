@@ -110,7 +110,7 @@ const PLAYBOOK_VERBS = new Set([
   // v0.11.0 canonical surface:
   "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
   "verify-attestation", "run-all", "lint",
-  // v0.10.x legacy verbs — kept as aliases with deprecation banner, removed in v0.12+:
+  // v0.10.x legacy verbs — kept as aliases with deprecation banner, scheduled for removal in v0.13:
   "plan", "govern", "direct", "look", "ingest", "reattest", "list-attestations",
 ]);
 
@@ -176,7 +176,7 @@ function printHelp() {
 Usage: exceptd <command> [args]
        npx @blamejs/exceptd-skills <command> [args]
 
-v0.11.0 canonical surface
+v0.12.0 canonical surface
 ─────────────────────────
 
   brief [playbook]           Unified info doc — jurisdictions + threat context
@@ -267,7 +267,7 @@ v0.11.0 canonical surface
                              Sources: kev|epss|nvd|rfc|pins|ghsa (v0.12.0).
                                                     ghsa drafts pass validator as warnings.
 
-v0.10.x compatibility (will be removed in v0.12)
+v0.10.x compatibility (will be removed in v0.13)
 ────────────────────────────────────────────────
 
 These verbs still work but emit a one-time deprecation banner. The
@@ -394,7 +394,7 @@ function main() {
         (haveBrief
           ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
           : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
-        `Legacy verbs remain functional through this release; they will be removed in v0.12. ` +
+        `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
         `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
       );
       process.env.EXCEPTD_DEPRECATION_SHOWN = "1";

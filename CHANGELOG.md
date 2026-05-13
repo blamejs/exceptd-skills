@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.12.3 — 2026-05-13
+
+**Patch: critical signature-verification regression fix + 14th predeploy gate to prevent recurrence.**
+
+### The critical bug
+
+Every release from v0.11.x through v0.12.2 shipped a tarball whose `keys/public.pem` did not match the Ed25519 signatures inside `manifest.json`. The result: `node lib/verify.js` against a fresh `npm install` reported `0/38 skills passed Ed25519 verification` and every skill listed as `TAMPERED`. Verification was silently bypassed by `exceptd run`, `exceptd ci`, etc. (which load skills without re-verifying), so the surface was only visible to operators running `exceptd doctor --signatures`.
+
+### What broke
+
+The CI release workflow's `verify` step ran against the SOURCE tree (which had matching signatures + public key). It passed `38/38`. But the tarball that `npm publish` actually uploaded ended up with a different `public.pem` than the source tree. Verifying-on-source-tree is not the same as verifying-on-shipped-tarball. The mismatch went undetected for the entire v0.11.x and v0.12.x series.
+
+### The fix
+
+- `scripts/verify-shipped-tarball.js` — packs the package via `npm pack`, extracts the tarball to a temp dir, and runs Ed25519 verify against the **extracted tree**. Catches any divergence between source-tree state and shipped-tarball state. Logs both fingerprints (source vs. tarball) so any future mismatch is forensically obvious.
+- Wired in as **the 14th predeploy gate** so local maintainers + CI both run it. A release that produces a broken tarball now blocks before `npm publish` instead of shipping silently.
+- v0.12.3 re-signs every skill against the current public key, then runs the new gate to confirm the round-trip is clean.
+
+### Other fixes
+
+- **#137**: help text bumped from `v0.11.0 canonical surface` → `v0.12.0 canonical surface`.
+- **#136 (text part)**: legacy-verb removal target moved from v0.12 → v0.13 in help text and deprecation banner. Actually removing the verbs is scope for a future release.
+- **#135 (the run-with-no-evidence exit-0 case)**: deferred to v0.12.4. The fix is straightforward (have `run` exit 3 when classification: inconclusive AND no observations submitted, matching `ci`'s semantic) but changes the `run` verb's contract, which deserves a focused release that also documents the behavior change.
+
+### Lesson codified in CLAUDE.md
+
+"Verify-on-source-tree is not verify-on-shipped-tarball." Any project that signs artifacts must verify the EXACT bytes that downstream consumers receive, after `npm pack` (or equivalent packaging step). The next-easiest place to lose integrity is the file-set transformation between `git checkout` and the registry upload — and that transformation runs in CI, where the maintainer has the least visibility.
+
 ## 0.12.2 — 2026-05-13
 
 **Patch: end-to-end scenario gate — staged-IoC harness in release workflow.**

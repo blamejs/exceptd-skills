@@ -139,6 +139,18 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-package.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // v0.12.3 — packs the tarball, extracts it, runs Ed25519 verify on the
+    // EXTRACTED tree. Catches the class of bug where verify-on-source-tree
+    // passes (38/38) but verify-on-shipped-tarball fails (0/38) because
+    // something between sign and pack swapped keys/public.pem. Every release
+    // v0.11.x through v0.12.2 shipped this regression invisibly.
+    name: "Verify shipped tarball (sign + pack + extract + verify round-trip)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "verify-shipped-tarball.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+    requiresKeys: true,
+  },
 ];
 
 /* Inline checker, run as `node -e`, so the predeploy gate stays one
