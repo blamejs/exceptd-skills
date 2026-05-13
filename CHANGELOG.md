@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.1 — 2026-05-13
+
+**Patch: README + website docs for the v0.12.0 freshness surface.**
+
+v0.12.0 shipped the GHSA source + `refresh --advisory` + `refresh --curate` but the README operator section + the website still showed the v0.11.x command set. v0.12.1 brings the docs into line:
+
+- README: refresh command reference now lists `--network`, `--advisory <CVE-or-GHSA-ID>`, `--curate <CVE-ID>`, `--prefetch`, and the `ghsa` source. Operator section command examples updated. New `EXCEPTD_GHSA_FIXTURE` + `EXCEPTD_REGISTRY_FIXTURE` env vars documented.
+- Website: "nightly upstream refresh" feature card extended to mention GHSA as the minutes-old disclosure path (vs days for KEV / NVD). Operator persona card command list updated to show the advisory + curate workflow.
+
+No CLI / catalog / playbook changes — pure docs.
+
 ## 0.12.0 — 2026-05-13
 
 **Minor: catalog freshness from minutes-old disclosures, not days.**

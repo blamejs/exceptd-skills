@@ -132,11 +132,11 @@ No clone, no signing keys, no Node 24 required for assistants that read directly
 You want to refresh CVE/RFC data, run currency checks, or generate reports. Install + invoke via `npx` (no global install needed):
 
 ```bash
-npx @blamejs/exceptd-skills prefetch          # warm local cache of upstream data
-npx @blamejs/exceptd-skills refresh --from-cache --swarm
-npx @blamejs/exceptd-skills validate-cves --from-cache --no-fail
-npx @blamejs/exceptd-skills currency
-npx @blamejs/exceptd-skills report executive
+npx @blamejs/exceptd-skills doctor                                # health check
+npx @blamejs/exceptd-skills refresh --apply --swarm               # pull KEV/NVD/EPSS/RFC/GHSA + apply
+npx @blamejs/exceptd-skills refresh --advisory CVE-2026-45321     # seed one CVE draft from GHSA
+npx @blamejs/exceptd-skills refresh --curate CVE-2026-45321       # surface editorial questions for a draft
+npx @blamejs/exceptd-skills refresh --network                     # swap data/ from latest signed npm tarball
 ```
 
 For frequent use, install globally to skip the `npx` resolution every time:
@@ -146,14 +146,18 @@ npm install -g @blamejs/exceptd-skills
 exceptd help
 ```
 
-Air-gapped operation: run `exceptd prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
+Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
+
+Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …. New CVE IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <CVE-ID>`. For "I want this CVE today, not tomorrow": `exceptd refresh --advisory <CVE-or-GHSA-ID> --apply`.
 
 Optional env vars for higher rate budgets:
 
 | Variable | Purpose |
 |---|---|
 | `NVD_API_KEY` | Lifts NVD 2.0 from 5 → 50 requests per 30s window. Free key at <https://nvd.nist.gov/developers/request-an-api-key>. |
-| `GITHUB_TOKEN` | Lifts GitHub Releases (used for ATLAS / ATT&CK / D3FEND / CWE pin checks) from 60 → 5000 requests per hour. |
+| `GITHUB_TOKEN` | Lifts GitHub Releases + GHSA from 60 → 5000 requests per hour. |
+| `EXCEPTD_GHSA_FIXTURE` | Path to a JSON fixture matching the api.github.com/advisories shape. For offline tests + air-gap workflows. |
+| `EXCEPTD_REGISTRY_FIXTURE` | Path to a JSON fixture matching the npm registry response. Used by `doctor --registry-check` + `run --upstream-check` + `refresh --network` for offline testing. |
 
 ### 3. Maintainer (extend / sign / publish)
 
@@ -275,8 +279,23 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
                                       Replaces prefetch + refresh + build-indexes.
   --apply                             Write diffs back + rebuild indexes.
   --from-cache [<dir>]                Read from prefetch cache.
-  --no-network                        Dry-run.
+  --prefetch                          Populate the offline cache (alias for
+                                      --no-network).
+  --network                           (v0.11.14) Fetch latest signed catalog
+                                      snapshot from npm tarball, verify against
+                                      local public.pem, swap data/ in place.
+  --advisory <CVE-or-GHSA-ID>         (v0.12.0) Seed a single catalog entry from
+                                      GitHub Advisory Database. Writes a draft
+                                      flagged _auto_imported. --apply commits it.
+  --curate <CVE-ID>                   (v0.12.0) Emit editorial questions + ranked
+                                      candidates (ATLAS/ATT&CK/CWE/framework) for
+                                      a draft catalog entry.
   --indexes-only                      Rebuild data/_indexes/*.json only.
+
+Sources (default = all): kev | epss | nvd | rfc | pins | ghsa (v0.12.0).
+GHSA covers npm, PyPI, Maven, Go, NuGet, etc. New CVE IDs land as drafts
+that the catalog validator treats as warnings, not errors — editorial
+review (framework gaps, IoCs, ATLAS/ATT&CK refs) is still required.
 
 exceptd skill <name>                  Show context for one skill.
 exceptd framework-gap <FW> <ref>      One framework + one CVE/scenario, JSON
