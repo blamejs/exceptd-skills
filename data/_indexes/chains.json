@@ -1751,6 +1751,23 @@
       ]
     }
   },
+  "CVE-2026-45321": {
+    "name": "Mini Shai-Hulud TanStack npm worm",
+    "rwep": 45,
+    "cvss": 9.6,
+    "cisa_kev": false,
+    "epss_score": 0.78,
+    "epss_percentile": 0.97,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-787": {
     "name": "Out-of-bounds Write",
     "category": "Memory Safety",

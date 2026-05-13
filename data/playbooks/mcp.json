@@ -1,10 +1,22 @@
 {
   "_meta": {
     "id": "mcp",
-    "version": "1.0.0",
-    "last_threat_review": "2026-05-11",
-    "threat_currency_score": 96,
+    "version": "1.1.0",
+    "last_threat_review": "2026-05-13",
+    "threat_currency_score": 97,
     "changelog": [
+      {
+        "version": "1.1.0",
+        "date": "2026-05-13",
+        "summary": "Cross-cuts CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) on the agent-persistence side. The worm installs SessionStart hooks in .claude/settings.json + folder-open tasks in .vscode/tasks.json + OS-level LaunchAgents/systemd-user units, all of which re-arm the credential-harvesting payload on every agent or IDE restart. Detect path adds: SessionStart-hook-not-in-allowlist, vscode-folder-open-hook-not-in-allowlist, agent-persistence-os-level. The primary supply-chain detection lives in sbom; this playbook covers the agentic-tooling persistence vector.",
+        "cves_added": [
+          "CVE-2026-45321"
+        ],
+        "framework_gaps_updated": [
+          "nist-800-53-AC-2-AI-hook-allowlist",
+          "eu-ai-act-art15-agent-persistence"
+        ]
+      },
       {
         "version": "1.0.0",
         "date": "2026-05-11",
@@ -68,7 +80,8 @@
       "T1190"
     ],
     "cve_refs": [
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "CVE-2026-45321"
     ],
     "cwe_refs": [
       "CWE-345",

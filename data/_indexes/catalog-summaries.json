@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 5,
+      "entry_count": 6,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2026-43284",
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 5,
+      "entry_count": 6,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

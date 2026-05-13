@@ -1,10 +1,22 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.0.0",
-    "last_threat_review": "2026-05-11",
-    "threat_currency_score": 95,
+    "version": "1.1.0",
+    "last_threat_review": "2026-05-13",
+    "threat_currency_score": 97,
     "changelog": [
+      {
+        "version": "1.1.0",
+        "date": "2026-05-13",
+        "summary": "Adds CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm, 2026-05-11). Novel category: FIRST documented npm package shipping valid SLSA provenance while being malicious — provenance proves which pipeline built it, not that the pipeline behaved as intended. Detect path includes chained-primitives signature (pull_request_target + actions/cache + id-token:write co-residency), IoC sweep for .claude/settings.json SessionStart hooks + .vscode/tasks.json folder-open hooks + LaunchAgent / systemd-user persistence, registry-cooldown mitigation (.npmrc before=72h or minimumReleaseAge=4320).",
+        "cves_added": [
+          "CVE-2026-45321"
+        ],
+        "framework_gaps_updated": [
+          "slsa-l3-insufficient-vs-cache-poisoning",
+          "nist-800-218-SSDF-PS3-PO3"
+        ]
+      },
       {
         "version": "1.0.0",
         "date": "2026-05-11",
@@ -80,7 +92,8 @@
       "CVE-2026-43284",
       "CVE-2026-43500",
       "CVE-2025-53773",
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "CVE-2026-45321"
     ],
     "cwe_refs": [
       "CWE-1357",
@@ -505,6 +518,48 @@
           "description": "Authoritative catalog for matched-CVE correlation.",
           "required": true,
           "air_gap_alternative": "Catalog is shipped with exceptd; available offline."
+        },
+        {
+          "id": "tanstack-payload-sweep",
+          "type": "file_path",
+          "source": "find node_modules -path '*/@tanstack/*' \\( -name 'router_init.js' -o -name 'router_runtime.js' \\) 2>/dev/null",
+          "description": "CVE-2026-45321 IoC sweep — payload markers inside any installed @tanstack/* package. Captures both flat npm and pnpm-style nested layouts.",
+          "required": false
+        },
+        {
+          "id": "agent-persistence-claude-settings",
+          "type": "config_file",
+          "source": ".claude/settings.json and $HOME/.claude/settings.json — read `hooks` keys, in particular SessionStart entries",
+          "description": "CVE-2026-45321 persistence vector — read every Claude Code settings file in scope to inspect hook entries.",
+          "required": false
+        },
+        {
+          "id": "agent-persistence-vscode-tasks",
+          "type": "config_file",
+          "source": ".vscode/tasks.json — read `tasks[].runOptions.runOn` for any folderOpen entries",
+          "description": "CVE-2026-45321 persistence vector — VS Code folder-open hooks re-arm the worm on every IDE re-open.",
+          "required": false
+        },
+        {
+          "id": "agent-persistence-os-level",
+          "type": "config_file",
+          "source": "$HOME/Library/LaunchAgents/*.plist (macOS) AND $HOME/.config/systemd/user/*.service (Linux) — list and read",
+          "description": "CVE-2026-45321 OS-level persistence — outlives any IDE/agent restart.",
+          "required": false
+        },
+        {
+          "id": "npmrc-cooldown-policy",
+          "type": "config_file",
+          "source": "Read .npmrc (project) and $HOME/.npmrc (user) — look for `before=` or `minimumReleaseAge=` settings",
+          "description": "Mitigation status for CVE-2026-45321 and similar fresh-publish worms. Absence is a high-confidence finding for any project that consumes npm packages.",
+          "required": false
+        },
+        {
+          "id": "github-workflows",
+          "type": "config_file",
+          "source": "Read .github/workflows/*.yml and *.yaml — extract `on:` triggers, `permissions:`, and `uses: actions/cache@*` step references",
+          "description": "CVE-2026-45321 architectural pre-condition check — detects pull_request_target + id-token:write + shared actions/cache co-residency in the same repo.",
+          "required": false
         }
       ],
       "collection_scope": {
@@ -628,6 +683,68 @@
           "description": "KEV-listed match — fast-path escalation required.",
           "confidence": "deterministic",
           "deterministic": true
+        },
+        {
+          "id": "tanstack-worm-payload-files",
+          "type": "file_path",
+          "value": "node_modules/@tanstack/*/router_init.js exists OR node_modules/@tanstack/*/router_runtime.js exists",
+          "description": "CVE-2026-45321 (Mini Shai-Hulud) payload markers — these files do not exist in clean TanStack packages.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "tanstack-worm-resolved-during-publish-window",
+          "type": "log_pattern",
+          "value": "Lockfile entry for any @tanstack/* package resolved within 2026-05-11T19:20Z..2026-05-11T19:26Z (the malicious publish window)",
+          "description": "CVE-2026-45321 timing match — any @tanstack/* package whose lockfile-recorded resolution timestamp falls inside the 6-minute attacker publish window is suspect even if the payload markers were since cleaned.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "agent-persistence-claude-session-start-hook",
+          "type": "file_path",
+          "value": ".claude/settings.json contains hooks.SessionStart referencing .vscode/setup.mjs OR any non-blamejs-installed script",
+          "description": "CVE-2026-45321 persistence vector — worm installs a SessionStart hook to re-arm on next Claude Code launch. Any SessionStart hook running an in-repo .mjs that the operator didn't author is suspect.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1574"
+        },
+        {
+          "id": "agent-persistence-vscode-folder-open-task",
+          "type": "file_path",
+          "value": ".vscode/tasks.json contains a runOptions.runOn=folderOpen task pointing at .vscode/setup.mjs or similar",
+          "description": "CVE-2026-45321 persistence vector — folder-open hook re-arms on every VS Code re-open of the directory.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1547"
+        },
+        {
+          "id": "agent-persistence-os-level",
+          "type": "file_path",
+          "value": "~/Library/LaunchAgents/com.tanstack.*.plist exists (macOS) OR ~/.config/systemd/user/*.service references an in-repo staged setup.mjs (Linux)",
+          "description": "CVE-2026-45321 OS-level persistence — outlives any IDE/agent restart. Targets macOS LaunchAgents + Linux systemd-user units.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1547"
+        },
+        {
+          "id": "ci-cache-poisoning-co-residency",
+          "type": "log_pattern",
+          "value": "Repo .github/workflows/ contains BOTH (a) a workflow with `on: pull_request_target` AND (b) any workflow with `permissions: id-token: write` AND (c) any actions/cache step shared between the two",
+          "description": "Architectural pre-condition for CVE-2026-45321-style chained-primitives attacks. Even without the payload, this co-residency means any successful fork-PR exploit can poison the cache that the publish workflow restores. Mitigation: separate cache namespaces, or remove pull_request_target.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002"
+        },
+        {
+          "id": "npm-registry-no-cooldown",
+          "type": "file_path",
+          "value": ".npmrc and ~/.npmrc both lack `before=` or `minimumReleaseAge=` settings, AND project consumes any npm package",
+          "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `before=72h` (npm 11+) or `minimumReleaseAge=4320` minutes. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
+          "confidence": "high",
+          "deterministic": false
         }
       ],
       "false_positive_profile": [

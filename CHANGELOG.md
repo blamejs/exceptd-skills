@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.11.15 — 2026-05-13
+
+**Patch: CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) — catalog + playbook + IoC sweep.**
+
+Adds detection for the npm supply-chain worm disclosed 2026-05-11 (84 malicious versions across 42 `@tanstack/*` packages, including `@tanstack/react-router` at ~12M weekly downloads, CVSS 9.6). The novel category: first documented npm package shipping VALID SLSA provenance while being malicious. Provenance proves which pipeline built the artifact, not that the pipeline behaved as intended.
+
+### Catalog
+
+- `data/cve-catalog.json` — new entry `CVE-2026-45321` with full RWEP scoring (78), the three chained primitives (`pull_request_target` co-resident with `id-token: write` and shared `actions/cache`), payload IoCs, persistence IoCs (`.claude/settings.json` SessionStart hooks, `.vscode/tasks.json` folder-open hooks, macOS LaunchAgents, Linux systemd-user units), framework-gap analysis (SLSA L3 insufficient, NIST 800-218 SSDF PS.3/PO.3 gap), and the destructive-on-revocation behavior.
+
+### Playbook detections (sbom)
+
+- `tanstack-worm-payload-files` — find `node_modules/@tanstack/*/router_init.js` or `router_runtime.js`
+- `tanstack-worm-resolved-during-publish-window` — lockfile entries resolved 2026-05-11T19:20Z..19:26Z
+- `agent-persistence-claude-session-start-hook` — non-owner SessionStart hooks
+- `agent-persistence-vscode-folder-open-task` — folder-open tasks running staged setup scripts
+- `agent-persistence-os-level` — macOS LaunchAgents + Linux systemd-user units referencing in-repo `.mjs`
+- `ci-cache-poisoning-co-residency` — repo has `pull_request_target` + `id-token: write` + shared `actions/cache` (architectural pre-condition, even without payload)
+- `npm-registry-no-cooldown` — project consumes npm but `.npmrc` lacks `before=` or `minimumReleaseAge=`
+
+### Playbook detections (mcp)
+
+- Same `agent-persistence-*` indicators on the agentic-tooling side. MCP playbook covers the persistence vector; SBOM covers the supply-chain root.
+
+### Skill update
+
+- `skills/supply-chain-integrity/SKILL.md` — adds the CVE-2026-45321 case at the top of Threat Context with the chained-primitives explanation and the new SLSA-L3-insufficient framing.
+
+### Eating own dogfood
+
+- `.npmrc` — adds `before=72h` + `minimumReleaseAge=4320` so this repo refuses fresh-publish installs. Survives downgrade to older npm via both flags.
+
+### threat_currency_score bumps
+
+- `sbom` 95 → 97, `mcp` 96 → 97, both with `last_threat_review: 2026-05-13`.
+
 ## 0.11.14 — 2026-05-13
 
 **Patch: items 129-134 + freshness surface — claims-vs-reality gap closure + opt-in registry-check.**

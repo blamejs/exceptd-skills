@@ -373,5 +373,98 @@
       "basis": "No vendor management or supply chain control covers MCP servers. 150M+ affected downloads suggests extremely broad exposure.",
       "theater_pattern": "vendor_management_ai"
     }
+  },
+  "CVE-2026-45321": {
+    "name": "Mini Shai-Hulud TanStack npm worm",
+    "lesson_date": "2026-05-13",
+    "attack_vector": {
+      "description": "Three chained primitives across one repository's CI: (1) pull_request_target on a non-publishing workflow ran fork-PR code with base-repo permissions, (2) that run poisoned actions/cache under a key the publish workflow would later restore, (3) on next main push the publish workflow restored the poisoned cache, attacker code read /proc/<runner>/mem to lift the OIDC token before the official publish step, and shipped malicious tarballs to npm with VALID SLSA provenance. 84 versions across 42 @tanstack/* packages published in a 6-minute window 2026-05-11 19:20-19:26 UTC.",
+      "privileges_required": "Any GitHub account that can open a pull request to the target repository (no maintainer access required).",
+      "complexity": "engineering-grade — chained primitives, deep CI knowledge, /proc/<pid>/mem token-scraping under id-token:write",
+      "ai_factor": "None observed. Engineering-grade tradecraft attributed to TeamPCP. Notable for what it didn't need: AI didn't make this attack possible. CI-trust-boundary misuse + cache co-residency made it possible."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Forbid pull_request_target co-residency with id-token:write workflows in the same repo, OR isolate actions/cache namespaces per trigger class so fork-PR runs cannot write to a key any tag/main run will read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Architectural — eliminates the chain. Hardest part is auditing every repo for the architectural pre-condition; this is what the sbom playbook's `ci-cache-poisoning-co-residency` indicator checks."
+      },
+      "detection": {
+        "what_would_have_worked": "Consumer-side fresh-publish cooldown (.npmrc before=72h or minimumReleaseAge=4320 minutes). External researchers caught this worm within 20 minutes of publish; 72h is overkill-safe.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Defense in depth — operators who would have installed the malicious version on 2026-05-11 19:25Z would not have, because the cooldown would have rejected it."
+      },
+      "response": {
+        "what_would_have_worked": "Token rotation triggered by the npm yank notice, paired with host-snapshot BEFORE rotation (the worm payload carries a destructive wipe on token-revocation).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Reduces blast radius post-exploitation. The destructive-on-revocation property means hasty rotation can lose evidence."
+      }
+    },
+    "framework_coverage": {
+      "SLSA-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA L3 build-integrity is necessary but insufficient against cache-poisoning attacks within the build. The malicious tarballs shipped with VALID SLSA provenance — provenance proves which pipeline built the artifact, not that the pipeline behaved as intended."
+      },
+      "NIST-800-218-SSDF": {
+        "covered": true,
+        "adequate": false,
+        "gap": "PS.3 + PO.3 don't address cache poisoning between sibling workflows in the same repo. SSDF presumes per-workflow trust isolation that GitHub Actions' shared actions/cache breaks."
+      },
+      "NIST-800-53-SA-12": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain protection treats provenance + signing as the trust anchor. CVE-2026-45321 demonstrates both can be intact on a malicious package."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerability-handling provisions presume detectable signal at consumption. Valid provenance neutralizes the standard consumer-side check."
+      },
+      "NIS2-Art21-2d": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain risk management presumes detectable signal at consumption."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-008",
+        "name": "CI-WORKFLOW-TRUST-BOUNDARY-ISOLATION",
+        "description": "Forbid pull_request_target co-residency with id-token:write workflows in the same repository. If co-residency is required, isolate actions/cache namespaces per trigger class.",
+        "evidence": "CVE-2026-45321 — chained primitives required exactly this co-residency to succeed",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "SLSA-L3"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-009",
+        "name": "REGISTRY-COOLDOWN-POLICY",
+        "description": "Consumer-side registry cooldown (.npmrc before=72h or minimumReleaseAge=4320 minutes) refuses to install any version published within the last 72 hours.",
+        "evidence": "CVE-2026-45321 — caught publicly within 20 minutes; 72h is overkill-safe",
+        "gap_closes": [
+          "NIST-800-53-SA-12",
+          "NIS2-Art21-2d"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-010",
+        "name": "AGENT-PERSISTENCE-HOOK-ALLOWLIST",
+        "description": "AI coding assistants must allowlist hooks. SessionStart hooks in .claude/settings.json + folder-open tasks in .vscode/tasks.json + OS-level LaunchAgents/systemd-user units that reference in-repo staged scripts must be approved by the operator before execution.",
+        "evidence": "CVE-2026-45321 — the worm installs persistence via all three hook surfaces",
+        "gap_closes": [
+          "ALL-AI-AGENT-PERSISTENCE"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 95,
+      "basis": "SLSA L3 + provenance + signing all pass on the malicious package. Standard supply-chain audits (SBOM check, provenance verify, signature verify) all give green. The architectural pre-condition (pull_request_target + id-token:write + shared actions/cache) is not in any compliance framework's control catalog. Combined ~150M+ weekly downloads across 42 packages = extremely broad exposure.",
+      "theater_pattern": "provenance_signed_therefore_safe"
+    }
   }
 }
