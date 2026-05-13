@@ -212,7 +212,17 @@ function diffSets(before, after) {
 function extractLibExports(content) {
   if (!content) return new Set();
   const out = new Set();
-  const m = content.match(/module\.exports\s*=\s*\{([^}]+)\}/);
+  // v0.12.9: strip block + line comments before matching `module.exports`
+  // so a doc-comment example like `module.exports = {...}` inside a /** */
+  // block does not shadow the real exports lower in the file. Pre-fix, the
+  // analyzer's own file matched a 3-char doc-comment fragment first and
+  // returned an empty export set — any source that mentions `module.exports`
+  // in a JSDoc/banner block hit the same bug. After stripping comments,
+  // the `module.exports = {...}` match runs against real code only.
+  const stripped = content
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  const m = stripped.match(/module\.exports\s*=\s*\{([^}]+)\}/);
   if (m) {
     for (const tok of m[1].split(",")) {
       const id = tok.split(":")[0].trim();
@@ -221,9 +231,9 @@ function extractLibExports(content) {
   }
   const re = /module\.exports\.([a-zA-Z_$][\w$]*)\s*=/g;
   let mm;
-  while ((mm = re.exec(content)) !== null) out.add(mm[1]);
+  while ((mm = re.exec(stripped)) !== null) out.add(mm[1]);
   const re2 = /^exports\.([a-zA-Z_$][\w$]*)\s*=/gm;
-  while ((mm = re2.exec(content)) !== null) out.add(mm[1]);
+  while ((mm = re2.exec(stripped)) !== null) out.add(mm[1]);
   return out;
 }
 
@@ -294,10 +304,21 @@ function coversCliFlag(corpus, flag) {
 
 function coversLibExport(corpus, libRel, ident) {
   const baseName = path.basename(libRel).replace(/\.js$/, "");
-  const requireRe = new RegExp("require\\([^)]*" + escapeRe(baseName) + "[^)]*\\)");
-  if (!requireRe.test(corpus)) return false;
+  const baseFile = path.basename(libRel); // e.g. "check-sbom-currency.js"
   const identRe = new RegExp("\\b" + escapeRe(ident) + "\\b");
-  return identRe.test(corpus);
+  // Primary: a `require()` that mentions the module name AND a reference
+  // to the identifier anywhere in the test corpus. Catches the canonical
+  // `const { foo } = require('../lib/x')` test shape.
+  const requireRe = new RegExp("require\\([^)]*" + escapeRe(baseName) + "[^)]*\\)");
+  if (requireRe.test(corpus) && identRe.test(corpus)) return true;
+  // v0.12.9: a test that spawns the script under test (e.g.
+  // `spawnSync(node, [".../scripts/check-sbom-currency.js", ...])`) is
+  // real coverage too. Accept that shape when the corpus references the
+  // full filename AND the identifier elsewhere. The `.js` suffix is what
+  // distinguishes a real spawn-path from an arbitrary mention of the
+  // module base name.
+  if (corpus.includes(baseFile) && identRe.test(corpus)) return true;
+  return false;
 }
 
 function coversPlaybookId(corpus, id) {

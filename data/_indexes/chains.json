@@ -12,8 +12,8 @@
     "rwep": 90,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.94,
-    "epss_percentile": 0.99,
+    "epss_score": 0.0257,
+    "epss_percentile": 0.8569,
     "referencing_skills": [
       "kernel-lpe-triage",
       "exploit-scoring",
@@ -271,10 +271,10 @@
   "CVE-2026-43284": {
     "name": "Dirty Frag (ESP/IPsec component)",
     "rwep": 38,
-    "cvss": 7.8,
+    "cvss": 8.8,
     "cisa_kev": false,
-    "epss_score": 0.18,
-    "epss_percentile": 0.88,
+    "epss_score": 0.00007,
+    "epss_percentile": 0.0051,
     "referencing_skills": [
       "kernel-lpe-triage",
       "pqc-first",
@@ -483,8 +483,8 @@
     "rwep": 32,
     "cvss": 7.6,
     "cisa_kev": false,
-    "epss_score": 0.07,
-    "epss_percentile": 0.75,
+    "epss_score": 0.0001,
+    "epss_percentile": 0.0115,
     "referencing_skills": [
       "kernel-lpe-triage",
       "pqc-first",
@@ -1251,9 +1251,9 @@
     }
   },
   "CVE-2026-30615": {
-    "name": "Windsurf MCP Zero-Interaction RCE",
+    "name": "Windsurf MCP Local-Vector RCE via Adversarial Tool Response",
     "rwep": 35,
-    "cvss": 9.8,
+    "cvss": 8,
     "cisa_kev": false,
     "epss_score": 0.14,
     "epss_percentile": 0.86,
@@ -1756,8 +1756,8 @@
     "rwep": 45,
     "cvss": 9.6,
     "cisa_kev": false,
-    "epss_score": 0.78,
-    "epss_percentile": 0.97,
+    "epss_score": 0.00039,
+    "epss_percentile": 0.1179,
     "referencing_skills": [],
     "chain": {
       "cwes": [],

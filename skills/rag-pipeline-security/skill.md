@@ -26,16 +26,18 @@ framework_gaps:
   - NIST-AI-RMF-MEASURE-2.5
   - OWASP-LLM-Top-10-2025-LLM08
   - EU-AI-Act-Art-15
-  - UK-CAF-A1
+  - UK-CAF-B2
   - AU-Essential-8-App-Hardening
 cwe_refs:
   - CWE-1395
   - CWE-1426
 d3fend_refs:
   - D3-CSPP
+  - D3-FCR
+  - D3-FAPA
   - D3-IOPR
   - D3-NTA
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-13"
 ---
 
 # RAG Pipeline Security Assessment
@@ -171,6 +173,8 @@ This attack requires:
 | NIST AI RMF MEASURE 2.5 | Evaluate AI risk during operation | Identifies operational monitoring as important. No specific controls for retrieval security, vector store integrity, or indirect prompt injection via retrieved content. |
 | SOC 2 CC6 | Logical and Physical Access | IAM for identified systems. Vector stores as inference surfaces don't map to traditional access control models. |
 | All frameworks | (none) | No framework has controls for: vector store poisoning, embedding manipulation for exfiltration, chunking exploitation, retrieval filter bypass, or indirect prompt injection via retrieved content. |
+| UK CAF | B2 (Identity and access control) | Selected over CAF-A1 because every RAG attack class above resolves to an access-control failure at retrieval time — clearance-aware namespace partitioning, per-query authorisation, and embedding-space ACLs are the missing controls. CAF-A1 (governance) is the parent concern but does not name the retrieval-access-control surface that is the actual mid-2026 gap. |
+| AU Essential Eight | User application hardening | The RAG pipeline is the application surface that hosts the retrieval engine, embedding model, and vector store. App-hardening as written covers browser/Office hardening; the AU mapping is partial because Essential Eight does not contemplate AI pipelines as a user-application class. |
 
 ---
 
@@ -289,6 +293,28 @@ After producing the RAG pipeline security assessment, the operator should chain 
 - **`attack-surface-pentest`** — RAG corpora and embedding-store APIs (Pinecone, Weaviate, Qdrant, pgvector, Chroma management endpoints) must be enumerated in pen-test scope. The architectural-control mitigations above are only verifiable through adversarial exercise; without pen-test coverage, the Step 3 posture score is self-reported.
 
 For ephemeral / serverless RAG pipelines (per AGENTS.md rule #9): embedding-distribution-shift monitoring across rolling deployments where the vector store is rebuilt per request is architecturally impossible. The scoped alternative is per-ingestion-event content scanning and provenance attestation, with the distribution-shift signal computed off-line against a sampled snapshot rather than the live store.
+
+---
+
+## Defensive Countermeasure Mapping
+
+D3FEND v1.0+ references from `data/d3fend-catalog.json`. The five RAG attack classes above map to the following defensive techniques. Coverage for RAG pipelines is uneven across enterprises in mid-2026 — most have `D3-NTA` on the network layer and nothing else.
+
+| D3FEND ID | Name | Layer | Rationale (what it counters here) |
+|---|---|---|---|
+| `D3-FCR` | File Content Rules | Data tier / corpus ingestion | Content classification at ingestion. Direct counter to Attack Class 2 (vector store poisoning) — corpus documents are content-filtered before they reach the embedding model. Also catches Attack Class 5 (indirect prompt injection) when payload patterns are recognisable in the source document. |
+| `D3-FAPA` | File Access Pattern Analysis | Data tier / corpus access | Detects retrieval-time anomalies — a query topology that systematically targets sensitive-document embeddings (Attack Class 1) shows up as an unusual file-access pattern against the corpus index, even when no individual retrieval is suspicious in isolation. |
+| `D3-IOPR` | Input/Output Profiling | RAG pipeline / SDK | Inspects retrieval queries and their resulting context bundles before they reach the LLM prompt. Required for Attack Class 3 (chunking exploitation) and Attack Class 4 (retrieval filter bypass) detection — the offending content shape is only visible at the pipeline boundary between retrieval and generation. |
+| `D3-CSPP` | Client-server Payload Profiling | LLM gateway | Gateway-layer inspection of the final composed prompt (query + retrieved context + instructions). Catches Attack Class 5 patterns that survived `D3-FCR` at ingestion — indirect prompt injection in retrieved context is visible as a structural anomaly in the assembled prompt. |
+| `D3-NTA` | Network Traffic Analysis | Network egress / RAG outputs | Per-identity baseline of RAG-result egress volume and destinations. Catches Attack Class 1's terminal phase — the exfiltrated content has to leave the boundary to reach the attacker. Last-resort detection when content controls fail. |
+
+**Defense-in-depth posture:** `D3-FCR` is the corpus-ingestion layer; `D3-FAPA` is the retrieval-access layer; `D3-IOPR` is the pipeline-internal layer; `D3-CSPP` is the gateway layer; `D3-NTA` is the egress layer. The Attack Class table maps each class to at least two of these — Class 5 (indirect prompt injection) is the canonical example: `D3-FCR` at ingestion + `D3-CSPP` at the gateway, because neither alone catches payloads that pass content rules at ingest but compose into a prompt-injection structure post-retrieval.
+
+**Least-privilege scope:** every query identity has a clearance label; retrieval results are filtered against that label at retrieval time (`D3-FAPA` enforces the filter and audits the pattern). RAG corpora are partitioned per-clearance — a Restricted-clearance corpus is not accessible to a Public-clearance principal even when query similarity would otherwise surface the document.
+
+**Zero-trust posture:** every retrieved chunk is treated as untrusted content. `D3-CSPP` inspects the composed prompt as if the retrieved context came from a hostile source — because under Attack Class 5, it did. No "internal document is trusted" exemption — internal documents are the documented vector for indirect prompt injection that survives external-content filters.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-FAPA` on ephemeral, per-query rebuilt indices degrades to per-query retrieval logging (`D3-IOPR` captures the query + result set) because there is no persistent corpus to baseline against. The scoped alternative is build-time provenance (signed index manifest at construction) combined with query-time `D3-IOPR` capture of the query+result-set tuple — equivalent observation surface, different anchoring.
 
 ---
 

@@ -67,6 +67,7 @@ When a framework update closes a gap:
    npm run verify                              # Ed25519 signatures on every skill
    npm test                                    # node:test suite under tests/
    npm run lint                                # skill frontmatter + 7 body sections + cross-refs
+   npm run diff-coverage                       # every changed CLI verb/flag/export/indicator has a covering test
    node lib/validate-cve-catalog.js            # CVE schema + zero-day learning coverage
    node orchestrator/index.js validate-cves --offline --no-fail   # local catalog sanity
    node scripts/check-manifest-snapshot.js     # detect breaking surface removals

@@ -54,6 +54,7 @@ cwe_refs:
   - CWE-918
   - CWE-94
 d3fend_refs:
+  - D3-CAA
   - D3-CBAN
   - D3-CSPP
   - D3-EAL
@@ -321,6 +322,29 @@ After producing the MCP trust assessment output, the operator should chain into 
 - **`framework-gap-analysis`** — when the MCP trust gap fails a specific framework control (NIST-800-53-CM-7 / ISO-27001-2022-A.8.30 / SOC2-CC9 vendor management), invoke this skill to produce the formal gap declaration tied to the organisation's compliance scope and jurisdiction, including the EU NIS2 / DORA / AU Essential 8 mappings per AGENTS.md rule #5.
 
 For ephemeral / serverless AI-pipeline contexts (per AGENTS.md rule #9): live SLSA-attestation verification at runtime is architecturally impossible for inline-pulled MCP servers in serverless functions. The scoped alternative is build-time attestation pinning baked into the function image, with the runtime fetch path disabled at the network layer.
+
+---
+
+## Defensive Countermeasure Mapping
+
+D3FEND v1.0+ references from `data/d3fend-catalog.json`. MCP trust failures land on a tightly bounded set of defensive techniques because the attack surface is structural: a tool registered in `mcp.json` runs with the AI assistant's authority unless the listed controls intervene.
+
+| D3FEND ID | Name | Layer | Rationale (what it counters here) |
+|---|---|---|---|
+| `D3-EHB` | Executable Hash-based Allowlist | Host / MCP server registration | Pins each MCP server binary by hash so CVE-2026-30615-class supply-chain swaps (compromised `npx` package replaces the server with an exploit variant) cannot replace the trusted binary silently. Direct counter to AML.T0010 + T1195.001. |
+| `D3-EAL` | Executable Allowlisting | Host / shell-capable tool | Restricts which executables an MCP shell-tool or process-exec-capable server can spawn. Without this, a server with `bash`/`pwsh` tools is a shell on the developer workstation with the developer's authority. |
+| `D3-CAA` | Credential Access Auditing | Identity / MCP bearer-auth | Logs every MCP server's use of the bearer token / OAuth credential and the resources it touched. The audit anchor for AML.T0016 (model and credential exfiltration via tool calls); the only post-hoc evidence stream when an MCP server is trusted but malicious. |
+| `D3-CSPP` | Client-server Payload Profiling | MCP gateway | Gateway-layer inspection of MCP tool-call args and tool-result bodies. The single control that can detect indirect prompt-injection payloads landing in `tools/call` results, AML.T0051 patterns reaching the assistant through document fetches, and AML.T0096 covert C2 over MCP transport. |
+| `D3-CBAN` | Certificate Analysis | Transport / MCP server-side | Validates the MCP server's TLS certificate chain and binds it to a pinned identity registered in the host's MCP catalog. Counters the "stand-up a malicious MCP server with a Let's Encrypt cert pretending to be a sanctioned vendor" pattern. |
+| `D3-MFA` | Multi-factor Authentication | Identity / OAuth client registration | Required for MCP servers registered as OAuth clients against enterprise IdPs. Without phishing-resistant MFA on the registration flow, a compromised developer credential can register an attacker-controlled MCP server inside the org's trust boundary. |
+
+**Defense-in-depth posture:** `D3-EHB` is the registration layer (only signed/hashed binaries register); `D3-EAL` is the runtime layer (only allowlisted child processes spawn); `D3-CSPP` is the in-flight content layer; `D3-CAA` is the post-hoc audit layer; `D3-CBAN` is the transport-identity layer; `D3-MFA` is the registration-identity layer. CVE-2026-30615 demonstrated that any single-layer defence fails — a signed manifest alone (`D3-EHB`) does not prevent an in-band path-traversal RCE that lands once the manifest is honoured.
+
+**Least-privilege scope:** every MCP server's tool allowlist is the minimum set required for its sanctioned use case — a documentation-search server does not get a `bash` tool, an issue-tracker server does not get a `read_file` tool with `/etc/**` glob authority. `D3-EAL` enforces this at the spawn boundary; `D3-CAA` audits every authorisation use against the documented scope.
+
+**Zero-trust posture:** every MCP server is treated as an untrusted third party regardless of vendor reputation — `D3-EHB` pin on registration, `D3-CBAN` cert verification on every connection, `D3-CSPP` payload inspection on every tool call. No "first-party vendor" exemption; the Cursor / Windsurf / VS Code first-party plugins ship through the same supply-chain (`npm` / `pip` / VS Code marketplace) that AML.T0010 targets.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-EAL` and `D3-EHB` apply only when the MCP server runs as a local executable. For hosted / remote MCP servers (the Claude Code, Cursor, and Windsurf hosted-tool pattern), the scoped alternative is `D3-CBAN` (pinned server identity) + `D3-CSPP` at the egress gateway + `D3-CAA` against the hosted-server provider's audit log feed. The endpoint controls (`D3-EAL`/`D3-EHB`) move from "verify locally before run" to "verify provider attestation before connect."
 
 ---
 

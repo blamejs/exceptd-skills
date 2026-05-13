@@ -581,7 +581,12 @@ function dispatchPlaybook(cmd, argv) {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
             "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
             "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
-            "json-stdout-only", "fix", "human", "json", "strict-preconditions"],
+            "json-stdout-only", "fix", "human", "json", "strict-preconditions",
+            // v0.12.9: doctor --shipped-tarball runs the verify-shipped-tarball
+            // gate alongside --signatures. doctor --registry-check + --signatures
+            // were already accepted; explicit registration removes the silent
+            // "unknown bool flag" surface in parseArgs.
+            "shipped-tarball", "registry-check", "signatures", "currency", "cves", "rfcs"],
     multi: ["playbook", "format"],
   });
   // v0.11.2 bug #60: flip defaults to human-readable. JSON via explicit --json
@@ -703,15 +708,60 @@ function buildSkillToPlaybookHint(runner, wanted) {
     if (matches.length > 0) {
       return `That is a SKILL (read-only knowledge unit), not a PLAYBOOK (executable). Skill "${wanted}" is loaded by playbook${matches.length === 1 ? "" : "s"}: ${matches.join(", ")}. ` +
              `To execute: \`exceptd run ${matches[0]}\`. To read the skill: \`exceptd skill ${wanted}\`. ` +
-             `Tip: \`exceptd plan\` lists all 13 playbooks; \`exceptd watchlist\` lists skills.`;
+             `Tip: \`exceptd brief --all\` lists all 13 playbooks; \`exceptd watch\` lists skills.`;
     }
     // No matching skill either — provide nearest-playbook suggestions.
-    const near = ids.filter(id => id.includes(wanted) || wanted.includes(id)).slice(0, 3);
+    // v0.12.9 (P3 #9 from production smoke): substring fallback first (cheap),
+    // then edit-distance for typos that don't substring-match (`secrt`,
+    // `kernl`, `cret-stores`). Without the second pass `run secrt` returned
+    // the generic "13 playbooks" message even though `secrets` is one edit
+    // away.
+    const subMatches = ids.filter(id => id.includes(wanted) || wanted.includes(id)).slice(0, 3);
+    const fuzzyMatches = subMatches.length === 0 ? nearestByEditDistance(wanted, ids, 2).slice(0, 3) : [];
+    const near = subMatches.length ? subMatches : fuzzyMatches;
     if (near.length > 0) {
-      return `Did you mean: ${near.join(", ")}? Run \`exceptd plan\` for the full list.`;
+      return `Did you mean: ${near.join(", ")}? Run \`exceptd brief --all\` for the full list.`;
     }
-    return `Run \`exceptd plan\` to list the 13 playbooks.`;
+    return `Run \`exceptd brief --all\` to list the 13 playbooks.`;
   } catch { return null; }
+}
+
+/**
+ * Cheap Levenshtein distance, used to surface "Did you mean X?" suggestions
+ * for misspelled playbook ids in the `run <typo>` error path. Returns ids
+ * whose distance from `wanted` is ≤ `maxDistance`, sorted by closest first.
+ * Bounded by the candidate set size (13 playbooks), so the O(n*m) cost is
+ * negligible.
+ */
+function nearestByEditDistance(wanted, ids, maxDistance) {
+  if (!wanted || !Array.isArray(ids)) return [];
+  const w = String(wanted).toLowerCase();
+  const scored = [];
+  for (const id of ids) {
+    const d = editDistance(w, id.toLowerCase());
+    if (d <= maxDistance) scored.push({ id, d });
+  }
+  scored.sort((a, b) => a.d - b.d);
+  return scored.map(s => s.id);
+}
+
+function editDistance(a, b) {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    let cur = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const next = Math.min(prev[j] + 1, cur + 1, prev[j - 1] + cost);
+      prev[j - 1] = cur;
+      cur = next;
+    }
+    prev[b.length] = cur;
+  }
+  return prev[b.length];
 }
 
 function printPlaybookVerbHelp(verb) {
@@ -1187,6 +1237,18 @@ function cmdLint(runner, args, runOpts, pretty) {
 function cmdBrief(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   const onlyPhase = args.phase || null;
+
+  // v0.12.9 (P2 #7 from production smoke): refuse garbage values to --phase.
+  // Pre-v0.12.9 `brief secrets --phase foo` silently accepted any string and
+  // emitted the full brief — operators got no signal the flag was misused.
+  // The legacy-compat surface is exactly the three v0.10.x verb names
+  // (govern | direct | look); anything else is a typo or a misunderstanding.
+  if (onlyPhase != null) {
+    const ACCEPTED_PHASES = ["govern", "direct", "look"];
+    if (!ACCEPTED_PHASES.includes(onlyPhase)) {
+      return emitError(`brief: --phase "${onlyPhase}" not in accepted set ${JSON.stringify(ACCEPTED_PHASES)}.`, { verb: "brief", provided: onlyPhase }, pretty);
+    }
+  }
 
   if (!playbookId || args.all) {
     // Multi-playbook brief (replaces `plan`). Reuses cmdPlan output shape.
@@ -1782,10 +1844,19 @@ function cmdRun(runner, args, runOpts, pretty) {
     const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
     lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
     const cves = obj.phases?.analyze?.matched_cves || [];
+    const baseline = obj.phases?.analyze?.catalog_baseline_cves || [];
     if (cves.length) {
       lines.push(`\nMatched CVEs (${cves.length}):`);
-      for (const c of cves.slice(0, 6)) lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev}  ${c.active_exploitation || ""}`);
+      for (const c of cves.slice(0, 6)) {
+        const via = Array.isArray(c.correlated_via) && c.correlated_via.length ? `  via ${c.correlated_via[0]}${c.correlated_via.length > 1 ? ` (+${c.correlated_via.length - 1})` : ""}` : "";
+        lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev}  ${c.active_exploitation || ""}${via}`);
+      }
       if (cves.length > 6) lines.push(`  … ${cves.length - 6} more`);
+    } else if (baseline.length) {
+      // No evidence correlated to any CVE — clarify rather than implying the
+      // operator is affected by the catalog enumeration. Pre-fix output read
+      // like a hit list; explicit zero + scan-coverage callout fixes that.
+      lines.push(`\nNo CVEs correlated to your evidence. Playbook catalog (informational): ${baseline.length} CVE(s) this playbook scans for.`);
     }
     const indicators = obj.phases?.detect?.indicators || [];
     const hits = indicators.filter(i => i.verdict === "hit");
@@ -1808,7 +1879,16 @@ function cmdRun(runner, args, runOpts, pretty) {
     const issues = obj.preflight_issues || [];
     if (issues.length) {
       lines.push(`\nPreflight warnings (${issues.length}):`);
-      for (const i of issues) lines.push(`  [${i.on_fail}] ${i.id}: ${i.check || ""}`);
+      // v0.12.9 (P3 #12 from production smoke): handle preconditions without
+      // an `on_fail` field (precondition.check was satisfied trivially or the
+      // playbook omits the field). Pre-v0.12.9 these rendered as `[undefined]
+      // <id>:`. Now: omit the bracket when on_fail is absent, and fall back
+      // to the description if `check` is missing too.
+      for (const i of issues) {
+        const tag = i.on_fail ? `[${i.on_fail}] ` : "";
+        const detail = i.check || i.description || i.reason || "(no detail)";
+        lines.push(`  ${tag}${i.id}: ${detail}`);
+      }
     }
     lines.push(`\nFull structured result: --json (or --pretty for indented).`);
     return lines.join("\n");
@@ -2107,7 +2187,14 @@ function persistAttestation(args) {
 function maybeSignAttestation(filePath) {
   const crypto = require("crypto");
   const sigPath = filePath + ".sig";
-  const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+  // v0.12.9 (P2 #3 from production smoke): resolve the private key the same
+  // way `doctor` does — cwd-first, PKG_ROOT fallback. Pre-v0.12.9 this only
+  // checked PKG_ROOT, so operators running from a repo with `.keys/private.pem`
+  // at cwd had `doctor` report the key as present while `run`/`ingest`
+  // silently wrote UNSIGNED attestations from the same directory.
+  const cwdKey = path.join(process.cwd(), ".keys", "private.pem");
+  const pkgKey = path.join(PKG_ROOT, ".keys", "private.pem");
+  const privKeyPath = fs.existsSync(cwdKey) ? cwdKey : pkgKey;
   const content = fs.readFileSync(filePath, "utf8");
   // One-time-per-process unsigned warning so cron jobs don't spam stderr.
   // Operators who set `.keys/private.pem` get tamper-evident attestations;
@@ -2840,6 +2927,46 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
       };
       if (!ok) issues.push("signatures");
+
+      // v0.12.9 (P3 #10 from production smoke): also run the shipped-tarball
+      // round-trip gate (sign + pack + extract + verify) when the operator
+      // opts in via --shipped-tarball. This is the v0.12.3 verify-as-shipped
+      // gate that closed the v0.11.x → v0.12.4 signature regression class
+      // (source-tree verify passed; shipped-tarball verify failed). It's
+      // opt-in because npm pack adds ~5-10s and creates tempdir churn —
+      // routine `doctor --signatures` stays fast.
+      if (args["shipped-tarball"]) {
+        try {
+          const tarballScript = path.join(PKG_ROOT, "scripts", "verify-shipped-tarball.js");
+          if (fs.existsSync(tarballScript)) {
+            const tRes = spawnSync(process.execPath, [tarballScript], {
+              encoding: "utf8",
+              cwd: PKG_ROOT,
+              timeout: 120000,
+            });
+            const tText = (tRes.stdout || "") + (tRes.stderr || "");
+            const tOk = tRes.status === 0;
+            const tMatch = tText.match(/(\d+)\/(\d+)\s+pass,\s+(\d+)\s+fail/i);
+            checks.signatures.shipped_tarball = {
+              ok: tOk,
+              skills_passed: tMatch ? Number(tMatch[1]) : null,
+              skills_total: tMatch ? Number(tMatch[2]) : null,
+              skills_failed: tMatch ? Number(tMatch[3]) : null,
+              ...(tOk ? {} : { exit_code: tRes.status, raw: tText.slice(-500) }),
+            };
+            if (!tOk) issues.push("signatures.shipped_tarball");
+          } else {
+            checks.signatures.shipped_tarball = {
+              ok: null,
+              skipped: true,
+              reason: "scripts/verify-shipped-tarball.js not present (likely an installed package, not a source checkout). The tarball-verify gate runs at release time; routine integrity is covered by `--signatures`.",
+            };
+          }
+        } catch (e) {
+          checks.signatures.shipped_tarball = { ok: false, error: e.message };
+          issues.push("signatures.shipped_tarball");
+        }
+      }
     } catch (e) {
       checks.signatures = { ok: false, error: e.message };
       issues.push("signatures");
@@ -3080,6 +3207,35 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       ? `RFC catalog: ${c.total ?? "?"} entries, drift ${c.drift ?? 0}`
       : `RFC catalog FAILED (exit=${c.exit_code ?? "?"})`
   );
+  // v0.12.9 (P3 #11 from production smoke): render registry-check in text mode.
+  // Pre-v0.12.9 --registry-check populated checks.registry only in the JSON
+  // output; operators in text mode had to add --json to see if the flag did
+  // anything. Now the line surfaces in the human checklist.
+  mark(checks.registry, c => {
+    if (c.skipped) return `npm registry check: skipped (${c.reason || "unknown reason"})`;
+    if (!c.ok && !c.same && c.behind) {
+      const days = c.days_since_latest_publish != null ? `${c.days_since_latest_publish}d` : "?";
+      return `npm registry: local v${c.local_version ?? "?"} BEHIND published v${c.published_version ?? "?"} (${days})`;
+    }
+    if (c.same) {
+      return `npm registry: local v${c.local_version ?? "?"} == published v${c.published_version ?? "?"} (current)`;
+    }
+    if (c.ahead) {
+      return `npm registry: local v${c.local_version ?? "?"} AHEAD of published v${c.published_version ?? "?"} (unreleased / dev install)`;
+    }
+    return `npm registry: check returned no comparison (raw exit=${c.exit_code ?? "?"})`;
+  });
+  // v0.12.9 (P3 #10): surface shipped_tarball sub-check when --shipped-tarball was used.
+  if (checks.signatures?.shipped_tarball) {
+    const st = checks.signatures.shipped_tarball;
+    if (st.skipped) {
+      lines.push(`  [info] shipped tarball verify: skipped (${st.reason})`);
+    } else if (st.ok) {
+      lines.push(`  [ok] shipped tarball verify: ${st.skills_passed ?? "?"}/${st.skills_total ?? "?"} skills pass on extracted tarball`);
+    } else {
+      lines.push(`  [!!] shipped tarball verify FAILED: ${st.skills_failed ?? "?"}/${st.skills_total ?? "?"} skills fail (exit=${st.exit_code ?? "?"})`);
+    }
+  }
   if (checks.signing) {
     if (checks.signing.private_key_present) {
       lines.push(`  [ok] attestation signing: private key present (.keys/private.pem)`);
@@ -3711,17 +3867,65 @@ function cmdCi(runner, args, runOpts, pretty) {
   const rwepValues = results.map(r => r.phases?.analyze?.rwep?.adjusted ?? 0);
   const maxRwepObserved = rwepValues.length ? Math.max(...rwepValues) : 0;
 
+  // v0.12.9 (P1 #2 from production smoke): reconcile verdict with exit code.
+  // Pre-v0.12.9 the no-evidence-all-inconclusive path emitted verdict="PASS"
+  // but the process exited 3 ("ran but no evidence"). CI consumers reading
+  // exit code only failed a PASS run; consumers reading verdict only passed
+  // a no-data run. Now compute the verdict up-front to match the exit-code
+  // matrix (BLOCKED > FAIL > NO_EVIDENCE > PASS) so both surfaces agree.
+  const suppliedEvidenceForVerdict = args.evidence || args["evidence-dir"];
+  const blockedCount = results.filter(r => r && r.ok === false).length;
+  const inconclusiveCount = results.filter(r => r.phases?.detect?.classification === "inconclusive").length;
+  const totalForVerdict = results.length;
+  const noEvidenceAllInconclusive = !suppliedEvidenceForVerdict && totalForVerdict > 0 && inconclusiveCount === totalForVerdict;
+  const computedVerdict = blockedCount > 0
+    ? "BLOCKED"
+    : fail
+      ? "FAIL"
+      : noEvidenceAllInconclusive
+        ? "NO_EVIDENCE"
+        : "PASS";
+
+  // v0.12.9 (P2 #8 from production smoke): roll up per-playbook framework_gap
+  // mappings to the ci top-level. Phase 7 of the seven-phase contract surfaces
+  // framework_gap_mapping per result; pre-v0.12.9 ci never aggregated them,
+  // so operators got individual-playbook results only. Now: top-level
+  // framework_gap_rollup lists each {framework, claimed_control} once with
+  // the set of playbooks that flagged it — single-glance "what gaps did this
+  // gate uncover across the scoped playbooks."
+  const gapRollupMap = new Map();
+  for (const r of results) {
+    const gaps = r.phases?.analyze?.framework_gap_mapping || [];
+    for (const g of gaps) {
+      const key = `${g.framework || "unknown"}::${g.claimed_control || "unspecified"}`;
+      const existing = gapRollupMap.get(key);
+      if (existing) {
+        if (!existing.playbooks.includes(r.playbook_id)) existing.playbooks.push(r.playbook_id);
+      } else {
+        gapRollupMap.set(key, {
+          framework: g.framework || null,
+          claimed_control: g.claimed_control || null,
+          why_insufficient: g.why_insufficient || null,
+          playbooks: [r.playbook_id],
+        });
+      }
+    }
+  }
+  const frameworkGapRollup = [...gapRollupMap.values()];
+
   const summary = {
     total: results.length,
     detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
-    inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
+    inconclusive: inconclusiveCount,
     not_detected: results.filter(r => ["not_detected", "clean"].includes(r.phases?.detect?.classification)).length,
-    blocked: results.filter(r => r && r.ok === false).length,
+    blocked: blockedCount,
     max_rwep_observed: maxRwepObserved,
     jurisdiction_clocks_started: results
       .flatMap(r => r.phases?.close?.notification_actions || [])
       .filter(n => n && n.clock_started_at != null).length,
-    verdict: fail ? "FAIL" : "PASS",
+    framework_gap_rollup: frameworkGapRollup,
+    framework_gap_count: frameworkGapRollup.length,
+    verdict: computedVerdict,
     fail_reasons: failReasons,
   };
 

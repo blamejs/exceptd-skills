@@ -41,6 +41,12 @@ This meta-skill manages the evolution of all other exceptd skills. It is the loo
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill operates on the *catalog and skill inventory itself* — it has no adversary TTP attached because its threat model is platform-currency drift, not an external adversary. Every TTP and framework-gap mapped by any other skill in the project is implicitly in scope for this loop's audit; pinning a subset would mis-bound the work.
+
+---
+
 ## Threat Context
 
 The threat context this skill defends against is not a specific adversary technique — it is the **drift attack against the platform's own currency**: an exceptd installation whose skills, catalogs, framework references, and ATLAS pins age silently between releases until the operator-facing analysis is calibrated to a threat model that no longer exists.

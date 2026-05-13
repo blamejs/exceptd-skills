@@ -27,6 +27,10 @@ last_threat_review: "2026-05-01"
 
 # Threat Model Currency Assessment
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill is a meta-assessment of *every* threat model — its job is to surface gaps against the full 14-class mid-2026 landscape that downstream skills enumerate. Pinning a fixed TTP or framework-gap subset here would understate the assessment's actual coverage (every ATLAS / ATT&CK ID and every framework gap any other skill maps becomes an in-scope currency check). The 14 threat classes are listed in the body; each one references the downstream skill that carries the authoritative TTP and framework-gap IDs.
+
 ## Purpose
 
 Most organizational threat models were last substantially revised 2–4 years ago. They describe the threat landscape of 2021–2022: ransomware, supply chain (SolarWinds-era), cloud misconfiguration, credential phishing using template emails. This is not the 2026 threat landscape.

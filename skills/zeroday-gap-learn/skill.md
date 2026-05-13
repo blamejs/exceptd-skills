@@ -34,6 +34,12 @@ This skill runs the full learning loop: zero-day description → attack vector e
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill exists to *generate* TTP-to-gap mappings from incoming zero-days, not to consume a fixed set — its output flows back into `data/atlas-ttps.json` and `data/framework-control-gaps.json` as new entries. Pinning a static reference set here would mis-frame the loop: every TTP and gap mapped by any other skill is a legitimate input, and the skill's job is to produce the *next* entries, not to inherit a fixed subset.
+
+---
+
 ## Threat Context (mid-2026)
 
 The zero-day learning cycle has compressed. The frameworks have not.

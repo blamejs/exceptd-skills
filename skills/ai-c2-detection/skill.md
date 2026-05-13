@@ -395,6 +395,30 @@ For every identity flagged in Step 2, every prompt flagged in Step 3, every Sesa
 
 ---
 
+## Defensive Countermeasure Mapping
+
+D3FEND v1.0+ references from `data/d3fend-catalog.json`. Maps the SesameOp / PROMPTFLUX / PROMPTSTEAL detection surfaces to the defense-in-depth layer they actually live on.
+
+| D3FEND ID | Name | Layer | Rationale (what it counters here) |
+|---|---|---|---|
+| `D3-NTA` | Network Traffic Analysis | Network egress | Establishes the AI-provider-egress baseline (per-identity volume, cadence, time-of-day) that SesameOp's persistent bursty-but-aperiodic shape violates. Primary detection control when SDK-level prompt logging is absent. |
+| `D3-NTPM` | Network Traffic Policy Mapping | Network egress | Per-identity sanctioned-business-reason allowlist for AI provider domains. Implements the SC-7 real_requirement; without it, blanket domain allowlisting is theater. |
+| `D3-CSPP` | Client-server Payload Profiling | Gateway / TLS-inspected proxy | The only layer that can observe prompt/completion content shape (entropy, base64 ratio, recognisable IOC tokens) without per-SDK instrumentation. Covers the QUIC / HTTP/3 case where boundary inspection sees only ciphertext. |
+| `D3-IOPR` | Input/Output Profiling | SDK / application | SDK-level prompt and completion logging with identity binding. The single most-load-bearing control for AI C2 — every Step in the Analysis Procedure degrades to "structurally zero coverage" without it. |
+| `D3-CA` | Connection Attempt Analysis | Network egress | Detects the AI-API connection from processes that have no business reason on this host type (e.g. a system service contacting `api.openai.com`). Cheap; deployable without TLS interception. |
+| `D3-DA` | Domain Analysis | Network egress | Catches Oblivious HTTP (RFC 9458) relays and atypical AI-provider edge endpoints whose direct upstream is a sanctioned LLM provider — the SesameOp evasion shape when ECH is in play. |
+| `D3-NI` | Network Isolation | Network segmentation | For non-developer host classes (databases, network gear, OT) where no AI API egress is ever sanctioned, hard-blocking the provider AS-paths removes the C2 channel entirely. |
+
+**Defense-in-depth posture:** `D3-NTA` + `D3-CA` + `D3-NI` are the network layer; `D3-CSPP` is the gateway layer; `D3-IOPR` is the SDK layer; `D3-NTPM` is the policy layer that binds the other four to identity. No single layer is sufficient — SesameOp is invisible to network-only deployments without `D3-CSPP` or `D3-IOPR`, and `D3-IOPR` is invisible without `D3-NTPM` to give it the per-identity baseline against which Step 3 anomaly detection fires.
+
+**Least-privilege scope:** `D3-NTPM` is implemented per-identity-per-business-reason — the developer using Cursor on a workstation is allowlisted for `api.anthropic.com`; the same developer's service account is not. `D3-IOPR` retention is scoped to the identities authorised to call AI APIs; prompts from unauthorised identities trigger Step 2 the moment they appear in the log, not after retention review.
+
+**Zero-trust posture:** every prompt is logged and identity-bound regardless of source host trust level; `D3-CSPP` and `D3-IOPR` verify content shape on every call rather than sampling. The verification primitive at the gateway is entropy + identity + business-reason; at the SDK layer it is full prompt + identity + retention. No "trusted developer" exemption — PROMPTFLUX is delivered to developer workstations as readily as to production hosts.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-IOPR` is the only control that survives serverless / ephemeral runtimes; per-host `D3-NTA` and `D3-CA` cannot baseline a host whose lifetime is shorter than the correlation window. The scoped alternative for ephemeral workloads is workload-identity-bound `D3-IOPR` correlated by IAM role / service-account identity rather than by host — preserving the PROMPTFLUX cadence shape and PROMPTSTEAL credential-access correlation across short-lived function invocations.
+
+---
+
 ## Compliance Theater Check
 
 > "Your SC-7 boundary-protection evidence shows AI provider domains — `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`, Azure OpenAI endpoints, Bedrock endpoints — on the egress allowlist, with NetFlow or Zeek records demonstrating that egress is monitored. Now answer two questions. First: for each AI provider domain on the allowlist, does the allowlist entry enumerate the specific sanctioned business reason and the identities or services entitled to use it, or is the entry a blanket allow for the domain? Second: do you have SDK-level prompt and completion logging, bound to identity, retained for at least 90 days, and forwarded to the SIEM, for every place AI APIs are called in production? If the allowlist is a blanket domain allow and SDK-level prompt logging is absent, the SC-7 control is theater for AI C2 — boundary inspection of an allowlisted domain cannot distinguish a developer prompt from a SesameOp-encoded C2 prompt, and you have no content-layer evidence to fall back on. SC-7 evidence is structurally incomplete for any org using AI APIs in production unless both an identity-bound business-reason allowlist and SDK-level prompt logging are in place. The control gap is recorded in `data/framework-control-gaps.json` under NIST-800-53-SC-7 — the real requirement names exactly these components."

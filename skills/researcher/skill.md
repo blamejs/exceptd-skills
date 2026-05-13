@@ -32,6 +32,12 @@ This skill is the front door to the exceptd library. Operators do not always arr
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill is a dispatch layer — it routes the operator to whichever specialised skill owns the relevant TTPs and framework gaps. The routed-to skill carries the authoritative reference set; duplicating those IDs here would create a divergence surface the next time a downstream skill's mappings change. The `data_deps` list is the complete dependency declaration: every catalog the researcher reads is enumerated there.
+
+---
+
 ## Threat Context (mid-2026)
 
 Most security teams in mid-2026 sit on a torrent of raw threat input: CISA KEV additions, vendor advisories, ATLAS updates, red-team reports, internal SIEM alerts, framework amendment bulletins, supply-chain notices. The two failure modes are symmetric and equally damaging.

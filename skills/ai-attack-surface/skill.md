@@ -49,6 +49,9 @@ cwe_refs:
 d3fend_refs:
   - D3-IOPR
   - D3-NTA
+  - D3-EAL
+  - D3-FAPA
+  - D3-CSPP
 last_threat_review: "2026-05-13"
 ---
 
@@ -275,6 +278,28 @@ For each identified risk, declare the framework gap:
 ### Prioritized Recommendations
 [Ordered by RWEP impact: specific, actionable, accounts for real deployment constraints]
 ```
+
+---
+
+## Defensive Countermeasure Mapping
+
+D3FEND v1.0+ references from `data/d3fend-catalog.json`. The AI attack surface enumerated above lands on five primary defensive techniques. Each entry below identifies which ATLAS TTP class the countermeasure addresses and the defense-in-depth layer it occupies.
+
+| D3FEND ID | Name | Layer | Rationale (what it counters here) |
+|---|---|---|---|
+| `D3-IOPR` | Input/Output Profiling | SDK / application | SDK-level prompt and completion inspection — the foundational control for AML.T0051 (prompt injection), AML.T0096 (LLM C2), AML.T0054 (extraction). Without per-call I/O profiling, every detection step below is degraded. |
+| `D3-CSPP` | Client-server Payload Profiling | LLM / MCP gateway | Gateway-layer inspection of tool-call args and prompt/completion bodies. Necessary when the AI client (mobile app, browser extension, IDE) cannot host `D3-IOPR` instrumentation in-process — the gateway becomes the only content-aware control. |
+| `D3-EAL` | Executable Allowlisting | Endpoint / managed host | Restricts which AI-tool binaries (IDE assistants, browser extensions, MCP servers) can execute on managed endpoints. Direct counter to AML.T0010 (ML supply-chain compromise) for tooling shipped as native binaries; precondition for managed-endpoint clipboard- and code-completion controls. |
+| `D3-FAPA` | File Access Pattern Analysis | Endpoint / data tier | Detects RAG-corpus and training-data abuse by pattern-matching the file-access shape of AML.T0018 (model poisoning at training time) and AML.T0020 (RAG retrieval abuse). Anchors the data-tier defence against poisoning that prompt-layer controls cannot see. |
+| `D3-NTA` | Network Traffic Analysis | Network egress | Per-identity baseline of model-API and MCP-server egress. Catches the AML.T0017 capability-development pattern (PROMPTFLUX-style rapid querying) and the AML.T0096 covert-C2 destination shape when SDK instrumentation is partial or missing. |
+
+**Defense-in-depth posture:** `D3-EAL` is the prerequisite endpoint layer (only sanctioned AI clients run); `D3-FAPA` is the data-tier layer (RAG and training corpora); `D3-IOPR` and `D3-CSPP` are the content-aware application and gateway layers; `D3-NTA` is the network-observability backstop. Skills that recommend a single layer alone are flagged as incomplete during Analysis Procedure Step 7.
+
+**Least-privilege scope:** every AI principal (human developer, agent identity, MCP server) has the minimum set of model-API, MCP-tool, and RAG-corpus authorisations required for its sanctioned use case. `D3-EAL` allowlists are per-host-class (developer ≠ production ≠ CI); `D3-FAPA` access-pattern baselines are per-corpus-per-principal; `D3-IOPR` logs include the principal identity on every prompt/completion pair.
+
+**Zero-trust posture:** every prompt is verified content-shape and origin-identity before downstream tool invocation; every RAG retrieval is clearance-checked at retrieval time (not just at index time); every MCP tool call has its args inspected at the gateway before reaching the tool. No "trusted prompt" exemption — AML.T0051 indirect prompt injection enters via documents and tool outputs, not just user prompts.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-EAL` is not applicable to serverless inference endpoints (no executable to allowlist on the consumer side). The scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider — the model-serving container is the executable surface, and its provenance is the prerequisite. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging (`D3-IOPR`) plus index-build provenance signed at construction.
 
 ---
 

@@ -38,6 +38,12 @@ This skill generates exception templates for architectural realities that curren
 
 ---
 
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. Exceptions are generated *against* whatever control the operator names at invocation time — the input is the framework-control ID, and the output is a templated exception keyed to that ID. Pinning a fixed subset here would constrain the skill's input domain to the wrong dimension; any framework gap any other skill produces is a legitimate exception-template input.
+
+---
+
 ## Threat Context (mid-2026)
 
 Most non-trivial mid-2026 production architectures break the literal reading of at least one major framework control. Serverless functions break asset-inventory language; immutable container images break in-place patch-window language; LLM API dependencies break change-management language; Zero Trust environments break network-segmentation language. Where the organization has no defensible exception process, only two outcomes remain: (1) the organization claims compliance falsely (theater) or (2) the audit blocks the architecture entirely.

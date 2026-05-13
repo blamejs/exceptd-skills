@@ -161,7 +161,7 @@ Schema per entry:
 
 ### `data/global-frameworks.json`
 
-Maps jurisdiction to framework to current coverage and lag assessment. Currently covers 22+ jurisdictions (expanding to 29+ as deferred jurisdiction agents land) including EU member states, UK, AU, SG, IN, JP, CA, and major sectoral regulators (DORA, NIS2, EU AI Act, EU CRA at the EU layer; APRA CPS 234, MAS TRM, CERT-In, SEBI, OSFI B-10 at the national layer). See schema in file.
+Maps jurisdiction to framework to current coverage and lag assessment. Currently covers 35 jurisdictions including EU member states, UK, AU, SG, IN, JP, CA, and major sectoral regulators (DORA, NIS2, EU AI Act, EU CRA at the EU layer; APRA CPS 234, MAS TRM, CERT-In, SEBI, OSFI B-10 at the national layer). See schema in file.
 
 ### `data/zeroday-lessons.json`
 
@@ -173,23 +173,23 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-30 CWE entries pinned to **CWE v4.17**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
+51 CWE entries pinned to **CWE v4.17**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
 ### `data/d3fend-catalog.json`
 
-21 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.0.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
+28 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.0.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
 
 `_meta.d3fend_version` pins the version; D3FEND ontology additions are tracked in skill `forward_watch` fields.
 
 ### `data/rfc-references.json`
 
-19 IETF RFC / Internet-Draft references covering authentication and authorization (OAuth 2.0 Security BCP RFC 9700, JWT BCP, FIDO/WebAuthn-related drafts), cryptography (TLS 1.3 RFC 8446, hybrid PQC drafts), disclosure (security.txt RFC 9116), and adjacent IETF standards skills depend on. Each entry tracks: title, status (Proposed Standard / Best Current Practice / Internet-Draft / Historic), errata count, replaces / replaced-by chains, IESG / IRTF stream, and a `last_verified` date. Skills cite RFC IDs in `rfc_refs`. Per Hard Rule #12, RFC references are version-pinned: when an RFC is obsoleted or a draft is published as an RFC, the catalog entry's `replaced_by` field is updated, `last_verified` is refreshed, and affected skills bump `last_threat_review`. Frameworks lag RFCs; RFCs lag attacker innovation — this catalog makes that middle layer auditable.
+31 IETF RFC / Internet-Draft references covering authentication and authorization (OAuth 2.0 Security BCP RFC 9700, JWT BCP, FIDO/WebAuthn-related drafts), cryptography (TLS 1.3 RFC 8446, hybrid PQC drafts), disclosure (security.txt RFC 9116), and adjacent IETF standards skills depend on. Each entry tracks: title, status (Proposed Standard / Best Current Practice / Internet-Draft / Historic), errata count, replaces / replaced-by chains, IESG / IRTF stream, and a `last_verified` date. Skills cite RFC IDs in `rfc_refs`. Per Hard Rule #12, RFC references are version-pinned: when an RFC is obsoleted or a draft is published as an RFC, the catalog entry's `replaced_by` field is updated, `last_verified` is refreshed, and affected skills bump `last_threat_review`. Frameworks lag RFCs; RFCs lag attacker innovation — this catalog makes that middle layer auditable.
 
 ### `data/dlp-controls.json`
 
-21 DLP control entries indexed along five axes: **channel** (where data flows — LLM prompt, RAG retrieval, MCP tool response, email, SaaS API, endpoint), **classifier** (how sensitive data is identified — regex, ML, embedding similarity, watermark), **surface** (where enforcement runs — endpoint, network proxy, API gateway, model gateway), **enforcement** mode (block, redact, warn, log-only), and **evidence** type (the audit artifact each control produces). The `dlp-gap-analysis` skill is the canonical consumer; other DLP-relevant skills cite control IDs in `dlp_refs`. Entries explicitly flag classical DLP controls that are architecturally inadequate for LLM/RAG channels (DR-1 framework-as-truth drift applied to DLP).
+22 DLP control entries indexed along five axes: **channel** (where data flows — LLM prompt, RAG retrieval, MCP tool response, email, SaaS API, endpoint), **classifier** (how sensitive data is identified — regex, ML, embedding similarity, watermark), **surface** (where enforcement runs — endpoint, network proxy, API gateway, model gateway), **enforcement** mode (block, redact, warn, log-only), and **evidence** type (the audit artifact each control produces). The `dlp-gap-analysis` skill is the canonical consumer; other DLP-relevant skills cite control IDs in `dlp_refs`. Entries explicitly flag classical DLP controls that are architecturally inadequate for LLM/RAG channels (DR-1 framework-as-truth drift applied to DLP).
 
 ---
 
@@ -231,6 +231,22 @@ Framework lag scoring and gap report generation.
 - `lagScore(frameworkId)` — Return a 0–100 lag score for a framework against current threat landscape
 - `gapReport(frameworkId, scope)` — Generate gap report for a framework within a scope (e.g., "kernel LPE", "AI attack surface")
 - `theaterCheck(controlId, orgControls)` — Run compliance theater detection for a specific control
+
+### `scripts/check-test-coverage.js`
+
+Diff-coverage analyzer. Walks the staged/working-tree diff for the changed-surface shapes Hard Rule #15 enforces (CLI verbs, CLI flags, `module.exports` identifiers, new playbook indicator IDs, CVE `iocs` fields) and asserts that each change has a covering test reference somewhere under `tests/`. Skill bodies, docs, and workflow YAML are allowlisted. Runs as the 15th gate of `npm run predeploy` (and the `Diff coverage` job in `ci.yml`). Direct invocation: `npm run diff-coverage`.
+
+### `scripts/check-sbom-currency.js`
+
+Compares `sbom.cdx.json` against the live `manifest.json` skill count and `data/*.json` catalog counts. Fails the predeploy gate when the SBOM drifts from the shipped surface. Refresh with `npm run refresh-sbom`.
+
+### `scripts/verify-shipped-tarball.js`
+
+Packs the project with `npm pack`, extracts the tarball, and runs Ed25519 signature verification against the extracted bytes — the same path a downstream `npm install` exercises. Predeploy gate guaranteeing the shipped tarball verifies, independent of source-tree verification.
+
+### `tests/_helpers/cli.js`
+
+Shared test harness for spawning the CLI under tempdir-isolated state. Tests that exercise verb dispatch should consume this helper rather than spawning subprocesses ad-hoc — the helper enforces the "no mutation outside the tempdir" contract that prevents CI-vs-local state divergence.
 
 ---
 
