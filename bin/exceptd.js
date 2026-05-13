@@ -2187,14 +2187,16 @@ function persistAttestation(args) {
 function maybeSignAttestation(filePath) {
   const crypto = require("crypto");
   const sigPath = filePath + ".sig";
-  // v0.12.9 (P2 #3 from production smoke): resolve the private key the same
-  // way `doctor` does — cwd-first, PKG_ROOT fallback. Pre-v0.12.9 this only
-  // checked PKG_ROOT, so operators running from a repo with `.keys/private.pem`
-  // at cwd had `doctor` report the key as present while `run`/`ingest`
-  // silently wrote UNSIGNED attestations from the same directory.
-  const cwdKey = path.join(process.cwd(), ".keys", "private.pem");
-  const pkgKey = path.join(PKG_ROOT, ".keys", "private.pem");
-  const privKeyPath = fs.existsSync(cwdKey) ? cwdKey : pkgKey;
+  // v0.12.9 (P2 #3 from production smoke + codex P1 PR #4 review): keep the
+  // sign key aligned with the VERIFY key. `attest verify` checks signatures
+  // against PKG_ROOT/keys/public.pem; if we sign with cwd/.keys/private.pem
+  // (e.g. the maintainer's repo-local keypair) the resulting `.sig` will
+  // verify INVALID and report a false tamper signal on every freshly-written
+  // attestation. PKG_ROOT-only resolution is the right answer; the original
+  // smoke report's "doctor finds key, run does not" gap is fixed in `doctor`
+  // (reporting only PKG_ROOT now), not by making `run` follow a cwd key the
+  // verifier doesn't trust.
+  const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
   const content = fs.readFileSync(filePath, "utf8");
   // One-time-per-process unsigned warning so cron jobs don't spam stderr.
   // Operators who set `.keys/private.pem` get tamper-evident attestations;
@@ -3068,9 +3070,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   if (runSigning) {
     try {
-      const keyPath = path.join(process.cwd(), ".keys", "private.pem");
-      const fallback = path.join(PKG_ROOT, ".keys", "private.pem");
-      const present = fs.existsSync(keyPath) || fs.existsSync(fallback);
+      // v0.12.9 codex P1 (PR #4): report only PKG_ROOT — that's the path
+      // maybeSignAttestation() and `attest verify` actually use. Pre-v0.12.9
+      // doctor also reported cwd-resident keys as present, which gave a
+      // false-positive "signing enabled" signal when the operator's cwd
+      // key was misaligned with the PKG_ROOT-resident public key used at
+      // verify time.
+      const keyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+      const present = fs.existsSync(keyPath);
       // Bug #61 (v0.11.2): signing-status missing key is a real WARNING. The
       // attestation pipeline writes unsigned files when this is absent, which
       // operators reading the attestation later cannot verify for authenticity.
@@ -3155,10 +3162,9 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     });
     if (r.status === 0) {
       // Re-verify the private key is now present so the JSON output reflects
-      // the fix.
-      const keyPath = path.join(process.cwd(), ".keys", "private.pem");
-      const fallback = path.join(PKG_ROOT, ".keys", "private.pem");
-      const present = fs.existsSync(keyPath) || fs.existsSync(fallback);
+      // the fix. v0.12.9 codex P1: PKG_ROOT-only (sign + verify use this path).
+      const keyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+      const present = fs.existsSync(keyPath);
       checks.signing = { ok: present, severity: present ? "info" : "warn", private_key_present: present, can_sign_attestations: present };
       out.checks = checks;
       out.summary.fix_applied = "ed25519_keypair_generated";
