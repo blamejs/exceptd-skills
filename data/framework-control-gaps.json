@@ -1494,5 +1494,57 @@
       "AML.T0048"
     ],
     "attack_refs": []
+  },
+  "EU-CRA-Art13": {
+    "framework": "EU Cyber Resilience Act (2024/2847)",
+    "control_id": "Art. 13",
+    "control_name": "Essential cybersecurity requirements + technical documentation",
+    "designed_for": "Manufacturers placing products with digital elements on the EU market; sets the essential cybersecurity requirements (Annex I) and the technical-documentation duty",
+    "misses": [
+      "Vulnerability handling clauses presume the maintainer is aware of the vulnerability and able to remediate. The elementary-data PyPI worm (MAL-2026-3083) compromised the publishing pipeline — the maintainer was a victim, not a participant — and the published release carried a valid signature.",
+      "'Technical documentation' obligations do not require the manufacturer to retain or publish the build-pipeline configuration that produced each release. Operators consuming a malicious release have no way to inspect the workflow that built it.",
+      "Art. 14 (24-hour notification of actively-exploited vulnerabilities) clock starts from manufacturer awareness; supply-chain-victim manufacturers may not know they are exploited until consumer-side detection (StepSecurity / Snyk / OSV) surfaces the IoCs."
+    ],
+    "real_requirement": "Manufacturer publishes the canonical build-pipeline definition alongside each release (workflow file hash, runner attestation, scope of secrets accessed). Operators verify the published pipeline matches the pipeline that produced the release-being-installed. Notification clock starts from FIRST awareness — manufacturer's OR competent-authority's OR widely-published security researcher's.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "MAL-2026-3083",
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0055"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002"
+    ]
+  },
+  "NIST-800-53-SI-10": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SI-10",
+    "control_name": "Information Input Validation",
+    "designed_for": "Validating untrusted input at system boundaries before consumption by downstream code paths",
+    "misses": [
+      "Treats 'input validation' as a single layer at the trust boundary. Modern injection classes (SQL, argument, command, prompt) live INSIDE the trust boundary — the input is already 'validated' as authentic but the consumer concatenates it into a syntax the original validator did not anticipate (SQL query, kubectl argv, shell command).",
+      "Does not distinguish argv-array vs string-form invocation. CVE-2026-39884 (mcp-server-kubernetes argument injection) and the broader CWE-88 class are invisible to a SI-10-compliant codebase that 'validates' the user-input string for length and character class.",
+      "Does not address parameterised-query vs string-concat distinction. CVE-2026-42208 (LiteLLM SQLi on CISA KEV) is the cardinal recent example — input was validated, then concatenated into SQL during error-handling, which the validator did not gate.",
+      "Auditing for SI-10 typically samples function boundaries; the argument-injection / SQL-injection / prompt-injection failure modes all occur inside the boundary."
+    ],
+    "real_requirement": "Per-injection-class structural controls in addition to boundary validation. Parameterised queries enforced at the ORM/driver level (CWE-89). Argv-array form for spawned subprocesses (CWE-88). Tool-arg / function-call sanitisation in MCP / AI-agent surfaces (CWE-94). Lint rules flagging string-concat into SQL, exec, or AI-tool arguments. SI-10 compliance attestation augmented with a per-class checklist that names the specific structural control.",
+    "status": "open",
+    "opened_date": "2026-05-13",
+    "evidence_cves": [
+      "CVE-2026-42208",
+      "CVE-2026-39884"
+    ],
+    "atlas_refs": [
+      "AML.T0053"
+    ],
+    "attack_refs": [
+      "T1190",
+      "T1059"
+    ]
   }
 }

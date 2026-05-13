@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.12.11 — 2026-05-13
+
+**Patch: OSV source hardening, indicator regex widening, CWE/framework-gap reconciliation. v0.12.10 audit closeout.**
+
+### OSV source hardening
+
+`lib/source-osv.js` matures from greenfield to GHSA-parity:
+
+- **Structured fixture-I/O error envelope.** Missing or malformed `EXCEPTD_OSV_FIXTURE` paths no longer crash with a Node stack trace; the source returns `{ok:false, error, source:"offline"}` matching the GHSA convention. Operators piping the CLI through `jq` or scripting around exit codes get a structured failure they can branch on.
+- **Case-fold ids before lookup.** `fetchAdvisoryById("mal-2026-3083")` (lowercase) now resolves correctly. OSV.dev's `/v1/vulns/{id}` is case-sensitive — the source uppercases the id at entry before any branch on fixture lookup or network call.
+- **Highest-CVSS-version wins + compute from vector.** `extractCvss` previously overwrote the chosen vector on every loop iteration ("last wins" not "highest-version wins") and returned `null` `score` when the OSV record carried only a vector string with no embedded numeric tail. Both fixed: explicit version-comparison via the `CVSS:N.M` prefix, and a new `cvss3BaseScore(vector)` helper that computes the CVSS 3.1 base score per FIRST §7.1 (handles Scope:U + Scope:C). MAL-* records that previously normalized to `cvss_score: null` / `active_exploitation: "unknown"` now carry computed scores.
+- **GHSA-404 → OSV fallback for CVE-*.** `seedSingleAdvisory` previously routed `CVE-*` unconditionally through `source-ghsa`. When GHSA returned 404 for a CVE that had only PYSEC / RUSTSEC / SNYK / MAL coverage, the operator saw `GHSA returned HTTP 404` even though OSV had the record. Now: on GHSA-404 for a CVE-* id, retry via `source-osv.fetchAdvisoryById(id)`; surface the combined error when both 404.
+- **`epss_note` on non-CVE drafts.** Non-CVE catalog keys (MAL-*, SNYK-*, RUSTSEC-*, etc.) now carry a populated `epss_note` documenting the FIRST EPSS API limitation — drafts no longer look incomplete to downstream consumers grepping for the field.
+- **`verification_sources` deduped.** The canonical `osv.dev/vulnerability/<id>` URL was previously both prepended unconditionally AND pulled from `rec.references[]`. Deduped via `new Set` before return.
+- **`buildDiff` error categorization.** Returns `unreachable_count` + `normalize_error_count` separately so an operator can distinguish "OSV unreachable" from "10 ids returned but none normalized cleanly."
+- **`GHSA-` dropped from `OSV_ID_PREFIXES`.** The export previously listed GHSA-* even though the dispatcher unconditionally routes GHSA-* through `source-ghsa`. `isOsvId("GHSA-...")` now returns false. A top-of-file comment documents the routing decision (GHSA has richer field coverage for that namespace).
+- **`OSV_HOST_OVERRIDE` env var for offline HTTP testing.** New stubbing surface — lets `tests/source-osv.test.js` spin up a local HTTP server to exercise HTTP 500 / 429 / timeout / parse-error paths previously uncovered. 429 surfaces as `rate-limited`; timeout error message clarified.
+- **`seedSingleAdvisory` exported** for in-process testing.
+
+### Indicator regex widening
+
+`gha-workflow-script-injection-sink` (added v0.12.10) previously anchored on `run:\s*\|` (block-scalar pipe only). Single-line `run: echo "${{ github.event.comment.body }}"` bypassed the regex despite being the same vulnerability class. Widened to `run:[\s\S]*?...` which admits both block-scalar AND single-line forms. The indicator's `confidence` drops from `deterministic` → `high` and `deterministic` flag flips to `false` to reflect the reasoning step still required for the false-positive demotion (sandboxed `pull_request` + `contents: read` permissions). `tests/gha-workflow-script-injection-sink.test.js` lands as a new end-to-end regex test with 8 fixture YAML cases covering both the catch and the FP-demotion classes. All 5 of this repo's own `.github/workflows/*.yml` files remain clean against the widened regex.
+
+### CWE reverse-references
+
+The v0.12.10 catalog additions cited existing CWEs (CWE-89, CWE-77, CWE-94) without updating their reverse-reference `evidence_cves` arrays. Bidirectional linkage restored: CWE-89 now lists CVE-2026-42208 (LiteLLM SQLi), CWE-77 lists MAL-2026-3083 (elementary-data secondary classification), CWE-94 adds MAL-2026-3083 alongside the existing CVE-2025-53773 and CVE-2026-30615.
+
+### Framework-control-gaps key reconciliation
+
+Eight `framework_control_gaps` keys used by the v0.12.10 catalog additions did not resolve in `data/framework-control-gaps.json`. Six reconciled to canonical existing forms: `SLSA-L3` → `SLSA-v1.0-Build-L3`; `OWASP-LLM01` → `OWASP-LLM-Top-10-2025-LLM01`; `NIST-800-218-PO.4` → `NIST-800-218-SSDF`; `NIS2-Art21-2d` / `-2g` → `NIS2-Art21-patch-management`; `NIS2-Art21-2e` → `NIS2-Art21-incident-handling`. Two genuinely-distinct citations gained new entries in the framework-gaps catalog: `EU-CRA-Art13` (essential cybersecurity requirements + technical documentation; the elementary-data class of supply-chain compromise where the maintainer is a victim) and `NIST-800-53-SI-10` (information input validation; the trust-boundary-vs-inside-boundary distinction that argument-injection / SQL-injection / prompt-injection exploit). All `framework_control_gaps` references in the catalog now resolve to a real entry.
+
+### Repository
+
+- `lib/source-ghsa.js` "unrecognized id format" error message widened to enumerate the OSV-native prefixes operators can pass via `--advisory` (was previously CVE/GHSA only).
+- `README.md` documents the OSV source: install command, `--advisory MAL-...` form, `EXCEPTD_OSV_FIXTURE` env var, the fresh-disclosure workflow expanded to mention OSV's coverage breadth.
+
+Test count: 462 → 492 (+30: 18 OSV source-hardening tests + 10 indicator regex tests + 2 catalog drift assertions). Predeploy gates: 15/15. Skills: 38/38 signed and verified.
+
 ## 0.12.10 — 2026-05-13
 
 **Patch: OSV.dev wired as an upstream source, three new catalog entries, one new library-author indicator.**

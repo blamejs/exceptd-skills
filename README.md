@@ -135,6 +135,7 @@ You want to refresh CVE/RFC data, run currency checks, or generate reports. Inst
 npx @blamejs/exceptd-skills doctor                                # health check
 npx @blamejs/exceptd-skills refresh --apply --swarm               # pull KEV/NVD/EPSS/RFC/GHSA + apply
 npx @blamejs/exceptd-skills refresh --advisory CVE-2026-45321     # seed one CVE draft from GHSA
+npx @blamejs/exceptd-skills refresh --advisory MAL-2026-3083      # seed via OSV (MAL-/SNYK-/RUSTSEC-/USN-/PYSEC-/GO-/MGASA-/UVI-)
 npx @blamejs/exceptd-skills refresh --curate CVE-2026-45321       # surface editorial questions for a draft
 npx @blamejs/exceptd-skills refresh --network                     # swap data/ from latest signed npm tarball
 ```
@@ -148,7 +149,7 @@ exceptd help
 
 Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
 
-Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …. New CVE IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <CVE-ID>`. For "I want this CVE today, not tomorrow": `exceptd refresh --advisory <CVE-or-GHSA-ID> --apply`.
+Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0) / **OSV** (added in v0.12.10). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …; OSV aggregates the OSSF Malicious Packages dataset (`MAL-*` keys) + Snyk + RustSec + Mageia + Ubuntu USN + Go Vuln DB + PYSEC + UVI on top of GHSA — useful for malicious-package compromises that don't have CVEs yet (`exceptd refresh --advisory MAL-2026-3083`). New IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <ID>`. For "I want this advisory today, not tomorrow": `exceptd refresh --advisory <CVE-or-GHSA-or-MAL-or-SNYK-or-RUSTSEC-ID> --apply`.
 
 Optional env vars for higher rate budgets:
 
@@ -157,6 +158,7 @@ Optional env vars for higher rate budgets:
 | `NVD_API_KEY` | Lifts NVD 2.0 from 5 → 50 requests per 30s window. Free key at <https://nvd.nist.gov/developers/request-an-api-key>. |
 | `GITHUB_TOKEN` | Lifts GitHub Releases + GHSA from 60 → 5000 requests per hour. |
 | `EXCEPTD_GHSA_FIXTURE` | Path to a JSON fixture matching the api.github.com/advisories shape. For offline tests + air-gap workflows. |
+| `EXCEPTD_OSV_FIXTURE` | Path to a JSON fixture matching the OSV schema (https://ossf.github.io/osv-schema/). For offline tests + air-gap workflows against the OSV source (added v0.12.10). |
 | `EXCEPTD_REGISTRY_FIXTURE` | Path to a JSON fixture matching the npm registry response. Used by `doctor --registry-check` + `run --upstream-check` + `refresh --network` for offline testing. |
 
 ### 3. Maintainer (extend / sign / publish)
