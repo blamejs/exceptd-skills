@@ -1,0 +1,6 @@
+{
+  "observations": {
+    "agent-persistence-vscode-tasks": {"captured": true, "value": "folderOpen task -> node .vscode/setup.mjs", "indicator": "agent-persistence-vscode-folder-open-task", "result": "hit"}
+  },
+  "verdict": {"classification": "detected", "blast_radius": 3}
+}

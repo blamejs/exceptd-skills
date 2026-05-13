@@ -1,0 +1,9 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "mode": "advisory-seed-dry-run",
+    "cve_id": "CVE-9999-99999",
+    "draft._auto_imported": true,
+    "draft._draft": true
+  }
+}

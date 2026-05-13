@@ -1,0 +1,9 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "phases.detect.classification": "detected"
+  },
+  "json_path_present": [
+    "phases.close.jurisdiction_notifications"
+  ]
+}

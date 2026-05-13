@@ -1,0 +1,17 @@
+name: Release (intentionally co-resident with bundle-size)
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: Linux-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: npm publish --provenance

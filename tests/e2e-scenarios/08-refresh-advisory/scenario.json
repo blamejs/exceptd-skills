@@ -1,0 +1,10 @@
+{
+  "name": "08-refresh-advisory",
+  "description": "Verifies refresh --advisory against an offline GHSA fixture. Must produce a draft seed with _auto_imported: true and exit 3 (draft prepared, not applied).",
+  "verb": "refresh",
+  "args": ["--advisory", "CVE-9999-99999", "--json"],
+  "env": {
+    "EXCEPTD_GHSA_FIXTURE": "@@FIXTURE@@/ghsa-cve-2026-45321.json"
+  },
+  "expect_exit": 3
+}

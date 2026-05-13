@@ -1,0 +1,7 @@
+{
+  "observations": {
+    "tanstack-payload-sweep": {"captured": true, "value": "node_modules/@tanstack/react-router/router_init.js", "indicator": "tanstack-worm-payload-files", "result": "hit"},
+    "npmrc-cooldown-policy": {"captured": true, "value": "no cooldown set", "indicator": "npm-registry-no-cooldown", "result": "hit"}
+  },
+  "verdict": {"classification": "detected", "blast_radius": 5}
+}

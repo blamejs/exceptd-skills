@@ -1,0 +1,7 @@
+{
+  "observations": {
+    "npmrc-cooldown-policy": {"captured": true, "value": "no .npmrc found, no minimumReleaseAge or before= set", "indicator": "npm-registry-no-cooldown", "result": "hit"},
+    "npm-global-packages": {"captured": true, "value": "package.json declares 1 dependency", "indicator": "package-matches-catalogued-cve", "result": "miss"}
+  },
+  "verdict": {"classification": "inconclusive", "blast_radius": 2}
+}

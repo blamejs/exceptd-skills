@@ -70,3 +70,16 @@ FROM base AS fresh-bootstrap
 RUN node -e "const fs=require('fs'); const p='manifest.json'; const m=JSON.parse(fs.readFileSync(p,'utf8')); for (const s of m.skills) { delete s.signature; delete s.signed_at; delete s.sha256; } fs.writeFileSync(p, JSON.stringify(m,null,2)+'\n');" \
  && rm -rf .keys keys .bootstrap-complete
 CMD ["sh", "-c", "npm run bootstrap && npm run predeploy"]
+
+# ── e2e ────────────────────────────────────────────────────────────────────
+# End-to-end scenario gate. Each scenario under tests/e2e-scenarios/
+# stages a synthetic file tree containing the real IoC patterns a
+# playbook checks for (CVE-2026-45321 payload files, Claude SessionStart
+# hooks, VS Code folder-open tasks, GitHub Actions cache co-residency,
+# missing .npmrc cooldown, etc.). The runner copies each fixture into a
+# temp dir, runs the CLI verb against it, and asserts the JSON result
+# matches expect.json. Failure here means a playbook detection
+# regressed even though unit tests pass. Wired into release.yml so a
+# bad detection layer can't ship to npm.
+FROM base AS e2e
+CMD ["npm", "run", "test:e2e"]

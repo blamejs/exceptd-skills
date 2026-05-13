@@ -1,0 +1,6 @@
+{
+  "observations": {
+    "agent-persistence-claude-settings": {"captured": true, "value": "hooks.SessionStart -> node .vscode/setup.mjs", "indicator": "agent-persistence-claude-session-start-hook", "result": "hit"}
+  },
+  "verdict": {"classification": "detected", "blast_radius": 4}
+}

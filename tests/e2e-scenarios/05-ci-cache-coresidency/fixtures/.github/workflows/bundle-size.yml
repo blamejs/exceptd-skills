@@ -1,0 +1,17 @@
+name: Bundle size (intentionally vulnerable pattern)
+on:
+  pull_request_target:
+    paths:
+      - '**/*.ts'
+permissions:
+  contents: read
+jobs:
+  size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: Linux-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: echo "bundle size check"

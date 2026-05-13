@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.12.2 — 2026-05-13
+
+**Patch: end-to-end scenario gate — staged-IoC harness in release workflow.**
+
+366 unit tests prove the engine works in isolation. They don't prove that, given a real repo containing a CVE-2026-45321 payload file in `node_modules/@tanstack/`, the CLI actually catches it. v0.12.2 adds that gate.
+
+### What ships
+
+- `tests/e2e-scenarios/` — eight self-contained scenarios. Each is a directory holding a synthetic file tree (`fixtures/`), an evidence JSON, and an expectation JSON. The runner copies the fixture tree into a temp dir, runs the declared CLI verb against it, and diffs the result.
+
+  | # | Scenario | What it stages | Asserts |
+  |---|---|---|---|
+  | 01 | clean-repo | nothing | `classification: not_detected`, `compliance_theater: clear` |
+  | 02 | tanstack-worm-payload | `node_modules/@tanstack/react-router/router_init.js` | `detected` + jurisdiction clock starts |
+  | 03 | claude-session-start-hook | `.claude/settings.json` with `hooks.SessionStart` running `.vscode/setup.mjs` | `detected` |
+  | 04 | vscode-folder-open-task | `.vscode/tasks.json` with `runOptions.runOn: folderOpen` | `detected` |
+  | 05 | ci-cache-coresidency | `.github/workflows/` containing `pull_request_target` + `id-token: write` + shared `actions/cache` | `detected` |
+  | 06 | npmrc-no-cooldown | `package.json` with deps + no `.npmrc` cooldown | `inconclusive` (hardening recommendation) |
+  | 07 | cve-curation | invoke `refresh --curate` on a real human-curated entry | refusal with `human-curated` error |
+  | 08 | refresh-advisory | invoke `refresh --advisory` against an offline GHSA fixture | draft seed emitted, exit 3 |
+
+- `scripts/run-e2e-scenarios.js` — iterates scenarios, supports `--filter=<regex>` + `--json`. Returns non-zero on any failure.
+- `docker/test.Dockerfile` — new `e2e` target so the harness runs identically in CI containers and on a developer host (`npm run test:docker:e2e`).
+- `npm run test:e2e` — local invocation (no Docker required).
+
+### Release-workflow integration
+
+`.github/workflows/release.yml` now runs `npm run test:e2e` immediately after `npm run predeploy` and before `npm pack` / `npm publish`. A regression that breaks any playbook's detection layer — even one that passes every unit test — blocks the publish.
+
+### Coverage matrix
+
+| Surface | Covered |
+|---|---|
+| `run sbom` with real IoC fixtures | scenarios 01-06 |
+| `refresh --advisory` (offline fixture path) | scenario 08 |
+| `refresh --curate` (human-curated refusal path) | scenario 07 |
+| Exit-code semantics (0 / 2 / 3) | every scenario asserts `expect_exit` |
+| `phases.detect.classification` + `phases.close.jurisdiction_notifications` | scenarios 02-05 |
+
+Surface gaps to add in subsequent patches: `ai-run --stream` (JSONL contract), `attest verify` + `attest diff` against staged attestations, `doctor` with mock signature failures, `discover` against staged cwds.
+
 ## 0.12.1 — 2026-05-13
 
 **Patch: README + website docs for the v0.12.0 freshness surface.**

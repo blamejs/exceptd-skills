@@ -98,6 +98,17 @@ jobs:
         # (plus the offline cve/rfc gates that mirror data-integrity).
         run: npm run predeploy
 
+      - name: End-to-end scenarios (staged-IoC harness)
+        # v0.12.2: iterate tests/e2e-scenarios/* — each scenario stages a
+        # synthetic file tree (CVE-2026-45321 payload files, Claude
+        # SessionStart hooks, VS Code folder-open tasks, GitHub Actions
+        # cache co-residency, missing .npmrc cooldown, etc.) and asserts
+        # the CLI catches it. Unit tests prove the engine works in
+        # isolation; this proves the seven-phase contract catches real
+        # IoCs against a real filesystem. A regression here blocks the
+        # release before npm publish.
+        run: npm run test:e2e
+
       - name: npm pack (dry-run preview)
         run: |
           npm pack --dry-run --json | tee /tmp/pack.json

@@ -1,0 +1,6 @@
+{
+  "observations": {
+    "github-workflows": {"captured": true, "value": "bundle-size.yml has pull_request_target + actions/cache; release.yml has id-token:write + same cache key. Co-residency present.", "indicator": "ci-cache-poisoning-co-residency", "result": "hit"}
+  },
+  "verdict": {"classification": "detected", "blast_radius": 4}
+}

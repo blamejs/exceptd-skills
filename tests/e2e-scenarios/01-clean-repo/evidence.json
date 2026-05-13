@@ -1,0 +1,12 @@
+{
+  "observations": {
+    "tanstack-payload-sweep": {"captured": true, "value": "0 matches", "indicator": "tanstack-worm-payload-files", "result": "miss"},
+    "agent-persistence-claude-settings": {"captured": true, "value": "absent", "indicator": "agent-persistence-claude-session-start-hook", "result": "miss"},
+    "agent-persistence-vscode-tasks": {"captured": true, "value": "absent", "indicator": "agent-persistence-vscode-folder-open-task", "result": "miss"},
+    "agent-persistence-os-level": {"captured": true, "value": "no LaunchAgents / systemd-user", "indicator": "agent-persistence-os-level", "result": "miss"},
+    "npmrc-cooldown-policy": {"captured": true, "value": "minimumReleaseAge=4320 set", "indicator": "npm-registry-no-cooldown", "result": "miss"},
+    "github-workflows": {"captured": true, "value": "no pull_request_target; no actions/cache", "indicator": "ci-cache-poisoning-co-residency", "result": "miss"},
+    "npm-global-packages": {"captured": true, "value": "0 deps", "indicator": "package-matches-catalogued-cve", "result": "miss"}
+  },
+  "verdict": {"classification": "not_detected", "blast_radius": 1}
+}

@@ -1,0 +1,14 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "phases.detect.classification": "not_detected",
+    "phases.analyze.compliance_theater_check.verdict": "clear"
+  },
+  "json_path_present": [
+    "session_id",
+    "evidence_hash",
+    "phases.govern",
+    "phases.close.notification_actions"
+  ],
+  "stderr_must_not_match": ["BLOCKED", "FAIL"]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "06-npmrc-no-cooldown",
+  "description": "Stages a project that consumes npm but has no .npmrc cooldown. Hardening recommendation — sbom playbook surfaces npm-registry-no-cooldown.",
+  "verb": "run",
+  "args": ["sbom", "--evidence", "evidence.json", "--session-id", "e2e-06", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

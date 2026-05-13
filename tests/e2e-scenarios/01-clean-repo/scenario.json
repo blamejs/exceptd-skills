@@ -1,0 +1,7 @@
+{
+  "name": "01-clean-repo",
+  "description": "Baseline: empty repo with cooldown configured + no IoCs. Sbom playbook should report not_detected, compliance_theater clear, exit 0.",
+  "verb": "run",
+  "args": ["sbom", "--evidence", "evidence.json", "--session-id", "e2e-01", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

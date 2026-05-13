@@ -1,0 +1,6 @@
+{
+  "json_path_equals": {
+    "ok": true,
+    "phases.detect.classification": "inconclusive"
+  }
+}

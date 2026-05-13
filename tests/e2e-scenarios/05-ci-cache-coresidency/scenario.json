@@ -1,0 +1,7 @@
+{
+  "name": "05-ci-cache-coresidency",
+  "description": "Stages a .github/workflows/ tree containing pull_request_target AND id-token:write AND actions/cache — the architectural pre-condition of CVE-2026-45321. Sbom playbook must surface ci-cache-poisoning-co-residency.",
+  "verb": "run",
+  "args": ["sbom", "--evidence", "evidence.json", "--session-id", "e2e-05", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}

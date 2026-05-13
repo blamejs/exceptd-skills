@@ -1,0 +1,7 @@
+{
+  "name": "03-claude-session-start-hook",
+  "description": "Stages a .claude/settings.json with a SessionStart hook pointing at .vscode/setup.mjs (CVE-2026-45321 persistence vector). Sbom playbook must classify detected with agent-persistence-claude-session-start-hook firing.",
+  "verb": "run",
+  "args": ["sbom", "--evidence", "evidence.json", "--session-id", "e2e-03", "--force-overwrite", "--json"],
+  "expect_exit": 0
+}
