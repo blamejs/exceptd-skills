@@ -80,8 +80,10 @@ test('refresh-external --help exits 0 and prints usage', () => {
     { cwd: ROOT, encoding: 'utf8' }
   );
   assert.equal(res.status, 0);
-  assert.match(res.stdout, /refresh-external/);
+  assert.match(res.stdout, /refresh — pull latest upstream/);
   assert.match(res.stdout, /--apply/);
+  assert.match(res.stdout, /--prefetch/);
+  assert.match(res.stdout, /Air-gap workflow/);
   assert.match(res.stdout, /Hard Rule #12/);
 });
 

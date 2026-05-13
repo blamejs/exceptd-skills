@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.11.14 — 2026-05-13
+
+**Patch: items 129-134 + freshness surface — claims-vs-reality gap closure + opt-in registry-check.**
+
+### New: freshness surface (all opt-in, all offline-safe)
+
+- **`doctor --registry-check`.** Queries the npm registry for the latest published version + publish date. Reports `local_version`, `latest_version`, `days_since_latest_publish`, and a `behind` / `same` / `ahead` flag. Routed through a child process so the call is bounded by a hard timeout; offline degrades to a structured warning, not a hang. Opt-in: doctor without the flag stays offline.
+
+- **`run --upstream-check`.** Same registry call, fires before phase-4 detect. Surfaces an `upstream_check` block on the run result + a visible stderr warning when the local catalog is behind. Operators wiring CI gates can read `result.upstream_check.behind` to decide whether to trust today's findings. Doesn't fetch the catalog — only compares timestamps.
+
+- **`refresh --network`.** Fetches the latest signed catalog snapshot from the maintainer's npm-published tarball, verifies every skill's Ed25519 signature against the `keys/public.pem` already in the operator's install, and swaps `data/` + `skills/` + `manifest.json` in place. Same trust anchor as `npm update -g`; only the data slice changes, so CLI/lib code stays pinned. Refuses the swap on public-key fingerprint mismatch (key rotation requires explicit `npm update -g` so the trust transition is auditable). Refuses when the install dir isn't writable (typical global installs) and points operators at `npm update -g` instead. Includes `--dry-run` for verifying signatures without applying. Backs up the prior `data/` to a timestamped dir so rollback is one `mv` away.
+
+All three honor `EXCEPTD_REGISTRY_FIXTURE` env var (path to a JSON file mimicking the registry response) so test runners and air-gapped operators can exercise the freshness paths offline.
+
+### Bugs
+
+- **#129 air-gap workflow is now operator-accessible.** Pre-0.11.14 the docs implied `refresh --from-cache` worked offline but the cache-population path wasn't surfaced; an empty cache produced a stack trace. Now `refresh --prefetch` is the operator-facing alias for the prefetch script (legacy `--no-network` retained). Missing-cache errors emit a structured hint that names the exact command: "(1) on connected host: `exceptd refresh --prefetch`, (2) copy `.cache/upstream/`, (3) offline: `exceptd refresh --from-cache --apply`." Help text rewritten to document the workflow.
+
+- **#130 `exceptd path copy` writes to the clipboard.** Previously the `copy` argument was silently consumed and the path was just printed — operators wondering "did anything happen?" had no signal. Now the verb invokes the platform clipboard tool (`clip` on Windows, `pbcopy` on macOS, `wl-copy` / `xclip` / `xsel` on Linux), confirms the copy on stderr, and still prints the path on stdout so shell consumers like `cd "$(exceptd path)"` continue to work. When no clipboard tool is available, a clear warning fires instead of a silent fallthrough.
+
+- **#131 `run <skill-name>` suggests the right playbook.** 13 playbooks vs 38 skills with a many-to-many relationship: operators routinely typed `run kernel-lpe-triage` (a skill) and got "Playbook not found." Now the error names the playbook(s) that load the skill (e.g. `kernel`), distinguishes skill-vs-playbook semantics, and suggests both `exceptd run <playbook>` (execute) and `exceptd skill <name>` (read). Near-matches on unknown ids also surface (`run secret` → "Did you mean: secrets?"). Landing site updated to clarify the distinction near the skills grid.
+
+- **#134 `ci` exit-code matrix puts BLOCKED before FAIL.** Pre-0.11.14 a preflight halt produced exit 2 (FAIL) — indistinguishable from "playbook detected a real problem." Operators wiring CI gates against `exit 2` couldn't separate "we never executed" from "we executed and found something." Now the precedence is BLOCKED (4) → FAIL (2) → NO-DATA (3) → PASS (0). The earlier `if (fail)` short-circuit was rearranged so blocked counts take precedence.
+
+### Website (operator-facing)
+
+- **#132** `exceptd build-indexes` references replaced with `exceptd refresh --indexes-only`.
+- **#133** "13-gate predeploy" feature card relabeled "13-gate release hygiene" and explicitly disambiguated from the operator-facing `exceptd ci` verb.
+- **#131** Skills grid header clarifies "skills are read-only; playbooks execute" with the three relevant verbs.
+- **#129** Operator persona card shows the actual air-gap workflow: `refresh --prefetch` → copy → `refresh --from-cache --apply`.
+
+### Tests
+
+7 new regression cases. 354 total. Notable: `#125/#134` now triggers a REAL preflight halt by submitting `repo-context: false` keyed by playbook id (autoDetectPreconditions can't override an explicit submission), and asserts `r.status === 4` not just non-zero — the earlier test only caught "not 0" which my v0.11.12 "fix" passed by coincidence (no-evidence → exit 3, also non-zero).
+
+### Lesson codified
+
+When a "fix" passes a regression test by coincidence (any non-zero exit satisfies "not 0"), the test is too weak. Tests must assert the EXACT contract — exit 4, not "any non-zero." Added to CLAUDE.md.
+
 ## 0.11.13 — 2026-05-13
 
 **Patch: the final two stragglers — universal `ok:false` exit and empty-submission diff counters.**

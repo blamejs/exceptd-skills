@@ -71,6 +71,7 @@ const COMMANDS = {
   "-h":            null,
   prefetch:        () => path.join(PKG_ROOT, "lib", "prefetch.js"),
   refresh:         () => path.join(PKG_ROOT, "lib", "refresh-external.js"),
+  "refresh-network": () => path.join(PKG_ROOT, "lib", "refresh-network.js"),
   "build-indexes": () => path.join(PKG_ROOT, "scripts", "build-indexes.js"),
   verify:          () => path.join(PKG_ROOT, "lib", "verify.js"),
   scan:            () => path.join(PKG_ROOT, "orchestrator", "index.js"),
@@ -196,6 +197,9 @@ v0.11.0 canonical surface
                              --ci                   exit-code gate (use \`exceptd ci\` instead)
                              --operator <name>      bind attestation to identity
                              --ack                  explicit jurisdiction-consent
+                             --upstream-check       (v0.11.14) opt-in registry freshness
+                                                    check before detect; warns if local
+                                                    catalog is behind latest published
                              --session-id <id>      reuse session id (collision refused)
                              --force-overwrite      override session collision refusal
                              --session-key <hex>    HMAC sign evidence_package
@@ -218,6 +222,8 @@ v0.11.0 canonical surface
   doctor                     Health check: signatures + currency + cve catalog
                              + rfc catalog + attestation-signing status.
                              --signatures | --currency | --cves | --rfcs
+                             --registry-check       (v0.11.14) opt-in: query npm registry
+                                                    for latest published version + days behind
 
   ci                         One-shot CI gate. Exit codes: 0 PASS, 2 detected/escalate,
                              3 ran-but-no-evidence, 4 blocked (ok:false), 1 framework error.
@@ -242,6 +248,13 @@ v0.11.0 canonical surface
 
   refresh [args]             Refresh upstream catalogs + indexes. Replaces
                              prefetch + refresh + build-indexes.
+                             --network              (v0.11.14) fetch latest signed
+                                                    catalog snapshot from npm registry,
+                                                    verify against local keys/public.pem,
+                                                    swap data/ in place (no CLI/lib reload)
+                             --prefetch             populate offline cache
+                             --from-cache           consume offline cache
+                             --indexes-only         rebuild indexes only
 
 v0.10.x compatibility (will be removed in v0.12)
 ────────────────────────────────────────────────
@@ -321,6 +334,35 @@ function main() {
     process.exit(0);
   }
   if (cmd === "path") {
+    // v0.11.14 (#130): `path copy` was silently consuming the `copy` arg and
+    // printing the path. Operators on Windows / Linux saw no clipboard write.
+    // Now: implement clipboard copy on the three host platforms (clip on
+    // Windows, pbcopy on macOS, xclip|wl-copy|xsel on Linux). If no usable
+    // tool is found, fall through to print + stderr-warn (so STDOUT still
+    // gives the path for shell consumers like `cd "$(exceptd path)"`).
+    const wantCopy = rest.includes("copy") || rest.includes("--copy");
+    if (wantCopy) {
+      const { spawnSync } = require("child_process");
+      const platform = process.platform;
+      const candidates = platform === "win32" ? [["clip"]]
+        : platform === "darwin" ? [["pbcopy"]]
+        : [["wl-copy"], ["xclip", "-selection", "clipboard"], ["xsel", "-bi"]];
+      let copied = false;
+      let tried = [];
+      for (const [bin, ...argv] of candidates) {
+        tried.push(bin);
+        const res = spawnSync(bin, argv, { input: PKG_ROOT, encoding: "utf8" });
+        if (res.status === 0 && !res.error) { copied = true; break; }
+      }
+      if (copied) {
+        process.stderr.write(`[exceptd path] copied to clipboard: ${PKG_ROOT}\n`);
+        process.stdout.write(PKG_ROOT + "\n");
+        process.exit(0);
+      }
+      process.stderr.write(`[exceptd path] copy: no clipboard tool available (tried: ${tried.join(", ")}). Path printed to stdout instead.\n`);
+      process.stdout.write(PKG_ROOT + "\n");
+      process.exit(0);
+    }
     process.stdout.write(PKG_ROOT + "\n");
     process.exit(0);
   }
@@ -356,12 +398,22 @@ function main() {
   // here so the deprecation pointer actually works.
   let effectiveCmd = cmd;
   let effectiveRest = rest;
-  if (cmd === "refresh" && rest.includes("--no-network")) {
+  if (cmd === "refresh" && (rest.includes("--no-network") || rest.includes("--prefetch"))) {
+    // v0.11.14 (#129): --prefetch is the operator-facing name for the
+    // cache-population path. --no-network retained as alias for back-compat.
     effectiveCmd = "prefetch";
-    effectiveRest = rest.filter(a => a !== "--no-network");
+    effectiveRest = rest.filter(a => a !== "--no-network" && a !== "--prefetch");
   } else if (cmd === "refresh" && rest.includes("--indexes-only")) {
     effectiveCmd = "build-indexes";
     effectiveRest = rest.filter(a => a !== "--indexes-only");
+  } else if (cmd === "refresh" && rest.includes("--network")) {
+    // v0.11.14: --network fetches a fresh signed catalog snapshot from the
+    // maintainer's npm-published tarball, verifies signatures against the
+    // public key already shipped in the operator's install, and swaps
+    // data/ in place. Same trust boundary as `npm update -g`; fresher
+    // data slice without requiring a full package upgrade.
+    effectiveCmd = "refresh-network";
+    effectiveRest = rest.filter(a => a !== "--network");
   }
 
   const resolver = COMMANDS[effectiveCmd];
@@ -594,8 +646,53 @@ function dispatchPlaybook(cmd, argv) {
       case "ci":     return cmdCi(runner, args, runOpts, pretty);
     }
   } catch (e) {
+    // v0.11.14 (#131): when the operator typed a skill name (kernel-lpe-triage)
+    // and got "Playbook not found," surface the playbooks that load that skill.
+    // 13 playbooks vs 38 skills with many-to-many: operators routinely confuse
+    // the two because the website (and AGENTS.md) describe both as runnable.
+    const m = e && e.message && e.message.match(/^Playbook not found: ([^\s(]+)/);
+    if (m) {
+      const wanted = m[1];
+      const hint = buildSkillToPlaybookHint(runner, wanted);
+      if (hint) {
+        return emitError(`Playbook not found: "${wanted}". ${hint}`, { verb: cmd, wanted, type: "playbook_not_found" }, pretty);
+      }
+    }
     emitError(e.message, { verb: cmd }, pretty);
   }
+}
+
+function buildSkillToPlaybookHint(runner, wanted) {
+  try {
+    const ids = runner.listPlaybooks ? runner.listPlaybooks() : [];
+    const matches = [];
+    for (const id of ids) {
+      let pb;
+      try { pb = runner.loadPlaybook(id); } catch { continue; }
+      const skills = new Set();
+      const collect = (val) => {
+        if (Array.isArray(val)) val.forEach(collect);
+        else if (val && typeof val === "object") Object.values(val).forEach(collect);
+        else if (typeof val === "string") skills.add(val);
+      };
+      collect(pb.phases?.govern?.skill_preload);
+      for (const d of (pb.directives || [])) {
+        collect(d.phase_overrides?.govern?.skill_preload);
+      }
+      if (skills.has(wanted)) matches.push(id);
+    }
+    if (matches.length > 0) {
+      return `That is a SKILL (read-only knowledge unit), not a PLAYBOOK (executable). Skill "${wanted}" is loaded by playbook${matches.length === 1 ? "" : "s"}: ${matches.join(", ")}. ` +
+             `To execute: \`exceptd run ${matches[0]}\`. To read the skill: \`exceptd skill ${wanted}\`. ` +
+             `Tip: \`exceptd plan\` lists all 13 playbooks; \`exceptd watchlist\` lists skills.`;
+    }
+    // No matching skill either — provide nearest-playbook suggestions.
+    const near = ids.filter(id => id.includes(wanted) || wanted.includes(id)).slice(0, 3);
+    if (near.length > 0) {
+      return `Did you mean: ${near.join(", ")}? Run \`exceptd plan\` for the full list.`;
+    }
+    return `Run \`exceptd plan\` to list the 13 playbooks.`;
+  } catch { return null; }
 }
 
 function printPlaybookVerbHelp(verb) {
@@ -1303,7 +1400,30 @@ function cmdRun(runner, args, runOpts, pretty) {
     }
   }
 
+  // v0.11.14: opt-in `--upstream-check` queries the npm registry BEFORE
+  // detect to warn operators if their local catalog is behind the latest
+  // published version. Opt-in so the runner stays offline by default.
+  // Network bounded by an 8s timeout; degrades gracefully when offline.
+  let upstreamCheck = null;
+  if (args["upstream-check"]) {
+    try {
+      const cliPath = path.join(PKG_ROOT, "lib", "upstream-check-cli.js");
+      const res = spawnSync(process.execPath, [cliPath, "--timeout", "5000"], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 8000,
+      });
+      try { upstreamCheck = JSON.parse((res.stdout || "").trim()); } catch { /* fall through */ }
+      if (upstreamCheck && upstreamCheck.behind) {
+        process.stderr.write(`[exceptd run --upstream-check] STALE: local v${upstreamCheck.local_version} < published v${upstreamCheck.latest_version} (published ${upstreamCheck.latest_published_at}, ${upstreamCheck.days_since_latest_publish}d ago). Continuing with local catalog. Run \`npm update -g @blamejs/exceptd-skills\` or \`exceptd refresh --network\` to consume the latest.\n`);
+      }
+    } catch (e) {
+      upstreamCheck = { ok: false, error: e.message, source: "offline" };
+    }
+  }
+
   const result = runner.run(playbookId, directiveId, submission, runOpts);
+  if (result && upstreamCheck) result.upstream_check = upstreamCheck;
 
   // v0.11.9 (#113/#114): surface --operator and --ack in the run result so
   // operators see the attribution + consent state without inspecting the
@@ -2699,6 +2819,41 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     }
   }
 
+  // v0.11.14: opt-in `--registry-check` queries the npm registry for the
+  // latest published version + publish date and computes "days behind."
+  // Opt-in (not on every doctor invocation) so offline use + air-gap
+  // workflows aren't disturbed. Routed through a child process to keep
+  // cmdDoctor synchronous + bound the network timeout cleanly.
+  if (args["registry-check"]) {
+    try {
+      const cliPath = path.join(PKG_ROOT, "lib", "upstream-check-cli.js");
+      const res = spawnSync(process.execPath, [cliPath, "--timeout", "5000"], {
+        encoding: "utf8",
+        cwd: PKG_ROOT,
+        timeout: 8000,
+      });
+      let parsed = null;
+      try { parsed = JSON.parse((res.stdout || "").trim()); } catch { /* fall through */ }
+      if (parsed) {
+        checks.registry = {
+          ok: parsed.ok && (parsed.same || parsed.ahead),
+          severity: parsed.behind ? "warn" : (parsed.ok ? "info" : "warn"),
+          ...parsed,
+        };
+      } else {
+        checks.registry = {
+          ok: false,
+          severity: "warn",
+          error: "upstream-check did not return JSON",
+          exit_code: res.status,
+          raw: ((res.stderr || res.stdout || "")).slice(0, 200),
+        };
+      }
+    } catch (e) {
+      checks.registry = { ok: false, severity: "warn", error: e.message };
+    }
+  }
+
   // Walk every check and split: errors (severity error/missing/fail) vs warnings
   // (severity warn). all_green is true ONLY when zero errors AND zero warnings.
   const warnList = [];
@@ -3449,28 +3604,32 @@ function cmdCi(runner, args, runOpts, pretty) {
   } else {
     emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty);
   }
-  if (fail) {
-    process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
-    // v0.11.11: use exitCode + return instead of process.exit() so the
-    // structured stdout JSON has a chance to flush when stdout is piped.
-    // process.exit() can truncate buffered async stdout writes.
-    process.exitCode = 2;
+  // v0.11.14 (#134): exit-code matrix with BLOCKED before FAIL.
+  // Pre-0.11.14 the `if (fail)` check fired first for blocked runs (because
+  // the loop pushed blocked entries onto failReasons), so blocked runs got
+  // exit 2 (FAIL/detected) instead of exit 4 (BLOCKED/didn't-execute).
+  // Operators wiring CI gates couldn't distinguish "playbook detected a
+  // problem" from "playbook never executed because preflight halted."
+  //
+  // Exit-code matrix (final, documented in --help):
+  //   0  PASS      every playbook produced a result, none detected/escalating
+  //   1  FRAMEWORK engine/parse error (set by emit() when body is ok:false)
+  //   2  FAIL      detected classification OR rwep>=escalate
+  //   3  NO-DATA   ran but no --evidence and all inconclusive
+  //   4  BLOCKED   at least one playbook returned ok:false (preflight halt,
+  //                stale threat intel, missing precondition, mutex contention)
+  // Precedence: BLOCKED > FAIL > NO-DATA > PASS. A blocked playbook didn't
+  // actually evaluate signals, so it can't be a true detection.
+  if (summary.blocked > 0) {
+    const blockedReasons = failReasons.filter(r => r.includes("blocked"));
+    process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) halted before detect. Exit 4. Reasons:\n  ${blockedReasons.join("\n  ")}\n`);
+    process.exitCode = 4;
     return;
   }
-  // v0.11.12 (#125): ci exit code matrix. Pre-0.11.12 every non-detected
-  // path exited 0 including blocked runs that never executed — CI gates
-  // couldn't distinguish ok:false from ok:true. Now:
-  //   0 PASS — every playbook produced a result, none detected/escalating
-  //   2 FAIL — at least one detected or rwep>=escalate (above)
-  //   3 NO-DATA — ran but no --evidence and all inconclusive
-  //   4 BLOCKED — at least one playbook returned ok:false (preflight halt,
-  //     stale threat intel, missing precondition, mutex contention, etc.)
-  //   1 FRAMEWORK — engine/parse error (set elsewhere)
-  // BLOCKED takes precedence over NO-DATA because a blocked run is a
-  // harder gate failure than "no real data."
-  if (summary.blocked > 0) {
-    process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) returned ok:false (preflight/mutex/threat-currency/etc.). Exit 4. Inspect results[].reason for each blocked entry.\n`);
-    process.exitCode = 4;
+  if (fail) {
+    process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
+    // v0.11.11: exitCode + return so emit()'s stdout flushes.
+    process.exitCode = 2;
     return;
   }
   const suppliedEvidence = args.evidence || args["evidence-dir"];
