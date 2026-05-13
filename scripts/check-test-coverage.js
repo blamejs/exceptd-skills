@@ -79,17 +79,29 @@ function git(args, cwd) {
   return r.stdout;
 }
 
-function listChangedFiles(opts, cwd) {
+// v0.12.8: resolve the diff anchor ONCE up front and thread the resolved SHA
+// through every per-file computation. Pre-fix, listChangedFiles() resolved
+// `opts.base` to a merge-base but fileDiff()/fileBefore() still used the raw
+// `opts.base` ref — so if origin/main advanced past the merge-base between
+// the file-list call and the per-file diff calls, the analyzer compared
+// per-file content against a newer upstream tree than the file list itself
+// was derived from. Result: false "added/removed" surface findings or real
+// findings masked. Codex P1 flag on PR #2 of v0.12.8.
+function resolveBaseRef(opts, cwd) {
+  if (opts.staged) return null; // staged mode uses --cached / HEAD throughout
+  try {
+    const mb = git(["merge-base", "HEAD", opts.base], cwd).trim();
+    if (mb) return mb;
+  } catch { /* base may not exist locally; fall back to ref literal */ }
+  return opts.base;
+}
+
+function listChangedFiles(opts, cwd, resolvedBase) {
   if (opts.staged) {
     return git(["diff", "--name-status", "--cached"], cwd)
       .split("\n").filter(Boolean).map(parseNameStatus);
   }
-  let baseRef = opts.base;
-  try {
-    const mb = git(["merge-base", "HEAD", baseRef], cwd).trim();
-    if (mb) baseRef = mb;
-  } catch { /* base may not exist locally; use ref literal */ }
-  return git(["diff", "--name-status", baseRef + "..HEAD"], cwd)
+  return git(["diff", "--name-status", resolvedBase + "..HEAD"], cwd)
     .split("\n").filter(Boolean).map(parseNameStatus);
 }
 
@@ -99,11 +111,11 @@ function parseNameStatus(line) {
   return { status, file: parts[parts.length - 1] };
 }
 
-function fileDiff(opts, file, cwd, ignoreWs) {
+function fileDiff(opts, file, cwd, ignoreWs, resolvedBase) {
   const args = ["diff", "-U0"];
   if (ignoreWs) args.push("--ignore-all-space", "--ignore-blank-lines");
   if (opts.staged) args.push("--cached");
-  else args.push(opts.base + "..HEAD");
+  else args.push(resolvedBase + "..HEAD");
   args.push("--", file);
   try { return git(args, cwd); } catch { return ""; }
 }
@@ -114,9 +126,9 @@ function fileAtRef(file, ref, cwd) {
   return r.stdout;
 }
 
-function fileBefore(opts, file, cwd) {
+function fileBefore(opts, file, cwd, resolvedBase) {
   if (opts.staged) return fileAtRef(file, "HEAD", cwd);
-  return fileAtRef(file, opts.base, cwd);
+  return fileAtRef(file, resolvedBase, cwd);
 }
 
 function fileAfter(opts, file, cwd) {
@@ -156,8 +168,8 @@ function categorize(file) {
   return "other";
 }
 
-function isWhitespaceOnly(opts, file, cwd) {
-  const wsBlind = fileDiff(opts, file, cwd, true);
+function isWhitespaceOnly(opts, file, cwd, resolvedBase) {
+  const wsBlind = fileDiff(opts, file, cwd, true, resolvedBase);
   return wsBlind.split("\n").filter(l => l.startsWith("+") || l.startsWith("-"))
     .filter(l => !l.startsWith("+++") && !l.startsWith("---")).length === 0;
 }
@@ -302,7 +314,12 @@ function coversCveIoc(corpus, cveId) {
 
 function analyze(opts) {
   const cwd = opts.repo || ROOT;
-  const changed = listChangedFiles(opts, cwd);
+  // v0.12.8: resolve the diff anchor ONCE and thread it through every
+  // per-file call so listChangedFiles + fileDiff + fileBefore all agree on
+  // the same SHA. Otherwise origin/main advancing past the merge-base
+  // between calls produces false add/remove findings.
+  const resolvedBase = resolveBaseRef(opts, cwd);
+  const changed = listChangedFiles(opts, cwd, resolvedBase);
   const corpus = loadTestCorpus(cwd);
 
   const findings = [];
@@ -318,12 +335,12 @@ function analyze(opts) {
     if (cat === "skill") { allowlisted.push({ file: ch.file, reason: "skill-signed" }); continue; }
     if (cat === "workflow") { manualReview.push({ file: ch.file, reason: "workflow" }); continue; }
     if (cat === "other") { allowlisted.push({ file: ch.file, reason: "out-of-scope" }); continue; }
-    if (ch.status !== "D" && isWhitespaceOnly(opts, ch.file, cwd)) {
+    if (ch.status !== "D" && isWhitespaceOnly(opts, ch.file, cwd, resolvedBase)) {
       allowlisted.push({ file: ch.file, reason: "whitespace-only" });
       continue;
     }
 
-    const before = fileBefore(opts, ch.file, cwd);
+    const before = fileBefore(opts, ch.file, cwd, resolvedBase);
     const after = ch.status === "D" ? null : fileAfter(opts, ch.file, cwd);
 
     if (cat === "cli") {
