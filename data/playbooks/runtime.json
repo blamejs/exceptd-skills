@@ -430,7 +430,12 @@
           "description": "Multiple UID=0 accounts. T1136.001 persistence pattern. Outside legitimate installs.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1136.001"
+          "attack_ref": "T1136.001",
+          "false_positive_checks_required": [
+            "If the second UID-0 account is `toor` on FreeBSD / `tor` on certain BSDs (documented alternate-shell root) or is a vendor-documented sudo-replacement account (e.g. AlmaLinux's `almauser`, Amazon Linux's `ec2-user` aliased), check the OS-vendor documentation; demote if intentional.",
+            "Cross-check `/etc/shadow` for the second account — if the password field is `!` / `*` (locked) AND no SSH authorized_keys / kerberos principal exists, the account is non-authentication-bearing; report at high but not deterministic.",
+            "If the host is a documented break-glass jumpbox with a renamed-root account replacing `root` (and `root` itself is removed), this is intentional; accept with the runbook reference."
+          ]
         },
         {
           "id": "listening-socket-unknown-bind",
@@ -457,7 +462,11 @@
           "description": "Hijack-execution-flow primitive. Any non-root process can replace the file.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1574.005"
+          "attack_ref": "T1574.005",
+          "false_positive_checks_required": [
+            "Verify the file has the sticky bit set (1777-style mode on /opt subdirs that intentionally permit per-user write). Sticky-bit mode 1777 + ownership root:root limits cross-user replacement and is documented for some package-managers; demote to lower confidence.",
+            "If the file is a 0-byte stamp / unix-socket / FIFO under /opt that's documented for the application (e.g. mode 0666 socket for /opt/vendor/sock), the indicator is misclassified by the gatherer; demote."
+          ]
         },
         {
           "id": "orphan-privileged-process",
@@ -466,7 +475,12 @@
           "description": "Privileged orphan in a writable temp path. Common implant shape.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1055"
+          "attack_ref": "T1055",
+          "false_positive_checks_required": [
+            "If the process executable matches a known anti-malware / VPN-client / EDR-agent that documentedly drops a binary under /var/tmp for sandbox-extraction reasons (e.g. CrowdStrike Falcon, SentinelOne, MS Defender Linux), check the org's endpoint-agent allowlist; demote if matched.",
+            "Verify the binary checksum (sha256) against the org's allowlisted-deploys inventory. A known-hash match means the binary is approved; demote. A mismatch means the path is unsanctioned and the indicator stands.",
+            "If the process was launched by `nohup` / `setsid` / `at` from an interactive session and is documented in the system's `at` queue or operator scratch list, accept as ephemeral with a TTL."
+          ]
         }
       ],
       "false_positive_profile": [

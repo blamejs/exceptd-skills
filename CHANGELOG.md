@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.12.17 — 2026-05-14
+
+**Patch: remaining deferred P1/P2 items from the v0.12.15 audit pile — manifest signing, Windows ACL, indicator FP backfill, schema promotion.**
+
+### Manifest signing (audit I P1-4)
+
+The previous trust chain signed each skill body individually but the manifest itself was just an unsigned index. A coordinated attacker who could rewrite `manifest.json` + `manifest-snapshot.json` + `manifest-snapshot.sha256` passed every gate (snapshot is checked locally, the sha256 also computed locally).
+
+Now: `manifest.json` carries a top-level `manifest_signature` field (Ed25519 over canonical sort-keys representation with the signature field excluded and `normalize()`-applied bytes). `lib/sign.js sign-all` and `lib/sign.js sign-skill` both re-sign the manifest after per-skill work; `lib/verify.js loadManifestValidated()` verifies the manifest signature before iterating skills. Tampered manifest entries (path swap, signature substitution) now fail the manifest-level check. Missing `manifest_signature` field emits a warning but doesn't block (backward-compat for legacy tarballs in the wild).
+
+Canonical-form contract documented in both `lib/sign.js` and `lib/verify.js` headers — future shape changes to manifest.json must respect the invariants (sort top-level keys, exclude `manifest_signature`, normalize line endings).
+
+### Windows ACL on `.keys/private.pem` (audit I P1-3)
+
+`lib/sign.js` previously wrote the private key with `{ mode: 0o600 }`. On POSIX this restricts read access to the owner. On Windows the `mode` argument maps to read/write attributes only, not POSIX permissions; ACLs inherited from the parent directory. A multi-user maintainer workstation or shared CI runner therefore allowed any process under the same desktop user to read the key. Now: on `win32`, `lib/sign.js` calls `icacls /inheritance:r /grant:r ${USERNAME}:F` after writing the private key, narrowing the ACL to the current user. The same restriction is applied via `restrictWindowsAcl(targetPath)` from `scripts/bootstrap.js` when bootstrap creates the keypair. Falls back to a stderr warning if `icacls` is unavailable; doesn't fail key generation.
+
+### Indicator FP-check backfill (audit K)
+
+36 deterministic indicators across 11 playbooks now carry `false_positive_checks_required[]` entries (the gold-standard pattern from `library-author.gha-workflow-script-injection-sink` in v0.12.13). Per-playbook coverage:
+
+- `ai-api` — 4 indicators (cleartext-api-key-in-dotfile, long-lived-aws-keys, gcp-service-account-json, kubeconfig-with-static-token)
+- `containers` — 4 (dockerfile-runs-as-root, dockerfile-curl-pipe-bash, compose-cap-add-sys-admin, compose-host-network)
+- `cred-stores` — 3 (aws-static-key-present, docker-cleartext-auth, credentials-file-bad-perms)
+- `crypto-codebase` — 3 (weak-hash-import, weak-cipher-mode, tls-old-protocol)
+- `crypto` — 2 (ml-dsa-slh-dsa-absent, openssl-pre-3-5)
+- `framework` — 3 (exception-missing-expiry-or-owner, jurisdiction-without-framework, compound-theater)
+- `hardening` — 4 (kptr-restrict-disabled, yama-ptrace-permissive, kaslr-disabled-at-boot, mitigations-off)
+- `kernel` — 2 (unpriv-userns-enabled, unpriv-bpf-allowed)
+- `mcp` — 3 (mcp-response-ansi-escape, mcp-response-unicode-tag-smuggling, mcp-server-running-as-root)
+- `runtime` — 3 (duplicate-uid-zero, world-writable-in-trusted-path, orphan-privileged-process)
+- `sbom` — 3 (lockfile-no-integrity, kev-listed-match, windsurf-vulnerable-version)
+- `secrets` — 5 (aws-secret-access-key, slack-bot-or-user-token, stripe-secret-key, openai-api-key, anthropic-api-key)
+
+Each entry is a 1-line check an AI assistant or operator must satisfy before the indicator's `hit` verdict can drive `classification: detected`. The runner downgrades a hit with unsatisfied FP checks to `inconclusive` (v0.12.12 E1 contract). Backfill complements the playbook-level `false_positive_profile[]` documentation by binding FP checks per-indicator at the schema layer.
+
+### Schema promotion (audit K + audit M)
+
+`lib/schemas/playbook.schema.json` indicator object now formally declares `false_positive_checks_required[]` and `cve_ref` as optional fields (was unschema'd; produced WARN noise on every validate run). The `cve_ref` field has been load-bearing since v0.12.14 F3 (drives `analyze.matched_cves[]` correlation); the schema declaration just catches up. After the schema promotion + the v0.12.16 enum-drift normalisation, `validate-playbooks` runs 13/13 PASS with zero warnings (was 12/13 PASS + 1 WARN in v0.12.16, 8/13 PASS + 5 WARN in v0.12.15).
+
+### Operator-facing surfaces
+
+- **`--diff-from-latest` result surfaced in `run` human renderer (audit L F11)**. Operators running with `--diff-from-latest` and no `--json` previously got no visibility on drift; now: `> drift vs prior: unchanged (same evidence_hash as session <prior_id>)` or `> drift vs prior: DRIFTED — evidence_hash differs from session <prior_id>` is added near the classification line. No line when there's no prior attestation for the playbook (don't clutter).
+- **`ai-run` stdin acceptance contract documented in `--help`**. The streaming + no-stream paths both consume "first parseable evidence event wins on stdin; subsequent evidence events ignored; non-evidence chatter silently ignored; invalid JSON exits 1." Was implicit behavior; now explicit so AI agents calling `exceptd ai-run` know the contract.
+
+### Auto-discovery hygiene (audit M P3-O)
+
+`lib/auto-discovery.js discoverNewKev` previously hardcoded `severity: 'high'` on every KEV-discovered diff. Now uses `deriveKevSeverity(kevEntry)` — returns `'critical'` when `knownRansomwareCampaignUse === 'Known'` OR `dueDate` is within 7 days; otherwise `'high'`. Downstream PR-body categorization can now route ransomware-use + imminent-due-date KEVs differently.
+
+### Tests
+
+- 20 new regression tests in `tests/audit-i-l-m-fixes.test.js` covering: Windows ACL helper export, manifest canonical-bytes determinism (stale signature + key-order invariants), sign + verify round trip, live manifest carries valid signature, tampered signature/skill detection, backward-compat `missing` status, `--diff-from-latest` renderer string/branch assertions, ai-run help-text content, `deriveKevSeverity` matrix, `discoverNewKev` propagation against synthetic KEV feed.
+
+Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/38 signed; manifest itself signed.
+
 ## 0.12.16 — 2026-05-14
 
 **Patch: highest-impact P1 security findings from the v0.12.15 audit pile.**

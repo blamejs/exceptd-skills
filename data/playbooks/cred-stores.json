@@ -420,7 +420,12 @@
           "description": "Long-lived AWS IAM user key. AAL1-equivalent. Static credential.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "If the AKIA* value is AKIAIOSFODNN7EXAMPLE / a documented AWS-sample credential pair, demote — these are AWS-published doc fixtures.",
+            "Verify the key is live via `aws sts get-caller-identity --profile <name>` (or dry-run equivalent). If the key is already deactivated / deleted upstream, demote to lower confidence (still flag for cleanup).",
+            "If the profile name pattern matches an org-documented break-glass profile (e.g. profile = 'breakglass-*' with a documented quarterly-rotation procedure tied to it), accept the exception with a TTL test."
+          ]
         },
         {
           "id": "kube-static-token",
@@ -447,7 +452,12 @@
           "description": "Docker registry credentials in cleartext (base64 is not encryption). credHelpers/credsStore would route to OS keychain or cloud-IAM-federated path.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "Decode the auth value — if the decoded user is '<token>' / 'AWS' / 'oauth2accesstoken' / '00000000-0000-0000-0000-000000000000' (vendor-documented pseudo-users for short-lived token auth) AND the docker login was scripted with an exchange step, the credential is ephemeral; demote.",
+            "If the registry is a local-only registry (127.0.0.1:*, registry.local, kind.local, *.svc.cluster.local) on a dev workstation, blast radius is local; report at high but not deterministic.",
+            "Verify the credsStore field is not set globally (top-level credsStore overrides per-registry omission); if globally configured, demote."
+          ]
         },
         {
           "id": "npm-pat-present",
@@ -498,7 +508,12 @@
           "description": "Permissive permissions on a credential file. Local-user theft primitive.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.004"
+          "attack_ref": "T1552.004",
+          "false_positive_checks_required": [
+            "If the host filesystem is on Windows / WSL with no POSIX mode enforcement OR is a network share where mode bits are emulated, posix-mode is meaningless — verify the share is ACL-protected (e.g. ntfs ACL grants only the user); demote when ACL-tight.",
+            "If the file is a 0-byte placeholder / symlink to a credential broker socket or to a tmpfs path that's wiped on logout, the readable bits do not yield a usable credential; demote.",
+            "On a shared multi-user host the operator may have an explicit ACL-by-design model (e.g. 0640 with a group ACL granting the deploy-group read). If the runbook documents the intent AND `getfacl` confirms the named-group restriction, accept the exception."
+          ]
         },
         {
           "id": "all-stores-empty-or-federated",

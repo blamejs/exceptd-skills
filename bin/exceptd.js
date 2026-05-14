@@ -1124,6 +1124,20 @@ Flags:
 Stdin event grammar (one JSON object per line):
   {"event":"evidence","payload":{"observations":{},"verdict":{}}}
 
+Stdin acceptance contract (Audit L F22):
+  In streaming mode, ai-run reads JSON-Lines from stdin until the FIRST
+  parseable {"event":"evidence","payload":{...}} line. That line wins:
+  subsequent evidence events on the same run are ignored (the handler
+  marks itself \`handled\` and refuses re-entry). Non-evidence chatter
+  (status updates, the host AI's own progress events) is silently
+  ignored — the host can interleave its own JSON events without
+  triggering a phase transition. Invalid JSON on any line exits 1 with
+  an {"event":"error","reason":"invalid JSON on stdin: ..."} frame.
+
+  If the host needs to send multiple evidence batches, spawn a separate
+  ai-run per batch (each produces an independent session_id). Use
+  --no-stream + --evidence <file> for single-shot single-batch runs.
+
 Emits phases: govern → direct → look → await_evidence → detect → analyze
 → validate → close, then {"event":"done","ok":true,"session_id":"..."}.
 Errors emit {"event":"error","reason":"..."} and exit non-zero.`,
@@ -2072,14 +2086,18 @@ function cmdRun(runner, args, runOpts, pretty) {
     // F11: surface --diff-from-latest verdict in the human renderer. Pre-fix
     // operators had to add --json to see whether the run drifted from the
     // previous attestation. Now one summary line follows the classification.
+    // - unchanged: same evidence_hash as prior → reassuring single line.
+    // - drifted: evidence differs → loud DRIFTED marker.
+    // - no_prior_attestation_for_playbook: no line — don't clutter the
+    //   output when there is nothing to compare against.
     if (obj.diff_from_latest) {
       const dfl = obj.diff_from_latest;
-      if (dfl.status === "no_prior_attestation_for_playbook") {
-        lines.push(`> drift vs prior: (no prior attestation for ${dfl.playbook_id})`);
-      } else {
-        const priorTag = dfl.prior_session_id ? ` (prior ${dfl.prior_session_id}` + (dfl.prior_captured_at ? ` @ ${dfl.prior_captured_at.slice(0, 19)})` : ")") : "";
-        lines.push(`> drift vs prior: ${dfl.status}${priorTag}`);
+      if (dfl.status === "unchanged") {
+        lines.push(`> drift vs prior: unchanged (same evidence_hash as session ${dfl.prior_session_id})`);
+      } else if (dfl.status === "drifted") {
+        lines.push(`> drift vs prior: DRIFTED — evidence_hash differs from session ${dfl.prior_session_id}`);
       }
+      // no_prior_attestation_for_playbook intentionally produces no line.
     }
     const cves = obj.phases?.analyze?.matched_cves || [];
     const baseline = obj.phases?.analyze?.catalog_baseline_cves || [];

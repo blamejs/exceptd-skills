@@ -639,7 +639,11 @@
           "value": "Within the repo-lockfiles artifact: any pinned dependency lacks an integrity field (sha512/sha384/sha256, sri-integrity, go.sum-style hash)",
           "description": "Theater fingerprint #2 detection — name-pinned without integrity.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the missing-integrity entries are local-path / workspace / git+ssh refs (`file:`, `link:`, `workspace:`, `git+ssh:`) that the package manager intentionally omits integrity for, demote — workspace refs are integrity-checked at the monorepo root.",
+            "Confirm the lockfile is the one the build actually consumes — repos can have stale lockfiles in `archive/` or `pre-migration/` subdirs. Check the build script's referenced lockfile path."
+          ]
         },
         {
           "id": "transitive-deps-incomplete-sbom",
@@ -681,7 +685,11 @@
           "description": "Direct match for CVE-2026-30615.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1190"
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "If the Windsurf binary is the vendor-published patched build identified by sha256 hash (cross-reference Codeium's signed release manifest), the recorded version string may not advance until the next major release; demote when the binary hash matches the patched-build allowlist.",
+            "Confirm the installation is on a network-isolated jumpbox / air-gapped dev workstation with documented offline procedure — exploit primitive requires network egress to attacker C2. Demote when the host is provably air-gapped."
+          ]
         },
         {
           "id": "kev-listed-match",
@@ -689,7 +697,12 @@
           "value": "Any package-matches-catalogued-cve match resolves to a CVE with cisa_kev=true in the catalog",
           "description": "KEV-listed match — fast-path escalation required.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Pull the vex-statements artifact for the matched CVE. If a VEX entry exists with status `not_affected` (justification: `component_not_present` / `vulnerable_code_not_in_execute_path` / `vulnerable_code_cannot_be_controlled_by_adversary`) AND `status_notes` references a maintainer review, demote — but keep on the regression schedule.",
+            "Verify the matched package version is actually present in the live deploy (not just in a build-time/dev-time dependency) — runtime presence elevates; build-time-only presence demotes to high.",
+            "If the matched VEX entry has `status: fixed` AND the lockfile resolution is newer-than-fix-version, the match is stale and should be demoted; re-run the dependency walker to refresh."
+          ]
         },
         {
           "id": "tanstack-worm-payload-files",

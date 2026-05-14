@@ -559,7 +559,12 @@
           "value": "Any file imports or constructs an MD5 / SHA1 hash and the output flows into a security context. Patterns: `crypto\\.createHash\\(['\"](md5|sha1|sha-1)['\"]\\)`, `hashlib\\.(md5|sha1)\\(`, `MessageDigest\\.getInstance\\(['\"](MD5|SHA-1)['\"]\\)`, `crypto/md5`, `crypto/sha1`, `Digest::(MD5|SHA1)\\.`",
           "description": "Weak hash primitive shipped in library source. Hard fail unless inline comment justifies non-security usage AND no flow into auth/integrity code path.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the call site is under tests/, spec/, fixtures/, examples/ or carries an inline `// non-security: <reason>` / `# non-cryptographic: <reason>` comment AND the hash output flows into a checksum-only path (ETag, content-addressed cache key, dedupe), demote to miss.",
+            "If the file implements a documented legacy-protocol shim (TLS interop, ntlm, sha1-rsa cert parsing for compat) and the hash is consumed by a verify-only path against externally-fixed inputs, accept with an expiry test (deprecation date).",
+            "Confirm the hash output reaches an authn/integrity sink via simple grep on the assigned variable name reaching crypto.verify / hmac / signature.update / token comparison. If no such flow exists in this file, demote."
+          ]
         },
         {
           "id": "weak-cipher-mode",
@@ -567,7 +572,12 @@
           "value": "AES with ECB mode anywhere: `aes-\\d+-ecb`, `AES/ECB/`, `Cipher\\.getInstance\\(['\"]AES['\"]\\)` (default mode ECB). Or DES/3DES anywhere: `des-cbc`, `des-ede3`, `\\\"des\\\"`, `\\\"3des\\\"`, `DES/`, `DESede/`. Or RC4: `\\\"rc4\\\"`, `arc4`, `ARCFOUR`.",
           "description": "Catastrophic cipher choice. ECB leaks plaintext patterns; DES/3DES is below current security margins; RC4 is broken.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the path is under tests/ / fixtures/ / known-answer-tests/ and carries a `// test-only` or `# KAT vector` marker, this is an interop / known-answer test against a published vector; demote to miss.",
+            "If the library is explicitly a legacy-protocol parser (e.g. an NTLM / Kerberos-RC4 / PKCS#12-3DES compatibility shim) AND its SECURITY.md declares the legacy scope, accept with a deprecation-deadline test rather than hard fail.",
+            "Confirm the construction is actually instantiated in a production code path — `grep -r '<cipher-var>' src/ --include='*.{js,ts,py,java,go}'`. If only referenced in `if (legacy) {}` dead-branch code, demote."
+          ]
         },
         {
           "id": "rsa-1024-anywhere",
@@ -649,7 +659,12 @@
           "value": "`secureProtocol:\\s*['\"](TLSv1_method|TLSv1_1_method|SSLv23_method|SSLv3_method)['\"]`, `minVersion:\\s*['\"](TLSv1(\\.0|\\.1)?)['\"]`, `ssl_version=ssl\\.PROTOCOL_TLSv1(_1)?`, `MinTlsVersion::TLSv1`.",
           "description": "TLS < 1.2 minimum in shipped TLS-context construction.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the path is under tests/ / fixtures/ AND the test purpose is asserting that the library REJECTS the legacy protocol (negative test), demote.",
+            "If the construction is gated behind a feature flag whose default value is OFF AND the README documents the flag as an opt-in for legacy compatibility only, treat as a deprecated-but-supported path rather than a default-insecure ship.",
+            "Confirm there is no override-construction later (e.g. a subsequent `setMinProtoVersion(TLS_1_3)` on the same context) — partial defaults are common; the effective minimum is the highest set."
+          ]
         },
         {
           "id": "no-crypto-agility-abstraction",
