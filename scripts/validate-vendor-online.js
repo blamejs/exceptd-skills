@@ -69,13 +69,21 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
   return `https://raw.githubusercontent.com/${owner}/${repo}/${commit}/${cleanPath}`;
 }
 
-function fetchBuffer(url, timeoutMs) {
+const MAX_REDIRECTS = 5;
+
+function fetchBuffer(url, timeoutMs, redirectsLeft = MAX_REDIRECTS) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, (res) => {
-      // Follow up to 5 redirects.
+      // v0.12.14 (codex P2): cap redirect hops. A redirect loop (or a
+      // hostile / mis-configured upstream that keeps returning 3xx with
+      // Location pointing back to itself) used to recurse until stack
+      // overflow or hang. Now: count hops, fail clean on exhaustion.
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
-        return resolve(fetchBuffer(res.headers.location, timeoutMs));
+        if (redirectsLeft <= 0) {
+          return reject(new Error(`exceeded ${MAX_REDIRECTS} redirects fetching ${url}`));
+        }
+        return resolve(fetchBuffer(res.headers.location, timeoutMs, redirectsLeft - 1));
       }
       if (res.statusCode !== 200) {
         res.resume();
