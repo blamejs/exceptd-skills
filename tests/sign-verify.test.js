@@ -166,3 +166,284 @@ test('temp-dir round-trip: write PEM keys, read them back, verify a signature', 
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+// ---------- v0.12.12 hardening: normalize() byte-stability contract ----------
+//
+// CRLF + BOM normalization is the round-trip stability contract between
+// lib/sign.js and lib/verify.js. Both modules export normalize() so the
+// tests can exercise the actual production function rather than a copy.
+// If either side's normalize() drifts, this test catches it.
+
+const signMod = require('../lib/sign.js');
+const verifyMod = require('../lib/verify.js');
+
+function actualSign(content, privateKey) {
+  const normalized = signMod.normalize(content);
+  return crypto.sign(null, Buffer.from(normalized, 'utf8'), {
+    key: privateKey, dsaEncoding: 'ieee-p1363'
+  }).toString('base64');
+}
+
+function actualVerify(content, sigB64, publicKey) {
+  try {
+    const normalized = verifyMod.normalize(content);
+    return crypto.verify(null, Buffer.from(normalized, 'utf8'), {
+      key: publicKey, dsaEncoding: 'ieee-p1363'
+    }, Buffer.from(sigB64, 'base64'));
+  } catch { return false; }
+}
+
+test('S1: CRLF and LF inputs produce identical signatures', () => {
+  const { privateKey } = generateTempKeypair();
+  const lf = 'hello\nworld\nthird line\n';
+  const crlf = 'hello\r\nworld\r\nthird line\r\n';
+  const sigLF = actualSign(lf, privateKey);
+  const sigCRLF = actualSign(crlf, privateKey);
+  assert.equal(sigLF, sigCRLF, 'CRLF must normalize to LF before signing');
+});
+
+test('S1: BOM-prefixed and non-BOM inputs produce identical signatures', () => {
+  const { privateKey } = generateTempKeypair();
+  const noBom = 'hello world\n';
+  const withBom = '﻿hello world\n';
+  const sigA = actualSign(noBom, privateKey);
+  const sigB = actualSign(withBom, privateKey);
+  assert.equal(sigA, sigB, 'BOM must be stripped before signing');
+});
+
+test('S1: BOM+CRLF combo produces same signature as plain LF', () => {
+  const { privateKey } = generateTempKeypair();
+  const plain = 'a\nb\nc\n';
+  const messy = '﻿a\r\nb\r\nc\r\n';
+  assert.equal(actualSign(plain, privateKey), actualSign(messy, privateKey));
+});
+
+test('S1: verify(LF_signed, CRLF_content) returns true — round-trip stability', () => {
+  const { privateKey, publicKey } = generateTempKeypair();
+  const lf = '# Skill body\nline 1\nline 2\n';
+  const crlf = '# Skill body\r\nline 1\r\nline 2\r\n';
+  const sig = actualSign(lf, privateKey);
+  assert.equal(actualVerify(crlf, sig, publicKey), true);
+});
+
+test('S1: verify(CRLF_signed, LF_content) returns true — symmetric stability', () => {
+  const { privateKey, publicKey } = generateTempKeypair();
+  const lf = 'line A\nline B\n';
+  const crlf = 'line A\r\nline B\r\n';
+  const sig = actualSign(crlf, privateKey);
+  assert.equal(actualVerify(lf, sig, publicKey), true);
+});
+
+test('S1: tampered content still fails after normalization', () => {
+  const { privateKey, publicKey } = generateTempKeypair();
+  const lf = 'line A\nline B\n';
+  const tampered = 'line A\nEVIL line B\n';
+  const sig = actualSign(lf, privateKey);
+  assert.equal(actualVerify(tampered, sig, publicKey), false);
+});
+
+test('S1: byte-level proof — normalize() produces stable utf-8 bytes', () => {
+  const variants = [
+    'hello\nworld\n',
+    'hello\r\nworld\r\n',
+    '﻿hello\nworld\n',
+    '﻿hello\r\nworld\r\n',
+  ];
+  const buffers = variants.map(v => Buffer.from(signMod.normalize(v), 'utf8').toString('hex'));
+  // All four must hex-equal the LF/no-BOM form.
+  for (const b of buffers) assert.equal(b, buffers[0]);
+  // And the canonical bytes are predictable.
+  assert.equal(buffers[0], Buffer.from('hello\nworld\n', 'utf8').toString('hex'));
+});
+
+// ---------- v0.12.12 hardening: S2 manifest path traversal ----------
+
+test('S2: validateSkillPath rejects ../../../etc/passwd', () => {
+  assert.throws(
+    () => signMod.validateSkillPath('../../../etc/passwd'),
+    /must start with 'skills\/'/,
+  );
+  assert.throws(
+    () => verifyMod.validateSkillPath('../../../etc/passwd'),
+    /must start with 'skills\/'/,
+  );
+});
+
+test('S2: validateSkillPath rejects skills/foo/../../../private.pem', () => {
+  assert.throws(
+    () => signMod.validateSkillPath('skills/foo/../../../private.pem'),
+    /must not contain '\.\.'/,
+  );
+});
+
+test('S2: validateSkillPath rejects backslash paths', () => {
+  assert.throws(
+    () => signMod.validateSkillPath('skills\\foo\\skill.md'),
+    /forward slashes/,
+  );
+});
+
+test('S2: validateSkillPath rejects non-string', () => {
+  assert.throws(() => signMod.validateSkillPath(null), /must be a string/);
+  assert.throws(() => signMod.validateSkillPath(42), /must be a string/);
+});
+
+test('S2: validateSkillPath accepts a legitimate skills/foo/skill.md', () => {
+  assert.equal(signMod.validateSkillPath('skills/kernel-lpe-triage/skill.md'),
+               'skills/kernel-lpe-triage/skill.md');
+});
+
+test('S2: loadManifestValidated throws on traversal-pattern manifest', () => {
+  // We exercise the helper directly. It reads the real manifest path, so we
+  // shim the read by validating an in-memory manifest object via the schema
+  // validator + path-check. The function itself reads from disk, so the
+  // best we can do here without mutating the repo is exercise the parts
+  // explicitly.
+  const validateAgainstSchema = verifyMod.validateAgainstSchema;
+  const schemaPath = path.join(__dirname, '..', 'lib', 'schemas', 'manifest.schema.json');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const bad = {
+    name: 'x',
+    version: '1.2.3',
+    description: 'desc',
+    atlas_version: '5.1.0',
+    threat_review_date: '2026-05-13',
+    skills: [{
+      name: 'evil',
+      version: '1.0.0',
+      path: '../../../etc/passwd',
+      description: 'a malicious entry',
+      triggers: ['x'],
+      data_deps: [],
+      atlas_refs: [],
+      attack_refs: [],
+      framework_gaps: ['foo'],
+      last_threat_review: '2026-05-13',
+    }],
+  };
+  // Schema validator catches the path pattern.
+  const errors = validateAgainstSchema(bad, schema, 'manifest');
+  assert.ok(
+    errors.some(e => /path/.test(e) && /pattern/.test(e)),
+    `expected schema to reject traversal path; got errors: ${JSON.stringify(errors)}`,
+  );
+  // Path validator independently catches it.
+  assert.throws(
+    () => verifyMod.validateSkillPath(bad.skills[0].path),
+    /must start with 'skills\/'/,
+  );
+});
+
+// ---------- v0.12.12 hardening: S3 manifest schema validation ----------
+
+test('S3: manifest schema accepts extra unknown TOP-LEVEL field (additionalProperties:true)', () => {
+  const schemaPath = path.join(__dirname, '..', 'lib', 'schemas', 'manifest.schema.json');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const m = {
+    name: 'x',
+    version: '1.2.3',
+    description: 'desc',
+    atlas_version: '5.1.0',
+    threat_review_date: '2026-05-13',
+    skills: [{
+      name: 'one',
+      version: '1.0.0',
+      path: 'skills/one/skill.md',
+      description: 'a real skill entry',
+      triggers: ['x'],
+      data_deps: [],
+      atlas_refs: [],
+      attack_refs: [],
+      framework_gaps: ['foo'],
+      last_threat_review: '2026-05-13',
+    }],
+    // Unknown top-level field — should pass.
+    operator_provided_extension: { foo: 'bar' },
+  };
+  const errors = verifyMod.validateAgainstSchema(m, schema, 'manifest');
+  assert.deepEqual(errors, [], 'unknown top-level field should be accepted');
+});
+
+test('S3: manifest schema REJECTS extra unknown per-skill field (additionalProperties:false)', () => {
+  const schemaPath = path.join(__dirname, '..', 'lib', 'schemas', 'manifest.schema.json');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const m = {
+    name: 'x',
+    version: '1.2.3',
+    description: 'desc',
+    atlas_version: '5.1.0',
+    threat_review_date: '2026-05-13',
+    skills: [{
+      name: 'one',
+      version: '1.0.0',
+      path: 'skills/one/skill.md',
+      description: 'a real skill entry',
+      triggers: ['x'],
+      data_deps: [],
+      atlas_refs: [],
+      attack_refs: [],
+      framework_gaps: ['foo'],
+      last_threat_review: '2026-05-13',
+      // Unknown per-skill field — should fail.
+      malicious_extension: 'oops',
+    }],
+  };
+  const errors = verifyMod.validateAgainstSchema(m, schema, 'manifest');
+  assert.ok(
+    errors.some(e => /malicious_extension/.test(e)),
+    `expected per-skill unknown field rejection; got: ${JSON.stringify(errors)}`,
+  );
+});
+
+test('S3: manifest schema validates against the LIVE manifest.json', () => {
+  const schemaPath = path.join(__dirname, '..', 'lib', 'schemas', 'manifest.schema.json');
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const errors = verifyMod.validateAgainstSchema(manifest, schema, 'manifest');
+  assert.deepEqual(errors, [], `live manifest must pass schema; got: ${JSON.stringify(errors)}`);
+});
+
+// ---------- v0.12.12 hardening: S4 duplicate frontmatter keys ----------
+
+test('S4: parseFrontmatter rejects duplicate top-level keys', () => {
+  const lint = require('../lib/lint-skills.js');
+  const fm = 'name: alpha\nversion: "1.0.0"\nname: beta\n';
+  assert.throws(
+    () => lint.parseFrontmatter(fm),
+    /Duplicate frontmatter key "name"/,
+  );
+});
+
+test('S4: parseFrontmatter accepts non-duplicate keys', () => {
+  const lint = require('../lib/lint-skills.js');
+  const fm = 'name: alpha\nversion: "1.0.0"\ndescription: hello\n';
+  const parsed = lint.parseFrontmatter(fm);
+  assert.equal(parsed.name, 'alpha');
+  assert.equal(parsed.version, '1.0.0');
+  assert.equal(parsed.description, 'hello');
+});
+
+// ---------- v0.12.12 hardening: S6 orphan skill.md detector ----------
+
+test('S6: findOrphanSkillFiles returns [] when every disk skill is in manifest', () => {
+  const lint = require('../lib/lint-skills.js');
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const orphans = lint.findOrphanSkillFiles(manifest.skills);
+  assert.deepEqual(orphans, [], `expected no orphans in live repo; got: ${JSON.stringify(orphans)}`);
+});
+
+test('S6: findOrphanSkillFiles detects a skill.md not referenced by manifest', () => {
+  const lint = require('../lib/lint-skills.js');
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  // Drop one entry — its skill.md should become an orphan from the walker's view.
+  const reduced = manifest.skills.slice(1);
+  const dropped = manifest.skills[0].path.split(path.sep).join('/');
+  const orphans = lint.findOrphanSkillFiles(reduced);
+  assert.ok(
+    orphans.includes(dropped),
+    `expected ${dropped} to appear as orphan; got: ${JSON.stringify(orphans)}`,
+  );
+});

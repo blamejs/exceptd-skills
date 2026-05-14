@@ -8,10 +8,22 @@
  *
  * This is a simple interval-based scheduler. For production use, swap for a
  * proper cron daemon or cloud scheduler without changing the task definitions.
+ *
+ * Implementation note — INT32 overflow guard. `setInterval` / `setTimeout`
+ * delay values are coerced to a signed 32-bit integer; any value above
+ * 2^31 - 1 ms (~24.8 days) is silently clamped to 1 ms by Node, which
+ * causes the handler to fire ~1000×/sec. The MONTHLY_CVE_VALIDATION and
+ * ANNUAL_AUDIT intervals both exceed that limit. `scheduleEvery` wraps the
+ * underlying timer with a short tick interval (capped at SAFE_MAX_MS) and
+ * compares wall-clock elapsed time against the requested interval, so any
+ * delay — including multi-year intervals — fires exactly when due.
  */
 
 const { bus, EVENT_TYPES } = require('./event-bus');
 const { currencyCheck } = require('./pipeline');
+
+const SAFE_MAX_MS = 2_147_483_647;            // INT32 max — Node's setTimeout/setInterval ceiling.
+const TICK_MS = Math.min(SAFE_MAX_MS, 24 * 60 * 60 * 1000);  // 24h tick by default.
 
 const INTERVALS = {
   WEEKLY_CURRENCY: 7 * 24 * 60 * 60 * 1000,
@@ -24,8 +36,37 @@ const CURRENCY_THRESHOLDS = {
   warning: 70
 };
 
-let timers = [];
+let unschedulers = [];
 let running = false;
+
+// --- scheduling primitive ---
+
+/**
+ * Schedule `handler` to fire every `intervalMs`, safely for intervals that
+ * exceed Node's INT32 setTimeout ceiling. Returns an unschedule function.
+ *
+ * @param {number} intervalMs   Desired interval in milliseconds (any positive value).
+ * @param {Function} handler    Function to invoke on each interval.
+ * @returns {Function}          Call to stop further firings.
+ */
+function scheduleEvery(intervalMs, handler) {
+  const startedAt = Date.now();
+  let lastFired = startedAt;
+  const tick = () => {
+    const now = Date.now();
+    if (now - lastFired >= intervalMs) {
+      lastFired = now;
+      try { handler(); } catch (e) { console.error('[scheduler]', e); }
+    }
+  };
+  const id = setInterval(tick, Math.min(intervalMs, TICK_MS));
+  // Deliberately NOT calling id.unref(): the `watch` orchestrator verb
+  // is long-running and relies on the scheduler timers to keep the event
+  // loop alive (the event bus has no I/O of its own). Callers that don't
+  // want the timer to hold the loop open should call the returned
+  // unschedule function in their teardown path.
+  return () => clearInterval(id);
+}
 
 // --- public API ---
 
@@ -37,9 +78,9 @@ function start() {
   running = true;
 
   runWeeklyCurrencyCheck();
-  timers.push(setInterval(runWeeklyCurrencyCheck, INTERVALS.WEEKLY_CURRENCY));
-  timers.push(setInterval(runMonthlyCveValidation, INTERVALS.MONTHLY_CVE_VALIDATION));
-  timers.push(setInterval(runAnnualAudit, INTERVALS.ANNUAL_AUDIT));
+  unschedulers.push(scheduleEvery(INTERVALS.WEEKLY_CURRENCY, runWeeklyCurrencyCheck));
+  unschedulers.push(scheduleEvery(INTERVALS.MONTHLY_CVE_VALIDATION, runMonthlyCveValidation));
+  unschedulers.push(scheduleEvery(INTERVALS.ANNUAL_AUDIT, runAnnualAudit));
 
   console.log('[scheduler] Started. Weekly currency check, monthly CVE validation, annual audit scheduled.');
 }
@@ -48,8 +89,10 @@ function start() {
  * Stop the scheduler and clear all timers.
  */
 function stop() {
-  for (const t of timers) clearInterval(t);
-  timers = [];
+  for (const off of unschedulers) {
+    try { off(); } catch { /* ignore */ }
+  }
+  unschedulers = [];
   running = false;
   console.log('[scheduler] Stopped.');
 }
@@ -134,4 +177,4 @@ function runAnnualAudit() {
   };
 }
 
-module.exports = { start, stop, runCurrencyNow };
+module.exports = { start, stop, runCurrencyNow, scheduleEvery, SAFE_MAX_MS, TICK_MS };

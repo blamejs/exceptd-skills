@@ -1,5 +1,90 @@
 # Changelog
 
+## 0.12.12 — 2026-05-13
+
+**Patch: deep multi-surface hardening — engine semantics, concurrency, signing round-trip, output bundles, validators, scheduler, curation. 73 distinct fixes across 10 surface classes.**
+
+### Engine semantics
+
+`lib/playbook-runner.js` corrects several long-standing classification and clock bugs:
+
+- **False-positive checks now gate classification.** When an indicator's `signal_overrides` says `hit` but the indicator's `false_positive_checks_required[]` haven't been attested, the verdict downgrades to `inconclusive` and `fp_checks_unsatisfied[]` is surfaced on the indicator. Operators attest FP checks with `signal_overrides: { '<id>__fp_checks': { '<check>': true } }`. Before: submitting a hit without attesting FP checks would auto-stamp `classification: detected`.
+- **Dead branch on empty submission**: the indicator-default arm previously emitted `inconclusive` for both `anyCaptured` and the empty case. Empty submissions with no captured artifacts now correctly produce `classification: not_detected` with theater verdict `clear`.
+- **`evalCondition` regex no longer crashes the run.** A malformed indicator condition (operator-authored regex) used to throw out of `analyze()`. Now wrapped in try/catch; the failure surfaces as `analyze.runtime_errors[]` with the source condition + exception message.
+- **`--strict-preconditions` is now load-bearing.** The flag escalates `precondition_unverified` / `precondition_warn` / `precondition_skip` outcomes to halt, with `escalated_from` provenance. The CLI exit body now carries `strict_preconditions_violated[]` so consumers grep'ing the JSON see the contract reason without inspecting stderr.
+- **`on_fail: skip_phase` is actually honored.** A precondition that fails `on_fail: skip_phase` now emits a placeholder detect phase `{skipped: true, classification: 'skipped', reason: <id>}` and runs analyze with empty signals. Previously the runner ignored the directive and proceeded into detect as if the precondition had passed.
+- **`clock_starts: detect_confirmed` is bound to operator awareness.** Jurisdiction notification clocks (NIS2 24h, DORA 4h, GDPR 72h, etc.) no longer auto-stamp when classification turns `detected`; the operator must pass `--ack` for the clock to start. Without `--ack`, the notification entry carries `clock_pending_ack: true`. Matches the legal contract — the clock starts from operator awareness, not from the runner's decision.
+- **`analyze.active_exploitation` is now the worst across matched CVEs**, not the first. Two matched CVEs where #1 is `suspected` and #2 is `confirmed` correctly report `confirmed`.
+- **`signal_overrides` collisions are surfaced** rather than silently last-wins. Two observations targeting the same indicator id now record the discarded values in `analyze.signal_origins_with_collisions[]`.
+- **Per-run playbook cache**: the runner reads the playbook once per `run()` invocation instead of re-loading it inside each of the seven phase calls.
+
+### Scoring
+
+`lib/scoring.js` exports a new `validateFactors(factors)` returning structured warnings for missing fields, out-of-range `blast_radius`, or non-enum `active_exploitation`. `scoreCustom(factors, {collectWarnings: true})` returns the score plus `_scoring_warnings[]` for downstream consumers; the bare-number return is preserved for backwards compatibility.
+
+### Concurrency
+
+Catalog read-modify-write was racy under concurrent `refresh --advisory --apply` invocations — five sites in `lib/refresh-external.js` and two in `lib/prefetch.js`. Now serialized via `withCatalogLock` / `withIndexLock` (lockfile-gated, atomic tmp+rename writes; 30s stale-lock reaper for crash recovery). Concurrent applies to distinct CVEs now both survive in the final catalog rather than 1/20 trials losing an entry to interleaved writes. Same pattern applied to the prefetch `_index.json`.
+
+`persistAttestation` (in `bin/exceptd.js`) no longer has a TOCTOU window between `existsSync` and `writeFileSync` — atomic create via `flag: 'wx'` (`O_EXCL`) guarantees that two concurrent runs sharing a session-id produce one winner and one explicit `EEXIST` rather than silent last-write-wins.
+
+`lib/refresh-external.js` post-pool `process.exit()` calls replaced with `process.exitCode = N; return;` so buffered stdout drains before the event loop ends (same v0.11.10 class).
+
+### Signing round-trip
+
+`lib/sign.js` + `lib/verify.js` now normalize content (strip UTF-8 BOM, convert CRLF → LF) before computing or verifying signatures. A skill body cloned with `core.autocrlf=true` on Windows but signed on Linux CI no longer fails verification on the consumer side. Byte-level proof: all four variants of `hello\nworld\n` (LF, CRLF, BOM+LF, BOM+CRLF) normalize to the identical signature.
+
+Manifest schema validation lands in `lib/schemas/manifest.schema.json` + `loadManifestValidated()`. A tampered manifest with `path: "../../../etc/passwd"` is rejected at load time before any skill resolution. Per-skill paths must match `^skills/[A-Za-z0-9._/-]+/skill\.md$`.
+
+`lib/lint-skills.js` rejects duplicate frontmatter keys (last-wins parsing previously masked identity spoofing) and walks `skills/` for orphan `skill.md` files not referenced in the manifest.
+
+The fingerprint banner now prints AFTER the verdict line in both `sign-all` and `verify`, so a quick read of `gh run watch` output isn't ambiguous about pass/fail.
+
+### Path traversal hardening
+
+- `--session-id` now enforces `^[A-Za-z0-9._-]{1,64}$` (alphanumeric, dot, underscore, hyphen; up to 64 chars). Path separators and `..` are rejected at input.
+- `--attestation-root` rejects `..`-bearing relative paths and resolves to an absolute path before propagation.
+- `--evidence-dir` validates each `<id>.json` entry, refuses traversal-escaping resolved paths.
+- `--evidence` enforces a 32 MB file-size limit to defend against adversarial JSON bombs.
+- `persistAttestation` validates the session-id + filename and confirms the resolved directory stays under the attestation root.
+- `parseTar` in `lib/refresh-network.js` skips entries with `..` segments or absolute paths — defense-in-depth against a compromised registry CDN shipping path-traversal tarballs.
+
+### Output bundles (CSAF 2.0 / SARIF 2.1.0 / OpenVEX 0.2.0)
+
+`buildEvidenceBundle()` in `lib/playbook-runner.js` produces bundles that pass canonical-schema validation against each spec:
+
+- **CSAF**: `csaf_security_advisory` documents now include a populated `product_tree.full_product_names[]`; every `vulnerabilities[]` entry references a declared product via `product_status` (`known_affected` / `fixed` / `under_investigation`). NVD / Red Hat / ENISA CSAF dashboards previously rejected exceptd CSAF output for missing product_tree.
+- **SARIF**: indicator-hit results now populate `physicalLocation.artifactLocation.uri` from the playbook's look-phase artifact source paths so GitHub Code Scanning surfaces them. Null property-bag keys are pruned. Framework-gap results carry `kind: "informational"` per spec §3.27.9.
+- **OpenVEX**: every statement carries `products` (B1). Status semantics rebuilt — indicator hits become `affected` with an `action_statement` from the validate phase's selected remediation; misses become `not_affected` with `vulnerable_code_not_present` justification; inconclusive stays `under_investigation` (no action_statement). Framework-gap statements are removed from the VEX feed entirely (they're control-design observations, not vulnerabilities — they remain in CSAF and SARIF). Vulnerability `@id` values now follow RFC 8141 (`urn:cve:<id>`, `urn:exceptd:indicator:<playbook>:<id>`), replacing the unregistered `exceptd:` scheme.
+
+### Validators
+
+`lib/validate-playbooks.js` is a new validator that checks all 13 shipped playbooks against `lib/schemas/playbook.schema.json` plus cross-catalog references (`atlas_refs`, `cve_refs`, `cwe_refs`, `d3fend_refs`, `attack_refs`), internal consistency (duplicate indicator ids, RWEP threshold ordering, obligation_ref resolution), and feeds_into / mutex / skill_chain resolution. Wired as predeploy gate 16 (informational in v0.12.12; flips to enforcing in v0.13.0). 75-entry `data/attack-techniques.json` lands to support `attack_refs` resolution across skills and playbooks.
+
+`lib/validate-cve-catalog.js` adds warning-class checks for the Hard Rule #14 iocs-when-poc-and-exploit-url contract, `atlas_refs` + `cwe_refs` cross-catalog resolution, duplicate-name detection, impossible-date guards, and strict CVSS-version prefix recognition. All new findings emit as warnings in v0.12.12 to preserve patch-class compatibility; v0.13.0 will flip them to errors.
+
+`lib/lint-skills.js` extends section detection to require an anchored `^## <Section>` heading with ≥20 words of body text (warning-class), resolves `attack_refs` against `data/attack-techniques.json`, and flags missing "Defensive Countermeasure Mapping" sections on skills whose `last_threat_review >= 2026-05-11`.
+
+### Curation `--apply`
+
+`lib/cve-curation.js` gains the missing apply path. `curate(cveId, {apply: true, answers})` validates each answer against a per-field whitelist, applies, derives `rwep_score` from `rwep_factors` when an explicit score isn't supplied, computes `residual_warnings[]` against the required-schema set, and promotes the draft (strips `_auto_imported` + `_draft` + `_draft_reason`) when zero warnings remain. CLI surface: `exceptd refresh --curate <id> --answers <file>` or the explicit `--apply` alias. The questionnaire now always asks for `cvss_score`, `cvss_vector`, patch fields, `affected_versions`, and `cisa_kev` when those are unpopulated — without these, the apply path can't produce a schema-passing entry. Severity rendering for `cvss_score: null` returns `unrated` (was misleading `low`). Catalog reads honor absolute paths on Windows. OSV-imported drafts now show `"OSV: <id>"` in `auto_imported_from` (was always `"unknown"`).
+
+### Scheduler
+
+`orchestrator/scheduler.js` `MONTHLY_CVE_VALIDATION` (2.59 billion ms) and `ANNUAL_AUDIT` (31.5 billion ms) exceeded Node's INT32 setTimeout limit (2.15 billion ms), which silently clamps to 1 ms — producing a 1000 fires/sec stdout flood on idle `exceptd watch`. New `scheduleEvery(intervalMs, handler)` primitive uses a bounded `setInterval` (capped at 24 h) with wall-clock elapsed comparison. Idle watch goes from 1000 lines/sec to 0.
+
+### Predeploy
+
+`scripts/predeploy.js` now reports per-gate timing (`(NNN ms)` next to each pass / fail / informational line + the summary table). New 16th gate `Validate playbooks` runs informationally in v0.12.12.
+
+### Repository
+
+- `.github/workflows/ci.yml` gains a `validate-playbooks` job (`continue-on-error: true` in v0.12.12).
+- `manifest-snapshot.json` + `sbom.cdx.json` + `data/_indexes/` refreshed.
+- `data/attack-techniques.json` new — 75 ATT&CK technique entries with v17 metadata, supporting `attack_refs` resolution across the catalog.
+
+Test count: 492 → 573 (+81 across engine, sign/verify, refresh-external, prefetch, scheduler, cve-curation, bundle-correctness, validate-playbooks, and operator-bugs test files). Predeploy gates: 16/16. Skills: 38/38 signed and verified.
+
 ## 0.12.11 — 2026-05-13
 
 **Patch: OSV source hardening, indicator regex widening, CWE/framework-gap reconciliation. v0.12.10 audit closeout.**

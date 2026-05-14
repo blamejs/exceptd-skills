@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-catalog compact summary so AI consumers can discover available data without loading every _meta block. Purpose strings are curated in scripts/builders/catalog-summaries.js.",
-    "catalog_count": 10
+    "catalog_count": 11
   },
   "catalogs": {
     "atlas-ttps.json": {
@@ -25,6 +25,28 @@
         "AML.T0016",
         "AML.T0017",
         "AML.T0018"
+      ]
+    },
+    "attack-techniques.json": {
+      "path": "data/attack-techniques.json",
+      "purpose": null,
+      "schema_version": "1.0.0",
+      "last_updated": "2026-05-13",
+      "tlp": "CLEAR",
+      "source_confidence_default": "A1",
+      "freshness_policy": {
+        "default_review_cadence_days": 90,
+        "stale_after_days": 180,
+        "rebuild_after_days": 365,
+        "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md hard rule #8 requires the bump to be intentional, not silent."
+      },
+      "entry_count": 75,
+      "sample_keys": [
+        "T0001",
+        "T0017",
+        "T0051",
+        "T0096",
+        "T0853"
       ]
     },
     "cve-catalog.json": {

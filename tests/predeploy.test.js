@@ -87,6 +87,15 @@ test("predeploy.js exports a non-empty ordered GATES list", () => {
   }
 });
 
+test("predeploy.js exports exactly 16 gates as of v0.12.12", () => {
+  const gates = loadGates();
+  assert.equal(
+    gates.length,
+    16,
+    `expected 16 gates in v0.12.12 (15 pre-existing + new validate-playbooks informational gate), got ${gates.length}`,
+  );
+});
+
 test("every predeploy gate maps to a job name in ci.yml", () => {
   const gates = loadGates();
   const ciJobs = loadCiJobNames();
