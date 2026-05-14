@@ -418,29 +418,50 @@ test('P3-7: runScan parses argv via parseFlags helper', () => {
 // --- P3-8 — watch --log-file teeing ----------------------------------------
 
 test('P3-8: watch --log-file tees stdout to the named file', (t, done) => {
+  // v0.12.16: poll the log file directly for the banner instead of
+  // requiring the banner to ALSO appear on the child's stdout. On Windows,
+  // the spawned process's stdout buffering can hold the banner until exit,
+  // so reading stdout-as-stream is unreliable. The contract being tested is
+  // "the log file contains the banner" — assert that directly.
   const logFile = path.join(SUITE_HOME, `watch-${Date.now()}.log`);
   const child = spawn(process.execPath, [ORCH, 'watch', '--log-file', logFile], {
     env: childEnv(),
   });
-  let stdout = '';
-  child.stdout.on('data', (d) => {
-    stdout += d.toString();
-    if (/Starting event watcher/.test(stdout)) {
-      // Give the writer a beat to flush, then signal stop.
-      setTimeout(() => {
+  let bannerSeen = false;
+  let finishedOnce = false;
+  const finish = (err) => {
+    if (finishedOnce) return;
+    finishedOnce = true;
+    try { child.kill('SIGKILL'); } catch {}
+    done(err);
+  };
+  // Poll the log file every 100ms; on first banner sighting, kill the child
+  // and assert on the file contents.
+  const poll = setInterval(() => {
+    if (!fs.existsSync(logFile)) return;
+    try {
+      const body = fs.readFileSync(logFile, 'utf8');
+      if (/Starting event watcher/.test(body)) {
+        bannerSeen = true;
+        clearInterval(poll);
         if (process.platform === 'win32') child.kill();
         else child.kill('SIGTERM');
-      }, 200);
-    }
-  });
+      }
+    } catch { /* file may be mid-write — retry */ }
+  }, 100);
   child.on('exit', () => {
+    clearInterval(poll);
     try {
       assert.ok(fs.existsSync(logFile), `log file ${logFile} must exist`);
       const body = fs.readFileSync(logFile, 'utf8');
       assert.match(body, /Starting event watcher/);
-      done();
-    } catch (e) { done(e); }
+      finish();
+    } catch (e) { finish(e); }
   });
+  setTimeout(() => {
+    clearInterval(poll);
+    finish(bannerSeen ? null : new Error('test timed out after 10s — banner never reached log file'));
+  }, 10000).unref();
 });
 
 // --- P3-9 — cache size guard -----------------------------------------------
