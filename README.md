@@ -55,7 +55,7 @@ Assess Linux kernel local privilege escalation exposure. Covers Copy Fail (CVE-2
 ### AI-Specific Attack Surface
 
 **[ai-attack-surface](skills/ai-attack-surface/skill.md)**
-Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with explicit gap flags. Covers prompt injection as enterprise RCE (CVE-2025-53773 CVSS 9.6, 85%+ bypass rate against SOTA defenses), MCP supply chain RCE (CVE-2026-30615, zero user interaction, 150M+ downloads), RAG exfiltration, model poisoning, AI-assisted exploit development (41% of 2025 zero-days), credential theft acceleration (160% increase).
+Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with explicit gap flags. Covers prompt injection as enterprise RCE (CVE-2025-53773 CVSS 7.8, 85%+ bypass rate against SOTA defenses), MCP supply chain RCE (CVE-2026-30615, zero user interaction, 150M+ downloads), RAG exfiltration, model poisoning, AI-assisted exploit development (41% of 2025 zero-days), credential theft acceleration (160% increase).
 
 **[mcp-agent-trust](skills/mcp-agent-trust/skill.md)**
 Enumerate MCP (Model Context Protocol) trust boundary failures. Covers tool allowlisting gaps, unsigned server manifests, prompt injection via tool responses, supply chain compromise. CVE-2026-30615 (Windsurf, zero-interaction RCE). Generates: tool allowlist policy, server signing requirements, bearer auth config, output sanitization requirements.

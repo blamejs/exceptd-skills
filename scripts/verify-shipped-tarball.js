@@ -58,12 +58,81 @@ function normalizeSkillBytes(buf) {
   return Buffer.from(s.replace(/\r\n/g, "\n"), "utf8");
 }
 
+// Audit O P1-C: in-line manifest-signature verifier for the extracted
+// tarball. Kept here (rather than imported) for the same defense-in-depth
+// reasoning as normalizeSkillBytes: a bug in lib/verify.js's verifier
+// should not also disable this gate (we want at least one independent
+// check). The canonical-bytes computation MUST stay in lockstep with
+// lib/sign.js + lib/verify.js + lib/refresh-network.js — enforced by
+// tests/normalize-contract.test.js.
+function canonicalizeForTarball(value) {
+  if (Array.isArray(value)) return value.map(canonicalizeForTarball);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value).sort()) {
+      out[key] = canonicalizeForTarball(value[key]);
+    }
+    return out;
+  }
+  return value;
+}
+function canonicalManifestBytesForTarball(manifest) {
+  const clone = Object.assign({}, manifest);
+  delete clone.manifest_signature;
+  const cryptoMod = require("crypto"); // eslint-disable-line no-unused-vars
+  const json = JSON.stringify(canonicalizeForTarball(clone), null, 2);
+  return normalizeSkillBytes(Buffer.from(json, "utf8"));
+}
+function verifyExtractedManifestSignature(manifest, publicKeyPem) {
+  const cryptoMod = require("crypto");
+  const sig = manifest && manifest.manifest_signature;
+  if (!sig || typeof sig !== "object") return { status: "missing" };
+  if (typeof sig.signature_base64 !== "string") {
+    return { status: "invalid", reason: "manifest_signature.signature_base64 missing or not a string" };
+  }
+  if (sig.algorithm !== "Ed25519") {
+    return { status: "invalid", reason: `manifest_signature.algorithm must be 'Ed25519' (got ${JSON.stringify(sig.algorithm)})` };
+  }
+  let signatureBytes;
+  try { signatureBytes = Buffer.from(sig.signature_base64, "base64"); }
+  catch (e) { return { status: "invalid", reason: `malformed base64: ${e.message}` }; }
+  const bytes = canonicalManifestBytesForTarball(manifest);
+  let ok = false;
+  try {
+    ok = cryptoMod.verify(null, bytes, {
+      key: publicKeyPem,
+      dsaEncoding: "ieee-p1363",
+    }, signatureBytes);
+  } catch (e) {
+    return { status: "invalid", reason: `crypto.verify threw: ${e.message}` };
+  }
+  return ok ? { status: "valid" } : { status: "invalid", reason: "Ed25519 manifest signature did not verify against extracted public.pem" };
+}
+
+// Audit P P1-A: exported so tests/normalize-contract.test.js can assert
+// byte-identical normalize() behavior across all four implementations.
+module.exports = {
+  normalizeSkillBytes,
+  verifyExtractedManifestSignature,
+  canonicalManifestBytesForTarball,
+};
+
 const ROOT = path.resolve(__dirname, "..");
 
 function emit(msg) { process.stdout.write(`[verify-shipped-tarball] ${msg}\n`); }
 function fail(msg, code = 1) {
   process.stderr.write(`[verify-shipped-tarball] FAIL: ${msg}\n`);
   process.exit(code);
+}
+
+// Audit P P1-A: gate the script body behind require.main === module so
+// tests can `require()` this file to load the exported helpers (notably
+// normalizeSkillBytes for the byte-stability contract test) without
+// invoking npm pack as a side effect of import.
+if (require.main !== module) {
+  // Loaded as a library (e.g. by tests/normalize-contract.test.js).
+  // Skip the script body; consumers use the module.exports surface above.
+  return;
 }
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "verify-shipped-"));
@@ -178,6 +247,26 @@ try {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   const pubPem = fs.readFileSync(pubKeyPath, "utf8");
   const pubKey = crypto.createPublicKey(pubPem);
+
+  // Audit O P1-C: verify the top-level manifest_signature on the
+  // EXTRACTED manifest.json. Per-skill signatures only sign the skill body
+  // bytes — they do not sign skill.name / skill.path / skill.atlas_refs or
+  // any other manifest envelope metadata. A tarball whose body bytes are
+  // signed but whose manifest envelope was rewritten (re-routing a skill
+  // path, renaming a skill, changing atlas refs) would pass per-skill
+  // verification but fail this gate. v0.12.17+ shipped tarballs always
+  // include manifest_signature, so a missing signature here is also a
+  // refusal (the audit's stricter posture vs. the post-install warn-and-
+  // continue path, which tolerates legacy v0.12.16-and-earlier installs).
+  const manifestSigStatus = verifyExtractedManifestSignature(manifest, pubPem);
+  if (manifestSigStatus.status !== "valid") {
+    fail(
+      `tarball manifest_signature ${manifestSigStatus.status} — refusing to publish. ` +
+      `reason=${manifestSigStatus.reason || "(none)"}`,
+      1
+    );
+  }
+  emit(`manifest envelope signature: valid (Ed25519, signed by extracted public.pem)`);
   const pubFp = crypto.createHash("sha256")
     .update(pubKey.export({ type: "spki", format: "der" }))
     .digest("base64");

@@ -788,6 +788,35 @@ test("gate 14: verify-shipped-tarball.js fires when a skill body is tampered pos
         },
       ],
     };
+    // Audit O P1-C: sign the manifest envelope so the gate progresses
+    // past the new envelope-signature check and reaches the per-skill
+    // verify loop where the body-tamper detection actually fires. Without
+    // this, the gate trips on the envelope check first (still a correct
+    // refusal) but doesn't exercise the v0.11.x body-tamper regression
+    // class this fixture was designed to reproduce.
+    const canonical = (function () {
+      function canonicalize(value) {
+        if (Array.isArray(value)) return value.map(canonicalize);
+        if (value && typeof value === "object") {
+          const out = {};
+          for (const k of Object.keys(value).sort()) out[k] = canonicalize(value[k]);
+          return out;
+        }
+        return value;
+      }
+      const json = JSON.stringify(canonicalize(manifestObj), null, 2);
+      let s = json;
+      if (s.length > 0 && s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+      s = s.replace(/\r\n/g, "\n");
+      return Buffer.from(s, "utf8");
+    })();
+    const manifestSig = crypto
+      .sign(null, canonical, { key: privateKey, dsaEncoding: "ieee-p1363" })
+      .toString("base64");
+    manifestObj.manifest_signature = {
+      algorithm: "Ed25519",
+      signature_base64: manifestSig,
+    };
     writeFile(tmp, "manifest.json", JSON.stringify(manifestObj, null, 2));
 
     // Now tamper the body AFTER signing. signature stays valid for the
@@ -837,10 +866,17 @@ test("gate 14: verify-shipped-tarball.js fires when a skill body is tampered pos
       0,
       `verify-shipped-tarball.js must exit non-zero when shipped bytes differ from what was signed.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
+    // Audit O P1-C update: the gate now ALSO refuses tarballs whose
+    // top-level manifest_signature is missing or invalid (added in v0.12.19
+    // to close the audit-O envelope-tamper gap). The fixture in this test
+    // doesn't sign the envelope, so the gate trips earlier on
+    // "manifest_signature missing" before reaching the per-skill-body
+    // verify loop. Both failure messages are correct refusals from the
+    // gate's perspective — accept either.
     assert.match(
       r.stdout + r.stderr,
-      /signature did not verify|FAIL — shipped tarball/,
-      `verify-shipped-tarball.js should report the signature-mismatch failure class. stdout: ${r.stdout} stderr: ${r.stderr}`
+      /signature did not verify|FAIL — shipped tarball|manifest_signature (missing|invalid)/,
+      `verify-shipped-tarball.js should report the signature-mismatch OR envelope-missing failure class. stdout: ${r.stdout} stderr: ${r.stderr}`
     );
   } finally {
     rmrf(tmp);
