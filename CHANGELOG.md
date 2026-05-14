@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.18 — 2026-05-14
+
+**Patch: e2e FP-check attestations for v0.12.17 indicator backfill. v0.12.17 publish payload.**
+
+The v0.12.17 tag exists on git but never reached npm — release.yml's validate gate's `npm run test:e2e` failed 4/20 scenarios because v0.12.17's indicator FP-check backfill (audit K) caused the runner to downgrade hits to inconclusive without operator attestation, dropping RWEP scores below the e2e expect thresholds.
+
+v0.12.18 ships the v0.12.17 fix payload plus FP-check attestations on the affected e2e scenarios:
+
+- `12-crypto-codebase-md5-eol`: attest FP checks for `weak-hash-import` + `no-ml-kem-implementation`
+- `15-cred-stores-aws-static`: attest FP checks for `aws-static-key-present`
+- `16-containers-root-user`: attest FP checks for `dockerfile-runs-as-root`; lower `adjusted` threshold from 15 → 10 (only `dockerfile-from-latest` carries an `rwep_inputs` entry on the containers playbook; the FP-attested `dockerfile-runs-as-root` fires but doesn't drive RWEP)
+- `20-ai-api-openai-dotfile`: attest FP checks for `cleartext-api-key-in-dotfile` + `long-lived-aws-keys`
+
+Attestation shape per the E1 contract (v0.12.12): `signal_overrides: { '<indicator>__fp_checks': { '0': true, '1': true, ... } }` — each entry means "I've verified that this FP scenario does NOT apply; this is a real hit."
+
 ## 0.12.17 — 2026-05-14
 
 **Patch: remaining deferred P1/P2 items from the v0.12.15 audit pile — manifest signing, Windows ACL, indicator FP backfill, schema promotion.**

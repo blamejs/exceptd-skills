@@ -1,19 +1,53 @@
 {
   "observations": {
-    "dockerfile-inventory": {"captured": true, "value": "./Dockerfile"},
-    "dockerfile-content": {"captured": true, "value": "FROM ubuntu:latest; USER root; RUN curl -sSL https://example.test/install.sh | bash", "indicator": "dockerfile-runs-as-root", "result": "hit"},
-    "compose-files": {"captured": true, "value": "no docker-compose files"},
-    "k8s-manifests": {"captured": true, "value": "no k8s manifests"},
-    "helm-charts": {"captured": true, "value": "no Helm charts"},
-    "kustomize-overlays": {"captured": true, "value": "no Kustomize overlays"},
-    "pod-security-admission-config": {"captured": true, "value": "no PSA config"},
-    "network-policies": {"captured": true, "value": "no NetworkPolicy"},
-    "service-account-manifests": {"captured": true, "value": "no ServiceAccount manifests"}
+    "dockerfile-inventory": {
+      "captured": true,
+      "value": "./Dockerfile"
+    },
+    "dockerfile-content": {
+      "captured": true,
+      "value": "FROM ubuntu:latest; USER root; RUN curl -sSL https://example.test/install.sh | bash",
+      "indicator": "dockerfile-runs-as-root",
+      "result": "hit"
+    },
+    "compose-files": {
+      "captured": true,
+      "value": "no docker-compose files"
+    },
+    "k8s-manifests": {
+      "captured": true,
+      "value": "no k8s manifests"
+    },
+    "helm-charts": {
+      "captured": true,
+      "value": "no Helm charts"
+    },
+    "kustomize-overlays": {
+      "captured": true,
+      "value": "no Kustomize overlays"
+    },
+    "pod-security-admission-config": {
+      "captured": true,
+      "value": "no PSA config"
+    },
+    "network-policies": {
+      "captured": true,
+      "value": "no NetworkPolicy"
+    },
+    "service-account-manifests": {
+      "captured": true,
+      "value": "no ServiceAccount manifests"
+    }
   },
   "signal_overrides": {
     "dockerfile-from-latest": "hit",
     "dockerfile-no-digest-pin": "hit",
-    "dockerfile-curl-pipe-bash": "hit"
+    "dockerfile-curl-pipe-bash": "hit",
+    "dockerfile-runs-as-root__fp_checks": {
+      "0": true,
+      "1": true,
+      "2": true
+    }
   },
   "verdict": {
     "classification": "detected",

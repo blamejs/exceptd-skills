@@ -1,21 +1,76 @@
 {
   "observations": {
-    "package-manifests": {"captured": true, "value": "pyproject.toml present"},
-    "lockfiles": {"captured": true, "value": "poetry.lock present"},
-    "hash-primitive-call-sites": {"captured": true, "value": "src/auth.py:7 hashlib.md5(token).hexdigest() — production auth path", "indicator": "weak-hash-import", "result": "hit"},
-    "cipher-and-kex-call-sites": {"captured": true, "value": "no cipher call sites"},
-    "signature-call-sites": {"captured": true, "value": "no signature call sites"},
-    "kdf-call-sites": {"captured": true, "value": "no KDF call sites"},
-    "rng-call-sites": {"captured": true, "value": "no RNG call sites in security paths"},
-    "hardcoded-key-material": {"captured": true, "value": "no hardcoded key material"},
-    "tls-config-construction": {"captured": true, "value": "no inline TLS config"},
-    "pqc-adoption-signals": {"captured": true, "value": "no ML-KEM / ML-DSA imports; no oqs-* libraries", "indicator": "no-ml-kem-implementation", "result": "hit"},
-    "fips-provider-activation": {"captured": true, "value": "no FIPS claim"},
-    "vendored-crypto-tree": {"captured": true, "value": "no vendored crypto"},
-    "ci-crypto-tests": {"captured": true, "value": "no crypto test suite"}
+    "package-manifests": {
+      "captured": true,
+      "value": "pyproject.toml present"
+    },
+    "lockfiles": {
+      "captured": true,
+      "value": "poetry.lock present"
+    },
+    "hash-primitive-call-sites": {
+      "captured": true,
+      "value": "src/auth.py:7 hashlib.md5(token).hexdigest() \u00e2\u20ac\u201d production auth path",
+      "indicator": "weak-hash-import",
+      "result": "hit"
+    },
+    "cipher-and-kex-call-sites": {
+      "captured": true,
+      "value": "no cipher call sites"
+    },
+    "signature-call-sites": {
+      "captured": true,
+      "value": "no signature call sites"
+    },
+    "kdf-call-sites": {
+      "captured": true,
+      "value": "no KDF call sites"
+    },
+    "rng-call-sites": {
+      "captured": true,
+      "value": "no RNG call sites in security paths"
+    },
+    "hardcoded-key-material": {
+      "captured": true,
+      "value": "no hardcoded key material"
+    },
+    "tls-config-construction": {
+      "captured": true,
+      "value": "no inline TLS config"
+    },
+    "pqc-adoption-signals": {
+      "captured": true,
+      "value": "no ML-KEM / ML-DSA imports; no oqs-* libraries",
+      "indicator": "no-ml-kem-implementation",
+      "result": "hit"
+    },
+    "fips-provider-activation": {
+      "captured": true,
+      "value": "no FIPS claim"
+    },
+    "vendored-crypto-tree": {
+      "captured": true,
+      "value": "no vendored crypto"
+    },
+    "ci-crypto-tests": {
+      "captured": true,
+      "value": "no crypto test suite"
+    }
   },
   "verdict": {
     "classification": "detected",
     "blast_radius": 3
+  },
+  "signal_overrides": {
+    "weak-hash-import__fp_checks": {
+      "0": true,
+      "1": true,
+      "2": true
+    },
+    "no-ml-kem-implementation__fp_checks": {
+      "0": true,
+      "1": true,
+      "2": true
+    }
   }
 }
