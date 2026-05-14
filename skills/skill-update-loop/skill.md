@@ -54,7 +54,7 @@ The threat context this skill defends against is not a specific adversary techni
 Real-world manifestations in mid-2026:
 
 - ATLAS v5.1.0 (November 2025) added TTPs that bind to operational reality (AML.T0096 AI-API C2, AML.T0048 erode-integrity-via-drift). A skill pinned to ATLAS v4 cannot route these. **AML.T0010** family was expanded to cover MCP supply-chain compromise mid-cycle.
-- CVE-2026-31431 (Copy Fail) joined CISA KEV in 2026-03-15. Any skill whose `last_threat_review` predates that date and whose body recommends "patch on 30-day SLA" is recommending against a threat model that KEV escalated to days, not weeks.
+- CVE-2026-31431 (Copy Fail) joined CISA KEV on 2026-05-01 with a 2026-05-15 federal due date. Any skill whose `last_threat_review` predates that listing and whose body recommends "patch on 30-day SLA" is recommending against a threat model that KEV escalated to days, not weeks.
 - NIST SP 800-63B updated PBKDF2 iteration guidance to ≥ 600,000 in 2022; many compliance attestations still cite the 2017 numbers. A skill that does not track that lag perpetuates the theater.
 - IETF RFC 9116 (security.txt) and the CSAF 2.0 transition both have hard cutover signals that change how `coordinated-vuln-disclosure` should advise.
 
@@ -69,7 +69,7 @@ This skill defends against drift; the TTPs that EXPLOIT a drifted skill are:
 | Tactic | TTP | What drift enables |
 |---|---|---|
 | Defense Evasion | T1562.001 (Disable or Modify Tools) | Stale skill recommends only the controls the current adversary class already evades |
-| Resource Development | AML.T0016 (Develop Capabilities) | Attacker capability outpaces the catalog the skill cites |
+| Resource Development | AML.T0016 (Obtain Capabilities: Develop Capabilities) | Attacker capability outpaces the catalog the skill cites |
 | Initial Access | AML.T0010 (Supply Chain Compromise) | New attack class (e.g. MCP plugin compromise) isn't yet a skill |
 | Defense Evasion | T1027 (Obfuscated Files or Information) | Detection rules in a skill are for an older obfuscation generation |
 | Impact | AML.T0048 (Erode ML Model Integrity) | Drift in the threat-context section means the operator's mental model is wrong by months |
@@ -481,7 +481,7 @@ This skill does not have a single exploited target — its "exploit surface" is 
 | MITRE ATLAS changelog | TTP additions, renames, removals for AI/ML threat domain | Quarterly check; immediate on minor-version release | ATLAS v5.1.0 (November 2025) — pinned in AGENTS.md and `data/atlas-ttps.json._meta.atlas_version` | `_meta.atlas_version` |
 | NVD CVE 2.0 API | Authoritative CVE metadata, CVSS vectors, references | Real-time on new CVE in covered domain | services.nvd.nist.gov/rest/json/cves/2.0 | `data/cve-catalog.json` |
 | NIST FIPS publication tracker | PQC and crypto-standard finalizations | Per-publication (event-driven) | csrc.nist.gov/publications | pqc-first `forward_watch` + manifest `last_threat_review` |
-| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v15) | Skill `attack_refs` fields |
+| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v17, 2025-06-25) | Skill `attack_refs` fields |
 | GitHub Security Advisories / OSV | CVEs for AI assistants, MCP clients/servers, supply-chain JS/Python packages | Real-time on covered repos | osv.dev, github.com/advisories | `data/cve-catalog.json` |
 | Framework publisher feeds | NIST SP revisions, ISO amendments, NIS2 implementing acts, EU Official Journal, ENISA, NCSC, ASD | RSS / changelog per publisher | csrc.nist.gov, iso.org, eur-lex.europa.eu | `data/framework-control-gaps.json`, `data/global-frameworks.json` |
 | Kernel CNA / distro advisories | Kernel LPE, container-escape, page-cache CVEs | Per advisory | kernel.org, RHEL/Ubuntu/Debian security advisories | `data/cve-catalog.json`, kernel-lpe-triage |
@@ -499,3 +499,19 @@ This skill does not have a single exploited target — its "exploit surface" is 
 > "Concrete test: pull the most recent MITRE ATLAS minor-version release date from atlas.mitre.org. Now pull the `last_threat_review` from every skill's frontmatter (or the equivalent currency timestamp in your own threat-intel documents). If any covered-domain document's `last_threat_review` predates the most recent ATLAS minor-version release by more than 30 days with no documented decision to defer, the currency claim fails. The control is being measured by the existence of the subscription rather than the freshness of the derived analysis."
 
 > "Second concrete test: pull the most recent CISA KEV additions in the last 30 days that affect technologies the organization runs. For each, identify the document (skill, runbook, policy) where the new KEV entry should have triggered a re-review. If the re-review either did not occur or occurred without updating the document's stated `last_threat_review`, the loopback is non-functional and the threat-intel program is theater regardless of how many feeds are consumed."
+
+---
+
+## Defensive Countermeasure Mapping
+
+The drift attack against skill currency is structural, not technical — there is no in-flight exploit to detect. The D3FEND mapping below describes the layered defences that keep the update-loop itself non-bypassable. Source: `data/d3fend-catalog.json`.
+
+| D3FEND Technique | Mapping | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture |
+|---|---|---|---|---|
+| **D3-CA** (Certificate Analysis) | The skill currency proof is the Ed25519 signature over each skill body keyed off `keys/public.pem`. D3-CA is the analysis of that signature chain — verify-on-shipped-tarball (predeploy gate #14) is the operational form. A drifted skill body whose signature fails verification cannot be loaded as ground truth. | Layer 1 (Harden — package boundary). | Per-skill — each skill body is signed individually; integrity is per-file, not per-bundle. | Verify every load; reject on hash mismatch. The signing key is the trust root the operator anchors. |
+| **D3-EHB** (Executable Hash-based Allowlist) | Manifest-snapshot integrity. The `manifest-snapshot.json` records the canonical hash of every shipped skill; the predeploy gate compares the live `manifest.json` against the snapshot. Drift in skill content that is *not* reflected in the snapshot (i.e. unreviewed) fails the snapshot-refresh gate. | Layer 1 (Harden — release surface). | Per-release — the snapshot is the canonical inventory for the release. | Default-deny additions / removals; every snapshot change is an intentional review event. |
+| **D3-FAPA** (File Access Pattern Analysis) | The `last_threat_review` timestamp on each skill is the auditable signal that the update loop walked the skill since the most recent threat-intel trigger. The triggers table above (CISA KEV adds, ATLAS minor-version, NIST drafts) is the input; `last_threat_review` is the output evidence. A skill whose body cites a newly-listed CVE but whose timestamp pre-dates the listing is a FAPA-flagged anomaly. | Layer 4 (Detect — currency audit). | Per-skill — the loop runs per-skill, not per-bundle. | Continuously evaluate; alert (CI fail) on any skill whose timestamp is older than its triggering source's published date. |
+| **D3-IOPR** (Input/Output Profiling Resource) | Lint-skills body / frontmatter parsing is the profiling step: every skill body is parsed against the canonical section template (Threat Context, TTP Mapping, Framework Lag Declaration, Exploit Availability Matrix, Analysis Procedure, Output Format, Compliance Theater Check, DCM). A drifted skill that drops a required section is caught at lint time. | Layer 2 (Harden — schema). | Per-skill — schema is per-skill body. | Default-deny missing sections; the v0.13.0 lint upgrade makes DCM a hard-fail. |
+| **D3-PA** (Process Analysis) | The watchlist / dispatch / scan log every load and signature-check event so a forensic reader can reconstruct which skill version produced which finding. Without a per-invocation evidence stream, a stale skill body whose timestamp says "current" cannot be detected after the fact. | Layer 5 (Detect — runtime). | Per-invocation — every CLI invocation emits a structured log entry. | Treat every invocation as untrusted until the signature chain is verified at load time; persist the verification result alongside the finding. |
+
+**Defense-in-depth posture:** signature integrity (D3-CA) and snapshot-pinning (D3-EHB) are the hard gates that prevent a tampered skill body from shipping; lint-schema (D3-IOPR) and currency timestamps (D3-FAPA) are the audit gates that catch silent drift inside an intentional release; D3-PA is the per-invocation evidence stream that lets the operator answer "which version of the skill produced this finding" post-hoc. Per AGENTS.md hard rule #8 (pinned ATLAS / ATT&CK version), every layer's evidence is keyed off the pinned version — a manifest snapshot taken against ATLAS v5.1.0 is not interchangeable with one taken against a later release.

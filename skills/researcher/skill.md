@@ -49,7 +49,7 @@ Most security teams in mid-2026 sit on a torrent of raw threat input: CISA KEV a
 The researcher skill sits between raw input and the specialized analytical skills. It is not itself analysis — it is dispatch. Concrete examples from the project's catalogs:
 
 - **CVE-2026-31431 (Copy Fail) drops.** Operator asks: "what should I do about CVE-2026-31431?" Researcher surfaces from `data/cve-catalog.json`: CISA KEV listed, AI-discovered, 732 bytes, deterministic (no race condition), blast radius = all Linux ≥ 4.14, live-patch available, RWEP 90, CVSS 7.8. Routes to `kernel-lpe-triage`. Flags that the standard 30-day SI-2 window is structurally inadequate — live-patch within 4 hours.
-- **CVE-2026-30615 (Windsurf MCP, zero-interaction RCE).** Operator asks: "new MCP CVE, where do I start?" Researcher cross-joins to ATLAS AML.T0010 (ML supply chain compromise) and AML.T0096 (LLM integration abuse), surfaces 150M+ affected downloads, routes primary to `mcp-agent-trust` and secondary to `ai-attack-surface`.
+- **CVE-2026-30615 (Windsurf MCP, local-vector RCE, CVSS 8.0 / AV:L / RWEP 35).** Operator asks: "new MCP CVE, where do I start?" Researcher cross-joins to ATLAS AML.T0010 (ML supply chain compromise) and AML.T0096 (LLM integration abuse), surfaces 150M+ combined downloads across MCP-capable assistants, routes primary to `mcp-agent-trust` and secondary to `ai-attack-surface`. Flags the v0.12.9 catalog correction: NVD-authoritative CVSS is 8.0 / AV:L (local-vector), not the initially-cataloged 9.8 / AV:N.
 - **SesameOp campaign report.** Operator asks: "we are seeing strange Azure OpenAI calls from a finance host — is this anything?" Researcher recognizes the AI-as-C2 pattern from `data/zeroday-lessons.json`, maps to AML.T0096, routes to `ai-c2-detection`.
 - **NIST 800-53 Rev. 6 draft published.** Operator asks: "does our gap analysis change?" Researcher routes to `skill-update-loop` for currency review, then to `framework-gap-analysis` for the specific control deltas.
 
@@ -84,10 +84,11 @@ This is a routing skill. The TTP coverage of any specific output equals the TTP 
 | ATLAS / ATT&CK Class | Researcher Routes To |
 |---|---|
 | AML.T0010 (ML Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
-| AML.T0017 (Develop Capabilities — AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
+| AML.T0016 (Obtain Capabilities: Develop Capabilities — AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
+| AML.T0017 (Discover ML Model Ontology) | `ai-attack-surface`, `mlops-security`, `api-security` |
 | AML.T0018 (Backdoor ML Model) | `ai-attack-surface` |
 | AML.T0020 (Poison Training Data) | `ai-attack-surface`, `rag-pipeline-security` |
-| AML.T0043 / AML.T0054 (Craft Adversarial Data) | `ai-attack-surface`, `rag-pipeline-security` |
+| AML.T0043 (Craft Adversarial Data) / AML.T0054 (LLM Jailbreak) | `ai-attack-surface`, `rag-pipeline-security` |
 | AML.T0051 (LLM Prompt Injection) | `ai-attack-surface`, `mcp-agent-trust` |
 | AML.T0096 (LLM Integration Abuse — C2) | `ai-c2-detection` |
 | ATT&CK T1068 / T1548.001 (Privilege Escalation) | `kernel-lpe-triage` |
@@ -300,6 +301,22 @@ US (for context): <NIST 800-53 control IDs + NIST AI RMF function if AI-related>
 ```
 
 The report fits on one page when rendered. Anything longer belongs in the downstream specialized skill's output, not here.
+
+---
+
+## Defensive Countermeasure Mapping
+
+The researcher skill is dispatch, not analysis — but every dispatched finding lands in a downstream skill where a defensive countermeasure must be selected. The mapping below names the D3FEND techniques the researcher recommends the downstream skill include in its output. Each entry pulls from `data/d3fend-catalog.json`.
+
+| D3FEND Technique | Researcher Trigger | Defense-in-Depth Layer | Rationale |
+|---|---|---|---|
+| **D3-IOPR** (Input/Output Profiling Resource) | Input is a CVE / advisory describing AI-API surface, RAG retrieval, MCP tool response, or prompt-injection path. | Detect | Per-call inspection of model inputs and outputs is the foundational signal for prompt-injection class findings the researcher routes to `ai-attack-surface` or `rag-pipeline-security`. Without IOPR baseline, downstream skills have no source for their detection rules. |
+| **D3-NTA** (Network Traffic Analysis) | Input is an AI-API anomaly, SesameOp-class C2 narrative, or any AML.T0096 reference. | Detect | The egress baseline the dispatcher recommends `ai-c2-detection` build first. Per-identity model-API and MCP-server egress profiling is the prerequisite for every downstream AI-as-C2 finding. |
+| **D3-CAA** (Credential Access Auditing) | Input mentions an MCP server, OAuth-flow CVE, agent bearer-token reuse, or AML.T0010 supply chain. | Detect | The post-hoc evidence stream when the dispatcher routes to `mcp-agent-trust`, `identity-assurance`, or `supply-chain-integrity`. Without CAA, the downstream skill cannot reconstruct what a compromised credential touched. |
+| **D3-EHB** (Executable Hash-based Allowlist) | Input is a supply-chain CVE / advisory (npm worm, PyPI malware, model-registry compromise). | Harden | Hash-pinning is the canonical counter to the AML.T0010 / T1195.001 pattern across `supply-chain-integrity`, `mcp-agent-trust`, and `mlops-security`. The dispatcher names it so the downstream skill does not re-derive the harden layer from first principles. |
+| **D3-PA** (Process Analysis) | Input is a kernel LPE, container-escape, or post-exploitation narrative. | Detect | The auditd / eBPF / EDR layer that `kernel-lpe-triage`, `container-runtime-security`, and `incident-response-playbook` all depend on. RWEP-90 LPE inputs route here before live-patch consideration. |
+
+Defense-in-depth posture: the researcher's job is to recommend the **first** D3FEND layer the downstream skill should produce evidence against. Subsequent layers are the downstream skill's responsibility. Per AGENTS.md hard rule #4 (no orphaned controls), every D3FEND mapping above resolves to a real ATLAS or ATT&CK TTP enumerated in the TTP Mapping section.
 
 ---
 

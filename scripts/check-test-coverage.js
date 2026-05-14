@@ -89,10 +89,49 @@ function git(args, cwd) {
 // findings masked. Codex P1 flag on PR #2 of v0.12.8.
 function resolveBaseRef(opts, cwd) {
   if (opts.staged) return null; // staged mode uses --cached / HEAD throughout
+  // F14 — fall back gracefully when origin/main is unreachable. The
+  // original implementation tried `merge-base HEAD <opts.base>` and, on
+  // failure, returned opts.base verbatim — which then failed every
+  // subsequent git invocation, surfacing as a runner-level error. In CI
+  // (full clones) the original ref usually resolves; on a developer
+  // laptop without `origin/main` configured (fresh clone, detached
+  // worktree, alternative remote name) the gate would fail entirely.
+  //
+  // Order of preference:
+  //   1. merge-base against the requested base
+  //   2. requested base verbatim, if `git rev-parse --verify` resolves it
+  //   3. local `main` HEAD if it exists
+  //   4. HEAD~1 as a last resort (single-commit diff)
+  const tryResolve = (ref) => {
+    try {
+      git(["merge-base", "HEAD", ref], cwd).trim();
+      return ref;
+    } catch { /* not resolvable */ }
+    try {
+      git(["rev-parse", "--verify", ref], cwd).trim();
+      return ref;
+    } catch { return null; }
+  };
   try {
     const mb = git(["merge-base", "HEAD", opts.base], cwd).trim();
     if (mb) return mb;
-  } catch { /* base may not exist locally; fall back to ref literal */ }
+  } catch { /* fall through */ }
+  const direct = tryResolve(opts.base);
+  if (direct) return direct;
+  const local = tryResolve("main");
+  if (local) {
+    process.stderr.write(
+      `[check-test-coverage] WARN: ${opts.base} unreachable; falling back to local main\n`
+    );
+    return local;
+  }
+  const parent = tryResolve("HEAD~1");
+  if (parent) {
+    process.stderr.write(
+      `[check-test-coverage] WARN: ${opts.base} unreachable and no local main; falling back to HEAD~1\n`
+    );
+    return parent;
+  }
   return opts.base;
 }
 
@@ -165,6 +204,18 @@ function categorize(file) {
   if (norm.startsWith("scripts/") && norm.endsWith(".js")) return "lib";
   if (norm.startsWith("data/playbooks/") && norm.endsWith(".json")) return "playbook";
   if (norm === "data/cve-catalog.json") return "cve-catalog";
+  // F11 — files matching catalog/schema/SBOM shapes are surfaced for manual
+  // review rather than silent allowlist. These changes (manifest.json,
+  // schemas/*, data/*.json, sbom.cdx.json, manifest-snapshot.*) can carry
+  // semantic surface but the analyzer has no syntactic surface extractor
+  // for them — humans should look.
+  if (norm === "manifest.json") return "manual-review";
+  if (norm === "manifest-snapshot.json") return "manual-review";
+  if (norm === "manifest-snapshot.sha256") return "manual-review";
+  if (norm === "sbom.cdx.json") return "manual-review";
+  if (norm.startsWith("lib/schemas/")) return "manual-review";
+  if (norm.startsWith("data/") && norm.endsWith(".json")) return "manual-review";
+  if (norm === "package.json") return "manual-review";
   return "other";
 }
 
@@ -271,15 +322,20 @@ function safeParse(s) { try { return s ? JSON.parse(s) : null; } catch { return 
 
 function loadTestCorpus(cwd) {
   const root = path.join(cwd, "tests");
-  if (!fs.existsSync(root)) return "";
+  if (!fs.existsSync(root)) return { joined: "", files: [] };
   const acc = [];
+  const files = [];
   walk(root, p => {
     const norm = p.replace(/\\/g, "/");
     if (/\.(js|json)$/.test(norm)) {
-      try { acc.push(fs.readFileSync(p, "utf8")); } catch { /* ignore unreadable */ }
+      try {
+        const content = fs.readFileSync(p, "utf8");
+        acc.push(content);
+        files.push({ path: norm, content });
+      } catch { /* ignore unreadable */ }
     }
   });
-  return acc.join("\n\x00\n");
+  return { joined: acc.join("\n\x00\n"), files };
 }
 
 function walk(dir, fn) {
@@ -302,22 +358,76 @@ function coversCliFlag(corpus, flag) {
   return corpus.includes(flag);
 }
 
+// F10 — same-file context check. A test corpus is no longer treated as
+// one giant string for lib-export coverage: the identifier must appear
+// inside a real test block (`test(`, `it(`, `describe(`, or an `assert(`
+// argument) within the SAME file that issues the matching require().
+// Pre-fix: an `assert.equal(...)` mention in one test file plus a stray
+// `require('../lib/x')` in a completely different test file counted as
+// coverage. That's not coverage — it's textual coincidence.
+//
+// `corpus` may be either a string (legacy joined corpus, used by
+// CLI/playbook/CVE coverage probes) or the structured shape
+// `{ joined, files }` produced by loadTestCorpus().
 function coversLibExport(corpus, libRel, ident) {
   const baseName = path.basename(libRel).replace(/\.js$/, "");
   const baseFile = path.basename(libRel); // e.g. "check-sbom-currency.js"
   const identRe = new RegExp("\\b" + escapeRe(ident) + "\\b");
-  // Primary: a `require()` that mentions the module name AND a reference
-  // to the identifier anywhere in the test corpus. Catches the canonical
-  // `const { foo } = require('../lib/x')` test shape.
   const requireRe = new RegExp("require\\([^)]*" + escapeRe(baseName) + "[^)]*\\)");
-  if (requireRe.test(corpus) && identRe.test(corpus)) return true;
-  // v0.12.9: a test that spawns the script under test (e.g.
-  // `spawnSync(node, [".../scripts/check-sbom-currency.js", ...])`) is
-  // real coverage too. Accept that shape when the corpus references the
-  // full filename AND the identifier elsewhere. The `.js` suffix is what
-  // distinguishes a real spawn-path from an arbitrary mention of the
-  // module base name.
-  if (corpus.includes(baseFile) && identRe.test(corpus)) return true;
+  // Accept the structured shape (preferred). Walk files individually.
+  if (corpus && Array.isArray(corpus.files)) {
+    for (const f of corpus.files) {
+      const hasRequire = requireRe.test(f.content);
+      const mentionsSpawnPath = f.content.includes(baseFile);
+      if (!hasRequire && !mentionsSpawnPath) continue;
+      if (!identRe.test(f.content)) continue;
+      // F10 — require the identifier appears inside a test block in this
+      // file. Recognise `test(`, `it(`, `describe(`, or `assert(` (or any
+      // `assert.<member>(`) bracketed argument that mentions the ident.
+      if (mentionsIdentInTestContext(f.content, ident)) return true;
+    }
+    return false;
+  }
+  // Fallback: legacy joined-string corpus.
+  const joined = typeof corpus === "string" ? corpus : (corpus && corpus.joined) || "";
+  if (requireRe.test(joined) && identRe.test(joined)) return true;
+  if (joined.includes(baseFile) && identRe.test(joined)) return true;
+  return false;
+}
+
+// Returns true when `ident` appears as a token inside the body of any
+// `test( ... )`, `it( ... )`, `describe( ... )`, `assert( ... )` or
+// `assert.<member>( ... )` call in the file. We approximate "the body of
+// the call" by finding the opening paren after the keyword, then walking
+// matched parens until the call closes. This is a syntactic-enough check
+// for vanilla JavaScript tests; the goal is to refuse "ident only appears
+// in a top-level comment" while still accepting `assert.deepEqual(foo, ...)`.
+function mentionsIdentInTestContext(content, ident) {
+  const tokenRe = new RegExp("\\b" + escapeRe(ident) + "\\b");
+  // Quick reject: file does not mention the identifier at all.
+  if (!tokenRe.test(content)) return false;
+  const callRe = /\b(test|it|describe|assert(?:\.[A-Za-z_$][\w$]*)?)\s*\(/g;
+  let m;
+  while ((m = callRe.exec(content)) !== null) {
+    const start = m.index + m[0].length; // pointer to first char inside (
+    let depth = 1;
+    let i = start;
+    let inStr = null;
+    while (i < content.length && depth > 0) {
+      const c = content[i];
+      if (inStr) {
+        if (c === "\\") { i += 2; continue; }
+        if (c === inStr) inStr = null;
+      } else {
+        if (c === '"' || c === "'" || c === "`") inStr = c;
+        else if (c === "(") depth++;
+        else if (c === ")") depth--;
+      }
+      i++;
+    }
+    const body = content.slice(start, i - 1);
+    if (tokenRe.test(body)) return true;
+  }
   return false;
 }
 
@@ -341,7 +451,8 @@ function analyze(opts) {
   // between calls produces false add/remove findings.
   const resolvedBase = resolveBaseRef(opts, cwd);
   const changed = listChangedFiles(opts, cwd, resolvedBase);
-  const corpus = loadTestCorpus(cwd);
+  const corpusObj = loadTestCorpus(cwd);
+  const corpus = corpusObj.joined;
 
   const findings = [];
   const allowlisted = [];
@@ -355,7 +466,10 @@ function analyze(opts) {
     }
     if (cat === "skill") { allowlisted.push({ file: ch.file, reason: "skill-signed" }); continue; }
     if (cat === "workflow") { manualReview.push({ file: ch.file, reason: "workflow" }); continue; }
-    if (cat === "other") { allowlisted.push({ file: ch.file, reason: "out-of-scope" }); continue; }
+    // F11 — data catalogs, schemas, manifests, SBOM go to manual review
+    // instead of being silently allowlisted. They show up in CI output.
+    if (cat === "manual-review") { manualReview.push({ file: ch.file, reason: "manual-review" }); continue; }
+    if (cat === "other") { manualReview.push({ file: ch.file, reason: "unclassified" }); continue; }
     if (ch.status !== "D" && isWhitespaceOnly(opts, ch.file, cwd, resolvedBase)) {
       allowlisted.push({ file: ch.file, reason: "whitespace-only" });
       continue;
@@ -381,9 +495,11 @@ function analyze(opts) {
       const b = extractLibExports(before);
       const a = extractLibExports(after);
       const d = diffSets(b, a);
-      for (const id of d.added) if (!coversLibExport(corpus, ch.file, id))
+      // F10 — pass the structured corpus so coversLibExport can enforce
+      // same-file require()+identifier-in-test-context coverage.
+      for (const id of d.added) if (!coversLibExport(corpusObj, ch.file, id))
         findings.push({ file: ch.file, kind: "lib-export", surface: id, change: "added" });
-      for (const id of d.removed) if (coversLibExport(corpus, ch.file, id))
+      for (const id of d.removed) if (coversLibExport(corpusObj, ch.file, id))
         findings.push({ file: ch.file, kind: "lib-export", surface: id, change: "removed-but-test-remains" });
     } else if (cat === "playbook") {
       const b = extractPlaybookIds(before);

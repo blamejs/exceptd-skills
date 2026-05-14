@@ -1,5 +1,112 @@
 # Changelog
 
+## 0.12.14 — 2026-05-14
+
+**Patch: ~210-finding deep-audit fix batch across trust chain, engine, refresh sources, orchestrator/watch, predeploy gates, catalogs, and skill content.**
+
+### Trust chain (lib/refresh-network.js)
+
+The `exceptd refresh --network` path was effectively unsigned-code-delivery. The signature loop iterated `sk.id` (not exposed on manifest entries) and a fixed payload path `skills/<id>/SKILL.md` (uppercase, while the manifest's path is `skills/<name>/skill.md` lowercase). Result: `0/38 signatures verified` across every operator pulling the network refresh. The `failures.length === 0` short-circuit then allowed `ok: true` to ship.
+
+Now: manifest entries iterated by `name` + `path` + `signature`, mirroring `lib/verify.js`. CRLF + BOM normalization applied before verify — Windows-`core.autocrlf=true` contributors produce signatures that round-trip stably through the network refresh. Manifest paths validated with the same regex-and-resolve check the source-tree verifier uses. The swap also enforces that every `skills/*/skill.md` entry shipped in the tarball is declared in the manifest — a tarball-vs-manifest divergence now refuses the swap.
+
+Integrity: SHA-512 SRI from `dist.integrity` is verified first (collision-resistant beyond SHA-1 reach), then SHA-1 `dist.shasum` for compatibility. `dist.signatures[]` count is now surfaced. A 200 MB tarball size cap (overridable via `EXCEPTD_TARBALL_SIZE_CAP_BYTES`) is enforced during download.
+
+Atomic swap rewritten with two-phase semantics: backup-all-targets THEN install-all-targets, with reverse-walk rollback on mid-swap failure. Backup-dir suffix uses `${process.pid}-${randomBytes(4)}` so concurrent invocations don't collide on the millisecond clock.
+
+### Engine semantics (lib/playbook-runner.js)
+
+- `evidence_hash` now incorporates a canonicalized SHA-256 over the operator's submission (observations, signal_overrides, signals — sorted keys recursively). Previously it hashed only `(playbook, directive, matched_cves, rwep, classification)`, so two materially different submissions producing the same classification were indistinguishable; `reattest` couldn't detect drift. A `submission_digest` sibling field is also surfaced for downstream consumers.
+- `run()` generates `session_id` once and threads it through close() and into CSAF tracking.id + OpenVEX @id + product PURLs. Previously close() and the bundle emitters each minted independent ids, so an attestation file at `.exceptd/attestations/<run-id>/attestation.json` couldn't be correlated to the bundle URN inside it.
+- Indicator-level `cve_ref` is now load-bearing: when an indicator hits and declares a `cve_ref`, the catalog entry is pulled into `analyze.matched_cves[]` with `correlated_via: 'indicator_cve_ref:<id>'`. Previously the field was dead data — `library-author`'s `gha-workflow-script-injection-sink` had a `cve_ref: "MAL-2026-3083"` that never reached matched_cves.
+- `analyzeFindingShape` now emits a derived `severity` from `rwep_adjusted` (critical >= 80, high >= 50, medium >= 20, low). Nine shipped playbooks reference `finding.severity` in `feeds_into` / `escalation_criteria`; those conditions were dead until now.
+- RWEP `rwep_factor` semantics implemented. Previously the runner applied every weight whenever the named indicator hit — every kernel-LPE hit jumped to RWEP 100 regardless of whether the matched CVE was KEV-listed or had `active_exploitation: confirmed`. Each factor now scales by the first matched CVE's corresponding catalog attribute (`cisa_kev`, `active_exploitation` enum, `poc_available`, `ai_factor`, `patch_available`, etc.). Breakdown surfaces `weight_declared` + `factor_scale` + `weight_applied`.
+- `blast_radius_score`: no signal → `null` (was: first rubric entry's score, which encoded "best case"); supplied → validated in `[0, 5]`; out-of-range → null + `blast_radius_signal: 'rejected'` + runtime_error.
+- Corrupt `data/cve-catalog.json` no longer crashes the runner uncaught at require-time. `lib/cross-ref-api.js` catches JSON parse failures, records them in a `_loadErrors[]` array, and returns a degraded empty catalog. `run()` surfaces `{ok:false, blocked_by:'catalog_corrupt', error: ...}` instead of throwing.
+- Unknown `directiveId` now returns `{ok:false, blocked_by:'directive_not_found', valid_directives:[...]}` instead of throwing inside analyze().
+- VEX `fixed` / CycloneDX `resolved` no longer conflated with `not_affected`. Fixed CVEs are retained in `matched_cves` with a `vex_status: 'fixed'` annotation and excluded from driving RWEP base — operators tracking residual-risk for partially-deployed patches see them; the score doesn't double-count.
+- `analyze.active_exploitation` reduces worst-of-N across matched CVEs (was first-match).
+- `interpolate()` surfaces unresolved `${var}` placeholders as `<MISSING:var>` and emits `missing_interpolation_vars[]` on each notification record. Previously the literal `${var}` reached operator-facing regulator notification drafts.
+- `signal_overrides` non-object input (string, array, number) rejected; previously a string `"HELLO"` spread character-by-character producing phantom indicator overrides.
+- Unknown bundle format no longer leaks `analyze` + `validate` internals via a fallback `{format, note, analyze, validate}` — returns supported-formats list instead.
+- `theater_verdict` validated against allowlist (`clear`, `present`, `theater`, `pending_agent_run`, `unknown`); off-allowlist values rejected with runtime_error.
+- `jurisdiction_obligations` sorted by `window_hours` ascending so shortest-deadline obligations (DORA 4h) surface first.
+- Non-day regression intervals (`wk`, `mo`, `yr`, `on_event`) now honored; previously only `\d+d` matched and 49 shipped triggers with `on_event` were silently dropped. `regression_event_triggers[]` + `regression_unparseable_triggers[]` surfaced.
+- `precondition_check_source` provenance annotation: `'submission' | 'runOpts' | 'merged'` so operators reading attestations see whose precondition declarations the run actually used.
+- `lockDir()` moved from `process.cwd()` to `os.tmpdir() + 'exceptd-locks-<platform>'` (overridable via `EXCEPTD_LOCK_DIR`) so cross-cwd invocations share lock state.
+
+### Refresh upstream sources (lib/source-osv.js, lib/source-ghsa.js, lib/refresh-external.js)
+
+GHSA + OSV `applyDiff` now route through `withCatalogLock` — previously they mutated `ctx.cveCatalog` in memory but never persisted. Bulk `--source ghsa|osv --apply` reported `applied: N updates` while the catalog file gained zero entries; under `--swarm`, KEV's lock-and-re-read overwrote the unflushed in-memory mutations. Lost-update bug closed.
+
+`normalizeAdvisory` now defensively coerces non-string `published_at` / `published` / `modified` to null; iterates `vulnerabilities` / `affected` / `references` only when arrays; coerces GHSA `cvss.score` numerically; validates dates against ISO-8601 prefix + year-in-[1990, currentYear+1]. Garbage upstream values fall to null rather than throwing out of the import.
+
+GHSA fixture envelope now rejects null / number / string roots; OSV `OSV_HOST_OVERRIDE` validates host + port. `isOsvId` + `fetchAdvisoryById` + `normalizeAdvisory` + `buildDiff` trim whitespace from operator-supplied identifiers. `pickCatalogKey` upper-cases non-CVE identifiers so mixed-case upstream doesn't produce duplicate catalog entries. CVSS v4-over-v3 fallback: when v4 wins version-order but `cvss4BaseScore` returns null, fall back to v3 score. GHSA `buildDiff` summary now discloses `ghsa_only_skipped` count.
+
+### CLI (bin/exceptd.js)
+
+- **Path traversal on attest read paths closed** (audit A P1-1). `attest show / export / verify / diff` and `reattest` now validate session-id against the same `^[A-Za-z0-9._-]{1,64}$` regex used on writes. Live reproducer `exceptd attest show '../../..'` (which dumped `~/.claude.json` and other home-dir JSON) no longer reads outside the attestation root.
+- **`emitError` v0.11.10 anti-pattern closed**. The `process.exit(1)` after stderr-write in `emitError` (and three sibling sites in `cmdRun` / `cmdCi`) replaced with `process.exitCode = 1; return;` — stderr drains under piped CI consumers.
+- **`ai-run` now persists attestations** in both `--no-stream` and streaming modes. Previously the returned `session_id` couldn't be resolved by `attest show / verify / diff` or `reattest` because the persistence call was missing.
+- **`attest list --playbook` honors multi-flag** (was: array-vs-scalar comparison silently returned `count: 0`). `--since` validated as parseable ISO-8601.
+- `--evidence-dir` per-entry path-traversal guard hardened.
+
+### Orchestrator + watch (orchestrator/)
+
+- `bus.eventLog` is now a ring buffer (default cap 1000 entries; `EXCEPTD_EVENT_LOG_MAX_SIZE` env override). Previously unbounded: ~400 B/event monotonic growth — 462 MB at 1M events.
+- `exceptd watch` now handles SIGTERM, SIGHUP, SIGBREAK in addition to SIGINT — container/k8s/systemd shutdown drains scheduler timers and releases the lockfile.
+- Lockfile at `~/.exceptd/watch.lock` prevents two concurrent watch processes against the same store. Stale-lock check uses PID-liveness probe (`process.kill(pid, 0)`) plus 60s mtime fallback.
+- Monthly + annual scheduler bootstrap now fires when overdue (was: only fired after 30/365 days of continuous uptime; weekly-restart watch processes never saw them). Last-fired state persisted at `~/.exceptd/scheduler-last-fired.json`.
+- Scheduler bootstrap `runWeeklyCurrencyCheck()` call wrapped in try/catch matching the per-tick wrapper.
+- `require('orchestrator/index')` no longer triggers full CLI execution — `main()` gated behind `if (require.main === module)`. Duplicate `case 'watch':` removed.
+- `scanner.probeTls()` now honors `EXCEPTD_AIR_GAP=1` and uses `EXCEPTD_TLS_PROBE_TARGET` (default `registry.npmjs.org:443`) instead of hardcoded `google.com:443`.
+- `scan --json` no longer emits `_deprecation` field (CLAUDE.md no-internal-narrative rule).
+- `dispatch()` rejects non-array inputs (was: iterated a string char-by-char). `routeQuery('')` returns `[]` (was: matched all 38 skills via empty-substring short-circuit).
+- `pipeline.buildHandoff` bounds-checks `stageIndex`; `currencyCheck` caches `manifest.json` reads with 60s TTL.
+- Worker-pool `scriptPath` validator rejects Windows UNC + extended-path prefixes (`\\?\`, `\\.\`, `\\server`).
+- New `--log-file <path>` on watch, `--concurrency N` on validate-cves, 50 MB cache-file cap on validateAllCvesPreferCache.
+
+### Predeploy gates
+
+- New `keys/EXPECTED_FINGERPRINT` pin (closes audit G F4): silent key rotation now fails the gate unless `KEYS_ROTATED=1` is explicitly set.
+- New `manifest-snapshot.sha256` pin (audit G F23): manifest-snapshot integrity is now check-able instead of trusted blindly.
+- `scripts/check-sbom-currency.js` now cross-checks `sbom.components[]` names + versions against `manifest.skills` and `vendor/blamejs/_PROVENANCE.json`. A renamed/version-bumped skill that didn't regenerate SBOM now fails the gate (was: count-only comparison).
+- `scripts/check-test-coverage.js` (diff-coverage gate) tightened: identifier must appear inside an actual `test(`/`it(`/`describe(`/`assert(` call body in the same test file that has the matching `require()` — not just anywhere in the corpus. Default routing for unclassified files changed from `other → allowlisted` to `manual-review` so schema files / data catalogs / package.json drift surface in CI output.
+- `scripts/verify-shipped-tarball.js` now re-`require()`s the extracted tarball's `lib/refresh-network.js` and re-parses the tarball with the shipped parser — `npm pack --offline` flag added. A regression in the parser that previously would have been invisible (gate only used the source-tree parser) now produces a structured divergence error.
+- `lib/validate-cve-catalog.js` extends cross-ref resolution to walk `attack_refs`, `atlas_refs`, `d3fend_refs`, `framework_control_gaps` keys in addition to `cwe_refs`. New `--strict` flag mirrors `validate-playbooks.js` for v0.13.0 preview. All new findings emit as warnings to preserve patch-class.
+- `lib/validate-indexes.js` refuses empty `source_hashes` table; rejects symlinked source entries (defense-in-depth).
+- `lib/validate-catalog-meta.js` now applies the declared `freshness_policy.stale_after_days` (was: declared but never enforced). Warning by default; `--strict` promotes to error.
+- Informational gates' WARN counts surface in the summary as `passed (N warnings)`.
+- Two no-op offline gates (validate-cves / validate-rfcs with forced `--no-fail`) removed; total gates now 14 (was 16).
+- New `scripts/validate-vendor-online.js` (opt-in) fetches each vendored file from upstream and verifies SHA-256 against `_PROVENANCE.json` pinned commit.
+
+### Catalog data corrections
+
+Nine CVE→catalog cross-ref breaks closed: missing CWE-669 + CWE-123 added; missing ATT&CK sub-techniques T1059.001/006/007 + T1078.001 added; CVE framework_control_gaps keys reconciled to the suffixed canonical names per v0.12.11 (`NIS2-Art21-patch-management`, `SOC2-CC6-logical-access`, `SOC2-CC9-vendor-management`); `ALL-MAJOR-FRAMEWORKS` stub removed; new `DORA-Art28` (ICT third-party risk monitoring) entry added.
+
+15 ATLAS entries gained `last_verified` so freshness-decay logic can fire per-entry. `attack-techniques._meta.attack_version` changed from `"v17"` to `"17"` to match `manifest.json.attack_version`. `T0867`/`T1570` "Lateral Tool Transfer" duplicate disambiguated via `domain: ICS` vs `domain: Enterprise`.
+
+`cwe-catalog.skills_referencing` contamination cleaned up: 16 entries that mixed skill dir names with playbook IDs split into `skills_referencing` + `playbooks_referencing`. CWE→CVE back-references symmetrized: CVE-2026-43500 ↔ CWE-787 and CVE-2025-53773 ↔ CWE-77.
+
+`exploit-availability.json` extended with the 4 newest CVEs (CVE-2026-45321, MAL-2026-3083, CVE-2026-42208, CVE-2026-39884).
+
+### Skill content corrections (operator-facing factual drift)
+
+- **ATLAS TTP names corrected across 14 skills.** AML.T0054 was systematically mislabeled "Craft Adversarial Data — NLP" (it's "LLM Jailbreak"). AML.T0017 mislabeled "Develop Capabilities" (it's "Discover ML Model Ontology"). AML.T0016 mislabeled "Acquire Public ML Artifacts" (it's "Obtain Capabilities: Develop Capabilities"). AML.T0000 (non-existent) replaced with the actual reconnaissance tactic AML.TA0002.
+- **CVE-2026-30615 (Windsurf MCP) re-aligned with catalog correction.** 17 skills cited CVSS 9.8 / "zero-interaction RCE"; catalog v0.12.9 correction documents CVSS 8.0 / AV:L / local-vector RCE requiring attacker-controlled HTML. Skill bodies and the exploit-scoring pedagogical example reframed accordingly.
+- **CVE-2025-53773 (GitHub Copilot) re-aligned** across 11 skills: cited 9.6 / RWEP 42 (or 91), catalog says 7.8 / RWEP 30.
+- **CVE-2026-31431 KEV date corrected** across 5 skills: cited 2026-03-15, catalog says 2026-05-01. Compliance-theater pedagogical "30 days exposed" narrative recomputed to "13 days exposed" against today's date.
+- **ATT&CK v17 pin propagated** to incident-response-playbook, pqc-first, skill-update-loop (was citing v15.1 / v15 / v16). Spurious "AGENTS.md rule #12" reference corrected to "rule #8".
+- **Four newest catalog CVEs cited in appropriate skills**: MAL-2026-3083 (mlops-security, zeroday-gap-learn), CVE-2026-42208 (ai-attack-surface, ai-c2-detection, rag-pipeline-security, dlp-gap-analysis), CVE-2026-39884 (mcp-agent-trust), CVE-2026-45321 (zeroday-gap-learn, ai-attack-surface, supply-chain-integrity).
+- **Defensive Countermeasure Mapping section added** to kernel-lpe-triage, researcher, skill-update-loop (previously missing despite `last_threat_review >= 2026-05-11`).
+
+### Repository
+
+- `package.json files` allowlist extended with `keys/EXPECTED_FINGERPRINT` and `manifest-snapshot.sha256` so the new pin checks ship to operators.
+- `vendor/blamejs/_PROVENANCE.json` `exceptd_deltas` documents the worker-pool UNC-path Windows rejection.
+
+Test count: 586 → 693 (+107: refresh-network rewrite tests, engine non-engine fixes, orchestrator audit tests, source-osv + source-ghsa hardening, predeploy gate additions, validate-cve-catalog cross-ref tests). Predeploy gates: 14/14 (was 16; two no-op offline gates removed). Skills: 38/38 signed and verified.
+
 ## 0.12.13 — 2026-05-14
 
 **Patch: e2e scenarios updated for the v0.12.12 jurisdiction-clock semantics.**

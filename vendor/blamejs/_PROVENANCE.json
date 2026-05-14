@@ -34,7 +34,7 @@
     },
     "worker-pool.js": {
       "vendored_path": "vendor/blamejs/worker-pool.js",
-      "vendored_sha256": "57d8f5c3bca23cd4ef2a16adf4107bc60c4da3fbc9bb861580edc76ed9a2d132",
+      "vendored_sha256": "fa9814c2d18db221a2dc552cf2a5047467d87a2590cbc9d64b8a0a340e545b55",
       "upstream_path": "lib/worker-pool.js",
       "upstream_sha256_at_pin": "262f99e9cc3d4a8f4eba9ad3e28401e8a1f47f78040afa63c9b17eb998437171",
       "stripped": [
@@ -48,6 +48,9 @@
         "create(scriptPath, opts) -> { run, drain, terminate, stats }",
         "bounded size + maxQueueDepth + taskTimeoutMs",
         "worker recycle on uncaught error / timeout / exit"
+      ],
+      "exceptd_deltas": [
+        "scriptPath validator rejects Windows UNC + extended-path prefixes (\\\\?\\, \\\\.\\, \\\\<server>\\) — defense-in-depth against worker-spawn from network shares on win32 platforms"
       ]
     }
   }

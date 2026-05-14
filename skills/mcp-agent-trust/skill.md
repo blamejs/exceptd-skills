@@ -87,25 +87,31 @@ There is no mandatory:
 
 This means: a malicious or compromised MCP server can execute arbitrary code by simply returning adversarial instructions in tool responses, which the AI model then follows.
 
-### CVE-2026-30615 — Windsurf MCP Zero-Interaction RCE
+### CVE-2026-30615 — Windsurf MCP Local-Vector RCE
 
-**CVSS:** 9.8 | **RWEP:** 94/100
+**CVSS:** 8.0 (AV:L, NVD-authoritative; corrected from initial 9.8/AV:N) | **RWEP:** 35/100
 
-A vulnerability in the Windsurf MCP client that allows a malicious MCP server to achieve remote code execution without any user interaction. The user does not click anything, approve anything, or trigger any visible action. The AI assistant autonomously calls the malicious tool and the code executes.
+A vulnerability in the Windsurf MCP client that allows a malicious MCP server to drive code execution in the user's context by returning attacker-controlled HTML the client processes. The attack vector is local — the attacker must first land a malicious MCP server in the user's installed set (typosquatting, supply-chain compromise, or social engineering). Once installed, the AI assistant invokes the tool and follows the adversarial response without an additional user-action gate.
 
-**Affected:** Windsurf (all versions before patch), and by architectural similarity: Cursor, VS Code MCP extension, Claude Code, Gemini CLI (each has its own vulnerability profile; CVE-2026-30615 is specific to Windsurf's implementation but the attack surface is identical across clients).
+**Affected:** Windsurf (all versions before patch), and by architectural similarity: Cursor, VS Code MCP extension, Claude Code, Gemini CLI (each has its own vulnerability profile; CVE-2026-30615 is specific to Windsurf's implementation but the architectural attack surface is identical across clients).
 
-**Scale:** 150M+ combined downloads across affected AI coding assistants.
+**Scale:** 150M+ combined downloads across affected MCP-capable AI coding assistants.
 
 **Attack path:**
 1. Attacker publishes malicious MCP server to npm or creates a typosquatting package
 2. Developer installs the package (or a legitimate package is compromised via supply chain)
 3. AI assistant starts, connects to MCP server, receives tool list
 4. At any future point: AI assistant calls a tool on the malicious server (possibly triggered by a prompt injection in a code comment, PR description, or documentation)
-5. MCP server returns a response containing adversarial instructions
+5. MCP server returns a response containing adversarial HTML / instructions the Windsurf client renders or relays back to the agent loop
 6. AI assistant follows the instructions — executes code, exfiltrates files, persists backdoor
 
-No user interaction required after installation.
+The attack vector is local (AV:L): no network-side exploitation; the attacker's content must reach the client through the installed MCP server.
+
+### CVE-2026-39884 — mcp-server-kubernetes Argument Injection
+
+**CVSS:** 8.3 (AV:N/AC:L/PR:L/UI:N) | Patched in mcp-server-kubernetes 3.5.0+
+
+A second-order example of the MCP trust failure pattern. Flux159's mcp-server-kubernetes (a popular MCP server granting AI assistants `kubectl` control) built kubectl command lines by `.split(' ')`-ing a string instead of using an argv array. The `port_forward` tool's `resourceName` parameter therefore allowed an attacker who controlled prompt content (RAG-poisoned docs, commit messages, retrieved tool responses) to inject space-delimited kubectl flags — e.g. `resourceName='pod-name --address=0.0.0.0'` binds the port-forward to all interfaces, `-n kube-system` redirects to an attacker-chosen namespace. Upstream gates exploitation on PR-injection / RAG-poisoning rather than direct network reach, but once a tainted resourceName reaches the tool, the MCP server is the abuse channel for cluster-scope kubectl. This is exactly the AML.T0010 + adversarial-tool-input pattern the trust-tier model in Step 5 below classifies — apply tool allowlisting (drop `port_forward` until 3.5.0+) and argv-array auditing to any MCP server that shells out to a CLI.
 
 ### Supply Chain Attack Surface
 
@@ -143,11 +149,11 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 | ATLAS/ATT&CK ID | Technique | MCP Relevance | Gap |
 |---|---|---|---|
 | AML.T0010 | ML Supply Chain Compromise | Direct: malicious MCP server in public registry compromises AI assistant's tool execution | ATLAS covers this conceptually; no framework has a technical control |
-| AML.T0054 | Craft Adversarial Data — NLP | Indirect: adversarial prompt in tool response triggers AI to call next malicious action | No framework control |
+| AML.T0054 | LLM Jailbreak | Indirect: adversarial prompt in tool response bypasses guardrails and triggers AI to call next malicious action | No framework control |
 | AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v5.1.0 |
 | T1195.001 | Supply Chain Compromise: Compromise Software Dependencies | MCP server package as supply chain attack target | ATT&CK covers but enterprise controls don't reach developer MCP configs |
 | T1059 | Command and Script Interpreter | MCP server causes shell command execution via model-mediated tool call | Standard SI-3/EDR doesn't attribute this to the MCP server as origin |
-| T1190 | Exploit Public-Facing Application | CVE-2026-30615: MCP client vulnerability exploited by server | Standard vuln management covers client; MCP server trust is unaddressed |
+| T1190 | Exploit Public-Facing Application | CVE-2026-30615: MCP client vulnerability driven by a locally-installed malicious server (AV:L) | Standard vuln management covers client; MCP server trust is unaddressed |
 
 ---
 
@@ -157,7 +163,8 @@ Sourced from `data/cve-catalog.json` and `data/exploit-availability.json` as of 
 
 | Threat | CVSS | RWEP | PoC Public? | CISA KEV? | AI-Accelerated Weaponization? | Patch Available? | Reboot / Version Bump Required? |
 |---|---|---|---|---|---|---|---|
-| CVE-2026-30615 (Windsurf MCP zero-interaction RCE) | 9.8 | 35 | Partial — conceptual exploit demonstrated; weaponization stage `partial` | No (architectural class; not in KEV catalog as of 2026-05) | No direct AI-assisted weaponization recorded; the attack vector itself rides on the AI agent's tool-call autonomy | Yes — vendor IDE update | IDE update / version bump required (no reboot); `live_patch_available: true` via vendor channel |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | Partial — conceptual exploit demonstrated; weaponization stage `partial` | No (architectural class; not in KEV catalog as of 2026-05) | No direct AI-assisted weaponization recorded; the attack vector itself rides on the AI agent's tool-call autonomy | Yes — vendor IDE update | IDE update / version bump required (no reboot); `live_patch_available: true` via vendor channel |
+| CVE-2026-39884 (Flux159 mcp-server-kubernetes argument injection) | 8.3 | n/a | Yes — GHSA-4xqg-gf5c-ghwq publishes the PoC (port_forward `resourceName='pod --address=0.0.0.0'`) | No | No direct AI-assisted weaponization; the bug is reached by tricking the assistant via prompt injection in retrieved docs / commit messages into passing a tainted resourceName | Yes — upgrade mcp-server-kubernetes to 3.5.0+ (argv-array refactor); workaround: disable `port_forward` in MCP allowlist | Version bump on the MCP server side; no client reboot |
 | MCP supply chain compromise — typosquatting / dependency confusion (ATLAS AML.T0010) | N/A (technique, not vendor CVE) | N/A | Yes — public typosquatting incidents in `@modelcontextprotocol/*` namespace observed | No (technique class) | Yes — AI assistants accelerate writing of convincing malicious tool descriptions | Mitigation only: pin versions, verify npm provenance attestation, enforce allowlist | Re-install / pin to known-good version |
 | Adversarial tool response → indirect prompt injection (ATLAS AML.T0054 in MCP context) | N/A (technique, not vendor CVE) | N/A | Yes — public research demonstrations; weaponizable wherever output is unsanitized | No | Yes — adversarial instruction crafting is a documented AI-accelerated capability | Mitigation only: output sanitization, system-prompt authority hierarchy, tool allowlisting | Client configuration change; no version bump strictly required |
 | AML.T0096 — MCP tool call as covert C2 conduit | N/A (technique) | N/A | Yes — SesameOp-class techniques apply when an MCP tool call is the relay | No | Yes — see `data/atlas-ttps.json` AML.T0096 real-world instances | Mitigation only: process-level AI/MCP egress monitoring | Configuration / monitoring change |

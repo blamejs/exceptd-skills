@@ -20,6 +20,14 @@ const SKILLS_DIR = process.env.EXCEPTD_SKILLS_DIR || path.join(__dirname, '..', 
  * @returns {{ plan: object[], unmatched: object[], summary: object }}
  */
 function dispatch(findings) {
+  // Type-check up front. A string argument would iterate character-by-
+  // character (since `for...of` on a string yields code points), producing
+  // nonsense "findings" with no domain/signal. Refuse loudly rather than
+  // silently process garbage; downstream consumers depend on plan entries
+  // being shaped by real findings.
+  if (!Array.isArray(findings)) {
+    throw new TypeError('dispatch: findings must be an array');
+  }
   const manifest = loadManifest();
   const plan = [];
   const unmatched = [];
@@ -85,10 +93,22 @@ function dispatch(findings) {
  */
 function routeQuery(query) {
   const manifest = loadManifest();
-  const q = query.toLowerCase();
+  if (typeof query !== 'string') return [];
+  const q = query.trim().toLowerCase();
+  // Reject empty + very short queries. The legacy substring match treats
+  // any trigger string as containing the empty string, so a bare empty
+  // query matched every skill — useless and misleading for callers.
+  // Short queries (1-2 chars) only match when they are an explicit
+  // prefix of a trigger; that prevents single letters from matching
+  // every trigger that contains them (e.g. "a" would match anything).
+  if (q.length === 0) return [];
 
   return manifest.skills.filter(skill => {
     const triggers = skill.triggers || [];
+    if (q.length < 3) {
+      // Trigger-prefix match only for short queries.
+      return triggers.some(t => t.toLowerCase().startsWith(q));
+    }
     return triggers.some(t => q.includes(t.toLowerCase()) || t.toLowerCase().includes(q));
   });
 }

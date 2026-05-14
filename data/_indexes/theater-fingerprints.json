@@ -11,7 +11,7 @@
       "primary_attack_class": "patch-cycle vs. KEV-listed instant-root exploits",
       "claim": "\"We have a patch management program. All Critical/High CVEs are remediated within 30 days.\"",
       "audit_evidence": "Patch management policy document, ticketing system showing CVEs opened and closed within SLA, vulnerability scanner reports showing declining open vulnerabilities.",
-      "reality": "CVE-2026-31431 (Copy Fail) was CISA KEV listed on 2026-03-15 with a public 732-byte exploit script. A 30-day SLA means an organization can be \"compliant\" while having a public deterministic root exploit unpatched for 30 days. During that window: active exploitation confirmed.",
+      "reality": "CVE-2026-31431 (Copy Fail) was CISA KEV listed on 2026-05-01 with a public 732-byte exploit script (CISA due date 2026-05-15). A 30-day SLA means an organization can be \"compliant\" while having a public deterministic root exploit unpatched for weeks past the federal due date. During that window: active exploitation confirmed.",
       "why_its_theater": "The 30-day SLA was designed for environments where weaponization takes weeks. Copy Fail's weaponization time was ~1 hour (AI-discovered and PoC-ready). The control measures compliance with a time window that no longer reflects exploit development reality.",
       "fast_test": "Pull last 12 months of patch records. Any CISA KEV patched > 72 hours after KEV listing = THEATER FLAG.",
       "controls": [

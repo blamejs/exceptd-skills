@@ -3,11 +3,20 @@
 /**
  * Scheduled task coordinator for skill currency maintenance.
  *
- * Schedules: weekly currency check, monthly CVE validation, annual full audit.
- * Emits events via event-bus.js when currency thresholds are breached.
+ * Schedules: weekly currency check, monthly CVE validation reminder, annual
+ * full audit reminder. Emits events via event-bus.js when currency thresholds
+ * are breached.
  *
  * This is a simple interval-based scheduler. For production use, swap for a
  * proper cron daemon or cloud scheduler without changing the task definitions.
+ *
+ * Bootstrap-fire policy. Long-cadence tasks (monthly, annual) are also
+ * evaluated on `start()` so a freshly-restarted watcher does not silently
+ * skip a due interval. Whether a task fires on bootstrap is gated by a
+ * persisted "last fired" timestamp store at
+ * `~/.exceptd/scheduler-last-fired.json` — the task fires only when the
+ * elapsed time since the persisted timestamp exceeds the interval. The
+ * weekly currency check always fires on bootstrap (legacy behavior).
  *
  * Implementation note — INT32 overflow guard. `setInterval` / `setTimeout`
  * delay values are coerced to a signed 32-bit integer; any value above
@@ -18,6 +27,10 @@
  * compares wall-clock elapsed time against the requested interval, so any
  * delay — including multi-year intervals — fires exactly when due.
  */
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const { bus, EVENT_TYPES } = require('./event-bus');
 const { currencyCheck } = require('./pipeline');
@@ -36,8 +49,63 @@ const CURRENCY_THRESHOLDS = {
   warning: 70
 };
 
+const LAST_FIRED_KEYS = {
+  WEEKLY_CURRENCY: 'weekly_currency_check',
+  MONTHLY_CVE_VALIDATION: 'monthly_cve_validation',
+  ANNUAL_AUDIT: 'annual_full_audit'
+};
+
 let unschedulers = [];
 let running = false;
+
+// --- persistent last-fired store ---
+
+/**
+ * Resolve the path of the last-fired persistence file. Defaults to
+ * `~/.exceptd/scheduler-last-fired.json`. Honors EXCEPTD_HOME for the test
+ * suite so unit tests stay isolated from the maintainer's real home dir.
+ */
+function _lastFiredStorePath() {
+  const root = process.env.EXCEPTD_HOME || path.join(os.homedir(), '.exceptd');
+  return path.join(root, 'scheduler-last-fired.json');
+}
+
+function _loadLastFired() {
+  const p = _lastFiredStorePath();
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function _saveLastFired(store) {
+  const p = _lastFiredStorePath();
+  try {
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify(store, null, 2));
+  } catch (err) {
+    // Persistence is best-effort. A failed write only means the next start
+    // can't tell whether the task fired; it does not break the running
+    // scheduler.
+    console.error('[scheduler] could not persist last-fired:', err.message);
+  }
+}
+
+function _markFired(key, when) {
+  const store = _loadLastFired();
+  store[key] = when || new Date().toISOString();
+  _saveLastFired(store);
+}
+
+function _shouldBootstrapFire(key, intervalMs) {
+  const store = _loadLastFired();
+  const stamp = store[key];
+  if (!stamp) return true;
+  const last = Date.parse(stamp);
+  if (!Number.isFinite(last)) return true;
+  return (Date.now() - last) >= intervalMs;
+}
 
 // --- scheduling primitive ---
 
@@ -71,16 +139,56 @@ function scheduleEvery(intervalMs, handler) {
 // --- public API ---
 
 /**
- * Start the scheduler. Runs all tasks immediately on start, then on schedule.
+ * Start the scheduler. Runs the weekly task immediately, then schedules all
+ * three on their intervals. Monthly and annual tasks are also "bootstrap
+ * fired" on start when the persisted last-fired timestamp is older than the
+ * interval (or absent), so a restarted watcher does not silently skip a due
+ * window. Bootstrap-fire happens inside the same try/catch the periodic
+ * wrapper uses so a single thrown task cannot crash the watcher.
  */
 function start() {
   if (running) return;
   running = true;
 
-  runWeeklyCurrencyCheck();
-  unschedulers.push(scheduleEvery(INTERVALS.WEEKLY_CURRENCY, runWeeklyCurrencyCheck));
-  unschedulers.push(scheduleEvery(INTERVALS.MONTHLY_CVE_VALIDATION, runMonthlyCveValidation));
-  unschedulers.push(scheduleEvery(INTERVALS.ANNUAL_AUDIT, runAnnualAudit));
+  const safeRun = (label, fn) => {
+    try { fn(); }
+    catch (e) { console.error('[scheduler] ' + label + ' failed:', e); }
+  };
+
+  // Weekly always fires on bootstrap (legacy behavior).
+  safeRun('weekly currency bootstrap', () => {
+    runWeeklyCurrencyCheck();
+    _markFired(LAST_FIRED_KEYS.WEEKLY_CURRENCY);
+  });
+
+  // Monthly + annual bootstrap-fire only when the persisted timestamp is
+  // older than the interval. This closes the "freshly-restarted watcher
+  // never fires the long-cadence task" gap.
+  if (_shouldBootstrapFire(LAST_FIRED_KEYS.MONTHLY_CVE_VALIDATION, INTERVALS.MONTHLY_CVE_VALIDATION)) {
+    safeRun('monthly CVE bootstrap', () => {
+      runMonthlyCveValidation();
+      _markFired(LAST_FIRED_KEYS.MONTHLY_CVE_VALIDATION);
+    });
+  }
+  if (_shouldBootstrapFire(LAST_FIRED_KEYS.ANNUAL_AUDIT, INTERVALS.ANNUAL_AUDIT)) {
+    safeRun('annual audit bootstrap', () => {
+      runAnnualAudit();
+      _markFired(LAST_FIRED_KEYS.ANNUAL_AUDIT);
+    });
+  }
+
+  unschedulers.push(scheduleEvery(INTERVALS.WEEKLY_CURRENCY, () => {
+    runWeeklyCurrencyCheck();
+    _markFired(LAST_FIRED_KEYS.WEEKLY_CURRENCY);
+  }));
+  unschedulers.push(scheduleEvery(INTERVALS.MONTHLY_CVE_VALIDATION, () => {
+    runMonthlyCveValidation();
+    _markFired(LAST_FIRED_KEYS.MONTHLY_CVE_VALIDATION);
+  }));
+  unschedulers.push(scheduleEvery(INTERVALS.ANNUAL_AUDIT, () => {
+    runAnnualAudit();
+    _markFired(LAST_FIRED_KEYS.ANNUAL_AUDIT);
+  }));
 
   console.log('[scheduler] Started. Weekly currency check, monthly CVE validation, annual audit scheduled.');
 }
@@ -113,14 +221,25 @@ function runWeeklyCurrencyCheck() {
 
   const { currency_report, action_required, critical_count } = currencyCheck();
 
-  for (const skill of currency_report) {
-    if (skill.currency_score < CURRENCY_THRESHOLDS.critical) {
-      bus.skillCurrencyLow({
-        skill_name: skill.skill,
-        currency_score: skill.currency_score,
-        days_since_review: skill.days_since_review
-      });
-    }
+  // Emit ONE aggregated SKILL_CURRENCY_LOW_AGGREGATE event per run instead
+  // of N per-skill events. Per-run aggregate prevents downstream consumers
+  // (`watch`, dashboards, alerting webhooks) from receiving an event storm
+  // when N skills are simultaneously stale — common after a long pause
+  // between runs or on first bootstrap. The aggregate payload carries
+  // critical_count + the full array of stale skills so consumers can still
+  // drill in. The legacy per-skill SKILL_CURRENCY_LOW signature is preserved
+  // for callers (and tests) that consume bus.skillCurrencyLow() directly.
+  const critical = currency_report.filter(s => s.currency_score < CURRENCY_THRESHOLDS.critical);
+  if (critical.length > 0) {
+    bus.emit(EVENT_TYPES.SKILL_CURRENCY_LOW_AGGREGATE, {
+      critical_count: critical.length,
+      skills: critical.map(s => ({
+        skill_name: s.skill,
+        currency_score: s.currency_score,
+        days_since_review: s.days_since_review
+      })),
+      timestamp
+    });
   }
 
   const result = {
@@ -129,7 +248,7 @@ function runWeeklyCurrencyCheck() {
     skills_checked: currency_report.length,
     action_required,
     critical_count,
-    critical_skills: currency_report.filter(s => s.currency_score < CURRENCY_THRESHOLDS.critical).map(s => s.skill),
+    critical_skills: critical.map(s => s.skill),
     warning_skills: currency_report.filter(s =>
       s.currency_score >= CURRENCY_THRESHOLDS.critical && s.currency_score < CURRENCY_THRESHOLDS.warning
     ).map(s => s.skill)
@@ -177,4 +296,18 @@ function runAnnualAudit() {
   };
 }
 
-module.exports = { start, stop, runCurrencyNow, scheduleEvery, SAFE_MAX_MS, TICK_MS };
+module.exports = {
+  start,
+  stop,
+  runCurrencyNow,
+  scheduleEvery,
+  SAFE_MAX_MS,
+  TICK_MS,
+  INTERVALS,
+  LAST_FIRED_KEYS,
+  // Internal hooks exposed for tests; not part of the operator surface.
+  _lastFiredStorePath,
+  _shouldBootstrapFire,
+  _markFired,
+  _loadLastFired,
+};

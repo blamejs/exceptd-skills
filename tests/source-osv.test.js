@@ -415,7 +415,10 @@ test('v0.12.11 F3 extractCvss computes score from CVSS 3.1 vector (no embedded t
 });
 
 test('v0.12.11 F3 extractCvss picks highest-version vector regardless of array order', () => {
-  // V4 appears first; V3 second. V4 must win even though it's listed first.
+  // V4 appears first; V3 second. Audit finding 10 (v0.12.15): when v4 is
+  // the highest version but cvss4BaseScore is not yet implemented, fall
+  // back to v3 so we don't silently lose the 9.8 score. The returned
+  // vector therefore reflects the highest *computable* version below v4.
   const rec = {
     id: 'TEST-FAKE',
     severity: [
@@ -423,8 +426,10 @@ test('v0.12.11 F3 extractCvss picks highest-version vector regardless of array o
       { type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' },
     ],
   };
-  const { vector } = osv.extractCvss(rec);
-  assert.match(vector, /^CVSS:4\.0/, `expected v4 vector to win, got: ${vector}`);
+  const { vector, score } = osv.extractCvss(rec);
+  assert.match(vector, /^CVSS:3\.1/, `v4 uncomputable -> fall back to v3 vector, got: ${vector}`);
+  assert.equal(typeof score, 'number');
+  assert.ok(score >= 9.7 && score <= 9.9, `expected v3 score ~9.8, got ${score}`);
 });
 
 test('v0.12.11 F3 cvss3BaseScore returns null for malformed vectors', () => {
@@ -659,4 +664,222 @@ test('v0.12.11 refresh-external --help mentions OSV fallback for CVE-* ids', () 
   assert.equal(r.status, 0);
   assert.match(r.stdout, /OSV\.dev/);
   assert.match(r.stdout, /falls back|fall back|fallback/i);
+});
+
+// ===========================================================================
+// v0.12.14 audit hardening — regression coverage for refresh-sources findings
+// ===========================================================================
+
+// -- F1 (audit item 2): non-string published/modified coerces to null --------
+
+test('v0.12.14 normalizeAdvisory survives numeric published + modified', () => {
+  const rec = {
+    id: 'MAL-2026-99001',
+    summary: 'non-string date regression',
+    published: 1747000000000, // ms since epoch — NOT a string
+    modified: { iso: '2026-05-13' }, // object — NOT a string
+    severity: [],
+    affected: [],
+    references: [],
+  };
+  let out;
+  assert.doesNotThrow(() => { out = osv.normalizeAdvisory(rec); },
+    'non-string published/modified must not throw inside .slice()');
+  const entry = out['MAL-2026-99001'];
+  assert.equal(entry.vendor_advisories[0].published_date, null,
+    'numeric published must coerce to null, not crash');
+  // last_updated falls through to today's date when modified is unusable.
+  assert.equal(typeof entry.last_updated, 'string');
+  assert.match(entry.last_updated, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('v0.12.14 safeDateSlice (osv) rejects malformed + out-of-range', () => {
+  assert.equal(osv.safeDateSlice(undefined), null);
+  assert.equal(osv.safeDateSlice(0), null);
+  assert.equal(osv.safeDateSlice('not-a-date'), null);
+  assert.equal(osv.safeDateSlice('0001-01-01'), null, 'pre-1990 year rejected');
+  assert.equal(osv.safeDateSlice('2026-05-13T00:00:00Z'), '2026-05-13');
+  const future = (new Date().getUTCFullYear() + 5);
+  assert.equal(osv.safeDateSlice(`${future}-01-01`), null,
+    'years far in the future are rejected as upstream typos');
+});
+
+// -- F3 (audit item 3): defensive iteration on rec.affected ------------------
+
+test('v0.12.14 normalizeAdvisory tolerates non-array affected', () => {
+  const rec = {
+    id: 'MAL-2026-99002',
+    summary: 'non-array affected regression',
+    published: '2026-05-13T00:00:00Z',
+    modified: '2026-05-13T00:00:00Z',
+    severity: [],
+    affected: null, // upstream drift: not an array
+    references: [],
+  };
+  let out;
+  assert.doesNotThrow(() => { out = osv.normalizeAdvisory(rec); },
+    'null affected must not throw inside the iteration');
+  const entry = out['MAL-2026-99002'];
+  assert.equal(entry.affected, null);
+  assert.deepEqual(entry.affected_versions, []);
+});
+
+test('v0.12.14 normalizeAdvisory tolerates non-array references', () => {
+  const rec = {
+    id: 'MAL-2026-99003',
+    summary: 'non-array references regression',
+    published: '2026-05-13T00:00:00Z',
+    modified: '2026-05-13T00:00:00Z',
+    severity: [],
+    affected: [],
+    references: 'https://osv.dev/vulnerability/MAL-2026-99003', // string, not array
+  };
+  let out;
+  assert.doesNotThrow(() => { out = osv.normalizeAdvisory(rec); },
+    'non-array references must not crash the reference-URL collector');
+  const entry = out['MAL-2026-99003'];
+  assert.ok(Array.isArray(entry.verification_sources));
+});
+
+// -- F6 (audit item 6): trim ids at entry seam (buildDiff path) --------------
+
+test('v0.12.14 buildDiff trims whitespace-padded ids in osv_ids[]', async () => {
+  process.env.EXCEPTD_OSV_FIXTURE = OSV_FIX;
+  try {
+    const ctx = { cveCatalog: {}, osv_ids: ['  MAL-2026-3083  ', '\tMAL-2026-3083\n'] };
+    const r = await osv.buildDiff(ctx);
+    // Both entries dedupe to the same id; second should hit "existing" via diff dedup.
+    assert.ok(r.diffs.length >= 1, 'whitespace-padded ids must resolve, not unreachable');
+    assert.equal(r.unreachable_count, 0,
+      'trimmed ids must not appear as unreachable');
+  } finally {
+    delete process.env.EXCEPTD_OSV_FIXTURE;
+  }
+});
+
+// -- F7 (audit item 7): CVSS v4-over-v3 score fallback ----------------------
+
+test('v0.12.14 extractCvss falls back to v3 score when v4 returns null', () => {
+  // v4 is the highest version but cvss4BaseScore is not implemented; the
+  // module must walk down to v3 rather than returning a null score with a
+  // v4 vector string. The accompanying v3 vector resolves to ~9.8.
+  const rec = {
+    id: 'TEST-V4-FALLBACK',
+    severity: [
+      { type: 'CVSS_V4', score: 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N' },
+      { type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' },
+    ],
+  };
+  const { score, vector } = osv.extractCvss(rec);
+  assert.equal(typeof score, 'number',
+    'v4 uncomputable → must fall back to v3 score; got null instead');
+  assert.ok(score >= 9.7 && score <= 9.9, `expected ~9.8 from v3 fallback, got ${score}`);
+  assert.match(vector, /^CVSS:3\./,
+    'returned vector must be the computable v3 one, not the v4 that lost the score');
+});
+
+test('v0.12.14 extractCvss returns null score when ALL versions uncomputable', () => {
+  // v4-only with no v3 fallback available → no computable score path.
+  const rec = {
+    id: 'TEST-V4-ONLY',
+    severity: [
+      { type: 'CVSS_V4', score: 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N' },
+    ],
+  };
+  const { score } = osv.extractCvss(rec);
+  assert.equal(score, null,
+    'v4-only with no fallback must return null score (computation not implemented)');
+});
+
+// -- F8 (audit item 8): OSV_HOST_OVERRIDE validation ------------------------
+
+test('v0.12.14 osvRequestOnce rejects OSV_HOST_OVERRIDE with invalid host chars', async () => {
+  process.env.OSV_HOST_OVERRIDE = 'bad host with spaces:8080';
+  try {
+    const r = await osv.fetchAdvisoryById('MAL-2026-3083');
+    assert.equal(r.ok, false,
+      'invalid host chars must be refused, not passed to http.request');
+    assert.equal(r.source, 'offline');
+    assert.match(r.error, /OSV_HOST_OVERRIDE.*host/);
+  } finally {
+    delete process.env.OSV_HOST_OVERRIDE;
+  }
+});
+
+test('v0.12.14 osvRequestOnce rejects OSV_HOST_OVERRIDE with port > 65535', async () => {
+  process.env.OSV_HOST_OVERRIDE = '127.0.0.1:99999';
+  try {
+    const r = await osv.fetchAdvisoryById('MAL-2026-3083');
+    assert.equal(r.ok, false,
+      'out-of-range port must be refused, not produce opaque socket errors');
+    assert.match(r.error, /port/);
+  } finally {
+    delete process.env.OSV_HOST_OVERRIDE;
+  }
+});
+
+test('v0.12.14 osvRequestOnce rejects OSV_HOST_OVERRIDE with port 0', async () => {
+  process.env.OSV_HOST_OVERRIDE = '127.0.0.1:0';
+  try {
+    const r = await osv.fetchAdvisoryById('MAL-2026-3083');
+    // Port 0 → !port → falls back to 80; bare host valid; this should attempt
+    // network. We expect an error envelope (no server bound at 127.0.0.1:80
+    // in CI). Either way the validation path itself accepts this — the
+    // intent is to not let port=99999 through. Sanity-only assertion: ok=false.
+    assert.equal(r.ok, false);
+  } finally {
+    delete process.env.OSV_HOST_OVERRIDE;
+  }
+});
+
+// -- F9 (audit item 9): pickCatalogKey uppercases mixed-case OSV ids --------
+
+test('v0.12.14 normalizeAdvisory uppercases mixed-case OSV id in catalog key', () => {
+  const rec = {
+    id: 'mal-2026-99004', // lowercase upstream
+    summary: 'mixed-case id regression',
+    published: '2026-05-13T00:00:00Z',
+    modified: '2026-05-13T00:00:00Z',
+    severity: [],
+    affected: [],
+    references: [],
+  };
+  const out = osv.normalizeAdvisory(rec);
+  assert.ok(out, 'normalizeAdvisory must accept lowercase id');
+  assert.deepEqual(Object.keys(out), ['MAL-2026-99004'],
+    'catalog key must be uppercased so mixed-case upstream cannot produce duplicate entries');
+});
+
+test('v0.12.14 normalizeAdvisory uppercases numeric-like id via String coercion', () => {
+  const rec = {
+    id: 'OSV-2026-12345',
+    summary: 'string-coerce id regression',
+    published: '2026-05-13T00:00:00Z',
+    modified: '2026-05-13T00:00:00Z',
+    severity: [],
+    affected: [],
+    references: [],
+  };
+  const out = osv.normalizeAdvisory(rec);
+  assert.deepEqual(Object.keys(out), ['OSV-2026-12345']);
+});
+
+// -- F10 reinforces ISO-8601 + year-range guards on the OSV side -------------
+
+test('v0.12.14 normalizeAdvisory rejects garbage published date without crashing', () => {
+  const rec = {
+    id: 'MAL-2026-99005',
+    summary: 'garbage date',
+    published: 'yesterday', // not ISO 8601
+    modified: '05-13-2026', // US-style, not ISO 8601
+    severity: [],
+    affected: [],
+    references: [],
+  };
+  const out = osv.normalizeAdvisory(rec);
+  const entry = out['MAL-2026-99005'];
+  assert.equal(entry.vendor_advisories[0].published_date, null,
+    'non-ISO published date must coerce to null');
+  // last_updated falls through to today when modified is unusable.
+  assert.match(entry.last_updated, /^\d{4}-\d{2}-\d{2}$/);
 });

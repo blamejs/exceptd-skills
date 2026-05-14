@@ -19,7 +19,7 @@
       "artifact": "data/attack-techniques.json",
       "path": "data/attack-techniques.json",
       "schema_version": "1.0.0",
-      "entry_count": 75
+      "entry_count": 79
     },
     {
       "date": "2026-05-13",
@@ -35,7 +35,7 @@
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 53
+      "entry_count": 55
     },
     {
       "date": "2026-05-13",
@@ -349,7 +349,7 @@
       "artifact": "data/exploit-availability.json",
       "path": "data/exploit-availability.json",
       "schema_version": "1.0.0",
-      "entry_count": 5
+      "entry_count": 9
     },
     {
       "date": "2026-05-01",
@@ -357,7 +357,7 @@
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 61
+      "entry_count": 62
     },
     {
       "date": "2026-05-01",

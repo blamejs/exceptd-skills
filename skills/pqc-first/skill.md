@@ -137,7 +137,7 @@ This skill addresses a **future-state attack class** that is not yet represented
 |---|---|---|
 | MITRE ATT&CK T1557 (Adversary-in-the-Middle) | Partial — operational family | T1557 covers AitM credential capture and traffic interception. The capture half of HNDL falls into T1557 operationally; the later decrypt phase has no ATT&CK technique. |
 | MITRE ATT&CK T1040 (Network Sniffing) | Partial — capture phase | Covers passive traffic capture. Does not cover the strategic-archive intent of HNDL, where the captured data has no immediate use and is stored for future decryption. |
-| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap in ATT&CK v15. |
+| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap through ATT&CK v17 (2025-06-25). |
 | MITRE ATLAS | **MISSING (out of scope)** | ATLAS scope is ML/AI system attacks. CRQC cryptanalysis is not in ATLAS scope. |
 | CAPEC-114 (Authentication Abuse) | Indirect | Forged signatures via broken signature scheme would manifest as authentication abuse, but CAPEC does not enumerate "signature scheme broken by CRQC" as a precondition. |
 | CAPEC-475 (Signature Spoofing by Improper Validation) | Indirect | Same — the post-CRQC equivalent has no CAPEC entry. |

@@ -20,11 +20,11 @@
       },
       "entry_count": 15,
       "sample_keys": [
-        "AML.T0043",
         "AML.T0010",
         "AML.T0016",
         "AML.T0017",
-        "AML.T0018"
+        "AML.T0018",
+        "AML.T0020"
       ]
     },
     "attack-techniques.json": {
@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md hard rule #8 requires the bump to be intentional, not silent."
       },
-      "entry_count": 75,
+      "entry_count": 79,
       "sample_keys": [
         "T0001",
         "T0017",
@@ -64,11 +64,11 @@
       },
       "entry_count": 9,
       "sample_keys": [
-        "CVE-2026-31431",
-        "CVE-2026-43284",
-        "CVE-2026-43500",
         "CVE-2025-53773",
-        "CVE-2026-30615"
+        "CVE-2026-30615",
+        "CVE-2026-31431",
+        "CVE-2026-39884",
+        "CVE-2026-42208"
       ]
     },
     "cwe-catalog.json": {
@@ -84,13 +84,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 53,
+      "entry_count": 55,
       "sample_keys": [
-        "CWE-787",
-        "CWE-79",
-        "CWE-89",
-        "CWE-416",
-        "CWE-20"
+        "CWE-20",
+        "CWE-22",
+        "CWE-77",
+        "CWE-78",
+        "CWE-79"
       ]
     },
     "d3fend-catalog.json": {
@@ -150,13 +150,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 5,
+      "entry_count": 9,
       "sample_keys": [
-        "CVE-2026-31431",
-        "CVE-2026-43284",
-        "CVE-2026-43500",
         "CVE-2025-53773",
-        "CVE-2026-30615"
+        "CVE-2026-30615",
+        "CVE-2026-31431",
+        "CVE-2026-39884",
+        "CVE-2026-42208"
       ]
     },
     "framework-control-gaps.json": {
@@ -172,13 +172,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 61,
+      "entry_count": 62,
       "sample_keys": [
-        "NIST-800-53-SI-2",
-        "NIST-800-53-SC-8",
-        "NIST-800-53-AC-2",
-        "NIST-800-53-SI-3",
-        "NIST-800-53-SA-12"
+        "ALL-AI-PIPELINE-INTEGRITY",
+        "ALL-MCP-TOOL-TRUST",
+        "ALL-PROMPT-INJECTION-ACCESS-CONTROL",
+        "AU-Essential-8-App-Hardening",
+        "AU-Essential-8-Backup"
       ]
     },
     "global-frameworks.json": {
@@ -218,11 +218,11 @@
       },
       "entry_count": 31,
       "sample_keys": [
-        "RFC-8446",
-        "DRAFT-IETF-TLS-ECDHE-MLKEM",
-        "DRAFT-IETF-TLS-HYBRID-DESIGN",
-        "RFC-9180",
-        "RFC-9458"
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-6376",
+        "RFC-6545",
+        "RFC-6546"
       ]
     },
     "zeroday-lessons.json": {

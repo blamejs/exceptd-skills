@@ -10,7 +10,7 @@
     "view_ai_ml": "CWE View 1425 (AI/ML Weaknesses)",
     "view_top_25_2024": "CWE View 1430 (2024 CWE Top 25 Most Dangerous Software Weaknesses)",
     "skill_refs_field": "cwe_refs",
-    "note": "CWE Top 25 ranks reflect the 2024 release published by MITRE / CISA on 2024-11-20 (View CWE-1430). The 2025 release was not yet published as of pin date 2026-05-11; top_25_rank_2025 is null for all entries until the next list ships. CVE-to-CWE assignments use the primary NVD classification where known; secondary classes are noted in lag_notes. Per AGENTS.md hard rule #10, this file contains real CWE IDs only — entries without a defensible public mapping were omitted rather than fabricated. Some CVE-to-CWE mappings could not be confidently justified (see project report); those CVEs do not appear in evidence_cves for the relevant CWE entry.",
+    "note": "CWE Top 25 ranks reflect the 2024 release published by MITRE / CISA on 2024-11-20 (View CWE-1430). The 2025 release was not yet published as of pin date 2026-05-11; top_25_rank_2025 is null for all entries until the next list ships. CVE-to-CWE assignments use the primary NVD classification where known; secondary classes are noted in lag_notes. Per AGENTS.md hard rule #10, this file contains real CWE IDs only — entries without a defensible public mapping were omitted rather than fabricated. Some CVE-to-CWE mappings could not be confidently justified (see project report); those CVEs do not appear in evidence_cves for the relevant CWE entry. skills_referencing carries only real exceptd skill directory names; playbooks_referencing carries playbook ids (data/playbooks/*.json) — split introduced 2026-05-14 to remove contamination flagged by Audit D.",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
@@ -24,13 +24,13 @@
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     }
   },
-  "CWE-787": {
-    "id": "CWE-787",
-    "name": "Out-of-bounds Write",
-    "abstraction": "Base",
-    "category": "Memory Safety",
-    "description": "The product writes data past the end, or before the beginning, of the intended buffer. Out-of-bounds writes corrupt adjacent memory and are the dominant root cause of kernel and userland remote/local code execution exploits in C/C++ codebases.",
-    "top_25_rank_2024": 2,
+  "CWE-20": {
+    "id": "CWE-20",
+    "name": "Improper Input Validation",
+    "abstraction": "Class",
+    "category": "Validation",
+    "description": "The product receives input but does not validate or incorrectly validates that the input has the properties required to safely process it. CWE-20 is the parent class for many concrete injection and overflow CWEs and remains in the Top 25 as a backstop classification.",
+    "top_25_rank_2024": 6,
     "top_25_rank_2025": null,
     "view_memberships": [
       "CWE-1003",
@@ -38,27 +38,117 @@
       "CWE-1430"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-100",
-      "CAPEC-14",
-      "CAPEC-46",
-      "CAPEC-540"
+      "CAPEC-3",
+      "CAPEC-10",
+      "CAPEC-22"
     ],
     "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring",
-      "zeroday-gap-learn"
+      "ai-attack-surface",
+      "rag-pipeline-security",
+      "exploit-scoring"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28",
+      "PCI-DSS-4.0-6.2.4"
+    ],
+    "real_requirement": "Schema-based input validation at trust boundaries with deny-by-default; for AI pipelines, input validation must include semantic-class validation (is this prompt text? Is it a tool-call structure?) not just syntactic validation. Prompt content cannot be validated by SI-10 syntactically.",
+    "lag_notes": "SI-10 treats validation as a syntactic operation. For LLM/RAG inputs, semantic validation is required (the input may be syntactically valid JSON but semantically a jailbreak payload). No framework operationalizes semantic validation for AI inputs.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-22": {
+    "id": "CWE-22",
+    "name": "Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)",
+    "abstraction": "Base",
+    "category": "Path/Resource",
+    "description": "The product uses external input to construct a pathname intended to identify a file or directory but does not properly neutralize sequences such as dot-dot that can resolve outside the restricted directory. Re-emerged as critical via MCP tools that expose file-read primitives to LLM-driven argument selection.",
+    "top_25_rank_2024": 5,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-126",
+      "CAPEC-76"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.5.15"
+    ],
+    "real_requirement": "Canonicalize-then-prefix-check; openat2 with RESOLVE_BENEATH on Linux; chroot or per-tool filesystem capabilities for MCP tools. AC-3 enforcement is satisfied by the OS file ACL — which is irrelevant when the agent has legitimate read access to the parent directory but should not have access to subpaths revealed by traversal.",
+    "lag_notes": "No framework requires per-tool filesystem capability scoping for AI agents — agents inherit their host process's full filesystem access, making CWE-22 effectively a privilege escalation in the agentic context.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-77": {
+    "id": "CWE-77",
+    "name": "Improper Neutralization of Special Elements used in a Command (Command Injection)",
+    "abstraction": "Class",
+    "category": "Injection",
+    "description": "The product constructs all or part of a command using externally-influenced input without neutralizing special elements that could modify the intended command. Parent class of CWE-78 (OS) and CWE-89 (SQL); a secondary classification used in some MCP and agentic-tool advisories.",
+    "top_25_rank_2024": 16,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-248",
+      "CAPEC-15"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "ai-attack-surface"
     ],
     "evidence_cves": [
-      "CVE-2026-31431"
+      "MAL-2026-3083",
+      "CVE-2025-53773"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
-      "NIST-800-53-SI-16",
-      "ISO-27001-2022-A.8.28",
-      "ISO-27001-2022-A.8.25"
+      "ISO-27001-2022-A.8.28"
     ],
-    "real_requirement": "Mandatory memory-safe language adoption for new kernel and security-boundary code (Rust-for-Linux, eBPF verifier, hypervisor); KASAN/UBSAN/HWASAN in continuous fuzzing for legacy C; structured bounds-checking annotations enforced at compile time. SI-10 input validation alone is insufficient — write-path bounds checking must be a structural property of the type system, not a runtime check the developer must remember.",
-    "lag_notes": "NIST SI-10 frames bounds violations as 'input validation' failures, which mischaracterizes the weakness — Copy Fail (CVE-2026-31431) had no untrusted input boundary in the traditional sense; it was a deterministic write past a kernel-internal buffer. ISO-27001 A.8.28 (secure coding) does not mandate memory-safe language adoption.",
+    "real_requirement": "Structured command APIs at every command boundary (DB driver, OS exec, MCP tool argv); reject unstructured-string command interfaces in new MCP tool designs.",
+    "lag_notes": "Used as the parent classification by some vendor advisories where the precise sub-class (CWE-78 vs CWE-94) is ambiguous; cited here so skill authors can defensibly use either.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-78": {
+    "id": "CWE-78",
+    "name": "Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product constructs an OS command using externally-influenced input without neutralizing special elements. OS command injection is the canonical class for CI/CD pipeline RCE, MCP tool shell-wrapper RCE, and developer-tooling agentic RCE.",
+    "top_25_rank_2024": 7,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-88",
+      "CAPEC-6"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "ai-attack-surface",
+      "exploit-scoring"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Avoid shell invocation entirely; use execve-style arg arrays. For MCP tools that wrap shells, allowlist tool argv structure at the protocol layer; refuse any tool that accepts unstructured string commands as input. NIST SI-10 does not contemplate AI agents as command-injection vectors.",
+    "lag_notes": "MCP tools that accept natural-language commands and translate to shell are a CWE-78 vector that no framework treats as a first-class issue. Treated as 'tool design' rather than 'injection.'",
     "last_verified": "2026-05-11"
   },
   "CWE-79": {
@@ -94,6 +184,35 @@
     "lag_notes": "PCI-DSS 6.2.4 still treats XSS as a code-review finding rather than a framework configuration finding. NIST SC-18 (mobile code) predates the SPA / DOM-XSS era and does not contemplate Trusted Types or CSP nonce enforcement.",
     "last_verified": "2026-05-11"
   },
+  "CWE-88": {
+    "id": "CWE-88",
+    "name": "Improper Neutralization of Argument Delimiters in a Command",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product constructs a string for a downstream command (typically by concatenating user input into a shell command line, then splitting on whitespace to argv) without escaping argument-delimiter characters. Distinguished from CWE-77 (Command Injection) by the narrower attack surface: the attacker cannot run arbitrary commands but CAN inject additional flags / arguments to a command the application already invokes, which is often sufficient to break the security model (redirect kubectl to attacker-control, change kubectl namespace, etc.).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-460"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "container-runtime-security"
+    ],
+    "evidence_cves": [
+      "CVE-2026-39884"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10"
+    ],
+    "real_requirement": "Pass arguments to spawned processes as an array, not a string. When a string-form command is unavoidable, use the runtime's argument-list API (Node `child_process.spawn(cmd, argsArray)`, Python `subprocess.run([cmd, ...args])`) or a vetted escape function. Linter rule that flags any `.split(' ')` followed by `spawn`/`exec` on user-tainted input.",
+    "lag_notes": "SI-10 addresses input validation categorically but does not specify the argv-vs-string boundary that argument injection exploits. Many MCP servers and CI runners string-concatenate user input into shell commands without registering this as a code-review failure mode.",
+    "last_verified": "2026-05-13"
+  },
   "CWE-89": {
     "id": "CWE-89",
     "name": "Improper Neutralization of Special Elements used in an SQL Command (SQL Injection)",
@@ -115,7 +234,9 @@
     "skills_referencing": [
       "exploit-scoring"
     ],
-    "evidence_cves": ["CVE-2026-42208"],
+    "evidence_cves": [
+      "CVE-2026-42208"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "ISO-27001-2022-A.8.28",
@@ -123,103 +244,6 @@
     ],
     "real_requirement": "Parameterized queries enforced at the ORM/driver level with raw-query usage gated by code-owner approval; AI-assisted code review flagging string-concat SQL patterns from LLM-generated code (a documented regression vector in 2024-2026 codebases).",
     "lag_notes": "DR-5 applies: AI code generation is a current re-introduction vector for SQLi in codebases that had previously eliminated it. No framework control acknowledges LLM-generated code as a regression source.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-416": {
-    "id": "CWE-416",
-    "name": "Use After Free",
-    "abstraction": "Variant",
-    "category": "Memory Safety",
-    "description": "Referencing memory after it has been freed causes a program to crash, use unexpected values, or execute attacker-controlled code. UAF is the dominant kernel/browser RCE primitive of the last decade and a frequent root cause for IPsec, netfilter, and io_uring class kernel CVEs.",
-    "top_25_rank_2024": 8,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-129"
-    ],
-    "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring"
-    ],
-    "evidence_cves": [
-      "CVE-2026-43284",
-      "CVE-2026-43500"
-    ],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-16",
-      "NIST-800-53-SI-2",
-      "ISO-27001-2022-A.8.28"
-    ],
-    "real_requirement": "Memory-safe rewrite of attack-surface subsystems (IPsec stack, packet reassembly, allocators); SLAB_VIRTUAL / heap hardening enabled in production kernels; KASAN-enabled fleet canaries. SI-16 'memory protection' as defined in NIST is satisfied by NX/ASLR, which UAF exploits routinely bypass via heap spray plus grooming.",
-    "lag_notes": "NIST SI-16 considers UAF mitigation 'addressed' if ASLR and NX are enabled. Modern UAF exploitation pipelines defeat both. NIST has not introduced a control for memory-safe-by-default for high-blast-radius subsystems.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-20": {
-    "id": "CWE-20",
-    "name": "Improper Input Validation",
-    "abstraction": "Class",
-    "category": "Validation",
-    "description": "The product receives input but does not validate or incorrectly validates that the input has the properties required to safely process it. CWE-20 is the parent class for many concrete injection and overflow CWEs and remains in the Top 25 as a backstop classification.",
-    "top_25_rank_2024": 6,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-3",
-      "CAPEC-10",
-      "CAPEC-22"
-    ],
-    "skills_referencing": [
-      "ai-attack-surface",
-      "rag-pipeline-security",
-      "exploit-scoring"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-10",
-      "ISO-27001-2022-A.8.28",
-      "PCI-DSS-4.0-6.2.4"
-    ],
-    "real_requirement": "Schema-based input validation at trust boundaries with deny-by-default; for AI pipelines, input validation must include semantic-class validation (is this prompt text? Is it a tool-call structure?) not just syntactic validation. Prompt content cannot be validated by SI-10 syntactically.",
-    "lag_notes": "SI-10 treats validation as a syntactic operation. For LLM/RAG inputs, semantic validation is required (the input may be syntactically valid JSON but semantically a jailbreak payload). No framework operationalizes semantic validation for AI inputs.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-78": {
-    "id": "CWE-78",
-    "name": "Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)",
-    "abstraction": "Base",
-    "category": "Injection",
-    "description": "The product constructs an OS command using externally-influenced input without neutralizing special elements. OS command injection is the canonical class for CI/CD pipeline RCE, MCP tool shell-wrapper RCE, and developer-tooling agentic RCE.",
-    "top_25_rank_2024": 7,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-88",
-      "CAPEC-6"
-    ],
-    "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface",
-      "exploit-scoring"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-10",
-      "ISO-27001-2022-A.8.28"
-    ],
-    "real_requirement": "Avoid shell invocation entirely; use execve-style arg arrays. For MCP tools that wrap shells, allowlist tool argv structure at the protocol layer; refuse any tool that accepts unstructured string commands as input. NIST SI-10 does not contemplate AI agents as command-injection vectors.",
-    "lag_notes": "MCP tools that accept natural-language commands and translate to shell are a CWE-78 vector that no framework treats as a first-class issue. Treated as 'tool design' rather than 'injection.'",
     "last_verified": "2026-05-11"
   },
   "CWE-94": {
@@ -259,187 +283,44 @@
     "lag_notes": "Microsoft's NVD advisory for CVE-2025-53773 maps the Copilot RCE to CWE-94. Some vendor advisories use CWE-77 (Command Injection) as a secondary classification — both are defensible. AGENTS.md DR-1 applies: no framework treats LLM code or tool-call emission as a CWE-94 class, so SI-10 cannot be claimed adequate.",
     "last_verified": "2026-05-11"
   },
-  "CWE-22": {
-    "id": "CWE-22",
-    "name": "Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)",
+  "CWE-123": {
+    "id": "CWE-123",
+    "name": "Write-what-where Condition",
     "abstraction": "Base",
-    "category": "Path/Resource",
-    "description": "The product uses external input to construct a pathname intended to identify a file or directory but does not properly neutralize sequences such as dot-dot that can resolve outside the restricted directory. Re-emerged as critical via MCP tools that expose file-read primitives to LLM-driven argument selection.",
-    "top_25_rank_2024": 5,
+    "category": "Memory Safety",
+    "description": "Any condition where the attacker has the ability to write an arbitrary value to an arbitrary location, often as the result of a buffer overflow or use of unchecked indexes. Write-what-where is the canonical kernel exploit primitive that turns a constrained memory corruption into reliable code execution.",
+    "top_25_rank_2024": null,
     "top_25_rank_2025": null,
     "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
+      "CWE-1000"
     ],
-    "related_attack_patterns_capec": [
-      "CAPEC-126",
-      "CAPEC-76"
-    ],
+    "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "mcp-agent-trust"
+      "kernel-lpe-triage",
+      "exploit-scoring"
     ],
-    "evidence_cves": [],
+    "playbooks_referencing": [
+      "kernel",
+      "hardening"
+    ],
+    "evidence_cves": [
+      "CVE-2026-43284"
+    ],
     "framework_controls_partially_addressing": [
-      "NIST-800-53-AC-3",
-      "NIST-800-53-SI-10",
-      "ISO-27001-2022-A.5.15"
-    ],
-    "real_requirement": "Canonicalize-then-prefix-check; openat2 with RESOLVE_BENEATH on Linux; chroot or per-tool filesystem capabilities for MCP tools. AC-3 enforcement is satisfied by the OS file ACL — which is irrelevant when the agent has legitimate read access to the parent directory but should not have access to subpaths revealed by traversal.",
-    "lag_notes": "No framework requires per-tool filesystem capability scoping for AI agents — agents inherit their host process's full filesystem access, making CWE-22 effectively a privilege escalation in the agentic context.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-352": {
-    "id": "CWE-352",
-    "name": "Cross-Site Request Forgery (CSRF)",
-    "abstraction": "Compound",
-    "category": "Session",
-    "description": "The web application does not, or cannot, sufficiently verify whether a well-formed, valid, consistent request was intentionally provided by the user who submitted the request. SameSite cookie defaults reduced CSRF risk but did not eliminate it for cross-origin POST and JSON APIs.",
-    "top_25_rank_2024": 9,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-62"
-    ],
-    "skills_referencing": [],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SC-23",
-      "ISO-27001-2022-A.8.26"
-    ],
-    "real_requirement": "SameSite=Strict on session cookies; double-submit token or origin check on all state-changing endpoints; deny cross-origin requests with credentials by default at the framework layer.",
-    "lag_notes": "SC-23 'session authenticity' is satisfied by session tokens but does not require origin-binding or SameSite enforcement. Frameworks lag the modern SPA plus cross-origin reality.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-862": {
-    "id": "CWE-862",
-    "name": "Missing Authorization",
-    "abstraction": "Class",
-    "category": "Authorization",
-    "description": "The product does not perform an authorization check when an actor attempts to access a resource or perform an action. Top 25 number four in 2024; the canonical broken-access-control class for API endpoints that authenticate but do not authorize per-object.",
-    "top_25_rank_2024": 4,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-1",
-      "CAPEC-115"
-    ],
-    "skills_referencing": [],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-AC-3",
-      "NIST-800-53-AC-6",
-      "ISO-27001-2022-A.5.15",
-      "SOC2-CC6.1"
-    ],
-    "real_requirement": "Authorization enforced as a policy decision point separate from authentication; per-object access control with deny-by-default; AI agent invocations require session-level authorization context distinct from the underlying service account's authorization.",
-    "lag_notes": "SOC 2 CC6.1 (per DR-1) defines logical access controls but does not require per-object authorization checks or AI-agent-session authorization contexts.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-434": {
-    "id": "CWE-434",
-    "name": "Unrestricted Upload of File with Dangerous Type",
-    "abstraction": "Base",
-    "category": "File Handling",
-    "description": "The product allows the attacker to upload or transfer files of dangerous types that can be automatically processed within the product's environment.",
-    "top_25_rank_2024": 10,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-1",
-      "CAPEC-650"
-    ],
-    "skills_referencing": [],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-3",
-      "NIST-800-53-SI-10",
-      "ISO-27001-2022-A.8.7"
-    ],
-    "real_requirement": "Content-type validation by magic bytes (not Content-Type header); rename uploaded files with random IDs; store outside webroot; serve via signed-URL proxy; for AI/RAG pipelines, validate uploaded document types are within the corpus schema.",
-    "lag_notes": "SI-3 (malicious code protection) checks AV signatures but does not contemplate uploaded prompt-injection payloads inside documents that are dangerous-by-content rather than dangerous-by-type.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-77": {
-    "id": "CWE-77",
-    "name": "Improper Neutralization of Special Elements used in a Command (Command Injection)",
-    "abstraction": "Class",
-    "category": "Injection",
-    "description": "The product constructs all or part of a command using externally-influenced input without neutralizing special elements that could modify the intended command. Parent class of CWE-78 (OS) and CWE-89 (SQL); a secondary classification used in some MCP and agentic-tool advisories.",
-    "top_25_rank_2024": 16,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-248",
-      "CAPEC-15"
-    ],
-    "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface"
-    ],
-    "evidence_cves": ["MAL-2026-3083"],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-16",
       "ISO-27001-2022-A.8.28"
     ],
-    "real_requirement": "Structured command APIs at every command boundary (DB driver, OS exec, MCP tool argv); reject unstructured-string command interfaces in new MCP tool designs.",
-    "lag_notes": "Used as the parent classification by some vendor advisories where the precise sub-class (CWE-78 vs CWE-94) is ambiguous; cited here so skill authors can defensibly use either.",
-    "last_verified": "2026-05-11"
+    "real_requirement": "Memory-safe rewrites of attack-surface subsystems (IPsec, netfilter, packet reassembly); SLAB_VIRTUAL and heap-isolation hardening enabled in production kernels; KASAN-enabled fleet canaries surfacing arbitrary-write primitives before they reach a release kernel.",
+    "lag_notes": "NIST SI-16 considers memory protection addressed if NX/ASLR are enabled; write-what-where primitives in kernel subsystems routinely defeat both via heap spray plus grooming. No framework control mandates memory-safe language adoption for high-blast-radius kernel subsystems.",
+    "last_verified": "2026-05-14"
   },
-  "CWE-502": {
-    "id": "CWE-502",
-    "name": "Deserialization of Untrusted Data",
+  "CWE-125": {
+    "id": "CWE-125",
+    "name": "Out-of-bounds Read",
     "abstraction": "Base",
-    "category": "Serialization",
-    "description": "The product deserializes untrusted data without sufficiently verifying that the resulting data will be valid. Code-executing serialization formats used for ML model checkpoint loading from HuggingFace and similar registries keep CWE-502 critical for AI/ML pipelines.",
-    "top_25_rank_2024": 15,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1425",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-586"
-    ],
-    "skills_referencing": [
-      "ai-attack-surface",
-      "mcp-agent-trust"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-10",
-      "NIST-800-53-SA-12",
-      "ISO-27001-2022-A.8.30"
-    ],
-    "real_requirement": "Reject code-executing serialization formats for model loading in production; require safetensors or equivalent type-safe formats; for legacy code-executing formats, run inside an unprivileged, network-isolated sandbox; verify cryptographic signatures of model artifacts before deserialization.",
-    "lag_notes": "SA-12 supply-chain controls assume binaries can be hash-verified — they do not address that certain serialization formats execute code on load, making hash-of-bad-blob still dangerous.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-918": {
-    "id": "CWE-918",
-    "name": "Server-Side Request Forgery (SSRF)",
-    "abstraction": "Base",
-    "category": "Network",
-    "description": "The web server receives a URL or similar request from an upstream component and retrieves the contents of this URL but does not sufficiently ensure that the request is being sent to the expected destination. SSRF is the canonical primitive for cloud metadata service abuse and is amplified in AI/RAG pipelines that fetch URLs from prompt-controlled context.",
-    "top_25_rank_2024": 19,
+    "category": "Memory Safety",
+    "description": "The product reads data past the end, or before the beginning, of the intended buffer. Frequent root cause for information disclosure (KASLR break, cryptographic key leak) in kernel CVEs.",
+    "top_25_rank_2024": 12,
     "top_25_rank_2025": null,
     "view_memberships": [
       "CWE-1003",
@@ -447,77 +328,20 @@
       "CWE-1430"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-664"
-    ],
-    "skills_referencing": [
-      "rag-pipeline-security",
-      "ai-attack-surface"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SC-7",
-      "ISO-27001-2022-A.8.22"
-    ],
-    "real_requirement": "Egress allowlist enforced at the network layer; IMDSv2 with hop-limit=1; for RAG/agent URL fetchers, allowlist of fetchable domains and explicit rejection of RFC 1918 / link-local / metadata IPs after DNS resolution (resolve-then-check, not check-then-resolve).",
-    "lag_notes": "SC-7 boundary protection assumes the application is the trust boundary; SSRF makes the application the attacker's proxy across the boundary. Cloud IMDS abuse remains a top SSRF outcome.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-287": {
-    "id": "CWE-287",
-    "name": "Improper Authentication",
-    "abstraction": "Class",
-    "category": "Authentication",
-    "description": "When an actor claims to have a given identity, the product does not prove or insufficiently proves that the claim is correct.",
-    "top_25_rank_2024": 14,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-115",
-      "CAPEC-22"
-    ],
-    "skills_referencing": [],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-IA-2",
-      "NIST-800-53-IA-8",
-      "ISO-27001-2022-A.5.17"
-    ],
-    "real_requirement": "Phishing-resistant MFA (FIDO2/WebAuthn) for all human users; mTLS or signed JWT with audience binding for service-to-service; for AI agents, cryptographic agent identity tied to invocation context not the host service account.",
-    "lag_notes": "IA-2 still accepts SMS OTP as a valid MFA factor under some configurations; modern phishing kits defeat SMS OTP. AI agent authentication is undefined in IA-2/IA-8.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-269": {
-    "id": "CWE-269",
-    "name": "Improper Privilege Management",
-    "abstraction": "Class",
-    "category": "Authorization",
-    "description": "The product does not properly assign, modify, track, or check privileges for an actor, creating an unintended sphere of control for that actor.",
-    "top_25_rank_2024": 22,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-122",
-      "CAPEC-233"
+      "CAPEC-540"
     ],
     "skills_referencing": [
       "kernel-lpe-triage",
-      "mcp-agent-trust"
+      "exploit-scoring"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
-      "NIST-800-53-AC-6",
-      "ISO-27001-2022-A.8.2"
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28"
     ],
-    "real_requirement": "Least-privilege enforced through capability tokens, not role labels; per-action privilege drop for tool invocations; namespace plus cgroup plus seccomp for any process that spawns LLM-controlled subprocesses.",
-    "lag_notes": "AC-6 'least privilege' is reviewed at account provisioning, not at action invocation. For AI agents whose actions vary per-prompt, account-level least privilege is insufficient granularity.",
+    "real_requirement": "Same memory-safety requirements as CWE-787; additionally, KASLR is not a sufficient compensating control because OOB-read CVEs are routinely used to defeat KASLR before exploiting an OOB-write CVE.",
+    "lag_notes": "Treated as 'information disclosure' severity by frameworks; in practice OOB-read is the enabler for OOB-write chained RCE and should be scored as a precursor to code execution.",
     "last_verified": "2026-05-11"
   },
   "CWE-200": {
@@ -551,13 +375,75 @@
     "lag_notes": "Data-at-rest controls (SC-28) do not protect against context-window exfiltration where authorized data is retrieved by an authorized agent but exfiltrated via prompt-injection-induced output.",
     "last_verified": "2026-05-11"
   },
-  "CWE-863": {
-    "id": "CWE-863",
-    "name": "Incorrect Authorization",
+  "CWE-250": {
+    "id": "CWE-250",
+    "name": "Execution with Unnecessary Privileges",
+    "abstraction": "Class",
+    "category": "Privilege Management",
+    "description": "The product performs an operation at a privilege level higher than the minimum required, expanding the consequences of any vulnerability in that code path. Common roots: long-lived root daemons, container processes running as UID 0 with no need, sudo-without-NOPASSWD prompt fatigue, setuid binaries with feature-creep.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-104",
+      "CAPEC-470"
+    ],
+    "skills_referencing": [
+      "container-runtime-security",
+      "kernel-lpe-triage",
+      "ot-ics-security"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.2",
+      "PCI-DSS-v4-7.2"
+    ],
+    "real_requirement": "Per-syscall capability dropping enforced at process start; no long-lived root daemons in modern container runtimes; sudo audit trail with rate-limit on privileged invocations; setuid binaries replaced with capability(7) bits.",
+    "lag_notes": "AC-6 least privilege is a paper compliance target — frameworks accept role-based attestation. CWE-250 requires runtime evidence of capability minimization, which compliance audits rarely sample.",
+    "last_verified": "2026-05-13"
+  },
+  "CWE-256": {
+    "id": "CWE-256",
+    "name": "Plaintext Storage of a Password",
+    "abstraction": "Variant",
+    "category": "Credentials Management",
+    "description": "The product stores a password in cleartext on disk, in a config file, or in a database column without cryptographic hashing or encryption, exposing it on any read access to the storage medium.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-37"
+    ],
+    "skills_referencing": [
+      "dlp-gap-analysis"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5(1)",
+      "ISO-27001-2022-A.5.16",
+      "PCI-DSS-v4-8.3"
+    ],
+    "real_requirement": "Passwords hashed at rest with a memory-hard KDF (Argon2id, scrypt); legacy databases with cleartext passwords forcibly rotated on next-login; no service-account passwords in config files — secrets manager mandatory.",
+    "lag_notes": "IA-5(1) addresses authenticator storage but compliance attestation often accepts 'encrypted at rest' for the storage volume, missing that the password value itself must be hashed not encrypted. PCI 8.3 specifies strong cryptography but rarely audits the KDF choice.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "cred-stores",
+      "ai-api"
+    ]
+  },
+  "CWE-269": {
+    "id": "CWE-269",
+    "name": "Improper Privilege Management",
     "abstraction": "Class",
     "category": "Authorization",
-    "description": "The product performs an authorization check when an actor attempts to access a resource or perform an action, but it does not correctly perform the check.",
-    "top_25_rank_2024": 24,
+    "description": "The product does not properly assign, modify, track, or check privileges for an actor, creating an unintended sphere of control for that actor.",
+    "top_25_rank_2024": 22,
     "top_25_rank_2025": null,
     "view_memberships": [
       "CWE-1003",
@@ -565,27 +451,412 @@
       "CWE-1430"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-1"
+      "CAPEC-122",
+      "CAPEC-233"
+    ],
+    "skills_referencing": [
+      "kernel-lpe-triage",
+      "mcp-agent-trust"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.2"
+    ],
+    "real_requirement": "Least-privilege enforced through capability tokens, not role labels; per-action privilege drop for tool invocations; namespace plus cgroup plus seccomp for any process that spawns LLM-controlled subprocesses.",
+    "lag_notes": "AC-6 'least privilege' is reviewed at account provisioning, not at action invocation. For AI agents whose actions vary per-prompt, account-level least privilege is insufficient granularity.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-284": {
+    "id": "CWE-284",
+    "name": "Improper Access Control",
+    "abstraction": "Pillar",
+    "category": "Access Control",
+    "description": "The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor. CWE-284 is the pillar — most authz/authn defects are specializations of this class.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1",
+      "CAPEC-19"
+    ],
+    "skills_referencing": [
+      "container-runtime-security",
+      "identity-assurance",
+      "webapp-security"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.5.15",
+      "SOC2-CC6"
+    ],
+    "real_requirement": "Authorization decisions enforced at the resource server, never client-side; deny-by-default policy with explicit allow; per-request authz check including for authenticated identities.",
+    "lag_notes": "AC-3 is the policy intent; compliance accepts the existence of an authorization framework. CWE-284 specifically calls out improper enforcement — the framework's existence does not imply the enforcement is correct.",
+    "last_verified": "2026-05-13"
+  },
+  "CWE-287": {
+    "id": "CWE-287",
+    "name": "Improper Authentication",
+    "abstraction": "Class",
+    "category": "Authentication",
+    "description": "When an actor claims to have a given identity, the product does not prove or insufficiently proves that the claim is correct.",
+    "top_25_rank_2024": 14,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-115",
+      "CAPEC-22"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-2",
+      "NIST-800-53-IA-8",
+      "ISO-27001-2022-A.5.17"
+    ],
+    "real_requirement": "Phishing-resistant MFA (FIDO2/WebAuthn) for all human users; mTLS or signed JWT with audience binding for service-to-service; for AI agents, cryptographic agent identity tied to invocation context not the host service account.",
+    "lag_notes": "IA-2 still accepts SMS OTP as a valid MFA factor under some configurations; modern phishing kits defeat SMS OTP. AI agent authentication is undefined in IA-2/IA-8.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-306": {
+    "id": "CWE-306",
+    "name": "Missing Authentication for Critical Function",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "The product does not perform any authentication for functionality that requires a provable user identity or consumes a significant amount of resources.",
+    "top_25_rank_2024": 20,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-115"
     ],
     "skills_referencing": [
       "mcp-agent-trust"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
-      "NIST-800-53-AC-3",
-      "ISO-27001-2022-A.5.15"
+      "NIST-800-53-IA-2",
+      "ISO-27001-2022-A.5.17"
     ],
-    "real_requirement": "Policy-as-code authorization with explicit deny-list-then-allowlist test coverage; per-tool authorization tests for MCP servers; invocation-time authorization for AI agent actions, separate from the agent's account-level permissions.",
-    "lag_notes": "Often distinguished from CWE-862 only at post-mortem; both classes are commonly conflated by framework controls that say 'authorization is enforced' without specifying the granularity.",
+    "real_requirement": "Default-deny on all admin, internal, and MCP endpoints; pre-deployment authentication audit of every newly-exposed endpoint; for MCP servers, required client authentication (mTLS or signed token) even on localhost transports.",
+    "lag_notes": "MCP servers on localhost or stdio transports are often unauthenticated by default — the trust boundary is assumed to be the host. CWE-306 applies when a malicious local process or compromised editor exploits this assumption.",
     "last_verified": "2026-05-11"
   },
-  "CWE-125": {
-    "id": "CWE-125",
-    "name": "Out-of-bounds Read",
-    "abstraction": "Base",
-    "category": "Memory Safety",
-    "description": "The product reads data past the end, or before the beginning, of the intended buffer. Frequent root cause for information disclosure (KASLR break, cryptographic key leak) in kernel CVEs.",
-    "top_25_rank_2024": 12,
+  "CWE-310": {
+    "id": "CWE-310",
+    "name": "Cryptographic Issues",
+    "abstraction": "Category",
+    "category": "Cryptography",
+    "description": "Top-level category covering cryptographic weaknesses — weak algorithms, insufficient key lengths, predictable IVs, missing integrity, broken random number generation. The category is retained as an umbrella for CWE-326, -327, -328, -329, -330 et al.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-97"
+    ],
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "ISO-27001-2022-A.8.24",
+      "FIPS-140-3"
+    ],
+    "real_requirement": "Cryptographic agility — algorithm choice expressed as policy, not hardcoded; periodic crypto inventory; PQC migration roadmap with hybrid signature support.",
+    "lag_notes": "SC-13 addresses approved cryptographic mechanisms but lags behind quantum-resistance reality. FIPS-140-3 approved list omits PQC primitives until NIST PQC standardization (FIPS 203/204/205) fully promulgates.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-312": {
+    "id": "CWE-312",
+    "name": "Cleartext Storage of Sensitive Information",
+    "abstraction": "Variant",
+    "category": "Data Protection",
+    "description": "The product stores sensitive information in cleartext within a resource that may be accessible to another control sphere — disk, log file, browser storage, environment variable that's printable by ps(1), Kubernetes ConfigMap when a Secret was the right primitive.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-37"
+    ],
+    "skills_referencing": [
+      "dlp-gap-analysis"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-28",
+      "ISO-27001-2022-A.8.24",
+      "PCI-DSS-v4-3.5"
+    ],
+    "real_requirement": "Encryption-at-rest for all sensitive fields with per-tenant key isolation; structured logging schemas that mark sensitive fields and redact at emit time; Kubernetes Secrets with KMS-backed encryption-at-rest, not ConfigMaps.",
+    "lag_notes": "SC-28 'protection at rest' is typically satisfied by full-disk encryption — which does not protect against a logged-in process reading the cleartext. PCI 3.5 requires field-level cryptography but auditors often accept disk-level controls.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "secrets",
+      "ai-api"
+    ]
+  },
+  "CWE-326": {
+    "id": "CWE-326",
+    "name": "Inadequate Encryption Strength",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product stores or transmits sensitive data using an encryption scheme that is too weak — short key length, deprecated algorithm (DES, RC4, 3DES, MD5-MAC), parameter choices outside current safe ranges. Distinguished from CWE-327 (broken algorithm) by the strength dimension rather than algorithm choice.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-20",
+      "CAPEC-97"
+    ],
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-SP-800-131A",
+      "ISO-27001-2022-A.8.24"
+    ],
+    "real_requirement": "AES-256 minimum for symmetric; RSA-3072 or ECC P-384 minimum for asymmetric pre-PQC migration; hybrid PQC (ML-KEM + ECDHE) for new TLS deployments; reject TLS handshakes below 1.2.",
+    "lag_notes": "SP 800-131A defines algorithm transitions but vendor compliance attestations lag — many auditors still accept 'AES + RSA-2048' without questioning quantum-resistance roadmap.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase",
+      "crypto"
+    ]
+  },
+  "CWE-327": {
+    "id": "CWE-327",
+    "name": "Use of a Broken or Risky Cryptographic Algorithm",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses a broken or risky cryptographic algorithm or protocol. Maps directly to the post-quantum-cryptography transition risk: classical asymmetric algorithms (RSA, ECDSA, ECDH) become risky once a cryptographically-relevant quantum computer exists, and 'harvest now, decrypt later' attacks make CWE-327 a present-tense risk for long-lived data.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-97"
+    ],
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "ISO-27001-2022-A.8.24"
+    ],
+    "real_requirement": "Crypto-agile design (algorithm selection via configuration, not hardcoded); migration plan to NIST PQC standards (ML-KEM / FIPS-203, ML-DSA / FIPS-204, SLH-DSA / FIPS-205) on a published timeline; hybrid classical-plus-PQC for transition period; inventory of long-lived encrypted data subject to harvest-now-decrypt-later.",
+    "lag_notes": "SC-13 'cryptographic protection' lists approved algorithms but the transition timeline for deprecating classical asymmetric crypto is not enforced. ISO-27001 A.8.24 (use of cryptography) does not require crypto-agility.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-328": {
+    "id": "CWE-328",
+    "name": "Use of Weak Hash",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses a cryptographic hash that produces output that no longer offers cryptographic guarantees — MD5, SHA-1 for collision resistance, unsalted SHA-256 for password verification. Includes hashes used for HMAC where the construction extends MAC lifetime past the underlying hash's safe horizon.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-97"
+    ],
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-SP-800-131A"
+    ],
+    "real_requirement": "SHA-256 minimum for integrity; SHA-384/SHA-512 for high-assurance; Argon2id/scrypt for password verification; HMAC-SHA-256 minimum for MAC.",
+    "lag_notes": "SP 800-131A retired SHA-1 for digital signatures in 2013 but legacy MAC use in non-signature contexts continued in many codebases — frameworks rarely require active inventory.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-329": {
+    "id": "CWE-329",
+    "name": "Generation of Predictable IV with CBC Mode",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "The product generates an initialization vector (IV) for CBC-mode encryption that is predictable — counter-derived, low-entropy, zero, or reused. Predictable IV in CBC reveals plaintext patterns and breaks the IND-CPA security model.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-97"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-SP-800-38A"
+    ],
+    "real_requirement": "Prefer AEAD modes (AES-GCM, ChaCha20-Poly1305) over CBC; if CBC is mandatory, IV from CSPRNG with no observable pattern; per-message IV uniqueness verified at encryption time.",
+    "lag_notes": "SP 800-38A specifies IV requirements but auditing typically focuses on algorithm presence not IV-generation correctness. CBC misuse is a recurring source of cryptographic weakness in production codebases.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-330": {
+    "id": "CWE-330",
+    "name": "Use of Insufficiently Random Values",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses values intended to be random but produced from a source that is not cryptographically secure — Math.random(), time-seeded PRNG, weak entropy source. Pillar weakness for CWE-331, -338, -339, -342.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-59",
+      "CAPEC-485"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-SP-800-90A"
+    ],
+    "real_requirement": "Use OS CSPRNG (getrandom(2) on Linux, BCryptGenRandom on Windows) for any security-relevant random; reject Math.random() / java.util.Random / rand() in security contexts via lint rules.",
+    "lag_notes": "SP 800-90A specifies DRBG requirements at the algorithm level; codebase-level enforcement that a non-CSPRNG never reaches a security-critical path is absent from framework controls.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-331": {
+    "id": "CWE-331",
+    "name": "Insufficient Entropy",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses an algorithm or scheme that produces insufficient entropy, leaving patterns or clusters of values more likely than others. Common in early-boot entropy starvation, VM clones, container snapshots, embedded devices with limited entropy sources.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310",
+      "CWE-330"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-59"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-SP-800-90B"
+    ],
+    "real_requirement": "Entropy pool seeded before security-sensitive operations; getrandom(2) blocking call honored on Linux until entropy is initialized; container/VM image entropy reseed-on-boot.",
+    "lag_notes": "SP 800-90B specifies entropy source requirements; supply chain attacks against entropy (e.g. predictable VM clones) are not addressed by any deployment-side framework control.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-338": {
+    "id": "CWE-338",
+    "name": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "The product uses a non-cryptographic PRNG (linear congruential, Mersenne Twister, Math.random) in a security context where attacker prediction of subsequent values breaks the security property.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310",
+      "CWE-330"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-485"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13"
+    ],
+    "real_requirement": "Linters that flag Math.random(), java.util.Random, rand() in security contexts; pin random-token generation to CSPRNG via type-level distinctions (e.g. SecureRandom in Java; secrets module in Python).",
+    "lag_notes": "Framework controls reference 'cryptographic randomness' abstractly; static-analysis enforcement that a non-CSPRNG cannot reach a security-relevant code path is left to development teams.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-345": {
+    "id": "CWE-345",
+    "name": "Insufficient Verification of Data Authenticity",
+    "abstraction": "Class",
+    "category": "Authenticity / Supply Chain",
+    "description": "The product does not sufficiently verify the origin or authenticity of data, in a way that causes it to accept invalid data. Canonical class for supply-chain compromise where a malicious model, plugin, or dependency is loaded because its provenance was not verified.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-141",
+      "CAPEC-148"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "ai-attack-surface"
+    ],
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SA-12",
+      "NIST-800-53-SI-7",
+      "ISO-27001-2022-A.8.30"
+    ],
+    "real_requirement": "Sigstore / cosign signature verification on all model and MCP plugin loads; SLSA Level 3+ provenance attestation; transparency-log inclusion proof checked at install time. Hash-pinning alone is insufficient if the publishing key is compromised.",
+    "lag_notes": "SA-12 supply chain risk management does not mandate cryptographic provenance verification for AI artifacts (models, MCP servers, agent plugins). Treated as 'vendor management' rather than 'authentication.'",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-352": {
+    "id": "CWE-352",
+    "name": "Cross-Site Request Forgery (CSRF)",
+    "abstraction": "Compound",
+    "category": "Session",
+    "description": "The web application does not, or cannot, sufficiently verify whether a well-formed, valid, consistent request was intentionally provided by the user who submitted the request. SameSite cookie defaults reduced CSRF risk but did not eliminate it for cross-origin POST and JSON APIs.",
+    "top_25_rank_2024": 9,
     "top_25_rank_2025": null,
     "view_memberships": [
       "CWE-1003",
@@ -593,21 +864,329 @@
       "CWE-1430"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-540"
+      "CAPEC-62"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-23",
+      "ISO-27001-2022-A.8.26"
+    ],
+    "real_requirement": "SameSite=Strict on session cookies; double-submit token or origin check on all state-changing endpoints; deny cross-origin requests with credentials by default at the framework layer.",
+    "lag_notes": "SC-23 'session authenticity' is satisfied by session tokens but does not require origin-binding or SameSite enforcement. Frameworks lag the modern SPA plus cross-origin reality.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-353": {
+    "id": "CWE-353",
+    "name": "Missing Support for Integrity Check",
+    "abstraction": "Base",
+    "category": "Integrity",
+    "description": "The product transmits or stores data without an integrity check, allowing modification in transit or at rest to go undetected. Common in custom binary protocols, log shippers without HMAC, package distribution without signatures.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-75",
+      "CAPEC-39"
+    ],
+    "skills_referencing": [
+      "supply-chain-integrity"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-7",
+      "NIST-800-53-SC-8(1)",
+      "ISO-27001-2022-A.8.24"
+    ],
+    "real_requirement": "All package distribution signed (Sigstore, in-toto, OpenPGP); HMAC on every internal RPC; SLSA L3+ provenance for shipped artifacts.",
+    "lag_notes": "SI-7 covers software/firmware integrity; SLSA-style provenance is not a framework-mandated control. SC-8(1) addresses transmission integrity at the network layer, not application-layer message integrity.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "library-author"
+    ]
+  },
+  "CWE-362": {
+    "id": "CWE-362",
+    "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+    "abstraction": "Class",
+    "category": "Concurrency",
+    "description": "The product contains a code sequence that can run concurrently with other code, and the code sequence requires temporary, exclusive access to a shared resource, but a timing window exists in which the shared resource can be modified by another code sequence that is operating concurrently.",
+    "top_25_rank_2024": 21,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-29"
+    ],
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Static race detection in CI (Rust Send/Sync, TSan); kernel-specific race detection (KCSAN); replace racy primitives with lock-free or RCU patterns where contention is high. CVSS routinely under-scores race conditions; many become deterministic with AI-assisted timing analysis.",
+    "lag_notes": "DR-5: AI-assisted timing analysis reduces race exploitation from days to minutes. CVSS attack-complexity-high assumption (race conditions are 'hard') is increasingly invalid.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-416": {
+    "id": "CWE-416",
+    "name": "Use After Free",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "Referencing memory after it has been freed causes a program to crash, use unexpected values, or execute attacker-controlled code. UAF is the dominant kernel/browser RCE primitive of the last decade and a frequent root cause for IPsec, netfilter, and io_uring class kernel CVEs.",
+    "top_25_rank_2024": 8,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-129"
     ],
     "skills_referencing": [
       "kernel-lpe-triage",
       "exploit-scoring"
     ],
+    "evidence_cves": [
+      "CVE-2026-43284",
+      "CVE-2026-43500"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "NIST-800-53-SI-2",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Memory-safe rewrite of attack-surface subsystems (IPsec stack, packet reassembly, allocators); SLAB_VIRTUAL / heap hardening enabled in production kernels; KASAN-enabled fleet canaries. SI-16 'memory protection' as defined in NIST is satisfied by NX/ASLR, which UAF exploits routinely bypass via heap spray plus grooming.",
+    "lag_notes": "NIST SI-16 considers UAF mitigation 'addressed' if ASLR and NX are enabled. Modern UAF exploitation pipelines defeat both. NIST has not introduced a control for memory-safe-by-default for high-blast-radius subsystems.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-426": {
+    "id": "CWE-426",
+    "name": "Untrusted Search Path",
+    "abstraction": "Base",
+    "category": "Privilege Management",
+    "description": "The product searches for resources along a path that includes locations writable by an unprivileged actor, enabling privilege escalation or code-execution hijacks. Includes PATH-injection on setuid binaries, DLL search-path attacks, LD_LIBRARY_PATH abuse, Python sys.path injection.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-38",
+      "CAPEC-471"
+    ],
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.20"
+    ],
+    "real_requirement": "Setuid binaries use absolute paths exclusively; secure_getenv() for PATH-derived lookups in libc-linked privileged binaries; Windows: SetDllDirectoryW with empty string; LSan-style search-path audit in CI.",
+    "lag_notes": "AC-6 least privilege is the conceptual control; runtime evidence that no privileged binary reaches a writable-by-attacker location during search is rarely audited.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "hardening"
+    ]
+  },
+  "CWE-434": {
+    "id": "CWE-434",
+    "name": "Unrestricted Upload of File with Dangerous Type",
+    "abstraction": "Base",
+    "category": "File Handling",
+    "description": "The product allows the attacker to upload or transfer files of dangerous types that can be automatically processed within the product's environment.",
+    "top_25_rank_2024": 10,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1",
+      "CAPEC-650"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-3",
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.7"
+    ],
+    "real_requirement": "Content-type validation by magic bytes (not Content-Type header); rename uploaded files with random IDs; store outside webroot; serve via signed-URL proxy; for AI/RAG pipelines, validate uploaded document types are within the corpus schema.",
+    "lag_notes": "SI-3 (malicious code protection) checks AV signatures but does not contemplate uploaded prompt-injection payloads inside documents that are dangerous-by-content rather than dangerous-by-type.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-494": {
+    "id": "CWE-494",
+    "name": "Download of Code Without Integrity Check",
+    "abstraction": "Base",
+    "category": "Supply Chain",
+    "description": "The product downloads source code or an executable from a remote location and executes the code without sufficiently verifying the origin and integrity of the code.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-185"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "ai-attack-surface"
+    ],
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-7",
+      "NIST-800-53-SA-12",
+      "ISO-27001-2022-A.8.30"
+    ],
+    "real_requirement": "All package, model, and plugin installs require signature verification against pinned publishing keys; key rotation procedures published and monitored; package-registry typosquat scanning for AI and MCP ecosystems specifically (PyPI, npm, HuggingFace, MCP registries).",
+    "lag_notes": "SI-7 covers software integrity but does not specifically address developer-installed AI tooling (MCP servers, VS Code AI extensions) as a high-trust class. Windsurf MCP RCE (CVE-2026-30615) is a CWE-494 instance reachable because developer tooling installs bypass enterprise package-integrity controls.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-502": {
+    "id": "CWE-502",
+    "name": "Deserialization of Untrusted Data",
+    "abstraction": "Base",
+    "category": "Serialization",
+    "description": "The product deserializes untrusted data without sufficiently verifying that the resulting data will be valid. Code-executing serialization formats used for ML model checkpoint loading from HuggingFace and similar registries keep CWE-502 critical for AI/ML pipelines.",
+    "top_25_rank_2024": 15,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1425",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-586"
+    ],
+    "skills_referencing": [
+      "ai-attack-surface",
+      "mcp-agent-trust"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
+      "NIST-800-53-SA-12",
+      "ISO-27001-2022-A.8.30"
+    ],
+    "real_requirement": "Reject code-executing serialization formats for model loading in production; require safetensors or equivalent type-safe formats; for legacy code-executing formats, run inside an unprivileged, network-isolated sandbox; verify cryptographic signatures of model artifacts before deserialization.",
+    "lag_notes": "SA-12 supply-chain controls assume binaries can be hash-verified — they do not address that certain serialization formats execute code on load, making hash-of-bad-blob still dangerous.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-506": {
+    "id": "CWE-506",
+    "name": "Embedded Malicious Code",
+    "abstraction": "Class",
+    "category": "Supply Chain",
+    "description": "The application contains code that appears to perform a legitimate function but actually contains a payload that performs an additional, attacker-controlled action — typically credential theft, persistence, or remote loader logic. The class covers package-registry malware (PyPI / npm / RubyGems / Cargo / Maven typosquats, compromised maintainer accounts, forged-release-via-CI vectors).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-442",
+      "CAPEC-446",
+      "CAPEC-538"
+    ],
+    "skills_referencing": [
+      "supply-chain-integrity"
+    ],
+    "evidence_cves": [
+      "CVE-2026-45321",
+      "MAL-2026-3083"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SA-12",
+      "NIST-800-218-PS.1",
+      "ISO-27001-2022-A.8.30",
+      "SLSA-Level-3"
+    ],
+    "real_requirement": "Provenance attestation at install time (Sigstore, in-toto, SLSA L3+); registry-side malware scanning on every uploaded artifact; install-time .pth / postinstall / preinstall hook auditing; differential analysis between consecutive releases of the same package (added files, new network egress, new file reads); cooldown periods on new releases of high-download packages so registry scanners and community detection have time to fire before mass install.",
+    "lag_notes": "SA-12 contemplates the traditional supply chain but does not require differential-analysis between adjacent releases. The elementary-data 0.23.3 attack (April 2026) added exactly one file (a `.pth` install-time payload) versus 0.23.2 — a difference any naive diff would catch but no registry-side scanner currently runs at upload time by default.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "library-author"
+    ]
+  },
+  "CWE-522": {
+    "id": "CWE-522",
+    "name": "Insufficiently Protected Credentials",
+    "abstraction": "Class",
+    "category": "Credentials Management",
+    "description": "The product stores or transmits authentication credentials but uses insufficient protection — weak hashing, no encryption in transit, plaintext in logs, recoverable via password-reset enumeration. Pillar for several credential-handling weaknesses.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-49",
+      "CAPEC-555"
+    ],
+    "skills_referencing": [
+      "identity-assurance"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5",
+      "ISO-27001-2022-A.5.16",
+      "PCI-DSS-v4-8.3"
+    ],
+    "real_requirement": "Argon2id/scrypt for password hashes; TLS 1.3 for credential transmission; structured logging that redacts credential fields; secret-scanning gates on commits; vendor credentials in secrets managers with rotation policy.",
+    "lag_notes": "IA-5 authenticator management speaks to the lifecycle but rarely audits the actual storage cryptography. Credential leak in logs is the failure mode most often missed by compliance review.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "cred-stores",
+      "ai-api"
+    ]
+  },
+  "CWE-669": {
+    "id": "CWE-669",
+    "name": "Incorrect Resource Transfer Between Spheres",
+    "abstraction": "Class",
+    "category": "Resource Management",
+    "description": "The product does not properly transfer a resource or information across spheres of control — between privileged and unprivileged contexts, between user and kernel, between page-cache and writable mapping. Canonical class for Dirty COW / Dirty Pipe / Copy Fail page-cache copy-on-write primitives where a read-only resource ends up writable in another sphere.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [
+      "kernel-lpe-triage",
+      "exploit-scoring"
+    ],
+    "playbooks_referencing": [
+      "kernel",
+      "hardening",
+      "runtime"
+    ],
+    "evidence_cves": [
+      "CVE-2026-31431"
+    ],
+    "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
       "ISO-27001-2022-A.8.28"
     ],
-    "real_requirement": "Same memory-safety requirements as CWE-787; additionally, KASLR is not a sufficient compensating control because OOB-read CVEs are routinely used to defeat KASLR before exploiting an OOB-write CVE.",
-    "lag_notes": "Treated as 'information disclosure' severity by frameworks; in practice OOB-read is the enabler for OOB-write chained RCE and should be scored as a precursor to code execution.",
-    "last_verified": "2026-05-11"
+    "real_requirement": "Boundary-checked transfer primitives in the kernel page-cache and copy-on-write paths; explicit sphere labelling on shared mappings; structural type-level distinction between read-only and writable views of the same backing memory.",
+    "lag_notes": "NIST controls treat resource transfer as an input-validation problem (SI-10) rather than as a sphere-boundary integrity problem. CWE-669 captures the Copy Fail / Dirty COW class more accurately than CWE-787 because the failure is the sphere transition, not the bounds of the write.",
+    "last_verified": "2026-05-14"
   },
   "CWE-672": {
     "id": "CWE-672",
@@ -660,65 +1239,126 @@
     "lag_notes": "AC-3 review at policy-grant time misses transitive permission graphs in cloud IAM and K8s RBAC. The effective permission, not the granted permission, is what an attacker exploits.",
     "last_verified": "2026-05-11"
   },
-  "CWE-345": {
-    "id": "CWE-345",
-    "name": "Insufficient Verification of Data Authenticity",
-    "abstraction": "Class",
-    "category": "Authenticity / Supply Chain",
-    "description": "The product does not sufficiently verify the origin or authenticity of data, in a way that causes it to accept invalid data. Canonical class for supply-chain compromise where a malicious model, plugin, or dependency is loaded because its provenance was not verified.",
+  "CWE-759": {
+    "id": "CWE-759",
+    "name": "Use of a One-Way Hash without a Salt",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "The product hashes a password or similar credential using a one-way hash without including a per-credential salt, enabling rainbow-table attacks against the resulting hash collection.",
     "top_25_rank_2024": null,
     "top_25_rank_2025": null,
     "view_memberships": [
-      "CWE-1000"
+      "CWE-1000",
+      "CWE-310"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-141",
-      "CAPEC-148"
+      "CAPEC-55"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5(1)",
+      "NIST-SP-800-63B"
+    ],
+    "real_requirement": "Use Argon2id/scrypt for password hashing — salt is intrinsic to the construction; never store bare-hashed passwords; per-credential salts ≥ 128 bits.",
+    "lag_notes": "SP 800-63B requires salted hashing for memorized secrets; codebase inventories rarely catch legacy unsalted hashes in long-lived tables. CWE-916 is the related insufficient-effort variant.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-760": {
+    "id": "CWE-760",
+    "name": "Use of a One-Way Hash with a Predictable Salt",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "The product hashes a password using a per-credential salt that is predictable (username-derived, timestamp-derived, counter), undermining the salt's defense against rainbow-table attacks.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-55"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5(1)",
+      "NIST-SP-800-63B"
+    ],
+    "real_requirement": "Salt generated from CSPRNG, ≥ 128 bits, stored alongside the hash; never derived from any user-controllable or deterministic input.",
+    "lag_notes": "Compliance frameworks audit the presence of a salt; correctness of salt generation is rarely sampled.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase"
+    ]
+  },
+  "CWE-787": {
+    "id": "CWE-787",
+    "name": "Out-of-bounds Write",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "The product writes data past the end, or before the beginning, of the intended buffer. Out-of-bounds writes corrupt adjacent memory and are the dominant root cause of kernel and userland remote/local code execution exploits in C/C++ codebases.",
+    "top_25_rank_2024": 2,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-100",
+      "CAPEC-14",
+      "CAPEC-46",
+      "CAPEC-540"
     ],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface"
+      "kernel-lpe-triage",
+      "exploit-scoring",
+      "zeroday-gap-learn"
     ],
     "evidence_cves": [
-      "CVE-2026-30615"
+      "CVE-2026-31431",
+      "CVE-2026-43500"
     ],
     "framework_controls_partially_addressing": [
-      "NIST-800-53-SA-12",
-      "NIST-800-53-SI-7",
-      "ISO-27001-2022-A.8.30"
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28",
+      "ISO-27001-2022-A.8.25"
     ],
-    "real_requirement": "Sigstore / cosign signature verification on all model and MCP plugin loads; SLSA Level 3+ provenance attestation; transparency-log inclusion proof checked at install time. Hash-pinning alone is insufficient if the publishing key is compromised.",
-    "lag_notes": "SA-12 supply chain risk management does not mandate cryptographic provenance verification for AI artifacts (models, MCP servers, agent plugins). Treated as 'vendor management' rather than 'authentication.'",
+    "real_requirement": "Mandatory memory-safe language adoption for new kernel and security-boundary code (Rust-for-Linux, eBPF verifier, hypervisor); KASAN/UBSAN/HWASAN in continuous fuzzing for legacy C; structured bounds-checking annotations enforced at compile time. SI-10 input validation alone is insufficient — write-path bounds checking must be a structural property of the type system, not a runtime check the developer must remember.",
+    "lag_notes": "NIST SI-10 frames bounds violations as 'input validation' failures, which mischaracterizes the weakness — Copy Fail (CVE-2026-31431) had no untrusted input boundary in the traditional sense; it was a deterministic write past a kernel-internal buffer. ISO-27001 A.8.28 (secure coding) does not mandate memory-safe language adoption.",
     "last_verified": "2026-05-11"
   },
-  "CWE-494": {
-    "id": "CWE-494",
-    "name": "Download of Code Without Integrity Check",
+  "CWE-798": {
+    "id": "CWE-798",
+    "name": "Use of Hard-coded Credentials",
     "abstraction": "Base",
-    "category": "Supply Chain",
-    "description": "The product downloads source code or an executable from a remote location and executes the code without sufficiently verifying the origin and integrity of the code.",
-    "top_25_rank_2024": null,
+    "category": "Credentials",
+    "description": "The product contains hard-coded credentials, such as a password or cryptographic key, which it uses for its own inbound authentication, outbound communication to external components, or encryption of internal data. LLM-generated code is a documented re-introduction vector for hardcoded credentials.",
+    "top_25_rank_2024": 18,
     "top_25_rank_2025": null,
     "view_memberships": [
-      "CWE-1000"
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
     ],
     "related_attack_patterns_capec": [
-      "CAPEC-185"
+      "CAPEC-191"
     ],
     "skills_referencing": [
-      "mcp-agent-trust",
       "ai-attack-surface"
     ],
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-7",
-      "NIST-800-53-SA-12",
-      "ISO-27001-2022-A.8.30"
+      "NIST-800-53-IA-5",
+      "ISO-27001-2022-A.8.5"
     ],
-    "real_requirement": "All package, model, and plugin installs require signature verification against pinned publishing keys; key rotation procedures published and monitored; package-registry typosquat scanning for AI and MCP ecosystems specifically (PyPI, npm, HuggingFace, MCP registries).",
-    "lag_notes": "SI-7 covers software integrity but does not specifically address developer-installed AI tooling (MCP servers, VS Code AI extensions) as a high-trust class. Windsurf MCP RCE (CVE-2026-30615) is a CWE-494 instance reachable because developer tooling installs bypass enterprise package-integrity controls.",
+    "real_requirement": "Secret-scanning in pre-commit and CI with deny-merge on detection; secret manager (HashiCorp Vault, AWS Secrets Manager, etc.) for runtime retrieval; LLM-generated-code-specific scanners that detect placeholder-credential patterns that the model emits.",
+    "lag_notes": "DR-5: LLM-generated code routinely contains placeholder credentials and sometimes real credentials from training data. No framework treats LLM code emission as a CWE-798 vector.",
     "last_verified": "2026-05-11"
   },
   "CWE-829": {
@@ -746,6 +1386,196 @@
     ],
     "real_requirement": "Allowlist of approved MCP server publishers; private package registry mirrors for enterprise; CI-time scanning for newly-included dependencies (including transitive); for AI agents, allowlist of tool sources distinct from the agent's general internet access.",
     "lag_notes": "SA-12 evaluates suppliers; CWE-829 occurs at runtime when an agent or developer adds a dependency post-evaluation. No framework requires runtime dependency-introduction review for AI tooling.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-862": {
+    "id": "CWE-862",
+    "name": "Missing Authorization",
+    "abstraction": "Class",
+    "category": "Authorization",
+    "description": "The product does not perform an authorization check when an actor attempts to access a resource or perform an action. Top 25 number four in 2024; the canonical broken-access-control class for API endpoints that authenticate but do not authorize per-object.",
+    "top_25_rank_2024": 4,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1",
+      "CAPEC-115"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.5.15",
+      "SOC2-CC6.1"
+    ],
+    "real_requirement": "Authorization enforced as a policy decision point separate from authentication; per-object access control with deny-by-default; AI agent invocations require session-level authorization context distinct from the underlying service account's authorization.",
+    "lag_notes": "SOC 2 CC6.1 (per DR-1) defines logical access controls but does not require per-object authorization checks or AI-agent-session authorization contexts.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-863": {
+    "id": "CWE-863",
+    "name": "Incorrect Authorization",
+    "abstraction": "Class",
+    "category": "Authorization",
+    "description": "The product performs an authorization check when an actor attempts to access a resource or perform an action, but it does not correctly perform the check.",
+    "top_25_rank_2024": 24,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1"
+    ],
+    "skills_referencing": [
+      "mcp-agent-trust"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.5.15"
+    ],
+    "real_requirement": "Policy-as-code authorization with explicit deny-list-then-allowlist test coverage; per-tool authorization tests for MCP servers; invocation-time authorization for AI agent actions, separate from the agent's account-level permissions.",
+    "lag_notes": "Often distinguished from CWE-862 only at post-mortem; both classes are commonly conflated by framework controls that say 'authorization is enforced' without specifying the granularity.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-916": {
+    "id": "CWE-916",
+    "name": "Use of Password Hash With Insufficient Computational Effort",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "The product hashes a password with a fast cryptographic hash (MD5, SHA-1, single-pass SHA-256) where computational effort is not tuned to make offline cracking economically infeasible. Allows GPU-accelerated brute-force at scale.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-55",
+      "CAPEC-49"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5(1)",
+      "NIST-SP-800-63B"
+    ],
+    "real_requirement": "Argon2id (memory-hard, RFC 9106) with tuned m/t/p; scrypt as fallback; bcrypt with work factor ≥ 12 acceptable for legacy. PBKDF2 only with iteration count ≥ 600,000 (NIST SP 800-63B 2022 update).",
+    "lag_notes": "SP 800-63B updated iteration guidance in 2022; many compliance attestations still cite the 2017 numbers. Argon2id is RFC-9106 (2021) but absent from FIPS-approved lists, creating policy friction in federal contexts.",
+    "last_verified": "2026-05-13",
+    "playbooks_referencing": [
+      "crypto-codebase",
+      "cred-stores"
+    ]
+  },
+  "CWE-918": {
+    "id": "CWE-918",
+    "name": "Server-Side Request Forgery (SSRF)",
+    "abstraction": "Base",
+    "category": "Network",
+    "description": "The web server receives a URL or similar request from an upstream component and retrieves the contents of this URL but does not sufficiently ensure that the request is being sent to the expected destination. SSRF is the canonical primitive for cloud metadata service abuse and is amplified in AI/RAG pipelines that fetch URLs from prompt-controlled context.",
+    "top_25_rank_2024": 19,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000",
+      "CWE-1430"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-664"
+    ],
+    "skills_referencing": [
+      "rag-pipeline-security",
+      "ai-attack-surface"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-7",
+      "ISO-27001-2022-A.8.22"
+    ],
+    "real_requirement": "Egress allowlist enforced at the network layer; IMDSv2 with hop-limit=1; for RAG/agent URL fetchers, allowlist of fetchable domains and explicit rejection of RFC 1918 / link-local / metadata IPs after DNS resolution (resolve-then-check, not check-then-resolve).",
+    "lag_notes": "SC-7 boundary protection assumes the application is the trust boundary; SSRF makes the application the attacker's proxy across the boundary. Cloud IMDS abuse remains a top SSRF outcome.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-1037": {
+    "id": "CWE-1037",
+    "name": "Processor Optimization Removal or Modification of Security-critical Code",
+    "abstraction": "Base",
+    "category": "Hardware / Side Channel",
+    "description": "The developer builds a security-critical protection mechanism into the software, but the processor optimizes the execution of the program such that the mechanism is removed or modified. Canonical class for Spectre/Meltdown-family speculative-execution side channels.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Retpoline / IBRS / hardware mitigations enabled; constant-time cryptographic implementations verified post-compile; site-isolation in browsers; speculative-execution-aware compiler hardening for cryptographic code paths.",
+    "lag_notes": "Microarchitectural side channels are not addressed by any framework control. SI-16 (memory protection) is satisfied by software-level NX/ASLR and does not contemplate the CPU as the attacker.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-1039": {
+    "id": "CWE-1039",
+    "name": "Automated Recognition Mechanism with Inadequate Detection or Handling of Adversarial Input Perturbations",
+    "abstraction": "Base",
+    "category": "AI/ML",
+    "description": "The product uses an automated mechanism such as machine learning to recognize complex data inputs but it does not adequately detect or handle inputs that have been crafted to cause the mechanism to misclassify or otherwise produce an incorrect result.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1425"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [
+      "ai-attack-surface"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-AI-RMF-MEASURE-2.5",
+      "NIST-AI-RMF-MEASURE-2.7"
+    ],
+    "real_requirement": "Adversarial robustness testing in the model evaluation lifecycle (FGSM, PGD, transfer attacks); confidence calibration on out-of-distribution inputs; out-of-band human review for high-stakes classifications (biometric auth, fraud).",
+    "lag_notes": "Adversarial robustness testing is not required by any compliance framework. Maps to ATLAS AML.T0043 (Craft Adversarial Data), for which the framework_gap is true.",
+    "last_verified": "2026-05-11"
+  },
+  "CWE-1188": {
+    "id": "CWE-1188",
+    "name": "Initialization of a Resource with an Insecure Default",
+    "abstraction": "Base",
+    "category": "Configuration",
+    "description": "The product initializes or sets a resource with a default that is intended to be changed by the administrator, but the default is not secure.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [
+      "mcp-agent-trust",
+      "security-maturity-tiers"
+    ],
+    "evidence_cves": [],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-CM-6",
+      "ISO-27001-2022-A.8.9"
+    ],
+    "real_requirement": "Secure-by-default configurations shipped; insecure modes require explicit opt-in with a documented risk acknowledgment; for MCP servers, default to no-network, no-fs, requiring explicit capability grants.",
+    "lag_notes": "CM-6 baseline configuration is set per-deployment; CWE-1188 is about the shipped default. Frameworks rarely audit product defaults — they audit organizational deployment.",
     "last_verified": "2026-05-11"
   },
   "CWE-1357": {
@@ -829,513 +1659,5 @@
     "real_requirement": "Output validation pipelines that match the action class of the output: tool-call outputs require argv allowlist plus capability scoping; code outputs require sandbox execution plus static analysis; natural-language outputs to users require PII and secret redaction. For high-impact actions, human-in-the-loop confirmation. Validation must be on the output channel, not (only) on the input.",
     "lag_notes": "NIST AI RMF MEASURE 2.5 (validity and reliability) treats AI output quality as a model-evaluation problem (accuracy metrics). It does not treat malicious output (jailbroken code, exfiltration, harmful content) as a CWE class requiring output-side controls.",
     "last_verified": "2026-05-11"
-  },
-  "CWE-1039": {
-    "id": "CWE-1039",
-    "name": "Automated Recognition Mechanism with Inadequate Detection or Handling of Adversarial Input Perturbations",
-    "abstraction": "Base",
-    "category": "AI/ML",
-    "description": "The product uses an automated mechanism such as machine learning to recognize complex data inputs but it does not adequately detect or handle inputs that have been crafted to cause the mechanism to misclassify or otherwise produce an incorrect result.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1000",
-      "CWE-1425"
-    ],
-    "related_attack_patterns_capec": [],
-    "skills_referencing": [
-      "ai-attack-surface"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-AI-RMF-MEASURE-2.5",
-      "NIST-AI-RMF-MEASURE-2.7"
-    ],
-    "real_requirement": "Adversarial robustness testing in the model evaluation lifecycle (FGSM, PGD, transfer attacks); confidence calibration on out-of-distribution inputs; out-of-band human review for high-stakes classifications (biometric auth, fraud).",
-    "lag_notes": "Adversarial robustness testing is not required by any compliance framework. Maps to ATLAS AML.T0043 (Craft Adversarial Data), for which the framework_gap is true.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-1037": {
-    "id": "CWE-1037",
-    "name": "Processor Optimization Removal or Modification of Security-critical Code",
-    "abstraction": "Base",
-    "category": "Hardware / Side Channel",
-    "description": "The developer builds a security-critical protection mechanism into the software, but the processor optimizes the execution of the program such that the mechanism is removed or modified. Canonical class for Spectre/Meltdown-family speculative-execution side channels.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1000"
-    ],
-    "related_attack_patterns_capec": [],
-    "skills_referencing": [
-      "pqc-first"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-16",
-      "ISO-27001-2022-A.8.28"
-    ],
-    "real_requirement": "Retpoline / IBRS / hardware mitigations enabled; constant-time cryptographic implementations verified post-compile; site-isolation in browsers; speculative-execution-aware compiler hardening for cryptographic code paths.",
-    "lag_notes": "Microarchitectural side channels are not addressed by any framework control. SI-16 (memory protection) is satisfied by software-level NX/ASLR and does not contemplate the CPU as the attacker.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-327": {
-    "id": "CWE-327",
-    "name": "Use of a Broken or Risky Cryptographic Algorithm",
-    "abstraction": "Class",
-    "category": "Cryptography",
-    "description": "The product uses a broken or risky cryptographic algorithm or protocol. Maps directly to the post-quantum-cryptography transition risk: classical asymmetric algorithms (RSA, ECDSA, ECDH) become risky once a cryptographically-relevant quantum computer exists, and 'harvest now, decrypt later' attacks make CWE-327 a present-tense risk for long-lived data.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-97"
-    ],
-    "skills_referencing": [
-      "pqc-first"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SC-13",
-      "ISO-27001-2022-A.8.24"
-    ],
-    "real_requirement": "Crypto-agile design (algorithm selection via configuration, not hardcoded); migration plan to NIST PQC standards (ML-KEM / FIPS-203, ML-DSA / FIPS-204, SLH-DSA / FIPS-205) on a published timeline; hybrid classical-plus-PQC for transition period; inventory of long-lived encrypted data subject to harvest-now-decrypt-later.",
-    "lag_notes": "SC-13 'cryptographic protection' lists approved algorithms but the transition timeline for deprecating classical asymmetric crypto is not enforced. ISO-27001 A.8.24 (use of cryptography) does not require crypto-agility.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-798": {
-    "id": "CWE-798",
-    "name": "Use of Hard-coded Credentials",
-    "abstraction": "Base",
-    "category": "Credentials",
-    "description": "The product contains hard-coded credentials, such as a password or cryptographic key, which it uses for its own inbound authentication, outbound communication to external components, or encryption of internal data. LLM-generated code is a documented re-introduction vector for hardcoded credentials.",
-    "top_25_rank_2024": 18,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-191"
-    ],
-    "skills_referencing": [
-      "ai-attack-surface"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-IA-5",
-      "ISO-27001-2022-A.8.5"
-    ],
-    "real_requirement": "Secret-scanning in pre-commit and CI with deny-merge on detection; secret manager (HashiCorp Vault, AWS Secrets Manager, etc.) for runtime retrieval; LLM-generated-code-specific scanners that detect placeholder-credential patterns that the model emits.",
-    "lag_notes": "DR-5: LLM-generated code routinely contains placeholder credentials and sometimes real credentials from training data. No framework treats LLM code emission as a CWE-798 vector.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-306": {
-    "id": "CWE-306",
-    "name": "Missing Authentication for Critical Function",
-    "abstraction": "Base",
-    "category": "Authentication",
-    "description": "The product does not perform any authentication for functionality that requires a provable user identity or consumes a significant amount of resources.",
-    "top_25_rank_2024": 20,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-115"
-    ],
-    "skills_referencing": [
-      "mcp-agent-trust"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-IA-2",
-      "ISO-27001-2022-A.5.17"
-    ],
-    "real_requirement": "Default-deny on all admin, internal, and MCP endpoints; pre-deployment authentication audit of every newly-exposed endpoint; for MCP servers, required client authentication (mTLS or signed token) even on localhost transports.",
-    "lag_notes": "MCP servers on localhost or stdio transports are often unauthenticated by default — the trust boundary is assumed to be the host. CWE-306 applies when a malicious local process or compromised editor exploits this assumption.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-362": {
-    "id": "CWE-362",
-    "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
-    "abstraction": "Class",
-    "category": "Concurrency",
-    "description": "The product contains a code sequence that can run concurrently with other code, and the code sequence requires temporary, exclusive access to a shared resource, but a timing window exists in which the shared resource can be modified by another code sequence that is operating concurrently.",
-    "top_25_rank_2024": 21,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1003",
-      "CWE-1000",
-      "CWE-1430"
-    ],
-    "related_attack_patterns_capec": [
-      "CAPEC-29"
-    ],
-    "skills_referencing": [
-      "kernel-lpe-triage"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-SI-16",
-      "ISO-27001-2022-A.8.28"
-    ],
-    "real_requirement": "Static race detection in CI (Rust Send/Sync, TSan); kernel-specific race detection (KCSAN); replace racy primitives with lock-free or RCU patterns where contention is high. CVSS routinely under-scores race conditions; many become deterministic with AI-assisted timing analysis.",
-    "lag_notes": "DR-5: AI-assisted timing analysis reduces race exploitation from days to minutes. CVSS attack-complexity-high assumption (race conditions are 'hard') is increasingly invalid.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-1188": {
-    "id": "CWE-1188",
-    "name": "Initialization of a Resource with an Insecure Default",
-    "abstraction": "Base",
-    "category": "Configuration",
-    "description": "The product initializes or sets a resource with a default that is intended to be changed by the administrator, but the default is not secure.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": [
-      "CWE-1000"
-    ],
-    "related_attack_patterns_capec": [],
-    "skills_referencing": [
-      "mcp-agent-trust",
-      "security-maturity-tiers"
-    ],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": [
-      "NIST-800-53-CM-6",
-      "ISO-27001-2022-A.8.9"
-    ],
-    "real_requirement": "Secure-by-default configurations shipped; insecure modes require explicit opt-in with a documented risk acknowledgment; for MCP servers, default to no-network, no-fs, requiring explicit capability grants.",
-    "lag_notes": "CM-6 baseline configuration is set per-deployment; CWE-1188 is about the shipped default. Frameworks rarely audit product defaults — they audit organizational deployment.",
-    "last_verified": "2026-05-11"
-  },
-  "CWE-250": {
-    "id": "CWE-250",
-    "name": "Execution with Unnecessary Privileges",
-    "abstraction": "Class",
-    "category": "Privilege Management",
-    "description": "The product performs an operation at a privilege level higher than the minimum required, expanding the consequences of any vulnerability in that code path. Common roots: long-lived root daemons, container processes running as UID 0 with no need, sudo-without-NOPASSWD prompt fatigue, setuid binaries with feature-creep.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-104", "CAPEC-470"],
-    "skills_referencing": ["container-runtime-security", "kernel-lpe-triage", "ot-ics-security"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-AC-6", "ISO-27001-2022-A.8.2", "PCI-DSS-v4-7.2"],
-    "real_requirement": "Per-syscall capability dropping enforced at process start; no long-lived root daemons in modern container runtimes; sudo audit trail with rate-limit on privileged invocations; setuid binaries replaced with capability(7) bits.",
-    "lag_notes": "AC-6 least privilege is a paper compliance target — frameworks accept role-based attestation. CWE-250 requires runtime evidence of capability minimization, which compliance audits rarely sample.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-256": {
-    "id": "CWE-256",
-    "name": "Plaintext Storage of a Password",
-    "abstraction": "Variant",
-    "category": "Credentials Management",
-    "description": "The product stores a password in cleartext on disk, in a config file, or in a database column without cryptographic hashing or encryption, exposing it on any read access to the storage medium.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-1003"],
-    "related_attack_patterns_capec": ["CAPEC-37"],
-    "skills_referencing": ["cred-stores", "ai-api", "dlp-gap-analysis"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-IA-5(1)", "ISO-27001-2022-A.5.16", "PCI-DSS-v4-8.3"],
-    "real_requirement": "Passwords hashed at rest with a memory-hard KDF (Argon2id, scrypt); legacy databases with cleartext passwords forcibly rotated on next-login; no service-account passwords in config files — secrets manager mandatory.",
-    "lag_notes": "IA-5(1) addresses authenticator storage but compliance attestation often accepts 'encrypted at rest' for the storage volume, missing that the password value itself must be hashed not encrypted. PCI 8.3 specifies strong cryptography but rarely audits the KDF choice.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-284": {
-    "id": "CWE-284",
-    "name": "Improper Access Control",
-    "abstraction": "Pillar",
-    "category": "Access Control",
-    "description": "The product does not restrict or incorrectly restricts access to a resource from an unauthorized actor. CWE-284 is the pillar — most authz/authn defects are specializations of this class.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-1", "CAPEC-19"],
-    "skills_referencing": ["container-runtime-security", "identity-assurance", "webapp-security"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-AC-3", "ISO-27001-2022-A.5.15", "SOC2-CC6"],
-    "real_requirement": "Authorization decisions enforced at the resource server, never client-side; deny-by-default policy with explicit allow; per-request authz check including for authenticated identities.",
-    "lag_notes": "AC-3 is the policy intent; compliance accepts the existence of an authorization framework. CWE-284 specifically calls out improper enforcement — the framework's existence does not imply the enforcement is correct.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-310": {
-    "id": "CWE-310",
-    "name": "Cryptographic Issues",
-    "abstraction": "Category",
-    "category": "Cryptography",
-    "description": "Top-level category covering cryptographic weaknesses — weak algorithms, insufficient key lengths, predictable IVs, missing integrity, broken random number generation. The category is retained as an umbrella for CWE-326, -327, -328, -329, -330 et al.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-97"],
-    "skills_referencing": ["pqc-first", "crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "ISO-27001-2022-A.8.24", "FIPS-140-3"],
-    "real_requirement": "Cryptographic agility — algorithm choice expressed as policy, not hardcoded; periodic crypto inventory; PQC migration roadmap with hybrid signature support.",
-    "lag_notes": "SC-13 addresses approved cryptographic mechanisms but lags behind quantum-resistance reality. FIPS-140-3 approved list omits PQC primitives until NIST PQC standardization (FIPS 203/204/205) fully promulgates.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-312": {
-    "id": "CWE-312",
-    "name": "Cleartext Storage of Sensitive Information",
-    "abstraction": "Variant",
-    "category": "Data Protection",
-    "description": "The product stores sensitive information in cleartext within a resource that may be accessible to another control sphere — disk, log file, browser storage, environment variable that's printable by ps(1), Kubernetes ConfigMap when a Secret was the right primitive.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-1003"],
-    "related_attack_patterns_capec": ["CAPEC-37"],
-    "skills_referencing": ["secrets", "ai-api", "dlp-gap-analysis"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-28", "ISO-27001-2022-A.8.24", "PCI-DSS-v4-3.5"],
-    "real_requirement": "Encryption-at-rest for all sensitive fields with per-tenant key isolation; structured logging schemas that mark sensitive fields and redact at emit time; Kubernetes Secrets with KMS-backed encryption-at-rest, not ConfigMaps.",
-    "lag_notes": "SC-28 'protection at rest' is typically satisfied by full-disk encryption — which does not protect against a logged-in process reading the cleartext. PCI 3.5 requires field-level cryptography but auditors often accept disk-level controls.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-326": {
-    "id": "CWE-326",
-    "name": "Inadequate Encryption Strength",
-    "abstraction": "Class",
-    "category": "Cryptography",
-    "description": "The product stores or transmits sensitive data using an encryption scheme that is too weak — short key length, deprecated algorithm (DES, RC4, 3DES, MD5-MAC), parameter choices outside current safe ranges. Distinguished from CWE-327 (broken algorithm) by the strength dimension rather than algorithm choice.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-20", "CAPEC-97"],
-    "skills_referencing": ["pqc-first", "crypto-codebase", "crypto"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "NIST-SP-800-131A", "ISO-27001-2022-A.8.24"],
-    "real_requirement": "AES-256 minimum for symmetric; RSA-3072 or ECC P-384 minimum for asymmetric pre-PQC migration; hybrid PQC (ML-KEM + ECDHE) for new TLS deployments; reject TLS handshakes below 1.2.",
-    "lag_notes": "SP 800-131A defines algorithm transitions but vendor compliance attestations lag — many auditors still accept 'AES + RSA-2048' without questioning quantum-resistance roadmap.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-328": {
-    "id": "CWE-328",
-    "name": "Use of Weak Hash",
-    "abstraction": "Class",
-    "category": "Cryptography",
-    "description": "The product uses a cryptographic hash that produces output that no longer offers cryptographic guarantees — MD5, SHA-1 for collision resistance, unsalted SHA-256 for password verification. Includes hashes used for HMAC where the construction extends MAC lifetime past the underlying hash's safe horizon.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-97"],
-    "skills_referencing": ["crypto-codebase", "pqc-first"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "NIST-SP-800-131A"],
-    "real_requirement": "SHA-256 minimum for integrity; SHA-384/SHA-512 for high-assurance; Argon2id/scrypt for password verification; HMAC-SHA-256 minimum for MAC.",
-    "lag_notes": "SP 800-131A retired SHA-1 for digital signatures in 2013 but legacy MAC use in non-signature contexts continued in many codebases — frameworks rarely require active inventory.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-329": {
-    "id": "CWE-329",
-    "name": "Generation of Predictable IV with CBC Mode",
-    "abstraction": "Variant",
-    "category": "Cryptography",
-    "description": "The product generates an initialization vector (IV) for CBC-mode encryption that is predictable — counter-derived, low-entropy, zero, or reused. Predictable IV in CBC reveals plaintext patterns and breaks the IND-CPA security model.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-97"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "NIST-SP-800-38A"],
-    "real_requirement": "Prefer AEAD modes (AES-GCM, ChaCha20-Poly1305) over CBC; if CBC is mandatory, IV from CSPRNG with no observable pattern; per-message IV uniqueness verified at encryption time.",
-    "lag_notes": "SP 800-38A specifies IV requirements but auditing typically focuses on algorithm presence not IV-generation correctness. CBC misuse is a recurring source of cryptographic weakness in production codebases.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-330": {
-    "id": "CWE-330",
-    "name": "Use of Insufficiently Random Values",
-    "abstraction": "Class",
-    "category": "Cryptography",
-    "description": "The product uses values intended to be random but produced from a source that is not cryptographically secure — Math.random(), time-seeded PRNG, weak entropy source. Pillar weakness for CWE-331, -338, -339, -342.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-59", "CAPEC-485"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "NIST-SP-800-90A"],
-    "real_requirement": "Use OS CSPRNG (getrandom(2) on Linux, BCryptGenRandom on Windows) for any security-relevant random; reject Math.random() / java.util.Random / rand() in security contexts via lint rules.",
-    "lag_notes": "SP 800-90A specifies DRBG requirements at the algorithm level; codebase-level enforcement that a non-CSPRNG never reaches a security-critical path is absent from framework controls.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-331": {
-    "id": "CWE-331",
-    "name": "Insufficient Entropy",
-    "abstraction": "Class",
-    "category": "Cryptography",
-    "description": "The product uses an algorithm or scheme that produces insufficient entropy, leaving patterns or clusters of values more likely than others. Common in early-boot entropy starvation, VM clones, container snapshots, embedded devices with limited entropy sources.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310", "CWE-330"],
-    "related_attack_patterns_capec": ["CAPEC-59"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13", "NIST-SP-800-90B"],
-    "real_requirement": "Entropy pool seeded before security-sensitive operations; getrandom(2) blocking call honored on Linux until entropy is initialized; container/VM image entropy reseed-on-boot.",
-    "lag_notes": "SP 800-90B specifies entropy source requirements; supply chain attacks against entropy (e.g. predictable VM clones) are not addressed by any deployment-side framework control.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-338": {
-    "id": "CWE-338",
-    "name": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)",
-    "abstraction": "Variant",
-    "category": "Cryptography",
-    "description": "The product uses a non-cryptographic PRNG (linear congruential, Mersenne Twister, Math.random) in a security context where attacker prediction of subsequent values breaks the security property.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310", "CWE-330"],
-    "related_attack_patterns_capec": ["CAPEC-485"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SC-13"],
-    "real_requirement": "Linters that flag Math.random(), java.util.Random, rand() in security contexts; pin random-token generation to CSPRNG via type-level distinctions (e.g. SecureRandom in Java; secrets module in Python).",
-    "lag_notes": "Framework controls reference 'cryptographic randomness' abstractly; static-analysis enforcement that a non-CSPRNG cannot reach a security-relevant code path is left to development teams.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-353": {
-    "id": "CWE-353",
-    "name": "Missing Support for Integrity Check",
-    "abstraction": "Base",
-    "category": "Integrity",
-    "description": "The product transmits or stores data without an integrity check, allowing modification in transit or at rest to go undetected. Common in custom binary protocols, log shippers without HMAC, package distribution without signatures.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-75", "CAPEC-39"],
-    "skills_referencing": ["library-author", "supply-chain-integrity"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-SI-7", "NIST-800-53-SC-8(1)", "ISO-27001-2022-A.8.24"],
-    "real_requirement": "All package distribution signed (Sigstore, in-toto, OpenPGP); HMAC on every internal RPC; SLSA L3+ provenance for shipped artifacts.",
-    "lag_notes": "SI-7 covers software/firmware integrity; SLSA-style provenance is not a framework-mandated control. SC-8(1) addresses transmission integrity at the network layer, not application-layer message integrity.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-426": {
-    "id": "CWE-426",
-    "name": "Untrusted Search Path",
-    "abstraction": "Base",
-    "category": "Privilege Management",
-    "description": "The product searches for resources along a path that includes locations writable by an unprivileged actor, enabling privilege escalation or code-execution hijacks. Includes PATH-injection on setuid binaries, DLL search-path attacks, LD_LIBRARY_PATH abuse, Python sys.path injection.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-38", "CAPEC-471"],
-    "skills_referencing": ["kernel-lpe-triage", "hardening"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-AC-6", "ISO-27001-2022-A.8.20"],
-    "real_requirement": "Setuid binaries use absolute paths exclusively; secure_getenv() for PATH-derived lookups in libc-linked privileged binaries; Windows: SetDllDirectoryW with empty string; LSan-style search-path audit in CI.",
-    "lag_notes": "AC-6 least privilege is the conceptual control; runtime evidence that no privileged binary reaches a writable-by-attacker location during search is rarely audited.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-522": {
-    "id": "CWE-522",
-    "name": "Insufficiently Protected Credentials",
-    "abstraction": "Class",
-    "category": "Credentials Management",
-    "description": "The product stores or transmits authentication credentials but uses insufficient protection — weak hashing, no encryption in transit, plaintext in logs, recoverable via password-reset enumeration. Pillar for several credential-handling weaknesses.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-1003"],
-    "related_attack_patterns_capec": ["CAPEC-49", "CAPEC-555"],
-    "skills_referencing": ["cred-stores", "ai-api", "identity-assurance"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-IA-5", "ISO-27001-2022-A.5.16", "PCI-DSS-v4-8.3"],
-    "real_requirement": "Argon2id/scrypt for password hashes; TLS 1.3 for credential transmission; structured logging that redacts credential fields; secret-scanning gates on commits; vendor credentials in secrets managers with rotation policy.",
-    "lag_notes": "IA-5 authenticator management speaks to the lifecycle but rarely audits the actual storage cryptography. Credential leak in logs is the failure mode most often missed by compliance review.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-759": {
-    "id": "CWE-759",
-    "name": "Use of a One-Way Hash without a Salt",
-    "abstraction": "Variant",
-    "category": "Cryptography",
-    "description": "The product hashes a password or similar credential using a one-way hash without including a per-credential salt, enabling rainbow-table attacks against the resulting hash collection.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-55"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-IA-5(1)", "NIST-SP-800-63B"],
-    "real_requirement": "Use Argon2id/scrypt for password hashing — salt is intrinsic to the construction; never store bare-hashed passwords; per-credential salts ≥ 128 bits.",
-    "lag_notes": "SP 800-63B requires salted hashing for memorized secrets; codebase inventories rarely catch legacy unsalted hashes in long-lived tables. CWE-916 is the related insufficient-effort variant.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-760": {
-    "id": "CWE-760",
-    "name": "Use of a One-Way Hash with a Predictable Salt",
-    "abstraction": "Variant",
-    "category": "Cryptography",
-    "description": "The product hashes a password using a per-credential salt that is predictable (username-derived, timestamp-derived, counter), undermining the salt's defense against rainbow-table attacks.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-55"],
-    "skills_referencing": ["crypto-codebase"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-IA-5(1)", "NIST-SP-800-63B"],
-    "real_requirement": "Salt generated from CSPRNG, ≥ 128 bits, stored alongside the hash; never derived from any user-controllable or deterministic input.",
-    "lag_notes": "Compliance frameworks audit the presence of a salt; correctness of salt generation is rarely sampled.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-916": {
-    "id": "CWE-916",
-    "name": "Use of Password Hash With Insufficient Computational Effort",
-    "abstraction": "Variant",
-    "category": "Cryptography",
-    "description": "The product hashes a password with a fast cryptographic hash (MD5, SHA-1, single-pass SHA-256) where computational effort is not tuned to make offline cracking economically infeasible. Allows GPU-accelerated brute-force at scale.",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-310"],
-    "related_attack_patterns_capec": ["CAPEC-55", "CAPEC-49"],
-    "skills_referencing": ["crypto-codebase", "cred-stores"],
-    "evidence_cves": [],
-    "framework_controls_partially_addressing": ["NIST-800-53-IA-5(1)", "NIST-SP-800-63B"],
-    "real_requirement": "Argon2id (memory-hard, RFC 9106) with tuned m/t/p; scrypt as fallback; bcrypt with work factor ≥ 12 acceptable for legacy. PBKDF2 only with iteration count ≥ 600,000 (NIST SP 800-63B 2022 update).",
-    "lag_notes": "SP 800-63B updated iteration guidance in 2022; many compliance attestations still cite the 2017 numbers. Argon2id is RFC-9106 (2021) but absent from FIPS-approved lists, creating policy friction in federal contexts.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-506": {
-    "id": "CWE-506",
-    "name": "Embedded Malicious Code",
-    "abstraction": "Class",
-    "category": "Supply Chain",
-    "description": "The application contains code that appears to perform a legitimate function but actually contains a payload that performs an additional, attacker-controlled action — typically credential theft, persistence, or remote loader logic. The class covers package-registry malware (PyPI / npm / RubyGems / Cargo / Maven typosquats, compromised maintainer accounts, forged-release-via-CI vectors).",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000"],
-    "related_attack_patterns_capec": ["CAPEC-442", "CAPEC-446", "CAPEC-538"],
-    "skills_referencing": ["library-author", "supply-chain-integrity"],
-    "evidence_cves": ["CVE-2026-45321", "MAL-2026-3083"],
-    "framework_controls_partially_addressing": ["NIST-800-53-SA-12", "NIST-800-218-PS.1", "ISO-27001-2022-A.8.30", "SLSA-Level-3"],
-    "real_requirement": "Provenance attestation at install time (Sigstore, in-toto, SLSA L3+); registry-side malware scanning on every uploaded artifact; install-time .pth / postinstall / preinstall hook auditing; differential analysis between consecutive releases of the same package (added files, new network egress, new file reads); cooldown periods on new releases of high-download packages so registry scanners and community detection have time to fire before mass install.",
-    "lag_notes": "SA-12 contemplates the traditional supply chain but does not require differential-analysis between adjacent releases. The elementary-data 0.23.3 attack (April 2026) added exactly one file (a `.pth` install-time payload) versus 0.23.2 — a difference any naive diff would catch but no registry-side scanner currently runs at upload time by default.",
-    "last_verified": "2026-05-13"
-  },
-  "CWE-88": {
-    "id": "CWE-88",
-    "name": "Improper Neutralization of Argument Delimiters in a Command",
-    "abstraction": "Base",
-    "category": "Injection",
-    "description": "The product constructs a string for a downstream command (typically by concatenating user input into a shell command line, then splitting on whitespace to argv) without escaping argument-delimiter characters. Distinguished from CWE-77 (Command Injection) by the narrower attack surface: the attacker cannot run arbitrary commands but CAN inject additional flags / arguments to a command the application already invokes, which is often sufficient to break the security model (redirect kubectl to attacker-control, change kubectl namespace, etc.).",
-    "top_25_rank_2024": null,
-    "top_25_rank_2025": null,
-    "view_memberships": ["CWE-1000", "CWE-1003"],
-    "related_attack_patterns_capec": ["CAPEC-460"],
-    "skills_referencing": ["mcp-agent-trust", "container-runtime-security"],
-    "evidence_cves": ["CVE-2026-39884"],
-    "framework_controls_partially_addressing": ["NIST-800-53-SI-10"],
-    "real_requirement": "Pass arguments to spawned processes as an array, not a string. When a string-form command is unavoidable, use the runtime's argument-list API (Node `child_process.spawn(cmd, argsArray)`, Python `subprocess.run([cmd, ...args])`) or a vetted escape function. Linter rule that flags any `.split(' ')` followed by `spawn`/`exec` on user-tainted input.",
-    "lag_notes": "SI-10 addresses input validation categorically but does not specify the argv-vs-string boundary that argument injection exploits. Many MCP servers and CI runners string-concatenate user input into shell commands without registering this as a code-review failure mode.",
-    "last_verified": "2026-05-13"
   }
 }

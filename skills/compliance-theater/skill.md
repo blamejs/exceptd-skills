@@ -43,8 +43,8 @@ The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is
 The defining mid-2026 reality is that an organization can pass a clean ISO 27001:2022, SOC 2 Type II, or PCI DSS 4.0 audit while remaining exposed to KEV-listed deterministic LPEs and zero-interaction RCEs. The contrast cases drive every theater pattern below:
 
 - **CVE-2026-31431 (Copy Fail)** — Linux kernel LPE, CISA KEV, AI-discovered in approximately one hour, deterministic 732-byte public PoC, no race condition. An organization with an A.8.8 / SI-2 / PCI 6.3.3 program that meets the framework's "appropriate timescale" language (commonly 30 days for High) is *passing the audit* during the active-exploitation window. This is the canonical Patch Management Theater case. Catalog entry: `data/cve-catalog.json`.
-- **CVE-2026-30615 (Windsurf MCP zero-interaction RCE)** — 150M+ affected downloads. An organization's CC9 / SA-12 / A.5.19 vendor management program rated as "operating effectively" by an auditor typically has zero coverage of MCP servers running in developer environments. The vendor-management control passes the audit and provides no control surface for the attack class. Catalog entry: `data/cve-catalog.json`.
-- **CVE-2025-53773 (GitHub Copilot prompt-injection RCE)** — CVSS 9.6. An organization's SOC 2 CC6 access control program is rated "passed" while prompt injection executes attacker-chosen actions using the AI service account's authorized identity. The audit evidence (IAM reviews, access logs with no unauthorized events) is correct and complete; it provides zero signal about the intrusion.
+- **CVE-2026-30615 (Windsurf MCP local-vector RCE)** — CVSS 8.0 / AV:L / RWEP 35. 150M+ combined downloads across MCP-capable assistants share the architectural surface. An organization's CC9 / SA-12 / A.5.19 vendor management program rated as "operating effectively" by an auditor typically has zero coverage of MCP servers running in developer environments. The vendor-management control passes the audit and provides no control surface for the attack class. Catalog entry: `data/cve-catalog.json`.
+- **CVE-2025-53773 (GitHub Copilot YOLO-mode RCE)** — CVSS 7.8 / AV:L / RWEP 30. An organization's SOC 2 CC6 access control program is rated "passed" while prompt injection coerces the AI assistant into flipping `chat.tools.autoApprove: true` and converting subsequent tool calls into shell execution under the AI service account's authorized identity. The audit evidence (IAM reviews, access logs with no unauthorized events) is correct and complete; it provides zero signal about the intrusion.
 
 In each case, a real-world public exploit produced by current adversary TTPs renders a passing audit non-informative about actual security posture. The seven theater patterns below codify the most common recurrences of this pattern.
 
@@ -57,7 +57,7 @@ Compliance theater is the operational shadow of framework lag. Per-framework lag
 | Framework | Control | Lag (what the control language does not cover) |
 |---|---|---|
 | SOC 2 | CC6 (Logical and Physical Access) | Logical-access language was drafted for human-controlled accounts and machine identities in traditional IAM. It does not cover prompt injection as an access control bypass: the AI service account is authorized, monitored, and within least-privilege scope; the attacker's intent travels through the model's context window and never appears in access logs. See CVE-2025-53773. |
-| ISO 27001:2022 | A.8.8 (Management of Technical Vulnerabilities) | "Appropriate timescales" is undefined; auditor practice typically reads as 30 days for High / 90 days for Medium. The language does not operationalize the CISA KEV class. For CVE-2026-31431 these timescales mean active exploitation during the "compliant" remediation window. |
+| ISO 27001:2022 | A.8.8 (Management of Technical Vulnerabilities) | "Appropriate timescales" is undefined; auditor practice typically reads as 30 days for High / 90 days for Medium. The language does not operationalize the CISA KEV class. For CVE-2026-31431 (KEV-listed 2026-05-01, federal due 2026-05-15) these timescales mean active exploitation during the "compliant" remediation window. |
 | PCI DSS 4.0 | 6.3.3 (Patches) | The one-month critical-patch window predates AI-assisted exploit development. For any CVE with CISA KEV listing and a public PoC, the one-month window is an exploitation-acceptance window, not a security window. |
 | SOC 2 | CC7 (System Operations) | Anomaly detection guidance has no baseline for AI API traffic, AI-as-C2 (SesameOp), or PROMPTFLUX behavioral patterns. The control passes the audit with no AI-relevant detection surface. |
 | ISO 27001:2022 | A.5.19 / A.5.20 (Supplier relationships) | Drafted for SaaS and outsourced-service vendors. Does not cover MCP servers as third-party code executing inside the developer environment, nor LLM API providers as data processors for sensitive prompt content. |
@@ -78,11 +78,11 @@ Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps
 |---|---|---|
 | Patch Management Theater (Pattern 1) | T1068 (Exploitation for Privilege Escalation), T1203 (Exploitation for Client Execution) | Public PoC + KEV + AI-accelerated weaponization compresses the exploitation window inside the SLA |
 | Network Segmentation Theater — IPsec (Pattern 2) | T1190 (Exploit Public-Facing Application) targeting the IPsec kernel subsystem | The control's cryptographic mechanism is the attack surface |
-| Access Control Theater — AI Agents (Pattern 3) | AML.T0051 (LLM Prompt Injection), AML.T0054 (Craft Adversarial Data — NLP), T1059 (Command and Scripting Interpreter) | Authorized service account executes attacker-chosen actions; no identity boundary is crossed |
+| Access Control Theater — AI Agents (Pattern 3) | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak), T1059 (Command and Scripting Interpreter) | Authorized service account executes attacker-chosen actions; no identity boundary is crossed |
 | Incident Response Theater — AI Pipeline (Pattern 4) | AML.T0020 (Poison Training Data), AML.T0096 (LLM Integration Abuse as C2), AML.T0010 (ML Supply Chain Compromise) | Detection triggers do not exist, so documented IR procedures have no input |
 | Change Management Theater — AI Models (Pattern 5) | AML.T0018 (Backdoor ML Model), AML.T0020 | Externally-managed model updates bypass operator change control entirely |
 | Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (ML Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
-| Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Acquire Public ML Artifacts — misuse) | AI-generated content evades grammar/style heuristics and template-matching detectors |
+| Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs for payload crafting) | AI-generated content evades grammar/style heuristics and template-matching detectors |
 
 Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.1.0, November 2025). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
 
@@ -95,8 +95,8 @@ The theater patterns most acutely under attack today are those backed by high-RW
 | Theater pattern | Evidence CVE | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|---|
 | Patch Management Theater | CVE-2026-31431 (Copy Fail) | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
-| Vendor Management Theater (AI APIs / MCP) | CVE-2026-30615 (Windsurf MCP) | 9.8 | Critical | No | Partial | No | N/A (vendor-side) | Suspected |
-| Access Control Theater (AI agents) | CVE-2025-53773 (Copilot prompt injection RCE) | 9.6 | High | No | Yes (demonstrated) | Yes (AI tooling enables) | N/A (vendor-side) | Suspected |
+| Vendor Management Theater (AI APIs / MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Suspected |
+| Access Control Theater (AI agents) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | Network Segmentation Theater (IPsec) | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited (subsystem-dependent) | Suspected |
 | Incident Response Theater (AI pipeline) | SesameOp campaign + AML.T0096 | N/A | High | N/A | ATLAS-documented | Yes | N/A | Confirmed campaign |
 | Change Management Theater (AI models) | Continuous provider updates | N/A | Medium | N/A | N/A | N/A | N/A | Ongoing (uncontrolled) |
@@ -114,7 +114,7 @@ The first three rows (Critical / Critical / High RWEP with public PoC or active 
 
 **The audit evidence:** Patch management policy document, ticketing system showing CVEs opened and closed within SLA, vulnerability scanner reports showing declining open vulnerabilities.
 
-**The reality:** CVE-2026-31431 (Copy Fail) was CISA KEV listed on 2026-03-15 with a public 732-byte exploit script. A 30-day SLA means an organization can be "compliant" while having a public deterministic root exploit unpatched for 30 days. During that window: active exploitation confirmed.
+**The reality:** CVE-2026-31431 (Copy Fail) was CISA KEV listed on 2026-05-01 with a public 732-byte exploit script (CISA due date 2026-05-15). A 30-day SLA means an organization can be "compliant" while having a public deterministic root exploit unpatched for weeks past the federal due date. During that window: active exploitation confirmed.
 
 **Why it's theater:** The 30-day SLA was designed for environments where weaponization takes weeks. Copy Fail's weaponization time was ~1 hour (AI-discovered and PoC-ready). The control measures compliance with a time window that no longer reflects exploit development reality.
 

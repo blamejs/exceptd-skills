@@ -65,7 +65,7 @@ AI governance moved from voluntary to mandatory between 2024 and 2026. The trans
 
 The gap on the ground is severe and the same in every jurisdiction the maintainers have spot-checked through Q2 2026: most organisations deploying LLMs, agents, RAG pipelines, and AI-augmented developer tooling have **zero governance artefact specific to AI**. They assume general security policies, the existing risk register, the existing vendor management programme, and the existing incident response playbook cover AI by inheritance. They do not. Concretely:
 
-- The risk register has no entry for prompt injection (AML.T0051), AI-as-C2 (AML.T0096), or AI-assisted exploit development against the organisation (AML.T0017).
+- The risk register has no entry for prompt injection (AML.T0051), AI-as-C2 (AML.T0096), or AI-assisted exploit development against the organisation (AML.T0016 + AML.T0017).
 - The vendor management programme treats AI providers as ordinary SaaS suppliers and accepts a SOC 2 Type II as evidence of AI-specific control adequacy — even though SOC 2 has no AI-specific criteria.
 - The incident response playbook does not enumerate AI-specific incident classes (model exfiltration, training-data poisoning, agent compromise via MCP server, RAG corpus contamination, AI vendor breach affecting derived embeddings).
 - The data inventory does not include vector embedding stores, model weights, or LLM prompt/response logs as classified data assets.
@@ -77,7 +77,7 @@ AI red-team activity has likewise shifted from voluntary research practice to go
 - NIST AI RMF MEASURE 2.5 expects organisations to assess AI risks during operation (`data/framework-control-gaps.json` → `NIST-AI-RMF-MEASURE-2.5`).
 - OWASP LLM Top 10 2025 (LLM01: Prompt Injection — `data/framework-control-gaps.json` → `OWASP-LLM-Top-10-2025-LLM01`) is treated by auditors as the working operational checklist where ISO/IEC 42001 is silent on technical specifics.
 
-The 2024–2026 disclosure record is unforgiving: vendor advisories from OpenAI, Anthropic, Google DeepMind, and Microsoft have published AI vulnerability disclosures spanning prompt-injection RCEs (CVE-2025-53773), MCP supply-chain RCEs (CVE-2026-30615), agentic-pipeline compromise patterns, and indirect-injection via retrieved content. An organisation with no governance artefact mapping these classes to internal use cases is not in a position to act on any of them.
+The 2024–2026 disclosure record is unforgiving: vendor advisories from OpenAI, Anthropic, Google DeepMind, and Microsoft have published AI vulnerability disclosures spanning prompt-injection-driven RCE (CVE-2025-53773, CVSS 7.8 / AV:L), local-vector MCP supply-chain RCE (CVE-2026-30615, CVSS 8.0 / AV:L), agentic-pipeline compromise patterns, and indirect-injection via retrieved content. An organisation with no governance artefact mapping these classes to internal use cases is not in a position to act on any of them.
 
 ---
 
@@ -113,7 +113,8 @@ Governance failure surfaces as exploitable threat. The TTPs below are the diagno
 |---|---|---|---|
 | AML.T0051 | LLM Prompt Injection | No prompt/response logging, no semantic monitoring, no AI use-case-level risk treatment decision | ISO/IEC 23894 clause 7 risk treatment register has no entry; OWASP LLM01 control unowned. CWE-1426 (improper validation of generative AI output) is the root-cause class. |
 | AML.T0096 | LLM Integration Abuse (covert C2) | No baseline of normal AI API traffic per principal; AI API egress treated as trusted internal traffic | NIST AI RMF MEASURE 2.5 not operationalised; SesameOp-class detection absent from SOC playbooks. |
-| AML.T0017 | Develop Capabilities (adversary AI-assisted exploit development) | No threat-intelligence ingestion path for AI-discovered vulnerabilities; patch SLAs sized for human-speed exploit development | EU AI Act Art. 9 RMS not iterating on the input that 41% of 2025 zero-days are AI-discovered (per `ai-attack-surface` and `zeroday-lessons.json`). |
+| AML.T0017 | Discover ML Model Ontology — adversary reconnaissance of deployed model family / guardrails | No inference-API rate / shape baseline; model-registry RBAC absent; system-prompt extraction queries undetected | NIST AI RMF MEASURE 2.5 not requiring per-identity inference monitoring; AIMS lacks a probing-detection control. |
+| AML.T0016 | Obtain Capabilities: Develop Capabilities (adversary AI-assisted exploit / payload development) | No threat-intelligence ingestion path for AI-discovered vulnerabilities; patch SLAs sized for human-speed exploit development | EU AI Act Art. 9 RMS not iterating on the input that 41% of 2025 zero-days are AI-discovered (per `ai-attack-surface` and `zeroday-lessons.json`). |
 
 Supporting weakness classes consumed from `data/cwe-catalog.json`:
 - **CWE-1426** — improper validation of generative AI output. The governance correlate: every AI use case must declare what output validation is performed and who owns it.
@@ -134,7 +135,7 @@ Adversary capability versus organisational governance maturity is the relevant a
 |---|---|---|---|
 | Low (off-the-shelf prompt injection per AML.T0051) | Exploitable today. Bypass rates >85% against SOTA defences (per `ai-attack-surface`). No detection. | Exploitable. Risk register names the threat; no detection or response capability deployed. | Detection latency: minutes-to-hours. Response playbook bound to incident class. |
 | Medium (AI-as-C2 per AML.T0096, SesameOp pattern) | Exploited last quarter by definition — no AI API logging, no baseline. | Detection-blind: AI traffic logged but no behavioural baseline. | Behavioural baseline + correlation with host activity per `ai-attack-surface` Step 4. |
-| High (AI-assisted exploit development per AML.T0017, Copy Fail-class) | Patch SLA structurally inadequate; live-patch capability absent. | Patch SLA sized for human-speed exploit development. | RWEP-driven prioritisation (`lib/scoring.js`), live-patch SLA <4h for KEV+PoC+AI-discovered class. |
+| High (AI-assisted exploit development per AML.T0016, Copy Fail-class) | Patch SLA structurally inadequate; live-patch capability absent. | Patch SLA sized for human-speed exploit development. | RWEP-driven prioritisation (`lib/scoring.js`), live-patch SLA <4h for KEV+PoC+AI-discovered class. |
 | Frontier (training pipeline poisoning, supply-chain compromise of model weights — AML.T0020 catalogue) | No AI supplier risk register; vendor SOC 2 accepted as adequate. | AI vendor register exists; no 4th-party (AI-of-AI) coverage. | EU AI Act Art. 10 data governance + Art. 72 adversarial testing operationalised; vendor adversarial-test attestations required contractually. |
 
 Reference incident inputs to the matrix: vendor advisories from Anthropic, OpenAI, Google DeepMind, Microsoft across 2024–2026; the emergent agentic-attack patterns observed through 2025–2026 disclosed in coordinated-vulnerability programmes per `coordinated-vuln-disclosure`; the AI-as-C2 evidence base referenced in `ai-c2-detection`; the prompt-injection-RCE and MCP-RCE CVE evidence referenced in `ai-attack-surface`.

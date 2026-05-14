@@ -61,6 +61,18 @@ function initPipeline(triggerType, triggerPayload) {
  * @returns {object} Handoff package for the next stage
  */
 function buildHandoff(run, stageIndex, stageOutput) {
+  // Bounds-check the stage index up front. Without this, an out-of-range
+  // index throws an opaque "cannot read properties of undefined" deep inside
+  // validateHandoff. With it, callers see a structured error that names the
+  // exact invalid input.
+  if (!run || !Array.isArray(run.stages)) {
+    throw new TypeError('buildHandoff: run.stages must be an array');
+  }
+  if (!Number.isInteger(stageIndex) || stageIndex < 0 || stageIndex >= run.stages.length) {
+    throw new RangeError(
+      `buildHandoff: stageIndex ${stageIndex} out of range [0, ${run.stages.length})`
+    );
+  }
   const currentStage = run.stages[stageIndex];
   const nextStage = run.stages[stageIndex + 1];
 
@@ -96,8 +108,40 @@ function buildHandoff(run, stageIndex, stageOutput) {
  *
  * @returns {{ currency_report: object[], action_required: boolean }}
  */
+// Manifest read cache. currencyCheck() runs on every weekly tick AND on every
+// `exceptd currency` invocation; in `watch` mode the scheduler triggers it
+// repeatedly. Re-reading + JSON.parse'ing the (~80 KB) manifest each time is
+// pure waste when the file hasn't changed within the cache window. 60s TTL is
+// short enough that a manual edit during a long-running watcher shows up by
+// the next periodic tick.
+const MANIFEST_CACHE_TTL_MS = 60_000;
+let _manifestCache = { value: null, mtimeMs: 0, readAt: 0 };
+
+function _loadManifestCached() {
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  const now = Date.now();
+  if (_manifestCache.value && (now - _manifestCache.readAt) < MANIFEST_CACHE_TTL_MS) {
+    // Within TTL — return cached value. The cost of a stat() per call is
+    // ~tens of microseconds; trade it for the JSON.parse() cost saved.
+    try {
+      const st = fs.statSync(manifestPath);
+      if (st.mtimeMs === _manifestCache.mtimeMs) {
+        return _manifestCache.value;
+      }
+    } catch {
+      // stat failed — fall through to re-read which will surface the error.
+    }
+  }
+  const raw = fs.readFileSync(manifestPath, 'utf8');
+  const parsed = JSON.parse(raw);
+  let mtimeMs = 0;
+  try { mtimeMs = fs.statSync(manifestPath).mtimeMs; } catch { /* leave 0 */ }
+  _manifestCache = { value: parsed, mtimeMs, readAt: now };
+  return parsed;
+}
+
 function currencyCheck() {
-  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8'));
+  const manifest = _loadManifestCached();
   const now = new Date();
   const report = [];
 
@@ -204,4 +248,13 @@ function _currencyLabel(score) {
   return 'critical_stale';
 }
 
-module.exports = { initPipeline, buildHandoff, currencyCheck, getAgentDefinition };
+module.exports = {
+  initPipeline,
+  buildHandoff,
+  currencyCheck,
+  getAgentDefinition,
+  MANIFEST_CACHE_TTL_MS,
+  // Test-only hook to reset the in-memory manifest cache. Not part of the
+  // operator surface.
+  _resetManifestCache: function () { _manifestCache = { value: null, mtimeMs: 0, readAt: 0 }; },
+};

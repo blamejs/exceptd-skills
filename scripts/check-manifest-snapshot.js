@@ -32,10 +32,12 @@
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const ROOT = path.join(__dirname, "..");
 const MANIFEST_PATH = path.join(ROOT, "manifest.json");
 const SNAPSHOT_PATH = path.join(ROOT, "manifest-snapshot.json");
+const SNAPSHOT_SHA_PATH = path.join(ROOT, "manifest-snapshot.sha256");
 
 function captureSurface(manifest) {
   // Public surface = the set of facts downstream consumers may have
@@ -186,6 +188,36 @@ if (require.main === module) {
         "`node scripts/refresh-manifest-snapshot.js` and commit it."
       );
       process.exit(2);
+    }
+
+    // Audit G F23 — when manifest-snapshot.sha256 is present, validate that
+    // the on-disk snapshot still hashes to the recorded value. Catches a
+    // hand-edit of manifest-snapshot.json that bypassed refresh-manifest-
+    // snapshot.js (so the F5 commit-only guard never had a chance to fire).
+    // The file is OPTIONAL: when absent, the gate warns-and-continues so
+    // pre-v0.12.14 trees still work.
+    if (fs.existsSync(SNAPSHOT_SHA_PATH)) {
+      const expectedLine = fs.readFileSync(SNAPSHOT_SHA_PATH, "utf8").trim();
+      const expectedSha = expectedLine.split(/\s+/)[0];
+      const liveSha = crypto
+        .createHash("sha256")
+        .update(fs.readFileSync(SNAPSHOT_PATH))
+        .digest("hex");
+      if (expectedSha !== liveSha) {
+        console.error(
+          "[check-manifest-snapshot] manifest-snapshot.json integrity check FAILED " +
+          `(expected ${expectedSha.slice(0, 12)}…, live ${liveSha.slice(0, 12)}…). ` +
+          "Someone edited manifest-snapshot.json without running refresh-manifest-snapshot.js. " +
+          "Re-run `node scripts/refresh-manifest-snapshot.js --commit-only` to regenerate."
+        );
+        process.exit(1);
+      }
+    } else {
+      console.warn(
+        "[check-manifest-snapshot] WARN: manifest-snapshot.sha256 missing — " +
+        "integrity check skipped. Run `node scripts/refresh-manifest-snapshot.js --commit-only` " +
+        "to generate it."
+      );
     }
 
     const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));

@@ -62,11 +62,67 @@ function checkSbomCurrency(root) {
   if (sbom.bomFormat !== "CycloneDX" || sbom.specVersion !== "1.6") {
     errors.push("SBOM is not CycloneDX 1.6");
   }
+
+  // Audit G F2 — component-level cross-check. A renamed or version-bumped
+  // skill that never made it into the SBOM refresh will pass the count
+  // check (the cardinality is unchanged) but the per-component name +
+  // version comparison surfaces it. Two component classes are recognised:
+  //
+  //   1. Skill components — bom-ref begins with "skill:" OR the component
+  //      name matches a manifest.skills[].name. Each one must exist in
+  //      manifest.skills with the same version.
+  //   2. Vendor components — bom-ref begins with "vendor:". Validated
+  //      against vendor/blamejs/_PROVENANCE.json when present.
+  //
+  // Components that don't fit either pattern are surfaced as warnings
+  // (not errors) so the gate isn't brittle against future component types.
+  const components = Array.isArray(sbom.components) ? sbom.components : [];
+  const skillByName = new Map(
+    (manifest.skills || []).map((s) => [s.name, s])
+  );
+  const provPath = path.join(root, "vendor", "blamejs", "_PROVENANCE.json");
+  let vendorProv = null;
+  if (fs.existsSync(provPath)) {
+    try { vendorProv = JSON.parse(fs.readFileSync(provPath, "utf8")); } catch { /* leave null */ }
+  }
+  for (const comp of components) {
+    const bomRef = typeof comp["bom-ref"] === "string" ? comp["bom-ref"] : "";
+    const name = comp.name;
+    const version = comp.version;
+    if (bomRef.startsWith("skill:") || skillByName.has(name)) {
+      const skillName = bomRef.startsWith("skill:")
+        ? bomRef.slice("skill:".length)
+        : name;
+      const live = skillByName.get(skillName);
+      if (!live) {
+        errors.push(
+          `SBOM component "${name}" (bom-ref ${bomRef}) is not in manifest.skills — skill renamed or removed without SBOM refresh`
+        );
+        continue;
+      }
+      if (live.version && version && String(live.version) !== String(version)) {
+        errors.push(
+          `SBOM component "${name}" version ${version} != manifest.skills version ${live.version} — bump without SBOM refresh`
+        );
+      }
+    } else if (bomRef.startsWith("vendor:")) {
+      if (vendorProv && vendorProv.pinned_commit) {
+        const expected = vendorProv.pinned_commit.slice(0, 12);
+        if (version && String(version) !== expected) {
+          errors.push(
+            `SBOM vendor component "${name}" version ${version} != _PROVENANCE.json pinned_commit ${expected}`
+          );
+        }
+      }
+    }
+  }
+
   return {
     ok: errors.length === 0,
     errors,
     skills: sbomSkills,
     catalogs: sbomCatalogs,
+    components_validated: components.length,
   };
 }
 
@@ -76,10 +132,16 @@ function main() {
   if (!result.ok) {
     for (const e of result.errors) process.stderr.write(e + "\n");
     process.stderr.write("Run `npm run refresh-sbom` to regenerate sbom.cdx.json.\n");
-    process.exit(1);
+    // v0.11.13 pattern: set exitCode + return so buffered stdout/stderr
+    // writes drain before the event loop exits. process.exit() can
+    // truncate piped output (CI log capture, JSON consumers).
+    process.exitCode = 1;
+    return;
   }
-  process.stdout.write(`SBOM current — ${result.skills} skills, ${result.catalogs} catalogs.\n`);
-  process.exit(0);
+  process.stdout.write(
+    `SBOM current — ${result.skills} skills, ${result.catalogs} catalogs, ` +
+    `${result.components_validated} components validated.\n`
+  );
 }
 
 module.exports = { checkSbomCurrency, resolveRoot };
