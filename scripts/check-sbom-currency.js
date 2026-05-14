@@ -63,7 +63,7 @@ function checkSbomCurrency(root) {
     errors.push("SBOM is not CycloneDX 1.6");
   }
 
-  // Audit G F2 — component-level cross-check. A renamed or version-bumped
+  // component-level cross-check. A renamed or version-bumped
   // skill that never made it into the SBOM refresh will pass the count
   // check (the cardinality is unchanged) but the per-component name +
   // version comparison surfaces it. Two component classes are recognised:

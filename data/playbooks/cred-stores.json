@@ -201,6 +201,24 @@
             "control_id": "Art.21(2)(j)",
             "designed_for": "Cryptography and access control policies.",
             "insufficient_because": "Policy shape. Permits 'we use SSO' as evidence without requiring per-device credential-store inventory."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B2 — Identity and access control",
+            "designed_for": "NCSC CAF outcome that the org understands, documents and manages access to networks and systems supporting the essential function.",
+            "insufficient_because": "Outcome focuses on authoritative directory state. Per-device credential stores (browser, IDE, secrets manager, OS keychain) holding long-lived bearer tokens fall outside the assessed identity surface and so escape the outcome's coverage."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 6 — Multi-factor authentication",
+            "designed_for": "ASD mitigation strategy requiring MFA for privileged actions and remote access.",
+            "insufficient_because": "MFA binds the human authentication step. Long-lived PATs and cloud access keys cached in IDE/CLI credential stores execute the privileged action without re-traversing the MFA factor; the strategy's surface excludes them."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1546",
+            "designed_for": "Australian Government ISM control on managing authentication credentials, including their secure storage.",
+            "insufficient_because": "Secure-storage requirement is met by any credential vault. Co-resident plaintext credential files on developer machines (npmrc, pip.conf, aws/credentials) are not exhaustively enumerated by the control's audit method."
           }
         ]
       },

@@ -254,7 +254,10 @@ test('Q P1 + R F6: attest verify subverb calls assertExpectedFingerprint', () =>
   // the call to assertExpectedFingerprint() within a bounded slice.
   const idx = src.indexOf('if (subverb === "verify")');
   assert.ok(idx > 0, 'attest verify subverb must be present');
-  const block = src.slice(idx, idx + 2500);
+  // Window widened post-AA P1-1 / P1-2: the verify subverb body grew with
+  // substitution-detection + corrupt-sidecar wrapping; the 2500-byte slice
+  // no longer reaches the normalize / pin call sites.
+  const block = src.slice(idx, idx + 4500);
   assert.match(
     block,
     /assertExpectedFingerprint\(/,
@@ -296,7 +299,8 @@ test('P P1-C: verifyAttestationSidecar normalizes content before verify', () => 
 test('P P1-C: attest verify subverb normalizes content before verify', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
   const idx = src.indexOf('if (subverb === "verify")');
-  const block = src.slice(idx, idx + 2500);
+  // Window widened post-AA P1-1 / P1-2 (see Q P1 + R F6 note above).
+  const block = src.slice(idx, idx + 4500);
   assert.match(
     block,
     /normalizeAttestationBytes\(/,

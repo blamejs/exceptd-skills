@@ -209,6 +209,36 @@
             "control_id": "Annex I",
             "designed_for": "Cyber Resilience Act essential requirements (effective Dec 2027).",
             "insufficient_because": "Names SBOM + vulnerability handling; effective date is in the future. Container-specific operationalization will be set by harmonized standards still being drafted in 2026."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(e)",
+            "designed_for": "Security in network and information systems acquisition, development and maintenance for essential and important entities.",
+            "insufficient_because": "Names secure configuration as essential measure. Implementing acts have not bound container-specific primitives (privileged, hostPID, runAsUser:0, capabilities-add, hostPath mounts); a fully NIS2-compliant entity can ship privileged containers."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.9",
+            "designed_for": "ICT systems, protocols and tools — protective and preventative measures for financial entities.",
+            "insufficient_because": "Article requires 'state-of-the-art' protective measures without enumerating container-runtime primitives. DORA-compliant financial-entity ICT can include privileged-container workloads with no DORA-side finding."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B4 — System security",
+            "designed_for": "NCSC CAF outcome that operational systems are protected against cyber attack.",
+            "insufficient_because": "Outcome-based. Container manifests granting host-namespace access (hostPID, hostNetwork, hostIPC) or capability escalation (CAP_SYS_ADMIN) are not enumerated by the assessment, so the outcome can return 'achieved' on an escape-prone cluster."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 5 — Restrict admin privileges",
+            "designed_for": "ASD mitigation strategy limiting administrative privilege scope.",
+            "insufficient_because": "Targets human admin accounts. Container workloads running as UID 0 or with CAP_SYS_ADMIN hold equivalent privilege to a host admin without appearing in the strategy's admin-account inventory."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1417",
+            "designed_for": "Australian Government ISM control on hardening operating system and platform configurations.",
+            "insufficient_because": "Control evidences platform-level hardening at deployment. Per-manifest container security context (Pod Security Standards, runAsNonRoot, readOnlyRootFilesystem) is outside the standard ISM evidence model for the host."
           }
         ]
       },

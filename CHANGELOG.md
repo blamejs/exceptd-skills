@@ -1,5 +1,103 @@
 # Changelog
 
+## 0.12.21 — 2026-05-14
+
+**Patch: Fragnesia (CVE-2026-46300) catalog + skill integration; trust-chain bypass closures; engine FP-gate extension; CSAF + SARIF + OpenVEX correctness; CLI fuzz; Hard Rule #5 global-first coverage; predeploy regression fix.**
+
+### Catalog — Fragnesia
+
+`CVE-2026-46300` (Fragnesia) added — a Linux kernel local privilege escalation disclosed 2026-05-13 by William Bowling / V12 security team. CVSS 7.8 / AV:L. The flaw is in the kernel XFRM ESP-in-TCP path: `skb_try_coalesce()` fails to propagate `SKBFL_SHARED_FRAG` when transferring paged fragments between socket buffers. An unprivileged user can deterministically rewrite read-only page-cache pages without modifying on-disk bytes — no race condition required. A public proof-of-concept demonstrates root shell via `/usr/bin/su`. Mitigation: blacklist or unload `esp4`, `esp6`, `rxrpc` kernel modules (the same set already documented for CVE-2026-31431); AlmaLinux + CloudLinux ship patched kernels in testing; live-patch is available via Canonical Livepatch, kpatch, kGraft, and CloudLinux KernelCare. RWEP today: 20 (will jump to 45 on CISA KEV listing).
+
+The `kernel`, `runtime`, and `hardening` playbooks now reference Fragnesia in `domain.cve_refs[]`. Seven skills carry cross-references: `kernel-lpe-triage`, `exploit-scoring`, `compliance-theater`, `framework-gap-analysis`, `zeroday-gap-learn`, `threat-model-currency`. `data/zeroday-lessons.json` adds three new control requirements that codify the lesson: page-cache integrity verification (file-integrity tools hashing on-disk bytes miss this class), bug-family mitigation persistence (operators who blacklisted modules for the parent bug remain mitigated for the sequel), and scanner paper-compliance test (a "patched" vulnerability-scanner report based on kernel-package version misses the module-unload mitigation surface).
+
+### Trust chain
+
+- **`algorithm: "unsigned"` sidecar substitution closed**. An attacker with write access to the attestation directory previously bypassed signed-tamper detection by overwriting `.sig` with `{"algorithm":"unsigned"}`. `attest verify` now refuses with exit 6 + `ok:false` when the substitution shape is detected on a host that has a private key present (legitimate unsigned attestations remain serviceable only on hosts where signing is intentionally disabled). `cmdReattest` requires explicit `--force-replay` to replay an explicitly-unsigned attestation regardless of host state; the persisted replay body records `sidecar_verify_class` and `force_replay: true`.
+- **Corrupt-sidecar `.sig` JSON parse bypass closed**. Previously `cmdReattest` refused only on `reason === "no .sig sidecar"`; a truncated or malformed sidecar fell through to the benign branch. The refusal class now covers any non-clean verify reason. `cmdAttest verify` also wraps the sidecar `JSON.parse` so a corrupt sidecar exits 6 (TAMPERED) rather than exit 1 (generic).
+- **`EXPECTED_FINGERPRINT` consulted inside `verifyManifestSignature`**. The pin previously fired only at the CLI tail; library callers (refresh-network gate, verify-shipped-tarball gate, tests, downstream consumers) bypassed it. The pin now gates manifest-envelope authentication at every load site. Honors `KEYS_ROTATED=1`; missing pin file remains warn-and-continue.
+
+### Engine
+
+- **Classification-override block extended to all override values**. The previous gate refused only `'detected'` overrides when an indicator with `false_positive_checks_required[]` was unsatisfied. An agent submitting `'clean'` or `'not_detected'` previously hid hits under a falsely-clean run verdict — strictly worse than the false-positive case the gate was meant to prevent. The substitution now applies to every override (`'detected' | 'clean' | 'not_detected' | 'inconclusive'`): when any indicator has unsatisfied FP checks, classification is forced to `'inconclusive'`. The `classification_override_blocked` runtime error records the offending indicator IDs and the count of unsatisfied checks (the literal check-name strings are no longer disclosed — they had been an attestation-bypass hint).
+- **`vex_status: 'fixed'` propagation closed end-to-end**. The runner's bundle gates (CSAF `product_status: fixed` / OpenVEX `status: fixed`) previously never fired on operator runs: the `--vex` CLI consumed `vexFilterFromDoc()` for the `vex_filter` set but never read the `.fixed` companion property. The CSAF + OpenVEX `fixed` semantics introduced in v0.12.19 now actually engage when an operator submits a CycloneDX `analysis.state: resolved` or OpenVEX `status: fixed` statement.
+- **`normalizeSubmission` flat-submission runtime errors reach `analyze.runtime_errors[]`**. The v0.12.19 promise to surface `signal_overrides_invalid` errors in the analyze phase was silently incomplete for flat-shape submissions (`{observations, verdict, signal_overrides}`); the constructed `out` object dropped the `_runErrors` accumulator. Errors are now threaded through both submission shapes.
+- **Off-allowlist `detection_classification` values surface a runtime error**. `'present'`, `'unknown'`, `''`, case variants, leading/trailing whitespace, and other non-allowlist strings previously failed silent. They now push `classification_override_invalid` onto `runtime_errors[]`.
+- **Proxy-throwing FP attestation no longer crashes detect()**. A malicious attestation whose getter throws is now caught: the indicator verdict downgrades to `'inconclusive'`, every required FP check is treated as unsatisfied, and a `fp_attestation_threw` runtime error records the indicator ID.
+
+### Bundles (CSAF / SARIF / OpenVEX)
+
+- **CSAF `tracking.status: 'interim'`** is the default for runtime emissions. `'final'` is an immutable-advisory marker; runtime detections without an operator review loop don't qualify. Operators promote to `final` via `--csaf-status final` after review. Strict validators (BSI CSAF Validator, Secvisogram) no longer refuse the bundles.
+- **CSAF non-CVE identifiers routed correctly**. Per CSAF 2.0 §3.2.1.2 the `cve` field requires a strict CVE-ID shape. `MAL-2026-3083`, GHSA-*, RUSTSEC-* identifiers are now emitted under `ids: [{system_name, text}]` instead of misappropriating the `cve` field. Validators no longer reject the document.
+- **CSAF `document.publisher.namespace`** now derives from `--publisher-namespace <url>` (new CLI flag) or, when omitted, from `--operator` if it parses as a URL. Without either, the bundle emits `urn:exceptd:operator:unknown` and pushes a `bundle_publisher_unclaimed` runtime warning. Operators are no longer misattributed to the tool vendor's marketing domain.
+- **CSAF `document.tracking.generator`** populated with the exceptd engine + version; `publisher.contact_details` carries the validated `--operator` value when supplied.
+- **`bundles_by_format` always populated**. The field was previously `null` when only the primary format was requested; multi-format-aware consumers had to special-case the no-extras shape.
+- **CSAF `cvss_v3` block requires `vectorString`**. Per the CVSS v3.1 schema referenced by CSAF, the vector is mandatory. The block is now omitted when the vector is unavailable rather than emitting a partial structure that downstream tooling would reject.
+- **SARIF `ruleId` prefixed with `<playbook-slug>/`**. Multi-playbook runs no longer collide on rule IDs (`framework-gap-0` from kernel-lpe and `framework-gap-0` from crypto-codebase are now distinct in GitHub Code Scanning dashboards).
+
+### CLI
+
+- **Stdin auto-detect uses `fstatSync` size probe** at `cmdRun`, `cmdIngest`, and `cmdAiRun --no-stream`. The previous truthy `!process.stdin.isTTY` check hung indefinitely on wrapped streams where `isTTY` was undefined but no data was piped (Mocha/Jest test harnesses, some Docker stdin-passthrough modes). The auto-detect now skips stdin when fstat reports size 0 on a non-TTY descriptor.
+- **`--vex` accepts CycloneDX SBOMs without `vulnerabilities[]`**. A document with `bomFormat: "CycloneDX"` and no vulnerabilities array is now read as a zero-CVE VEX filter rather than refused. Operators with legitimate "no known vulnerabilities" SBOMs can now thread them through.
+- **`--vex` and `--evidence` tolerate UTF-8 / UTF-16 BOMs**. A new shared `readJsonFile` helper detects the BOM (`FF FE` / `FE FF` / `EF BB BF`), decodes accordingly, strips the residual code point, and surfaces clean parse errors. Windows-generated CycloneDX documents (which routinely emit UTF-16LE or UTF-8 BOM) now parse correctly.
+- **`--vex` enforces a 32 MiB size cap** with a clear error message (`exceeds 32 MiB limit (33,554,432 bytes)`).
+- **`--operator` rejects Unicode bidi / format / control characters**. NFC-normalized input is validated against an allowlist that excludes Unicode general categories `Cc` (control), `Cf` (format — RTL override, zero-width, etc.), `Cs`, `Co`, `Cn`. Operator-identity forgery via right-to-left override or Zalgo is closed.
+- **`--evidence-dir` refuses symbolic links, Windows directory junctions, and surfaces a warning on hardlinks**. The previous `lstatSync().isSymbolicLink()` gate missed Windows reparse-point junctions (which Node treats as directories) and gave no signal on hardlinked entries. A `realpathSync` check now enforces containment under the resolved directory; `nlink > 1` emits a defense-in-depth stderr warning.
+- **`--ack` refused on non-clock verbs**. `brief`, `list`, and similar info-only verbs that don't engage jurisdiction-clock semantics now refuse the flag with a clear "irrelevant on this verb" error. On `run`, `--ack` is consumed only when classification is `'detected'`; on a `not_detected` run, consent persistence is skipped and `ack_skipped_reason` is surfaced.
+- **`--help` text scrubbed**. The `ai-run` subverb help no longer carries internal-process vocabulary.
+
+### CLI flag additions
+
+- **`--csaf-status <interim|final>`** controls CSAF emission status.
+- **`--publisher-namespace <url>`** sets the CSAF `document.publisher.namespace` field.
+
+### Auto-discovery + curation
+
+- **KEV-discovered draft predeploy regression closed**. `scoring.validate()` previously flagged every newly-imported KEV draft as score-diverged (the `buildScoringInputs` shape sets `poc_available: true` for the contribution while `buildKevDraftEntry` stores `null` on the draft for review). The validator now skips entries flagged `_auto_imported: true`; promoted entries are validated normally.
+- **`--air-gap` CLI flag wired through `refresh-external`**. The flag was previously accepted only via `EXCEPTD_AIR_GAP=1` env. Both the `parseArgs` and `loadCtx` paths now thread `--air-gap` into `ctx.airGap`; GHSA + OSV diff applicators correctly skip network calls.
+- **`cross-ref-api.byCve()` filters out auto-imported drafts by default**. An optional `{ include_drafts: true }` opt-in is available for the curation questionnaire path. Bundles, analyze, and other operator-facing surfaces no longer treat unreviewed drafts as authoritative.
+
+### Concurrency
+
+- **`cross-ref-api` cache invalidates on file mtime change**. The previous process-lifetime cache meant a long-running `orchestrator watch` process never observed catalog updates applied by an out-of-band `refresh-external --apply`. Each `loadCatalog` / `loadIndex` call now compares the cached mtime against `fs.statSync`; mismatch re-parses.
+- **`persistAttestation --force-overwrite` retry cap reduced** from 50 to 10 (~1 second worst-case event-loop block under attestation contention, down from ~10 seconds). Failure returns include a `lock_contention: true` sentinel + `LOCK_CONTENTION:` error prefix so callers can distinguish lock-busy from hard failure. An async refactor of `persistAttestation` and its call sites is a v0.13.0 candidate.
+- **`acquireLock` (playbook-runner) probes PID liveness on EEXIST**. Previously a stale-PID lockfile caused `acquireLock` to return null silently; callers proceeded unlocked. The function now parses the lockfile PID, calls `process.kill(pid, 0)`, reclaims on `ESRCH`, and returns a structured diagnostic when the lock is held by a live process.
+
+### CI workflows
+
+- **Top-level `permissions: contents: read`** added to `.github/workflows/release.yml` and `.github/workflows/refresh.yml`. Per-job blocks retain their elevated scopes. Closes outstanding Scorecard `TokenPermissionsID` alerts.
+
+### Tests
+
+- New: `tests/audit-aa-trust-fixes.test.js`, `tests/audit-bb-p1-fixes.test.js`, `tests/audit-cc-csaf-fixes.test.js`, `tests/audit-ee-gg-cli-fixes.test.js`, `tests/audit-ff-dd-hh-fixes.test.js`.
+- `tests/audit-r-cli-fixes.test.js` — 8 `notEqual(r.status, 0)` assertions tightened to `assert.equal(r.status, 1)` per the coincidence-passing-tests contract.
+- `tests/audit-s-t-u-z-fixes.test.js` — classification-override assertion pinned to `'inconclusive'` (was `notEqual('detected')`).
+- `tests/operator-bugs.test.js` — `#87 doctor --fix is registered` rewritten as a non-mutating `--help` probe; the previous shape staged a dummy `.keys/private.pem` in the real repo root, replicating the v0.12.4 incident anti-pattern.
+
+### Skill content
+
+- `webapp-security` skill — `CVE-2025-53773` CVSS aligned to catalog (`7.8 / AV:L`, was `9.6`).
+- `kernel-lpe-triage` skill — `CVE-2026-31431` KEV listing date aligned to catalog (`2026-05-01`, was `2026-03-15`).
+
+### Hard Rule #5 (global-first) coverage
+
+UK CAF + AU Essential 8 / ISM entries added to the framework-control-gap declarations across 10 playbooks (`kernel`, `mcp`, `ai-api`, `crypto`, `sbom`, `runtime`, `cred-stores`, `secrets`, `containers`, `hardening`). NIS2 Art. 21 + DORA Art. 9 added to `hardening` and `containers`. Each entry follows the existing schema shape; the gold-standard templates from `framework`, `crypto-codebase`, and `library-author` remain the reference.
+
+### Operator-facing comments
+
+A scrub across 19 shipped source files (`bin/`, `lib/`, `scripts/`) removed 101 internal-vocabulary references (`(audit X PN-N)`, `// Audit Y PN-N: ...`, `v0.12.X (audit Z PN-N):`). The remaining behavior-framing comments describe the change itself; the surrounding context (version pin, WHY) is preserved where it carries operator value.
+
+### Operator action required
+
+- **`NPM_TOKEN` env-scope migration**. The publish token is still org-scoped on `blamejs.NPM_TOKEN` with `visibility=all`. To complete the v0.12.16 audit goal, run:
+  ```
+  gh secret set NPM_TOKEN --env npm-publish --body "<paste npm automation token>"
+  gh secret list --env npm-publish    # verify
+  gh secret delete NPM_TOKEN --org blamejs   # AFTER verifying the env-scoped one is picked up
+  ```
+  The repo-side wiring (`release.yml` declares `environment: npm-publish` on the publish job; the env has the `tag: v*.*.*` deploy filter) is already in place.
+
+Test count: 840 → 943 (new audit closure files + scrubbed assertions). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
+
 ## 0.12.20 — 2026-05-14
 
 **Patch: e2e scenarios attest FP checks for indicators that the v0.12.19 classification-override block now forces to `inconclusive` when unattested.**

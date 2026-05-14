@@ -579,7 +579,7 @@ describe('analyze', () => {
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
     const ids = an.catalog_baseline_cves.map(c => c.cve_id);
     assert.ok(ids.includes('CVE-2026-31431'));
-    assert.equal(an.catalog_baseline_cves.length, 3, 'all three catalogued kernel CVEs present in baseline');
+    assert.equal(an.catalog_baseline_cves.length, 4, 'all four catalogued kernel CVEs present in baseline');
     assert.ok(an.catalog_baseline_cves.every(c => c.correlated_via === null), 'baseline entries carry correlated_via=null');
   });
 
@@ -599,7 +599,7 @@ describe('analyze', () => {
       signal_overrides: { 'kver-in-affected-range': 'hit' }
     });
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    assert.equal(an.matched_cves.length, 3, 'all three kernel CVEs correlate via the fired indicator');
+    assert.equal(an.matched_cves.length, 4, 'all four kernel CVEs correlate via the fired indicator');
     assert.ok(an.matched_cves.every(c => Array.isArray(c.correlated_via) && c.correlated_via.length > 0),
       'every matched CVE entry must carry a non-empty correlated_via');
     assert.ok(an.matched_cves[0].correlated_via.some(v => v.startsWith('indicator_hit:')),
@@ -1016,7 +1016,7 @@ describe('run (end-to-end)', () => {
     assert.equal(result.phases.detect.classification, 'detected');
     assert.equal(result.phases.analyze.rwep.adjusted, 100, 'rwep clamped to 100');
     assert.equal(result.phases.validate.selected_remediation.id, 'live-patch-deploy');
-    assert.equal(result.phases.analyze.matched_cves.length, 3);
+    assert.equal(result.phases.analyze.matched_cves.length, 4);
     assert.match(result.evidence_hash, /^[0-9a-f]{64}$/);
   });
 

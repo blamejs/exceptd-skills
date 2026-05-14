@@ -11,7 +11,7 @@
  * blindly — read the breaking-change list first. A breaking change is
  * a surface narrowing every downstream consumer needs to know about.
  *
- * Audit G F5 — commitOnly mode. Pass `--commit-only` (or set the env
+ * commitOnly mode. Pass `--commit-only` (or set the env
  * EXCEPTD_SNAPSHOT_AUDIT_ACK=1) to acknowledge that the operator
  * deliberately wants to overwrite the committed snapshot. When neither
  * flag nor env is set AND the snapshot would actually change, the
@@ -98,7 +98,7 @@ fs.writeFileSync(SNAPSHOT_PATH, newJson, "utf8");
 console.log(`[refresh-manifest-snapshot] wrote ${snapshot.skill_count} skills to manifest-snapshot.json`);
 console.log("[refresh-manifest-snapshot] commit this file alongside the surface change.");
 
-// Audit G F23 — write a tracked SHA-256 of the snapshot so the
+// write a tracked SHA-256 of the snapshot so the
 // check-manifest-snapshot.js gate can verify integrity (no hand edits
 // after refresh).
 const crypto = require("crypto");

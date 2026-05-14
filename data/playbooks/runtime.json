@@ -69,7 +69,8 @@
       "T1548.003"
     ],
     "cve_refs": [
-      "CVE-2026-31431"
+      "CVE-2026-31431",
+      "CVE-2026-46300"
     ],
     "cwe_refs": [
       "CWE-269",
@@ -190,6 +191,24 @@
             "control_id": "Art.21(2)(i)",
             "designed_for": "Access control policies, including privileged accounts.",
             "insufficient_because": "Policy-shaped, not state-shaped. Permits policy compliance without state-of-host evidence."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B2 — Identity and access control",
+            "designed_for": "NCSC CAF outcome that the org understands, documents and manages access to networks and systems supporting the essential function.",
+            "insufficient_because": "Outcome is achievable on documented intent. State-of-host enumeration (live sudoers, SUID, world-writable, cron/timer) is not a required artefact; sustained drift between documented and actual access is invisible to the CAF assessor."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 5 — Restrict admin privileges",
+            "designed_for": "ASD mitigation strategy limiting administrative privilege scope and re-validation cadence.",
+            "insufficient_because": "Targets explicit administrative accounts. SUID binaries, sudoers wildcards, and cron-as-root entries grant equivalent privilege without appearing in the strategy's admin-account inventory."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1382",
+            "designed_for": "Australian Government ISM control on privileged-account management and audit.",
+            "insufficient_because": "Audit cadence anchors on account creation/modification events. Persistent SUID/cron drift between audits does not trigger an event, so the control's audit trail can be clean while the host state is not."
           }
         ]
       },

@@ -79,10 +79,11 @@
       "supply-chain-integrity",
       "threat-model-currency",
       "threat-modeling-methodology",
-      "webapp-security"
+      "webapp-security",
+      "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 35
+    "skill_count": 36
   },
   "AU": {
     "skills": [

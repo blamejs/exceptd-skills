@@ -127,8 +127,8 @@ test('R-F4: --vex refuses empty vulnerabilities[] when bomFormat is not "Cyclone
     }), 'utf8');
     const sub = JSON.stringify({ observations: {}, verdict: {} });
     const r = cli(['run', 'library-author', '--evidence', '-', '--vex', vexPath], { input: sub });
-    assert.notEqual(r.status, 0,
-      'run with adversarial --vex must exit non-zero. stdout=' + r.stdout.slice(0,300) + ' stderr=' + r.stderr.slice(0,300));
+    assert.equal(r.status, 1,
+      'run with adversarial --vex must exit 1 (arg-validation refusal). stdout=' + r.stdout.slice(0,300) + ' stderr=' + r.stderr.slice(0,300));
     const err = tryJson(r.stderr.trim()) || {};
     assert.equal(err.ok, false, '--vex refusal body must carry ok:false');
     assert.match(err.error || '',
@@ -185,7 +185,7 @@ test('R-F5: --vex refuses files larger than 32 MB', () => {
     assert.ok(stat.size > 32 * 1024 * 1024, 'fixture must exceed 32 MB; got ' + stat.size);
     const sub = JSON.stringify({ observations: {}, verdict: {} });
     const r = cli(['run', 'library-author', '--evidence', '-', '--vex', vexPath], { input: sub });
-    assert.notEqual(r.status, 0, '--vex with oversized file must exit non-zero');
+    assert.equal(r.status, 1, '--vex with oversized file must exit 1 (size-cap refusal). status=' + r.status);
     const err = tryJson(r.stderr.trim()) || {};
     assert.equal(err.ok, false);
     assert.match(err.error || '', /--vex file too large/,
@@ -203,7 +203,7 @@ test('R-F5: --vex refuses files larger than 32 MB', () => {
 
 test('R-F7: attest show rejects path-traversal session-id with validation error (not "no session dir")', () => {
   const r = cli(['attest', 'show', '../../..', '--json']);
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 1, 'path-traversal session-id must exit 1 (validation refusal). status=' + r.status);
   const err = tryJson(r.stderr.trim()) || {};
   assert.equal(err.ok, false);
   // The validation error names the regex, not "no session dir for".
@@ -215,7 +215,7 @@ test('R-F7: attest show rejects path-traversal session-id with validation error 
 
 test('R-F7: attest show with a valid-shape but missing session id still emits the not-found error', () => {
   const r = cli(['attest', 'show', 'definitely-not-a-real-session-' + Date.now(), '--json']);
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 1, 'valid-shape but missing session-id must exit 1 (not-found). status=' + r.status);
   const err = tryJson(r.stderr.trim()) || {};
   assert.equal(err.ok, false);
   assert.match(err.error || '', /no session dir for/,
@@ -243,8 +243,8 @@ test('R-F8: unknown-command stderr JSON is parseable AND exit code is 2', () => 
 
 test('R-F9: run --scope "" rejects with the accepted-set message', () => {
   const r = cli(['run', '--scope', '']);
-  assert.notEqual(r.status, 0,
-    'run --scope "" must exit non-zero, not silently auto-detect. status=' + r.status + ' stdout=' + r.stdout.slice(0,300));
+  assert.equal(r.status, 1,
+    'run --scope "" must exit 1 (validateScopeOrThrow refusal). status=' + r.status + ' stdout=' + r.stdout.slice(0,300));
   const err = tryJson(r.stderr.trim()) || {};
   assert.equal(err.ok, false);
   assert.match(err.error || '', /--scope must be one of/,
@@ -257,8 +257,8 @@ test('R-F9: run --scope "" rejects with the accepted-set message', () => {
 
 test('R-F10: attest list --since 99 is refused (regex check before Date.parse)', () => {
   const r = cli(['attest', 'list', '--since', '99', '--json']);
-  assert.notEqual(r.status, 0,
-    'attest list --since 99 must exit non-zero (Date.parse silently maps "99" to 1999-12-01).');
+  assert.equal(r.status, 1,
+    'attest list --since 99 must exit 1 (regex refusal — Date.parse silently maps "99" to 1999-12-01). status=' + r.status);
   const err = tryJson(r.stderr.trim()) || {};
   assert.equal(err.ok, false);
   assert.match(err.error || '', /ISO-8601 calendar timestamp/,
@@ -267,8 +267,8 @@ test('R-F10: attest list --since 99 is refused (regex check before Date.parse)',
 
 test('R-F10: reattest --since 99 is refused (same regex contract)', () => {
   const r = cli(['reattest', 'somesid', '--since', '99', '--json']);
-  assert.notEqual(r.status, 0,
-    'reattest --since 99 must exit non-zero');
+  assert.equal(r.status, 1,
+    'reattest --since 99 must exit 1 (regex refusal). status=' + r.status);
   const err = tryJson(r.stderr.trim()) || {};
   assert.equal(err.ok, false);
   assert.match(err.error || '', /ISO-8601 calendar timestamp/,
@@ -357,8 +357,8 @@ test('R-F12: --evidence-dir refuses symbolic-link entries', (t) => {
       throw e;
     }
     const r = cli(['run', '--evidence-dir', tmp]);
-    assert.notEqual(r.status, 0,
-      '--evidence-dir with a symlink entry must exit non-zero');
+    assert.equal(r.status, 1,
+      '--evidence-dir with a symlink entry must exit 1 (symlink refusal). status=' + r.status);
     const err = tryJson(r.stderr.trim()) || {};
     assert.equal(err.ok, false);
     assert.match(err.error || '', /symbolic link|symlink/i,

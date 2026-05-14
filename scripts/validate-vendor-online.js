@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/validate-vendor-online.js — Audit G F6.
+ * scripts/validate-vendor-online.js
  *
  * Optional, network-touching companion to lib/validate-vendor.js. For every
  * file recorded in vendor/blamejs/_PROVENANCE.json, fetches the upstream

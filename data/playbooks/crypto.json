@@ -252,6 +252,24 @@
             "control_id": "Annex I (essential cybersecurity requirements)",
             "designed_for": "Cryptography for products with digital elements.",
             "insufficient_because": "Manufacturer obligation to use 'state-of-the-art' cryptography. 'State-of-the-art' is interpretive; without binding PQC reference, products ship classical-only."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B3 — Data security",
+            "designed_for": "NCSC CAF outcome that data is protected from compromise, including by cryptographic means.",
+            "insufficient_because": "Outcome-based — does not name algorithms or migration tempo. An entirely classical posture can be assessed as 'achieving' the outcome despite the HNDL adversary recording today against a CRQC decrypt date inside the data's retention window."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 8 — Regular backups",
+            "designed_for": "ASD mitigation strategy for resilient backups, including encryption at rest.",
+            "insufficient_because": "Encryption at rest under the strategy uses classical algorithms by default. Long-retention backups encrypted classically are HNDL-exposed for the entire retention period; the strategy makes no reference to PQC or algorithm-currency."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-0457",
+            "designed_for": "Australian Government ISM control on approved cryptographic algorithms for protecting government information.",
+            "insufficient_because": "Quarterly publishing cadence lags FIPS 203/204/205 finalization. Approved-algorithm list mixes classical and PQC entries without binding migration deadlines; classical-only stacks remain ISM-compliant for the lag window."
           }
         ]
       },
