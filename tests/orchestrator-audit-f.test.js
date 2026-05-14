@@ -69,20 +69,38 @@ test('P1-2: SIGTERM triggers graceful shutdown of watch (POSIX only)', (t, done)
     t.skip('SIGTERM is POSIX-only; covered indirectly on win32');
     return done();
   }
+  // v0.12.14: capture both stdout AND stderr; the shutdown banner ends up
+  // on stderr in the Ubuntu/macOS CI runners (was missed when the test
+  // looked only at stdout). 50ms delay between banner-detect and signal
+  // so the SIGTERM handler is fully registered before delivery. Hard
+  // timeout safety net so a hung child can't hold the CI runner.
   const child = spawn(process.execPath, [ORCH, 'watch'], { env: childEnv() });
-  let stdout = '';
-  child.stdout.on('data', (d) => {
-    stdout += d.toString();
-    if (/Starting event watcher/.test(stdout)) {
-      // Banner reached — signal now.
-      child.kill('SIGTERM');
+  let captured = '';
+  let signalled = false;
+  let finishedOnce = false;
+  const finish = (err) => {
+    if (finishedOnce) return;
+    finishedOnce = true;
+    try { child.kill('SIGKILL'); } catch {}
+    done(err);
+  };
+  const onData = (d) => {
+    captured += d.toString();
+    if (!signalled && /Starting event watcher/.test(captured)) {
+      signalled = true;
+      setTimeout(() => { try { child.kill('SIGTERM'); } catch {} }, 50);
     }
-  });
+  };
+  child.stdout.on('data', onData);
+  child.stderr.on('data', onData);
   child.on('exit', (code) => {
-    assert.match(stdout, /Stopping watcher \(SIGTERM\)/);
-    assert.equal(code, 0, 'graceful SIGTERM shutdown must exit 0');
-    done();
+    try {
+      assert.match(captured, /Stopping watcher \(SIGTERM\)/);
+      assert.equal(code, 0, 'graceful SIGTERM shutdown must exit 0');
+      finish();
+    } catch (e) { finish(e); }
   });
+  setTimeout(() => finish(new Error('test timed out — child did not shut down within 10s')), 10000).unref();
 });
 
 test('P1-2: signal handlers registered for SIGTERM (and SIGBREAK on win32)', () => {

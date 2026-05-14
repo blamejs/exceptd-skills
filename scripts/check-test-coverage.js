@@ -214,6 +214,11 @@ function categorize(file) {
   if (norm === "manifest-snapshot.sha256") return "manual-review";
   if (norm === "sbom.cdx.json") return "manual-review";
   if (norm.startsWith("lib/schemas/")) return "manual-review";
+  // v0.12.14: data/_indexes/ is auto-regenerated from data/ + manifest by
+  // `npm run build-indexes`; the source-of-truth diff is in the data/
+  // files themselves. Allowlist the derived index files so they don't
+  // perpetually surface as manual-review on every release commit.
+  if (norm.startsWith("data/_indexes/")) return "allowlist-derived";
   if (norm.startsWith("data/") && norm.endsWith(".json")) return "manual-review";
   if (norm === "package.json") return "manual-review";
   return "other";
@@ -469,6 +474,8 @@ function analyze(opts) {
     // F11 — data catalogs, schemas, manifests, SBOM go to manual review
     // instead of being silently allowlisted. They show up in CI output.
     if (cat === "manual-review") { manualReview.push({ file: ch.file, reason: "manual-review" }); continue; }
+    // v0.12.14: derived index files allowlist (auto-regenerated artifacts).
+    if (cat === "allowlist-derived") { allowlisted.push({ file: ch.file, reason: "derived-artifact" }); continue; }
     if (cat === "other") { manualReview.push({ file: ch.file, reason: "unclassified" }); continue; }
     if (ch.status !== "D" && isWhitespaceOnly(opts, ch.file, cwd, resolvedBase)) {
       allowlisted.push({ file: ch.file, reason: "whitespace-only" });

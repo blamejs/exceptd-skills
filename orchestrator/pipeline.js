@@ -248,13 +248,21 @@ function _currencyLabel(score) {
   return 'critical_stale';
 }
 
+// Test-only hook to reset the in-memory manifest cache. Not part of the
+// operator surface. v0.12.14: moved out of the export object literal so
+// the inline { mtimeMs: 0, readAt: 0 } reset values don't get detected
+// by scripts/check-test-coverage.js's extractLibExports regex as
+// pseudo-exports (`mtimeMs` and `readAt` are private cache fields, not
+// module exports).
+function _resetManifestCache() {
+  _manifestCache = { value: null, mtimeMs: 0, readAt: 0 };
+}
+
 module.exports = {
   initPipeline,
   buildHandoff,
   currencyCheck,
   getAgentDefinition,
   MANIFEST_CACHE_TTL_MS,
-  // Test-only hook to reset the in-memory manifest cache. Not part of the
-  // operator surface.
-  _resetManifestCache: function () { _manifestCache = { value: null, mtimeMs: 0, readAt: 0 }; },
+  _resetManifestCache,
 };
