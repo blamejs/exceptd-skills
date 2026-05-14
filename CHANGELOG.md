@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.20 — 2026-05-14
+
+**Patch: e2e scenarios attest FP checks for indicators that the v0.12.19 classification-override block now forces to `inconclusive` when unattested.**
+
+The v0.12.19 engine fix blocks `detection_classification: 'detected'` agent overrides when ANY indicator with `false_positive_checks_required[]` fires without operator attestation. Five e2e scenarios asserting `classification: detected` were submitting FP-required indicator hits without attestations, so the runner correctly downgraded them. The scenarios now attest the FP checks:
+
+- `09-secrets-aws-key`: attest `aws-secret-access-key` (3 checks)
+- `10-kernel-copy-fail`: attest `unpriv-userns-enabled` (2 checks)
+- `14-framework-jurisdiction-gap`: attest `exception-missing-expiry-or-owner` + `jurisdiction-without-framework` (2 + 2)
+- `16-containers-root-user`: attest `dockerfile-curl-pipe-bash` (3 checks; `dockerfile-runs-as-root` was already attested)
+- `19-crypto-rsa-2048-eol`: attest `openssl-pre-3-5` + `ml-dsa-slh-dsa-absent` (3 + 3)
+
+The v0.12.19 tag exists on git but never reached the npm registry — the release workflow's `validate` job failed against the pre-update scenarios. v0.12.20 ships the v0.12.19 trust-chain + engine + bundle + concurrency payload plus the scenario updates.
+
 ## 0.12.19 — 2026-05-14
 
 **Patch: trust-chain hardening across attestation verify + refresh-network + verify-shipped-tarball; engine FP-bypass closures; bundle correctness; concurrency safety; KEV-draft promotability; README CVSS correction.**

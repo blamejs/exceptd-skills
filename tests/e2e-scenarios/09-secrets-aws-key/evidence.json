@@ -9,7 +9,8 @@
     "secret-regex-scan-text-files": {"captured": true, "value": "src/config.py:3 AKIA2RFBQHJK7MNPQR4S (live-shape, not the AWS example key)", "indicator": "aws-access-key-id", "result": "hit"}
   },
   "signal_overrides": {
-    "aws-secret-access-key": "hit"
+    "aws-secret-access-key": "hit",
+    "aws-secret-access-key__fp_checks": { "0": true, "1": true, "2": true }
   },
   "verdict": {
     "classification": "detected",

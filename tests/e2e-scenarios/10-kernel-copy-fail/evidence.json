@@ -12,6 +12,9 @@
     "sysctl-hardening": {"captured": true, "value": "kernel.unprivileged_userns_clone=1", "indicator": "unpriv-userns-enabled", "result": "hit"},
     "cpu-vulnerabilities": {"captured": true, "value": "Mitigations enabled"}
   },
+  "signal_overrides": {
+    "unpriv-userns-enabled__fp_checks": { "0": true, "1": true }
+  },
   "verdict": {
     "classification": "detected",
     "blast_radius": 5

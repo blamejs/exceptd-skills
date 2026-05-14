@@ -17,7 +17,9 @@
   },
   "signal_overrides": {
     "ml-dsa-slh-dsa-absent": "hit",
-    "tls-no-hybrid-group": "hit"
+    "tls-no-hybrid-group": "hit",
+    "ml-dsa-slh-dsa-absent__fp_checks": { "0": true, "1": true, "2": true },
+    "openssl-pre-3-5__fp_checks": { "0": true, "1": true, "2": true }
   },
   "verdict": {
     "classification": "detected",
