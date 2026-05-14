@@ -231,10 +231,19 @@ test('#65 refresh --no-network routes to prefetch', () => {
   // sources. Assert errors <= a small ceiling so a real regression
   // (re-adding a permanently-broken URL) still fires but transient
   // upstream flakes don't fail CI on every PR.
-  const errorCount = parseInt(summaryMatch[3], 10);
-  const ERROR_CEILING = 10; // remaining pin sources (8) + small headroom
-  assert.ok(errorCount <= ERROR_CEILING,
-    `prefetch error count ${errorCount} exceeds ceiling ${ERROR_CEILING} — implies a pin source URL is permanently broken (not transient upstream flakiness). Got: ${summaryMatch[0]}`);
+  //
+  // v0.12.16: the 3rd capture group means different things in the two
+  // summary shapes — "N error(s)" vs "N would-fetch (dry-run)". The
+  // ceiling check only applies to the error shape; the dry-run shape's
+  // would-fetch count is the entire pin registry (47 today) and is
+  // expected to be high.
+  const isDryRun = /would-fetch/.test(summaryMatch[0]);
+  if (!isDryRun) {
+    const errorCount = parseInt(summaryMatch[3], 10);
+    const ERROR_CEILING = 10; // remaining pin sources (8) + small headroom
+    assert.ok(errorCount <= ERROR_CEILING,
+      `prefetch error count ${errorCount} exceeds ceiling ${ERROR_CEILING} — implies a pin source URL is permanently broken (not transient upstream flakiness). Got: ${summaryMatch[0]}`);
+  }
   // The libuv assertion fix: stderr must not contain the teardown
   // assertion line. Coupled with the exit-status path below, this
   // proves the crash is gone, not just masked by a pipe-buffered
