@@ -43,7 +43,10 @@
         "on_fail": "warn"
       }
     ],
-    "mutex": ["secrets"],
+    "mutex": [
+      "secrets",
+      "containers"
+    ],
     "feeds_into": [
       {
         "playbook_id": "sbom",
@@ -563,14 +566,14 @@
         },
         {
           "id": "signing-key-material",
-          "type": "file_path",
+          "type": "file",
           "source": "Locate: cosign.pub, *.pem (public-key signing artifacts), keys/public.pem, .well-known/openpgpkey/, sigstore-cosign metadata in workflow",
           "description": "Public signing material committed to the repo or referenced from the release workflow.",
           "required": false
         },
         {
           "id": "intoto-attestations",
-          "type": "file_path",
+          "type": "file",
           "source": "Glob: *.intoto.jsonl, *.sigstore, *.sbom.json.sig, *.cdx.json.sig, attestations directory; AND for npm packages: GET https://registry.npmjs.org/${pkg} and inspect dist.attestations",
           "description": "in-toto / Sigstore / SLSA provenance attestations attached to releases.",
           "required": false,
@@ -592,7 +595,7 @@
         },
         {
           "id": "vendored-code",
-          "type": "file_path",
+          "type": "file",
           "source": "List directories: vendor/, third_party/, external/, deps/, internal/vendor/; AND for each: locate provenance manifest (vendor.json, THIRD_PARTY_PROVENANCE.md, modules.txt for Go vendored)",
           "description": "Vendored / bundled third-party code carried in the publisher's own release.",
           "required": false
@@ -644,7 +647,7 @@
         },
         {
           "id": "skill-signing-infrastructure",
-          "type": "file_path",
+          "type": "file",
           "source": "If repo ships skills / plugins / extensions: locate lib/sign.js, lib/verify.js, scripts/sign-skills.*, signatures/, keys/, AND read package.json scripts for sign/verify entries",
           "description": "Specific to AI-tool / plugin / skill publishers: Ed25519 / cosign signing scaffolding.",
           "required": false
@@ -786,7 +789,11 @@
           "description": "Mutable action reference — upstream owner can substitute action code under the same tag.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1195.001"
+          "attack_ref": "T1195.001",
+          "false_positive_checks_required": [
+            "If Dependabot is configured (.github/dependabot.yml with package-ecosystem: github-actions, schedule >= weekly) AND the repo has a recent (within last 60 days) Dependabot PR updating action SHAs — the mutable-ref window is bounded; demote to lower-confidence finding (not miss; tag-pinning is still strictly safer than SHA-pinning-with-Dependabot).",
+            "If every mutable ref points to a github-owned action (actions/*, github/*) the supply-chain risk is materially lower than third-party action refs; tag-with-rationale-in-comment is acceptable for github-owned. Demote third-party-only mutable refs above github-owned ones in reporting."
+          ]
         },
         {
           "id": "package-json-provenance-missing",
@@ -839,11 +846,15 @@
         },
         {
           "id": "tag-protection-absent",
-          "type": "api_response",
+          "type": "api_call_sequence",
           "value": "Within the branch-tag-protection artifact: gh api repos/${owner}/${repo}/tags/protection returns empty array OR 404 AND the release-workflows artifact contains a publish workflow that triggers on push tags: ['v*']",
           "description": "Release tags unprotected (theater #6) — any branch can push v* and trigger publish.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If repository rulesets (newer model) protect the tag pattern v*.*.* with delete + non-fast-forward + update blocked AND zero bypass actors — the legacy tag-protection-rules API may return empty while protection is in place. Cross-check the rulesets API before flagging.",
+            "If the repository is read-only / archived (archived: true via the repo API) — tag protection is moot; demote to miss."
+          ]
         },
         {
           "id": "release-tag-not-signed",
@@ -871,7 +882,7 @@
         },
         {
           "id": "no-security-txt",
-          "type": "api_response",
+          "type": "api_call_sequence",
           "value": "If product has a primary domain: HTTP 404 / connection failure on /.well-known/security.txt",
           "description": "No RFC 9116 machine-discoverable disclosure path (theater #10).",
           "confidence": "deterministic",
@@ -879,7 +890,7 @@
         },
         {
           "id": "private-vuln-reporting-disabled",
-          "type": "api_response",
+          "type": "api_call_sequence",
           "value": "gh api repos/${owner}/${repo} --jq '.security_and_analysis.private_vulnerability_reporting.status' returns 'disabled'",
           "description": "GitHub private vulnerability reporting off — no OIDC-authenticated disclosure intake.",
           "confidence": "deterministic",

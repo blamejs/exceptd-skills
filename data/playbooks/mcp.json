@@ -440,7 +440,7 @@
         },
         {
           "id": "mcp-tool-response-log",
-          "type": "log_pattern",
+          "type": "log",
           "source": "AI client MCP-protocol logs: ~/.claude/logs/mcp/*.jsonl (Claude Code), ~/.cursor/logs/mcp-*.log (Cursor), ~/.codeium/windsurf/logs/mcp_*.log (Windsurf)",
           "description": "v0.12.6: Verbatim tools/list and tools/call response capture. The only artifact that lets ANSI-escape, Unicode-Tag-smuggling, instruction-coercion-grammar, and sensitive-path-reference indicators fire. If client doesn't log MCP responses, mark inconclusive and recommend enabling MCP request/response verbose logging in client settings.",
           "required": false

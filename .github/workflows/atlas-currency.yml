@@ -54,10 +54,17 @@ jobs:
 
       - name: Open issue for skills past review window
         if: steps.currency.outputs.needs_issue == 'true'
+        # The currency report is untrusted output from `node orchestrator/index.js currency`.
+        # A skill author who lands a string containing a backtick + `${...}` could otherwise
+        # achieve arbitrary JS execution inside the github-script runtime (CWE-1395 /
+        # Scorecard DangerousWorkflowID). We pass the report via `env:` and read it from
+        # process.env so it is treated as a plain string, never expanded as a template.
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        env:
+          REPORT_TEXT: ${{ steps.currency.outputs.report }}
         with:
           script: |
-            const report = `${{ steps.currency.outputs.report }}`;
+            const report = process.env.REPORT_TEXT || '';
             const title = '[currency] Skills past review window';
             const body = [
               'The scheduled ATLAS currency check found one or more skills scoring below 50% currency.',

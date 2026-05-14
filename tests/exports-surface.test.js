@@ -158,6 +158,41 @@ test('orchestrator/pipeline exports MANIFEST_CACHE_TTL_MS + _resetManifestCache'
 
 const validateVendorOnline = require('../scripts/validate-vendor-online');
 
+// v0.12.16 surface additions.
+
+test('lib/validate-playbooks exports checkMutexReciprocity as a function', () => {
+  const validatePlaybooks = require('../lib/validate-playbooks');
+  assert.equal(typeof validatePlaybooks.checkMutexReciprocity, 'function');
+  // Returns a Map keyed by playbook id; values are arrays of warning
+  // messages for asymmetric mutex declarations.
+  const empty = validatePlaybooks.checkMutexReciprocity([]);
+  assert.ok(empty instanceof Map);
+  // Reciprocal: a↔b — no asymmetric edges.
+  const reciprocal = validatePlaybooks.checkMutexReciprocity([
+    { data: { _meta: { id: 'a', mutex: ['b'] } } },
+    { data: { _meta: { id: 'b', mutex: ['a'] } } },
+  ]);
+  assert.ok(reciprocal instanceof Map);
+  // Asymmetric: a declares mutex with b but b doesn't reciprocate.
+  const asym = validatePlaybooks.checkMutexReciprocity([
+    { data: { _meta: { id: 'a', mutex: ['b'] } } },
+    { data: { _meta: { id: 'b', mutex: [] } } },
+  ]);
+  assert.ok(asym instanceof Map);
+  // At least one finding registered (against either 'a' or 'b').
+  const totalFindings = [...asym.values()].reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
+  assert.ok(totalFindings >= 1, 'asymmetric mutex should produce at least one finding');
+});
+
+test('bin/exceptd registers --force-replay flag for cmdReattest', () => {
+  // The flag was added in v0.12.16 audit L F10 — operator override to
+  // proceed with reattest replay even when the prior attestation .sig
+  // sidecar fails to verify. Confirm the flag is in the bool-args list.
+  const fs = require('fs');
+  const src = fs.readFileSync(require('path').join(__dirname, '..', 'bin', 'exceptd.js'), 'utf8');
+  assert.match(src, /"force-replay"/, '--force-replay must be registered as a parseArgs bool flag');
+});
+
 test('scripts/validate-vendor-online exports rawUrlForPin + fetchBuffer', () => {
   assert.equal(typeof validateVendorOnline.rawUrlForPin, 'function');
   assert.equal(typeof validateVendorOnline.fetchBuffer, 'function');

@@ -393,77 +393,77 @@
         },
         {
           "id": "hash-primitive-call-sites",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep across the repo (excluding test/spec/fixture/node_modules/vendor/.venv/target/dist/build) for hash-primitive call sites. Patterns: `crypto.createHash\\(`, `crypto.createHmac\\(`, `hashlib\\.(md5|sha1|sha224|sha256|sha384|sha512|blake2b|blake2s|sha3_)`, `MessageDigest\\.getInstance\\(`, `Digest::(MD5|SHA1|SHA256)`, `hash/md5`, `hash/sha1`, `\"md5\"`, `\"sha1\"`, `\"sha-1\"`, `\"sha256\"`, `\"sha3-256\"`. Use Grep with multiline=true where the algorithm-name string is on a different line from the constructor.",
           "description": "Every hash-primitive call site. Distinguish security-context usage (signature input, MAC input, integrity check, password derivation, token derivation) from non-security usage (cache key, ETag, dedup). The non-security distinction must be evidenced inline; absent evidence, treat as security-context.",
           "required": true
         },
         {
           "id": "cipher-and-kex-call-sites",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for cipher and KEX call sites: `createCipheriv\\(`, `createDecipheriv\\(`, `crypto\\.publicEncrypt\\(`, `crypto\\.privateDecrypt\\(`, `createDiffieHellman\\(`, `createECDH\\(`, `crypto\\.generateKeyPair`, `Cipher\\.getInstance\\(`, `aesgcm`, `ChaCha20Poly1305`, `\\.(seal|open)\\(`, `OpenSSL::Cipher`, hardcoded curve names `\"P-256\"`, `\"secp256r1\"`, `\"prime256v1\"`, `\"P-384\"`, `\"secp384r1\"`, `\"P-521\"`, `\"secp521r1\"`, `\"secp256k1\"`, `\"X25519\"`, `\"X448\"`.",
           "description": "Cipher and key-exchange call sites. Identify mode (GCM/CBC/CTR/ECB), curve, key size, IV-generation pattern. ECB mode anywhere is a hard fail. CBC without HMAC is a hard fail. AES-128 without GCM authenticator is a finding.",
           "required": true
         },
         {
           "id": "signature-call-sites",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for signature operations: `crypto\\.sign\\(`, `crypto\\.verify\\(`, `Signature\\.getInstance\\(`, `\\.sign_pss\\(`, `\\.verify_pss\\(`, `RSA-PSS`, `RSA-PKCS1`, `ECDSA`, `Ed25519`, `Ed448`, `ML-DSA`, `Dilithium`, `SLH-DSA`, `SPHINCS`. Capture key sizes for RSA (look for `modulusLength`, `key_size`, `--rsa-2048` literals), curve choice for ECDSA, hash choice paired with signature (RSA-SHA1 is a hard fail).",
           "description": "Signature scheme inventory. RSA-1024 anywhere is a hard fail; RSA-2048 with > 5-year sensitivity requires PQC roadmap; ECDSA-P256 acceptable today but needs hybrid ML-DSA migration plan; bare RSA-PKCS1 (not PSS) for new signatures is a finding.",
           "required": true
         },
         {
           "id": "kdf-call-sites",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for key-derivation calls: `pbkdf2(Sync)?\\(`, `PBKDF2`, `hashlib\\.pbkdf2_hmac`, `bcrypt\\.(hash|hashSync|compare)`, `scrypt(Sync)?\\(`, `argon2\\.(hash|verify)`, `argon2id`, `hkdf\\(`, `HKDF`, `derive_key`. For each, extract the cost parameters: PBKDF2 iterations, bcrypt cost factor, scrypt N/r/p, argon2 t/m/p.",
           "description": "Key-derivation parameter inventory. Apply OWASP 2023 minimums: PBKDF2-HMAC-SHA256 >= 600,000; PBKDF2-HMAC-SHA512 >= 210,000; bcrypt cost >= 12; scrypt N >= 2^17, r=8, p=1; argon2id m >= 19 MiB (19456 KiB), t >= 2, p >= 1. Any parameter below minimum is a finding.",
           "required": true
         },
         {
           "id": "rng-call-sites",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for RNG sources: `Math\\.random\\(`, `random\\.random\\(`, `random\\.randint\\(`, `random\\.choice\\(`, `rand\\(`, `srand\\(`, `mt_rand\\(`, `secrets\\.(token_|randbits|choice)`, `crypto\\.randomBytes\\(`, `crypto\\.getRandomValues\\(`, `crypto\\.randomUUID\\(`, `os\\.urandom\\(`, `getrandom\\(`, `SecureRandom`, `OsRng`, `ThreadRng`, `/dev/urandom`, `/dev/random`. Capture file_path:line for each.",
           "description": "RNG-source inventory. Production-context Math.random / random.random / rand without cryptographic-RNG fallback is CWE-338. Distinguish test/spec/fixture usage explicitly via path allowlist; production usage requires a cryptographic RNG.",
           "required": true
         },
         {
           "id": "hardcoded-key-material",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for hardcoded crypto material: PEM markers `-----BEGIN (RSA |EC |DSA |PRIVATE |PUBLIC |CERTIFICATE )?(PRIVATE|PUBLIC) KEY-----`, SSH key prefixes `ssh-rsa AAAA`, `ssh-ed25519 AAAA`, `ecdsa-sha2-nistp256 AAAA`, hex-blob heuristics for keys (>= 64 hex chars on a single literal line), base64-encoded blobs >= 256 chars in source files. Cross-reference with the `secrets` playbook for the exfil-secret angle; here the focus is library-author shipping defaults that look like keys (e.g. example certs, demo keys, sample HMAC seeds that downstream consumers fail to rotate).",
           "description": "Hardcoded key material shipped with the library. Library-author angle: any 'demo' or 'example' key that downstream consumers fail to rotate becomes a universal-default vulnerability (cf. embedded-router demo keys, Wi-Fi default WPA keys, IoT bootloader signing keys).",
           "required": false
         },
         {
           "id": "tls-config-construction",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for in-code TLS context construction: `tls\\.createSecureContext`, `tls\\.createServer`, `https\\.createServer`, `ssl\\.SSLContext\\(`, `ssl\\.create_default_context`, `rustls::ServerConfig`, `rustls::ClientConfig`, `tls\\.Config\\{`, `SSL_CTX_new`, options like `minVersion`, `maxVersion`, `secureProtocol`, `ciphers`, `ecdhCurve`, `sigalgs`, `groups`, `ALPNProtocols`.",
           "description": "In-code TLS configuration. Library authors that construct TLS contexts internally must default to TLS 1.3 minimum, X25519MLKEM768 group preference (when openssl >= 3.5 detected), modern cipher list. Hardcoded `secureProtocol: 'TLSv1_method'` or `minVersion: 'TLSv1'` is a hard fail.",
           "required": false
         },
         {
           "id": "pqc-adoption-signals",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for PQC adoption: `ml[-_]?kem`, `ml[-_]?dsa`, `slh[-_]?dsa`, `kyber`, `dilithium`, `sphincs`, `falcon`, `kemEncapsulate`, `kemDecapsulate`, `EVP_KEM_`, `OQS_KEM_`, `oqsprovider`, `liboqs`, `noble-post-quantum`, `pqcrypto::`, `aws-lc-rs::pqc`, `circl/sign/dilithium`, `circl/kem/kyber`.",
           "description": "PQC adoption signals. If `pqc-readiness-gap` directive runs, this artifact is the primary input. Distinguish concrete cryptographic operations from configuration strings, feature-flag names, and comments.",
           "required": false
         },
         {
           "id": "fips-provider-activation",
-          "type": "file_path",
+          "type": "file",
           "source": "Grep for FIPS-mode activation: `OSSL_PROVIDER_load.*fips`, `crypto\\.setFips\\(`, `openssl::provider::Provider::load_default`, `Provider::load.*\"fips\"`, openssl.cnf or fipsmodule.cnf files in the repo, environment-variable references to `OPENSSL_FIPS`, `OPENSSL_CONF`. Capture whether the activation is conditional (e.g. only if env var set) or unconditional.",
           "description": "FIPS-provider activation evidence. The `fips-validation-status` directive uses this to distinguish runtime FIPS activation from link-time FIPS claims.",
           "required": false
         },
         {
           "id": "vendored-crypto-tree",
-          "type": "file_path",
+          "type": "file",
           "source": "Glob for vendored crypto: `vendor/**/{crypto,openssl,sodium,nacl,kyber,dilithium,sphincs,curve25519,blake2,sha3,argon2}*`, `third_party/**/*crypto*`, `crates/**/*crypto*` (excluding the package's own crypto module). Look for upstream-reference files: `UPSTREAM`, `ORIGIN`, `PROVENANCE.md`, `.upstream-commit`, integrity hashes in lockfiles.",
           "description": "Vendored cryptographic primitives. Library authors sometimes vendor crypto to reduce dep tree or for licensing reasons. Without provenance + integrity audit, vendored crypto is a supply-chain backdoor opportunity.",
           "required": false
         },
         {
           "id": "ci-crypto-tests",
-          "type": "file_path",
+          "type": "file",
           "source": "Glob for CI configs: `.github/workflows/**/*.yml`, `.gitlab-ci.yml`, `.circleci/config.yml`, `azure-pipelines.yml`, `Jenkinsfile`. Grep for crypto-test invocations, FIPS-test runs, constant-time analysis tools (`dudect`, `valgrind --tool=memcheck` on secret-dependent code, `ctgrind`).",
           "description": "Build-time crypto verification. Absence of constant-time tests on vendored PQC primitives is a finding for the `pqc-readiness-gap` directive.",
           "required": false

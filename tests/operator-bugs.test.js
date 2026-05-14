@@ -216,9 +216,13 @@ test('#65 refresh --no-network routes to prefetch', () => {
   // different format.
   assert.match(r.stdout, /prefetch summary:/,
     'refresh --no-network must route to prefetch.js and emit its summary');
-  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) error\(s\)/);
+  // v0.12.16: dry-run summary differs — prefetch emits "N fetched, M fresh,
+  // K would-fetch (dry-run)" when --no-network is supplied (versus
+  // "N fetched, M fresh, K error(s)" on a real fetch run). Both shapes
+  // prove prefetch.js produced the line. Accept either.
+  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) (?:error\(s\)|would-fetch)/);
   assert.ok(summaryMatch,
-    `summary line must be in the exact "N fetched, M fresh, K error(s)" format — proves prefetch.js produced it, not a misrouted verb that happens to print "prefetch summary:". Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
+    `summary line must be in the exact "N fetched, M fresh, K error(s)" OR "N fetched, M fresh, K would-fetch (dry-run)" format — proves prefetch.js produced it, not a misrouted verb. Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
   // The 2 prior 404 sources (mitre/cwe + d3fend/d3fend-data — neither
   // upstream project publishes via GitHub Releases) were removed from
   // the pins registry. The error counter SHOULD be 0 on a fresh cache,
@@ -227,10 +231,19 @@ test('#65 refresh --no-network routes to prefetch', () => {
   // sources. Assert errors <= a small ceiling so a real regression
   // (re-adding a permanently-broken URL) still fires but transient
   // upstream flakes don't fail CI on every PR.
-  const errorCount = parseInt(summaryMatch[3], 10);
-  const ERROR_CEILING = 10; // remaining pin sources (8) + small headroom
-  assert.ok(errorCount <= ERROR_CEILING,
-    `prefetch error count ${errorCount} exceeds ceiling ${ERROR_CEILING} — implies a pin source URL is permanently broken (not transient upstream flakiness). Got: ${summaryMatch[0]}`);
+  //
+  // v0.12.16: the 3rd capture group means different things in the two
+  // summary shapes — "N error(s)" vs "N would-fetch (dry-run)". The
+  // ceiling check only applies to the error shape; the dry-run shape's
+  // would-fetch count is the entire pin registry (47 today) and is
+  // expected to be high.
+  const isDryRun = /would-fetch/.test(summaryMatch[0]);
+  if (!isDryRun) {
+    const errorCount = parseInt(summaryMatch[3], 10);
+    const ERROR_CEILING = 10; // remaining pin sources (8) + small headroom
+    assert.ok(errorCount <= ERROR_CEILING,
+      `prefetch error count ${errorCount} exceeds ceiling ${ERROR_CEILING} — implies a pin source URL is permanently broken (not transient upstream flakiness). Got: ${summaryMatch[0]}`);
+  }
   // The libuv assertion fix: stderr must not contain the teardown
   // assertion line. Coupled with the exit-status path below, this
   // proves the crash is gone, not just masked by a pipe-buffered

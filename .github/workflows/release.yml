@@ -122,6 +122,37 @@ jobs:
           echo '== git diff --stat HEAD =='
           git diff --stat HEAD || true
 
+      - name: Assert prepublishOnly delegates only to predeploy + validate-package
+        # The publish job below sets EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY=1 to
+        # avoid double-running the predeploy gate (validate ran it above).
+        # That escape hatch is only safe as long as `prepublishOnly`'s
+        # work is exactly { predeploy, validate-package } and nothing more.
+        # If anyone adds a NEW gate to prepublishOnly (e.g. a third script
+        # invocation), it would be silently skipped on the canonical
+        # release path. This step parses package.json and fails the build
+        # if the shape changes — forcing a human to either fold the new
+        # gate into predeploy/validate-package or update this assertion
+        # AND the publish step deliberately.
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const pre = pkg.scripts && pkg.scripts.prepublishOnly;
+            if (!pre) { console.error('prepublishOnly is unset'); process.exit(1); }
+            // Allowed references — and nothing else.
+            const allow = ['scripts/predeploy.js', 'lib/validate-package.js', 'EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY'];
+            const forbidden = ['scripts/', 'lib/'].flatMap(prefix =>
+              (pre.match(new RegExp(prefix + '[a-zA-Z0-9_./-]+', 'g')) || [])
+            );
+            for (const tok of forbidden) {
+              if (!allow.includes(tok)) {
+                console.error('prepublishOnly references unexpected gate: ' + tok);
+                console.error('Either fold the new gate into predeploy / validate-package, or update the assertion + the EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY escape hatch in .github/workflows/release.yml.');
+                process.exit(1);
+              }
+            }
+            console.log('prepublishOnly shape OK — only predeploy + validate-package referenced.');
+          "
+
       - name: npm pack (dry-run preview)
         run: |
           npm pack --dry-run --json | tee /tmp/pack.json
@@ -181,6 +212,15 @@ jobs:
           # signature verification failing despite bit-identical inputs).
           # The validate job is the authoritative safety net for CI
           # publishes.
+          #
+          # IMPORTANT — escape hatch invariant: this only skips the
+          # `node scripts/predeploy.js` half of prepublishOnly. The
+          # second half (`node lib/validate-package.js`) still runs.
+          # The validate-job step "Assert prepublishOnly delegates only
+          # to predeploy + validate-package" guards this assumption —
+          # if anyone adds a third gate to prepublishOnly, the release
+          # fails at validate-time rather than silently skipping it on
+          # the canonical tag-push path.
           EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY: '1'
         run: |
           # --access public is also set via publishConfig, but explicit beats

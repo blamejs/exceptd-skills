@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.12.16 — 2026-05-14
+
+**Patch: highest-impact P1 security findings from the v0.12.15 audit pile.**
+
+### Sign/verify trust chain (audit I)
+
+- **CRLF/BOM bypass on the shipped-tarball verify gate closed.** `scripts/verify-shipped-tarball.js` previously read raw on-disk bytes and called `crypto.verify` directly — bypassing the CRLF/BOM normalization that `lib/sign.js` + `lib/verify.js` apply on both sides of the byte-stability contract. The gate's whole purpose is to catch the v0.11.x signature regression class; without the same normalization, it would itself report 0/38 on any tree where line-ending normalization touched the source between sign and pack (a Windows contributor with `core.autocrlf=true`, or any tool like Prettier in the CI pipeline). The `normalizeSkillBytes` helper is now mirrored in this fourth normalize() implementation.
+- **`keys/EXPECTED_FINGERPRINT` pin now consulted at every public-key load site.** Previously only `lib/verify.js` + `scripts/verify-shipped-tarball.js` checked the pin. `lib/refresh-network.js` and `bin/exceptd.js attest verify` both loaded `keys/public.pem` and trusted it without the cross-check. A coordinated attacker who tampered with `keys/public.pem` on the operator's host (e.g. via a prior compromised refresh) passed every check because the local↔tarball fingerprints matched each other. Now the pin is the external trust anchor at all four load sites. Honors `KEYS_ROTATED=1` env to allow legitimate rotation without re-bootstrap; missing pin file degrades to warn-and-continue.
+
+### CI workflow security (audit N)
+
+- **`atlas-currency.yml` script-injection sink closed (CWE-1395).** `${{ steps.currency.outputs.report }}` was interpolated directly into a github-script template literal; the `report` value is unescaped output of `node orchestrator/index.js currency`. A skill author who landed a string containing a backtick followed by `${process.exit(0)}` (or worse, an exfil to a webhook with `${process.env.GITHUB_TOKEN}`) got arbitrary JS execution inside the github-script runtime with the workflow's token. Now routed via `env.REPORT_TEXT` and read inside the script body as `process.env.REPORT_TEXT`.
+- **`refresh.yml` shell-injection from `workflow_dispatch` input closed (CWE-78).** `${{ inputs.source }}` was interpolated directly into a bash `run:` block. An operator passing `kev; rm -rf /; #` got shell injection inside the runner. Now routed via `env.SOURCE_INPUT` and validated against `^[a-z,]+$` (the documented `kev,epss,nvd,rfc,pins` allowlist shape) before passing to the CLI.
+- `actions/checkout` SHA comments aligned across `ci.yml`/`release.yml`/`scorecard.yml` (no SHA change; comment-only).
+- `secret-scan` job declares explicit `permissions: contents: read` (survives a future repo visibility flip).
+- `gitleaks` resolver now has a hardcoded fallback version + non-fatal failure path so a GitHub API HTML-error response doesn't block every CI run.
+- New `tests/workflows-security.test.js` enforces: no `${{ steps.*.outputs.* }}` inside github-script template literals; no `${{ inputs.* }}` inside bash `run:` blocks; every third-party action is SHA-pinned; every workflow declares `permissions:`.
+
+### CLI hardening (audit L)
+
+- **`--block-on-jurisdiction-clock` now honored on `cmdRun`.** Previously the flag was registered + documented but only `cmdCi` consumed it; `run --block-on-jurisdiction-clock` exited 0 even when an NIS2 24h clock had started. Now both verbs exit 5 (`CLOCK_STARTED`) when any notification action has a non-null `clock_started_at` and an unacked operator consent.
+- **`cmdIngest` auto-detects piped stdin.** Mirrors the `cmdRun` shape — `echo '{...}' | exceptd ingest` now works without an explicit `--evidence -`.
+- **`--vex` validates document shape before applying.** Previously any malformed JSON (SARIF, SBOM, CSAF advisory by mistake) resulted in a silent empty filter; now CycloneDX (`vulnerabilities[]` or `bomFormat: 'CycloneDX'`) or OpenVEX (`statements[]` + `@context` on openvex.dev) shape required before the filter is consumed.
+- **`cmdReattest` verifies the `.sig` sidecar** before consuming the prior attestation. A tampered attestation is no longer silently consumed for the drift verdict. `--force-replay` available for legitimate ack-of-divergence.
+- **`--operator <name>` validated**: rejects ASCII control chars + newlines; caps length at 256; rejects all-whitespace. Closes the "multi-line operator forgery" surface in CSAF / attest export rendering.
+- **`--diff-from-latest` result surfaced in human renderer**: operators running with `--diff-from-latest` and no `--json` now see a `> drift vs prior: <status>` line.
+- **Cross-playbook jurisdiction clock rollup** in `cmdRunMulti` / `cmdCi`: deduped by `(jurisdiction, regulation, obligation, window_hours)`, `triggered_by_playbooks[]` lists contributors. Operators running 13 playbooks no longer draft 8 separate NIS2 24h notifications.
+- `--block-on-jurisdiction-clock` exit code split from `FAIL` (exit 2) → `CLOCK_STARTED` (exit 5). CI gates can distinguish "detected" from "clock fired".
+- `cmdReattest --since` validated as parseable ISO-8601.
+
+### Scoring math hardening (audit J)
+
+- `scoreCustom` now treats `active_exploitation: 'unknown'` as `0.25 × weight` (was 0) — aligning with `playbook-runner._activeExploitationLadder` semantics so catalog-side and runtime-side scoring agree.
+- New `deriveRwepFromFactors(factors)` helper exported; detects whether `rwep_factors` is in Shape A (boolean inputs to `scoreCustom`) or Shape B (numeric weighted contributions) and produces a consistent score. Documents the dual-semantics so the rename can land cleanly in v0.13.0.
+- `validateFactors` NaN/Infinity diagnostics now use `Number.isFinite` with dedicated messages (was misleading "expected number, got number (null)").
+- `validateFactors` flags unknown factor keys ("unknown factor: X (ignored)").
+- `scoreCustom(factors, {collectWarnings: true})` returns `_rwep_raw_unclamped` so operators see deduction magnitude even when the floor clamp absorbs negative weights.
+- `compare()` "broadly aligned" band tightened from ±20 to ±10. The Copy Fail RWEP-vs-CVSS divergence (delta 12) now correctly surfaces as "significantly higher than CVSS equivalent."
+- `Math.floor(20/2)` arithmetic replaced with `RWEP_WEIGHTS.active_exploitation * 0.5` (no behavior change today; closes a future odd-weight asymmetry).
+
+### Curation + auto-discovery + prefetch (audit M)
+
+- **Hidden second scoring path in `lib/cve-curation.js` closed.** The apply path previously derived `rwep_score` via `Object.values(rwep_factors).reduce(sum, 0)` — bypassing `scoring.js` entirely. Replaced with `deriveRwepFromFactors()`.
+- **Auto-discovery RWEP divergence closed.** `lib/auto-discovery.js` previously stored `rwep_factors` with null values for poc_available/ai_*/reboot_required while calling `scoreCustom` with `true` defaults; stored factors and stored score were inconsistent and `scoring.validate()` always flagged it. New `buildScoringInputs(kev, nvd)` is the single source of truth.
+- **`lib/prefetch.js` GITHUB_TOKEN now reaches the request.** The auth lookup keyed off source name `"github"` but the registered source is `"pins"` — anonymous rate-limit applied even when `GITHUB_TOKEN` was set. Fixed.
+- **`lib/prefetch.js` docs corrected**: header comment + `printHelp()` no longer reference non-existent source names `ietf` and `github`.
+- **`readCached` no longer returns stale data as fresh** when `fetched_at` is missing/corrupt (the `NaN > maxAgeMs === false` short-circuit was treating undefined-age entries as eternally-fresh).
+
+### Playbook quality (audit K)
+
+- **Mutex reciprocity validator** in `lib/validate-playbooks.js`: walks every `_meta.mutex` entry, emits WARNING per asymmetric edge. Reciprocity backfilled across 7 mutex relationships (secrets↔library-author, kernel↔hardening, containers↔library-author, etc.).
+- **`containers → sbom` feeds_into edge** added (container-image-layer SBOM matching against KEV-listed CVEs is a primary v0.12.x use case but wasn't declared).
+- **Domain CVE refs backfilled** where threat_context cited CVEs without referencing them: `runtime.cve_refs += CVE-2026-31431`, `ai-api.cve_refs += CVE-2026-30615`. `containers` threat_context's stale `CVE-2024-21626` (not in catalog) stripped.
+- **ATLAS refs backfilled**: `cred-stores.atlas_refs += AML.T0055` (Unsecured Credentials), `containers.atlas_refs += AML.T0010` (ML Supply Chain).
+- **Artifact type enum drift normalized**: 19 occurrences across crypto-codebase / crypto / library-author / mcp / sbom of `"file_path"` and `"log_pattern"` rewritten to the schema enum (`"file"` / `"log"`).
+- **Indicator type enum drift normalized**: 3 occurrences in `library-author` of `"api_response"` rewritten to `"api_call_sequence"`.
+- **FP-check backfill** on library-author indicators (publish-workflow-action-refs-mutable + tag-protection-absent) — gold-standard pattern from `gha-workflow-script-injection-sink` extended to two more high-confidence indicators.
+
+### Repository
+
+- `data/cve-catalog.json` synthetic test-pollution entry (`CVE-9999-99999`) removed (left by a test run that used the real catalog path).
+- 29 new RWEP vector regression tests in `tests/scoring-vectors.test.js`.
+- 8 new workflow-security regression tests in `tests/workflows-security.test.js`.
+- `validate-playbooks.js` now reports 12/13 PASS + 1 WARN (was 8 PASS + 5 WARN before normalization).
+
+Test count: 701 → 738 (+37: 29 scoring vectors + 8 workflow-security). Predeploy gates: 14/14. Skills: 38/38 signed and verified.
+
 ## 0.12.15 — 2026-05-14
 
 **Patch: e2e RWEP factor-scaling fix + audit-surfaced silent-disable regressions. v0.12.14 publish payload.**

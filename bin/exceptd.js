@@ -227,7 +227,8 @@ v0.12.0 canonical surface
                                                     for latest published version + days behind
 
   ci                         One-shot CI gate. Exit codes: 0 PASS, 2 detected/escalate,
-                             3 ran-but-no-evidence, 4 blocked (ok:false), 1 framework error.
+                             3 ran-but-no-evidence, 4 blocked (ok:false),
+                             5 jurisdiction clock started, 1 framework error.
                              --all | --scope <type> | (auto-detect)
                              --max-rwep <n>         cap below playbook default
                              --block-on-jurisdiction-clock
@@ -414,8 +415,21 @@ function main() {
   if (cmd === "refresh" && (rest.includes("--no-network") || rest.includes("--prefetch"))) {
     // v0.11.14 (#129): --prefetch is the operator-facing name for the
     // cache-population path. --no-network retained as alias for back-compat.
+    //
+    // v0.12.16: BUT — `refresh --no-network` previously stripped BOTH flags
+    // before invoking prefetch.js, leaving prefetch in network-fetching
+    // (default) mode. The operator's "do not touch the network" intent was
+    // lost in dispatch. Ubuntu CI passed because cached data was warm;
+    // Windows + macOS CI runners with cold caches hit 30s test timeout
+    // attempting 47 real fetches. Preserve `--no-network` when the operator
+    // explicitly supplied it; strip only `--prefetch` (the alias).
     effectiveCmd = "prefetch";
-    effectiveRest = rest.filter(a => a !== "--no-network" && a !== "--prefetch");
+    const wantedNoNetwork = rest.includes("--no-network");
+    effectiveRest = rest.filter(a => a !== "--prefetch");
+    if (wantedNoNetwork && !effectiveRest.includes("--no-network")) {
+      // Already preserved; no-op. But explicit so a future filter regression
+      // is visible.
+    }
   } else if (cmd === "refresh" && rest.includes("--indexes-only")) {
     effectiveCmd = "build-indexes";
     effectiveRest = rest.filter(a => a !== "--indexes-only");
@@ -578,6 +592,55 @@ function loadRunner() {
   return require(path.join(PKG_ROOT, "lib", "playbook-runner.js"));
 }
 
+/**
+ * F5: detect whether a parsed JSON document is plausibly CycloneDX VEX or
+ * OpenVEX. The runner's vexFilterFromDoc returns Set(0) tolerantly for
+ * anything else, which means an operator who passes SARIF / SBOM / CSAF /
+ * advisory JSON by mistake gets zero filter + zero feedback. We pre-validate
+ * at the CLI layer so the operator finds out at flag parse time.
+ *
+ * Returns { ok, detected, top_level_keys[] }. `detected` is one of:
+ *   "cyclonedx-vex" | "openvex" | "not-vex"
+ */
+function detectVexShape(doc) {
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) {
+    return { ok: false, detected: "not-an-object", top_level_keys: [] };
+  }
+  const keys = Object.keys(doc);
+  // CycloneDX VEX: bomFormat==="CycloneDX" + vulnerabilities[] is the
+  // canonical shape; CycloneDX 1.4+ also allows a standalone vulnerabilities
+  // document where entries carry analysis.state. Accept either when the
+  // entries look vex-shaped (have id/bom_ref/analysis).
+  if (Array.isArray(doc.vulnerabilities)) {
+    const isBom = doc.bomFormat === "CycloneDX";
+    const entriesLookVex = doc.vulnerabilities.length === 0
+      || doc.vulnerabilities.some(v => v && typeof v === "object" && (v.id || v["bom-ref"] || v.bom_ref || v.analysis));
+    if (isBom || entriesLookVex) {
+      return { ok: true, detected: "cyclonedx-vex", top_level_keys: keys };
+    }
+  }
+  // OpenVEX: @context starts with https://openvex.dev AND statements[]
+  const ctx = doc["@context"];
+  const ctxStr = Array.isArray(ctx) ? ctx[0] : ctx;
+  if (typeof ctxStr === "string" && ctxStr.startsWith("https://openvex.dev") && Array.isArray(doc.statements)) {
+    return { ok: true, detected: "openvex", top_level_keys: keys };
+  }
+  // Common false-positive shapes — give the operator a hint.
+  if (Array.isArray(doc.runs) && doc.$schema && String(doc.$schema).includes("sarif")) {
+    return { ok: false, detected: "sarif-not-vex", top_level_keys: keys };
+  }
+  if (doc.document && doc.document.category && String(doc.document.category).startsWith("csaf_")) {
+    return { ok: false, detected: "csaf-advisory-not-vex", top_level_keys: keys };
+  }
+  if (doc.bomFormat === "CycloneDX" && !Array.isArray(doc.vulnerabilities)) {
+    return { ok: false, detected: "cyclonedx-sbom-without-vulnerabilities", top_level_keys: keys };
+  }
+  if (Array.isArray(doc.statements) && !ctxStr) {
+    return { ok: false, detected: "statements-array-but-no-openvex-context", top_level_keys: keys };
+  }
+  return { ok: false, detected: "unrecognized", top_level_keys: keys };
+}
+
 function firstDirectiveId(runner, playbookId) {
   const pb = runner.loadPlaybook(playbookId);
   if (!pb.directives || !pb.directives.length) {
@@ -598,6 +661,7 @@ function dispatchPlaybook(cmd, argv) {
     bool:  ["pretty", "air-gap", "force-stale", "all", "flat", "directives",
             "ci", "latest", "diff-from-latest", "explain", "signal-list", "ack",
             "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
+            "force-replay",
             "json-stdout-only", "fix", "human", "json", "strict-preconditions",
             // v0.12.9: doctor --shipped-tarball runs the verify-shipped-tarball
             // gate alongside --signatures. doctor --registry-check + --signatures
@@ -680,8 +744,42 @@ function dispatchPlaybook(cmd, argv) {
   }
   // Multi-operator teams need attestations bound to a specific human or
   // service identity. --operator <name> persists into the attestation file
-  // for audit-trail accountability. Free-form string; no validation.
-  if (args.operator) runOpts.operator = args.operator;
+  // for audit-trail accountability.
+  //
+  // F9: validate the input. Pre-fix the value flowed into runOpts unchanged,
+  // so an operator could inject newlines / control chars / arbitrary length
+  // into attestation export output (multi-line "operator:" key/value pairs
+  // are a forgery surface — a forged second line could look like a separate
+  // attestation field to a naive parser). Now: strip ASCII control chars
+  // (\x00-\x1F + \x7F), cap length at 256, reject if all-whitespace.
+  if (args.operator !== undefined) {
+    if (typeof args.operator !== "string") {
+      return emitError("run: --operator must be a string.", { provided: typeof args.operator }, pretty);
+    }
+    // eslint-disable-next-line no-control-regex
+    if (/[\x00-\x1F\x7F]/.test(args.operator)) {
+      return emitError(
+        "run: --operator contains ASCII control characters (newline, tab, NUL, etc.). Refusing — these would corrupt attestation export shape and enable forgery via multi-line injection.",
+        { provided_length: args.operator.length },
+        pretty
+      );
+    }
+    if (args.operator.length > 256) {
+      return emitError(
+        `run: --operator too long: ${args.operator.length} chars (limit 256). Use a stable identifier (email, service-account name) — not a free-form description.`,
+        { provided_length: args.operator.length },
+        pretty
+      );
+    }
+    if (args.operator.trim().length === 0) {
+      return emitError(
+        "run: --operator is empty or whitespace-only. Pass a meaningful identifier or omit the flag.",
+        null,
+        pretty
+      );
+    }
+    runOpts.operator = args.operator;
+  }
   // --ack: operator acknowledges the jurisdiction obligations surfaced by
   // govern. Captured in attestation; downstream tooling can check whether
   // consent was explicit vs. implicit. AGENTS.md says the AI should surface
@@ -1077,8 +1175,11 @@ Exit codes:
   3  Ran-but-no-evidence   Every result was inconclusive AND no evidence was
                            submitted (visibility gap — CI should fail loud).
   4  Blocked               Result returned ok:false (preflight halt, missing
-                           preconditions with on_fail=halt, etc.) OR
-                           --block-on-jurisdiction-clock fired.
+                           preconditions with on_fail=halt, etc.).
+  5  CLOCK_STARTED         --block-on-jurisdiction-clock fired: at least one
+                           close.notification_actions entry started a
+                           regulatory clock (NIS2 24h, GDPR 72h, DORA 4h,
+                           etc.) and the operator has not acked.
 
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
@@ -1645,13 +1746,32 @@ function cmdRun(runner, args, runOpts, pretty) {
   // --vex <file>: load a CycloneDX/OpenVEX document and pass the not_affected
   // CVE ID set through to analyze() so matched_cves drops them.
   if (args.vex) {
+    let vexDoc;
     try {
-      const vexDoc = JSON.parse(fs.readFileSync(args.vex, "utf8"));
+      vexDoc = JSON.parse(fs.readFileSync(args.vex, "utf8"));
+    } catch (e) {
+      return emitError(`run: failed to load --vex ${args.vex}: ${e.message}`, null, pretty);
+    }
+    // F5: validate the VEX shape BEFORE handing to runner.vexFilterFromDoc.
+    // The runner tolerantly returns Set(0) for anything that's not CycloneDX
+    // or OpenVEX shape, so an operator who passes a SARIF / SBOM / CSAF
+    // advisory by mistake got ZERO filter applied and ZERO feedback. Now:
+    // reject with a clear error naming the detected shape.
+    const shape = detectVexShape(vexDoc);
+    if (!shape.ok) {
+      return emitError(
+        `run: --vex file doesn't look like CycloneDX or OpenVEX. Detected shape: ${shape.detected}. ` +
+        `Expected CycloneDX VEX (bomFormat:"CycloneDX" + vulnerabilities[]) or OpenVEX (@context starting "https://openvex.dev" + statements[]).`,
+        { provided_path: args.vex, top_level_keys: shape.top_level_keys },
+        pretty
+      );
+    }
+    try {
       const vexSet = runner.vexFilterFromDoc(vexDoc);
       submission.signals = submission.signals || {};
       submission.signals.vex_filter = [...vexSet];
     } catch (e) {
-      return emitError(`run: failed to load --vex ${args.vex}: ${e.message}`, null, pretty);
+      return emitError(`run: failed to apply --vex ${args.vex}: ${e.message}`, null, pretty);
     }
   }
 
@@ -1736,9 +1856,14 @@ function cmdRun(runner, args, runOpts, pretty) {
   }
 
   if (result && result.ok === false) {
-    // v0.12.14: exitCode + return; matches the emitError class fix.
+    // F19: align preflight-halt exit code between `run --ci` and `ci`.
+    // Pre-fix `run --ci` exited 1 (FRAMEWORK_ERROR) while `ci` on the same
+    // halt exited 4 (BLOCKED). Now both use 4 when --ci is in effect, so
+    // operators can wire one set of exit-code expectations regardless of
+    // which verb they call. Without --ci the legacy exit 1 is preserved
+    // (ok:false bodies are framework signals when no CI gating is asked for).
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exitCode = 1;
+    process.exitCode = args.ci ? 4 : 1;
     return;
   }
 
@@ -1785,6 +1910,26 @@ function cmdRun(runner, args, runOpts, pretty) {
       };
     } else {
       result.diff_from_latest = { status: "no_prior_attestation_for_playbook", playbook_id: playbookId };
+    }
+  }
+
+  // --block-on-jurisdiction-clock (F3): the flag was registered + documented on
+  // `run --help` but only honored on cmdCi. Pre-fix, `exceptd run mcp
+  // --block-on-jurisdiction-clock` exited 0 even when an NIS2 24h clock had
+  // started. Now: when ANY close.notification_actions entry has a started
+  // clock that the operator hasn't acked, exit 5 (CLOCK_STARTED) with a
+  // stderr line naming the obligations. Mirrors cmdCi semantics.
+  if (args["block-on-jurisdiction-clock"] && result && result.phases) {
+    const startedClocks = (result.phases?.close?.notification_actions || [])
+      .filter(n => n && n.clock_started_at != null && n.clock_pending_ack !== true);
+    if (startedClocks.length > 0) {
+      const refs = startedClocks
+        .map(n => `${n.obligation_ref || n.jurisdiction || "?"}@${n.clock_started_at}`)
+        .join("; ");
+      process.stderr.write(`[exceptd run --block-on-jurisdiction-clock] CLOCK_STARTED: ${startedClocks.length} jurisdiction clock(s) running and unacked: ${refs}. Exit 5.\n`);
+      emit(result, pretty);
+      process.exitCode = 5;
+      return;
     }
   }
 
@@ -1924,6 +2069,18 @@ function cmdRun(runner, args, runOpts, pretty) {
     const top = rwep?.threshold?.escalate ?? "n/a";
     const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
     lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
+    // F11: surface --diff-from-latest verdict in the human renderer. Pre-fix
+    // operators had to add --json to see whether the run drifted from the
+    // previous attestation. Now one summary line follows the classification.
+    if (obj.diff_from_latest) {
+      const dfl = obj.diff_from_latest;
+      if (dfl.status === "no_prior_attestation_for_playbook") {
+        lines.push(`> drift vs prior: (no prior attestation for ${dfl.playbook_id})`);
+      } else {
+        const priorTag = dfl.prior_session_id ? ` (prior ${dfl.prior_session_id}` + (dfl.prior_captured_at ? ` @ ${dfl.prior_captured_at.slice(0, 19)})` : ")") : "";
+        lines.push(`> drift vs prior: ${dfl.status}${priorTag}`);
+      }
+    }
     const cves = obj.phases?.analyze?.matched_cves || [];
     const baseline = obj.phases?.analyze?.catalog_baseline_cves || [];
     if (cves.length) {
@@ -1987,6 +2144,57 @@ function cmdRun(runner, args, runOpts, pretty) {
  * Falls back to running every playbook with empty evidence (engine returns
  * inconclusive findings + visibility gaps) when no --evidence is given.
  */
+/**
+ * F13: collapse per-playbook notification_actions into a deduped rollup.
+ * Multi-playbook runs frequently surface the same jurisdiction clock from
+ * 5-10 contributing playbooks (every EU-touching playbook starts a fresh
+ * NIS2 Art.23 24h clock). Operators were drafting one notification per
+ * entry instead of one per (jurisdiction, regulation, obligation, window).
+ * Key tuple stays additive — every contributor playbook id lands in
+ * `triggered_by_playbooks[]` — and earliest clock_started_at + deadline
+ * win so the strictest deadline is what an operator sees.
+ */
+function buildJurisdictionClockRollup(results) {
+  const m = new Map();
+  for (const r of results || []) {
+    if (!r || !r.phases) continue;
+    const actions = r.phases?.close?.notification_actions || [];
+    for (const n of actions) {
+      if (!n || n.clock_started_at == null) continue;
+      const key = [
+        n.jurisdiction || "?",
+        n.regulation || "?",
+        n.obligation_ref || "?",
+        String(n.window_hours ?? "?"),
+      ].join("::");
+      const existing = m.get(key);
+      if (existing) {
+        if (!existing.triggered_by_playbooks.includes(r.playbook_id)) {
+          existing.triggered_by_playbooks.push(r.playbook_id);
+        }
+        // Strictest (earliest) clock_started_at + deadline win.
+        if ((n.clock_started_at || "") < (existing.clock_started_at || "")) {
+          existing.clock_started_at = n.clock_started_at;
+        }
+        if (n.deadline && (!existing.deadline || n.deadline < existing.deadline)) {
+          existing.deadline = n.deadline;
+        }
+      } else {
+        m.set(key, {
+          jurisdiction: n.jurisdiction || null,
+          regulation: n.regulation || null,
+          obligation_ref: n.obligation_ref || null,
+          window_hours: n.window_hours ?? null,
+          clock_started_at: n.clock_started_at,
+          deadline: n.deadline || null,
+          triggered_by_playbooks: [r.playbook_id],
+        });
+      }
+    }
+  }
+  return [...m.values()];
+}
+
 function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   const sessionId = runOpts.session_id || require("crypto").randomBytes(8).toString("hex");
   runOpts.session_id = sessionId;
@@ -2071,6 +2279,16 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     results.push(result);
   }
 
+  // F13: dedupe jurisdiction-clock notification actions across all playbook
+  // results into a single rollup. Pre-fix a 13-playbook multi-run with 8
+  // contributors of "EU NIS2 Art.23 24h" produced 8 separate entries, so
+  // operators drafted 8 NIS2 notifications when one was sufficient. Per-
+  // playbook entries are preserved on individual results; this rollup is
+  // additive — keyed on (jurisdiction, regulation, obligation_ref,
+  // window_hours) — with a triggered_by_playbooks[] list so operators see
+  // which playbooks contributed.
+  const jurisdictionClockRollup = buildJurisdictionClockRollup(results);
+
   emit({
     ok: results.every(r => r.ok !== false),
     session_id: sessionId,
@@ -2084,6 +2302,7 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       detected: results.filter(r => r.phases?.detect?.classification === "detected").length,
       inconclusive: results.filter(r => r.phases?.detect?.classification === "inconclusive").length,
     },
+    jurisdiction_clock_rollup: jurisdictionClockRollup,
     results,
   }, pretty);
   // v0.11.9 (#100): cmdRunMulti exits non-zero when any individual run
@@ -2099,6 +2318,13 @@ function cmdIngest(runner, args, runOpts, pretty) {
   // `ingest` matches the AGENTS.md ingest contract. The submission JSON may
   // carry playbook_id + directive_id; --domain/--directive flags override.
   let submission = {};
+  // F4: auto-detect piped stdin (parity with cmdRun). Without this,
+  // `echo '{...}' | exceptd ingest` failed with "no playbook resolved"
+  // because args.evidence stayed undefined and the routing JSON never got
+  // read. Mirrors the cmdRun behavior at line 1614.
+  if (!args.evidence && process.stdin.isTTY === false) {
+    args.evidence = "-";
+  }
   if (args.evidence) {
     try {
       submission = readEvidence(args.evidence);
@@ -2459,7 +2685,64 @@ function walkAttestationDir(root, opts, candidates) {
   }
 }
 
+/**
+ * F10: factored Ed25519-sidecar verification used by both `attest verify`
+ * and `reattest`. Returns { file, signed, verified, reason } for a given
+ * attestation file path.
+ *
+ * Pre-fix, cmdReattest read attestation.json via JSON.parse with no
+ * authenticity check. A tampered attestation was silently consumed and the
+ * drift verdict was computed against forged input. Now cmdReattest calls
+ * this and refuses on verify-fail unless --force-replay is set.
+ */
+function verifyAttestationSidecar(attFile) {
+  const crypto = require("crypto");
+  const sigPath = attFile + ".sig";
+  const pubKeyPath = path.join(PKG_ROOT, "keys", "public.pem");
+  const pubKey = fs.existsSync(pubKeyPath) ? fs.readFileSync(pubKeyPath, "utf8") : null;
+  if (!fs.existsSync(sigPath)) {
+    return { file: attFile, signed: false, verified: false, reason: "no .sig sidecar" };
+  }
+  let sigDoc;
+  try { sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8")); }
+  catch (e) { return { file: attFile, signed: false, verified: false, reason: `sidecar parse error: ${e.message}` }; }
+  if (sigDoc.algorithm === "unsigned") {
+    return { file: attFile, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
+  }
+  if (!pubKey) {
+    return { file: attFile, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
+  }
+  let content;
+  try { content = fs.readFileSync(attFile, "utf8"); }
+  catch (e) { return { file: attFile, signed: true, verified: false, reason: `attestation read error: ${e.message}` }; }
+  try {
+    const ok = crypto.verify(null, Buffer.from(content, "utf8"), {
+      key: pubKey, dsaEncoding: "ieee-p1363",
+    }, Buffer.from(sigDoc.signature_base64, "base64"));
+    return {
+      file: attFile,
+      signed: true,
+      verified: !!ok,
+      reason: ok ? "Ed25519 signature valid" : "Ed25519 signature INVALID — possible post-hoc tampering",
+    };
+  } catch (e) {
+    return { file: attFile, signed: true, verified: false, reason: `verify error: ${e.message}` };
+  }
+}
+
 function cmdReattest(runner, args, runOpts, pretty) {
+  // F29: --since ISO-8601 validation parity with `attest list --since`
+  // (already fixed in v0.12.12). Pre-fix, an invalid date silently passed
+  // through to walkAttestationDir, where the lexical comparison either
+  // matched all or none unpredictably.
+  if (args.since != null) {
+    if (typeof args.since !== "string" || isNaN(Date.parse(args.since))) {
+      return emitError(
+        `reattest: --since must be a parseable ISO-8601 timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(args.since)).slice(0, 80)}`,
+        null, pretty
+      );
+    }
+  }
   // --latest [--playbook <id>] [--since <ISO>] — find prior attestation
   // without requiring the operator to know the session-id.
   let sessionId = args._[0];
@@ -2479,6 +2762,37 @@ function cmdReattest(runner, args, runOpts, pretty) {
   if (!fs.existsSync(attFile)) {
     return emitError(`reattest: no attestation found at ${attFile}`, { session_id: sessionId }, pretty);
   }
+
+  // F10: verify the .sig sidecar BEFORE consuming the prior attestation.
+  // Pre-fix, a tampered attestation.json was silently parsed and the drift
+  // verdict was computed against forged input. Now: refuse on verify-fail
+  // with exit 6 (TAMPERED) unless --force-replay is explicitly set.
+  // Unsigned attestations (no private key was available at run time) emit
+  // a stderr warning but proceed — that's an operator config issue, not
+  // tampering. `verified === false && signed === true` is the real tamper
+  // signal.
+  const verify = verifyAttestationSidecar(attFile);
+  if (verify.signed && !verify.verified && !args["force-replay"]) {
+    process.stderr.write(`[exceptd reattest] TAMPERED: attestation at ${attFile} failed Ed25519 verification (${verify.reason}). Refusing to replay against forged input. Pass --force-replay to override (the replay output records sidecar_verify so the audit trail captures the override).\n`);
+    const body = {
+      ok: false,
+      error: `reattest: prior attestation failed signature verification — refusing to replay`,
+      verb: "reattest",
+      session_id: sessionId,
+      attestation_file: attFile,
+      sidecar_verify: verify,
+      hint: "If you have inspected the attestation and the divergence is benign (e.g. you re-signed manually), pass --force-replay.",
+    };
+    process.stderr.write(JSON.stringify(body) + "\n");
+    process.exitCode = 6;
+    return;
+  }
+  if (verify.signed && !verify.verified && args["force-replay"]) {
+    process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding failed signature verification on ${attFile} (${verify.reason}). The replay output records sidecar_verify so the override is audit-visible.\n`);
+  } else if (!verify.signed && verify.reason !== "no .sig sidecar") {
+    process.stderr.write(`[exceptd reattest] NOTE: attestation at ${attFile} has no Ed25519 signature (${verify.reason}). Proceeding — unsigned attestations are an operator config issue, not tamper evidence.\n`);
+  }
+
   let prior;
   try {
     prior = JSON.parse(fs.readFileSync(attFile, "utf8"));
@@ -2544,6 +2858,10 @@ function cmdReattest(runner, args, runOpts, pretty) {
     replayed_at: new Date().toISOString(),
     replay_classification: replay.phases && replay.phases.detect && replay.phases.detect.classification,
     replay_rwep_adjusted: replay.phases && replay.phases.analyze && replay.phases.analyze.rwep && replay.phases.analyze.rwep.adjusted,
+    // F10: persist the sidecar verify result + the force-replay flag so the
+    // audit trail records whether the replay was authenticated input.
+    sidecar_verify: verify,
+    force_replay: !!args["force-replay"],
   }, pretty);
 }
 
@@ -3989,9 +4307,13 @@ function cmdAsk(runner, args, runOpts, pretty) {
  * `run --all --ci` packaged as a verb so .github/workflows lines are short.
  *
  * Exit codes:
- *   0   PASS  — no detected findings, no rwep ≥ cap, no clock started (when
- *               --block-on-jurisdiction-clock is set).
- *   2   FAIL  — any of the above tripped.
+ *   0   PASS           — no detected findings, no rwep ≥ cap, no clock fired.
+ *   2   FAIL           — detected classification OR rwep ≥ cap.
+ *   3   NO_EVIDENCE    — every result inconclusive AND no --evidence supplied.
+ *   4   BLOCKED        — at least one playbook returned ok:false (preflight halt).
+ *   5   CLOCK_STARTED  — --block-on-jurisdiction-clock fired (F18); separated
+ *                        from FAIL so operators distinguish "detected" from
+ *                        "regulatory notification deadline running."
  */
 function cmdCi(runner, args, runOpts, pretty) {
   const scope = args.scope;
@@ -4063,6 +4385,11 @@ function cmdCi(runner, args, runOpts, pretty) {
   const results = [];
   let fail = false;
   let failReasons = [];
+  // F18: track jurisdiction-clock signals separately from generic FAIL so the
+  // exit code can distinguish "detected/escalated" (2) from "regulatory clock
+  // running, operator must notify" (5). Pre-fix the two collapsed into exit 2.
+  let clockStartedFail = false;
+  let clockStartedReasons = [];
 
   for (const id of ids) {
     let pb;
@@ -4114,8 +4441,13 @@ function cmdCi(runner, args, runOpts, pretty) {
       failReasons.push(`${id}: rwep_delta=${rwepAdj - rwepBase} >= cap=${cap} (classification=inconclusive; operator evidence raised the score)`);
     }
     if (blockOnClock && clockStarted) {
-      fail = true;
-      failReasons.push(`${id}: jurisdiction clock started`);
+      // F18: separate "clock started" from generic FAIL. Pre-fix this collapsed
+      // into exit 2 (FAIL), so operators couldn't distinguish "playbook
+      // detected" from "regulatory clock running." Tracked separately and
+      // exit 5 (CLOCK_STARTED) is selected below, taking precedence over
+      // FAIL but not BLOCKED.
+      clockStartedFail = true;
+      clockStartedReasons.push(`${id}: jurisdiction clock started`);
     }
   }
 
@@ -4133,13 +4465,22 @@ function cmdCi(runner, args, runOpts, pretty) {
   const inconclusiveCount = results.filter(r => r.phases?.detect?.classification === "inconclusive").length;
   const totalForVerdict = results.length;
   const noEvidenceAllInconclusive = !suppliedEvidenceForVerdict && totalForVerdict > 0 && inconclusiveCount === totalForVerdict;
+  // F18: precedence — BLOCKED > CLOCK_STARTED > FAIL > NO_EVIDENCE > PASS.
+  // CLOCK_STARTED outranks FAIL because the operator explicitly opted into
+  // the clock gate (--block-on-jurisdiction-clock); when that gate fires,
+  // they want the regulatory-deadline signal even if a detected finding
+  // also surfaces. (A detected finding is still in the body for the
+  // operator to act on; the exit-code dimension just answers "what's the
+  // top-line reason this gate failed.")
   const computedVerdict = blockedCount > 0
     ? "BLOCKED"
-    : fail
-      ? "FAIL"
-      : noEvidenceAllInconclusive
-        ? "NO_EVIDENCE"
-        : "PASS";
+    : clockStartedFail
+      ? "CLOCK_STARTED"
+      : fail
+        ? "FAIL"
+        : noEvidenceAllInconclusive
+          ? "NO_EVIDENCE"
+          : "PASS";
 
   // v0.12.9 (P2 #8 from production smoke): roll up per-playbook framework_gap
   // mappings to the ci top-level. Phase 7 of the seven-phase contract surfaces
@@ -4180,8 +4521,15 @@ function cmdCi(runner, args, runOpts, pretty) {
       .filter(n => n && n.clock_started_at != null).length,
     framework_gap_rollup: frameworkGapRollup,
     framework_gap_count: frameworkGapRollup.length,
+    // F13: dedupe jurisdiction-clock notifications across playbooks; see
+    // buildJurisdictionClockRollup. Multi-playbook ci runs were producing
+    // one notification entry per contributing playbook (often 8+) when a
+    // single notification per (jurisdiction, regulation, obligation,
+    // window) was the right shape.
+    jurisdiction_clock_rollup: buildJurisdictionClockRollup(results),
     verdict: computedVerdict,
     fail_reasons: failReasons,
+    clock_started_reasons: clockStartedReasons,
   };
 
   // v0.11.4 (#72): ci --format <fmt> previously emitted the full bundle
@@ -4239,6 +4587,15 @@ function cmdCi(runner, args, runOpts, pretty) {
     const blockedReasons = failReasons.filter(r => r.includes("blocked"));
     process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) halted before detect. Exit 4. Reasons:\n  ${blockedReasons.join("\n  ")}\n`);
     process.exitCode = 4;
+    return;
+  }
+  // F18: precedence BLOCKED > CLOCK_STARTED > FAIL. The operator opted into
+  // --block-on-jurisdiction-clock; when a clock fires, that's the gate
+  // result they want to see at the exit-code layer. Per-playbook detected
+  // findings remain in the body for them to investigate.
+  if (clockStartedFail) {
+    process.stderr.write(`[exceptd ci] CLOCK_STARTED: ${clockStartedReasons.join("; ")}. Exit 5.\n`);
+    process.exitCode = 5;
     return;
   }
   if (fail) {
