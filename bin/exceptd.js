@@ -415,8 +415,21 @@ function main() {
   if (cmd === "refresh" && (rest.includes("--no-network") || rest.includes("--prefetch"))) {
     // v0.11.14 (#129): --prefetch is the operator-facing name for the
     // cache-population path. --no-network retained as alias for back-compat.
+    //
+    // v0.12.16: BUT — `refresh --no-network` previously stripped BOTH flags
+    // before invoking prefetch.js, leaving prefetch in network-fetching
+    // (default) mode. The operator's "do not touch the network" intent was
+    // lost in dispatch. Ubuntu CI passed because cached data was warm;
+    // Windows + macOS CI runners with cold caches hit 30s test timeout
+    // attempting 47 real fetches. Preserve `--no-network` when the operator
+    // explicitly supplied it; strip only `--prefetch` (the alias).
     effectiveCmd = "prefetch";
-    effectiveRest = rest.filter(a => a !== "--no-network" && a !== "--prefetch");
+    const wantedNoNetwork = rest.includes("--no-network");
+    effectiveRest = rest.filter(a => a !== "--prefetch");
+    if (wantedNoNetwork && !effectiveRest.includes("--no-network")) {
+      // Already preserved; no-op. But explicit so a future filter regression
+      // is visible.
+    }
   } else if (cmd === "refresh" && rest.includes("--indexes-only")) {
     effectiveCmd = "build-indexes";
     effectiveRest = rest.filter(a => a !== "--indexes-only");
