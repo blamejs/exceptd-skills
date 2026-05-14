@@ -216,9 +216,13 @@ test('#65 refresh --no-network routes to prefetch', () => {
   // different format.
   assert.match(r.stdout, /prefetch summary:/,
     'refresh --no-network must route to prefetch.js and emit its summary');
-  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) error\(s\)/);
+  // v0.12.16: dry-run summary differs — prefetch emits "N fetched, M fresh,
+  // K would-fetch (dry-run)" when --no-network is supplied (versus
+  // "N fetched, M fresh, K error(s)" on a real fetch run). Both shapes
+  // prove prefetch.js produced the line. Accept either.
+  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) (?:error\(s\)|would-fetch)/);
   assert.ok(summaryMatch,
-    `summary line must be in the exact "N fetched, M fresh, K error(s)" format — proves prefetch.js produced it, not a misrouted verb that happens to print "prefetch summary:". Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
+    `summary line must be in the exact "N fetched, M fresh, K error(s)" OR "N fetched, M fresh, K would-fetch (dry-run)" format — proves prefetch.js produced it, not a misrouted verb. Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
   // The 2 prior 404 sources (mitre/cwe + d3fend/d3fend-data — neither
   // upstream project publishes via GitHub Releases) were removed from
   // the pins registry. The error counter SHOULD be 0 on a fresh cache,
