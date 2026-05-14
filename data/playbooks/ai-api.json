@@ -474,7 +474,12 @@
           "description": "Primary credential-exposure indicator. Userland code execution → key extraction in milliseconds.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "Decode the key prefix — sk-test-*, sk_test_*, anthropic-test-*, hf_dummy_* and similar documented placeholder formats are SDK quickstart fixtures; demote to miss.",
+            "If the dotfile is under examples/, tests/, fixtures/, docs/, sdk-quickstart/ or a vendor's reference-repo path, treat as documentation; demote to miss unless the key validates against the vendor's live API.",
+            "Verify the key length meets the format's minimum entropy floor (real OpenAI sk-* >=48 chars after prefix; Anthropic sk-ant-* >=40 chars; Google AIza* >=39 chars). Below the floor is a placeholder; demote."
+          ]
         },
         {
           "id": "long-lived-aws-keys",
@@ -483,7 +488,12 @@
           "description": "Long-lived AWS keys in dotfile — high-value target.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "If the access-key prefix is AKIAIOSFODNN7EXAMPLE / wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY or any other documented AWS sample credential pair, demote to miss — these are AWS-published doc fixtures.",
+            "Verify the credentials file resides under examples/, tests/, fixtures/, or a documented vendor-reference path before flagging; demote when so.",
+            "Cross-check via aws sts get-caller-identity (or equivalent dry-run) — if the key is already deactivated/deleted at the vendor side it is a stale revoked credential, demote to lower confidence."
+          ]
         },
         {
           "id": "gcp-service-account-json",
@@ -492,7 +502,12 @@
           "description": "Service-account JSON key (long-lived) in user dotfile — known anti-pattern.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "If the private_key field is the literal value 'PLACEHOLDER' / 'REDACTED' / a PEM body of fewer than 1000 chars, the file is a stub; demote to miss.",
+            "Verify the client_email domain — *@gserviceaccount.com is real; *@example.com, *@test.iam.gserviceaccount.com or fixture-shaped emails are doc samples, demote.",
+            "If the file lives under examples/, tests/, fixtures/, terraform-module-examples/, or a documented quickstart path AND no GOOGLE_APPLICATION_CREDENTIALS env points at it, demote."
+          ]
         },
         {
           "id": "kubeconfig-with-static-token",
@@ -501,7 +516,12 @@
           "description": "Static kube token persists in dotfile.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1552.001"
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "If the cluster server URL is https://127.0.0.1:* / https://localhost:* / *.kind / minikube / k3d / docker-for-desktop — this is a local-only kubeconfig with no external blast radius; demote to lower confidence.",
+            "Verify the token field is not the documented kind/minikube/k3d default-bootstrap-token shape (length and prefix match the local-dev distro). If so, demote.",
+            "If the kubeconfig sits inside a CI runner workspace (path matches /home/runner/, /github/workspace/, /builds/, /workspace/) and the token is OIDC-exchanged at job start, treat as ephemeral; demote."
+          ]
         },
         {
           "id": "ai-api-egress-from-unexpected-process",

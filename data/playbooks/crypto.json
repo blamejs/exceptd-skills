@@ -453,7 +453,12 @@
           "value": "Within the openssl-kem-algorithms artifact (its `openssl list -signature-algorithms` half): output does NOT contain ML-DSA-44/65/87 AND does NOT contain SLH-DSA-*",
           "description": "TLS library cannot use PQC signatures. Certificate-chain PQC migration is blocked.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm whether oqsprovider / aws-lc / wolfssl is loaded alongside OpenSSL — `openssl list -providers` may show a PQC-providing module that supplies ML-DSA via a non-default path. If so, demote.",
+            "Verify the binary is statically linked or chroot-jailed against a different libcrypto than the one being interrogated; rerun the list command using the actual library the service has loaded (lsof / /proc/<pid>/maps).",
+            "If the host's role is documented as classical-only (e.g. an air-gapped HSM-fronted signer with offline key custody) AND a separate PQC-signing tier exists upstream, accept with an explicit roadmap milestone."
+          ]
         },
         {
           "id": "openssl-pre-3-5",
@@ -461,7 +466,12 @@
           "value": "Within the openssl-version artifact: output starts with 'OpenSSL 1.', 'OpenSSL 2.', 'OpenSSL 3.0', 'OpenSSL 3.1', 'OpenSSL 3.2', 'OpenSSL 3.3', or 'OpenSSL 3.4'; cross-check libssl-libraries artifact to detect coexisting older libcrypto.so loaded via LD_LIBRARY_PATH or vendored builds (LibreSSL, BoringSSL, vendored OpenSSL under /usr/local/lib)",
           "description": "Pre-3.5 OpenSSL lacks native ML-KEM. Requires oqsprovider or upgrade.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the host is on a vendor-supported LTS (RHEL 8/9, Ubuntu 20.04/22.04, SLES 15, Amazon Linux 2/2023), verify the distro's documented PQC backport status via `rpm -q --changelog openssl` / `dpkg -s openssl` — RHEL 9.5+, Ubuntu 24.04 ship oqsprovider as a package; mark backport state explicitly.",
+            "If openssl-providers also lists an active oqsprovider AND oqsprovider's ML-KEM appears in the kem-algorithms list, the pre-3.5 base is provider-augmented; demote to lower confidence (still flag the upgrade path).",
+            "Confirm the queried `openssl` binary is the one services link against (lsof on representative daemons + /proc/<pid>/maps grep for libcrypto). If services link against a newer vendored 3.5+ libcrypto, the system openssl version is misleading."
+          ]
         },
         {
           "id": "sshd-no-pqc-kex",

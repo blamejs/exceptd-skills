@@ -425,7 +425,12 @@
           "description": "Container will run as root inside the namespace. Combined with any namespace escape, root-on-host.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1611"
+          "attack_ref": "T1611",
+          "false_positive_checks_required": [
+            "If the FROM base is a distroless / chainguard / nonroot variant (gcr.io/distroless/*:nonroot, cgr.dev/chainguard/*:latest, *:*-nonroot, scratch with a static binary) AND no later RUN/USER escalates to root, the runtime UID is nonroot by base; demote to miss.",
+            "If the Kubernetes pod spec consuming this image sets runAsNonRoot: true + a non-zero runAsUser, kubelet refuses to start the container as root; demote to lower confidence.",
+            "If the Dockerfile is under a multi-stage build and only the final stage's USER is missing while an intermediate builder stage runs as root (acceptable for builder stages), check the final stage only."
+          ]
         },
         {
           "id": "dockerfile-curl-pipe-bash",
@@ -434,7 +439,12 @@
           "description": "Build-time supply-chain compromise primitive. Compromised CDN or DNS rebind = arbitrary code in image.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1195.002"
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "If the curl target is a major-vendor official install path (sh.rustup.rs, get.docker.com, get.pnpm.io, raw.githubusercontent.com/nvm-sh/nvm, sigstore/cosign release URL) AND the pipe is preceded by a documented sha256/gpg verify step in the same RUN, the chain is integrity-checked; demote to lower confidence.",
+            "If the URL is an internal-mirror with --tlsv1.3 + --proto =https + a pinned --cacert and the org's release-engineering runbook documents this mirror, treat as in-policy; demote.",
+            "Confirm the RUN does not chain to an `sudo` / privilege-elevation primitive — pipe-to-shell as an unprivileged builder USER materially reduces blast radius; report at high but not deterministic."
+          ]
         },
         {
           "id": "compose-privileged",
@@ -452,7 +462,12 @@
           "description": "Dangerous capability granted. SYS_ADMIN especially is functionally equivalent to root-on-host.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1611"
+          "attack_ref": "T1611",
+          "false_positive_checks_required": [
+            "If the container is a node-exporter / cadvisor / falco / sysdig / metrics-collector sidecar AND its image and pod identity match a documented host-introspection allowlist, the capability is intentional; demote to lower confidence (still report; revisit boundary).",
+            "If cap_drop: [ALL] precedes cap_add AND the user namespace is remapped (userns-remap configured at the daemon level), the effective root inside the container is unprivileged on the host; report at high but not deterministic.",
+            "If the compose file is under tests/, integration/, e2e/ or a development-only directory AND is excluded from production deploy pipelines (check CI for compose-file references), treat as non-shipped configuration."
+          ]
         },
         {
           "id": "compose-host-network",
@@ -461,7 +476,11 @@
           "description": "Host namespace sharing. Cross-process visibility + tampering primitive.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1610"
+          "attack_ref": "T1610",
+          "false_positive_checks_required": [
+            "If the service is a known service-mesh data-plane (envoy / linkerd-proxy / istio-proxy / cilium-agent) or a host-metrics sidecar (node-exporter / cadvisor) AND the deployment is documented on an operator-maintained host-network allowlist, demote.",
+            "Verify the compose file is not a dev-only docker-compose.override.yml that won't ship — diff against the production compose; if host-network is dev-only, mark in-scope-for-dev-only."
+          ]
         },
         {
           "id": "compose-docker-sock-mount",

@@ -477,7 +477,11 @@
           "value": "Any exception register entry with rwep_at_acceptance >= 70 lacking (a) explicit calendar expiry, (b) named risk-acceptance owner at correct authority level, (c) tested compensating controls",
           "description": "Theater fingerprint #3 detection.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the artifact actually represents the live exception register. If the input is a draft / historical / archived register snapshot (filename includes -draft / -archive / -YYYY-Q< number >), demote.",
+            "If expiry/owner/controls are stored in a sidecar system (ServiceNow, Jira, IRM tool) linked by ID, the indicator may falsely fire on a register that intentionally normalises to ID-references. Verify the linked record's fields before flagging."
+          ]
         },
         {
           "id": "jurisdiction-without-framework",
@@ -485,7 +489,11 @@
           "value": "jurisdictional_footprint contains EU / UK / AU / SG / JP / IN / CA / HK / TW / IL / CH / ID / VN AND framework_mapping_matrix does NOT contain the corresponding binding framework (NIS2 / DORA / EU AI Act / CAF / Essential 8 / APRA / MAS TRM / NISC / CERT-In / OSFI B-10)",
           "description": "Theater fingerprint #4 detection — operating in a regulated jurisdiction without framework mapping.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the organisation has filed a documented `out-of-scope` declaration with the relevant regulator (e.g. NIS2 size-threshold exclusion <50 employees + <EUR 10M turnover; DORA scoping out as non-financial entity; EU AI Act non-AI-deployer attestation) AND the declaration is current within the regulator's revalidation window, demote.",
+            "If the jurisdictional footprint is data-only (e.g. an EU IP block accessing a CDN, no establishment / no targeted offering) AND no EU data subjects' personal data is processed, the binding framework may not attach; confirm against the regulator's territoriality test."
+          ]
         },
         {
           "id": "mapping-without-tempo",
@@ -509,7 +517,11 @@
           "value": "Three or more theater fingerprints fire on the same framework control (e.g. ISO 27001:2022 A.8.30 fires patterns #1 + #2 + #6 simultaneously)",
           "description": "Compound theater — single control structurally insufficient across multiple threat classes.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the multiple fingerprints fire on the SAME control (not different controls aggregated against the same audit scope). Cross-fingerprint stacks against different controls are not compound theater; they are inventory of distinct gaps.",
+            "Verify each constituent fingerprint individually passed its own FP checks. If any of the three is itself a coincidence-hit (e.g. exception-missing-expiry on a draft register), recompute the count without it."
+          ]
         }
       ],
       "false_positive_profile": [

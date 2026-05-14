@@ -384,7 +384,11 @@
           "description": "Unprivileged user namespaces enabled — required for several catalogued LPE classes.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1611"
+          "attack_ref": "T1611",
+          "false_positive_checks_required": [
+            "If a documented rootless-container runtime (podman/rootless, buildah, lima, colima, GitHub Actions runners) is the workload AND unprivileged userns is a documented requirement, accept the exception — but pair with an LSM (SELinux/AppArmor) enforcing profile that constrains exec/mount inside the userns.",
+            "Verify CONFIG_USER_NS is built into the kernel — distros that ship with userns disabled at config-time make the sysctl moot regardless of value. `grep CONFIG_USER_NS /boot/config-$(uname -r)` should show =y for the indicator to be live."
+          ]
         },
         {
           "id": "unpriv-bpf-allowed",
@@ -393,7 +397,11 @@
           "description": "Unprivileged BPF allowed — primitive for several kernel LPE classes.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1068"
+          "attack_ref": "T1068",
+          "false_positive_checks_required": [
+            "Verify CONFIG_BPF_SYSCALL=y AND CONFIG_BPF_JIT=y in the running kernel config (`grep CONFIG_BPF /boot/config-$(uname -r)`). If BPF is compiled out, the sysctl is moot; demote.",
+            "If an enforcing LSM profile (SELinux / AppArmor) restricts bpf() syscall for unprivileged users via a tested policy, the kernel-level open is constrained at a higher layer; demote to lower confidence."
+          ]
         }
       ],
       "false_positive_profile": [

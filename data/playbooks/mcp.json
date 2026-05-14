@@ -550,7 +550,11 @@
           "value": "ps shows an MCP server process running with effective UID 0 or with elevated capabilities (CAP_SYS_ADMIN, CAP_NET_ADMIN)",
           "description": "MCP server with elevated privileges turns a tool-response RCE into immediate root.",
           "confidence": "deterministic",
-          "deterministic": true
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the MCP server's documented purpose requires elevated capability (kernel-introspection / host-firewall / docker-control MCP) AND it is on a vendor-published privileged-allowlist with a signed manifest, accept with explicit scope.",
+            "Verify root-on-host vs root-in-user-namespace — inspect /proc/<pid>/status Cap* fields and userns mapping. A rootless-container MCP running as in-namespace UID 0 has materially lower blast radius; demote to lower confidence."
+          ]
         },
         {
           "id": "copilot-yolo-mode-flag",
@@ -579,7 +583,11 @@
           "confidence": "deterministic",
           "deterministic": true,
           "atlas_ref": "AML.T0051",
-          "attack_ref": "T1059"
+          "attack_ref": "T1059",
+          "false_positive_checks_required": [
+            "If the MCP tool is a documented terminal-emulation / shell-output renderer (the tool's purpose is to relay terminal output and the host AI assistant renders it inline) AND the escape bytes are SGR-only with no cursor-movement / screen-clear / OSC-8 codes, the escape carries no instruction-coercion payload; demote.",
+            "Confirm the escape appears in a tool-output payload AND not in a tools/list metadata field — metadata is the high-leverage smuggling site; output may be expected. If only in output for a documented terminal tool, demote."
+          ]
         },
         {
           "id": "mcp-response-unicode-tag-smuggling",
@@ -588,7 +596,11 @@
           "description": "Unicode Tag-range smuggling — zero-width to humans, tokenized by the model. Source: Embrace the Red (Rehberger, 2025).",
           "confidence": "deterministic",
           "deterministic": true,
-          "atlas_ref": "AML.T0051"
+          "atlas_ref": "AML.T0051",
+          "false_positive_checks_required": [
+            "Tag-range codepoints have no documented legitimate use in MCP transport. Confirm the file content is actually a JSON payload (not, e.g., a captured raw email body that contains a U+E0000-tagged language hint per RFC 4646 / RFC 5646 BCP-47 legacy). For genuine MCP payloads, presence is unambiguous; demote only if the payload is from a non-MCP capture mislabeled in the artifact.",
+            "Cross-check against the MCP server's package signature / publisher field — if the server is signed by a first-party allowlisted publisher AND the codepoint appears only in a documented `language-tag` schema field, treat as legacy-language-tag (RFC 6082 marked Tag deprecated 2011); still flag for review."
+          ]
         },
         {
           "id": "mcp-response-instruction-coercion",

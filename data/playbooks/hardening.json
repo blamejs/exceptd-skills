@@ -403,7 +403,11 @@
           "description": "/proc/kallsyms is world-readable; KASLR is effectively defeated for any local user. Decisive for kernel LPE exploitability.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1068"
+          "attack_ref": "T1068",
+          "false_positive_checks_required": [
+            "If the host is in an active kdump / perf / kernel-debugging session AND the rationale is captured in the operator runbook with a documented restoration deadline, accept with a TTL test (must flip to >=1 within N days).",
+            "Confirm /proc/kallsyms actually leaks pointers — `head -1 /proc/kallsyms` as an unprivileged user. If addresses are zeroed despite kptr_restrict=0 (e.g. CAP_SYSLOG-only path active via systemd), demote to lower confidence."
+          ]
         },
         {
           "id": "unprivileged-userns-enabled",
@@ -430,7 +434,12 @@
           "description": "Yama ptrace_scope=0 allows any process to ptrace any same-UID process. Credential-theft + privilege-pivot primitive.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1212"
+          "attack_ref": "T1212",
+          "false_positive_checks_required": [
+            "If the host is a developer workstation in a documented debug-allowlist AND an enforcing MAC profile (AppArmor `aa-status` enforced / SELinux `getenforce` == Enforcing) restricts cross-UID ptrace, the kernel-level open is constrained at a higher layer; demote to lower confidence.",
+            "If a containerised workload depends on ptrace for documented observability tooling (strace-based tracer, gdb-based debugger run-as-CAP_SYS_PTRACE), confirm the broader scope is justified by that workload and is not host-wide.",
+            "Confirm the system isn't a single-user dev VM with no network exposure — ptrace_scope=0 on an isolated VM has materially lower blast radius than on a multi-tenant host."
+          ]
         },
         {
           "id": "kaslr-disabled-at-boot",
@@ -439,7 +448,11 @@
           "description": "Boot-time KASLR disabled. Makes catalogued kernel LPEs deterministic.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1068"
+          "attack_ref": "T1068",
+          "false_positive_checks_required": [
+            "If the host is in an active kdump / kgdb / kernel-debugging session AND the rationale is documented in the operator runbook with a documented restoration deadline, accept with TTL.",
+            "Confirm the cmdline option actually took effect — `dmesg | grep -i kaslr` should show KASLR offsets when active. An nokaslr token in cmdline but a KASLR-active kernel (some distros override) means the boot parameter was ignored; demote."
+          ]
         },
         {
           "id": "mitigations-off",
@@ -448,7 +461,11 @@
           "description": "Boot-time CPU mitigations disabled. Spectre/Meltdown/MDS/Retbleed/Downfall class becomes exploitable.",
           "confidence": "deterministic",
           "deterministic": true,
-          "attack_ref": "T1068"
+          "attack_ref": "T1068",
+          "false_positive_checks_required": [
+            "If the host is HPC/benchmark-tagged (slurm node, MPI scratch node, vendor-perf-test rig) AND not network-exposed AND mitigations=off is documented in the operator runbook with a network-isolation control, accept the exception with a quarterly revalidation test.",
+            "Confirm the host is single-tenant (no multi-user, no untrusted workloads). Mitigations are speculative-execution defences against same-host attackers; on a single-tenant control-plane the threat may not apply."
+          ]
         },
         {
           "id": "selinux-not-enforcing",

@@ -323,7 +323,13 @@
                   "confidence": { "type": "string", "enum": ["low", "medium", "high", "deterministic"] },
                   "deterministic": { "type": "boolean", "description": "True if presence is definitive proof, not probabilistic." },
                   "atlas_ref": { "type": "string" },
-                  "attack_ref": { "type": "string" }
+                  "attack_ref": { "type": "string" },
+                  "cve_ref": { "type": "string", "description": "Optional CVE / MAL-* / SNYK-* identifier this indicator binds to. When the indicator fires, the named entry is pulled into analyze.matched_cves[] (v0.12.14 F3)." },
+                  "false_positive_checks_required": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "v0.12.12+ contract: each entry is a check an AI assistant or operator must satisfy before this indicator's `hit` verdict can drive classification:detected. The runner downgrades a hit to inconclusive when this array is non-empty and no fp_checks attestation is supplied via signal_overrides[`<id>__fp_checks`]."
+                  }
                 }
               }
             },
