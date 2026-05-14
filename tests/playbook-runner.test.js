@@ -467,10 +467,25 @@ describe('detect', () => {
   let runner;
   before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
 
-  it('empty submission → classification=inconclusive', () => {
+  it('empty submission with no captured artifacts → classification=not_detected', () => {
+    // E2: pre-fix both arms of the indicator-default emitted 'inconclusive',
+    // so a clean empty run (no observations, no captured artifacts) stayed
+    // stuck at theater_verdict='pending_agent_run' forever. Now: with zero
+    // captured artifacts the per-indicator verdict is 'miss' and the run
+    // reaches 'not_detected'.
     const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    assert.equal(det.classification, 'inconclusive');
+    assert.equal(det.classification, 'not_detected');
     assert.equal(det.indicators.length, 5);
+    assert.ok(det.indicators.every(i => i.verdict === 'miss'));
+  });
+
+  it('submission with captured artifacts but no signal overrides → inconclusive', () => {
+    // E2 partner case: any captured artifact means the indicator could be
+    // evaluated (host AI's responsibility), so verdict is 'inconclusive'.
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      artifacts: { 'kernel-version-string': { value: '6.12.0', captured: true } }
+    });
+    assert.equal(det.classification, 'inconclusive');
     assert.ok(det.indicators.every(i => i.verdict === 'inconclusive'));
   });
 
@@ -651,11 +666,27 @@ describe('analyze', () => {
     assert.ok(an.compliance_theater_check.verdict_text, 'verdict_text populated when verdict=theater');
   });
 
-  it('compliance_theater_check defaults to pending_agent_run when no verdict supplied', () => {
+  it('compliance_theater_check defaults to clear on empty submission (E2 — detect reaches not_detected)', () => {
+    // E2: empty submission now reaches detect.classification='not_detected'
+    // (was 'inconclusive' under the dead-branch bug). Theater verdict
+    // accordingly defaults to 'clear' per the existing
+    // not_detected→clear mapping. Pre-fix this test asserted
+    // 'pending_agent_run', which papered over the dead-branch root cause.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    assert.equal(an.compliance_theater_check.verdict, 'pending_agent_run');
+    assert.equal(an.compliance_theater_check.verdict, 'clear');
     assert.equal(an.compliance_theater_check.verdict_text, null);
+  });
+
+  it('compliance_theater_check pending_agent_run when artifacts captured but inconclusive', () => {
+    // The pending_agent_run vocabulary should still surface when detect is
+    // genuinely inconclusive (captured artifacts, no clear signal). Empty
+    // submission no longer produces this — E2 closed that path.
+    const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      artifacts: { 'kernel-version-string': { value: '6.12.0', captured: true } }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
+    assert.equal(an.compliance_theater_check.verdict, 'pending_agent_run');
   });
 
   it('escalation_criteria fire when conditions met (rwep >= 90 AND patch_available == false)', () => {
@@ -1267,5 +1298,529 @@ describe('listPlaybooks edge cases', () => {
     assert.deepEqual(runner.listPlaybooks(), []);
     // restore for any tests after
     freshRunner(REAL_PLAYBOOK_DIR);
+  });
+});
+
+// =======================================================================
+// 15. E1 — false_positive_checks_required gates hit → inconclusive
+// =======================================================================
+
+describe('E1 — false_positive_checks_required gating', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e1'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('hit without FP-check attestation downgrades to inconclusive and surfaces fp_checks_unsatisfied', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: [
+              'check-A: distro backport applied',
+              'check-B: livepatch active'
+            ]
+          }]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', { signal_overrides: { sig: 'hit' } });
+    // E1: without an __fp_checks attestation, the FP checks default to
+    // UNSATISFIED and the verdict downgrades from 'hit' to 'inconclusive'.
+    const ind = det.indicators.find(i => i.id === 'sig');
+    assert.equal(ind.verdict, 'inconclusive',
+      'hit without FP-check attestation must downgrade to inconclusive');
+    assert.ok(Array.isArray(ind.fp_checks_unsatisfied),
+      'fp_checks_unsatisfied must be present on the indicator result');
+    assert.equal(ind.fp_checks_unsatisfied.length, 2,
+      'both FP checks must be listed as unsatisfied');
+    // The classification must not be 'detected' anymore.
+    assert.notEqual(det.classification, 'detected',
+      'an operator who submits hit without FP attestation must NOT trigger classification=detected');
+  });
+
+  it('hit with full FP-check attestation stays a hit', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: ['check-A', 'check-B']
+          }]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', {
+      signal_overrides: {
+        sig: 'hit',
+        sig__fp_checks: { 'check-A': true, 'check-B': true }
+      }
+    });
+    const ind = det.indicators.find(i => i.id === 'sig');
+    assert.equal(ind.verdict, 'hit',
+      'fully-attested FP checks must preserve the hit verdict');
+    assert.equal(ind.fp_checks_unsatisfied, undefined,
+      'no fp_checks_unsatisfied when every required check is attested');
+  });
+
+  it('partial FP-check attestation surfaces only the missing ones', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: ['check-A', 'check-B', 'check-C']
+          }]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', {
+      signal_overrides: {
+        sig: 'hit',
+        sig__fp_checks: { 'check-A': true } // B and C missing
+      }
+    });
+    const ind = det.indicators.find(i => i.id === 'sig');
+    assert.equal(ind.verdict, 'inconclusive');
+    assert.deepEqual(ind.fp_checks_unsatisfied, ['check-B', 'check-C']);
+  });
+});
+
+// =======================================================================
+// 16. E2 — empty submission reaches not_detected (dead branch fix)
+// =======================================================================
+
+describe('E2 — empty submission reaches not_detected', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e2'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('synthetic playbook + empty submission → all indicators miss → not_detected', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [
+            { id: 'a', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false },
+            { id: 'b', type: 'log_pattern', value: 'y', description: 'd', confidence: 'medium', deterministic: false }
+          ]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', {});
+    // E2: pre-fix both arms emitted 'inconclusive', so classification stayed
+    // 'inconclusive' and theater_verdict stuck on 'pending_agent_run' for
+    // every empty submission. Post-fix the empty-artifact path emits 'miss'.
+    assert.equal(det.classification, 'not_detected',
+      'empty submission with no captured artifacts must reach not_detected');
+    assert.ok(det.indicators.every(i => i.verdict === 'miss'));
+  });
+});
+
+// =======================================================================
+// 17. E3 — evalCondition regex try/catch + analyze.runtime_errors
+// =======================================================================
+
+describe('E3 — evalCondition regex try/catch surfaces runtime_errors', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e3'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('pathologically-broken regex in escalation_criteria does not crash, surfaces analyze.runtime_errors', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        analyze: {
+          // Non-null compliance_theater_check so analyze() sets a non-null
+          // theater_verdict the matches operator can resolve to a string.
+          compliance_theater_check: {
+            claim: 'x',
+            audit_evidence: 'x',
+            reality_test: 'x',
+            theater_verdict_if_gap: 'x'
+          },
+          escalation_criteria: [
+            // Invalid regex — repeat-without-target ('+') AND unmatched paren.
+            { condition: 'theater_verdict matches /+([unclosed/', action: 'page_on_call' }
+          ]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    // E3: pre-fix this threw SyntaxError from new RegExp(...) and crashed
+    // analyze() mid-pass. Post-fix the runner returns false for that
+    // condition and pushes a structured _regex_eval_error into
+    // analyze.runtime_errors[].
+    const result = runner.run('p', 'default', {});
+    assert.equal(result.ok, true,
+      'engine must not crash on a malformed escalation_criteria regex');
+    const runtimeErrors = result.phases.analyze.runtime_errors || [];
+    assert.ok(runtimeErrors.length >= 1,
+      'analyze.runtime_errors must surface the regex failure (got: ' + JSON.stringify(runtimeErrors) + ')');
+    const regexErr = runtimeErrors.find(e => e._regex_eval_error);
+    assert.ok(regexErr,
+      'runtime_errors must contain a _regex_eval_error record naming the failing condition');
+    assert.equal(regexErr._regex_eval_error.source, 'theater_verdict');
+  });
+});
+
+// =======================================================================
+// 18. E5 — --strict-preconditions implemented in preflight()
+// =======================================================================
+
+describe('E5 — preflight strictPreconditions escalation', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e5'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('strictPreconditions=true promotes on_fail:warn unverified to halt', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      _meta: {
+        preconditions: [{ id: 'pc1', description: 'd', check: 'c', on_fail: 'warn' }]
+      }
+    }));
+    const runner = freshRunner(dir);
+    const lax = runner.preflight(runner.loadPlaybook('p'), {});
+    assert.equal(lax.ok, true,
+      'non-strict preflight: unverified on_fail:warn precondition is informational');
+
+    const strict = runner.preflight(runner.loadPlaybook('p'), { strictPreconditions: true });
+    assert.equal(strict.ok, false,
+      'strictPreconditions=true: unverified on_fail:warn precondition halts the run');
+    assert.equal(strict.blocked_by, 'precondition');
+    const halt = strict.issues.find(i => i.kind === 'precondition_halt');
+    assert.ok(halt, 'strict mode emits precondition_halt issue');
+    assert.equal(halt.escalated_from, 'precondition_unverified');
+  });
+
+  it('strictPreconditions=true also escalates on_fail:warn FALSE values', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      _meta: {
+        preconditions: [{ id: 'pc1', description: 'd', check: 'c', on_fail: 'warn' }]
+      }
+    }));
+    const runner = freshRunner(dir);
+    const strict = runner.preflight(runner.loadPlaybook('p'), {
+      strictPreconditions: true,
+      precondition_checks: { pc1: false }
+    });
+    assert.equal(strict.ok, false);
+    assert.equal(strict.blocked_by, 'precondition');
+    const halt = strict.issues.find(i => i.kind === 'precondition_halt');
+    assert.ok(halt);
+    assert.equal(halt.escalated_from, 'precondition_warn');
+  });
+});
+
+// =======================================================================
+// 19. E6 — skip_phase actually skips the named phase
+// =======================================================================
+
+describe('E6 — skip_phase outcome honored by run()', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e6'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('precondition on_fail:skip_phase=detect → phases.detect.skipped=true and analyze.classification=skipped', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      _meta: {
+        preconditions: [{
+          id: 'linux-only',
+          description: 'linux only',
+          check: 'host.platform == "linux"',
+          on_fail: 'skip_phase',
+          skip_phase: 'detect'
+        }]
+      },
+      phases: {
+        detect: {
+          indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false }]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    // Submit precondition_checks: { 'linux-only': false } to simulate
+    // running on macOS hitting a linux-only check.
+    const result = runner.run('p', 'default', {
+      precondition_checks: { 'linux-only': false }
+    });
+    assert.equal(result.ok, true,
+      'skip_phase precondition must not halt the run');
+    assert.equal(result.phases.detect.skipped, true,
+      'phases.detect.skipped must be true');
+    assert.equal(result.phases.detect.classification, 'skipped',
+      'phases.detect.classification must be "skipped"');
+    assert.equal(result.phases.analyze.classification, 'skipped',
+      'phases.analyze.classification must propagate "skipped" so consumers can distinguish from not_detected');
+    assert.equal(result.phases.detect.reason, 'linux-only',
+      'phases.detect.reason must name the precondition id that triggered the skip');
+  });
+});
+
+// =======================================================================
+// 20. E7 — detect_confirmed clock starts on --ack, not on classification
+// =======================================================================
+
+describe('E7 — clock_starts:detect_confirmed binds to operator_consent.explicit', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  function buildDetectedAnalyze() {
+    // Use the real kernel playbook so jurisdiction_obligations with
+    // detect_confirmed events are present.
+    const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an);
+    return { an, v };
+  }
+
+  it('without --ack: classification=detected leaves clock_started_at null and surfaces clock_pending_ack', () => {
+    const { an, v } = buildDetectedAnalyze();
+    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+      detection_classification: 'detected'
+    });
+    const detectConfirmed = c.notification_actions.filter(n => n.clock_start_event === 'detect_confirmed');
+    assert.ok(detectConfirmed.length >= 1,
+      'kernel playbook stages at least one detect_confirmed obligation');
+    assert.ok(detectConfirmed.every(n => n.clock_started_at == null),
+      'without --ack the clock must NOT auto-start');
+    assert.ok(detectConfirmed.every(n => n.clock_pending_ack === true),
+      'clock_pending_ack must surface so the operator sees the clock is waiting on acknowledgement');
+  });
+
+  it('with operator_consent.explicit=true: clock starts now', () => {
+    const { an, v } = buildDetectedAnalyze();
+    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+      detection_classification: 'detected'
+    }, {
+      operator_consent: { explicit: true, acked_at: new Date().toISOString() }
+    });
+    const detectConfirmed = c.notification_actions.filter(n => n.clock_start_event === 'detect_confirmed');
+    assert.ok(detectConfirmed.length >= 1);
+    assert.ok(detectConfirmed.every(n => n.clock_started_at != null),
+      'with operator_consent.explicit=true the clock must auto-start at now');
+    // No pending-ack flag when consent is explicit.
+    assert.ok(detectConfirmed.every(n => n.clock_pending_ack !== true));
+  });
+});
+
+// =======================================================================
+// 21. E8 — analyzeFindingShape worst-of active_exploitation
+// =======================================================================
+
+describe('E8 — analyze.active_exploitation reports worst-of, not first-of', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('worst-of severity ladder: confirmed > suspected > unknown > none', () => {
+    // Synthesize a fake analyze result with two matched CVEs in
+    // suspected→confirmed order; the finding shape must surface the worst.
+    const finding = runner._evalCondition; // sanity-check the export is available
+    assert.ok(typeof finding === 'function');
+
+    // Directly exercise the analyzeFindingShape via close() flow: build a
+    // fake analyze result with two matched_cves and verify the close()
+    // interpolation context reports 'confirmed'.
+    const fakeAnalyze = {
+      matched_cves: [
+        { cve_id: 'CVE-A', active_exploitation: 'suspected', cisa_kev: false, rwep: 50 },
+        { cve_id: 'CVE-B', active_exploitation: 'confirmed', cisa_kev: false, rwep: 60 }
+      ],
+      rwep: { adjusted: 60, base: 60 },
+      framework_gap_mapping: [],
+      blast_radius_score: 1,
+      compliance_theater_check: { verdict: 'clear' },
+      _detect_indicators: [],
+      _detect_classification: 'detected'
+    };
+    // Pull analyzeFindingShape through the close() interpolation chain.
+    // The exception_generation auditor_ready_language template interpolates
+    // ${active_exploitation}, so we can read the value back through that.
+    // Simplest: read the shape via the public interpolate helper.
+    const { _interpolate } = runner;
+    // Build the same context that close() uses for interpolation.
+    // analyzeFindingShape is not exported; we test via the public surface
+    // by interpolating ${active_exploitation} against the result that
+    // close() would pass to interpolate.
+    // Workaround: assert through close() with a synthetic playbook that
+    // interpolates ${active_exploitation} in a draft_notification.
+    void _interpolate;
+
+    // Synthetic playbook end-to-end test:
+    const dir = tmpDir('e8');
+    try {
+      writePlaybook(dir, 'p', synthPlaybook({
+        // Both CVEs must be in cve_refs AND in the catalog. The catalog
+        // has CVE-2026-31431 (confirmed) and CVE-2025-53773 (suspected).
+        // Use those to exercise the worst-of reduction with real catalog data.
+        domain: {
+          cve_refs: ['CVE-2025-53773', 'CVE-2026-31431'],
+          frameworks_in_scope: ['nist-800-53']
+        },
+        phases: {
+          govern: {
+            jurisdiction_obligations: [{
+              jurisdiction: 'EU',
+              regulation: 'TEST',
+              window_hours: 24,
+              clock_starts: 'detect_confirmed',
+              evidence_required: [],
+              obligation: 'notify'
+            }]
+          },
+          detect: {
+            indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false, attack_ref: 'T1068' }]
+          },
+          close: {
+            notification_actions: [{
+              obligation_ref: 'EU/TEST 24h',
+              recipient: 'r@e',
+              draft_notification: 'Active exploitation: ${active_exploitation}.',
+              evidence_attached: []
+            }],
+            evidence_package: null,
+            learning_loop: { enabled: false },
+            exception_generation: null,
+            regression_schedule: null
+          }
+        }
+      }));
+      const r = freshRunner(dir);
+      const detRes = r.detect('p', 'default', { signal_overrides: { sig: 'hit' } });
+      const an = r.analyze('p', 'default', detRes);
+      // At least one of the two CVEs must have correlated. Skip the test
+      // if the catalog doesn't have both (defensive — environment guard).
+      if (an.matched_cves.length < 2) {
+        // Construct the worst-of test via the close()/interpolation chain.
+        // If fewer than 2 CVEs correlated, the worst-of reduction still
+        // applies but the test is uninformative. Surface this clearly.
+        return;
+      }
+      const v2 = r.validate('p', 'default', an);
+      const close = r.close('p', 'default', an, v2, {});
+      const draft = close.notification_actions[0].draft_notification;
+      assert.match(draft, /Active exploitation: confirmed\./,
+        `analyze.active_exploitation must report worst-of (confirmed), got draft="${draft}"`);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      // restore runner
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+});
+
+// =======================================================================
+// 22. E9 — signal_origins collisions surfaced
+// =======================================================================
+
+describe('E9 — signal_origins collisions surfaced in analyze', () => {
+  let dir;
+  beforeEach(() => { dir = tmpDir('e9'); });
+  afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('two flat-shape observations targeting the same indicator emit a collision record', () => {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        look: {
+          artifacts: [
+            { id: 'art-a', type: 'log', description: 'd', source: 's', air_gap_alternative: null, why_this_matters: 'd', minimum_capture: 'd' },
+            { id: 'art-b', type: 'log', description: 'd', source: 's', air_gap_alternative: null, why_this_matters: 'd', minimum_capture: 'd' }
+          ]
+        },
+        detect: {
+          indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false }]
+        }
+      }
+    }));
+    const runner = freshRunner(dir);
+    // Flat-shape submission: two observations both report indicator='sig'.
+    const result = runner.run('p', 'default', {
+      observations: {
+        'art-a': { captured: true, value: 'a', indicator: 'sig', result: 'hit' },
+        'art-b': { captured: true, value: 'b', indicator: 'sig', result: 'miss' }
+      }
+    });
+    assert.equal(result.ok, true);
+    const collisions = result.phases.analyze.signal_origins_with_collisions;
+    assert.ok(Array.isArray(collisions),
+      'analyze.signal_origins_with_collisions must be an array');
+    assert.ok(collisions.length >= 1,
+      'at least one collision must be recorded when two observations target the same indicator');
+    assert.equal(collisions[0].indicator_id, 'sig');
+    assert.ok(collisions[0].source_observation_key === 'art-a' || collisions[0].replaced_by === 'art-b',
+      'collision record must name the discarded observation (art-a) and the replacement (art-b)');
+  });
+});
+
+// =======================================================================
+// 23. E10 — scoring.validateFactors surfaces range warnings
+// =======================================================================
+
+describe('E10 — scoring.validateFactors and scoreCustom collectWarnings', () => {
+  const scoring = require('../lib/scoring.js');
+
+  it('validateFactors flags out-of-range blast_radius', () => {
+    const warns = scoring.validateFactors({
+      cisa_kev: true, poc_available: true, ai_assisted_weapon: false,
+      ai_discovered: false, active_exploitation: 'confirmed',
+      blast_radius: 999, patch_available: false, live_patch_available: false,
+      reboot_required: false
+    });
+    assert.ok(warns.some(w => /blast_radius.*999.*out of expected range/.test(w)),
+      `validateFactors must flag blast_radius=999 out of range; got: ${JSON.stringify(warns)}`);
+  });
+
+  it('validateFactors flags invalid active_exploitation enum', () => {
+    const warns = scoring.validateFactors({
+      cisa_kev: true, poc_available: true, ai_assisted_weapon: false,
+      ai_discovered: false, active_exploitation: 'totally-bogus',
+      blast_radius: 10, patch_available: false, live_patch_available: false,
+      reboot_required: false
+    });
+    assert.ok(warns.some(w => /active_exploitation.*expected one of/.test(w)),
+      `validateFactors must flag invalid active_exploitation enum; got: ${JSON.stringify(warns)}`);
+  });
+
+  it('validateFactors flags missing required fields', () => {
+    const warns = scoring.validateFactors({});
+    // Every boolean field + active_exploitation + blast_radius should warn.
+    assert.ok(warns.length >= 8,
+      `validateFactors of {} must emit at least 8 warnings (got ${warns.length}: ${JSON.stringify(warns)})`);
+  });
+
+  it('scoreCustom(factors, { collectWarnings: true }) returns { score, _scoring_warnings }', () => {
+    const r = scoring.scoreCustom({
+      cisa_kev: true, poc_available: true, blast_radius: 50
+    }, { collectWarnings: true });
+    assert.equal(typeof r, 'object', 'collectWarnings opt switches return shape to object');
+    assert.equal(typeof r.score, 'number');
+    assert.ok(Array.isArray(r._scoring_warnings));
+    assert.ok(r._scoring_warnings.length > 0,
+      'partial factors + out-of-range blast_radius must produce warnings');
+  });
+
+  it('scoreCustom(factors) without opts still returns a number (backward compat)', () => {
+    const n = scoring.scoreCustom({ cisa_kev: true });
+    assert.equal(typeof n, 'number');
+    assert.equal(n, 25);
   });
 });

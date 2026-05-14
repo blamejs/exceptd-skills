@@ -164,6 +164,19 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-test-coverage.js")],
     ciJobName: "Diff coverage",
   },
+  {
+    // v0.12.12 — Validate every playbook in data/playbooks/ against the
+    // JSON schema + cross-playbook + cross-catalog references. Runs as
+    // informational (warnings, not failures) for v0.12.12 so the patch-
+    // class release can land without retroactively breaking schema-drift
+    // cases that operators have not yet reconciled. v0.13.0 will flip
+    // `informational: false`.
+    name: "Validate playbooks (schema + cross-refs, informational)",
+    command: process.execPath,
+    args: [path.join(ROOT, "lib", "validate-playbooks.js")],
+    ciJobName: "Validate playbooks",
+    informational: true,
+  },
 ];
 
 function runGate(gate) {
@@ -174,26 +187,35 @@ function runGate(gate) {
         status: "skipped",
         reason:
           "keys/public.pem missing — run `npm run bootstrap` to generate keys + sign skills.",
+        durationMs: 0,
       };
     }
   }
+  const t0 = Date.now();
   try {
     execFileSync(gate.command, gate.args, { stdio: "inherit", cwd: ROOT });
-    return { status: "passed" };
+    return { status: "passed", durationMs: Date.now() - t0 };
   } catch (e) {
     if (gate.informational) {
       return {
         status: "informational",
         exitCode: e.status ?? null,
         message: e.message,
+        durationMs: Date.now() - t0,
       };
     }
     return {
       status: "failed",
       exitCode: e.status ?? null,
       message: e.message,
+      durationMs: Date.now() - t0,
     };
   }
+}
+
+function fmtMs(ms) {
+  if (typeof ms !== "number" || !Number.isFinite(ms)) return "";
+  return `${ms} ms`;
 }
 
 function main() {
@@ -202,17 +224,19 @@ function main() {
     process.stdout.write(`\n=== ${gate.name} ===\n`);
     const outcome = runGate(gate);
     results.push({ gate, outcome });
+    const timing = fmtMs(outcome.durationMs);
+    const timingSuffix = timing ? ` (${timing})` : "";
     if (outcome.status === "skipped") {
       process.stdout.write(`  ⊘ skipped — ${outcome.reason}\n`);
     } else if (outcome.status === "passed") {
-      process.stdout.write(`  ✓ passed\n`);
+      process.stdout.write(`  ✓ passed${timingSuffix}\n`);
     } else if (outcome.status === "informational") {
       process.stdout.write(
-        `  ℹ informational (exit ${outcome.exitCode ?? "?"}) — not failing the run\n`
+        `  ℹ informational (exit ${outcome.exitCode ?? "?"})${timingSuffix} — not failing the run\n`
       );
     } else {
       process.stdout.write(
-        `  ✗ failed (exit ${outcome.exitCode ?? "?"}): ${outcome.message}\n`
+        `  ✗ failed (exit ${outcome.exitCode ?? "?"})${timingSuffix}: ${outcome.message}\n`
       );
     }
   }
@@ -232,8 +256,10 @@ function main() {
         : outcome.status === "informational"
         ? "ℹ"
         : "✗";
+    const timing = fmtMs(outcome.durationMs);
+    const timingSuffix = timing ? `  (${timing})` : "";
     process.stdout.write(
-      `  ${icon} ${gate.name.padEnd(widest)}  ${outcome.status}\n`
+      `  ${icon} ${gate.name.padEnd(widest)}  ${outcome.status}${timingSuffix}\n`
     );
   }
 

@@ -554,6 +554,17 @@ function readEvidence(evidenceFlag) {
     if (!buf.trim()) return {};
     return JSON.parse(buf);
   }
+  // v0.12.12: read enforces a max size to defend against an operator
+  // accidentally passing a multi-gigabyte file (binary, log, or
+  // adversarial JSON bomb). 32 MB is well beyond any legitimate
+  // submission and still drains in a single read on modern hardware.
+  const MAX_EVIDENCE_BYTES = 32 * 1024 * 1024;
+  let stat;
+  try { stat = fs.statSync(evidenceFlag); }
+  catch (e) { throw new Error(`evidence path not readable: ${e.message}`); }
+  if (stat.size > MAX_EVIDENCE_BYTES) {
+    throw new Error(`evidence file too large: ${stat.size} bytes > ${MAX_EVIDENCE_BYTES} byte limit. Reduce the submission or split into multiple playbook runs.`);
+  }
   return JSON.parse(fs.readFileSync(evidenceFlag, "utf8"));
 }
 
@@ -607,8 +618,39 @@ function dispatchPlaybook(cmd, argv) {
     airGap: !!args["air-gap"],
     forceStale: !!args["force-stale"],
   };
-  if (args["session-id"]) runOpts.session_id = args["session-id"];
-  if (args["attestation-root"]) runOpts.attestationRoot = args["attestation-root"];
+  if (args["session-id"]) {
+    // v0.12.12: --session-id is a filesystem path component (resolves to
+    // .exceptd/attestations/<id>/attestation.json). Operator-supplied input
+    // with `..` or path separators escapes the attestation root. Validate
+    // strict allowlist before propagating.
+    const sid = args["session-id"];
+    if (typeof sid !== "string" || !/^[A-Za-z0-9._-]{1,64}$/.test(sid)) {
+      return emitError(
+        "run: --session-id must match /^[A-Za-z0-9._-]{1,64}$/ (alphanumeric, dot, underscore, hyphen; up to 64 chars). Path separators and '..' are rejected.",
+        { provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
+        pretty
+      );
+    }
+    runOpts.session_id = sid;
+  }
+  if (args["attestation-root"]) {
+    // v0.12.12: --attestation-root must resolve to an absolute path the
+    // operator owns. Reject `..`-bearing relatives at input so a misconfigured
+    // env doesn't write outside the intended root. Final resolution still
+    // happens in resolveAttestationRoot — this is the input-validation layer.
+    const ar = args["attestation-root"];
+    if (typeof ar !== "string" || ar.length === 0) {
+      return emitError("run: --attestation-root must be a non-empty string.", { provided: typeof ar }, pretty);
+    }
+    if (ar.split(/[\\/]/).some(seg => seg === "..")) {
+      return emitError(
+        "run: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.",
+        { provided: ar.slice(0, 200) },
+        pretty
+      );
+    }
+    runOpts.attestationRoot = path.resolve(ar);
+  }
   if (args["session-key"]) {
     // Bug #33: validate that --session-key is hex. Previously any string was
     // silently accepted; HMAC signing then either failed silently or produced
@@ -1678,6 +1720,14 @@ function cmdRun(runner, args, runOpts, pretty) {
       i.kind === "precondition_unverified" || i.kind === "precondition_warn"
     );
     if (warnIssues.length > 0) {
+      // v0.12.12: surface the contract violation in the emitted body so
+      // downstream consumers grepping the JSON see WHY the exit is non-zero.
+      // result.ok stays true (the playbook executed) but the explicit flag
+      // makes the strict-preconditions contract observable, not just inferable
+      // from exit code + stderr line.
+      result.strict_preconditions_violated = warnIssues.map(i => ({
+        id: i.id, kind: i.kind, message: i.message || null, on_fail: i.on_fail || null,
+      }));
       process.stderr.write(`[exceptd run] --strict-preconditions: ${warnIssues.length} unverified/warn precondition(s) — exit 1.\n`);
       emit(result, pretty);
       // v0.11.11: exitCode + return so emit()'s stdout flushes (process.exit
@@ -1922,13 +1972,28 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // contract in one pass.
   if (args["evidence-dir"]) {
     const dir = args["evidence-dir"];
+    if (typeof dir !== "string" || dir.length === 0) {
+      return emitError("run: --evidence-dir must be a non-empty string.", null, pretty);
+    }
     if (!fs.existsSync(dir)) {
       return emitError(`run: --evidence-dir ${dir} does not exist.`, null, pretty);
     }
+    const resolvedDir = path.resolve(dir);
+    // v0.12.12: only `<playbook-id>.json` entries are honored. Reject
+    // anything where the filename strip leaves traversal segments — npm
+    // refuses to write such filenames so the realistic risk is an operator
+    // symlink/junction inside the dir, but the filter is cheap.
     for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
       const pbId = f.replace(/\.json$/, "");
+      if (!/^[A-Za-z0-9_.-]+$/.test(pbId)) {
+        return emitError(`run: --evidence-dir entry ${JSON.stringify(f)} has unsafe playbook-id segment.`, null, pretty);
+      }
+      const entryPath = path.resolve(path.join(resolvedDir, f));
+      if (!entryPath.startsWith(resolvedDir + path.sep)) {
+        return emitError(`run: --evidence-dir entry ${f} resolves outside the directory; refusing.`, null, pretty);
+      }
       try {
-        bundle[pbId] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+        bundle[pbId] = JSON.parse(fs.readFileSync(entryPath, "utf8"));
       } catch (e) {
         return emitError(`run: failed to parse --evidence-dir entry ${f}: ${e.message}`, null, pretty);
       }
@@ -2128,47 +2193,86 @@ function deriveRunTag() {
 function persistAttestation(args) {
   const { sessionId, playbookId, directiveId, evidenceHash, operator,
           operatorConsent, submission, runOpts, forceOverwrite, filename } = args;
+  // v0.12.12: session-id is supposed to be sanitized at input. Defense in
+  // depth: reject anything that path-traverses out of the attestation root.
+  if (!/^[A-Za-z0-9._-]{1,64}$/.test(sessionId || "")) {
+    return {
+      ok: false,
+      error: `Refusing to persist attestation with unsafe session-id: ${JSON.stringify(sessionId).slice(0, 80)}. Must match /^[A-Za-z0-9._-]{1,64}$/.`,
+      existingPath: null,
+    };
+  }
+  if (!/^[A-Za-z0-9._-]{1,64}\.json$/.test(filename || "")) {
+    return {
+      ok: false,
+      error: `Refusing to persist attestation with unsafe filename: ${JSON.stringify(filename).slice(0, 80)}.`,
+      existingPath: null,
+    };
+  }
   const root = resolveAttestationRoot(runOpts);
   const dir = path.join(root, sessionId);
   const filePath = path.join(dir, filename);
-
-  let prior = null;
-  if (fs.existsSync(filePath)) {
-    try { prior = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch {}
-    if (!forceOverwrite) {
-      return {
-        ok: false,
-        error: `Attestation already exists at ${path.relative(process.cwd(), filePath)}. Session-id collision (${sessionId}) — refusing to overwrite to preserve audit trail.`,
-        existingPath: path.relative(process.cwd(), filePath),
-      };
-    }
+  // Final-resolution check: dir must remain inside root after normalization.
+  const normRoot = path.resolve(root) + path.sep;
+  if (!(path.resolve(dir) + path.sep).startsWith(normRoot)) {
+    return {
+      ok: false,
+      error: `Refusing to persist attestation outside root. session_id=${sessionId} root=${root}`,
+      existingPath: null,
+    };
   }
 
   try {
     fs.mkdirSync(dir, { recursive: true });
-    const attestation = {
-      session_id: sessionId,
-      playbook_id: playbookId,
-      directive_id: directiveId,
-      evidence_hash: evidenceHash,
-      operator: operator || null,
-      operator_consent: operatorConsent || null,
-      submission,
-      run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
-      captured_at: new Date().toISOString(),
-      // When overwriting (with --force-overwrite), link to the prior content
-      // by evidence_hash + capture timestamp. session_id is the same (that's
-      // why we collided), so it's the hash + timestamp that distinguish.
-      prior_evidence_hash: prior ? (prior.evidence_hash || null) : null,
-      prior_captured_at: prior ? (prior.captured_at || null) : null,
+    const writeAttestation = (priorEvidenceHash, priorCapturedAt, flag) => {
+      const attestation = {
+        session_id: sessionId,
+        playbook_id: playbookId,
+        directive_id: directiveId,
+        evidence_hash: evidenceHash,
+        operator: operator || null,
+        operator_consent: operatorConsent || null,
+        submission,
+        run_opts: { airGap: runOpts.airGap, forceStale: runOpts.forceStale, mode: runOpts.mode },
+        captured_at: new Date().toISOString(),
+        // When overwriting (with --force-overwrite), link to the prior content
+        // by evidence_hash + capture timestamp. session_id is the same (that's
+        // why we collided), so it's the hash + timestamp that distinguish.
+        prior_evidence_hash: priorEvidenceHash,
+        prior_captured_at: priorCapturedAt,
+      };
+      // Atomic-create via O_EXCL ('wx' flag) eliminates the TOCTOU window
+      // between existsSync and writeFileSync. Two concurrent run-with-same-
+      // session-id invocations now produce one winner + one EEXIST loser,
+      // not silent last-write-wins.
+      fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2), { flag });
+      maybeSignAttestation(filePath);
     };
-    fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2));
-    maybeSignAttestation(filePath);
-    return {
-      ok: true,
-      prior_session_id: prior ? sessionId : null,
-      overwrote_at: prior ? prior.captured_at : null,
-    };
+
+    try {
+      writeAttestation(null, null, "wx");
+      return { ok: true, prior_session_id: null, overwrote_at: null };
+    } catch (eExcl) {
+      if (eExcl.code !== "EEXIST") throw eExcl;
+      // Slot already taken — read prior to chain audit trail, then decide.
+      let prior = null;
+      try { prior = JSON.parse(fs.readFileSync(filePath, "utf8")); } catch { /* malformed prior — proceed */ }
+      if (!forceOverwrite) {
+        return {
+          ok: false,
+          error: `Attestation already exists at ${path.relative(process.cwd(), filePath)}. Session-id collision (${sessionId}) — refusing to overwrite to preserve audit trail.`,
+          existingPath: path.relative(process.cwd(), filePath),
+        };
+      }
+      writeAttestation(prior ? (prior.evidence_hash || null) : null,
+                       prior ? (prior.captured_at || null) : null,
+                       "w");
+      return {
+        ok: true,
+        prior_session_id: prior ? sessionId : null,
+        overwrote_at: prior ? prior.captured_at : null,
+      };
+    }
   } catch (e) {
     return { ok: false, error: `Failed to write attestation: ${e.message}`, existingPath: null };
   }
@@ -3367,8 +3471,14 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     directPhase = runner.direct(playbookId, directiveId);
     lookPhase = runner.look(playbookId, directiveId, runOpts);
   } catch (e) {
-    process.stdout.write(JSON.stringify({ event: "error", reason: e.message, phase: "info" }) + "\n");
-    process.exit(1);
+    // v0.12.12 (T8): process.exit(1) immediately after a stdout write can
+    // truncate buffered output under piped consumers (same class as v0.11.10
+    // #100). Use exitCode+return so the JSONL error frame drains. Also write
+    // the framed error event so the stdout-only JSONL contract holds — host
+    // AIs reading this stream must see structured frames, never bare text.
+    process.stdout.write(JSON.stringify({ event: "error", reason: e.message, phase: "info", playbook_id: playbookId, directive_id: directiveId }) + "\n");
+    process.exitCode = 1;
+    return;
   }
 
   const governEvent = {
@@ -3444,8 +3554,11 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       return emitError(`ai-run: runner threw: ${e.message}`, { playbook: playbookId }, pretty);
     }
     if (!result || result.ok === false) {
+      // v0.12.12: same exit-after-write anti-pattern as the pre-stream
+      // load path. Use exitCode + return so stderr drains.
       process.stderr.write((pretty ? JSON.stringify(result || {}, null, 2) : JSON.stringify(result || {})) + "\n");
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     // v0.11.8 (#101): unify ai-run --no-stream shape with `run`. Pre-0.11.8
     // ai-run flattened phases to top-level (`govern`, `direct`, `look`, ...),

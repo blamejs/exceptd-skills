@@ -98,6 +98,13 @@ test("gate 1: verify.js fires on a byte-flipped signature in manifest.json", () 
       path.join(ROOT, "lib", "verify.js"),
       path.join(tmp, "lib", "verify.js")
     );
+    // verify.js v0.12.12+ schema-validates the manifest before any skill
+    // I/O. The schema lives at lib/schemas/manifest.schema.json — copy it
+    // into the temp tree alongside verify.js so the validator can load it.
+    copyFile(
+      path.join(ROOT, "lib", "schemas", "manifest.schema.json"),
+      path.join(tmp, "lib", "schemas", "manifest.schema.json")
+    );
     const { privateKey, publicKey } = genKeypair();
     writeFile(tmp, "keys/public.pem", publicKey);
     const skillBody = "---\nname: t\n---\n# tempdir skill body\n";
@@ -107,11 +114,27 @@ test("gate 1: verify.js fires on a byte-flipped signature in manifest.json", () 
     const flipped =
       (goodSig[0] === "A" ? "B" : "A") + goodSig.slice(1);
     assert.notEqual(flipped, goodSig, "sanity: flipped signature must differ");
+    // Manifest must satisfy the schema's required top-level + per-skill
+    // fields. Anything missing fails before we ever reach signature
+    // verification — which would silently mask the test's intent.
     const manifest = {
+      name: "test",
+      version: "0.0.1",
+      description: "test fixture manifest",
+      atlas_version: "5.1.0",
+      threat_review_date: "2026-01-01",
       skills: [
         {
           name: "t",
+          version: "1.0.0",
           path: "skills/t/skill.md",
+          description: "tempdir skill for predeploy-gate test",
+          triggers: ["t"],
+          data_deps: [],
+          atlas_refs: [],
+          attack_refs: [],
+          framework_gaps: ["G1"],
+          last_threat_review: "2026-01-01",
           signature: flipped,
           signed_at: "2026-01-01T00:00:00.000Z",
         },

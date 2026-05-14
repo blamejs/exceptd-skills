@@ -1,11 +1,12 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-13T21:19:48.889Z",
+  "generated_at": "2026-05-14T05:27:33.085Z",
   "generator": "scripts/build-indexes.js",
-  "source_count": 49,
+  "source_count": 50,
   "source_hashes": {
-    "manifest.json": "b7e77cd5de579732b6dd352720557c3ba2ac93f472de50f4e1f861a665a2760b",
+    "manifest.json": "1f99de9a465bc6346581ca8fde53746212b653032cfa640f9444cc35241776f5",
     "data/atlas-ttps.json": "f3f75ff2778a0a2c7d953a21386bc4f265cb2685ce41242eee45f9e9f2a6add6",
+    "data/attack-techniques.json": "b6dde8f2d8bbe809cbd017d1490b16c01cc54034d695bc8535613b699e3b45c6",
     "data/cve-catalog.json": "197f5313d93f0a7225d5ff275e21cbd067b3970a6f2fdc6da35f81c847e8bdee",
     "data/cwe-catalog.json": "19ce1fad3ed0b0687ec9a328b2d6cd1b544eea7f19140234ec1a8467de1f908d",
     "data/d3fend-catalog.json": "d219520c8d3eb61a270b25ea60f64721035e98a8d5d51d1a4e1f1140d9a586f9",
@@ -55,7 +56,7 @@
     "skills/age-gates-child-safety/skill.md": "c741d7dca9da0abb09bdebb8a02e803ce4ae9fb9a6904fb8df3ec19cae83917d"
   },
   "skill_count": 38,
-  "catalog_count": 10,
+  "catalog_count": 11,
   "index_stats": {
     "xref_entries": {
       "cwe_refs": 34,
@@ -80,8 +81,8 @@
     "theater_fingerprints": 7,
     "currency_action_required": 0,
     "frequency_fields": 7,
-    "activity_feed_events": 49,
-    "catalog_summaries": 10,
+    "activity_feed_events": 50,
+    "catalog_summaries": 11,
     "stale_content_findings": 0
   },
   "invalidation_note": "If any source file in source_hashes has a different SHA-256 than recorded here, the indexes are stale. Re-run `npm run build-indexes`."

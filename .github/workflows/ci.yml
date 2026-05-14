@@ -157,6 +157,30 @@ jobs:
       - name: Run diff coverage analyzer
         run: node scripts/check-test-coverage.js --base origin/main
 
+  # ── Validate playbooks (informational, v0.12.12) ────────────────────────────
+  # Runs the new lib/validate-playbooks.js gate against every playbook in
+  # data/playbooks/. v0.12.12 ships in informational mode — schema enum
+  # drift, cross-catalog unresolved refs, and obligation_ref mismatches are
+  # surfaced as warnings and DO NOT block the merge. v0.13.0 will flip
+  # this job to required.
+  validate-playbooks:
+    name: Validate playbooks
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 24.14.1 LTS
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Validate playbooks (schema + cross-refs)
+        run: node lib/validate-playbooks.js
+
   # ── Skill lint (frontmatter + body sections + cross-refs) ───────────────────
   # AGENTS.md hard rules #4 (no orphaned controls), #7 (skills are
   # instructions, not descriptions), #10 (no placeholders), #11 (no-MVP

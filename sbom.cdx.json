@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:dac8abdb-9a54-4d36-9f4b-21e8dde200ea",
+  "serialNumber": "urn:uuid:b111772e-df26-4185-870f-3d79d7851669",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-13T21:19:35.259Z",
+    "timestamp": "2026-05-14T05:25:57.038Z",
     "tools": [
       {
         "name": "hand-written",
@@ -40,11 +40,11 @@
     "properties": [
       {
         "name": "cyclonedx:dataflow:input",
-        "value": "data/atlas-ttps.json,data/cve-catalog.json,data/cwe-catalog.json,data/d3fend-catalog.json,data/dlp-controls.json,data/exploit-availability.json,data/framework-control-gaps.json,data/global-frameworks.json,data/rfc-references.json,data/zeroday-lessons.json"
+        "value": "data/atlas-ttps.json,data/attack-techniques.json,data/cve-catalog.json,data/cwe-catalog.json,data/d3fend-catalog.json,data/dlp-controls.json,data/exploit-availability.json,data/framework-control-gaps.json,data/global-frameworks.json,data/rfc-references.json,data/zeroday-lessons.json"
       },
       {
         "name": "exceptd:catalog:count",
-        "value": "10"
+        "value": "11"
       },
       {
         "name": "exceptd:skill:count",

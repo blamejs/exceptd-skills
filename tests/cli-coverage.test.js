@@ -464,8 +464,13 @@ test('ci --block-on-jurisdiction-clock fails when a clock fires (exit 2 = FAIL)'
     verdict: { classification: 'detected', blast_radius: 4 },
   }));
   try {
+    // E7: --ack required for the jurisdiction clock to start now (operator
+    // awareness contract per AGENTS.md Phase 7). Pre-fix the engine
+    // auto-stamped on detect_confirmed; post-fix the operator must
+    // acknowledge.
     const r = cli(['ci', '--required', 'secrets',
       '--evidence-dir', tmp,
+      '--ack',
       '--block-on-jurisdiction-clock', '--json']);
     const data = tryJson(r.stdout);
     assert.ok(data, 'ci output must be JSON');

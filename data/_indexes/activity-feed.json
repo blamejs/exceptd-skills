@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 49
+    "event_count": 50
   },
   "events": [
     {
@@ -12,6 +12,14 @@
       "path": "data/atlas-ttps.json",
       "schema_version": "1.0.0",
       "entry_count": 15
+    },
+    {
+      "date": "2026-05-13",
+      "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 75
     },
     {
       "date": "2026-05-13",
@@ -356,7 +364,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 38 skills, 10 catalogs"
+      "note": "manifest threat_review_date — 38 skills, 11 catalogs"
     }
   ]
 }
