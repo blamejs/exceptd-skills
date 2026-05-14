@@ -194,3 +194,46 @@ test('P P1-A: bin/exceptd.js#normalizeAttestationBytes is structurally identical
     'normalizeAttestationBytes must not globally strip BOM characters (only the leading one)'
   );
 });
+
+test('refreshMod.normalizeSkillBytes and tarballMod.normalizeSkillBytes are exported and callable', () => {
+  // Diff-coverage gate requires the export identifier appear inside a
+  // test() body in the same file that issues the matching require().
+  assert.equal(typeof refreshMod.normalizeSkillBytes, 'function', 'refresh-network.js must export normalizeSkillBytes');
+  assert.equal(typeof tarballMod.normalizeSkillBytes, 'function', 'verify-shipped-tarball.js must export normalizeSkillBytes');
+  // Functional smoke: both must strip leading BOM + collapse CRLF.
+  const input = Buffer.from('﻿hello\r\nworld\r\n', 'utf8');
+  assert.equal(refreshMod.normalizeSkillBytes(input).toString('utf8'), 'hello\nworld\n');
+  assert.equal(tarballMod.normalizeSkillBytes(input).toString('utf8'), 'hello\nworld\n');
+});
+
+test('canonicalManifestBytesForRefresh and canonicalManifestBytesForTarball produce byte-identical bytes', () => {
+  // The two helpers compute the canonical signing input for the manifest
+  // envelope from the refresh-network path and the verify-shipped-tarball
+  // gate respectively. They MUST agree byte-for-byte; otherwise a manifest
+  // signed during `npm pack` predeploy verifies on one site and fails on
+  // the other — exactly the v0.11.x signature divergence class.
+  const manifest = {
+    version: '0.12.19',
+    skills: [
+      { name: 'b-skill', path: 'skills/b/skill.md', signature: 'b-sig' },
+      { name: 'a-skill', path: 'skills/a/skill.md', signature: 'a-sig' },
+    ],
+    manifest_signature: { algorithm: 'Ed25519', signature_base64: 'should-be-stripped' },
+  };
+  const refreshBytes = refreshMod.canonicalManifestBytesForRefresh(manifest);
+  const tarballBytes = tarballMod.canonicalManifestBytesForTarball(manifest);
+  assert.equal(
+    Buffer.compare(Buffer.from(refreshBytes), Buffer.from(tarballBytes)), 0,
+    'canonicalManifestBytesForRefresh and canonicalManifestBytesForTarball must be byte-identical'
+  );
+  // Negative — the manifest_signature field MUST be excluded from canonical input.
+  const refreshStr = Buffer.from(refreshBytes).toString('utf8');
+  assert.ok(
+    !refreshStr.includes('should-be-stripped'),
+    'canonical bytes must exclude manifest_signature.signature_base64 (replay surface)'
+  );
+  assert.ok(
+    !refreshStr.includes('manifest_signature'),
+    'canonical bytes must exclude the manifest_signature field entirely'
+  );
+});
