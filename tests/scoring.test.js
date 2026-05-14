@@ -197,17 +197,16 @@ test('timeline() boundary at 60 maps to 72h, 40 to 7-day, 20 to 30-day', () => {
 
 // ---------- compare() ----------
 
-test('compare() flags Copy Fail as RWEP-higher-than-CVSS-equivalent', () => {
+test('compare() flags Copy Fail as RWEP-significantly-higher-than-CVSS-equivalent (band tightened to ±10 in audit J F15)', () => {
   const r = compare('CVE-2026-31431', catalog);
   assert.equal(r.cve_id, 'CVE-2026-31431');
   assert.equal(r.cvss, 7.8);
   assert.equal(r.rwep, 90);
-  // cvssEquivalent = 78; delta = 90 - 78 = 12 → between -20 and 20 → "broadly aligned"
-  // NOTE: For Copy Fail the formula yields delta 12, so compare() returns "broadly aligned" rather than
-  // "significantly higher". The CLAUDE.md narrative (CVSS 7.8 vs RWEP 90 → framework SLA insufficient)
-  // is communicated via the SLA fields, not the delta classifier.
+  // cvssEquivalent = 78; delta = 90 - 78 = 12 → above the new ±10 band → "significantly higher".
+  // The old ±20 band swallowed this divergence (the operator-facing point is that the
+  // CVSS-calibrated SLA is insufficient); narrowing the band surfaces the gap explicitly.
   assert.equal(r.delta, 12);
-  assert.match(r.explanation, /broadly aligned/);
+  assert.match(r.explanation, /significantly higher/);
   assert.equal(r.rwep_actual_sla.hours, 4);
 });
 

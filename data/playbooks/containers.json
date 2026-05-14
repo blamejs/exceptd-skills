@@ -29,7 +29,9 @@
         "on_fail": "halt"
       }
     ],
-    "mutex": [],
+    "mutex": [
+      "library-author"
+    ],
     "feeds_into": [
       {
         "playbook_id": "kernel",
@@ -38,13 +40,19 @@
       {
         "playbook_id": "secrets",
         "condition": "always"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "container-image-layers.length > 0"
       }
     ]
   },
   "domain": {
     "name": "Container runtime posture + manifest review",
     "attack_class": "container-escape",
-    "atlas_refs": [],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
     "attack_refs": [
       "T1611",
       "T1610",
@@ -213,7 +221,7 @@
       ]
     },
     "direct": {
-      "threat_context": "Container escape attack class in 2025-2026 is dominated by the runc / containerd / kubelet CVE chain. CVE-2024-21626 'Leaky Vessels' (runc <1.1.12 working-directory race → fd leak into host) shipped Jan 2024 with public PoC and is the canonical container-escape primitive; subsequent runc/containerd CVEs follow the same pattern (host-resource leakage via misconfigured isolation). Mandiant 2025 IR report: ~22% of cloud-tenant compromises involved a container-escape step. The escape is exquisitely sensitive to manifest posture: privileged: true grants the attacker the full host kernel (LPE without escape); hostPID/hostNetwork/hostIPC grant cross-pod visibility; runAsUser: 0 + writable host mount = direct host write. seccompProfile + AppArmor profile presence is the primary mitigation. Manifests in repos are the attestation-vs-reality battleground — admission controllers reject some but not all anti-patterns, depending on policy maturity.",
+      "threat_context": "Container escape attack class in 2025-2026 is dominated by the runc / containerd / kubelet CVE chain. Public runc / containerd / kubelet escape primitives — including the 2024 'Leaky Vessels' working-directory race class — establish the canonical pattern: host-resource leakage (fd, mount, /proc) via misconfigured isolation. Subsequent CVEs in the runc/containerd/kubelet chain follow the same shape. Mandiant 2025 IR report: ~22% of cloud-tenant compromises involved a container-escape step. The escape is exquisitely sensitive to manifest posture: privileged: true grants the attacker the full host kernel (LPE without escape); hostPID/hostNetwork/hostIPC grant cross-pod visibility; runAsUser: 0 + writable host mount = direct host write. seccompProfile + AppArmor profile presence is the primary mitigation. Manifests in repos are the attestation-vs-reality battleground — admission controllers reject some but not all anti-patterns, depending on policy maturity.",
       "rwep_threshold": {
         "escalate": 85,
         "monitor": 65,

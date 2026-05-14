@@ -43,7 +43,9 @@
   "domain": {
     "name": "Per-user credential store inventory + identity-assurance posture",
     "attack_class": "identity-abuse",
-    "atlas_refs": [],
+    "atlas_refs": [
+      "AML.T0055"
+    ],
     "attack_refs": [
       "T1078",
       "T1552.001",

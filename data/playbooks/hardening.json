@@ -35,7 +35,9 @@
         "on_fail": "warn"
       }
     ],
-    "mutex": [],
+    "mutex": [
+      "kernel"
+    ],
     "feeds_into": [
       {
         "playbook_id": "kernel",

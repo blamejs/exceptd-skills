@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
@@ -71,7 +71,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (full history for diff base)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -169,7 +169,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
@@ -194,7 +194,7 @@ jobs:
       output:  ${{ steps.lint.outputs.output }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
 
@@ -228,9 +228,17 @@ jobs:
   secret-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    # Explicit least-privilege at the job level. The workflow-level
+    # `contents: read` is inherited for public repos, but a future visibility
+    # flip to private would change the inherited scope of api.github.com calls
+    # (used to resolve the latest gitleaks release tag below). Pinning the
+    # scope here documents intent and keeps Scorecard TokenPermissionsID
+    # satisfied regardless of repo visibility.
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -247,16 +255,30 @@ jobs:
         # silently miss improvements to the detection set.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Known-good fallback when the GitHub releases API returns HTML
+          # (rate-limit / outage / auth blip). gitleaks is deliberately
+          # floated (not SHA-pinned) because new rules catch new leak
+          # patterns and pinning would silently miss them — Scorecard's
+          # PinnedDependenciesID accepts comment-justified deliberate floats.
+          # Bump GITLEAKS_FALLBACK to the latest known release each time the
+          # workflow is touched so the fallback never drifts more than one
+          # release behind the floating-latest target.
+          GITLEAKS_FALLBACK: '8.21.2'
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          # Tolerate a non-zero exit from the resolver pipeline so we can
+          # fall back instead of failing the gate. `set -e` is intentionally
+          # NOT in effect for the resolver block below.
           GITLEAKS_VERSION=$(curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
-            | grep -oP '"tag_name":\s*"v\K[^"]+' | head -1)
-          if [ -z "$GITLEAKS_VERSION" ]; then
-            echo "::error::Could not resolve latest gitleaks release tag from GitHub API"
-            exit 1
+            https://api.github.com/repos/gitleaks/gitleaks/releases/latest 2>/dev/null \
+            | grep -oP '"tag_name":\s*"v\K[^"]+' \
+            | head -1 || true)
+          if [ -z "${GITLEAKS_VERSION:-}" ]; then
+            echo "::warning::Could not resolve latest gitleaks release from GitHub API (HTML error page or rate limit); falling back to v${GITLEAKS_FALLBACK}"
+            GITLEAKS_VERSION="${GITLEAKS_FALLBACK}"
           fi
-          echo "[gitleaks] resolved latest release: v${GITLEAKS_VERSION}"
+          set -e
+          echo "[gitleaks] resolved release: v${GITLEAKS_VERSION}"
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             | tar -xz -C /tmp gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks

@@ -339,7 +339,7 @@
         },
         {
           "id": "libssl-libraries",
-          "type": "file_path",
+          "type": "file",
           "source": "ldconfig -p | grep -E 'libssl|libcrypto|libtls' AND find /usr/lib /usr/local/lib -name 'libssl*' -o -name 'libcrypto*' 2>/dev/null",
           "description": "Installed TLS libraries — catches non-default OpenSSL builds, vendored libcrypto, LibreSSL, BoringSSL.",
           "required": false

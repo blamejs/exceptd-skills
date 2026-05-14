@@ -45,7 +45,9 @@
         "on_fail": "warn"
       }
     ],
-    "mutex": [],
+    "mutex": [
+      "hardening"
+    ],
     "feeds_into": [
       {
         "playbook_id": "sbom",

@@ -45,6 +45,19 @@ const path = require("path");
 const os = require("os");
 const { spawnSync } = require("child_process");
 
+// v0.12.16 (audit I P1-1): mirror the byte-stability normalize() contract
+// from lib/sign.js + lib/verify.js + lib/refresh-network.js. Duplicated
+// (not require'd) to keep this script's dep surface minimal and to ensure
+// a bug in the normalize() implementation in lib/ doesn't simultaneously
+// disable both the source-tree-verify path AND the shipped-tarball-verify
+// gate (we want at least one independent check). ANY change to normalize()
+// in any of these four files must be mirrored in all of them.
+function normalizeSkillBytes(buf) {
+  let s = Buffer.isBuffer(buf) ? buf.toString("utf8") : String(buf);
+  if (s.length > 0 && s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  return Buffer.from(s.replace(/\r\n/g, "\n"), "utf8");
+}
+
 const ROOT = path.resolve(__dirname, "..");
 
 function emit(msg) { process.stdout.write(`[verify-shipped-tarball] ${msg}\n`); }
@@ -221,22 +234,38 @@ try {
       failures.push(`${s.name}: file not found at ${s.path}`);
       continue;
     }
-    const content = fs.readFileSync(skillPath);
-    const ok = crypto.verify(null, content, pubKey, Buffer.from(s.signature, "base64"));
+    // v0.12.16 (audit I P1-1): the prior code passed the raw file bytes
+    // directly to crypto.verify. lib/sign.js + lib/verify.js both NORMALIZE
+    // bytes (strip UTF-8 BOM, convert CRLF -> LF) before sign/verify, per
+    // the byte-stability contract in lib/verify.js's normalize() header.
+    // Without the same normalization here, this gate (which was added
+    // specifically to catch the v0.11.x signature regression class!) would
+    // itself report 0/38 on any tree where line-ending normalization
+    // touched the source between sign and pack — a Windows contributor
+    // with `core.autocrlf=true`, or a tool like Prettier between sign and
+    // pack. CLAUDE.md flags this as the recurring CRLF-bypass class.
+    const rawContent = fs.readFileSync(skillPath);
+    const normalizedContent = normalizeSkillBytes(rawContent);
+    const ok = crypto.verify(null, normalizedContent, pubKey, Buffer.from(s.signature, "base64"));
     if (ok) pass++;
     else {
       fail_count++;
       // Forensic detail: log size + sha256 of tarball-extracted content vs source-tree content
       // so we can pinpoint which bytes changed between npm pack and what was signed.
-      const tarSha = crypto.createHash("sha256").update(content).digest("hex").slice(0, 16);
+      // v0.12.16: forensic logging uses rawContent (pre-normalization
+      // bytes) so an operator inspecting failures sees the actual on-disk
+      // shape, but tarSha is computed over the NORMALIZED bytes that
+      // were actually fed to crypto.verify — making the comparison to
+      // sign-time bytes meaningful.
+      const tarSha = crypto.createHash("sha256").update(normalizedContent).digest("hex").slice(0, 16);
       let srcSha = "<missing>", srcSize = 0, srcContent;
       if (fs.existsSync(sourceSkillPath)) {
         srcContent = fs.readFileSync(sourceSkillPath);
         srcSize = srcContent.length;
-        srcSha = crypto.createHash("sha256").update(srcContent).digest("hex").slice(0, 16);
+        srcSha = crypto.createHash("sha256").update(normalizeSkillBytes(srcContent)).digest("hex").slice(0, 16);
       }
-      const equal = srcContent && content.equals(srcContent) ? "equal" : "DIFFER";
-      failures.push(`${s.name}: signature did not verify (tarball size=${content.length} sha=${tarSha}; source size=${srcSize} sha=${srcSha}; bytes ${equal})`);
+      const equal = srcContent && rawContent.equals(srcContent) ? "equal" : "DIFFER";
+      failures.push(`${s.name}: signature did not verify (tarball size=${rawContent.length} sha-normalized=${tarSha}; source size=${srcSize} sha-normalized=${srcSha}; raw bytes ${equal})`);
     }
   }
 

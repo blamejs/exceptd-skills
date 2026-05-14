@@ -456,7 +456,7 @@ test('ci --max-rwep <N> overrides the playbook escalate threshold', () => {
     'summary.verdict must be a string (PASS/FAIL)');
 });
 
-test('ci --block-on-jurisdiction-clock fails when a clock fires (exit 2 = FAIL)', () => {
+test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = CLOCK_STARTED)', () => {
   const tmp = path.join(os.tmpdir(), `cidir-${Date.now()}`);
   fs.mkdirSync(tmp, { recursive: true });
   fs.writeFileSync(path.join(tmp, 'secrets.json'), JSON.stringify({
@@ -468,6 +468,10 @@ test('ci --block-on-jurisdiction-clock fails when a clock fires (exit 2 = FAIL)'
     // awareness contract per AGENTS.md Phase 7). Pre-fix the engine
     // auto-stamped on detect_confirmed; post-fix the operator must
     // acknowledge.
+    //
+    // F18 (v0.12.16): clock-fired runs now exit 5 (CLOCK_STARTED), not 2
+    // (FAIL). Pre-F18 the two collapsed so operators couldn't distinguish
+    // "playbook detected" from "regulatory clock running" by exit code.
     const r = cli(['ci', '--required', 'secrets',
       '--evidence-dir', tmp,
       '--ack',
@@ -476,14 +480,18 @@ test('ci --block-on-jurisdiction-clock fails when a clock fires (exit 2 = FAIL)'
     assert.ok(data, 'ci output must be JSON');
     assert.ok(data.summary.jurisdiction_clocks_started >= 1,
       'detected+blast_radius=4 must start at least one jurisdiction clock');
-    assert.equal(data.summary.verdict, 'FAIL',
-      '--block-on-jurisdiction-clock plus a started clock must produce verdict=FAIL');
-    assert.ok(data.summary.fail_reasons.some(fr => /jurisdiction clock started/.test(fr)),
-      'fail_reasons must explicitly mention the jurisdiction-clock cause');
-    // Exit code: --block-on-jurisdiction-clock adds a fail reason → exit 2 (FAIL).
-    // (BLOCKED/exit 4 is for preflight halts, not clock-firing.)
-    assert.equal(r.status, 2,
-      'fail-reason path must exit 2 (FAIL); BLOCKED reserved for preflight halts');
+    assert.equal(data.summary.verdict, 'CLOCK_STARTED',
+      'F18: --block-on-jurisdiction-clock plus a started clock must produce verdict=CLOCK_STARTED');
+    assert.ok(Array.isArray(data.summary.clock_started_reasons),
+      'F18: summary.clock_started_reasons must be present and an array');
+    assert.ok(data.summary.clock_started_reasons.some(fr => /jurisdiction clock started/.test(fr)),
+      'F18: clock_started_reasons must explicitly mention the jurisdiction-clock cause');
+    // F18: clock-firing has its own exit code (5), distinct from FAIL (2).
+    // BLOCKED (4) is preflight halts; FAIL (2) is detected/escalate; the
+    // new CLOCK_STARTED (5) tells operators "the system fired exactly as
+    // designed but you now owe a regulatory notification."
+    assert.equal(r.status, 5,
+      'F18: clock-fired runs exit 5 (CLOCK_STARTED), separate from FAIL (2)');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

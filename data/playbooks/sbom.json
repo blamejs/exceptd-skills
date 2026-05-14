@@ -499,7 +499,7 @@
         },
         {
           "id": "model-weight-files",
-          "type": "file_path",
+          "type": "file",
           "source": "find $HOME ~/.cache/huggingface ~/.cache/torch /var/lib/model-store -type f \\( -name '*.pt' -o -name '*.ckpt' -o -name '*.bin' -o -name '*.safetensors' -o -name '*.gguf' \\) 2>/dev/null AND for each: file <path> AND attempt to identify Sigstore signature / OpenSSF model-signing attestation",
           "description": "Model weight artifacts — needed for AI-supply-chain analysis (ATLAS AML.T0018).",
           "required": false
@@ -528,7 +528,7 @@
         },
         {
           "id": "tanstack-payload-sweep",
-          "type": "file_path",
+          "type": "file",
           "source": "find node_modules -path '*/@tanstack/*' \\( -name 'router_init.js' -o -name 'router_runtime.js' \\) 2>/dev/null",
           "description": "CVE-2026-45321 IoC sweep — payload markers inside any installed @tanstack/* package. Captures both flat npm and pnpm-style nested layouts.",
           "required": false
