@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.12.15 — 2026-05-14
+
+**Patch: e2e RWEP factor-scaling fix + audit-surfaced silent-disable regressions. v0.12.14 publish payload.**
+
+The v0.12.14 tag exists on git but never reached npm — the `validate` job's `npm run test:e2e` gate failed 9/20 scenarios because the v0.12.14 RWEP factor-scaling change (F5 from the engine agent) had no fallback for class-of-vulnerability playbooks that detect without per-CVE evidence correlation. `_factorScale` returned 0 when no `factorCve` was available; every fired indicator's `weight_applied` was forced to 0; catalog-shape playbooks (secrets, library-author, crypto-codebase, framework, cred-stores, containers, runtime, crypto, ai-api) emitted `adjusted: 0` for every detection.
+
+v0.12.15 ships the v0.12.14 deep-audit fix payload plus:
+
+### Engine: class-of-vulnerability RWEP fallback
+
+`lib/playbook-runner.js` factor-scaling now has a three-tier fallback:
+
+1. **Evidence-correlated CVE** (`factorCve from matchedCves[0]`): scale by the matched CVE's catalog attributes (v0.12.14 F5 semantics — `cisa_kev` weight only when the matched CVE actually has `cisa_kev: true`, etc.).
+2. **Domain-CVE fallback** (`factorCve from playbook.domain.cve_refs[]`): when no evidence correlation but the playbook declares its threat class via `domain.cve_refs[]`, use the highest-RWEP catalog entry from those refs.
+3. **Class fallback** (no domain CVE either): apply the declared weight as-is (`factor_scale = 1`), mirroring pre-v0.12.14 behaviour. Class-of-vulnerability playbooks that detect without CVE anchoring (e.g. `secrets`, `library-author`) get a sensible default while still honoring an operator-supplied `blast_radius_score` when present.
+
+The breakdown emits `factor_cve_source: 'evidence' | 'domain' | 'class'` so operators see which tier the run used.
+
+### Silent-disable regressions closed
+
+Three v0.12.12+v0.12.14 fixes that audit M discovered were silently dead:
+
+- **`lib/cve-curation.js loadCveEntrySchema()`** always returned `null` because the function looked for `root.patternProperties["^CVE-\\d{4}-\\d+$"]` or an object `root.additionalProperties`, but the actual `lib/schemas/cve-catalog.schema.json` has neither — its top level IS the entry shape. The v0.12.12 codex P1 #1 fix that gates promotion on strict-schema validation was silently disabled; schema-violating entries promoted out of draft anyway. Fixed to use the root schema directly.
+- **`lib/cve-curation.js loadJson("data/attack-ttps.json")`** referenced a path that doesn't exist (canonical is `data/attack-techniques.json`). `loadJsonRaw` swallowed the ENOENT and cached `null`, so the ATT&CK candidate-ranking branch in the curation questionnaire always returned zero proposals. Fixed.
+- **`lib/auto-discovery.js _auto_imported`** wrote object-shape provenance (`{source, imported_at, curation_needed}`) but `lib/validate-cve-catalog.js` checks `entry._auto_imported === true` (strict identity). KEV-discovered drafts were treated as production-grade entries instead of warning-tier drafts, hard-failing the strict catalog gate. Fixed to write the boolean `true` with provenance moved to a sibling `_auto_imported_meta` field. Also: `source_verified: false` (boolean) violated the schema's `YYYY-MM-DD | null` shape — fixed to `null`. Template literal bug on the RFC errata URL hint also fixed (was printing literal `${number}` to operators).
+
+### Scoring math hardening (audit J)
+
+- `scoreCustom` now rejects `NaN` / `Infinity` / stringified-number `blast_radius` cleanly via `Number.isFinite(Number(blast_radius))`. The prior `typeof === 'number'` check accepted `NaN` (which IS `typeof === 'number'`) and propagated it through `Math.min/max` to the final return — defeating the `[0, 100]` clamp contract.
+- `scoreCustom` now accepts either `reboot_required` or the catalog's `patch_required_reboot` field name. The catalog stores `patch_required_reboot`; `scoreCustom` expected `reboot_required`. `validate()` aliased at the call site, but a direct caller passing the catalog entry silently lost the reboot factor.
+- Defense-in-depth: the final clamp now rejects non-finite scores explicitly (`Number.isFinite(score) ? clamp : 0`).
+
+### CLI fuzz fixes (audit L)
+
+- `--scope <invalid>` now produces a structured error instead of silently producing zero results. The prior shape: `run --scope nonsense` returned `count: 0` + `ok: true` + exit 0; `ci --scope nonsense` silently ran only the cross-cutting set (`framework`) with `verdict: PASS`. Both validated as operator-intent loss patterns. Accepted scope set: `system | code | service | cross-cutting | all`.
+
+### Test alignment
+
+- `tests/e2e-scenarios/11-library-author-static-token/expect.json` `json_path_min.adjusted` floor adjusted from `20` to `18` to reflect the post-v0.12.14 RWEP semantics. The scenario evidence supplies `verdict.blast_radius: 4` which legitimately scales blast-radius-factor weights by 0.8; the computed value is `19` (was implicitly `>= 20` only because pre-v0.12.14 every fired indicator applied full weight regardless of CVE attributes or agent-supplied blast score).
+- `tests/auto-discovery.test.js` updated to assert the new `_auto_imported: true` + `_auto_imported_meta: {...}` shape.
+
+Test count: 701 (700 pass + 1 skipped POSIX-only SIGTERM test). Predeploy gates: 14/14. Skills: 38/38 signed and verified. v0.12.14 deep-audit fix payload is included.
+
 ## 0.12.14 — 2026-05-14
 
 **Patch: ~210-finding deep-audit fix batch across trust chain, engine, refresh sources, orchestrator/watch, predeploy gates, catalogs, and skill content.**
