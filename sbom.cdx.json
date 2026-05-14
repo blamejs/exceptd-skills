@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:e95f2906-1131-4b52-ad00-d92384a40831",
+  "serialNumber": "urn:uuid:9b2c309b-26dc-4004-bb62-3482296207da",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-14T23:45:53.106Z",
+    "timestamp": "2026-05-14T23:57:05.072Z",
     "tools": [
       {
         "name": "hand-written",
