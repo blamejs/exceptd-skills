@@ -55,7 +55,10 @@ async function scan() {
   findings.push(...frameworkScan());
 
   const summary = summarize(findings);
-  return { timestamp, host, findings, summary, _deprecation: 'Use `exceptd plan` + `exceptd run <playbook>` for the seven-phase contract.' };
+  // _deprecation is a stderr-only banner — it MUST NOT appear in the JSON
+  // shape that downstream consumers ingest. Internal narrative belongs on
+  // stderr (the banner above), never in the structured result body.
+  return { timestamp, host, findings, summary };
 }
 
 /**
@@ -205,18 +208,34 @@ function cryptoScan() {
     });
   }
 
-  const tlsProbe = probeTls();
-  if (tlsProbe) {
+  // Air-gap mode short-circuits the outbound TLS probe entirely; emit a
+  // skipped annotation so operators can see the probe was intentionally
+  // suppressed rather than failing silently.
+  if (process.env.EXCEPTD_AIR_GAP === '1') {
     findings.push({
       domain: 'crypto',
       signal: 'tls_probe',
-      value: tlsProbe,
-      severity: tlsProbe.includes('TLSv1.3') ? 'info' : 'high',
+      probe: 'skipped (air-gap)',
+      severity: 'info',
       skill_hint: 'pqc-first',
-      action_required: tlsProbe.includes('TLSv1.3')
-        ? 'TLS 1.3 detected — verify X25519+ML-KEM-768 hybrid for HNDL-exposed connections'
-        : 'TLS below 1.3 — upgrade to TLS 1.3 minimum'
+      action_required: 'Air-gap mode active — TLS probe suppressed. Run with EXCEPTD_AIR_GAP=0 to probe.'
     });
+  } else {
+    const target = process.env.EXCEPTD_TLS_PROBE_TARGET || 'registry.npmjs.org:443';
+    const tlsProbe = probeTls(target);
+    if (tlsProbe) {
+      findings.push({
+        domain: 'crypto',
+        signal: 'tls_probe',
+        value: tlsProbe,
+        target,
+        severity: tlsProbe.includes('TLSv1.3') ? 'info' : 'high',
+        skill_hint: 'pqc-first',
+        action_required: tlsProbe.includes('TLSv1.3')
+          ? 'TLS 1.3 detected — verify X25519+ML-KEM-768 hybrid for HNDL-exposed connections'
+          : 'TLS below 1.3 — upgrade to TLS 1.3 minimum'
+      });
+    }
   }
 
   return findings;
@@ -483,8 +502,11 @@ function probePqcAlgorithms() {
   return result;
 }
 
-function probeTls() {
-  const result = spawnSync('openssl', ['s_client', '-connect', 'google.com:443', '-brief'], {
+function probeTls(target) {
+  // Target is "host:port"; default lives at the call site so the env var
+  // is read once per scan rather than baked in here.
+  const t = typeof target === 'string' && target.length > 0 ? target : 'registry.npmjs.org:443';
+  const result = spawnSync('openssl', ['s_client', '-connect', t, '-brief'], {
     input: '',
     timeout: 5000,
     stdio: ['pipe', 'pipe', 'pipe']

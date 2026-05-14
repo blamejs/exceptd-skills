@@ -82,20 +82,20 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ### Class 4: Prompt Injection as Enterprise RCE
 
-**2026 reality:** CVE-2025-53773 demonstrated prompt injection in a production developer tool (GitHub Copilot) achieving CVSS 9.6 RCE. This is not a research demo. It is a real CVE in a tool used by hundreds of millions of developers. Attack success rates against SOTA defenses exceed 85%.
+**2026 reality:** CVE-2025-53773 demonstrated prompt injection in a production developer tool (GitHub Copilot) coercing the agent into flipping `chat.tools.autoApprove: true` and converting subsequent tool calls into shell execution. CVSS 7.8 / AV:L (NVD-authoritative; the local-vector reflects developer-side IDE interaction, not network reach). This is not a research demo. It is a real CVE in a tool used by hundreds of millions of developers. Attack success rates against SOTA defenses exceed 85%.
 
 **Currency check questions:**
 - Does the threat model include prompt injection as an RCE vector (not just a chatbot annoyance)?
 - Is prompt injection included in application threat models for any system with an LLM component?
 - Are AI coding assistants in scope for the threat model?
 
-**If unchecked:** Prompt injection is classified as a "trust and safety" issue, not a security control failure. The CVSS 9.6 data says otherwise.
+**If unchecked:** Prompt injection is classified as a "trust and safety" issue, not a security control failure. The shipped CVE (CVSS 7.8 / AV:L) says otherwise.
 
 ---
 
 ### Class 5: MCP Supply Chain RCE
 
-**2026 reality:** CVE-2026-30615 (Windsurf) demonstrated zero-user-interaction RCE via the MCP tool ecosystem. 150M+ affected. Every major AI coding assistant has the same architectural attack surface.
+**2026 reality:** CVE-2026-30615 (Windsurf MCP) demonstrated local-vector RCE via the MCP tool ecosystem (CVSS 8.0 / AV:L — attacker controls HTML the client processes). 150M+ combined downloads across MCP-capable assistants. Every major AI coding assistant has the same architectural attack surface.
 
 **Currency check questions:**
 - Does the threat model include AI tool supply chain as an attack surface?
@@ -228,7 +228,7 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 Most organizational threat models in circulation today are 2022–2024 vintage. They were written before the operational reality of mid-2026:
 
 - **AI-discovered LPEs.** Copy Fail (CVE-2026-31431) was found by an AI system in roughly one hour in a code path that had been in every major Linux distribution for nine years. A threat model that does not name "AI-assisted vulnerability discovery" as an attacker capability cannot reason about Copy Fail-class exposure.
-- **Zero-interaction MCP RCE.** CVE-2026-30615 (Windsurf) demonstrated that a malicious MCP server can drive an AI coding assistant to execute code in the developer's user context without any human action. 150M+ combined downloads of MCP-capable assistants share the same architectural surface. A threat model that lists "third-party software" but not "AI tool plugins" is no longer comprehensive.
+- **Local-vector MCP RCE.** CVE-2026-30615 (Windsurf, CVSS 8.0 / AV:L) demonstrated that a malicious MCP server can drive an AI coding assistant to execute code in the developer's user context once installed. 150M+ combined downloads of MCP-capable assistants share the same architectural surface. A threat model that lists "third-party software" but not "AI tool plugins" is no longer comprehensive.
 - **AI-API C2 (SesameOp).** Adversaries are using legitimate AI API endpoints (ATLAS AML.T0096) as covert command-and-control channels. Traffic is indistinguishable from legitimate usage at the network layer. A threat model whose C2 chapter still lists only DGAs, beaconing, and protocol anomalies has a documented blind spot.
 - **AI-accelerated weaponization.** 41% of 2025 zero-days involved AI-assisted reverse engineering on the attacker side. The window between disclosure and reliable exploitation has compressed from weeks to hours for a meaningful class of CVEs.
 - **AI-generated phishing as baseline.** 82.6% of phishing in 2025 contained AI-generated content. Threat models that treat AI-generated phishing as an "emerging" or "advanced" capability are scoring below the actual median attacker.
@@ -268,15 +268,15 @@ The 14-class checklist above *is* the TTP map. Each class is a coverage requirem
 | 1 — AI-discovered kernel LPE | T1068 (Exploitation for Privilege Escalation) | cve-catalog.json: CVE-2026-31431 | Threat model assumes human-speed exploit discovery |
 | 2 — Deterministic LPE | T1068 | cve-catalog.json: CVE-2026-31431 | IR plan treats LPE as probabilistic |
 | 3 — IPsec subsystem LPE | T1068 | cve-catalog.json: CVE-2026-43284 / CVE-2026-43500 | Network-segmentation claimed as compensating control for the attack surface itself |
-| 4 — Prompt injection RCE | AML.T0051 (LLM Prompt Injection), AML.T0054 (Craft Adversarial Data — NLP) | atlas-ttps.json + CVE-2025-53773 | Prompt injection treated as T&S, not security |
+| 4 — Prompt injection RCE | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak) | atlas-ttps.json + CVE-2025-53773 | Prompt injection treated as T&S, not security |
 | 5 — MCP supply chain RCE | AML.T0010 (ML Supply Chain Compromise), T1190 (Exploit Public-Facing Application) | atlas-ttps.json + CVE-2026-30615 | AI plugin ecosystem out of supply-chain scope |
-| 6 — AI-assisted weaponization | AML.T0017 (Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
+| 6 — AI-assisted weaponization | AML.T0016 (Obtain Capabilities: Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
 | 7 — AI as covert C2 | AML.T0096 (LLM Integration Abuse — C2) | atlas-ttps.json | C2 detection architecture has total blind spot |
-| 8 — AI-generated malware evasion | AML.T0016 (Acquire Public ML Artifacts) | atlas-ttps.json | Detection stack signature-bound; PROMPTFLUX bypasses by design |
+| 8 — AI-generated malware evasion | AML.T0016 (Obtain Capabilities: Develop Capabilities — payload generation) | atlas-ttps.json | Detection stack signature-bound; PROMPTFLUX bypasses by design |
 | 9 — RAG exfiltration | AML.T0043 (Craft Adversarial Data) | atlas-ttps.json | Vector store treated as database, not as semantic exfil surface |
 | 10 — Model poisoning | AML.T0020 (Poison Training Data) | atlas-ttps.json | ML decision systems treated as standard software |
 | 11 — AI-speed reconnaissance | T1595 (Active Scanning), T1190 | ATT&CK | Rate-based detection thresholds calibrated for human-speed scans |
-| 12 — AI-generated phishing | AML.T0016 (Acquire Public ML Artifacts — misuse), T1566 (Phishing) | atlas-ttps.json + ATT&CK | Detection rules tuned for 2021 phishing |
+| 12 — AI-generated phishing | AML.T0016 (Obtain Capabilities: Develop Capabilities — payload crafting via public AI APIs), T1566 (Phishing) | atlas-ttps.json + ATT&CK | Detection rules tuned for 2021 phishing |
 | 13 — ATLAS coverage | All AML.T* in atlas-ttps.json | atlas-ttps.json `_meta.atlas_version` | SOC detection programs are ATT&CK-only |
 | 14 — Post-quantum adversary | T1557 (harvest-now-decrypt-later context) | global-frameworks.json (PQC standards) | Long-lived sensitive traffic captured today, decrypted later |
 
@@ -290,9 +290,9 @@ A threat model is "current" only if it accounts for every `data/cve-catalog.json
 
 | CVE | Name | CVSS | RWEP | KEV | PoC | AI factor | Live-patchable | Required threat-model treatment |
 |---|---|---|---|---|---|---|---|---|
-| CVE-2026-31431 | Copy Fail | 7.8 | 90 | Yes (2026-03-15) | Yes — 732-byte deterministic | AI-discovered | Yes (kpatch / canonical-livepatch / kGraft) | Must name as named threat. Patch SLA must reflect KEV + deterministic class — live-patch within hours, not 30 days. |
-| CVE-2025-53773 | Copilot prompt-injection RCE | 9.6 | 42 | No | Yes — demonstrated | AI-weaponized | Yes (SaaS vendor patch) | Must include prompt injection as RCE vector if any developer uses Copilot. |
-| CVE-2026-30615 | Windsurf MCP zero-interaction RCE | 9.8 | 35 | No | Partial | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
+| CVE-2026-31431 | Copy Fail | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte deterministic | AI-discovered | Yes (kpatch / canonical-livepatch / kGraft) | Must name as named threat. Patch SLA must reflect KEV + deterministic class — live-patch within hours, not 30 days. |
+| CVE-2025-53773 | Copilot YOLO-mode RCE | 7.8 | 30 | No | Yes — demonstrated | AI-weaponized | Yes (SaaS vendor patch / IDE update) | Must include prompt-injection-driven YOLO-mode escalation as RCE vector if any developer uses Copilot. |
+| CVE-2026-30615 | Windsurf MCP local-vector RCE | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
 | CVE-2026-43284 | Dirty Frag (ESP/IPsec) | 7.8 | 38 | No | Yes — chain component | No | No | Required if IPsec-based controls are claimed as compensating. |
 | CVE-2026-43500 | Dirty Frag (RxRPC) | 7.6 | 32 | No | Yes — chain component | No | No | Required when chained with CVE-2026-43284 in IR scenario planning. |
 

@@ -11,10 +11,22 @@
  * blindly — read the breaking-change list first. A breaking change is
  * a surface narrowing every downstream consumer needs to know about.
  *
+ * Audit G F5 — commitOnly mode. Pass `--commit-only` (or set the env
+ * EXCEPTD_SNAPSHOT_AUDIT_ACK=1) to acknowledge that the operator
+ * deliberately wants to overwrite the committed snapshot. When neither
+ * flag nor env is set AND the snapshot would actually change, the
+ * script refuses and emits a structured diff hint. This stops an
+ * accidental `npm run refresh-snapshot` (run as muscle-memory while
+ * triaging a failing gate) from masking a real breaking change.
+ *
  * Usage:
- *   node scripts/refresh-manifest-snapshot.js
- *   git add manifest-snapshot.json
- *   git commit -m "refresh manifest snapshot: <what changed>"
+ *   node scripts/refresh-manifest-snapshot.js              # dry-shows the diff
+ *   EXCEPTD_SNAPSHOT_AUDIT_ACK=1 \
+ *     node scripts/refresh-manifest-snapshot.js            # writes the new snapshot
+ *   node scripts/refresh-manifest-snapshot.js --commit-only   # same thing, on argv
+ *
+ * The flag is documented in scripts/predeploy.js so contributors see it
+ * the moment the snapshot gate fails.
  */
 
 const fs = require("fs");
@@ -50,8 +62,47 @@ function captureSurface(manifest) {
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
 const snapshot = captureSurface(manifest);
+const newJson = JSON.stringify(snapshot, null, 2) + "\n";
 
-fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2) + "\n", "utf8");
+// F5 — refuse to overwrite an existing snapshot unless the operator
+// has explicitly acknowledged the rewrite (env or --commit-only flag).
+const argv = process.argv.slice(2);
+const commitOnly =
+  argv.includes("--commit-only") ||
+  process.env.EXCEPTD_SNAPSHOT_AUDIT_ACK === "1";
+
+if (fs.existsSync(SNAPSHOT_PATH) && !commitOnly) {
+  const current = fs.readFileSync(SNAPSHOT_PATH, "utf8");
+  // Normalise the _generated_at timestamp for comparison — that field
+  // changes every run and shouldn't trigger the guard.
+  const stripGenerated = (s) => s.replace(
+    /"_generated_at":\s*"[^"]+",?\s*\n?/, ""
+  );
+  if (stripGenerated(current) === stripGenerated(newJson)) {
+    console.log("[refresh-manifest-snapshot] snapshot unchanged — nothing to do.");
+    process.exit(0);
+  }
+  process.stderr.write(
+    "[refresh-manifest-snapshot] REFUSING to overwrite manifest-snapshot.json — " +
+    "the captured surface differs from the committed snapshot.\n" +
+    "  Re-run with `--commit-only` (or EXCEPTD_SNAPSHOT_AUDIT_ACK=1) to confirm " +
+    "the rewrite is intentional. The check-manifest-snapshot.js gate exists to " +
+    "force a deliberate decision about removed skills / triggers / refs before " +
+    "the baseline is rewritten.\n"
+  );
+  process.exit(1);
+}
+
+fs.writeFileSync(SNAPSHOT_PATH, newJson, "utf8");
 
 console.log(`[refresh-manifest-snapshot] wrote ${snapshot.skill_count} skills to manifest-snapshot.json`);
 console.log("[refresh-manifest-snapshot] commit this file alongside the surface change.");
+
+// Audit G F23 — write a tracked SHA-256 of the snapshot so the
+// check-manifest-snapshot.js gate can verify integrity (no hand edits
+// after refresh).
+const crypto = require("crypto");
+const snapshotSha = crypto.createHash("sha256").update(newJson).digest("hex");
+const snapshotShaPath = path.join(ROOT, "manifest-snapshot.sha256");
+fs.writeFileSync(snapshotShaPath, snapshotSha + "  manifest-snapshot.json\n", "utf8");
+console.log(`[refresh-manifest-snapshot] wrote integrity hash to manifest-snapshot.sha256`);

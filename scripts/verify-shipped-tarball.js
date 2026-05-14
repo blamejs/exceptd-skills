@@ -18,6 +18,20 @@
  * The bug was invisible because CI's verify ran against the SOURCE tree,
  * not the shipped tarball. This gate closes that gap.
  *
+ * Audit G:
+ *   F9  — After the first-pass extraction (using the source-tree parseTar),
+ *         re-parse the tarball using the parseTar shipped INSIDE the
+ *         extracted tree itself. If the two parses disagree, fail with a
+ *         structured error. Catches the class where the shipped parser
+ *         silently rejects entries the source parser accepts (or vice
+ *         versa), which would mean operators run a different extractor
+ *         than CI exercised.
+ *   F15 — Invoke `npm pack --offline` so the gate cannot be blocked by
+ *         registry reachability problems during predeploy.
+ *   F4  — Cross-check the extracted public.pem against
+ *         keys/EXPECTED_FINGERPRINT (warn-and-continue when missing, fail
+ *         when present-but-mismatched and KEYS_ROTATED != 1).
+ *
  * Exit codes:
  *   0  verify passed against the packed tarball
  *   1  verify failed against the packed tarball (the bug class above)
@@ -42,7 +56,10 @@ function fail(msg, code = 1) {
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "verify-shipped-"));
 try {
   emit(`packing into ${tmpRoot} ...`);
-  const pack = spawnSync("npm", ["pack", "--pack-destination", tmpRoot], {
+  // F15 — pass --offline. Predeploy must run without registry
+  // reachability; `npm pack` does not need the network for a local
+  // package and forcing offline mode hard-locks the assumption.
+  const pack = spawnSync("npm", ["pack", "--offline", "--pack-destination", tmpRoot], {
     cwd: ROOT,
     encoding: "utf8",
     shell: process.platform === "win32",
@@ -60,10 +77,10 @@ try {
   const extractDir = path.join(tmpRoot, "extract");
   fs.mkdirSync(extractDir, { recursive: true });
   const zlib = require("zlib");
-  const { parseTar } = require(path.join(ROOT, "lib", "refresh-network.js"));
+  const { parseTar: parseTarSource } = require(path.join(ROOT, "lib", "refresh-network.js"));
   const tgz = fs.readFileSync(tarballPath);
   const tarBuf = zlib.gunzipSync(tgz);
-  const entries = parseTar(tarBuf);
+  const entries = parseTarSource(tarBuf);
   for (const e of entries) {
     if (!e.name) continue;
     const dst = path.join(extractDir, e.name);
@@ -76,6 +93,65 @@ try {
     fail(`extracted tree missing lib/verify.js at ${pkgRoot}`, 2);
   }
   emit(`extracted to ${pkgRoot}`);
+
+  // Audit G F9 — load the extracted tree's OWN parseTar and re-parse the
+  // tarball. If the two parsers diverge on entry list or content, the
+  // gate trips: this means CI exercised a different parser than operators
+  // will. Defense against drift between source and shipped tarball when
+  // someone edits lib/refresh-network.js without re-vendoring or vice
+  // versa.
+  const shippedParserPath = path.join(pkgRoot, "lib", "refresh-network.js");
+  if (!fs.existsSync(shippedParserPath)) {
+    fail(`extracted tree missing lib/refresh-network.js (cannot run F9 cross-parse check)`, 2);
+  }
+  let parseTarShipped;
+  try {
+    parseTarShipped = require(shippedParserPath).parseTar;
+  } catch (e) {
+    fail(`failed to load extracted parseTar: ${e.message}`, 2);
+  }
+  if (typeof parseTarShipped !== "function") {
+    fail(`extracted lib/refresh-network.js does not export parseTar`, 2);
+  }
+  const shippedEntries = parseTarShipped(tarBuf);
+  // Compare counts first — fast bailout.
+  const divergences = [];
+  if (shippedEntries.length !== entries.length) {
+    divergences.push(
+      `entry count divergence: source-tree parser produced ${entries.length}, ` +
+      `shipped parser produced ${shippedEntries.length}`
+    );
+  } else {
+    // Walk in parallel; tarball entry order is deterministic so positional
+    // compare is correct. Compare name + byte length + body bytes.
+    for (let i = 0; i < entries.length; i++) {
+      const a = entries[i];
+      const b = shippedEntries[i];
+      if (a.name !== b.name) {
+        divergences.push(`entry[${i}] name mismatch: source=${a.name} shipped=${b.name}`);
+        continue;
+      }
+      const aBuf = Buffer.isBuffer(a.body) ? a.body : Buffer.from(a.body);
+      const bBuf = Buffer.isBuffer(b.body) ? b.body : Buffer.from(b.body);
+      if (aBuf.length !== bBuf.length || !aBuf.equals(bBuf)) {
+        divergences.push(
+          `entry[${i}] (${a.name}) body bytes differ between source-tree and shipped parser ` +
+          `(source ${aBuf.length} bytes vs shipped ${bBuf.length} bytes)`
+        );
+      }
+    }
+  }
+  if (divergences.length > 0) {
+    emit(`*** F9: parseTar divergence between source-tree and shipped tree ***`);
+    for (const d of divergences.slice(0, 5)) emit(`  - ${d}`);
+    if (divergences.length > 5) emit(`  ... and ${divergences.length - 5} more`);
+    fail(
+      `parseTar implementations diverge between source tree and shipped tarball. ` +
+      `Operators will run a different extractor than CI exercised. Refusing to publish.`,
+      1
+    );
+  }
+  emit(`F9: source-tree and shipped parseTar agree on ${entries.length} entries`);
 
   // Run the verifier inline against the extracted package tree. This avoids
   // having to spawn a separate process whose cwd resolution differs across
@@ -106,6 +182,33 @@ try {
   if (pubFp !== sourcePubFp) {
     emit(`*** WARNING: tarball public.pem differs from source-tree public.pem ***`);
     emit(`*** Something between sign and pack is swapping the key. Verify will fail below. ***`);
+  }
+
+  // Audit G F4 — key-pin cross-check against the EXTRACTED tree. The pin
+  // is consumed from keys/EXPECTED_FINGERPRINT in the extracted package —
+  // that's the file operators will actually receive on `npm install`.
+  // Warn when absent, fail when present-but-mismatched (unless KEYS_ROTATED).
+  const expectedFpPath = path.join(pkgRoot, "keys", "EXPECTED_FINGERPRINT");
+  if (fs.existsSync(expectedFpPath)) {
+    const raw = fs.readFileSync(expectedFpPath, "utf8").trim();
+    const firstLine = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length > 0) || "";
+    const liveFpLine = `SHA256:${pubFp}`;
+    if (firstLine !== liveFpLine) {
+      if (process.env.KEYS_ROTATED === "1") {
+        emit(`WARN: extracted public.pem fingerprint ${liveFpLine} differs from pin ${firstLine}; KEYS_ROTATED=1 accepted`);
+      } else {
+        fail(
+          `keys/EXPECTED_FINGERPRINT (${firstLine}) does not match the extracted ` +
+          `public.pem fingerprint (${liveFpLine}). If this is an intentional rotation ` +
+          `set KEYS_ROTATED=1 and commit the new pin.`,
+          1
+        );
+      }
+    } else {
+      emit(`F4: key pin verified — ${liveFpLine} matches keys/EXPECTED_FINGERPRINT`);
+    }
+  } else {
+    emit(`WARN: keys/EXPECTED_FINGERPRINT not in extracted tree — key-pin check skipped`);
   }
 
   let pass = 0, miss = 0, fail_count = 0;

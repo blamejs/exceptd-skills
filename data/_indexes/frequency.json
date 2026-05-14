@@ -2040,6 +2040,7 @@
   },
   "uncited": {
     "cwe_refs": [
+      "CWE-123",
       "CWE-250",
       "CWE-256",
       "CWE-284",
@@ -2055,6 +2056,7 @@
       "CWE-426",
       "CWE-506",
       "CWE-522",
+      "CWE-669",
       "CWE-759",
       "CWE-760",
       "CWE-88",
@@ -2083,6 +2085,7 @@
       "AU-Essential-8-Backup",
       "AU-Essential-8-MFA",
       "AU-Essential-8-Patch",
+      "DORA-Art28",
       "EU-AI-Act-Art-15",
       "EU-CRA-Art13",
       "NIS2-Art21-incident-handling",

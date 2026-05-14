@@ -137,12 +137,21 @@ test("sources/validators/rfc-validator.js is airgapped-tolerant", () => {
   assert.match(src, /TIMEOUT_MS/, "has a documented timeout constant");
 });
 
-test("predeploy gate sequence includes validate-rfcs", () => {
+test("predeploy gate sequence no longer carries no-op validate-rfcs gate (Audit G F13)", () => {
+  // The previous `Validate offline RFC catalog state` gate ran
+  // `orchestrator validate-rfcs --offline --no-fail`; the `--no-fail`
+  // forced it to always exit 0, so the gate never blocked a release on
+  // a real RFC-catalog problem. Removed in v0.12.14 (Audit G F13) to
+  // stop inflating the gate count with no marginal value. The deeper
+  // RFC-reference resolution lives in lib/lint-skills.js's rfc_refs
+  // walk (per-skill) and lib/validate-cve-catalog.js's V2 cross-ref
+  // expansion (per-CVE).
   const { GATES } = require(path.join(ROOT, "scripts", "predeploy.js"));
   const names = GATES.map((g) => g.name);
-  assert.ok(
+  assert.equal(
     names.includes("Validate offline RFC catalog state"),
-    "predeploy must run validate-rfcs --offline alongside the CVE check"
+    false,
+    "Audit G F13: validate-rfcs gate was removed in v0.12.14 (no-op due to --no-fail)"
   );
 });
 

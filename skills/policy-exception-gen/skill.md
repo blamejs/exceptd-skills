@@ -87,7 +87,7 @@ A granted exception does not remove the threat — it shifts the burden onto com
 | Exception | Residual TTPs the exception must still address | Compensating coverage requirement |
 |---|---|---|
 | Exception 1 — Ephemeral Infrastructure Asset Inventory | T1525 (Implant Internal Image), T1610 (Deploy Container), T1611 (Escape to Host), T1078.004 (Valid Cloud Accounts) | Image scanning in CI, IaC drift detection, cloud-asset-inventory API alerts on resources not in IaC registry |
-| Exception 2 — AI Pipeline Change Management | AML.T0020 (Poison Training Data), AML.T0018 (Backdoor ML Model), AML.T0051 (LLM Prompt Injection — emergent behavior on model upgrade), AML.T0054 (Craft Adversarial Data — NLP) | Behavioral regression test suite, model version pinning, model fingerprinting on canonical prompts, provider changelog review |
+| Exception 2 — AI Pipeline Change Management | AML.T0020 (Poison Training Data), AML.T0018 (Backdoor ML Model), AML.T0051 (LLM Prompt Injection — emergent behavior on model upgrade), AML.T0054 (LLM Jailbreak) | Behavioral regression test suite, model version pinning, model fingerprinting on canonical prompts, provider changelog review |
 | Exception 3 — Zero Trust Architecture Network Segmentation | T1021 (Remote Services), T1570 (Lateral Tool Transfer), T1078 (Valid Accounts), T1199 (Trusted Relationship) | Workload identity (SPIFFE/SPIRE), per-request mTLS, device-posture verification, east-west behavioral analytics |
 | Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, network-layer isolation if no live patch available, scheduled reboot window |
 
@@ -103,8 +103,8 @@ For each residual TTP an exception leaves in scope, the compensating control bun
 |---|---|---|---|---|---|---|---|---|
 | T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes | Yes (kpatch/livepatch) | Live patch within 4 hours OR network isolation — anything weaker is non-defensible |
 | T1190 (Exploit Public-Facing Application — IPsec subsystem) | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited | eBPF kernel-text integrity monitoring + maintenance-window reboot SLA |
-| AML.T0051 (LLM Prompt Injection — emergent on model upgrade) | CVE-2025-53773 | 9.6 | High | No | Yes | Yes | N/A | Behavioral regression suite + system-prompt hardening + tool allowlist |
-| AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 | 9.8 | Critical | No | Partial | No | N/A | MCP server allowlist + signed-manifest enforcement + per-server auth |
+| AML.T0051 (LLM Prompt Injection — emergent on model upgrade) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 (AV:L) | 30 | No | Yes | Yes | Yes (SaaS push / IDE update) | Behavioral regression suite + system-prompt hardening + tool allowlist |
+| AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 (AV:L) | 35 | No | Partial | No | Yes (IDE update) | MCP server allowlist + signed-manifest enforcement + per-server auth |
 | T1525 / T1610 (Implant Internal Image / Deploy Container) | Image-supply-chain class | Varies | High | N/A | Operational | Yes | N/A (image rebuild) | CI image scanning gate at CVSS ≥ 7.0, SBOM per image, image-registry signing |
 
 An exception that names a residual TTP without a compensating-control bundle of equal or greater RWEP-justified strength is theater. The compliance-theater skill's universal test (demand the bypassing TTP for any claimed compensating control) should be run against the bundle before the exception is approved.

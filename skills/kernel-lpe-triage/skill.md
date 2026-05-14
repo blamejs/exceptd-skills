@@ -41,8 +41,10 @@ cwe_refs:
 d3fend_refs:
   - D3-ASLR
   - D3-EAL
+  - D3-PA
   - D3-PHRA
   - D3-PSEP
+  - D3-SCP
 last_threat_review: "2026-05-13"
 ---
 
@@ -130,7 +132,7 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 
 | CVE | CVSS | RWEP | CISA KEV | PoC Public | AI-Discovered | Active Exploitation | Patch Available | Live Patch | Reboot Required |
 |---|---|---|---|---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-03-15) | Yes — 732-byte script | Yes | Confirmed | Yes | Yes (kpatch/livepatch/kGraft) | Yes |
+| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | Yes (kpatch/livepatch/kGraft) | Yes |
 | CVE-2026-43284 (Dirty Frag ESP) | 7.8 | 38 | No | Yes | No | Suspected | Yes | No (kpatch RHEL-only) | Yes |
 | CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 81 | No | Yes (chain component) | No | Suspected | Yes | Partial (kpatch) | Yes if no live patch |
 
@@ -234,7 +236,7 @@ Additional exposure: any IPsec-based network control becomes unreliable
 
 Run this check for any org claiming patch management compliance:
 
-> "Your patch management control (SI-2 / A.8.8 / PCI 6.3.3) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public 732-byte exploit script requiring no privileges. What is the actual time between CISA KEV listing (2026-03-15) and confirmed patch-or-mitigate? If it exceeds 72 hours without live patching as a deployed capability, the patch management control is theater for CISA KEV class vulnerabilities."
+> "Your patch management control (SI-2 / A.8.8 / PCI 6.3.3) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public 732-byte exploit script requiring no privileges. What is the actual time between CISA KEV listing (2026-05-01, federal due 2026-05-15) and confirmed patch-or-mitigate? If it exceeds 72 hours without live patching as a deployed capability, the patch management control is theater for CISA KEV class vulnerabilities."
 
 ### Step 6: Assess IPsec dependency
 
@@ -309,6 +311,23 @@ vm.unprivileged_userfaultfd = 0
 ```
 
 **Monitoring alert:** Any unprivileged process writing to `/proc/[pid]/mem` or invoking `userfaultfd` outside of a known application allowlist should be treated as a potential LPE attempt.
+
+---
+
+## Defensive Countermeasure Mapping
+
+Maps the kernel LPE findings above to MITRE D3FEND techniques with explicit defense-in-depth layer position, least-privilege scope, and zero-trust posture (per AGENTS.md Hard Rule #9). Source: `data/d3fend-catalog.json`.
+
+| D3FEND Technique | Mapping | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture |
+|---|---|---|---|---|
+| **D3-PSEP** (Process Segment Execution Prevention) | Counters T1068 page-cache CoW write primitives (Copy Fail) and adjacent kernel write-where exploits by enforcing NX / W^X on user-mapped segments and rejecting writeable-and-executable kernel mappings. | Layer 1 (Harden — kernel build flags + runtime mitigations: SMEP, SMAP, KPTI, KRG). | Per-system — the entire kernel image is the principal scope. | Treat every userspace write to a kernel-shared mapping as untrusted until verified by an immutable mapping policy; auditd / eBPF rules emit a tamper signal on any anomalous write path. |
+| **D3-ASLR** (Address Space Layout Randomization) | Raises the cost of reliable kernel LPE exploitation by randomising kernel base and module load addresses; Copy Fail is deterministic without an info-leak primitive, so KASLR alone is not sufficient but is the first-floor mitigation against the broader class. | Layer 1 (Harden). | Per-boot — randomisation applies system-wide each boot. | Combine with `kernel.kptr_restrict=2` (already in the sysctl block above) so unprivileged processes cannot read kernel pointers that would defeat KASLR. |
+| **D3-EAL** (Executable Allowlisting) | Restricts which userspace executables can run on the host. A Copy Fail PoC is a 732-byte binary; allowlisting denies unauthorised execution of any binary not on the allowlist, raising the cost of post-exploit shell payloads even when the in-kernel write itself succeeds. | Layer 2 (Harden — execve gate). | Per-system / per-workload — fleet baselines (gold images) define the allowlist; SOC / EDR enforces it. | Verify the binary identity on every `execve`; reject on hash mismatch. AGENTS.md rule #9: in ephemeral / serverless contexts bake the allowlist into the function image at build-time. |
+| **D3-PHRA** (Process Hardware Resource Access) | Constrains hardware-resource access from userspace (page table writes via `/proc/self/mem`, `userfaultfd`, `process_vm_writev`) that the Copy Fail PoC relies on. The sysctl hardening above (`vm.unprivileged_userfaultfd=0`, `kernel.unprivileged_userns_clone=0`) is the D3-PHRA enforcement layer. | Layer 1 (Isolate — kernel-syscall surface). | Per-process — capability set + namespace + seccomp filter define the syscall allowlist. | Default-deny: an unprivileged process gets the minimum syscall surface and is denied `userfaultfd`, `unshare(CLONE_NEWUSER)`, and `process_vm_writev` unless explicitly required. |
+| **D3-SCP** (System Call Filtering) | Per-container / per-workload seccomp profile blocks the syscalls Copy Fail abuses (`userfaultfd`, `process_vm_writev`, `pwritev2`) without requiring kernel patch. For container-escape variants (T1611 — Copy Fail in a privileged container), this is the only viable runtime mitigation between KEV-listing and the next reboot window. | Layer 2 (Isolate — runtime syscall gate). | Per-container — runtime profile is the principal scope. | Define a default-deny seccomp baseline; the host kernel patch is necessary but seccomp is the per-workload extension that survives an unpatched kernel during the live-patch deployment window. |
+| **D3-PA** (Process Analysis) | Detects post-exploit anomalies — root shell spawned by previously-unprivileged process, suid-binary creation, capability escalation — that follow a Copy Fail-class write. The auditd and Falco / Tetragon rules in the Detection Rules section above are the D3-PA enforcement layer. | Layer 5 (Detect). | Per-host — SOC / EDR ingest the audit stream. | Continuously evaluate process lineage; alert on uid transitions, capability gains, or suid mounts that don't appear in the baseline. |
+
+**Defense-in-depth posture:** the live-patch is the closure; the five D3FEND techniques above are the layers that must remain active *during* the live-patch deployment window. A SOC claiming "we have EDR" is at one D3FEND layer (D3-PA) for a six-layer-deep finding — the harden / isolate / detect stack collapses to a detect-only posture, and a kernel-write primitive that succeeds before EDR fires is unrecoverable. Per AGENTS.md rule #9: in ephemeral / serverless contexts, D3-PSEP / D3-EAL / D3-SCP / D3-PHRA are configured at image build time; the host-kernel layer remains the CSP's responsibility for managed runtimes, with the consumer responsible for the guest-OS posture on IaaS workloads.
 
 ---
 

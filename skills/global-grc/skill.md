@@ -453,8 +453,9 @@ A summary of the multi-jurisdiction control surface vs. the high-priority TTPs f
 | ML supply chain (MCP, models) | AML.T0010 | EU CRA Annex I (post 2026-09-11 reporting) | All others — supply-chain controls do not name AI plugins |
 | LLM C2 abuse (SesameOp) | AML.T0096 | None | All — no jurisdiction has a control for AI-API as C2 |
 | Poison Training Data | AML.T0020 | EU AI Act Art. 10 (data and data governance for high-risk AI) | All others |
-| Craft Adversarial Data — NLP | AML.T0054 | None — same gap as AML.T0051 | All |
-| Develop Capabilities (AI-assisted) | AML.T0017 | None — adversary capability, not directly controllable | All |
+| LLM Jailbreak | AML.T0054 | None — same gap as AML.T0051 | All |
+| Discover ML Model Ontology | AML.T0017 | None — adversary reconnaissance against deployed models, no mapped control | All |
+| Obtain Capabilities: Develop Capabilities (AI-assisted weaponization) | AML.T0016 | None — adversary capability, not directly controllable | All |
 | Privilege escalation (T1068) | ATT&CK T1068 | AU ISM-1623 / Essential 8 ML3 (48h patch with exploit) | EU (no specific SLA), UK (14d generic), SG (30d), JP, IN, CA |
 | Exploit public-facing app (T1190) | ATT&CK T1190 | AU Essential 8 (patching applications) | All — none address AI-mediated T1190 like CVE-2025-53773 |
 | Phishing (T1566) | ATT&CK T1566 | None updated for AI-generated content | All — phishing guidance generally pre-AI-baseline |

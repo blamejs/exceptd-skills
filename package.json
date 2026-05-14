@@ -1,6 +1,6 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.12.13",
+  "version": "0.12.14",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
   "keywords": [
     "ai-security",
@@ -54,8 +54,10 @@
     "data/",
     "skills/",
     "keys/public.pem",
+    "keys/EXPECTED_FINGERPRINT",
     "manifest.json",
     "manifest-snapshot.json",
+    "manifest-snapshot.sha256",
     "sbom.cdx.json",
     "AGENTS.md",
     "ARCHITECTURE.md",

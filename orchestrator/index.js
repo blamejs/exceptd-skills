@@ -18,6 +18,10 @@
  *   help              Show this help
  */
 
+const fsMod = require('fs');
+const osMod = require('os');
+const pathMod = require('path');
+
 const { scan } = require('./scanner');
 const { dispatch, routeQuery, getSkillContext } = require('./dispatcher');
 const { currencyCheck, initPipeline } = require('./pipeline');
@@ -26,6 +30,51 @@ const { start: startScheduler, stop: stopScheduler, runCurrencyNow } = require('
 
 const cmd = process.argv[2];
 const args = process.argv.slice(3);
+
+/**
+ * Minimal argv parser shared by verbs that want a structured view of
+ * `process.argv.slice(2)` instead of repeated `.includes()` calls. Returns
+ * `{ flags: Set<string>, options: Map<string,string>, positionals: string[] }`
+ * where boolean flags (e.g. `--json`) land in `flags`, option flags with a
+ * value (e.g. `--log-file path.log` or `--log-file=path.log`) land in
+ * `options`, and the rest are positionals.
+ *
+ * Kept inline rather than reaching into `lib/refresh-external.js#parseArgs`
+ * because that helper is hard-coded to the `refresh` flag set; this one
+ * stays generic. Both follow the same convention so verbs stay consistent.
+ */
+function parseFlags(argv, optionFlags) {
+  const optSet = new Set(optionFlags || []);
+  const flags = new Set();
+  const options = new Map();
+  const positionals = [];
+  for (let i = 0; i < argv.length; i++) {
+    const tok = argv[i];
+    if (typeof tok !== 'string') continue;
+    if (tok.startsWith('--')) {
+      const eq = tok.indexOf('=');
+      if (eq !== -1) {
+        const key = tok.slice(0, eq);
+        const val = tok.slice(eq + 1);
+        if (optSet.has(key)) options.set(key, val);
+        else flags.add(tok);
+      } else if (optSet.has(tok)) {
+        const next = argv[i + 1];
+        if (next !== undefined && !next.startsWith('--')) {
+          options.set(tok, next);
+          i++;
+        } else {
+          options.set(tok, '');
+        }
+      } else {
+        flags.add(tok);
+      }
+    } else {
+      positionals.push(tok);
+    }
+  }
+  return { flags, options, positionals };
+}
 
 async function main() {
   switch (cmd) {
@@ -48,7 +97,7 @@ async function main() {
       await runReport(args[0] || 'technical');
       break;
     case 'watch':
-      runWatch();
+      await runWatch();
       break;
     case 'validate-cves':
       await runValidateCves(args);
@@ -56,7 +105,6 @@ async function main() {
     case 'validate-rfcs':
       await runValidateRfcs(args);
       break;
-    case 'watch':
     case 'watchlist':
       runWatchlist(args);
       break;
@@ -162,7 +210,12 @@ Examples:
 // --- command implementations ---
 
 async function runScan() {
-  const jsonOut = process.argv.includes('--json');
+  // Use the shared parseFlags helper so flag handling is consistent with
+  // other verbs (validate-cves, watchlist, etc.). Previously this was a
+  // bare `process.argv.includes('--json')`, which differed in style from
+  // the verbs below and could miss `--json=true` or similar future forms.
+  const { flags } = parseFlags(process.argv.slice(2), []);
+  const jsonOut = flags.has('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
   const result = await scan();
   if (jsonOut) {
@@ -407,29 +460,191 @@ async function runReport(format) {
   }
 }
 
-function runWatch() {
+/**
+ * Resolve a writable directory for the watch lockfile. Prefer the operator's
+ * home directory; fall back to the OS tempdir when home is non-writable or
+ * non-existent (CI runners, restricted shells, etc.).
+ */
+function _resolveWatchLockDir() {
+  const home = process.env.EXCEPTD_HOME || pathMod.join(osMod.homedir(), '.exceptd');
+  try {
+    fsMod.mkdirSync(home, { recursive: true });
+    // Probe writability with a small marker; remove on success.
+    const probe = pathMod.join(home, `.write-probe-${process.pid}`);
+    fsMod.writeFileSync(probe, '');
+    fsMod.unlinkSync(probe);
+    return home;
+  } catch {
+    const fallback = pathMod.join(osMod.tmpdir(), 'exceptd');
+    try { fsMod.mkdirSync(fallback, { recursive: true }); } catch { /* tmp always exists */ }
+    return fallback;
+  }
+}
+
+/**
+ * Acquire an exclusive watch lockfile. Returns `{ path, release }` on
+ * success. Throws with code 'EWATCHLOCKED' when another watcher holds the
+ * lock and the lock looks fresh. Staleness is determined by two checks
+ * combined: (a) the recorded PID is no longer alive, or (b) the file
+ * mtime is older than 60s. Either path reclaims the lock atomically.
+ *
+ * The PID-alive check covers Windows, where SIGTERM cannot be delivered
+ * to the prior watcher and our graceful release handler never ran (e.g.
+ * the test harness kills with taskkill /F). Without it, every second
+ * watch invocation would inherit a stale lock until the 60s mtime ages out.
+ */
+function _acquireWatchLock() {
+  const dir = _resolveWatchLockDir();
+  const lockPath = pathMod.join(dir, 'watch.lock');
+  const STALE_MS = 60_000;
+
+  function tryCreate() {
+    const fd = fsMod.openSync(lockPath, 'wx');
+    fsMod.writeSync(fd, JSON.stringify({ pid: process.pid, started_at: new Date().toISOString() }));
+    fsMod.closeSync(fd);
+  }
+
+  function _pidAlive(pid) {
+    if (!Number.isInteger(pid) || pid <= 0) return false;
+    try {
+      // signal 0 is the POSIX "is the process alive" probe; Node implements
+      // it on Windows too via OpenProcess. Throws ESRCH (or EPERM, which
+      // also implies alive) when the PID is dead.
+      process.kill(pid, 0);
+      return true;
+    } catch (e) {
+      return e.code === 'EPERM';
+    }
+  }
+
+  try {
+    tryCreate();
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
+    let stale = false;
+    let recordedPid = null;
+    try {
+      const raw = fsMod.readFileSync(lockPath, 'utf8');
+      try { recordedPid = JSON.parse(raw).pid; } catch { /* malformed file = stale */ stale = true; }
+      const st = fsMod.statSync(lockPath);
+      const ageStale = (Date.now() - st.mtimeMs) > STALE_MS;
+      const pidStale = recordedPid != null && !_pidAlive(recordedPid);
+      stale = stale || ageStale || pidStale;
+    } catch {
+      stale = true;
+    }
+    if (!stale) {
+      const e = new Error(
+        `another exceptd watch process (pid ${recordedPid}) appears to hold ${lockPath}; remove the file if you're sure no watcher is running`
+      );
+      e.code = 'EWATCHLOCKED';
+      throw e;
+    }
+    // Stale — reclaim atomically. unlink + re-create with O_EXCL so a race
+    // with another reclaimer surfaces as EEXIST cleanly.
+    try { fsMod.unlinkSync(lockPath); } catch { /* concurrent reclaim, fine */ }
+    tryCreate();
+  }
+
+  return {
+    path: lockPath,
+    release() {
+      try { fsMod.unlinkSync(lockPath); } catch { /* idempotent */ }
+    }
+  };
+}
+
+async function runWatch() {
+  const { flags, options } = parseFlags(args, ['--log-file']);
+  const logFilePath = options.get('--log-file');
+  let logStream = null;
+  // Tee stdout when --log-file is set. We intercept process.stdout.write so
+  // every console.log + raw write also lands in the log file; this is the
+  // simplest pattern that captures scheduler + event-bus + this verb's
+  // output uniformly without rewriting every console.log call site.
+  if (logFilePath) {
+    try {
+      fsMod.mkdirSync(pathMod.dirname(pathMod.resolve(logFilePath)), { recursive: true });
+      logStream = fsMod.createWriteStream(pathMod.resolve(logFilePath), { flags: 'a' });
+    } catch (err) {
+      console.error(`[orchestrator] --log-file ${logFilePath}: ${err.message}`);
+      process.exitCode = 2;
+      return;
+    }
+    const origWrite = process.stdout.write.bind(process.stdout);
+    process.stdout.write = function teeWrite(chunk, enc, cb) {
+      try { logStream.write(chunk, enc); } catch { /* best-effort */ }
+      return origWrite(chunk, enc, cb);
+    };
+  }
+  // Touch flags to keep eslint-style linters quiet about unused locals.
+  void flags;
+
+  // Acquire the cross-process watch lock before any heavy work. The lock
+  // prevents two concurrent watchers from emitting double events or
+  // double-firing scheduler bootstraps. Release happens in every shutdown
+  // path (SIGINT/SIGTERM/SIGHUP/SIGBREAK).
+  let lock;
+  try {
+    lock = _acquireWatchLock();
+  } catch (err) {
+    console.error(`[orchestrator] cannot start watch: ${err.message}`);
+    process.exitCode = err.code === 'EWATCHLOCKED' ? 75 : 1;
+    return;
+  }
+
   console.log('[orchestrator] Starting event watcher...');
+  console.log(`[orchestrator] Lockfile: ${lock.path}`);
   console.log('Listening for: CISA KEV additions, ATLAS updates, CVE drops, framework amendments.\n');
 
-  bus.onAny(event => {
+  // Save the listener reference so the shutdown path can detach it instead
+  // of leaving it bound (a leaked '*' listener accumulates across
+  // start/stop cycles in long-running embedders).
+  const anyListener = (event) => {
     console.log(`[event] ${event.type} — ${event.timestamp}`);
     if (event.affected_skills.length > 0) {
       console.log(`  Affected skills: ${event.affected_skills.join(', ')}`);
     }
-    if (event.payload.cve_id) {
+    if (event.payload && event.payload.cve_id) {
       console.log(`  CVE: ${event.payload.cve_id}`);
     }
-  });
+  };
+  bus.onAny(anyListener);
 
   startScheduler();
 
-  process.on('SIGINT', () => {
-    console.log('\n[orchestrator] Stopping watcher.');
-    stopScheduler();
-    process.exit(0);
-  });
+  let shuttingDown = false;
+  const shutdown = (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`\n[orchestrator] Stopping watcher (${signal}).`);
+    try { bus.offAny(anyListener); } catch { /* best-effort */ }
+    try { stopScheduler(); } catch { /* best-effort */ }
+    try { lock.release(); } catch { /* best-effort */ }
+    if (logStream) {
+      try { logStream.end(); } catch { /* best-effort */ }
+    }
+    // process.exitCode + return-from-handler pattern: let the loop drain
+    // (so stdout flushes the goodbye line + the log stream finishes) rather
+    // than a hard process.exit() that can truncate.
+    process.exitCode = 0;
+  };
 
-  console.log('Press Ctrl+C to stop.\n');
+  // Standard signal coverage. SIGINT (Ctrl+C) was the only one previously
+  // handled; SIGTERM is the conventional "graceful stop" signal sent by
+  // process managers (systemd, docker stop, kubernetes), and SIGHUP is the
+  // terminal-close signal on POSIX. SIGBREAK fires on Ctrl+Break on Windows.
+  // SIGHUP doesn't exist on Windows and registering it there is a no-op
+  // that throws on some Node versions; gate by platform.
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  if (process.platform !== 'win32') {
+    try { process.on('SIGHUP', () => shutdown('SIGHUP')); } catch { /* unsupported */ }
+  } else {
+    try { process.on('SIGBREAK', () => shutdown('SIGBREAK')); } catch { /* unsupported */ }
+  }
+
+  console.log('Press Ctrl+C to stop. (SIGTERM / SIGHUP / SIGBREAK also honored.)\n');
 }
 
 async function runValidateCves(rawArgs = []) {
@@ -444,6 +659,11 @@ async function runValidateCves(rawArgs = []) {
   // The cache layout is fixed by lib/prefetch.js — same one refresh-external
   // reads from.
   let cacheDir = null;
+  // --concurrency N — bound the number of in-flight upstream calls during
+  // live validation. Default stays 4 to match the prior implicit value;
+  // operators with faster networks can crank it up, air-gapped fleets can
+  // drop it to 1 to keep cache reads serial.
+  let concurrency = 4;
   for (let i = 0; i < rawArgs.length; i++) {
     const a = rawArgs[i];
     if (a === '--from-cache') {
@@ -452,6 +672,12 @@ async function runValidateCves(rawArgs = []) {
       if (next && !next.startsWith('--')) i++;
     } else if (a.startsWith('--from-cache=')) {
       cacheDir = a.slice('--from-cache='.length);
+    } else if (a === '--concurrency') {
+      const next = rawArgs[i + 1];
+      if (next !== undefined) { const n = Number(next); if (Number.isFinite(n) && n >= 1) concurrency = Math.floor(n); i++; }
+    } else if (a.startsWith('--concurrency=')) {
+      const n = Number(a.slice('--concurrency='.length));
+      if (Number.isFinite(n) && n >= 1) concurrency = Math.floor(n);
     }
   }
   if (cacheDir) cacheDir = path.resolve(cacheDir);
@@ -559,7 +785,7 @@ async function runValidateCves(rawArgs = []) {
   if (cacheDir && fs.existsSync(cacheDir)) {
     report = await validateAllCvesPreferCache(catalog, cacheDir);
   } else {
-    report = await validateAllCves(catalog, { concurrency: 4 });
+    report = await validateAllCves(catalog, { concurrency });
   }
 
   // Index results by cve_id (validateAllCves preserves insertion order, but be explicit).
@@ -850,7 +1076,12 @@ function runWatchlist(rawArgs = []) {
     process.exit(2);
   }
 
-  const skills = Array.isArray(manifest.skills) ? manifest.skills : [];
+  // Exclude entries that are explicitly marked `status: "deprecated"` so
+  // operator forward-watch decisions aren't anchored to skills that are
+  // about to come out of the manifest. The field is optional today; when
+  // absent every skill is treated as active.
+  const skills = (Array.isArray(manifest.skills) ? manifest.skills : [])
+    .filter(s => s && s.status !== 'deprecated');
   // item -> { skills: [{name, last_threat_review}] }
   const itemToSkills = new Map();
   // skill name -> { items: [...], last_threat_review }
@@ -958,11 +1189,25 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
   const path = require('path');
   const { validateCve } = require('../sources/validators');
 
+  // 50 MB cap on any single cache file. Refuses to read past the cap to
+  // protect against a tampered or malformed prefetch payload that would
+  // OOM the validator on JSON.parse. The cap is well above any legitimate
+  // NVD / EPSS / KEV file (largest in practice is the full KEV feed at
+  // ~3 MB as of 2026); anything beyond 50 MB is almost certainly damage.
+  const CACHE_FILE_MAX_BYTES = 50 * 1024 * 1024;
+
   function readCached(source, id) {
     const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
     const p = path.join(cacheDir, source, `${safe}.json`);
     if (!fs.existsSync(p)) return null;
-    try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
+    try {
+      const st = fs.statSync(p);
+      if (st.size > CACHE_FILE_MAX_BYTES) {
+        console.error(`[validate-cves] cache file ${p} exceeds ${CACHE_FILE_MAX_BYTES} byte cap (${st.size}); refusing to read.`);
+        return null;
+      }
+      return JSON.parse(fs.readFileSync(p, 'utf8'));
+    }
     catch { return null; }
   }
 
@@ -1136,7 +1381,21 @@ Examples:
 `);
 }
 
-main().catch(err => {
-  console.error('[orchestrator] Fatal:', err.message);
-  process.exit(1);
-});
+// Only run the CLI when this file is executed directly. Earlier versions
+// invoked main() at import time too, which meant `require('./orchestrator')`
+// would trigger a full CLI dispatch (and printHelp) inside the importing
+// process. Gating on require.main keeps the module safely importable from
+// tests and from `bin/exceptd.js`'s programmatic entrypoints.
+if (require.main === module) {
+  main().catch(err => {
+    console.error('[orchestrator] Fatal:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  // Export the main + parseFlags helpers for programmatic embedders /
+  // tests. Verb runners stay internal — call them via the CLI surface.
+  main,
+  parseFlags,
+};

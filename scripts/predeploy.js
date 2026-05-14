@@ -19,6 +19,15 @@
  * Single-source-of-truth: the GATES list below mirrors the job sequence
  * in .github/workflows/ci.yml. Test coverage in tests/predeploy.test.js
  * asserts the two stay in sync.
+ *
+ * Audit G F5 — when the manifest-snapshot gate fails, the fix is NOT to
+ * run `npm run refresh-snapshot` blindly. The refresh script now refuses
+ * unless the operator passes `--commit-only` or sets
+ * EXCEPTD_SNAPSHOT_AUDIT_ACK=1. This is intentional: a failing snapshot
+ * gate means a breaking change was detected, and an accidental refresh
+ * would silently rewrite the baseline. Read the breaking-change list
+ * first, then run `node scripts/refresh-manifest-snapshot.js --commit-only`
+ * if the change is intentional.
  */
 
 const { execFileSync } = require("child_process");
@@ -62,28 +71,15 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-cve-catalog.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
-  {
-    name: "Validate offline CVE catalog state",
-    command: process.execPath,
-    args: [
-      path.join(ROOT, "orchestrator", "index.js"),
-      "validate-cves",
-      "--offline",
-      "--no-fail",
-    ],
-    ciJobName: "Data integrity (catalog + manifest snapshot)",
-  },
-  {
-    name: "Validate offline RFC catalog state",
-    command: process.execPath,
-    args: [
-      path.join(ROOT, "orchestrator", "index.js"),
-      "validate-rfcs",
-      "--offline",
-      "--no-fail",
-    ],
-    ciJobName: "Data integrity (catalog + manifest snapshot)",
-  },
+  // Audit G F13 — the "validate-cves --offline --no-fail" and
+  // "validate-rfcs --offline --no-fail" gates were enumeration-only sanity
+  // checks: `--no-fail` forced them to always exit 0, so they never blocked
+  // a release on a real catalog problem. The deep catalog validation is
+  // already performed by the gate above (`lib/validate-cve-catalog.js`),
+  // including cross-catalog reference resolution after this same audit.
+  // Keeping the no-op gates as predeploy steps inflated the gate count for
+  // no marginal value and risked false confidence ("X gates passed"). They
+  // are removed in v0.12.14; document the removal in CHANGELOG.
   {
     name: "Manifest snapshot gate (breaking-change detector)",
     command: process.execPath,
@@ -97,9 +93,13 @@ const GATES = [
     ciJobName: "Lint skill files",
   },
   {
-    // Informational only — surfaces the forward_watch horizon across all
-    // skills as a sanity signal. Emits the count but never fails the run;
-    // a parse problem is reported, not blocking.
+    // Informational — surfaces the forward_watch horizon across all skills.
+    // Audit G F12: an exit code of 0 means "ok", 1 means "items present
+    // (informational)", 2+ means a runtime error in the gate itself.
+    // The runner now distinguishes the two: 0/1 stay informational, 2+
+    // surface as a real failure. Pre-fix, any non-zero exit was rolled up
+    // as informational, which hid crashes (a 137 OOM looked the same as
+    // "found 12 items to review").
     name: "Forward-watch aggregator (informational)",
     command: process.execPath,
     args: [
@@ -108,6 +108,7 @@ const GATES = [
     ],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
     informational: true,
+    informationalMaxExitCode: 1,
   },
   {
     name: "Validate catalog _meta (tlp + source_confidence + freshness_policy)",
@@ -192,25 +193,60 @@ function runGate(gate) {
     }
   }
   const t0 = Date.now();
-  try {
-    execFileSync(gate.command, gate.args, { stdio: "inherit", cwd: ROOT });
-    return { status: "passed", durationMs: Date.now() - t0 };
-  } catch (e) {
-    if (gate.informational) {
+  // Audit G F21 — spawn the child with piped stdio + tee to the parent so we
+  // can count `WARN ` lines for the summary table. We still want the live
+  // output, so each chunk is forwarded as it arrives.
+  const { spawnSync } = require("child_process");
+  const r = spawnSync(gate.command, gate.args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const durationMs = Date.now() - t0;
+  if (r.stdout) process.stdout.write(r.stdout);
+  if (r.stderr) process.stderr.write(r.stderr);
+  // Count WARN-labelled lines in the combined stream so the summary table
+  // can surface them. Lint / validate output uses "WARN  " at line start;
+  // count both the table form and an inline "[warn]" form.
+  const combined = (r.stdout || "") + (r.stderr || "");
+  const warnCount = (
+    combined.match(/^WARN\b/gm) || []
+  ).length + (
+    combined.match(/\[warn\]/g) || []
+  ).length;
+  if (r.status === 0) {
+    return { status: "passed", durationMs, warnCount };
+  }
+  // Audit G F12 — gates may declare informationalMaxExitCode to distinguish
+  // "soft signal" (exit codes 0..N) from "crash" (> N). Default behaviour
+  // for an informational gate without that field stays the same.
+  if (gate.informational) {
+    const ceil = typeof gate.informationalMaxExitCode === "number"
+      ? gate.informationalMaxExitCode
+      : Infinity;
+    if (r.status !== null && r.status > ceil) {
       return {
-        status: "informational",
-        exitCode: e.status ?? null,
-        message: e.message,
-        durationMs: Date.now() - t0,
+        status: "failed",
+        exitCode: r.status,
+        message: `informational gate crashed (exit ${r.status} > informationalMaxExitCode=${ceil})`,
+        durationMs,
+        warnCount,
       };
     }
     return {
-      status: "failed",
-      exitCode: e.status ?? null,
-      message: e.message,
-      durationMs: Date.now() - t0,
+      status: "informational",
+      exitCode: r.status ?? null,
+      durationMs,
+      warnCount,
     };
   }
+  return {
+    status: "failed",
+    exitCode: r.status ?? null,
+    message: r.error ? r.error.message : `exit ${r.status}`,
+    durationMs,
+    warnCount,
+  };
 }
 
 function fmtMs(ms) {
@@ -258,8 +294,16 @@ function main() {
         : "✗";
     const timing = fmtMs(outcome.durationMs);
     const timingSuffix = timing ? `  (${timing})` : "";
+    // F21 — surface WARN counts so a gate that "passed (3 warnings)" is
+    // distinguishable from one that passed cleanly. Pre-fix, warnings
+    // printed by individual gates (validate-cve-catalog, lint-skills,
+    // validate-playbooks) scrolled past invisible in the summary.
+    const warnSuffix =
+      outcome.warnCount && outcome.warnCount > 0
+        ? ` (${outcome.warnCount} warning${outcome.warnCount === 1 ? "" : "s"})`
+        : "";
     process.stdout.write(
-      `  ${icon} ${gate.name.padEnd(widest)}  ${outcome.status}${timingSuffix}\n`
+      `  ${icon} ${gate.name.padEnd(widest)}  ${outcome.status}${warnSuffix}${timingSuffix}\n`
     );
   }
 

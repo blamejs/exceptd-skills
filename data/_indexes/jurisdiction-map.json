@@ -213,10 +213,11 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "skill-update-loop",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 13
+    "skill_count": 14
   },
   "BR": {
     "skills": [
@@ -250,10 +251,11 @@
       "pqc-first",
       "sector-federal-government",
       "supply-chain-integrity",
-      "threat-modeling-methodology"
+      "threat-modeling-methodology",
+      "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 12
+    "skill_count": 13
   },
   "ZA": {
     "skills": [

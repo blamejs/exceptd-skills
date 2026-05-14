@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "last_updated": "2026-05-13",
-    "attack_version": "v17",
+    "attack_version": "17",
     "attack_version_date": "2025-06-25",
     "source": "https://attack.mitre.org — MITRE ATT&CK Enterprise + ICS. Only techniques currently referenced by shipped exceptd skills and playbooks. The full ATT&CK matrix (~700 techniques) is intentionally not duplicated here; this is a resolution catalog for cross-reference validation, not a substitute for attack.mitre.org. See `npm run refresh-attack-techniques` (v0.13.0+) for the full corpus.",
     "tlp": "CLEAR",
@@ -18,79 +18,322 @@
       "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md hard rule #8 requires the bump to be intentional, not silent."
     }
   },
-  "T0001": { "name": "Authority Spoof", "version": "v17" },
-  "T0017": { "name": "Spearphishing Attachment (ICS)", "version": "v17" },
-  "T0051": { "name": "Position Tampering", "version": "v17" },
-  "T0096": { "name": "Remote System Discovery (ICS)", "version": "v17" },
-  "T0853": { "name": "Scripting", "version": "v17" },
-  "T0855": { "name": "Unauthorized Command Message", "version": "v17" },
-  "T0867": { "name": "Lateral Tool Transfer", "version": "v17" },
-  "T0883": { "name": "Internet Accessible Device", "version": "v17" },
-  "T1021": { "name": "Remote Services", "version": "v17" },
-  "T1027": { "name": "Obfuscated Files or Information", "version": "v17" },
-  "T1040": { "name": "Network Sniffing", "version": "v17" },
-  "T1041": { "name": "Exfiltration Over C2 Channel", "version": "v17" },
-  "T1053.003": { "name": "Scheduled Task/Job: Cron", "version": "v17" },
-  "T1055": { "name": "Process Injection", "version": "v17" },
-  "T1059": { "name": "Command and Scripting Interpreter", "version": "v17" },
-  "T1068": { "name": "Exploitation for Privilege Escalation", "version": "v17" },
-  "T1071": { "name": "Application Layer Protocol", "version": "v17" },
-  "T1078": { "name": "Valid Accounts", "version": "v17" },
-  "T1078.002": { "name": "Valid Accounts: Domain Accounts", "version": "v17" },
-  "T1078.003": { "name": "Valid Accounts: Local Accounts", "version": "v17" },
-  "T1078.004": { "name": "Valid Accounts: Cloud Accounts", "version": "v17" },
-  "T1098": { "name": "Account Manipulation", "version": "v17" },
-  "T1102": { "name": "Web Service", "version": "v17" },
-  "T1110": { "name": "Brute Force", "version": "v17" },
-  "T1110.001": { "name": "Brute Force: Password Guessing", "version": "v17" },
-  "T1133": { "name": "External Remote Services", "version": "v17" },
-  "T1136.001": { "name": "Create Account: Local Account", "version": "v17" },
-  "T1190": { "name": "Exploit Public-Facing Application", "version": "v17" },
-  "T1195": { "name": "Supply Chain Compromise", "version": "v17" },
-  "T1195.001": { "name": "Supply Chain Compromise: Software Dependencies and Development Tools", "version": "v17" },
-  "T1195.002": { "name": "Supply Chain Compromise: Software Supply Chain", "version": "v17" },
-  "T1199": { "name": "Trusted Relationship", "version": "v17" },
-  "T1203": { "name": "Exploitation for Client Execution", "version": "v17" },
-  "T1212": { "name": "Exploitation for Credential Access", "version": "v17" },
-  "T1213": { "name": "Data from Information Repositories", "version": "v17" },
-  "T1485": { "name": "Data Destruction", "version": "v17" },
-  "T1486": { "name": "Data Encrypted for Impact", "version": "v17" },
-  "T1505": { "name": "Server Software Component", "version": "v17" },
-  "T1518": { "name": "Software Discovery", "version": "v17" },
-  "T1525": { "name": "Implant Internal Image", "version": "v17" },
-  "T1528": { "name": "Steal Application Access Token", "version": "v17" },
-  "T1530": { "name": "Data from Cloud Storage", "version": "v17" },
-  "T1543": { "name": "Create or Modify System Process", "version": "v17" },
-  "T1546": { "name": "Event Triggered Execution", "version": "v17" },
-  "T1547": { "name": "Boot or Logon Autostart Execution", "version": "v17" },
-  "T1548.001": { "name": "Abuse Elevation Control Mechanism: Setuid and Setgid", "version": "v17" },
-  "T1548.003": { "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching", "version": "v17" },
-  "T1552": { "name": "Unsecured Credentials", "version": "v17" },
-  "T1552.001": { "name": "Unsecured Credentials: Credentials In Files", "version": "v17" },
-  "T1552.004": { "name": "Unsecured Credentials: Private Keys", "version": "v17" },
-  "T1552.005": { "name": "Unsecured Credentials: Cloud Instance Metadata API", "version": "v17" },
-  "T1552.007": { "name": "Unsecured Credentials: Container API", "version": "v17" },
-  "T1554": { "name": "Compromise Host Software Binary", "version": "v17" },
-  "T1555": { "name": "Credentials from Password Stores", "version": "v17" },
-  "T1556": { "name": "Modify Authentication Process", "version": "v17" },
-  "T1557": { "name": "Adversary-in-the-Middle", "version": "v17" },
-  "T1562.001": { "name": "Impair Defenses: Disable or Modify Tools", "version": "v17" },
-  "T1562.006": { "name": "Impair Defenses: Indicator Blocking", "version": "v17" },
-  "T1565": { "name": "Data Manipulation", "version": "v17" },
-  "T1566": { "name": "Phishing", "version": "v17" },
-  "T1566.001": { "name": "Phishing: Spearphishing Attachment", "version": "v17" },
-  "T1566.002": { "name": "Phishing: Spearphishing Link", "version": "v17" },
-  "T1566.003": { "name": "Phishing: Spearphishing via Service", "version": "v17" },
-  "T1567": { "name": "Exfiltration Over Web Service", "version": "v17" },
-  "T1568": { "name": "Dynamic Resolution", "version": "v17" },
-  "T1570": { "name": "Lateral Tool Transfer", "version": "v17" },
-  "T1573": { "name": "Encrypted Channel", "version": "v17" },
-  "T1574": { "name": "Hijack Execution Flow", "version": "v17" },
-  "T1574.005": { "name": "Hijack Execution Flow: Executable Installer File Permissions Weakness", "version": "v17" },
-  "T1595": { "name": "Active Scanning", "version": "v17" },
-  "T1600": { "name": "Weaken Encryption", "version": "v17" },
-  "T1606.001": { "name": "Forge Web Credentials: Web Cookies", "version": "v17" },
-  "T1610": { "name": "Deploy Container", "version": "v17" },
-  "T1611": { "name": "Escape to Host", "version": "v17" },
-  "T1613": { "name": "Container and Resource Discovery", "version": "v17" }
+  "T0001": {
+    "name": "Authority Spoof",
+    "version": "v17"
+  },
+  "T0017": {
+    "name": "Spearphishing Attachment (ICS)",
+    "version": "v17"
+  },
+  "T0051": {
+    "name": "Position Tampering",
+    "version": "v17"
+  },
+  "T0096": {
+    "name": "Remote System Discovery (ICS)",
+    "version": "v17"
+  },
+  "T0853": {
+    "name": "Scripting",
+    "version": "v17"
+  },
+  "T0855": {
+    "name": "Unauthorized Command Message",
+    "version": "v17"
+  },
+  "T0867": {
+    "name": "Lateral Tool Transfer",
+    "version": "v17",
+    "domain": "ICS"
+  },
+  "T0883": {
+    "name": "Internet Accessible Device",
+    "version": "v17"
+  },
+  "T1021": {
+    "name": "Remote Services",
+    "version": "v17"
+  },
+  "T1027": {
+    "name": "Obfuscated Files or Information",
+    "version": "v17"
+  },
+  "T1040": {
+    "name": "Network Sniffing",
+    "version": "v17"
+  },
+  "T1041": {
+    "name": "Exfiltration Over C2 Channel",
+    "version": "v17"
+  },
+  "T1053.003": {
+    "name": "Scheduled Task/Job: Cron",
+    "version": "v17"
+  },
+  "T1055": {
+    "name": "Process Injection",
+    "version": "v17"
+  },
+  "T1059": {
+    "name": "Command and Scripting Interpreter",
+    "version": "v17"
+  },
+  "T1059.001": {
+    "name": "Command and Scripting Interpreter: PowerShell",
+    "version": "v17"
+  },
+  "T1059.006": {
+    "name": "Command and Scripting Interpreter: Python",
+    "version": "v17"
+  },
+  "T1059.007": {
+    "name": "Command and Scripting Interpreter: JavaScript",
+    "version": "v17"
+  },
+  "T1068": {
+    "name": "Exploitation for Privilege Escalation",
+    "version": "v17"
+  },
+  "T1071": {
+    "name": "Application Layer Protocol",
+    "version": "v17"
+  },
+  "T1078": {
+    "name": "Valid Accounts",
+    "version": "v17"
+  },
+  "T1078.001": {
+    "name": "Valid Accounts: Default Accounts",
+    "version": "v17"
+  },
+  "T1078.002": {
+    "name": "Valid Accounts: Domain Accounts",
+    "version": "v17"
+  },
+  "T1078.003": {
+    "name": "Valid Accounts: Local Accounts",
+    "version": "v17"
+  },
+  "T1078.004": {
+    "name": "Valid Accounts: Cloud Accounts",
+    "version": "v17"
+  },
+  "T1098": {
+    "name": "Account Manipulation",
+    "version": "v17"
+  },
+  "T1102": {
+    "name": "Web Service",
+    "version": "v17"
+  },
+  "T1110": {
+    "name": "Brute Force",
+    "version": "v17"
+  },
+  "T1110.001": {
+    "name": "Brute Force: Password Guessing",
+    "version": "v17"
+  },
+  "T1133": {
+    "name": "External Remote Services",
+    "version": "v17"
+  },
+  "T1136.001": {
+    "name": "Create Account: Local Account",
+    "version": "v17"
+  },
+  "T1190": {
+    "name": "Exploit Public-Facing Application",
+    "version": "v17"
+  },
+  "T1195": {
+    "name": "Supply Chain Compromise",
+    "version": "v17"
+  },
+  "T1195.001": {
+    "name": "Supply Chain Compromise: Software Dependencies and Development Tools",
+    "version": "v17"
+  },
+  "T1195.002": {
+    "name": "Supply Chain Compromise: Software Supply Chain",
+    "version": "v17"
+  },
+  "T1199": {
+    "name": "Trusted Relationship",
+    "version": "v17"
+  },
+  "T1203": {
+    "name": "Exploitation for Client Execution",
+    "version": "v17"
+  },
+  "T1212": {
+    "name": "Exploitation for Credential Access",
+    "version": "v17"
+  },
+  "T1213": {
+    "name": "Data from Information Repositories",
+    "version": "v17"
+  },
+  "T1485": {
+    "name": "Data Destruction",
+    "version": "v17"
+  },
+  "T1486": {
+    "name": "Data Encrypted for Impact",
+    "version": "v17"
+  },
+  "T1505": {
+    "name": "Server Software Component",
+    "version": "v17"
+  },
+  "T1518": {
+    "name": "Software Discovery",
+    "version": "v17"
+  },
+  "T1525": {
+    "name": "Implant Internal Image",
+    "version": "v17"
+  },
+  "T1528": {
+    "name": "Steal Application Access Token",
+    "version": "v17"
+  },
+  "T1530": {
+    "name": "Data from Cloud Storage",
+    "version": "v17"
+  },
+  "T1543": {
+    "name": "Create or Modify System Process",
+    "version": "v17"
+  },
+  "T1546": {
+    "name": "Event Triggered Execution",
+    "version": "v17"
+  },
+  "T1547": {
+    "name": "Boot or Logon Autostart Execution",
+    "version": "v17"
+  },
+  "T1548.001": {
+    "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
+    "version": "v17"
+  },
+  "T1548.003": {
+    "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
+    "version": "v17"
+  },
+  "T1552": {
+    "name": "Unsecured Credentials",
+    "version": "v17"
+  },
+  "T1552.001": {
+    "name": "Unsecured Credentials: Credentials In Files",
+    "version": "v17"
+  },
+  "T1552.004": {
+    "name": "Unsecured Credentials: Private Keys",
+    "version": "v17"
+  },
+  "T1552.005": {
+    "name": "Unsecured Credentials: Cloud Instance Metadata API",
+    "version": "v17"
+  },
+  "T1552.007": {
+    "name": "Unsecured Credentials: Container API",
+    "version": "v17"
+  },
+  "T1554": {
+    "name": "Compromise Host Software Binary",
+    "version": "v17"
+  },
+  "T1555": {
+    "name": "Credentials from Password Stores",
+    "version": "v17"
+  },
+  "T1556": {
+    "name": "Modify Authentication Process",
+    "version": "v17"
+  },
+  "T1557": {
+    "name": "Adversary-in-the-Middle",
+    "version": "v17"
+  },
+  "T1562.001": {
+    "name": "Impair Defenses: Disable or Modify Tools",
+    "version": "v17"
+  },
+  "T1562.006": {
+    "name": "Impair Defenses: Indicator Blocking",
+    "version": "v17"
+  },
+  "T1565": {
+    "name": "Data Manipulation",
+    "version": "v17"
+  },
+  "T1566": {
+    "name": "Phishing",
+    "version": "v17"
+  },
+  "T1566.001": {
+    "name": "Phishing: Spearphishing Attachment",
+    "version": "v17"
+  },
+  "T1566.002": {
+    "name": "Phishing: Spearphishing Link",
+    "version": "v17"
+  },
+  "T1566.003": {
+    "name": "Phishing: Spearphishing via Service",
+    "version": "v17"
+  },
+  "T1567": {
+    "name": "Exfiltration Over Web Service",
+    "version": "v17"
+  },
+  "T1568": {
+    "name": "Dynamic Resolution",
+    "version": "v17"
+  },
+  "T1570": {
+    "name": "Lateral Tool Transfer",
+    "version": "v17",
+    "domain": "Enterprise"
+  },
+  "T1573": {
+    "name": "Encrypted Channel",
+    "version": "v17"
+  },
+  "T1574": {
+    "name": "Hijack Execution Flow",
+    "version": "v17"
+  },
+  "T1574.005": {
+    "name": "Hijack Execution Flow: Executable Installer File Permissions Weakness",
+    "version": "v17"
+  },
+  "T1595": {
+    "name": "Active Scanning",
+    "version": "v17"
+  },
+  "T1600": {
+    "name": "Weaken Encryption",
+    "version": "v17"
+  },
+  "T1606.001": {
+    "name": "Forge Web Credentials: Web Cookies",
+    "version": "v17"
+  },
+  "T1610": {
+    "name": "Deploy Container",
+    "version": "v17"
+  },
+  "T1611": {
+    "name": "Escape to Host",
+    "version": "v17"
+  },
+  "T1613": {
+    "name": "Container and Resource Discovery",
+    "version": "v17"
+  }
 }

@@ -95,8 +95,10 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 | CVE-2026-31431 (Copy Fail) | Yes | Yes (732-byte) | Yes (AI-discovered ~1h) | 90 | Complete — pre-run lesson encoded below; new control requirements CISA-KEV-RESPONSE-SLA, LIVE-PATCH-CAPABILITY, KERNEL-EXPLOITATION-DETECTION generated |
 | CVE-2026-43284 (Dirty Frag — ESP/IPsec) | No | Yes (chain) | No | 38 | Complete — pre-run lesson encoded; new control requirements CRYPTO-SUBSYSTEM-INTEGRITY, PRE-PATCH-DISCLOSURE-RESPONSE generated |
 | CVE-2026-43500 (Dirty Frag — RxRPC) | No | Yes (chain) | No | 32 | Complete — covered jointly with CVE-2026-43284 (chain partner) |
-| CVE-2025-53773 (Copilot prompt-injection RCE) | No | Yes (demonstrated) | Yes (AI tooling enables) | 42 | Complete — pre-run lesson encoded; new control requirements AI-TOOL-ACTION-AUTHORIZATION, AI-TOOL-INPUT-SANITIZATION, PROMPT-INJECTION-MONITORING generated |
-| CVE-2026-30615 (Windsurf MCP RCE) | No | Partial | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
+| CVE-2025-53773 (Copilot YOLO-mode RCE) | No | Yes (demonstrated) | Yes (AI tooling enables) | 30 | Complete — pre-run lesson encoded; new control requirements AI-TOOL-ACTION-AUTHORIZATION, AI-TOOL-INPUT-SANITIZATION, PROMPT-INJECTION-MONITORING generated |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Partial | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
+| CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Pending | Yes (worm in-wild) | No (engineering-grade chain) | n/a | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
+| MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogues vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
 
 Per AGENTS.md DR-8: every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
@@ -196,9 +198,9 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 ---
 
-### Lesson: CVE-2025-53773 (GitHub Copilot Prompt Injection RCE)
+### Lesson: CVE-2025-53773 (GitHub Copilot YOLO-Mode RCE)
 
-**Attack vector:** Hidden prompt injection in GitHub Copilot PR descriptions. Developer reviews PR with Copilot → injected instructions execute in developer session → RCE. CVSS 9.6.
+**Attack vector:** Hidden prompt injection in any agent-readable content (source comments, README, PR descriptions, retrieved docs, MCP tool responses) coerces Copilot agent mode to write `"chat.tools.autoApprove": true` to `.vscode/settings.json`. Every subsequent shell tool call then auto-approves; the demo runs `calc.exe` / `Calculator.app` via the auto-approved `run_in_terminal` tool. CVSS 7.8 / AV:L (local-vector — developer-side IDE interaction; the NVD-authoritative score was corrected from initial 9.6 / AV:N). Affected: Visual Studio 2022 17.14.0–17.14.11 (fixed 17.14.12); GitHub Copilot Chat extension predating the 2025-08 Patch Tuesday fix.
 
 **What control should have prevented this:**
 - Access control for AI tool actions: the developer's GitHub session was correctly authenticated. The RCE happened because the AI tool executed adversarial instructions with the developer's authorization context.
@@ -212,13 +214,13 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 3. **PROMPT-INJECTION-MONITORING**: Log all AI tool actions, including the content of prompts that triggered those actions. Alert on AI actions that deviate from the user's stated intent or that weren't preceded by an explicit user request.
 
-**Framework coverage:** Missing entirely in all major frameworks. CVSS 9.6 with active exploitation demonstrated and no framework control category for this attack class.
+**Framework coverage:** Missing entirely in all major frameworks. Even after the CVSS correction to 7.8 / AV:L (which reflects the local-vector reality, not severity), there is no framework control category for "prompt-injection-driven autoApprove escalation" — the bottleneck on the *attack* is a settings-file write that IS detectable as an IOC, but no framework currently mandates monitoring it.
 
 ---
 
-### Lesson: CVE-2026-30615 (Windsurf MCP Zero-Interaction RCE)
+### Lesson: CVE-2026-30615 (Windsurf MCP Local-Vector RCE)
 
-**Attack vector:** Malicious MCP server achieves RCE without user interaction. AI coding assistant autonomously calls malicious tool, code executes. 150M+ affected.
+**Attack vector:** Malicious MCP server drives RCE in the AI assistant's user context once installed. The attack vector is local (AV:L) — the attacker must control HTML content the Windsurf MCP client processes; supply-chain prerequisite (typosquatting, dependency confusion, or compromise of a legitimate server) puts the malicious server in front of the client. CVSS 8.0 (NVD-authoritative; corrected from initial 9.8 / AV:N). 150M+ combined downloads of MCP-capable AI coding assistants share the architectural surface.
 
 **New control requirements generated:**
 
@@ -245,6 +247,48 @@ Output: Lesson entry for data/zeroday-lessons.json
 3. **AI-API-CORRELATION**: Correlate AI API call events with security-relevant host events (file access, credential access, lateral movement). AI API calls correlated with security events within defined time windows must escalate.
 
 **Framework coverage:** Missing entirely. SI-4 (system monitoring) and A.8.16 (monitoring activities) don't address AI API behavioral baselines.
+
+---
+
+### Lesson: CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm)
+
+**Attack vector:** Engineering-grade three-primitive chain against the TanStack monorepo, disclosed 2026-05-11. (1) `pull_request_target` on `bundle-size.yml` runs fork-PR code with base-repo permissions (classic Pwn Request). (2) That run poisons the `actions/cache` pnpm-store under the key `Linux-pnpm-store-${hashFiles('**/pnpm-lock.yaml')}` that `release.yml` later restores. (3) On the next main push, `release.yml` (which has `id-token: write` for npm publish) restores the poisoned cache and the worm captures the OIDC token. 84 malicious versions published across 42 @tanstack/* packages between 2026-05-11 19:20-19:26 UTC. ~150M weekly downloads in scope. CVSS 9.6; CISA KEV pending. Attribution: TeamPCP. No AI-assisted exploit-development attribution for this specific instance, but the chain shape is exactly what AML.T0016-class capability-development produces at AI cadence — chained CI/CD primitives that no individual component owner recognises as exploitable.
+
+**What control should have prevented this:**
+- Workflow-privilege isolation: `pull_request_target` should never run fork-PR code with base-repo permissions in the same job as cache writes. The chain is broken if the bundle-size workflow runs with `permissions: contents: read` and writes to a separate cache key.
+- Cache integrity: `actions/cache` keyed by `hashFiles('**/pnpm-lock.yaml')` is attacker-influenceable when the same key is restored by a privileged downstream workflow. Restore-only-on-verified-publisher caches or per-job cache namespacing breaks the link.
+- OIDC token scoping: the publish job's `id-token: write` should be bound to a job that does *not* restore externally-influenced caches. Token scope minimisation per AGENTS.md DR-1 (no orphaned-privilege workflows).
+
+**New control requirements generated:**
+
+1. **PR-WORKFLOW-PRIVILEGE-CAP**: Any workflow triggered by `pull_request_target`, `pull_request` from forks, or `issue_comment` MUST declare `permissions: contents: read` at the top level and MUST NOT write to `actions/cache` keys that any other workflow restores. Static analysis at PR merge time.
+2. **ACTIONS-CACHE-INTEGRITY**: Cache keys used by publish-capable workflows MUST be namespaced per-job and MUST NOT include `${{ hashFiles(...) }}` expressions that fork PRs can influence. Where shared caches are unavoidable, restore-then-verify against an out-of-band integrity record before use.
+3. **OIDC-PUBLISH-AUDIT**: Every npm / container registry / cloud-provider OIDC token issuance from CI must be audit-logged with the job's full permission set, the workflow file SHA, and the cache keys it restored. Anomalies (cache restored from a key written by a different workflow) must alert.
+
+**Exposure scoring:**
+- Any consumer that ran `npm install` / `pnpm install` between 2026-05-11 19:20Z and 2026-05-11 ~21:00Z (yank propagation window) with a `@tanstack/*` package in their dependency tree is suspect. Lockfile resolution time-stamp is the join key.
+- Coverage failure: no major framework requires CI workflow-privilege static analysis. Supply-chain controls (SA-12, A.5.19) address vendor SaaS not GitHub Actions workflow files.
+
+---
+
+### Lesson: MAL-2026-3083 (Elementary-Data PyPI Worm — Forged Release via GitHub Actions Script Injection)
+
+**Attack vector:** Disclosed 2026-04-24, OSSF Malicious Packages primary key (no CVE assigned as of 2026-05-13; OSV-native MAL-2026-3083, Snyk cross-reference SNYK-PYTHON-ELEMENTARYDATA-16316110, kam193 campaign id `pypi/2026-04-compr-elementary-data`). Attacker abused a GitHub Actions script-injection sink in `.github/workflows/update_pylon_issue.yml`: the workflow interpolated `${{ github.event.comment.body }}` directly into a `run:` shell script. Commenting on any open PR was sufficient to execute attacker-controlled shell with the elevated `GITHUB_TOKEN`. Attacker forged orphan commit `b1e4b1f3aad0d489ab0e9208031c67402bbb8480` (still readable on GitHub) and the workflow built and published `elementary-data==0.23.3` to PyPI with an install-time `.pth`-file payload. Window of live exposure: 2026-04-24 22:20Z → 2026-04-25 ~06:30Z (~8 hours). 1.1M monthly downloads in scope. CVSS 9.3 (AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H). Exfiltration domain (`skyhanni.cloud` subdomain) was active throughout the window.
+
+**What control should have prevented this:**
+- GitHub Actions hygiene: never interpolate `${{ github.event.* }}` into a `run:` script — use the value as an environment variable instead so the shell tokeniser treats it as data. Static-analysis tools (`zizmor`, `Octoscan`) flag this class.
+- Install-hook auditing: `.pth` files run at every `import` of any package in the same site-packages directory. The MAL-2026-3083 payload is invisible to `pip install --dry-run` but visible in the wheel's `RECORD` file. `pip install --require-hashes` plus consumer-side `pip-audit --strict` against the OSSF Malicious Packages dataset would have caught the malicious version.
+- Ingest-time intel: OSSF Malicious Packages publishes within minutes of detection. A consumer pipeline that ingests OSSF + Snyk + npm advisory feeds with sub-hour latency closes the window in proportion to the attacker's, not in proportion to vendor advisory cadence.
+
+**New control requirements generated:**
+
+1. **GHACTIONS-EVENT-INTERPOLATION-BAN**: Static-analysis gate on every CI pipeline: reject any workflow that interpolates `${{ github.event.* }}` (or `github.head_ref`, `inputs.*` from untrusted sources) directly into `run:` shell. Required tooling: `zizmor` / `Octoscan` / `actionlint` with the script-injection rule enabled. Hard fail on PR merge.
+2. **INSTALL-HOOK-AUDIT**: Pre-install scan of every wheel / sdist for install-time hooks (`.pth` files, `setup.py` execution, `pyproject.toml` build hooks). Any package adding a `.pth` file that imports network code at module-load time gets quarantined for review. Tooling: `pip-audit` plus a custom `.pth`-file diff rule.
+3. **OSSF-MALPACKAGES-INGEST**: Subscribe to the OSSF Malicious Packages OSV feed with sub-hour latency and apply it as a hard-block at the dependency resolver. Any organisation whose dependency pipeline is anchored to NVD CVE feeds alone misses MAL-2026-3083 entirely — there is no CVE ID, just an OSSF / Snyk / kam193 advisory. This control closes the AGENTS.md DR-1 (no stale threat intel) loop for the OSV-native malicious-package class.
+
+**Exposure scoring:**
+- Anyone who `pip install`-ed `elementary-data` between 2026-04-24 22:20Z and 2026-04-25 ~06:30Z inside a dbt analytics pipeline (or any virtualenv where `elementary-data==0.23.3` resolved) was hit. The install-hook fires at the *next* import in the affected venv, which can be hours-to-days after the install.
+- Coverage failure: NVD CVE feed coverage is structurally zero (no CVE issued); SOC playbooks that filter on "is there a CVE ID?" miss the entire OSV-native class. OSSF Malicious Packages + Snyk Advisor + kam193 campaign feeds are the operational intel layer.
 
 ---
 

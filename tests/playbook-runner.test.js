@@ -648,13 +648,18 @@ describe('analyze', () => {
     assert.ok(fired.length >= 5, 'kver-in-affected-range fires for all its rwep_inputs entries');
   });
 
-  it('blast_radius_score comes from agentSignals when supplied; otherwise rubric default', () => {
+  it('blast_radius_score: null+default when no signal supplied; supplied value used when in [0,5]', () => {
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const an1 = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    assert.equal(an1.blast_radius_score, 1, 'default to first rubric entry (score=1)');
+    // F6: no agent signal → null + signal='default' (NOT first rubric entry).
+    // Pre-fix the runner silently substituted the LOWEST rubric entry,
+    // which is the opposite of safe-default for risk reporting.
+    assert.equal(an1.blast_radius_score, null, 'no signal → null');
+    assert.equal(an1.blast_radius_signal, 'default');
 
     const an2 = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes, { blast_radius_score: 4 });
     assert.equal(an2.blast_radius_score, 4);
+    assert.equal(an2.blast_radius_signal, 'supplied');
     assert.ok(an2.blast_radius_basis, 'basis populated from rubric for score=4');
     assert.equal(an2.blast_radius_basis.blast_radius_score, 4);
   });
@@ -860,15 +865,19 @@ describe('close', () => {
     assert.match(nis2.draft_notification, /KEV-listed: [1-9]/);
   });
 
-  it('${} placeholders are left intact when context lacks the value', () => {
+  it('F14: missing ${} placeholders render as <MISSING:var> and surface in missing_interpolation_vars', () => {
     const { an, v } = detected();
     const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
       // matched_cve_ids will populate, but interim_mitigation / ict_dependencies / affected_host_count are missing
     });
     const nis2 = c.notification_actions.find(n => n.obligation_ref === 'EU/NIS2 Art.23 24h');
-    // Untouched placeholders survive
-    assert.match(nis2.draft_notification, /\$\{interim_mitigation\}/);
-    assert.match(nis2.draft_notification, /\$\{affected_host_count\}/);
+    // F14: failure mode is loud now — operators see <MISSING:var> instead
+    // of a silent literal placeholder that could ship to regulators.
+    assert.match(nis2.draft_notification, /<MISSING:interim_mitigation>/);
+    assert.match(nis2.draft_notification, /<MISSING:affected_host_count>/);
+    assert.ok(Array.isArray(nis2.missing_interpolation_vars), 'missing_interpolation_vars array present');
+    assert.ok(nis2.missing_interpolation_vars.includes('interim_mitigation'));
+    assert.ok(nis2.missing_interpolation_vars.includes('affected_host_count'));
   });
 
   it('exception_generation fires when trigger_condition satisfied (synthetic playbook)', () => {
@@ -1144,8 +1153,11 @@ describe('interpolate', () => {
     assert.equal(runner._interpolate('Hello ${name}', { name: 'world' }), 'Hello world');
   });
 
-  it('leaves ${...} intact when context lacks the value', () => {
-    assert.equal(runner._interpolate('Hello ${name}', {}), 'Hello ${name}');
+  it('F14: renders missing keys as <MISSING:var> and (optionally) tracks them', () => {
+    assert.equal(runner._interpolate('Hello ${name}', {}), 'Hello <MISSING:name>');
+    const missing = [];
+    assert.equal(runner._interpolate('Hello ${name} ${other}', {}, missing), 'Hello <MISSING:name> <MISSING:other>');
+    assert.deepEqual(missing.sort(), ['name', 'other']);
   });
 
   it('returns null/undefined templates unchanged', () => {

@@ -87,6 +87,20 @@ function _validateScriptPath(scriptPath) {
     throw _err("workerpool/bad-script-path",
       "workerPool.create: scriptPath must be a filesystem path, not an eval/data URL");
   }
+  // On Windows path.isAbsolute() accepts UNC + extended-length + device
+  // namespace forms (e.g. `\\server\share`, `\\?\UNC\server\share`,
+  // `\\?\C:\path`, `\\.\PhysicalDrive0`). The worker pool only supports
+  // local-filesystem scripts; reject these prefixes so a hostile or
+  // mistyped path can't get a Worker thread to follow a network share or
+  // device namespace.
+  if (process.platform === "win32") {
+    // \\.\, \\?\, \\?\UNC\, or any other \\<server>\<share> form.
+    if (/^\\\\[.?]\\/.test(scriptPath) || /^\\\\\?\\UNC\\/i.test(scriptPath) || /^\\\\[^\\?.]/.test(scriptPath)) {
+      throw _err("workerpool/bad-script-path",
+        "workerPool.create: scriptPath must not use UNC / extended-length / device namespace prefixes on win32; got " +
+        JSON.stringify(scriptPath));
+    }
+  }
 }
 
 function _emitAudit(_action, _outcome, _metadata) {
@@ -94,6 +108,30 @@ function _emitAudit(_action, _outcome, _metadata) {
   // Preserved as a function so the rest of the file matches upstream shape.
 }
 
+/**
+ * Create a worker pool.
+ *
+ * Lifecycle. Worker threads spawned by the pool hold the parent's event
+ * loop open until they are explicitly terminated. Pool timers are NOT
+ * unref'd (intentional: timeouts must fire even when no other work is
+ * pending). Consumers MUST call `terminate()` when the pool is no longer
+ * needed, or wrap their usage in a try/finally:
+ *
+ *   const pool = workerPool.create(scriptPath);
+ *   try {
+ *     await pool.run(message);
+ *   } finally {
+ *     await pool.terminate();
+ *   }
+ *
+ * Failing to call terminate() causes the host process to hang after main()
+ * returns. The pool does not auto-recycle on idle, and no GC reachability
+ * heuristic will reclaim a live Worker thread.
+ *
+ * @param {string} scriptPath Absolute filesystem path to the worker script.
+ * @param {{ size?: number, onExit?: Function, maxQueueDepth?: number, taskTimeoutMs?: number }} [opts]
+ * @returns {{ run: Function, drain: Function, terminate: Function, stats: Function }}
+ */
 function create(scriptPath, opts) {
   opts = opts || {};
   _validateOptsWhitelist(opts, ["size", "onExit", "maxQueueDepth", "taskTimeoutMs"], "workerPool.create");

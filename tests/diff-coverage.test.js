@@ -273,3 +273,58 @@ test("new lib export without test → red", () => {
   assert.equal(f.change, "added");
   assert.equal(f.file, "lib/scoring.js");
 });
+
+test("Audit G F10: identifier mentioned in a top-level comment is NOT coverage", () => {
+  // A test that requires the module under a different name AND only
+  // mentions the new export in a header comment must not satisfy the
+  // F10 same-file-context check.
+  const repo = mkRepo();
+  seedBaseline(repo);
+  write(repo, "lib/scoring.js",
+    "function score(){} function commentOnly(){} module.exports = { score, commentOnly };\n");
+  // Stray reference: filename, identifier, and require() are all present
+  // but only in comments. No `test()` / `assert()` mentions the identifier.
+  write(repo, "tests/comment-only.test.js",
+    "// const { commentOnly } = require('../lib/scoring');\n" +
+    "// just a comment — commentOnly is not exercised\n");
+  commit(repo, "comment-only ref");
+
+  const r = runAnalyzer(repo);
+  assert.equal(r.status, 1, "expected red because the comment doesn't actually cover the export");
+  const f = r.json.findings.find(x => x.surface === "commentOnly");
+  assert.ok(f, "expected a finding for commentOnly even though comments mention it");
+});
+
+test("Audit G F10: identifier inside test() body counts as coverage", () => {
+  // Same shape as above but the identifier appears inside an actual
+  // `test(...)` call. F10 must accept this.
+  const repo = mkRepo();
+  seedBaseline(repo);
+  write(repo, "lib/scoring.js",
+    "function score(){} function realCovered(){} module.exports = { score, realCovered };\n");
+  write(repo, "tests/real.test.js",
+    "const { realCovered } = require('../lib/scoring');\n" +
+    "test('realCovered works', () => { assert.equal(typeof realCovered, 'function'); });\n");
+  commit(repo, "covered");
+
+  const r = runAnalyzer(repo);
+  assert.equal(r.status, 0, "should be green when ident appears inside a test() body");
+  const f = (r.json.findings || []).find(x => x.surface === "realCovered");
+  assert.equal(f, undefined, "no finding expected for the covered export");
+});
+
+test("Audit G F11: data/*.json edits land in manual-review, not silent allowlist", () => {
+  const repo = mkRepo();
+  seedBaseline(repo);
+  // Add a data file with no CVE-iocs change (not the cve-catalog path).
+  write(repo, "data/some-other.json", JSON.stringify({ foo: "bar" }));
+  commit(repo, "data drop");
+
+  const r = runAnalyzer(repo);
+  // Manual review surfaces in CI output; gate stays green because the
+  // file is unclassified surface (no syntactic extractor for arbitrary
+  // catalogs). Operators MUST look at the manual_review list.
+  assert.equal(r.status, 0);
+  const m = (r.json.manual_review || []).find(x => x.file === "data/some-other.json");
+  assert.ok(m, `expected manual_review entry for data/some-other.json; got ${JSON.stringify(r.json)}`);
+});

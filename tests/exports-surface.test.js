@@ -13,6 +13,9 @@ const lintSkills = require('../lib/lint-skills');
 const validateCveCatalog = require('../lib/validate-cve-catalog');
 const prefetch = require('../lib/prefetch');
 const scheduler = require('../orchestrator/scheduler');
+const crossRefApi = require('../lib/cross-ref-api');
+const sourceGhsa = require('../lib/source-ghsa');
+const sourceOsv = require('../lib/source-osv');
 
 test('lib/lint-skills exports REQUIRED_SECTIONS as a non-empty array of strings', () => {
   assert.ok(Array.isArray(lintSkills.REQUIRED_SECTIONS));
@@ -89,4 +92,78 @@ test('orchestrator/scheduler exports TICK_MS as a positive integer not exceeding
   assert.ok(Number.isInteger(scheduler.TICK_MS));
   assert.ok(scheduler.TICK_MS > 0);
   assert.ok(scheduler.TICK_MS <= scheduler.SAFE_MAX_MS);
+});
+
+// v0.12.14 surface additions.
+
+test('lib/cross-ref-api exports getLoadErrors as a function returning an array', () => {
+  assert.equal(typeof crossRefApi.getLoadErrors, 'function');
+  const errs = crossRefApi.getLoadErrors();
+  assert.ok(Array.isArray(errs),
+    'getLoadErrors must return an array (empty when no catalog/index parse errors)');
+});
+
+test('lib/source-ghsa exports FIELD_DROPPED_WATCH as a frozen array of field names', () => {
+  assert.ok(Array.isArray(sourceGhsa.FIELD_DROPPED_WATCH));
+  assert.ok(sourceGhsa.FIELD_DROPPED_WATCH.length >= 1);
+  for (const f of sourceGhsa.FIELD_DROPPED_WATCH) assert.equal(typeof f, 'string');
+  // Frozen so downstream consumers can't accidentally mutate the shared
+  // watch list and silently change refresh-source behaviour.
+  assert.ok(Object.isFrozen(sourceGhsa.FIELD_DROPPED_WATCH));
+});
+
+test('lib/source-osv exports FIELD_DROPPED_WATCH as a frozen array of field names', () => {
+  assert.ok(Array.isArray(sourceOsv.FIELD_DROPPED_WATCH));
+  assert.ok(sourceOsv.FIELD_DROPPED_WATCH.length >= 1);
+  for (const f of sourceOsv.FIELD_DROPPED_WATCH) assert.equal(typeof f, 'string');
+  assert.ok(Object.isFrozen(sourceOsv.FIELD_DROPPED_WATCH));
+});
+
+// v0.12.14 verify.js fingerprint-pin surface.
+
+const verifyMod = require('../lib/verify');
+
+test('lib/verify exports publicKeyFingerprint + checkExpectedFingerprint + EXPECTED_FINGERPRINT_PATH', () => {
+  assert.equal(typeof verifyMod.publicKeyFingerprint, 'function');
+  assert.equal(typeof verifyMod.checkExpectedFingerprint, 'function');
+  assert.equal(typeof verifyMod.EXPECTED_FINGERPRINT_PATH, 'string');
+  assert.ok(verifyMod.EXPECTED_FINGERPRINT_PATH.endsWith('EXPECTED_FINGERPRINT'));
+});
+
+// v0.12.14 orchestrator/event-bus.js + scheduler.js + pipeline.js additions.
+
+const eventBus = require('../orchestrator/event-bus');
+const pipelineMod = require('../orchestrator/pipeline');
+
+test('orchestrator/event-bus exports DEFAULT_EVENT_LOG_MAX_SIZE as a positive integer', () => {
+  assert.equal(typeof eventBus.DEFAULT_EVENT_LOG_MAX_SIZE, 'number');
+  assert.ok(Number.isInteger(eventBus.DEFAULT_EVENT_LOG_MAX_SIZE));
+  assert.ok(eventBus.DEFAULT_EVENT_LOG_MAX_SIZE > 0);
+});
+
+test('orchestrator/scheduler exports _lastFiredStorePath + _markFired internals', () => {
+  assert.equal(typeof scheduler._lastFiredStorePath, 'function');
+  assert.equal(typeof scheduler._markFired, 'function');
+});
+
+test('orchestrator/pipeline exports MANIFEST_CACHE_TTL_MS + _resetManifestCache', () => {
+  assert.equal(typeof pipelineMod.MANIFEST_CACHE_TTL_MS, 'number');
+  assert.ok(pipelineMod.MANIFEST_CACHE_TTL_MS > 0);
+  assert.equal(typeof pipelineMod._resetManifestCache, 'function');
+  // Smoke: resetManifestCache must not throw on a fresh process.
+  pipelineMod._resetManifestCache();
+});
+
+// v0.12.14 scripts/validate-vendor-online.js exports.
+
+const validateVendorOnline = require('../scripts/validate-vendor-online');
+
+test('scripts/validate-vendor-online exports rawUrlForPin + fetchBuffer', () => {
+  assert.equal(typeof validateVendorOnline.rawUrlForPin, 'function');
+  assert.equal(typeof validateVendorOnline.fetchBuffer, 'function');
+  // Smoke: rawUrlForPin produces a github raw URL string for a known shape.
+  const url = validateVendorOnline.rawUrlForPin(
+    'https://github.com/blamejs/blamejs.git', '1442f17758a4', 'lib/x.js'
+  );
+  assert.ok(typeof url === 'string' && url.includes('1442f17758a4'));
 });

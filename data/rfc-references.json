@@ -26,6 +26,171 @@
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     }
   },
+  "RFC-4301": {
+    "number": 4301,
+    "title": "Security Architecture for the Internet Protocol",
+    "status": "Proposed Standard",
+    "published": "2005-12",
+    "errata_count": 11,
+    "tracker": "https://www.rfc-editor.org/info/rfc4301",
+    "relevance": "IPsec architecture. CVE-2026-43284 (Dirty Frag) exploits an implementation bug in the Linux kernel's IPsec ESP path; the spec layer is RFC 4301 + RFC 4303. Framework controls like NIST 800-53 SC-8 implicitly cite this RFC family without operationalizing the kernel-implementation gap.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-4303": {
+    "number": 4303,
+    "title": "IP Encapsulating Security Payload (ESP)",
+    "status": "Proposed Standard",
+    "published": "2005-12",
+    "errata_count": 7,
+    "tracker": "https://www.rfc-editor.org/info/rfc4303",
+    "relevance": "ESP — the specific IPsec datagram format exploited by Dirty Frag (CVE-2026-43284). Spec compliance does not imply implementation safety; the kernel-lpe-triage skill operationalizes the gap.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-6376": {
+    "number": 6376,
+    "title": "DomainKeys Identified Mail (DKIM) Signatures",
+    "status": "Internet Standard",
+    "published": "2011-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc6376",
+    "relevance": "Cryptographic signing of email by the originating domain. DMARC verification relies on either SPF or DKIM aligning with the From-header domain. Operationally, DKIM is the load-bearing half of DMARC — SPF breaks on legitimate forwarding paths; DKIM survives them. Key-length lag is the recurring framework gap: many deployments still use 1024-bit RSA keys despite IETF guidance to rotate to ≥2048-bit.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-6545": {
+    "number": 6545,
+    "title": "Real-time Inter-network Defense (RID)",
+    "status": "Proposed Standard",
+    "published": "2012-04",
+    "tracker": "https://www.rfc-editor.org/info/rfc6545",
+    "relevance": "Defines the RID schema for exchanging incident-response data between organizations and CSIRTs. Operator-facing relevance is via the IODEF (RFC 7970) payload that RID transports — the pair is the IETF-standardized cross-organizational incident-coordination protocol. Adoption lags; in practice many SOCs use ad-hoc CSV/JSON exchanges instead, leaving compliance with 'documented coordination channel' requirements weakly evidenced.",
+    "skills_referencing": [
+      "incident-response-playbook"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-6546": {
+    "number": 6546,
+    "title": "Transport of Real-time Inter-network Defense (RID) Messages over HTTP/TLS",
+    "status": "Proposed Standard",
+    "published": "2012-04",
+    "tracker": "https://www.rfc-editor.org/info/rfc6546",
+    "relevance": "Specifies the HTTP-over-TLS transport for RID (RFC 6545) messages. Operator-facing: provides the wire-level protocol for IODEF/RID message exchange when an organization commits to standardized incident-data coordination. Pair this with RFC 6545 (schema) and RFC 7970 (IODEF v2 payload).",
+    "skills_referencing": [
+      "incident-response-playbook"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-6749": {
+    "number": 6749,
+    "title": "The OAuth 2.0 Authorization Framework",
+    "status": "Proposed Standard",
+    "published": "2012-10",
+    "errata_count": 33,
+    "tracker": "https://www.rfc-editor.org/info/rfc6749",
+    "relevance": "OAuth 2.0 underpins MCP server-to-client auth in production deployments. RFC 9700 (OAuth 2.0 Security BCP) is the operational reference.",
+    "skills_referencing": [
+      "api-security",
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-7208": {
+    "number": 7208,
+    "title": "Sender Policy Framework (SPF) for Authorizing Use of Domains in Email",
+    "status": "Proposed Standard",
+    "published": "2014-04",
+    "tracker": "https://www.rfc-editor.org/info/rfc7208",
+    "relevance": "Authorizes which IPs may send mail on behalf of a domain. DMARC's path-based authentication half. Limits: a strict 10-DNS-lookup ceiling that operators routinely blow past through nested includes, leading to permerror DMARC outcomes; SPF breaks across legitimate forwarders, which is why DKIM (RFC 6376) is the load-bearing half operationally.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-7296": {
+    "number": 7296,
+    "title": "Internet Key Exchange Protocol Version 2 (IKEv2)",
+    "status": "Internet Standard",
+    "published": "2014-10",
+    "std_number": 79,
+    "errata_count": 19,
+    "tracker": "https://www.rfc-editor.org/info/rfc7296",
+    "relevance": "IKEv2 sets up IPsec SAs. Configuration mistakes here surface as SI-7 / SC-8 audit findings without indicating the kernel-side implementation reality. Referenced by kernel-lpe-triage when scoping the Dirty Frag blast radius.",
+    "skills_referencing": [
+      "kernel-lpe-triage"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-7489": {
+    "number": 7489,
+    "title": "Domain-based Message Authentication, Reporting, and Conformance (DMARC)",
+    "status": "Informational",
+    "published": "2015-03",
+    "tracker": "https://www.rfc-editor.org/info/rfc7489",
+    "relevance": "Defines DMARC — the email-authentication policy framework that binds SPF + DKIM results to a published domain-owner policy. Operator-facing email security depends on a published DMARC record with `p=reject` or `p=quarantine`; relaxed policies (`p=none`) are equivalent to no DMARC for spoofing-defense purposes. Cited alongside DKIM (RFC 6376) and SPF (RFC 7208) as the authoritative tri-RFC for anti-spoofing posture.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-7519": {
+    "number": 7519,
+    "title": "JSON Web Token (JWT)",
+    "status": "Proposed Standard",
+    "published": "2015-05",
+    "errata_count": 25,
+    "tracker": "https://www.rfc-editor.org/info/rfc7519",
+    "relevance": "JWT is the dominant bearer-token format for MCP server auth, AI-provider API auth, and OAuth 2.0 access tokens (RFC 9068). mcp-agent-trust analyses signer trust, audience validation, and the alg=none / kid-confusion attack classes.",
+    "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
+    "skills_referencing": [
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-7970": {
+    "number": 7970,
+    "title": "The Incident Object Description Exchange Format Version 2",
+    "status": "Proposed Standard",
+    "published": "2016-11",
+    "tracker": "https://www.rfc-editor.org/info/rfc7970",
+    "relevance": "IODEF v2 — the structured-incident payload format carried by RID. Operator-facing: IODEF v2 is the canonical machine-readable incident record. Use cases include cross-CSIRT coordination, regulator submissions where structured data is requested, and SIEM-to-SIEM federation. Adoption is sector-uneven; healthcare and financial sectors have stronger uptake than general industry.",
+    "skills_referencing": [
+      "incident-response-playbook"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-8032": {
+    "number": 8032,
+    "title": "Edwards-Curve Digital Signature Algorithm (EdDSA)",
+    "status": "Informational",
+    "published": "2017-01",
+    "errata_count": 8,
+    "tracker": "https://www.rfc-editor.org/info/rfc8032",
+    "relevance": "Ed25519 / Ed448. exceptd itself uses Ed25519 for skill integrity signing (AGENTS.md hard rule #13, lib/sign.js). Not PQC-safe; pqc-first tracks the SLH-DSA / ML-DSA migration path for signature surfaces.",
+    "skills_referencing": [
+      "container-runtime-security",
+      "identity-assurance",
+      "mlops-security",
+      "pqc-first",
+      "sector-federal-government",
+      "supply-chain-integrity"
+    ],
+    "last_verified": "2026-05-11"
+  },
   "RFC-8446": {
     "number": 8446,
     "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
@@ -51,6 +216,203 @@
       "webapp-security"
     ],
     "last_verified": "2026-05-11"
+  },
+  "RFC-8461": {
+    "number": 8461,
+    "title": "SMTP MTA Strict Transport Security (MTA-STS)",
+    "status": "Proposed Standard",
+    "published": "2018-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc8461",
+    "relevance": "Forces TLS on inbound SMTP between MTAs that publish a `_mta-sts` policy. Closes the historical 'opportunistic-TLS-downgrade' attack window where a network-positioned attacker stripped the STARTTLS handshake. Operator-facing: an MTA-STS policy in `enforce` mode plus monitoring via TLSRPT (RFC 8460) is the baseline for inbound email confidentiality. Phishing-defense relevance is indirect — STARTTLS stripping enables session-layer manipulation that downstream defenses (DMARC, content classifiers) cannot recover from.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-8616": {
+    "number": 8616,
+    "title": "Email Authentication for Internationalized Mail",
+    "status": "Proposed Standard",
+    "published": "2019-06",
+    "tracker": "https://www.rfc-editor.org/info/rfc8616",
+    "relevance": "Updates DKIM / SPF / DMARC handling for internationalized domain names (IDN) and internationalized email-address local parts. Operator-facing: phishing campaigns increasingly leverage IDN homoglyphs (e.g. Cyrillic `а` for Latin `a`), and a DMARC implementation that doesn't honor RFC 8616 normalization rules can fail to align IDN-bearing From-headers correctly. Treat as a compatibility prerequisite for any anti-spoofing posture covering global mail flows.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-8725": {
+    "number": 8725,
+    "title": "JSON Web Token Best Current Practices",
+    "status": "Best Current Practice",
+    "published": "2020-02",
+    "errata_count": 4,
+    "tracker": "https://www.rfc-editor.org/info/rfc8725",
+    "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
+    "skills_referencing": [
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "mcp-agent-trust",
+      "sector-financial",
+      "webapp-security"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9000": {
+    "number": 9000,
+    "title": "QUIC: A UDP-Based Multiplexed and Secure Transport",
+    "status": "Proposed Standard",
+    "published": "2021-05",
+    "errata_count": 25,
+    "tracker": "https://www.rfc-editor.org/info/rfc9000",
+    "relevance": "QUIC is the transport beneath HTTP/3 and beneath several emerging AI inference APIs that need low-latency streaming. SC-7 boundary tools historically assume TCP for HTTPS — QUIC over UDP requires explicit detection rules.",
+    "skills_referencing": [
+      "ai-c2-detection"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9106": {
+    "number": 9106,
+    "title": "Argon2 Memory-Hard Function for Password Hashing and Proof-of-Work",
+    "status": "Informational",
+    "published": "2021-09",
+    "errata_count": 3,
+    "tracker": "https://www.rfc-editor.org/info/rfc9106",
+    "relevance": "Argon2id is the memory-hard KDF baseline for password hashing in any system that exceptd operators deploy. Not directly PQC-relevant (it's a one-way function, not a public-key primitive) but pqc-first tracks crypto migration generally.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9114": {
+    "number": 9114,
+    "title": "HTTP/3",
+    "status": "Proposed Standard",
+    "published": "2022-06",
+    "errata_count": 7,
+    "tracker": "https://www.rfc-editor.org/info/rfc9114",
+    "relevance": "AI providers increasingly serve over HTTP/3 (QUIC). Boundary tools that rely on TLS termination + HTTP/1.1 / HTTP/2 inspection cannot apply to HTTP/3 without QUIC-aware probes. Detection gap for ai-c2-detection.",
+    "lag_notes": "Standard well-deployed; enterprise next-gen-firewall HTTP/3 inspection coverage as of mid-2026 remains uneven.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "api-security",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9116": {
+    "number": 9116,
+    "title": "A File Format to Aid in Security Vulnerability Disclosure",
+    "status": "Proposed Standard",
+    "published": "2022-04",
+    "tracker": "https://www.rfc-editor.org/info/rfc9116",
+    "relevance": "Defines the `/.well-known/security.txt` file format. Operator-facing CVD entry point: researchers reaching a domain consult `/.well-known/security.txt` for the disclosure contact + policy URL + preferred encryption + acknowledgments page. Absence is a recurring CVD-friction finding; presence with a stale `Expires` header is equivalent to absence. Pair with ISO 29147 receipt requirements.",
+    "skills_referencing": [
+      "coordinated-vuln-disclosure"
+    ],
+    "last_verified": "2026-05-13"
+  },
+  "RFC-9180": {
+    "number": 9180,
+    "title": "Hybrid Public Key Encryption",
+    "status": "Informational",
+    "published": "2022-02",
+    "errata_count": 12,
+    "tracker": "https://www.rfc-editor.org/info/rfc9180",
+    "relevance": "HPKE is the substrate for TLS ECH, MLS, Oblivious HTTP, and several emerging covert-channel scenarios in AI-API C2 detection. PQC composition discussions for HPKE are ongoing at IETF.",
+    "lag_notes": "RFC 9180 is classical-only. PQC HPKE is being worked at IETF CFRG; expect draft updates through 2026-2027.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "cloud-security",
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9420": {
+    "number": 9420,
+    "title": "The Messaging Layer Security (MLS) Protocol",
+    "status": "Proposed Standard",
+    "published": "2023-07",
+    "errata_count": 5,
+    "tracker": "https://www.rfc-editor.org/info/rfc9420",
+    "relevance": "MLS provides group-key agreement for E2E messaging. Used by some AI agent group-chat systems (multi-agent coordination over E2E channels). PQC migration path is via the same hybrid-KEM approach as TLS.",
+    "lag_notes": "Standard published; MLS PQC composition is being worked at IETF CFRG.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9421": {
+    "number": 9421,
+    "title": "HTTP Message Signatures",
+    "status": "Proposed Standard",
+    "published": "2024-02",
+    "tracker": "https://www.rfc-editor.org/info/rfc9421",
+    "relevance": "Per-request signing of HTTP messages — relevant for MCP server-to-agent attestation and for AI provider abuse-signal subscriptions. AI providers increasingly use HTTP Message Signatures for webhook authenticity.",
+    "lag_notes": "Standard published; AI-provider adoption is uneven. MCP spec does not yet mandate it.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "api-security",
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9458": {
+    "number": 9458,
+    "title": "Oblivious HTTP",
+    "status": "Proposed Standard",
+    "published": "2024-01",
+    "tracker": "https://www.rfc-editor.org/info/rfc9458",
+    "relevance": "Oblivious HTTP is a published-standard covert-channel candidate for AI-API C2: requests are encrypted to a relay so the destination sees no client identity. Boundary inspection cannot distinguish OHTTP-wrapped AI traffic from any other HTTPS traffic to the relay endpoint.",
+    "lag_notes": "Standard published; enterprise SC-7 boundary tooling vendors are 12-18 months behind on detection guidance. AI-c2-detection skill operationalizes the gap.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "dlp-gap-analysis"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9700": {
+    "number": 9700,
+    "title": "Best Current Practice for OAuth 2.0 Security",
+    "status": "Best Current Practice",
+    "published": "2025-01",
+    "tracker": "https://www.rfc-editor.org/info/rfc9700",
+    "relevance": "Replaces the older RFC 6819 threat model. MCP / agent OAuth implementations should track this BCP, not the original RFC 6749 alone.",
+    "lag_notes": "Published 2025-01. Enterprise IAM tooling is still catching up.",
+    "skills_referencing": [
+      "api-security",
+      "identity-assurance",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "RFC-9794": {
+    "number": 9794,
+    "title": "Terminology for Post-Quantum Cryptography",
+    "status": "Informational",
+    "published": "2025-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc9794",
+    "relevance": "Reference terminology for PQC discussions. Cited by every IETF working group document touching PQC. Operators reading the various drafts should anchor on this terminology.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-05-11"
+  },
+  "CSAF-2.0": {
+    "number": null,
+    "title": "OASIS Common Security Advisory Framework Version 2.0",
+    "status": "OASIS Standard",
+    "published": "2022-11",
+    "tracker": "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html",
+    "relevance": "Machine-readable security advisory format adopted by EU CRA, CISA, and major vendor PSIRTs. Replaces the CVRF-1.2 format. Operator-facing: CSAF 2.0 documents carry the same advisory content traditionally found in vendor PDFs but in a parseable JSON form that consumers can ingest for fleet-wide impact assessment. exceptd emits CSAF-2.0 close.evidence_package bundles from `exceptd run --format csaf-2.0` for downstream auditor consumption.",
+    "skills_referencing": [
+      "coordinated-vuln-disclosure"
+    ],
+    "last_verified": "2026-05-13"
   },
   "DRAFT-IETF-TLS-ECDHE-MLKEM": {
     "number": null,
@@ -79,308 +441,6 @@
     ],
     "last_verified": "2026-05-11"
   },
-  "RFC-9180": {
-    "number": 9180,
-    "title": "Hybrid Public Key Encryption",
-    "status": "Informational",
-    "published": "2022-02",
-    "errata_count": 12,
-    "tracker": "https://www.rfc-editor.org/info/rfc9180",
-    "relevance": "HPKE is the substrate for TLS ECH, MLS, Oblivious HTTP, and several emerging covert-channel scenarios in AI-API C2 detection. PQC composition discussions for HPKE are ongoing at IETF.",
-    "lag_notes": "RFC 9180 is classical-only. PQC HPKE is being worked at IETF CFRG; expect draft updates through 2026-2027.",
-    "skills_referencing": [
-      "ai-c2-detection",
-      "cloud-security",
-      "pqc-first"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9458": {
-    "number": 9458,
-    "title": "Oblivious HTTP",
-    "status": "Proposed Standard",
-    "published": "2024-01",
-    "tracker": "https://www.rfc-editor.org/info/rfc9458",
-    "relevance": "Oblivious HTTP is a published-standard covert-channel candidate for AI-API C2: requests are encrypted to a relay so the destination sees no client identity. Boundary inspection cannot distinguish OHTTP-wrapped AI traffic from any other HTTPS traffic to the relay endpoint.",
-    "lag_notes": "Standard published; enterprise SC-7 boundary tooling vendors are 12-18 months behind on detection guidance. AI-c2-detection skill operationalizes the gap.",
-    "skills_referencing": [
-      "ai-c2-detection",
-      "dlp-gap-analysis"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9421": {
-    "number": 9421,
-    "title": "HTTP Message Signatures",
-    "status": "Proposed Standard",
-    "published": "2024-02",
-    "tracker": "https://www.rfc-editor.org/info/rfc9421",
-    "relevance": "Per-request signing of HTTP messages — relevant for MCP server-to-agent attestation and for AI provider abuse-signal subscriptions. AI providers increasingly use HTTP Message Signatures for webhook authenticity.",
-    "lag_notes": "Standard published; AI-provider adoption is uneven. MCP spec does not yet mandate it.",
-    "skills_referencing": [
-      "ai-c2-detection",
-      "api-security",
-      "mcp-agent-trust",
-      "sector-financial",
-      "sector-healthcare"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9114": {
-    "number": 9114,
-    "title": "HTTP/3",
-    "status": "Proposed Standard",
-    "published": "2022-06",
-    "errata_count": 7,
-    "tracker": "https://www.rfc-editor.org/info/rfc9114",
-    "relevance": "AI providers increasingly serve over HTTP/3 (QUIC). Boundary tools that rely on TLS termination + HTTP/1.1 / HTTP/2 inspection cannot apply to HTTP/3 without QUIC-aware probes. Detection gap for ai-c2-detection.",
-    "lag_notes": "Standard well-deployed; enterprise next-gen-firewall HTTP/3 inspection coverage as of mid-2026 remains uneven.",
-    "skills_referencing": [
-      "ai-c2-detection",
-      "api-security",
-      "mcp-agent-trust",
-      "webapp-security"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9000": {
-    "number": 9000,
-    "title": "QUIC: A UDP-Based Multiplexed and Secure Transport",
-    "status": "Proposed Standard",
-    "published": "2021-05",
-    "errata_count": 25,
-    "tracker": "https://www.rfc-editor.org/info/rfc9000",
-    "relevance": "QUIC is the transport beneath HTTP/3 and beneath several emerging AI inference APIs that need low-latency streaming. SC-7 boundary tools historically assume TCP for HTTPS — QUIC over UDP requires explicit detection rules.",
-    "skills_referencing": [
-      "ai-c2-detection"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-7519": {
-    "number": 7519,
-    "title": "JSON Web Token (JWT)",
-    "status": "Proposed Standard",
-    "published": "2015-05",
-    "errata_count": 25,
-    "tracker": "https://www.rfc-editor.org/info/rfc7519",
-    "relevance": "JWT is the dominant bearer-token format for MCP server auth, AI-provider API auth, and OAuth 2.0 access tokens (RFC 9068). mcp-agent-trust analyses signer trust, audience validation, and the alg=none / kid-confusion attack classes.",
-    "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
-    "skills_referencing": [
-      "api-security",
-      "cloud-security",
-      "identity-assurance",
-      "mcp-agent-trust",
-      "sector-financial",
-      "sector-healthcare",
-      "webapp-security"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-8725": {
-    "number": 8725,
-    "title": "JSON Web Token Best Current Practices",
-    "status": "Best Current Practice",
-    "published": "2020-02",
-    "errata_count": 4,
-    "tracker": "https://www.rfc-editor.org/info/rfc8725",
-    "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
-    "skills_referencing": [
-      "api-security",
-      "cloud-security",
-      "identity-assurance",
-      "mcp-agent-trust",
-      "sector-financial",
-      "webapp-security"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-6749": {
-    "number": 6749,
-    "title": "The OAuth 2.0 Authorization Framework",
-    "status": "Proposed Standard",
-    "published": "2012-10",
-    "errata_count": 33,
-    "tracker": "https://www.rfc-editor.org/info/rfc6749",
-    "relevance": "OAuth 2.0 underpins MCP server-to-client auth in production deployments. RFC 9700 (OAuth 2.0 Security BCP) is the operational reference.",
-    "skills_referencing": [
-      "api-security",
-      "identity-assurance",
-      "mcp-agent-trust"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9700": {
-    "number": 9700,
-    "title": "Best Current Practice for OAuth 2.0 Security",
-    "status": "Best Current Practice",
-    "published": "2025-01",
-    "tracker": "https://www.rfc-editor.org/info/rfc9700",
-    "relevance": "Replaces the older RFC 6819 threat model. MCP / agent OAuth implementations should track this BCP, not the original RFC 6749 alone.",
-    "lag_notes": "Published 2025-01. Enterprise IAM tooling is still catching up.",
-    "skills_referencing": [
-      "api-security",
-      "identity-assurance",
-      "mcp-agent-trust"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-8032": {
-    "number": 8032,
-    "title": "Edwards-Curve Digital Signature Algorithm (EdDSA)",
-    "status": "Informational",
-    "published": "2017-01",
-    "errata_count": 8,
-    "tracker": "https://www.rfc-editor.org/info/rfc8032",
-    "relevance": "Ed25519 / Ed448. exceptd itself uses Ed25519 for skill integrity signing (AGENTS.md hard rule #13, lib/sign.js). Not PQC-safe; pqc-first tracks the SLH-DSA / ML-DSA migration path for signature surfaces.",
-    "skills_referencing": [
-      "container-runtime-security",
-      "identity-assurance",
-      "mlops-security",
-      "pqc-first",
-      "sector-federal-government",
-      "supply-chain-integrity"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9106": {
-    "number": 9106,
-    "title": "Argon2 Memory-Hard Function for Password Hashing and Proof-of-Work",
-    "status": "Informational",
-    "published": "2021-09",
-    "errata_count": 3,
-    "tracker": "https://www.rfc-editor.org/info/rfc9106",
-    "relevance": "Argon2id is the memory-hard KDF baseline for password hashing in any system that exceptd operators deploy. Not directly PQC-relevant (it's a one-way function, not a public-key primitive) but pqc-first tracks crypto migration generally.",
-    "skills_referencing": [
-      "pqc-first"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-4301": {
-    "number": 4301,
-    "title": "Security Architecture for the Internet Protocol",
-    "status": "Proposed Standard",
-    "published": "2005-12",
-    "errata_count": 11,
-    "tracker": "https://www.rfc-editor.org/info/rfc4301",
-    "relevance": "IPsec architecture. CVE-2026-43284 (Dirty Frag) exploits an implementation bug in the Linux kernel's IPsec ESP path; the spec layer is RFC 4301 + RFC 4303. Framework controls like NIST 800-53 SC-8 implicitly cite this RFC family without operationalizing the kernel-implementation gap.",
-    "skills_referencing": [
-      "kernel-lpe-triage"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-4303": {
-    "number": 4303,
-    "title": "IP Encapsulating Security Payload (ESP)",
-    "status": "Proposed Standard",
-    "published": "2005-12",
-    "errata_count": 7,
-    "tracker": "https://www.rfc-editor.org/info/rfc4303",
-    "relevance": "ESP — the specific IPsec datagram format exploited by Dirty Frag (CVE-2026-43284). Spec compliance does not imply implementation safety; the kernel-lpe-triage skill operationalizes the gap.",
-    "skills_referencing": [
-      "kernel-lpe-triage"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-7296": {
-    "number": 7296,
-    "title": "Internet Key Exchange Protocol Version 2 (IKEv2)",
-    "status": "Internet Standard",
-    "published": "2014-10",
-    "std_number": 79,
-    "errata_count": 19,
-    "tracker": "https://www.rfc-editor.org/info/rfc7296",
-    "relevance": "IKEv2 sets up IPsec SAs. Configuration mistakes here surface as SI-7 / SC-8 audit findings without indicating the kernel-side implementation reality. Referenced by kernel-lpe-triage when scoping the Dirty Frag blast radius.",
-    "skills_referencing": [
-      "kernel-lpe-triage"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9420": {
-    "number": 9420,
-    "title": "The Messaging Layer Security (MLS) Protocol",
-    "status": "Proposed Standard",
-    "published": "2023-07",
-    "errata_count": 5,
-    "tracker": "https://www.rfc-editor.org/info/rfc9420",
-    "relevance": "MLS provides group-key agreement for E2E messaging. Used by some AI agent group-chat systems (multi-agent coordination over E2E channels). PQC migration path is via the same hybrid-KEM approach as TLS.",
-    "lag_notes": "Standard published; MLS PQC composition is being worked at IETF CFRG.",
-    "skills_referencing": [
-      "pqc-first"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-9794": {
-    "number": 9794,
-    "title": "Terminology for Post-Quantum Cryptography",
-    "status": "Informational",
-    "published": "2025-09",
-    "tracker": "https://www.rfc-editor.org/info/rfc9794",
-    "relevance": "Reference terminology for PQC discussions. Cited by every IETF working group document touching PQC. Operators reading the various drafts should anchor on this terminology.",
-    "skills_referencing": [
-      "pqc-first"
-    ],
-    "last_verified": "2026-05-11"
-  },
-  "RFC-7489": {
-    "number": 7489,
-    "title": "Domain-based Message Authentication, Reporting, and Conformance (DMARC)",
-    "status": "Informational",
-    "published": "2015-03",
-    "tracker": "https://www.rfc-editor.org/info/rfc7489",
-    "relevance": "Defines DMARC — the email-authentication policy framework that binds SPF + DKIM results to a published domain-owner policy. Operator-facing email security depends on a published DMARC record with `p=reject` or `p=quarantine`; relaxed policies (`p=none`) are equivalent to no DMARC for spoofing-defense purposes. Cited alongside DKIM (RFC 6376) and SPF (RFC 7208) as the authoritative tri-RFC for anti-spoofing posture.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-6376": {
-    "number": 6376,
-    "title": "DomainKeys Identified Mail (DKIM) Signatures",
-    "status": "Internet Standard",
-    "published": "2011-09",
-    "tracker": "https://www.rfc-editor.org/info/rfc6376",
-    "relevance": "Cryptographic signing of email by the originating domain. DMARC verification relies on either SPF or DKIM aligning with the From-header domain. Operationally, DKIM is the load-bearing half of DMARC — SPF breaks on legitimate forwarding paths; DKIM survives them. Key-length lag is the recurring framework gap: many deployments still use 1024-bit RSA keys despite IETF guidance to rotate to ≥2048-bit.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-7208": {
-    "number": 7208,
-    "title": "Sender Policy Framework (SPF) for Authorizing Use of Domains in Email",
-    "status": "Proposed Standard",
-    "published": "2014-04",
-    "tracker": "https://www.rfc-editor.org/info/rfc7208",
-    "relevance": "Authorizes which IPs may send mail on behalf of a domain. DMARC's path-based authentication half. Limits: a strict 10-DNS-lookup ceiling that operators routinely blow past through nested includes, leading to permerror DMARC outcomes; SPF breaks across legitimate forwarders, which is why DKIM (RFC 6376) is the load-bearing half operationally.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-8616": {
-    "number": 8616,
-    "title": "Email Authentication for Internationalized Mail",
-    "status": "Proposed Standard",
-    "published": "2019-06",
-    "tracker": "https://www.rfc-editor.org/info/rfc8616",
-    "relevance": "Updates DKIM / SPF / DMARC handling for internationalized domain names (IDN) and internationalized email-address local parts. Operator-facing: phishing campaigns increasingly leverage IDN homoglyphs (e.g. Cyrillic `а` for Latin `a`), and a DMARC implementation that doesn't honor RFC 8616 normalization rules can fail to align IDN-bearing From-headers correctly. Treat as a compatibility prerequisite for any anti-spoofing posture covering global mail flows.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-8461": {
-    "number": 8461,
-    "title": "SMTP MTA Strict Transport Security (MTA-STS)",
-    "status": "Proposed Standard",
-    "published": "2018-09",
-    "tracker": "https://www.rfc-editor.org/info/rfc8461",
-    "relevance": "Forces TLS on inbound SMTP between MTAs that publish a `_mta-sts` policy. Closes the historical 'opportunistic-TLS-downgrade' attack window where a network-positioned attacker stripped the STARTTLS handshake. Operator-facing: an MTA-STS policy in `enforce` mode plus monitoring via TLSRPT (RFC 8460) is the baseline for inbound email confidentiality. Phishing-defense relevance is indirect — STARTTLS stripping enables session-layer manipulation that downstream defenses (DMARC, content classifiers) cannot recover from.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
-    "last_verified": "2026-05-13"
-  },
   "ISO-29147": {
     "number": null,
     "title": "ISO/IEC 29147:2018 Information technology — Security techniques — Vulnerability disclosure",
@@ -402,66 +462,6 @@
     "relevance": "Internal handling counterpart to ISO 29147. Defines the internal processes (investigation, resolution, release) that follow a disclosed vulnerability through to fix. Operator-facing: paired with ISO 29147 it supplies the end-to-end CVD lifecycle. Many compliance frameworks (NIS2, EU CRA) reference 'a documented vulnerability handling process'; ISO 30111 is the canonical artifact that satisfies the wording.",
     "skills_referencing": [
       "coordinated-vuln-disclosure"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-9116": {
-    "number": 9116,
-    "title": "A File Format to Aid in Security Vulnerability Disclosure",
-    "status": "Proposed Standard",
-    "published": "2022-04",
-    "tracker": "https://www.rfc-editor.org/info/rfc9116",
-    "relevance": "Defines the `/.well-known/security.txt` file format. Operator-facing CVD entry point: researchers reaching a domain consult `/.well-known/security.txt` for the disclosure contact + policy URL + preferred encryption + acknowledgments page. Absence is a recurring CVD-friction finding; presence with a stale `Expires` header is equivalent to absence. Pair with ISO 29147 receipt requirements.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "CSAF-2.0": {
-    "number": null,
-    "title": "OASIS Common Security Advisory Framework Version 2.0",
-    "status": "OASIS Standard",
-    "published": "2022-11",
-    "tracker": "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html",
-    "relevance": "Machine-readable security advisory format adopted by EU CRA, CISA, and major vendor PSIRTs. Replaces the CVRF-1.2 format. Operator-facing: CSAF 2.0 documents carry the same advisory content traditionally found in vendor PDFs but in a parseable JSON form that consumers can ingest for fleet-wide impact assessment. exceptd emits CSAF-2.0 close.evidence_package bundles from `exceptd run --format csaf-2.0` for downstream auditor consumption.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-6545": {
-    "number": 6545,
-    "title": "Real-time Inter-network Defense (RID)",
-    "status": "Proposed Standard",
-    "published": "2012-04",
-    "tracker": "https://www.rfc-editor.org/info/rfc6545",
-    "relevance": "Defines the RID schema for exchanging incident-response data between organizations and CSIRTs. Operator-facing relevance is via the IODEF (RFC 7970) payload that RID transports — the pair is the IETF-standardized cross-organizational incident-coordination protocol. Adoption lags; in practice many SOCs use ad-hoc CSV/JSON exchanges instead, leaving compliance with 'documented coordination channel' requirements weakly evidenced.",
-    "skills_referencing": [
-      "incident-response-playbook"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-6546": {
-    "number": 6546,
-    "title": "Transport of Real-time Inter-network Defense (RID) Messages over HTTP/TLS",
-    "status": "Proposed Standard",
-    "published": "2012-04",
-    "tracker": "https://www.rfc-editor.org/info/rfc6546",
-    "relevance": "Specifies the HTTP-over-TLS transport for RID (RFC 6545) messages. Operator-facing: provides the wire-level protocol for IODEF/RID message exchange when an organization commits to standardized incident-data coordination. Pair this with RFC 6545 (schema) and RFC 7970 (IODEF v2 payload).",
-    "skills_referencing": [
-      "incident-response-playbook"
-    ],
-    "last_verified": "2026-05-13"
-  },
-  "RFC-7970": {
-    "number": 7970,
-    "title": "The Incident Object Description Exchange Format Version 2",
-    "status": "Proposed Standard",
-    "published": "2016-11",
-    "tracker": "https://www.rfc-editor.org/info/rfc7970",
-    "relevance": "IODEF v2 — the structured-incident payload format carried by RID. Operator-facing: IODEF v2 is the canonical machine-readable incident record. Use cases include cross-CSIRT coordination, regulator submissions where structured data is requested, and SIEM-to-SIEM federation. Adoption is sector-uneven; healthcare and financial sectors have stronger uptake than general industry.",
-    "skills_referencing": [
-      "incident-response-playbook"
     ],
     "last_verified": "2026-05-13"
   }

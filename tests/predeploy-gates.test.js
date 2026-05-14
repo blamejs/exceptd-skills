@@ -323,6 +323,159 @@ test("gate 9: validate-catalog-meta.js fires on a catalog missing _meta.tlp", ()
   }
 });
 
+// ---------- Audit G F2: SBOM gate catches renamed skill ----------
+
+test("Audit G F2: SBOM gate fires when a skill named in SBOM components is renamed in manifest", () => {
+  const tmp = mktmp("sbom-rename");
+  try {
+    // Manifest declares skill "renamed-skill", SBOM still names the old one.
+    writeFile(
+      tmp,
+      "manifest.json",
+      JSON.stringify({
+        skills: [
+          { name: "renamed-skill", version: "1.0.0", path: "skills/renamed-skill/skill.md" },
+        ],
+      })
+    );
+    writeFile(tmp, "data/x.json", "{}");
+    writeFile(
+      tmp,
+      "sbom.cdx.json",
+      JSON.stringify({
+        bomFormat: "CycloneDX",
+        specVersion: "1.6",
+        metadata: {
+          properties: [
+            { name: "exceptd:catalog:count", value: "1" },
+            { name: "exceptd:skill:count", value: "1" },
+          ],
+        },
+        components: [
+          {
+            "bom-ref": "skill:original-skill",
+            name: "original-skill",
+            version: "1.0.0",
+            type: "library",
+          },
+        ],
+      })
+    );
+
+    const r = spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts", "check-sbom-currency.js"), "--root", tmp],
+      { encoding: "utf8" }
+    );
+    assert.notEqual(
+      r.status,
+      0,
+      `check-sbom-currency.js must exit non-zero on a renamed skill not reflected in SBOM.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /not in manifest\.skills/,
+      `SBOM gate should report the missing skill. stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+test("Audit G F2: SBOM gate fires on a version-bumped skill", () => {
+  const tmp = mktmp("sbom-vbump");
+  try {
+    writeFile(
+      tmp,
+      "manifest.json",
+      JSON.stringify({
+        skills: [
+          { name: "my-skill", version: "2.0.0", path: "skills/my-skill/skill.md" },
+        ],
+      })
+    );
+    writeFile(tmp, "data/x.json", "{}");
+    writeFile(
+      tmp,
+      "sbom.cdx.json",
+      JSON.stringify({
+        bomFormat: "CycloneDX",
+        specVersion: "1.6",
+        metadata: {
+          properties: [
+            { name: "exceptd:catalog:count", value: "1" },
+            { name: "exceptd:skill:count", value: "1" },
+          ],
+        },
+        components: [
+          {
+            "bom-ref": "skill:my-skill",
+            name: "my-skill",
+            version: "1.0.0", // stale — manifest has 2.0.0
+            type: "library",
+          },
+        ],
+      })
+    );
+
+    const r = spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts", "check-sbom-currency.js"), "--root", tmp],
+      { encoding: "utf8" }
+    );
+    assert.notEqual(r.status, 0, "SBOM gate must fire on version skew");
+    assert.match(
+      r.stderr,
+      /version 1\.0\.0 != manifest\.skills version 2\.0\.0/,
+      `version-skew message expected; stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+// ---------- Audit G F1: validate-indexes rejects empty source_hashes ----------
+
+test("Audit G F1: validate-indexes.js rejects an empty source_hashes table", () => {
+  const tmp = mktmp("indexes-empty");
+  try {
+    writeFile(
+      tmp,
+      "manifest.json",
+      JSON.stringify({ skills: [] })
+    );
+    writeFile(
+      tmp,
+      "data/_indexes/_meta.json",
+      JSON.stringify({
+        generated_at: "2026-01-01T00:00:00.000Z",
+        source_hashes: {}, // empty — must be rejected
+      })
+    );
+    copyFile(
+      path.join(ROOT, "lib", "validate-indexes.js"),
+      path.join(tmp, "lib", "validate-indexes.js")
+    );
+    const r = spawnSync(
+      process.execPath,
+      [path.join(tmp, "lib", "validate-indexes.js")],
+      { cwd: tmp, encoding: "utf8" }
+    );
+    assert.notEqual(
+      r.status,
+      0,
+      `validate-indexes.js must reject an empty source_hashes table.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /source_hashes is empty/i,
+      `validate-indexes.js should label the empty-table error. stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
+});
+
 // ---------- Gate 10: SBOM currency ----------
 
 test("gate 10: check-sbom-currency.js fires on drifted skill count", () => {

@@ -63,7 +63,7 @@ The AI attack surface is not speculative. It is actively exploited. The followin
 
 ### 1. Prompt Injection as Enterprise RCE
 
-**CVE-2025-53773** — Hidden prompt injection in GitHub Copilot PR descriptions enabling RCE. CVSS 9.6. The attack embeds adversarial instructions in GitHub PR descriptions. When a developer uses GitHub Copilot to review or summarize the PR, the injected instructions execute in the context of the developer's session, enabling remote code execution.
+**CVE-2025-53773** — Hidden prompt injection in GitHub Copilot agent mode coerces the assistant to write `"chat.tools.autoApprove": true` into `.vscode/settings.json`, flipping every subsequent tool call into auto-approval. CVSS 7.8 (AV:L — local-vector through developer-side IDE interaction; RWEP 30). The attack embeds adversarial instructions in any agent-readable content (source comments, README, PR descriptions, retrieved docs, MCP tool responses). Once the YOLO-mode flag lands, the next shell tool call executes attacker-chosen commands in the developer's user context.
 
 This is not a chatbot trick. This is enterprise RCE via a developer tool used by hundreds of millions of developers. The attack surface is any system that:
 - Feeds external content (user input, web content, documents, PR descriptions, emails, calendar events) into an LLM prompt
@@ -71,13 +71,13 @@ This is not a chatbot trick. This is enterprise RCE via a developer tool used by
 
 **Attack success rates against SOTA defenses:** A 2026 meta-analysis of 78 studies found adaptive prompt injection strategies succeed against state-of-the-art defenses at rates exceeding 85%. No current framework has adequate controls for this.
 
-**ATLAS ref:** AML.T0054 (Craft Adversarial Data — NLP)
+**ATLAS ref:** AML.T0054 (LLM Jailbreak) and AML.T0051 (LLM Prompt Injection)
 
 ### 2. MCP Supply Chain — Architectural RCE
 
 The Model Context Protocol (MCP) introduced an architectural vulnerability affecting every major AI coding assistant: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, Gemini CLI.
 
-**CVE-2026-30615** — Windsurf. Zero user interaction required. The vulnerability allows a malicious MCP server (or a compromised legitimate MCP server) to execute arbitrary code in the context of the AI assistant. 150M+ affected downloads.
+**CVE-2026-30615** — Windsurf MCP. CVSS 8.0 (AV:L — local-vector RCE requiring attacker-controlled HTML the MCP client processes; RWEP 35). The vulnerability allows a malicious or compromised MCP server to drive code execution in the context of the AI assistant once a victim installs it. 150M+ combined downloads across MCP-capable assistants share the same architectural attack surface.
 
 This is a supply chain attack surface. Every MCP server a user installs is a potential RCE vector. Trust boundaries that exist for npm packages do not exist for MCP servers because most MCP clients do not enforce signed manifests or tool allowlists.
 
@@ -89,13 +89,13 @@ This is a supply chain attack surface. Every MCP server a user installs is a pot
 
 The implication: the time between a vulnerability's introduction into a codebase and its reliable exploitation has compressed from months or years to hours or days for AI-capable threat actors. Patch management SLAs designed for human-speed exploit development are structurally inadequate.
 
-**ATLAS ref:** AML.T0017 (Develop Capabilities)
+**ATLAS ref:** AML.T0016 (Obtain Capabilities: Develop Capabilities)
 
 ### 4. AI Credential Phishing Acceleration
 
 Credential theft driven by AI increased 160% in 2025. 82.6% of phishing emails now contain AI-generated content undetectable by grammar/style checks. Traditional phishing detection heuristics (poor grammar, unusual phrasing, template patterns) are no longer reliable detectors.
 
-**ATLAS ref:** AML.T0018 (Acquire Public ML Artifacts — misuse of generation capability)
+**ATLAS ref:** AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs to generate phishing payloads)
 
 ### 5. AI as Covert C2 — SesameOp
 
@@ -127,6 +127,14 @@ Training pipeline targeting has moved beyond data injection to directly biasing 
 
 AI-assisted reconnaissance is observed at 36,000 probes per second per campaign. Traditional rate-based detection (100–1,000 req/s threshold alerts) does not fire at legitimate-looking distributed AI-directed probe rates until significant reconnaissance has already occurred.
 
+### 10. LLM-Gateway Credential Theft as AI Attack Surface
+
+**CVE-2026-42208** — BerriAI LiteLLM Proxy authorization-header SQL injection (CVSS 9.8 / CVSS v4 9.3 / CISA KEV-listed 2026-05-08, due 2026-05-29). LiteLLM is the open-source LLM-API gateway used in front of agent stacks, MCP-server fronts, and multi-model proxy deployments — exactly the trust hinge that this skill's threat-context section treats as the credential boundary for hosted-model use. The proxy concatenated an attacker-controlled `Authorization` header value into a SQL query in the error-logging path, so a single curl-able POST against `/chat/completions` with a SQL-injection payload returns the managed-credentials DB content without prior auth. Patched in 1.83.7+; temporary workaround `general_settings: disable_error_logs: true`. Any organisation whose AI attack-surface inventory treats the LLM gateway as "just a reverse proxy" misses that the gateway holds every downstream model-provider credential.
+
+### 11. AI-Discovered + AI-Weaponized Supply-Chain Worms
+
+**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0016-class capability-development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (ML Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
+
 ---
 
 ## Framework Lag Declaration
@@ -150,14 +158,14 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 | ATLAS ID | Technique | Framework Coverage | Gap Description | Exploitation Example |
 |---|---|---|---|---|
-| AML.T0054 | Craft Adversarial Data — NLP | Missing in all major frameworks | No control covers adversarial text injection into LLM prompts | CVE-2025-53773 (GitHub Copilot RCE) |
+| AML.T0054 | LLM Jailbreak | Missing in all major frameworks | No control covers adversarial-instruction injection that bypasses guardrails and coerces the model into attacker-chosen actions | CVE-2025-53773 (GitHub Copilot YOLO-mode RCE) |
 | AML.T0010 | ML Supply Chain Compromise | Partial (ISO A.8.30) | A.8.30 covers outsourced development; does not cover MCP server trust, package signing for AI tools | CVE-2026-30615 (Windsurf MCP) |
 | AML.T0096 | LLM Integration Abuse (C2) | Missing in all major frameworks | No framework has a control for AI API traffic as C2 channel | SesameOp campaign |
 | AML.T0020 | Poison Training Data | Partial (NIST AI RMF) | NIST AI RMF identifies the risk; no specific technical control | Supply chain logistics model poisoning |
 | AML.T0043 | Craft Adversarial Data | Partial (SI-10) | SI-10 covers web input validation; not semantic injection in LLM prompts | RAG vector manipulation |
 | AML.T0051 | LLM Prompt Injection | Missing in all major frameworks | Zero controls in NIST, ISO, SOC 2, PCI for prompt injection | CVE-2025-53773, indirect injection via retrieved docs |
-| AML.T0017 | Develop Capabilities | Partial (awareness only) | No framework requires monitoring for AI-assisted exploit development against the org | Copy Fail AI discovery, 41% of 2025 0-days |
-| AML.T0016 | Acquire Public ML Artifacts | Missing (misuse dimension) | Frameworks don't address adversary use of public AI APIs for reconnaissance/attack | PROMPTFLUX, PROMPTSTEAL, phishing generation |
+| AML.T0017 | Discover ML Model Ontology | Partial (awareness only) | No framework requires monitoring for adversary mapping of deployed model family, guardrail surface, or system-prompt structure via inference-API probing | Reconnaissance step preceding PROMPTSTEAL-class targeting; AML-model registry exposure |
+| AML.T0016 | Obtain Capabilities: Develop Capabilities | Missing (misuse dimension) | Frameworks don't address adversary AI-assisted exploit development or use of public AI APIs to craft malware/phishing payloads | Copy Fail AI discovery (41% of 2025 0-days), PROMPTFLUX, PROMPTSTEAL, phishing generation |
 | AML.T0018 | Backdoor ML Model | Partial (NIST AI RMF) | No technical control requirements for model integrity verification | Training pipeline poisoning |
 
 ---
@@ -166,8 +174,8 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 | Vulnerability | CVSS | RWEP | KEV | PoC | AI-Accelerated | Active Exploitation |
 |---|---|---|---|---|---|---|
-| CVE-2025-53773 (Copilot prompt injection RCE) | 9.6 | 91 | No | Yes — demonstrated | Yes (AI tooling enables) | Suspected |
-| CVE-2026-30615 (Windsurf MCP RCE) | 9.8 | 94 | No | Partial | No | Suspected |
+| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes — demonstrated | Yes (AI tooling enables) | Suspected |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Suspected |
 | SesameOp (AI C2 technique) | N/A | N/A | N/A | Yes (ATLAS documented) | Yes | Confirmed campaign |
 | PROMPTFLUX family | N/A | N/A | N/A | Behavioral signatures | Yes | Active |
 | PROMPTSTEAL family | N/A | N/A | N/A | Behavioral signatures | Yes | Active |

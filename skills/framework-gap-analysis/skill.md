@@ -32,8 +32,8 @@ This skill analyzes the gap between what a compliance framework control was desi
 Compliance frameworks lag the threat environment by years. Most active controls in NIST 800-53, ISO 27001:2022, SOC 2, PCI DSS 4.0, NIS2, and DORA were drafted against assumptions (human-speed exploit development, persistent inventoriable assets, human-controlled accounts) that current attacker TTPs no longer respect. Three concrete mid-2026 instances anchor the lag:
 
 - **CVE-2026-31431 (Copy Fail)** — CISA KEV-listed Linux kernel LPE, AI-discovered in roughly one hour, 732-byte deterministic public PoC, no race condition. NIST 800-53 SI-2 and ISO 27001:2022 A.8.8 patch-window language permits 30-day remediation, during which active exploitation is the documented condition. See `data/cve-catalog.json` for the full entry.
-- **CVE-2025-53773** — GitHub Copilot prompt-injection RCE, CVSS 9.6. Bypasses SOC 2 CC6 and NIST 800-53 AC-2 because the action executes under the AI service account's authorized identity; the access control audit shows "passed."
-- **CVE-2026-30615** — Windsurf MCP zero-interaction RCE, 150M+ affected downloads. ISO 27001:2022 A.5.19 / A.5.20 vendor-management language treats MCP servers as SaaS tools, not third-party code executing in production developer environments.
+- **CVE-2025-53773** — GitHub Copilot YOLO-mode RCE, CVSS 7.8 (AV:L — local-vector through developer-side IDE interaction; the NVD-authoritative score was corrected from an initial 9.6 / AV:N). Bypasses SOC 2 CC6 and NIST 800-53 AC-2 because the action executes under the AI service account's authorized identity; the access control audit shows "passed."
+- **CVE-2026-30615** — Windsurf MCP local-vector RCE, CVSS 8.0 / AV:L (NVD-authoritative; corrected from initial 9.8 / AV:N once the attack-vector reality — attacker controls HTML the MCP client processes — was confirmed). 150M+ combined downloads across MCP-capable assistants share the architectural surface. ISO 27001:2022 A.5.19 / A.5.20 vendor-management language treats MCP servers as SaaS tools, not third-party code executing in production developer environments.
 
 This skill exists because every gap-analysis engagement encounters at least one control where a "compliant" auditor finding masks current-TTP exposure. The built-in gap catalog below is the codified evidence base.
 
@@ -76,7 +76,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 | NIST 800-53 SI-2 vs. deterministic LPE | T1068 (Exploitation for Privilege Escalation), T1548.001 | Patch SLA permits active exploitation window |
 | NIST 800-53 SC-8/SC-28 vs. Dirty Frag | T1190 (Exploit Public-Facing Application) via IPsec subsystem | Cryptographic control is the attack surface |
 | NIST 800-53 AC-2 vs. prompt injection | AML.T0051 (LLM Prompt Injection), AML.T0054 | Authorized identity executes attacker intent |
-| NIST 800-53 SI-3 vs. AI-generated malware | AML.T0017, AML.T0018 | Signature-based detection has zero coverage |
+| NIST 800-53 SI-3 vs. AI-generated malware | AML.T0016 (adversary Develop Capabilities — payload generation), AML.T0018 | Signature-based detection has zero coverage |
 | ISO 27001 A.8.8 vs. CISA KEV class | T1068, T1203 | "Appropriate timescales" undefined for AI-accelerated weaponization |
 | SOC 2 CC6 vs. prompt injection | AML.T0051 | Authorization model has no prompt-level granularity |
 | PCI DSS 6.3.3 vs. AI-accelerated weaponization | T1068, T1190 | One-month window predates AI-assisted exploit development |
@@ -93,8 +93,8 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 |---|---|---|---|---|---|---|---|
 | CVE-2026-31431 (Copy Fail) | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
 | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited (subsystem-dependent) | Suspected |
-| CVE-2025-53773 (Copilot prompt injection RCE) | 9.6 | High | No | Yes (demonstrated) | Yes (AI tooling enables) | N/A (vendor-side) | Suspected |
-| CVE-2026-30615 (Windsurf MCP RCE) | 9.8 | Critical | No | Partial | No | N/A (vendor-side) | Suspected |
+| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Suspected |
 
 When a gap analysis cites a CVE not in this matrix, the analyst must populate the row from `data/cve-catalog.json` before producing the declaration. A declaration without an evidence row is incomplete.
 
@@ -368,7 +368,7 @@ Specific high-confidence theater signals (each triggers a mandatory Framework La
 |---|---|
 | Org claims SI-2 / A.8.8 / PCI 6.3.3 30-day patching as adequate for CISA KEV entries | CVE-2026-31431 KEV-listed; deterministic public PoC means active exploitation during the window |
 | Org claims AC-2 / CC6 as adequate for AI-agent access control | CVE-2025-53773 demonstrates AML.T0051 routing around the identity model entirely |
-| Org claims A.5.19 / SA-12 vendor management as adequate for MCP servers | CVE-2026-30615 demonstrates AML.T0010 supply-chain RCE with zero user interaction |
+| Org claims A.5.19 / SA-12 vendor management as adequate for MCP servers | CVE-2026-30615 demonstrates AML.T0010 supply-chain RCE via attacker-controlled HTML processed by the MCP client (local-vector, not network) |
 | Org claims IPsec-based SC-8 segmentation as adequate without a kernel-patch status check | CVE-2026-43284 makes the IPsec implementation the attack surface |
 
 When this check fires, hand off to the compliance-theater skill for the theater-pattern detection test and to policy-exception-gen if the org needs to grant a defensible exception with concrete compensating controls.

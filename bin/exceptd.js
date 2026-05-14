@@ -541,10 +541,16 @@ function emit(obj, pretty, humanRenderer) {
 }
 
 function emitError(msg, extra, pretty) {
+  // v0.12.14 (audit A P1-2): the v0.11.13 emit() fix used exitCode + return
+  // to defend stdout-buffered writes from truncation under piped consumers.
+  // emitError() (stderr) kept process.exit(1), which has the same truncation
+  // class — CLAUDE.md's "fix the class, not the instance." Now: write to
+  // stderr, set exitCode = 1, return. Every caller already uses
+  // `return emitError(...)` so the return-value propagation is clean.
   const body = Object.assign({ ok: false, error: msg }, extra || {});
   const s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
   process.stderr.write(s + "\n");
-  process.exit(1);
+  process.exitCode = 1;
 }
 
 function readEvidence(evidenceFlag) {
@@ -1693,8 +1699,11 @@ function cmdRun(runner, args, runOpts, pretty) {
         hint: "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
         verb: "run",
       };
+      // v0.12.14 (audit A P1-2): exitCode + return instead of process.exit
+      // so the stderr line drains under piped CI consumers.
       process.stderr.write(JSON.stringify(err) + "\n");
-      process.exit(3);
+      process.exitCode = 3;
+      return;
     }
     if (persistResult.prior_session_id) {
       // Force-overwrite happened — surface the prior_session_id in the
@@ -1707,8 +1716,10 @@ function cmdRun(runner, args, runOpts, pretty) {
   }
 
   if (result && result.ok === false) {
+    // v0.12.14: exitCode + return; matches the emitError class fix.
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   // v0.11.6 (#96): --strict-preconditions escalates warn-level preflight
@@ -2347,12 +2358,43 @@ function maybeSignAttestation(filePath) {
  * default root and the legacy cwd-relative root; returns whichever exists.
  * Returns null if neither has the session.
  */
+/**
+ * v0.12.14 (audit A P1-1): session-id validation — applied at every READ
+ * site, not just writes. The write path (persistAttestation) was hardened
+ * in v0.12.12, but the read paths (findSessionDir / cmdAttest / cmdReattest)
+ * accepted arbitrary strings and joined them into path.join(root, id) with
+ * no normalization. Reproducer that exfiltrated $HOME/.claude.json:
+ *   exceptd attest show '../../..'
+ *
+ * Validation regex + root-confinement check matches persistAttestation.
+ */
+function validateSessionIdForRead(sessionId) {
+  if (typeof sessionId !== "string" || !/^[A-Za-z0-9._-]{1,64}$/.test(sessionId)) {
+    throw new Error(
+      `Invalid session-id: ${JSON.stringify(sessionId).slice(0, 80)}. Must match /^[A-Za-z0-9._-]{1,64}$/.`
+    );
+  }
+  return sessionId;
+}
+
 function findSessionDir(sessionId, runOpts) {
+  // v0.12.14 (audit A P1-1): validate the session-id at every read path.
+  try { validateSessionIdForRead(sessionId); }
+  catch { return null; }
   const candidates = [
     path.join(resolveAttestationRoot(runOpts), sessionId),
     path.join(process.cwd(), ".exceptd", "attestations", sessionId),
   ];
-  for (const c of candidates) if (fs.existsSync(c)) return c;
+  for (const c of candidates) {
+    // Final-resolution check: the resolved candidate must stay strictly
+    // inside its parent root after normalization. Defense in depth on top
+    // of the regex check above — catches anything that survives the
+    // string-level filter.
+    const parent = path.dirname(c);
+    const resolved = path.resolve(c);
+    if (!resolved.startsWith(path.resolve(parent) + path.sep)) continue;
+    if (fs.existsSync(c)) return c;
+  }
   return null;
 }
 
@@ -3378,6 +3420,26 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 }
 
 function cmdListAttestations(runner, args, runOpts, pretty) {
+  // v0.12.14 (audit A P2-3): --playbook is registered as `multi:` so
+  // `--playbook a --playbook b` lands as an array. The prior filter used
+  // strict equality (`j.playbook_id !== args.playbook`) — always false for
+  // array, silently producing count: 0. Normalize to a Set up-front.
+  const playbookFilter = (() => {
+    if (args.playbook == null) return null;
+    const list = Array.isArray(args.playbook) ? args.playbook : [args.playbook];
+    return new Set(list.filter(x => typeof x === "string" && x.length > 0));
+  })();
+  // v0.12.14 (audit A P2-6): --since must be a parseable ISO-8601 timestamp.
+  // Prior behavior silently accepted any string and lexically compared to
+  // captured_at, producing 0-result or full-result depending on the string.
+  if (args.since != null) {
+    if (typeof args.since !== "string" || isNaN(Date.parse(args.since))) {
+      return emitError(
+        `attest list: --since must be a parseable ISO-8601 timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(args.since)).slice(0, 80)}`,
+        null, pretty
+      );
+    }
+  }
   // Enumerate sessions across both v0.11.0 default root and legacy cwd-
   // relative root, so operators with prior attestations still see them.
   const roots = [resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")];
@@ -3395,7 +3457,8 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
       for (const f of files) {
         try {
           const j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8"));
-          if (args.playbook && j.playbook_id !== args.playbook) continue;
+          // v0.12.14: normalized array-set filter (see top of fn).
+          if (playbookFilter && !playbookFilter.has(j.playbook_id)) continue;
           if (args.since && (j.captured_at || "") < args.since) continue;
           entries.push({
             session_id: sid,
@@ -3415,7 +3478,7 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     ok: true,
     attestations: entries,
     count: entries.length,
-    filter: { playbook: args.playbook || null, since: args.since || null },
+    filter: { playbook: playbookFilter ? [...playbookFilter] : null, since: args.since || null },
     roots_searched: [...seenRoots],
   }, pretty, (obj) => {
     // v0.11.6 (#95) human renderer for attest list: one row per session.
@@ -3560,6 +3623,36 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       process.exitCode = 1;
       return;
     }
+    // v0.12.14 (audit A P2-1): ai-run --no-stream previously emitted a
+    // session_id but never persisted the attestation, so the AI agent
+    // calling ai-run couldn't chain into `attest show / verify / diff`
+    // or `reattest` with the returned id. Now: same persistAttestation
+    // shape as cmdRun, so AI-facing flow round-trips cleanly.
+    if (result.session_id) {
+      const persistResult = persistAttestation({
+        sessionId: result.session_id,
+        playbookId: result.playbook_id || playbookId,
+        directiveId: result.directive_id || directiveId,
+        evidenceHash: result.evidence_hash,
+        operator: runOpts.operator,
+        operatorConsent: runOpts.operator_consent,
+        submission,
+        runOpts,
+        forceOverwrite: !!args["force-overwrite"],
+        filename: "attestation.json",
+      });
+      if (!persistResult.ok && !args["force-overwrite"]) {
+        // Collision without --force-overwrite. AI agents typically pass
+        // unique session ids each run, so this path is rare but surface
+        // it cleanly via the same JSONL contract.
+        process.stdout.write(JSON.stringify({
+          event: "error", reason: persistResult.error,
+          existing_attestation: persistResult.existingPath,
+        }) + "\n");
+        process.exitCode = 3;
+        return;
+      }
+    }
     // v0.11.8 (#101): unify ai-run --no-stream shape with `run`. Pre-0.11.8
     // ai-run flattened phases to top-level (`govern`, `direct`, `look`, ...),
     // while `run` nested them under `phases.*`. Operators writing JSONPath
@@ -3636,6 +3729,28 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     writeLine({ phase: "analyze", ...result.phases?.analyze });
     writeLine({ phase: "validate", ...result.phases?.validate });
     writeLine({ phase: "close", ...result.phases?.close });
+    // v0.12.14 (audit A P2-1): persist the attestation in streaming mode
+    // too. Without this, the session_id emitted in the `done` frame
+    // can't be resolved by `attest show / verify / diff` or `reattest`.
+    if (result.session_id) {
+      const persistResult = persistAttestation({
+        sessionId: result.session_id,
+        playbookId: result.playbook_id || playbookId,
+        directiveId: result.directive_id || directiveId,
+        evidenceHash: result.evidence_hash,
+        operator: runOpts.operator,
+        operatorConsent: runOpts.operator_consent,
+        submission,
+        runOpts,
+        forceOverwrite: !!args["force-overwrite"],
+        filename: "attestation.json",
+      });
+      if (!persistResult.ok && !args["force-overwrite"]) {
+        writeLine({ event: "error", reason: persistResult.error,
+                    existing_attestation: persistResult.existingPath });
+        return finish(3);
+      }
+    }
     writeLine({ event: "done", ok: true, session_id: result.session_id, evidence_hash: result.evidence_hash });
     return finish(0);
   };
@@ -4076,8 +4191,10 @@ function cmdCi(runner, args, runOpts, pretty) {
     emit({ verb: "ci", session_id: sessionId, format: fmt, bundles_count: bundles.length, bundles }, pretty);
   } else if (fmt && fmt !== "json") {
     // v0.11.4 (#76): garbage format rejected with structured error, not silent empty stdout.
+    // v0.12.14: exitCode + return; matches the emitError class fix.
     process.stderr.write(JSON.stringify({ ok: false, error: `ci: --format "${fmt}" not in accepted set ["summary","markdown","csaf-2.0","sarif","openvex","json"].`, verb: "ci" }) + "\n");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   } else {
     emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty);
   }
