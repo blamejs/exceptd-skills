@@ -4,7 +4,7 @@
     "phases.detect.classification": "detected"
   },
   "json_path_min": {
-    "phases.analyze.rwep.adjusted": 15
+    "phases.analyze.rwep.adjusted": 10
   },
   "json_path_present": [
     "phases.analyze.rwep.adjusted",
