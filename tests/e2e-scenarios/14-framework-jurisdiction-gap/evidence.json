@@ -11,7 +11,9 @@
     "ai-usage-attestation": {"captured": true, "value": "AI coding assistants in production developer workflow; no MCP trust controls operational", "indicator": "ai-use-without-ai-controls", "result": "hit"}
   },
   "signal_overrides": {
-    "framework-lag-no-compensating-control": "hit"
+    "framework-lag-no-compensating-control": "hit",
+    "exception-missing-expiry-or-owner__fp_checks": { "0": true, "1": true },
+    "jurisdiction-without-framework__fp_checks": { "0": true, "1": true }
   },
   "verdict": {
     "classification": "detected",
