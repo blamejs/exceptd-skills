@@ -1443,7 +1443,26 @@ function cmdPlan(runner, args, runOpts, pretty) {
   emit(plan, pretty);
 }
 
+// v0.12.15 (audit L F1, F2): --scope must validate against the accepted
+// set. The prior shape silently returned [] for any unknown scope, which
+// in `run --scope nonsense` produced `count: 0` + exit 0 (cmd reports
+// "ran 0 playbooks") and in `ci --scope nonsense` silently ran only the
+// cross-cutting set (the union with `framework` produced a false-positive
+// PASS). Both are operator-intent loss patterns CLAUDE.md flags as the
+// "field-present, content-wrong" class.
+const VALID_SCOPES = ["system", "code", "service", "cross-cutting", "all"];
+
+function validateScopeOrThrow(scope) {
+  if (typeof scope !== "string" || !VALID_SCOPES.includes(scope)) {
+    throw new Error(
+      `--scope must be one of ${JSON.stringify(VALID_SCOPES)}; got ${JSON.stringify(scope)}.`
+    );
+  }
+  return scope;
+}
+
 function filterPlaybooksByScope(runner, scope) {
+  validateScopeOrThrow(scope);
   const ids = runner.listPlaybooks();
   return ids.filter(id => {
     try {
@@ -1519,7 +1538,8 @@ function cmdRun(runner, args, runOpts, pretty) {
     if (args.all) {
       ids = runner.listPlaybooks();
     } else {
-      ids = filterPlaybooksByScope(runner, args.scope);
+      try { ids = filterPlaybooksByScope(runner, args.scope); }
+      catch (e) { return emitError(`run: ${e.message}`, { provided_scope: args.scope }, pretty); }
     }
     return cmdRunMulti(runner, ids, args, runOpts, pretty, { trigger: args.all ? "--all" : `--scope ${args.scope}` });
   }
@@ -3994,7 +4014,8 @@ function cmdCi(runner, args, runOpts, pretty) {
   } else if (args.all) {
     ids = runner.listPlaybooks();
   } else if (scope) {
-    ids = filterPlaybooksByScope(runner, scope);
+    try { ids = filterPlaybooksByScope(runner, scope); }
+    catch (e) { return emitError(`ci: ${e.message}`, { provided_scope: scope }, pretty); }
     // Always include cross-cutting playbooks regardless of scope choice.
     const cross = filterPlaybooksByScope(runner, "cross-cutting");
     ids = [...new Set([...ids, ...cross])];
