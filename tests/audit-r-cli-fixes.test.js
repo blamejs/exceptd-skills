@@ -36,7 +36,7 @@ const cli = makeCli(SUITE_HOME);
 // R-F1 — attest verify must exit 6 on TAMPERED
 // ---------------------------------------------------------------------------
 
-test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', () => {
+test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', { skip: !fs.existsSync(path.join(ROOT, '.keys', 'private.pem')) && 'private key absent — signed-tamper path cannot be exercised without .keys/private.pem' }, () => {
   // Produce a real attestation under SUITE_HOME, then mutate the on-disk
   // attestation.json AFTER signing so the Ed25519 sidecar fails.
   const sid = 'rf1-tamper-' + Date.now();
