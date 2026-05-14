@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.13 — 2026-05-14
+
+**Patch: e2e scenarios updated for the v0.12.12 jurisdiction-clock semantics.**
+
+Two e2e scenarios (`02-tanstack-worm-payload`, `09-secrets-aws-key`) assert that `phases.close.jurisdiction_clocks_count >= 1` against a `detected` classification. In v0.12.12 the clock-starts contract was tightened: `clock_starts: detect_confirmed` no longer auto-stamps when classification turns `detected`; the operator must pass `--ack` for the clock to start. Both scenarios now pass `--ack` so the contract is exercised end-to-end. No code changes; v0.12.13 ships solely to land the scenario update and a corresponding npm publish — the v0.12.12 tag exists on git but never reached the npm registry because the validate gate failed against the pre-update scenarios.
+
+Test count: 585/585. Predeploy gates: 16/16. Skills: 38/38 signed and verified.
+
 ## 0.12.12 — 2026-05-13
 
 **Patch: deep multi-surface hardening — engine semantics, concurrency, signing round-trip, output bundles, validators, scheduler, curation. 73 distinct fixes across 10 surface classes.**
