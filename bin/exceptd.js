@@ -58,6 +58,44 @@ const { spawnSync } = require("child_process");
 // (e.g. <somewhere>/node_modules/@blamejs/exceptd-skills).
 const PKG_ROOT = path.resolve(__dirname, "..");
 
+/**
+ * Audit Q P1 + R F6: factor the EXPECTED_FINGERPRINT pin check used by
+ * the attestation pipeline. Centralizes the policy (compute live SHA-256
+ * fingerprint of the loaded public.pem, compare to keys/EXPECTED_FINGERPRINT,
+ * honor KEYS_ROTATED=1 bypass, tolerate missing pin file) so every site
+ * that loads keys/public.pem applies the same check.
+ *
+ * Returns null when the check passes (or when no pin file exists), or a
+ * human-readable error string when the pin diverges and the rotation env
+ * is not set. lib/verify.js exposes a parallel checkExpectedFingerprint()
+ * that operates on a precomputed fingerprint shape; this wrapper accepts
+ * the raw PEM directly so callers don't have to compute the fingerprint
+ * themselves.
+ */
+function assertExpectedFingerprint(pubKeyPem) {
+  if (!pubKeyPem) return null;
+  const cryptoMod = require("crypto");
+  const pinPath = path.join(PKG_ROOT, "keys", "EXPECTED_FINGERPRINT");
+  if (!fs.existsSync(pinPath)) return null;
+  let liveFp;
+  try {
+    const ko = cryptoMod.createPublicKey(pubKeyPem);
+    const der = ko.export({ type: "spki", format: "der" });
+    liveFp = "SHA256:" + cryptoMod.createHash("sha256").update(der).digest("base64");
+  } catch (e) {
+    return `EXPECTED_FINGERPRINT check: failed to derive live fingerprint: ${e.message}`;
+  }
+  const raw = fs.readFileSync(pinPath, "utf8");
+  const firstLine = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length > 0) || "";
+  if (firstLine === liveFp) return null;
+  if (process.env.KEYS_ROTATED === "1") return null;
+  return (
+    `EXPECTED_FINGERPRINT mismatch: live=${liveFp} pin=${firstLine}. ` +
+    `If this is an intentional rotation, re-run with KEYS_ROTATED=1 and ` +
+    `update keys/EXPECTED_FINGERPRINT.`
+  );
+}
+
 // Subcommand → resolved script path. Lazy-resolved per call so a missing
 // optional component (e.g. orchestrator/) just fails that one command
 // instead of crashing dispatcher init.
@@ -453,16 +491,25 @@ function main() {
   if (typeof resolver !== "function") {
     // Emit a structured JSON error matching the seven-phase verbs so operators
     // piping through `jq` get one consistent shape across the CLI surface.
-    // Plain-text "unknown command" still reaches stderr for human readers.
-    const err = { ok: false, error: `unknown command "${cmd}"`, hint: "Run `exceptd help` for the list of verbs.", verb: cmd };
-    process.stderr.write(JSON.stringify(err) + "\n");
-    process.exit(2);
+    // R-F8: pre-fix, the structured-JSON stderr write was followed by
+    // process.exit(2) — the v0.11.10 truncation class applied to stderr
+    // just as it does to stdout. Route through emitError() (which uses
+    // exitCode + return per v0.12.14) so the JSON drains, then promote
+    // the exit code to 2 (unknown-command remains a distinct exit class).
+    emitError(`unknown command "${cmd}"`, { hint: "Run `exceptd help` for the list of verbs.", verb: cmd });
+    process.exitCode = 2;
+    return;
   }
 
   const script = resolver();
   if (!fs.existsSync(script)) {
-    process.stderr.write(`exceptd: command "${cmd}" not available — expected ${path.relative(PKG_ROOT, script)} in the installed package.\n`);
-    process.exit(2);
+    // R-F8: same class — emitError + exitCode rather than stderr + exit().
+    emitError(
+      `command "${cmd}" not available — expected ${path.relative(PKG_ROOT, script)} in the installed package.`,
+      { verb: cmd }
+    );
+    process.exitCode = 2;
+    return;
   }
 
   // Orchestrator subcommands need the subcommand name preserved as argv[0]
@@ -470,10 +517,15 @@ function main() {
   const finalArgs = ORCHESTRATOR_PASSTHROUGH.has(effectiveCmd) ? [script, effectiveCmd, ...effectiveRest] : [script, ...effectiveRest];
   const res = spawnSync(process.execPath, finalArgs, { stdio: "inherit", cwd: PKG_ROOT });
   if (res.error) {
-    process.stderr.write(`exceptd: failed to run ${cmd}: ${res.error.message}\n`);
-    process.exit(2);
+    // R-F8: same class — emitError + exitCode.
+    emitError(`failed to run ${cmd}: ${res.error.message}`, { verb: cmd });
+    process.exitCode = 2;
+    return;
   }
-  process.exit(typeof res.status === "number" ? res.status : 1);
+  // Propagate the child's exit status via exitCode so any buffered output
+  // from the child (rare with stdio:"inherit", possible on Windows) gets
+  // a chance to drain before the parent tears down.
+  process.exitCode = typeof res.status === "number" ? res.status : 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -593,6 +645,26 @@ function loadRunner() {
 }
 
 /**
+ * R-F10: ISO-8601 shape regex applied BEFORE Date.parse. Pre-fix, both
+ * `attest list --since` and `reattest --since` accepted anything Date.parse
+ * could chew on — including bare integers like "99", which JavaScript
+ * happily resolves to 1999-12-01T00:00:00Z (Y2K-era millisecond / two-digit
+ * year heuristic). Operators got a "valid timestamp" check that silently
+ * filtered the wrong years. Now: require an explicit calendar-date shape
+ * (YYYY-MM-DD with optional time component) BEFORE handing to Date.parse.
+ *
+ * Returns null on success; returns the human-facing error message string
+ * on failure so the caller can wrap it with its own verb prefix.
+ */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+function validateIsoSince(raw) {
+  if (typeof raw !== "string" || !ISO_DATE_RE.test(raw) || isNaN(Date.parse(raw))) {
+    return `--since must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
+  }
+  return null;
+}
+
+/**
  * F5: detect whether a parsed JSON document is plausibly CycloneDX VEX or
  * OpenVEX. The runner's vexFilterFromDoc returns Set(0) tolerantly for
  * anything else, which means an operator who passes SARIF / SBOM / CSAF /
@@ -613,8 +685,21 @@ function detectVexShape(doc) {
   // entries look vex-shaped (have id/bom_ref/analysis).
   if (Array.isArray(doc.vulnerabilities)) {
     const isBom = doc.bomFormat === "CycloneDX";
-    const entriesLookVex = doc.vulnerabilities.length === 0
-      || doc.vulnerabilities.some(v => v && typeof v === "object" && (v.id || v["bom-ref"] || v.bom_ref || v.analysis));
+    const specStr = typeof doc.specVersion === "string" ? doc.specVersion : "";
+    const hasCyclonedxMarker = isBom || specStr.startsWith("1.");
+    // R-F4: empty vulnerabilities arrays cannot vouch for CycloneDX shape
+    // on their own — `{"bomFormat":"NOT-CycloneDX","vulnerabilities":[]}`
+    // previously passed because `length === 0` always satisfied
+    // `entriesLookVex`. Require a real CycloneDX marker (bomFormat or
+    // specVersion) when the array is empty; non-empty arrays still pass
+    // when any entry has vex-shaped fields (id / bom-ref / analysis).
+    if (doc.vulnerabilities.length === 0) {
+      if (hasCyclonedxMarker) {
+        return { ok: true, detected: "cyclonedx-vex", top_level_keys: keys };
+      }
+      return { ok: false, detected: "empty-vulnerabilities-without-cyclonedx-marker", top_level_keys: keys };
+    }
+    const entriesLookVex = doc.vulnerabilities.some(v => v && typeof v === "object" && (v.id || v["bom-ref"] || v.bom_ref || v.analysis));
     if (isBom || entriesLookVex) {
       return { ok: true, detected: "cyclonedx-vex", top_level_keys: keys };
     }
@@ -1648,7 +1733,14 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Multi-playbook dispatch path. Triggered by --all, --scope <type>, or by
   // a bare `exceptd run` (no positional, no flags) which auto-detects scopes
   // from the cwd.
-  if (!positional && (args.all || args.scope)) {
+  // R-F9: gate on `args.scope !== undefined` rather than `args.scope`
+  // truthy. Pre-fix, `--scope ""` parsed to `args.scope === ""`, which
+  // is falsy — the dispatcher fell through to the auto-detect path and
+  // silently ran whatever scopes happened to match the cwd, masking the
+  // operator's explicit (if malformed) intent. Now: an empty string
+  // reaches validateScopeOrThrow which rejects with the accepted-set
+  // message, matching the rest of the v0.12.15 scope-validation contract.
+  if (!positional && (args.all || args.scope !== undefined)) {
     let ids;
     if (args.all) {
       ids = runner.listPlaybooks();
@@ -1658,7 +1750,7 @@ function cmdRun(runner, args, runOpts, pretty) {
     }
     return cmdRunMulti(runner, ids, args, runOpts, pretty, { trigger: args.all ? "--all" : `--scope ${args.scope}` });
   }
-  if (!positional && !args.all && !args.scope) {
+  if (!positional && !args.all && args.scope === undefined) {
     const scopes = detectScopes();
     const ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
     const unique = [...new Set(ids)];
@@ -1722,11 +1814,16 @@ function cmdRun(runner, args, runOpts, pretty) {
   }
 
   let submission = {};
-  // v0.11.1: auto-detect piped stdin (process.stdin.isTTY === false means
-  // something is piping into us). If no --evidence flag and stdin is a pipe,
-  // assume `--evidence -`. Operators forgetting the flag previously got a
-  // confusing precondition halt; now the common case "just works."
-  if (!args.evidence && process.stdin.isTTY === false) {
+  // v0.11.1: auto-detect piped stdin. If no --evidence flag and stdin is a
+  // pipe, assume `--evidence -`. Operators forgetting the flag previously
+  // got a confusing precondition halt; now the common case "just works."
+  // R-F3: use truthy `!process.stdin.isTTY` instead of `=== false`. On
+  // Windows MSYS bash, process.stdin.isTTY is `undefined` for a piped
+  // stream — the strict `=== false` check failed and auto-detect never
+  // fired, making `echo '{...}' | exceptd run <pb>` silently behave like
+  // no-evidence on Windows. cmdAiRun's path (below) already uses the
+  // truthy form, so this brings cmdRun + cmdIngest to parity.
+  if (!args.evidence && !process.stdin.isTTY) {
     args.evidence = "-";
   }
   if (args.evidence) {
@@ -1761,6 +1858,24 @@ function cmdRun(runner, args, runOpts, pretty) {
   // CVE ID set through to analyze() so matched_cves drops them.
   if (args.vex) {
     let vexDoc;
+    // R-F5: cap --vex file size the same way readEvidence() caps --evidence
+    // (32 MB). Pre-fix, --vex did a raw readFileSync with no size check —
+    // an operator passing a multi-GB file (binary log, JSON bomb, or
+    // accident) blocked the event loop for minutes / OOM'd the process.
+    // 32 MB is well beyond any legitimate VEX submission.
+    const MAX_VEX_BYTES = 32 * 1024 * 1024;
+    let vstat;
+    try { vstat = fs.statSync(args.vex); }
+    catch (e) {
+      return emitError(`run: failed to stat --vex ${args.vex}: ${e.message}`, null, pretty);
+    }
+    if (vstat.size > MAX_VEX_BYTES) {
+      return emitError(
+        `run: --vex file too large: ${vstat.size} bytes > ${MAX_VEX_BYTES} byte limit. Reduce the document or split into multiple passes.`,
+        { provided_path: args.vex, size_bytes: vstat.size, limit_bytes: MAX_VEX_BYTES },
+        pretty
+      );
+    }
     try {
       vexDoc = JSON.parse(fs.readFileSync(args.vex, "utf8"));
     } catch (e) {
@@ -2198,10 +2313,18 @@ function buildJurisdictionClockRollup(results) {
           existing.deadline = n.deadline;
         }
       } else {
+        // R-F11: emit `obligation` (the field name the CHANGELOG v0.12.16
+        // entry promised) AND retain `obligation_ref` as a kept-name alias
+        // for any consumer that already parses the older shape. The dedupe
+        // key still keys on n.obligation_ref since that's the field
+        // notification-action stubs carry; the rollup body just exposes
+        // both names so the documented contract is truthful.
+        const obligation = n.obligation_ref || null;
         m.set(key, {
           jurisdiction: n.jurisdiction || null,
           regulation: n.regulation || null,
-          obligation_ref: n.obligation_ref || null,
+          obligation,
+          obligation_ref: obligation,
           window_hours: n.window_hours ?? null,
           clock_started_at: n.clock_started_at,
           deadline: n.deadline || null,
@@ -2248,6 +2371,24 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       const entryPath = path.resolve(path.join(resolvedDir, f));
       if (!entryPath.startsWith(resolvedDir + path.sep)) {
         return emitError(`run: --evidence-dir entry ${f} resolves outside the directory; refusing.`, null, pretty);
+      }
+      // R-F12: the path.resolve check above only catches `..` traversal in
+      // the joined path; fs.readFileSync(entryPath) still follows symlinks,
+      // so a `<pb-id>.json -> /etc/shadow` symlink inside the dir would
+      // happily slurp the target. lstat is symlink-aware (it does NOT
+      // follow); refuse anything that's not a regular file. Defense in
+      // depth on top of the readdir filter — a junction (Windows) or
+      // bind-mount can shape-shift in between filter and read.
+      let lst;
+      try { lst = fs.lstatSync(entryPath); }
+      catch (e) {
+        return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
+      }
+      if (lst.isSymbolicLink()) {
+        return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
+      }
+      if (!lst.isFile()) {
+        return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing.`, { entry: f }, pretty);
       }
       try {
         bundle[pbId] = JSON.parse(fs.readFileSync(entryPath, "utf8"));
@@ -2340,7 +2481,12 @@ function cmdIngest(runner, args, runOpts, pretty) {
   // `echo '{...}' | exceptd ingest` failed with "no playbook resolved"
   // because args.evidence stayed undefined and the routing JSON never got
   // read. Mirrors the cmdRun behavior at line 1614.
-  if (!args.evidence && process.stdin.isTTY === false) {
+  // R-F3: use truthy `!process.stdin.isTTY` rather than `=== false`. On
+  // Windows MSYS bash, isTTY is `undefined` for piped streams — the
+  // strict `=== false` check failed and ingest silently treated the
+  // routing JSON as absent. CHANGELOG v0.12.16 F4 ("cmdIngest auto-
+  // detects piped stdin") was a no-op on Windows pre-fix.
+  if (!args.evidence && !process.stdin.isTTY) {
     args.evidence = "-";
   }
   if (args.evidence) {
@@ -2539,14 +2685,74 @@ function persistAttestation(args) {
           existingPath: path.relative(process.cwd(), filePath),
         };
       }
-      writeAttestation(prior ? (prior.evidence_hash || null) : null,
-                       prior ? (prior.captured_at || null) : null,
-                       "w");
-      return {
-        ok: true,
-        prior_session_id: prior ? sessionId : null,
-        overwrote_at: prior ? prior.captured_at : null,
-      };
+      // T P1-2: serialize the read-prior + write-new sequence behind a
+      // lockfile so concurrent --force-overwrite invocations against the
+      // same session-id slot do not degrade to last-write-wins. Pattern
+      // matches withCatalogLock + withIndexLock: O_EXCL 'wx' on a sibling
+      // .lock file with bounded retry, PID-liveness check on contention,
+      // mtime fallback for orphaned lockfiles.
+      const lockPath = filePath + ".lock";
+      const MAX_RETRIES = 50;
+      const STALE_LOCK_MS = 30_000;
+      let acquired = false;
+      for (let i = 0; i < MAX_RETRIES; i++) {
+        try {
+          fs.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+          acquired = true;
+          break;
+        } catch (lockErr) {
+          if (lockErr.code !== "EEXIST" && lockErr.code !== "EPERM") throw lockErr;
+          let reclaimed = false;
+          try {
+            const raw = fs.readFileSync(lockPath, "utf8").trim();
+            const pid = Number.parseInt(raw, 10);
+            if (Number.isInteger(pid) && pid > 0 && pid !== process.pid) {
+              try { process.kill(pid, 0); }
+              catch (probeErr) {
+                if (probeErr && probeErr.code === "ESRCH") {
+                  try { fs.unlinkSync(lockPath); reclaimed = true; } catch {}
+                }
+              }
+            }
+          } catch {}
+          if (reclaimed) continue;
+          try {
+            const stat = fs.statSync(lockPath);
+            if (Date.now() - stat.mtimeMs > STALE_LOCK_MS) {
+              try { fs.unlinkSync(lockPath); } catch {}
+              continue;
+            }
+          } catch {}
+          // Synchronous spin — persistAttestation is sync; we cannot await.
+          const deadline = Date.now() + 50 + Math.floor(Math.random() * 150);
+          while (Date.now() < deadline) { /* spin */ }
+        }
+      }
+      if (!acquired) {
+        return {
+          ok: false,
+          error: `Failed to acquire attestation lock at ${path.relative(process.cwd(), lockPath)} after ${MAX_RETRIES} attempts.`,
+          existingPath: path.relative(process.cwd(), filePath),
+        };
+      }
+      try {
+        // Re-read prior INSIDE the lock — the value captured before lock
+        // acquisition may be stale if another --force-overwrite landed
+        // between our EEXIST probe and the lock grab.
+        let lockedPrior = prior;
+        try { lockedPrior = JSON.parse(fs.readFileSync(filePath, "utf8")); }
+        catch { /* keep pre-lock prior */ }
+        writeAttestation(lockedPrior ? (lockedPrior.evidence_hash || null) : null,
+                         lockedPrior ? (lockedPrior.captured_at || null) : null,
+                         "w");
+        return {
+          ok: true,
+          prior_session_id: lockedPrior ? sessionId : null,
+          overwrote_at: lockedPrior ? lockedPrior.captured_at : null,
+        };
+      } finally {
+        try { fs.unlinkSync(lockPath); } catch {}
+      }
     }
   } catch (e) {
     return { ok: false, error: `Failed to write attestation: ${e.message}`, existingPath: null };
@@ -2563,6 +2769,20 @@ function persistAttestation(args) {
  * state so downstream tooling can distinguish "operator declined signing"
  * from "the .sig file was deleted by an attacker."
  */
+/**
+ * Audit P P1-C: byte-stability normalize() for the attestation pipeline.
+ * Strips a leading UTF-8 BOM and collapses CRLF → LF. Mirrors the
+ * normalize() implementations in lib/sign.js, lib/verify.js,
+ * lib/refresh-network.js, and scripts/verify-shipped-tarball.js. Five
+ * sites total; tests/normalize-contract.test.js asserts byte-identical
+ * output across all of them.
+ */
+function normalizeAttestationBytes(input) {
+  let s = Buffer.isBuffer(input) ? input.toString("utf8") : String(input);
+  if (s.length > 0 && s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  return s.replace(/\r\n/g, "\n");
+}
+
 function maybeSignAttestation(filePath) {
   const crypto = require("crypto");
   const sigPath = filePath + ".sig";
@@ -2576,7 +2796,16 @@ function maybeSignAttestation(filePath) {
   // (reporting only PKG_ROOT now), not by making `run` follow a cwd key the
   // verifier doesn't trust.
   const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
-  const content = fs.readFileSync(filePath, "utf8");
+  // Audit P P1-C: normalize attestation bytes before sign — strip leading
+  // UTF-8 BOM + collapse CRLF to LF. Mirrors lib/sign.js / lib/verify.js /
+  // lib/refresh-network.js / scripts/verify-shipped-tarball.js. The
+  // attestation file lives on disk under .exceptd/ and can pick up CRLF
+  // through git-attribute / editor round-trips on Windows; without
+  // normalization the sign/verify pair diverges on the same logical content.
+  // The byte-stability contract is now five sites; tests/normalize-contract
+  // .test.js enforces byte-identical output across all of them.
+  const rawContent = fs.readFileSync(filePath, "utf8");
+  const content = normalizeAttestationBytes(rawContent);
   // One-time-per-process unsigned warning so cron jobs don't spam stderr.
   // Operators who set `.keys/private.pem` get tamper-evident attestations;
   // operators without the keypair get a single nudge per session telling them
@@ -2718,6 +2947,19 @@ function verifyAttestationSidecar(attFile) {
   const sigPath = attFile + ".sig";
   const pubKeyPath = path.join(PKG_ROOT, "keys", "public.pem");
   const pubKey = fs.existsSync(pubKeyPath) ? fs.readFileSync(pubKeyPath, "utf8") : null;
+  // Audit Q P1 + R F6: consult keys/EXPECTED_FINGERPRINT before honoring
+  // the loaded public key. The v0.12.16 CHANGELOG claimed "pin consulted
+  // at every public-key load site," but reattest's signature verifier
+  // loaded keys/public.pem without the pin cross-check. A coordinated
+  // attacker who swapped keys/public.pem on the operator's host could
+  // verify-against-attacker-key without surfacing the divergence. Honors
+  // KEYS_ROTATED=1 to bypass during legitimate rotation.
+  if (pubKey) {
+    const pinError = assertExpectedFingerprint(pubKey);
+    if (pinError) {
+      return { file: attFile, signed: false, verified: false, reason: pinError };
+    }
+  }
   if (!fs.existsSync(sigPath)) {
     return { file: attFile, signed: false, verified: false, reason: "no .sig sidecar" };
   }
@@ -2731,7 +2973,13 @@ function verifyAttestationSidecar(attFile) {
     return { file: attFile, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
   }
   let content;
-  try { content = fs.readFileSync(attFile, "utf8"); }
+  try {
+    const raw = fs.readFileSync(attFile, "utf8");
+    // Audit P P1-C: apply the same normalize() used by the signer so the
+    // verify path is byte-stable across CRLF / BOM churn (Windows checkout
+    // with core.autocrlf=true, editor round-trips, git-attributes flips).
+    content = normalizeAttestationBytes(raw);
+  }
   catch (e) { return { file: attFile, signed: true, verified: false, reason: `attestation read error: ${e.message}` }; }
   try {
     const ok = crypto.verify(null, Buffer.from(content, "utf8"), {
@@ -2754,12 +3002,10 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // through to walkAttestationDir, where the lexical comparison either
   // matched all or none unpredictably.
   if (args.since != null) {
-    if (typeof args.since !== "string" || isNaN(Date.parse(args.since))) {
-      return emitError(
-        `reattest: --since must be a parseable ISO-8601 timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(args.since)).slice(0, 80)}`,
-        null, pretty
-      );
-    }
+    // R-F10: regex BEFORE Date.parse — bare integers like "99" would
+    // otherwise parse as the year 1999 and silently filter wrong eras.
+    const sinceErr = validateIsoSince(args.since);
+    if (sinceErr) return emitError(`reattest: ${sinceErr}`, null, pretty);
   }
   // --latest [--playbook <id>] [--since <ISO>] — find prior attestation
   // without requiring the operator to know the session-id.
@@ -2807,6 +3053,32 @@ function cmdReattest(runner, args, runOpts, pretty) {
   }
   if (verify.signed && !verify.verified && args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding failed signature verification on ${attFile} (${verify.reason}). The replay output records sidecar_verify so the override is audit-visible.\n`);
+  } else if (!verify.signed && verify.reason && verify.reason.includes("no .sig sidecar") && !args["force-replay"]) {
+    // Audit Q P2: missing-sidecar is NOT benign. The previous flow accepted
+    // a missing .sig file silently (only blocked on signed-but-invalid).
+    // Sidecar deletion is observationally identical to sidecar tamper —
+    // an attacker who can rewrite the attestation can also rm the sidecar,
+    // and pre-fix that path produced a green replay with no audit warning.
+    // Now: refuse unless --force-replay, and the persisted replay body
+    // records sidecar_verify so the override is audit-visible. Operators
+    // whose original run wrote unsigned attestations (no private key
+    // available) hit the "explicitly unsigned" branch below, which is
+    // distinguishable from a missing sidecar.
+    process.stderr.write(`[exceptd reattest] TAMPERED-OR-MISSING: no .sig sidecar at ${attFile}.sig. Sidecar deletion is treated the same as sidecar tamper — refusing to replay against potentially-forged input. Pass --force-replay to override (the replay output records sidecar_verify so the audit trail captures the override).\n`);
+    const body = {
+      ok: false,
+      error: `reattest: prior attestation has no .sig sidecar — refusing to replay`,
+      verb: "reattest",
+      session_id: sessionId,
+      attestation_file: attFile,
+      sidecar_verify: verify,
+      hint: "If the sidecar was intentionally removed (e.g. a clean operator rotation) and you have inspected the attestation, pass --force-replay.",
+    };
+    process.stderr.write(JSON.stringify(body) + "\n");
+    process.exitCode = 6;
+    return;
+  } else if (!verify.signed && verify.reason && verify.reason.includes("no .sig sidecar") && args["force-replay"]) {
+    process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding missing .sig sidecar on ${attFile}. The replay output records sidecar_verify so the override is audit-visible.\n`);
   } else if (!verify.signed && verify.reason !== "no .sig sidecar") {
     process.stderr.write(`[exceptd reattest] NOTE: attestation at ${attFile} has no Ed25519 signature (${verify.reason}). Proceeding — unsigned attestations are an operator config issue, not tamper evidence.\n`);
   }
@@ -2908,6 +3180,16 @@ function cmdAttest(runner, args, runOpts, pretty) {
   if (!sessionId) {
     return emitError(`attest ${subverb}: missing <session-id> positional argument.`, null, pretty);
   }
+  // R-F7: distinguish "validation rejected" from "valid format but not
+  // found". findSessionDir() returns null for BOTH (regex-rejected ids
+  // collapse to the "no session dir" message), which gives operators a
+  // misleading error — a string with `..` or `/` looks to them like an
+  // existing-session lookup that failed, not a refusal. Call the same
+  // validator up front; emit its specific message when it throws.
+  try { validateSessionIdForRead(sessionId); }
+  catch (e) {
+    return emitError(`attest ${subverb}: ${e.message}`, { session_id_input: typeof sessionId === "string" ? sessionId.slice(0, 80) : typeof sessionId }, pretty);
+  }
   const dir = findSessionDir(sessionId, runOpts);
   if (!dir) {
     return emitError(`attest ${subverb}: no session dir for ${sessionId}. Searched: ${resolveAttestationRoot(runOpts)} + .exceptd/attestations/`, { session_id: sessionId }, pretty);
@@ -2979,13 +3261,29 @@ function cmdAttest(runner, args, runOpts, pretty) {
     const crypto = require("crypto");
     const pubKeyPath = path.join(PKG_ROOT, "keys", "public.pem");
     const pubKey = fs.existsSync(pubKeyPath) ? fs.readFileSync(pubKeyPath, "utf8") : null;
+    // Audit Q P1 + R F6: same pin cross-check as verifyAttestationSidecar().
+    // The v0.12.16 promise that EXPECTED_FINGERPRINT is consulted at every
+    // public-key load site was not honored here — `attest verify` loaded
+    // keys/public.pem raw. Refuse to verify any sidecar when the local
+    // public.pem diverges from the pinned fingerprint (unless KEYS_ROTATED=1).
+    const pinError = pubKey ? assertExpectedFingerprint(pubKey) : null;
+    if (pinError) {
+      return emitError(
+        `attest verify: ${pinError}`,
+        { verb: "attest verify", session_id: sessionId, pin_error: pinError },
+        pretty
+      );
+    }
     const results = files.map(f => {
       const sigPath = path.join(dir, f + ".sig");
       if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
       const sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8"));
       if (sigDoc.algorithm === "unsigned") return { file: f, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
       if (!pubKey) return { file: f, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
-      const content = fs.readFileSync(path.join(dir, f), "utf8");
+      // Audit P P1-C: normalize before crypto.verify — mirrors the signer
+      // path so the verify pair is byte-stable across CRLF / BOM churn.
+      const rawContent = fs.readFileSync(path.join(dir, f), "utf8");
+      const content = normalizeAttestationBytes(rawContent);
       try {
         const ok = crypto.verify(null, Buffer.from(content, "utf8"), {
           key: pubKey, dsaEncoding: "ieee-p1363",
@@ -2995,7 +3293,21 @@ function cmdAttest(runner, args, runOpts, pretty) {
         return { file: f, signed: true, verified: false, reason: `verify error: ${e.message}` };
       }
     });
-    emit({ verb: "attest verify", session_id: sessionId, results }, pretty);
+    // R-F1: when ANY result is signed-but-failed-verify, surface ok:false
+    // AND set exit 6 for parity with cmdReattest's TAMPERED code. Pre-fix,
+    // `attest verify` emitted {verb, session_id, results} without ok:false
+    // and exited 0 — operators piping through `set -e` saw no failure
+    // signal even when an attestation had been forged. emit()'s ok:false
+    // → exitCode = 1 auto-promotion would stop at 1; tamper is distinct
+    // from generic failure, so explicitly raise to 6 (cmdReattest's code).
+    const tampered = results.some(r => r.signed && !r.verified);
+    const body = { verb: "attest verify", session_id: sessionId, results };
+    if (tampered) {
+      body.ok = false;
+      body.error = "attest verify: one or more attestations failed Ed25519 verification — possible post-hoc tampering";
+      process.exitCode = 6;
+    }
+    emit(body, pretty);
     return;
   }
 
@@ -3789,12 +4101,10 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
   // Prior behavior silently accepted any string and lexically compared to
   // captured_at, producing 0-result or full-result depending on the string.
   if (args.since != null) {
-    if (typeof args.since !== "string" || isNaN(Date.parse(args.since))) {
-      return emitError(
-        `attest list: --since must be a parseable ISO-8601 timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(args.since)).slice(0, 80)}`,
-        null, pretty
-      );
-    }
+    // R-F10: regex BEFORE Date.parse — bare integers like "99" would
+    // otherwise parse as the year 1999 and silently filter wrong eras.
+    const sinceErr = validateIsoSince(args.since);
+    if (sinceErr) return emitError(`attest list: ${sinceErr}`, null, pretty);
   }
   // Enumerate sessions across both v0.11.0 default root and legacy cwd-
   // relative root, so operators with prior attestations still see them.
@@ -4632,4 +4942,4 @@ function cmdCi(runner, args, runOpts, pretty) {
 
 if (require.main === module) main();
 
-module.exports = { COMMANDS, PKG_ROOT, PLAYBOOK_VERBS };
+module.exports = { COMMANDS, PKG_ROOT, PLAYBOOK_VERBS, persistAttestation };

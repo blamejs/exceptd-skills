@@ -177,6 +177,11 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-playbooks.js")],
     ciJobName: "Validate playbooks",
     informational: true,
+    // audit Y F30: cap informational acceptance at exit 1 so a CRASH (137 OOM,
+    // 139 SIGSEGV, 134 SIGABRT, etc.) surfaces as a real failure instead of
+    // being absorbed under the informational bucket. Matches the
+    // forward-watch gate (line ~111) which already pins the same ceiling.
+    informationalMaxExitCode: 1,
   },
 ];
 

@@ -532,18 +532,38 @@ test('#85 from_observation populated when observation drove the indicator', () =
 });
 
 // ===================================================================
-test('#91 CSAF includes framework_gap_mapping as vulnerabilities', () => {
+// audit W P2-D (v0.12.20): framework gaps were previously emitted as
+// CSAF vulnerabilities[] entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string was rejected by NVD / ENISA / Red Hat dashboards and
+// rendered as false-positive advisories at the framework_gap_mapping
+// length on every run. The correct emission is `document.notes[]` with
+// `category: details` — advisory context, not pseudo-CVEs. The test
+// below was updated to verify the new shape; the previous assertion
+// (gaps appearing in vulnerabilities[]) is now an anti-assertion.
+test('#91 CSAF emits framework_gap_mapping as document.notes (not pseudo-vulnerabilities)', () => {
   const sub = JSON.stringify({
     observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
   });
   const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
   const data = tryJson(r.stdout);
   assert.ok(data, 'csaf output should be JSON');
+  // Anti-assertion: gaps no longer ride in vulnerabilities[].
   const fwGapVulns = (data.vulnerabilities || []).filter(v =>
     (v.ids || []).some(id => id.system_name === 'exceptd-framework-gap')
   );
-  assert.ok(fwGapVulns.length > 0,
-    'CSAF must include framework gaps as vulnerabilities — pre-0.11.6 only matched_cves + indicators were emitted');
+  assert.equal(fwGapVulns.length, 0,
+    'framework gaps must NOT appear as vulnerabilities[] entries — they pollute downstream CSAF consumers');
+  // Positive assertion: gaps land in document.notes[].
+  const notes = data?.document?.notes || [];
+  assert.ok(Array.isArray(notes), 'document.notes must be an array');
+  assert.ok(notes.length >= 1, 'library-author playbook surfaces at least one framework gap as a note');
+  for (const n of notes) {
+    assert.equal(n.category, 'details', 'framework-gap notes use category: details');
+    assert.ok(typeof n.text === 'string' && n.text.length > 0,
+      'each framework-gap note must carry a non-empty text body');
+  }
 });
 
 test('#91 OpenVEX excludes framework_gap_mapping statements (v0.12.12 B3)', () => {

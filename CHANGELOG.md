@@ -1,25 +1,96 @@
 # Changelog
 
+## 0.12.19 — 2026-05-14
+
+**Patch: trust-chain hardening across attestation verify + refresh-network + verify-shipped-tarball; engine FP-bypass closures; bundle correctness; concurrency safety; KEV-draft promotability; README CVSS correction.**
+
+### Trust chain
+
+- **`attest verify` returns exit 6 + `ok:false` on TAMPERED**. The subverb previously emitted `{verb, session_id, results}` without `ok:false` when any sidecar failed verification — the `emit()` auto-exitCode contract only fires on `ok:false`, so a tampered attestation passed exit 0. CI gates and shell pipelines now see the correct failure signal.
+- **`reattest` refuses missing `.sig` sidecar** unless `--force-replay` is supplied. A deleted sidecar previously hit the same silently-consumed path as a clean attestation; the drift verdict was meaningless. `--force-replay` records `sidecar_verify` + `force_replay: true` in the persisted body so the override is auditable.
+- **`refresh-network` verifies the tarball's `manifest_signature`** before swapping in the new skill set. The previous swap only verified per-skill signatures and trusted the manifest itself unconditionally; a coordinated attacker who could rewrite the manifest envelope's `skills[].signature` field (without breaking individual skill-body crypto) passed the check. Swap now refuses on `invalid` OR `missing` (stricter than the post-install loader, which still degrades to warn-and-continue for legacy unsigned tarballs).
+- **`verify-shipped-tarball` predeploy gate verifies the manifest envelope signature** in addition to per-skill bodies. Mirrors the post-install verifier so the publish-time gate catches manifest-level tampering before the tarball reaches operators.
+- **`keys/EXPECTED_FINGERPRINT` consulted at every public-key load site**. `attest verify`, `reattest` (via `verifyAttestationSidecar`), and the attestation sign path now cross-check the loaded public key against the pinned fingerprint, refusing on mismatch. Honors `KEYS_ROTATED=1` for legitimate rotation; missing pin file warns and continues. Closes the previously-misleading note in the v0.12.16 entry — the pin was claimed at "every load site" but the bin/exceptd.js sites were not consulting it.
+- **`manifest_signature.signed_at` removed** from the signed-bytes envelope. The field was excluded from the canonical input but included in the output object, letting an attacker replay a stale signature and rewrite the timestamp to lie about freshness. `manifest_signature` now carries `{algorithm, signature_base64}` only; consumers needing a freshness signal read git log or filesystem mtime.
+- **`manifest_signature.algorithm` validated strictly** (`=== 'Ed25519'`). A missing field previously bypassed the algorithm guard; now refused unless the field is present and matches.
+- **Unsigned-manifest warning deduplicated** via `process.emitWarning(..., { code: 'EXCEPTD_MANIFEST_UNSIGNED' })`. CLI verbs calling `loadManifestValidated` more than once per invocation no longer emit the warning N times.
+- **Attestation sign + verify normalize CRLF/BOM**. All three attestation pipeline sites (`maybeSignAttestation`, `verifyAttestationSidecar`, `attest verify`) now apply the same `normalize()` contract as the manifest signer. Closes the CRLF-on-Windows divergence class that produced the v0.11.x signature regressions, now mirrored at attestation granularity.
+- **Cross-implementation `normalize()` contract test** asserts byte-identical output across `lib/sign.js`, `lib/verify.js`, `lib/refresh-network.js`, `scripts/verify-shipped-tarball.js`, and `bin/exceptd.js#normalizeAttestationBytes` against a 16-input fuzz corpus (plain LF, CRLF, BOM+LF, BOM+CRLF, double BOM, embedded `\r`, mixed line endings, embedded nulls, empty string, unicode codepoints, fixed-point convergence).
+
+### Engine + FP-check enforcement
+
+- **Array-shape FP attestation rejected**. `signal_overrides: { '<indicator>__fp_checks': [true, true] }` (array) previously bypassed the gate: `typeof [] === 'object'` is true and index-string fallback `att[String(idx)]` matched the array indices. Arrays now land in the empty-attestation branch and every required FP check is treated as unsatisfied.
+- **Agent-supplied `detection_classification: 'detected'` override blocked when any indicator is FP-downgraded**. The runner previously honored the override unconditionally; an agent could mark the run `detected` even though every indicator with `false_positive_checks_required[]` had unsatisfied checks. Substitution to `inconclusive` is now forced and a `classification_override_blocked` runtime_error records the attempted value, the substituted value, and the indicators driving the downgrade.
+- **`normalizeSubmission` runtime errors reach `analyze.runtime_errors[]`**. The helper recorded validation errors (e.g. `signal_overrides_invalid` for non-object input) on its own scratch array but the engine never harvested them; the v0.12.14 promise that `runtime_errors[]` surfaces every validation failure was silently incomplete. Errors now splice into the run-level accumulator before the F1 evidence-hash digest, then the scratch property is deleted so the digest stays deterministic.
+
+### Bundle correctness
+
+- **CSAF + OpenVEX `fixed` status gated on `vex_status`, not `live_patch_available`**. The catalog's `live_patch_available` field means "vendor publishes a live-patch in the world" — NOT "operator has deployed it." Bundles were emitting `product_status: fixed` / OpenVEX `status: "fixed"` for every CVE in the catalog with a live-patch route, regardless of operator disposition. Now: `fixed` requires `c.vex_status === 'fixed'` (operator-supplied via `--vex`); live-patchable CVEs without an operator attestation emit `known_affected` / OpenVEX `affected` with `remediations[].category: vendor_fix` pointing at the live-patch.
+- **SARIF `artifactLocation.uri` validates path shape**. The previous logic stripped `^https?://` and split on `AND|OR`, leaving shell commands like `uname -r` or English prose as the URI. GitHub Code Scanning rejected or rendered these garbled. A path-shape predicate now accepts POSIX absolute, home (`~`), relative dot, Windows drive, `file:` URI, and bare relative paths; rejects whitespace + shell metachars. Non-path sources omit `locations` cleanly.
+- **CSAF framework gaps emitted as `document.notes[]`** instead of `vulnerabilities[]`. Framework-gap entries previously carried `ids: [{system_name: "exceptd-framework-gap"}]` — not a recognized vulnerability tracking authority. NVD / Red Hat dashboards saw 9 false-positive advisories per run. Now rendered as `notes[].category: "details"`.
+- **`bundle_body` and `bundles_by_format` share timestamps**. `buildEvidenceBundle` was called twice in close(); each invocation minted independent `new Date().toISOString()` values, so `document.tracking.initial_release_date` (CSAF) and `timestamp` (OpenVEX) differed by milliseconds across the two bundle surfaces. A memoized build now produces one bundle reused at both call sites.
+- **SARIF `invocations[0].properties` strips nulls**. Aligns with the rest of the SARIF emitter so consumer dashboards don't see `{ "exit_code": null }` noise.
+
+### CLI hardening
+
+- **Windows stdin auto-detect fixed**. `cmdRun` and `cmdIngest` used `process.stdin.isTTY === false` (strict equality). On Windows MSYS bash, `process.stdin.isTTY === undefined` for a piped stream, so the check failed and `echo '{...}' | exceptd run ...` was not picked up as evidence. Both call sites now use truthy `!process.stdin.isTTY` (parity with `cmdAiRun`).
+- **`--vex` validates document shape on empty `vulnerabilities[]`**. The detect heuristic previously returned `entriesLookVex` true for any document with an empty `vulnerabilities` array — including `{"bomFormat":"NOT-CycloneDX","vulnerabilities":[]}`. Empty arrays now require `bomFormat === "CycloneDX"` OR `specVersion` starting with `1.`.
+- **`--vex` enforces a 32 MB size cap**. `fs.statSync` check before `fs.readFileSync` matches the cap on `--evidence`.
+- **`--scope ""` rejected with the accepted-set message** instead of silently auto-detecting. The gate changed from truthy `args.scope` to `args.scope !== undefined`, so empty string reaches `validateScopeOrThrow`.
+- **`--since` validated against ISO-8601 regex BEFORE `Date.parse`** on `attest list` and `reattest`. `Date.parse("99")` returned 1999-12-01 (a legitimate-looking ISO-8601 short form). The regex now requires `YYYY-MM-DD` minimum.
+- **Session-id validation runs before `findSessionDir`** in `cmdAttest`. Previously a regex-rejected id (e.g. `'../../..'`) and a valid-shape-but-not-found id both surfaced as "no session dir" — the validation error is now reported distinctly.
+- **`--evidence-dir` refuses symbolic links** via `fs.lstatSync` check. Prior path-traversal guards covered string-resolved paths but symlinks pointing outside the directory followed transparently through `readFileSync`.
+- **Three `process.exit(N)` sites after stderr writes** in the main dispatcher (unknown command, missing script, spawn error) replaced with `emitError()` + `process.exitCode = N; return;`. Stderr drains under piped CI consumers.
+- **`buildJurisdictionClockRollup` output carries both `obligation` and `obligation_ref`**. The CHANGELOG previously claimed the dedupe key was `(jurisdiction, regulation, obligation, window_hours)` while the rollup body emitted `obligation_ref` only; both shapes now ship.
+
+### Concurrency
+
+- **`withCatalogLock` (refresh-external) and `withIndexLock` (prefetch) probe PID liveness** before falling through to the mtime-based stale-lock check. A lockfile written by a dead process is now reclaimed immediately (`process.kill(pid, 0)` → ESRCH → unlink). Matches the pattern already used in `orchestrator/index.js#_acquireWatchLock` and `lib/playbook-runner.js#acquireLock`.
+- **`persistAttestation --force-overwrite` serialized via a lockfile**. Concurrent overwrites of the same path previously last-write-wins; the `prior_evidence_hash` chain lost intermediate writers. An `O_EXCL` lockfile gate at `<filePath>.lock` (with PID-liveness reclaim) now serializes the read-prior / write-new sequence.
+- **`prefetch.js` payload staging atomic**. The fetcher previously wrote the cached payload before acquiring the index lock; a lock-acquisition timeout left orphan payload files with no index entry. Payload is now written to `<targetPath>.tmp.<pid>.<rand>` first; inside `withIndexLock` the rename + index update happen as an atomic pair; on lock-acquisition failure the tmp file is unlinked.
+- **`scheduleEvery(0)` / `(-1)` / `(NaN)` rejected** with `RangeError`. Previously `scheduleEvery(0, fn)` fired ~93 times in 100 ms; negative values produced similar tight loops. `Number.isFinite(intervalMs) && intervalMs > 0` is now required.
+
+### Auto-discovery + curation
+
+- **KEV-discovered drafts now promotable**. `buildKevDraftEntry` previously stored `rwep_factors` with boolean values (the input shape for `scoreCustom`) plus `source_verified: null` — both shapes violated the strict catalog schema, hard-failing promotion. Drafts now carry post-weight numeric `rwep_factors` (matching the catalog norm) summing to `rwep_score` exactly, and `source_verified: <today>` (the KEV listing IS the verification source).
+
+### Operator-facing factual
+
+- **README CVE-2025-53773 CVSS aligned to catalog** (7.8, not 9.6). The catalog correction landed in v0.12.14 across 11 skills; the README example was missed.
+
+### Predeploy
+
+- **`Validate playbooks` gate caps informational exit at 1** via `informationalMaxExitCode: 1`. A CRASH (137/139) now surfaces as a real failure instead of being demoted to informational, matching the forward-watch gate's existing ceiling.
+
+### Catalog
+
+- **`ai-api` playbook `domain.cve_refs` += `CVE-2026-42208`** (cited in threat_context, was missing from the structured refs).
+
+### Tests
+
+- New: `tests/normalize-contract.test.js`, `tests/audit-o-q-r-fixes.test.js`, `tests/audit-r-cli-fixes.test.js`, `tests/audit-s-t-u-z-fixes.test.js`, `tests/bundle-correctness.test.js`, `tests/_helpers/concurrent-attestation-writer.js`.
+- Touched: `tests/predeploy-gates.test.js` (gate-14 fixture signs the manifest envelope so per-skill verify still runs against tamper variants); `tests/operator-bugs.test.js` (#91 framework-gap assertion updated to the new `document.notes[]` contract); `tests/auto-discovery.test.js` (KEV-draft schema-shape + active_exploitation enum + source_verified date).
+
+Test count: 760 → 840 (838 pass + 2 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed; manifest signature shape `{algorithm, signature_base64}` (no `signed_at`).
+
 ## 0.12.18 — 2026-05-14
 
-**Patch: e2e FP-check attestations for v0.12.17 indicator backfill. v0.12.17 publish payload.**
+**Patch: e2e scenarios attest FP-check satisfaction for indicators that carry `false_positive_checks_required[]`.**
 
-The v0.12.17 tag exists on git but never reached npm — release.yml's validate gate's `npm run test:e2e` failed 4/20 scenarios because v0.12.17's indicator FP-check backfill (audit K) caused the runner to downgrade hits to inconclusive without operator attestation, dropping RWEP scores below the e2e expect thresholds.
-
-v0.12.18 ships the v0.12.17 fix payload plus FP-check attestations on the affected e2e scenarios:
+Four e2e scenarios assert `classification: detected` against indicators whose v0.12.17 FP-check backfill now requires explicit operator attestation. Without the attestation, the engine downgrades hits to `inconclusive` and the scenarios' RWEP thresholds aren't met. The scenarios now carry the attestation shape:
 
 - `12-crypto-codebase-md5-eol`: attest FP checks for `weak-hash-import` + `no-ml-kem-implementation`
 - `15-cred-stores-aws-static`: attest FP checks for `aws-static-key-present`
-- `16-containers-root-user`: attest FP checks for `dockerfile-runs-as-root`; lower `adjusted` threshold from 15 → 10 (only `dockerfile-from-latest` carries an `rwep_inputs` entry on the containers playbook; the FP-attested `dockerfile-runs-as-root` fires but doesn't drive RWEP)
+- `16-containers-root-user`: attest FP checks for `dockerfile-runs-as-root`; `adjusted` threshold lowered from 15 → 10 (only `dockerfile-from-latest` carries an `rwep_inputs` entry on the containers playbook; the FP-attested `dockerfile-runs-as-root` fires but doesn't drive RWEP)
 - `20-ai-api-openai-dotfile`: attest FP checks for `cleartext-api-key-in-dotfile` + `long-lived-aws-keys`
 
-Attestation shape per the E1 contract (v0.12.12): `signal_overrides: { '<indicator>__fp_checks': { '0': true, '1': true, ... } }` — each entry means "I've verified that this FP scenario does NOT apply; this is a real hit."
+Attestation shape per the E1 contract: `signal_overrides: { '<indicator>__fp_checks': { '0': true, '1': true, ... } }` — each entry means "I've verified that this FP scenario does NOT apply; this is a real hit."
 
 ## 0.12.17 — 2026-05-14
 
-**Patch: remaining deferred P1/P2 items from the v0.12.15 audit pile — manifest signing, Windows ACL, indicator FP backfill, schema promotion.**
+**Patch: manifest signing, Windows ACL on signing key, indicator FP-check backfill, schema promotion.**
 
-### Manifest signing (audit I P1-4)
+### Manifest signing
 
 The previous trust chain signed each skill body individually but the manifest itself was just an unsigned index. A coordinated attacker who could rewrite `manifest.json` + `manifest-snapshot.json` + `manifest-snapshot.sha256` passed every gate (snapshot is checked locally, the sha256 also computed locally).
 
@@ -27,11 +98,11 @@ Now: `manifest.json` carries a top-level `manifest_signature` field (Ed25519 ove
 
 Canonical-form contract documented in both `lib/sign.js` and `lib/verify.js` headers — future shape changes to manifest.json must respect the invariants (sort top-level keys, exclude `manifest_signature`, normalize line endings).
 
-### Windows ACL on `.keys/private.pem` (audit I P1-3)
+### Windows ACL on `.keys/private.pem`
 
 `lib/sign.js` previously wrote the private key with `{ mode: 0o600 }`. On POSIX this restricts read access to the owner. On Windows the `mode` argument maps to read/write attributes only, not POSIX permissions; ACLs inherited from the parent directory. A multi-user maintainer workstation or shared CI runner therefore allowed any process under the same desktop user to read the key. Now: on `win32`, `lib/sign.js` calls `icacls /inheritance:r /grant:r ${USERNAME}:F` after writing the private key, narrowing the ACL to the current user. The same restriction is applied via `restrictWindowsAcl(targetPath)` from `scripts/bootstrap.js` when bootstrap creates the keypair. Falls back to a stderr warning if `icacls` is unavailable; doesn't fail key generation.
 
-### Indicator FP-check backfill (audit K)
+### Indicator FP-check backfill
 
 36 deterministic indicators across 11 playbooks now carry `false_positive_checks_required[]` entries (the gold-standard pattern from `library-author.gha-workflow-script-injection-sink` in v0.12.13). Per-playbook coverage:
 
@@ -48,37 +119,33 @@ Canonical-form contract documented in both `lib/sign.js` and `lib/verify.js` hea
 - `sbom` — 3 (lockfile-no-integrity, kev-listed-match, windsurf-vulnerable-version)
 - `secrets` — 5 (aws-secret-access-key, slack-bot-or-user-token, stripe-secret-key, openai-api-key, anthropic-api-key)
 
-Each entry is a 1-line check an AI assistant or operator must satisfy before the indicator's `hit` verdict can drive `classification: detected`. The runner downgrades a hit with unsatisfied FP checks to `inconclusive` (v0.12.12 E1 contract). Backfill complements the playbook-level `false_positive_profile[]` documentation by binding FP checks per-indicator at the schema layer.
+Each entry is a 1-line check an AI assistant or operator must satisfy before the indicator's `hit` verdict can drive `classification: detected`. The runner downgrades a hit with unsatisfied FP checks to `inconclusive` (E1 contract from v0.12.12). Binding FP checks per-indicator at the schema layer complements the playbook-level `false_positive_profile[]` documentation.
 
-### Schema promotion (audit K + audit M)
+### Schema promotion
 
-`lib/schemas/playbook.schema.json` indicator object now formally declares `false_positive_checks_required[]` and `cve_ref` as optional fields (was unschema'd; produced WARN noise on every validate run). The `cve_ref` field has been load-bearing since v0.12.14 F3 (drives `analyze.matched_cves[]` correlation); the schema declaration just catches up. After the schema promotion + the v0.12.16 enum-drift normalisation, `validate-playbooks` runs 13/13 PASS with zero warnings (was 12/13 PASS + 1 WARN in v0.12.16, 8/13 PASS + 5 WARN in v0.12.15).
+`lib/schemas/playbook.schema.json` indicator object now formally declares `false_positive_checks_required[]` and `cve_ref` as optional fields (was unschema'd; produced WARN noise on every validate run). The `cve_ref` field has been load-bearing since v0.12.14 (drives `analyze.matched_cves[]` correlation); the schema declaration catches up. `validate-playbooks` runs 13/13 PASS with zero warnings.
 
 ### Operator-facing surfaces
 
-- **`--diff-from-latest` result surfaced in `run` human renderer (audit L F11)**. Operators running with `--diff-from-latest` and no `--json` previously got no visibility on drift; now: `> drift vs prior: unchanged (same evidence_hash as session <prior_id>)` or `> drift vs prior: DRIFTED — evidence_hash differs from session <prior_id>` is added near the classification line. No line when there's no prior attestation for the playbook (don't clutter).
-- **`ai-run` stdin acceptance contract documented in `--help`**. The streaming + no-stream paths both consume "first parseable evidence event wins on stdin; subsequent evidence events ignored; non-evidence chatter silently ignored; invalid JSON exits 1." Was implicit behavior; now explicit so AI agents calling `exceptd ai-run` know the contract.
+- **`--diff-from-latest` result surfaced in `run` human renderer**. Operators running with `--diff-from-latest` and no `--json` previously got no visibility on drift; now: `> drift vs prior: unchanged (same evidence_hash as session <prior_id>)` or `> drift vs prior: DRIFTED — evidence_hash differs from session <prior_id>` is added near the classification line. No line when there's no prior attestation for the playbook.
+- **`ai-run` stdin acceptance contract documented in `--help`**. The streaming + no-stream paths both consume "first parseable evidence event wins on stdin; subsequent evidence events ignored; non-evidence chatter silently ignored; invalid JSON exits 1." Was implicit behavior; now explicit.
 
-### Auto-discovery hygiene (audit M P3-O)
+### Auto-discovery hygiene
 
 `lib/auto-discovery.js discoverNewKev` previously hardcoded `severity: 'high'` on every KEV-discovered diff. Now uses `deriveKevSeverity(kevEntry)` — returns `'critical'` when `knownRansomwareCampaignUse === 'Known'` OR `dueDate` is within 7 days; otherwise `'high'`. Downstream PR-body categorization can now route ransomware-use + imminent-due-date KEVs differently.
 
-### Tests
-
-- 20 new regression tests in `tests/audit-i-l-m-fixes.test.js` covering: Windows ACL helper export, manifest canonical-bytes determinism (stale signature + key-order invariants), sign + verify round trip, live manifest carries valid signature, tampered signature/skill detection, backward-compat `missing` status, `--diff-from-latest` renderer string/branch assertions, ai-run help-text content, `deriveKevSeverity` matrix, `discoverNewKev` propagation against synthetic KEV feed.
-
-Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/38 signed; manifest itself signed.
+Test count: 740 → 760. Predeploy gates: 14/14. Skills: 38/38 signed; manifest itself signed.
 
 ## 0.12.16 — 2026-05-14
 
-**Patch: highest-impact P1 security findings from the v0.12.15 audit pile.**
+**Patch: trust chain hardening, CI workflow injection sinks, CLI fuzz fixes, scoring math, curation + auto-discovery + prefetch fixes, playbook hygiene.**
 
-### Sign/verify trust chain (audit I)
+### Sign/verify trust chain
 
 - **CRLF/BOM bypass on the shipped-tarball verify gate closed.** `scripts/verify-shipped-tarball.js` previously read raw on-disk bytes and called `crypto.verify` directly — bypassing the CRLF/BOM normalization that `lib/sign.js` + `lib/verify.js` apply on both sides of the byte-stability contract. The gate's whole purpose is to catch the v0.11.x signature regression class; without the same normalization, it would itself report 0/38 on any tree where line-ending normalization touched the source between sign and pack (a Windows contributor with `core.autocrlf=true`, or any tool like Prettier in the CI pipeline). The `normalizeSkillBytes` helper is now mirrored in this fourth normalize() implementation.
 - **`keys/EXPECTED_FINGERPRINT` pin now consulted at every public-key load site.** Previously only `lib/verify.js` + `scripts/verify-shipped-tarball.js` checked the pin. `lib/refresh-network.js` and `bin/exceptd.js attest verify` both loaded `keys/public.pem` and trusted it without the cross-check. A coordinated attacker who tampered with `keys/public.pem` on the operator's host (e.g. via a prior compromised refresh) passed every check because the local↔tarball fingerprints matched each other. Now the pin is the external trust anchor at all four load sites. Honors `KEYS_ROTATED=1` env to allow legitimate rotation without re-bootstrap; missing pin file degrades to warn-and-continue.
 
-### CI workflow security (audit N)
+### CI workflow security
 
 - **`atlas-currency.yml` script-injection sink closed (CWE-1395).** `${{ steps.currency.outputs.report }}` was interpolated directly into a github-script template literal; the `report` value is unescaped output of `node orchestrator/index.js currency`. A skill author who landed a string containing a backtick followed by `${process.exit(0)}` (or worse, an exfil to a webhook with `${process.env.GITHUB_TOKEN}`) got arbitrary JS execution inside the github-script runtime with the workflow's token. Now routed via `env.REPORT_TEXT` and read inside the script body as `process.env.REPORT_TEXT`.
 - **`refresh.yml` shell-injection from `workflow_dispatch` input closed (CWE-78).** `${{ inputs.source }}` was interpolated directly into a bash `run:` block. An operator passing `kev; rm -rf /; #` got shell injection inside the runner. Now routed via `env.SOURCE_INPUT` and validated against `^[a-z,]+$` (the documented `kev,epss,nvd,rfc,pins` allowlist shape) before passing to the CLI.
@@ -87,7 +154,7 @@ Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/3
 - `gitleaks` resolver now has a hardcoded fallback version + non-fatal failure path so a GitHub API HTML-error response doesn't block every CI run.
 - New `tests/workflows-security.test.js` enforces: no `${{ steps.*.outputs.* }}` inside github-script template literals; no `${{ inputs.* }}` inside bash `run:` blocks; every third-party action is SHA-pinned; every workflow declares `permissions:`.
 
-### CLI hardening (audit L)
+### CLI hardening
 
 - **`--block-on-jurisdiction-clock` now honored on `cmdRun`.** Previously the flag was registered + documented but only `cmdCi` consumed it; `run --block-on-jurisdiction-clock` exited 0 even when an NIS2 24h clock had started. Now both verbs exit 5 (`CLOCK_STARTED`) when any notification action has a non-null `clock_started_at` and an unacked operator consent.
 - **`cmdIngest` auto-detects piped stdin.** Mirrors the `cmdRun` shape — `echo '{...}' | exceptd ingest` now works without an explicit `--evidence -`.
@@ -99,7 +166,7 @@ Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/3
 - `--block-on-jurisdiction-clock` exit code split from `FAIL` (exit 2) → `CLOCK_STARTED` (exit 5). CI gates can distinguish "detected" from "clock fired".
 - `cmdReattest --since` validated as parseable ISO-8601.
 
-### Scoring math hardening (audit J)
+### Scoring math hardening
 
 - `scoreCustom` now treats `active_exploitation: 'unknown'` as `0.25 × weight` (was 0) — aligning with `playbook-runner._activeExploitationLadder` semantics so catalog-side and runtime-side scoring agree.
 - New `deriveRwepFromFactors(factors)` helper exported; detects whether `rwep_factors` is in Shape A (boolean inputs to `scoreCustom`) or Shape B (numeric weighted contributions) and produces a consistent score. Documents the dual-semantics so the rename can land cleanly in v0.13.0.
@@ -109,7 +176,7 @@ Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/3
 - `compare()` "broadly aligned" band tightened from ±20 to ±10. The Copy Fail RWEP-vs-CVSS divergence (delta 12) now correctly surfaces as "significantly higher than CVSS equivalent."
 - `Math.floor(20/2)` arithmetic replaced with `RWEP_WEIGHTS.active_exploitation * 0.5` (no behavior change today; closes a future odd-weight asymmetry).
 
-### Curation + auto-discovery + prefetch (audit M)
+### Curation + auto-discovery + prefetch
 
 - **Hidden second scoring path in `lib/cve-curation.js` closed.** The apply path previously derived `rwep_score` via `Object.values(rwep_factors).reduce(sum, 0)` — bypassing `scoring.js` entirely. Replaced with `deriveRwepFromFactors()`.
 - **Auto-discovery RWEP divergence closed.** `lib/auto-discovery.js` previously stored `rwep_factors` with null values for poc_available/ai_*/reboot_required while calling `scoreCustom` with `true` defaults; stored factors and stored score were inconsistent and `scoring.validate()` always flagged it. New `buildScoringInputs(kev, nvd)` is the single source of truth.
@@ -117,7 +184,7 @@ Test count: 740 → 760 (+20 + 1 reworked). Predeploy gates: 14/14. Skills: 38/3
 - **`lib/prefetch.js` docs corrected**: header comment + `printHelp()` no longer reference non-existent source names `ietf` and `github`.
 - **`readCached` no longer returns stale data as fresh** when `fetched_at` is missing/corrupt (the `NaN > maxAgeMs === false` short-circuit was treating undefined-age entries as eternally-fresh).
 
-### Playbook quality (audit K)
+### Playbook quality
 
 - **Mutex reciprocity validator** in `lib/validate-playbooks.js`: walks every `_meta.mutex` entry, emits WARNING per asymmetric edge. Reciprocity backfilled across 7 mutex relationships (secrets↔library-author, kernel↔hardening, containers↔library-author, etc.).
 - **`containers → sbom` feeds_into edge** added (container-image-layer SBOM matching against KEV-listed CVEs is a primary v0.12.x use case but wasn't declared).
@@ -138,11 +205,9 @@ Test count: 701 → 738 (+37: 29 scoring vectors + 8 workflow-security). Predepl
 
 ## 0.12.15 — 2026-05-14
 
-**Patch: e2e RWEP factor-scaling fix + audit-surfaced silent-disable regressions. v0.12.14 publish payload.**
+**Patch: RWEP factor-scaling three-tier fallback + silent-disable regression closures.**
 
-The v0.12.14 tag exists on git but never reached npm — the `validate` job's `npm run test:e2e` gate failed 9/20 scenarios because the v0.12.14 RWEP factor-scaling change (F5 from the engine agent) had no fallback for class-of-vulnerability playbooks that detect without per-CVE evidence correlation. `_factorScale` returned 0 when no `factorCve` was available; every fired indicator's `weight_applied` was forced to 0; catalog-shape playbooks (secrets, library-author, crypto-codebase, framework, cred-stores, containers, runtime, crypto, ai-api) emitted `adjusted: 0` for every detection.
-
-v0.12.15 ships the v0.12.14 deep-audit fix payload plus:
+The v0.12.14 RWEP factor-scaling change had no fallback for class-of-vulnerability playbooks that detect without per-CVE evidence correlation. `_factorScale` returned 0 when no `factorCve` was available, forcing `weight_applied` to 0 and emitting `adjusted: 0` for every detection on catalog-shape playbooks (`secrets`, `library-author`, `crypto-codebase`, `framework`, `cred-stores`, `containers`, `runtime`, `crypto`, `ai-api`).
 
 ### Engine: class-of-vulnerability RWEP fallback
 
@@ -154,34 +219,29 @@ v0.12.15 ships the v0.12.14 deep-audit fix payload plus:
 
 The breakdown emits `factor_cve_source: 'evidence' | 'domain' | 'class'` so operators see which tier the run used.
 
-### Silent-disable regressions closed
+### Silent-disable regression closures
 
-Three v0.12.12+v0.12.14 fixes that audit M discovered were silently dead:
+Three prior fixes were silently dead:
 
-- **`lib/cve-curation.js loadCveEntrySchema()`** always returned `null` because the function looked for `root.patternProperties["^CVE-\\d{4}-\\d+$"]` or an object `root.additionalProperties`, but the actual `lib/schemas/cve-catalog.schema.json` has neither — its top level IS the entry shape. The v0.12.12 codex P1 #1 fix that gates promotion on strict-schema validation was silently disabled; schema-violating entries promoted out of draft anyway. Fixed to use the root schema directly.
-- **`lib/cve-curation.js loadJson("data/attack-ttps.json")`** referenced a path that doesn't exist (canonical is `data/attack-techniques.json`). `loadJsonRaw` swallowed the ENOENT and cached `null`, so the ATT&CK candidate-ranking branch in the curation questionnaire always returned zero proposals. Fixed.
-- **`lib/auto-discovery.js _auto_imported`** wrote object-shape provenance (`{source, imported_at, curation_needed}`) but `lib/validate-cve-catalog.js` checks `entry._auto_imported === true` (strict identity). KEV-discovered drafts were treated as production-grade entries instead of warning-tier drafts, hard-failing the strict catalog gate. Fixed to write the boolean `true` with provenance moved to a sibling `_auto_imported_meta` field. Also: `source_verified: false` (boolean) violated the schema's `YYYY-MM-DD | null` shape — fixed to `null`. Template literal bug on the RFC errata URL hint also fixed (was printing literal `${number}` to operators).
+- **`lib/cve-curation.js loadCveEntrySchema()`** always returned `null` because the function looked for `root.patternProperties["^CVE-\\d{4}-\\d+$"]` or an object `root.additionalProperties`, but `lib/schemas/cve-catalog.schema.json` has neither — its top level IS the entry shape. The strict-schema gate on draft promotion never fired; schema-violating entries promoted anyway. Now uses the root schema directly.
+- **`lib/cve-curation.js loadJson("data/attack-ttps.json")`** referenced a path that doesn't exist (canonical is `data/attack-techniques.json`). `loadJsonRaw` swallowed the ENOENT and cached `null`, so the ATT&CK candidate-ranking branch in the curation questionnaire always returned zero proposals. Path corrected.
+- **`lib/auto-discovery.js _auto_imported`** wrote object-shape provenance (`{source, imported_at, curation_needed}`) but `lib/validate-cve-catalog.js` checks `entry._auto_imported === true` (strict identity). KEV-discovered drafts were treated as production-grade entries instead of warning-tier drafts, hard-failing the strict catalog gate. Now writes the boolean `true` with provenance moved to a sibling `_auto_imported_meta` field. `source_verified: false` (boolean) violated the schema's `YYYY-MM-DD | null` shape — now `null`. Template literal bug on the RFC errata URL hint also fixed (was printing literal `${number}` to operators).
 
-### Scoring math hardening (audit J)
+### Scoring math hardening
 
 - `scoreCustom` now rejects `NaN` / `Infinity` / stringified-number `blast_radius` cleanly via `Number.isFinite(Number(blast_radius))`. The prior `typeof === 'number'` check accepted `NaN` (which IS `typeof === 'number'`) and propagated it through `Math.min/max` to the final return — defeating the `[0, 100]` clamp contract.
 - `scoreCustom` now accepts either `reboot_required` or the catalog's `patch_required_reboot` field name. The catalog stores `patch_required_reboot`; `scoreCustom` expected `reboot_required`. `validate()` aliased at the call site, but a direct caller passing the catalog entry silently lost the reboot factor.
 - Defense-in-depth: the final clamp now rejects non-finite scores explicitly (`Number.isFinite(score) ? clamp : 0`).
 
-### CLI fuzz fixes (audit L)
+### CLI fuzz fixes
 
 - `--scope <invalid>` now produces a structured error instead of silently producing zero results. The prior shape: `run --scope nonsense` returned `count: 0` + `ok: true` + exit 0; `ci --scope nonsense` silently ran only the cross-cutting set (`framework`) with `verdict: PASS`. Both validated as operator-intent loss patterns. Accepted scope set: `system | code | service | cross-cutting | all`.
 
-### Test alignment
-
-- `tests/e2e-scenarios/11-library-author-static-token/expect.json` `json_path_min.adjusted` floor adjusted from `20` to `18` to reflect the post-v0.12.14 RWEP semantics. The scenario evidence supplies `verdict.blast_radius: 4` which legitimately scales blast-radius-factor weights by 0.8; the computed value is `19` (was implicitly `>= 20` only because pre-v0.12.14 every fired indicator applied full weight regardless of CVE attributes or agent-supplied blast score).
-- `tests/auto-discovery.test.js` updated to assert the new `_auto_imported: true` + `_auto_imported_meta: {...}` shape.
-
-Test count: 701 (700 pass + 1 skipped POSIX-only SIGTERM test). Predeploy gates: 14/14. Skills: 38/38 signed and verified. v0.12.14 deep-audit fix payload is included.
+Test count: 701 (700 pass + 1 skipped POSIX-only SIGTERM test). Predeploy gates: 14/14. Skills: 38/38 signed and verified.
 
 ## 0.12.14 — 2026-05-14
 
-**Patch: ~210-finding deep-audit fix batch across trust chain, engine, refresh sources, orchestrator/watch, predeploy gates, catalogs, and skill content.**
+**Patch: hardening across trust chain, engine, refresh sources, orchestrator/watch, predeploy gates, catalogs, and skill content.**
 
 ### Trust chain (lib/refresh-network.js)
 
@@ -224,8 +284,8 @@ GHSA fixture envelope now rejects null / number / string roots; OSV `OSV_HOST_OV
 
 ### CLI (bin/exceptd.js)
 
-- **Path traversal on attest read paths closed** (audit A P1-1). `attest show / export / verify / diff` and `reattest` now validate session-id against the same `^[A-Za-z0-9._-]{1,64}$` regex used on writes. Live reproducer `exceptd attest show '../../..'` (which dumped `~/.claude.json` and other home-dir JSON) no longer reads outside the attestation root.
-- **`emitError` v0.11.10 anti-pattern closed**. The `process.exit(1)` after stderr-write in `emitError` (and three sibling sites in `cmdRun` / `cmdCi`) replaced with `process.exitCode = 1; return;` — stderr drains under piped CI consumers.
+- **Path traversal on attest read paths closed.** `attest show / export / verify / diff` and `reattest` now validate session-id against the same `^[A-Za-z0-9._-]{1,64}$` regex used on writes. Live reproducer `exceptd attest show '../../..'` (which dumped `~/.claude.json` and other home-dir JSON) no longer reads outside the attestation root.
+- **`process.exit(1)` after stderr-write replaced with `process.exitCode = 1; return;`** in `emitError` and three sibling sites in `cmdRun` / `cmdCi`. Stderr drains under piped CI consumers.
 - **`ai-run` now persists attestations** in both `--no-stream` and streaming modes. Previously the returned `session_id` couldn't be resolved by `attest show / verify / diff` or `reattest` because the persistence call was missing.
 - **`attest list --playbook` honors multi-flag** (was: array-vs-scalar comparison silently returned `count: 0`). `--since` validated as parseable ISO-8601.
 - `--evidence-dir` per-entry path-traversal guard hardened.
@@ -247,8 +307,8 @@ GHSA fixture envelope now rejects null / number / string roots; OSV `OSV_HOST_OV
 
 ### Predeploy gates
 
-- New `keys/EXPECTED_FINGERPRINT` pin (closes audit G F4): silent key rotation now fails the gate unless `KEYS_ROTATED=1` is explicitly set.
-- New `manifest-snapshot.sha256` pin (audit G F23): manifest-snapshot integrity is now check-able instead of trusted blindly.
+- New `keys/EXPECTED_FINGERPRINT` pin: silent key rotation now fails the gate unless `KEYS_ROTATED=1` is explicitly set.
+- New `manifest-snapshot.sha256` pin: manifest-snapshot integrity is now check-able instead of trusted blindly.
 - `scripts/check-sbom-currency.js` now cross-checks `sbom.components[]` names + versions against `manifest.skills` and `vendor/blamejs/_PROVENANCE.json`. A renamed/version-bumped skill that didn't regenerate SBOM now fails the gate (was: count-only comparison).
 - `scripts/check-test-coverage.js` (diff-coverage gate) tightened: identifier must appear inside an actual `test(`/`it(`/`describe(`/`assert(` call body in the same test file that has the matching `require()` — not just anywhere in the corpus. Default routing for unclassified files changed from `other → allowlisted` to `manual-review` so schema files / data catalogs / package.json drift surface in CI output.
 - `scripts/verify-shipped-tarball.js` now re-`require()`s the extracted tarball's `lib/refresh-network.js` and re-parses the tarball with the shipped parser — `npm pack --offline` flag added. A regression in the parser that previously would have been invisible (gate only used the source-tree parser) now produces a structured divergence error.
@@ -288,9 +348,9 @@ Test count: 586 → 693 (+107: refresh-network rewrite tests, engine non-engine 
 
 ## 0.12.13 — 2026-05-14
 
-**Patch: e2e scenarios updated for the v0.12.12 jurisdiction-clock semantics.**
+**Patch: e2e scenarios pass `--ack` to exercise the v0.12.12 jurisdiction-clock contract.**
 
-Two e2e scenarios (`02-tanstack-worm-payload`, `09-secrets-aws-key`) assert that `phases.close.jurisdiction_clocks_count >= 1` against a `detected` classification. In v0.12.12 the clock-starts contract was tightened: `clock_starts: detect_confirmed` no longer auto-stamps when classification turns `detected`; the operator must pass `--ack` for the clock to start. Both scenarios now pass `--ack` so the contract is exercised end-to-end. No code changes; v0.12.13 ships solely to land the scenario update and a corresponding npm publish — the v0.12.12 tag exists on git but never reached the npm registry because the validate gate failed against the pre-update scenarios.
+Two e2e scenarios (`02-tanstack-worm-payload`, `09-secrets-aws-key`) assert that `phases.close.jurisdiction_clocks_count >= 1` against a `detected` classification. The v0.12.12 contract: `clock_starts: detect_confirmed` no longer auto-stamps when classification turns `detected`; the operator must pass `--ack` for the clock to start. Both scenarios now pass `--ack`.
 
 Test count: 585/585. Predeploy gates: 16/16. Skills: 38/38 signed and verified.
 

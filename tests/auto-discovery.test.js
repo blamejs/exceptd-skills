@@ -186,3 +186,76 @@ test('buildKevDraftEntry rwep_score is bounded 0..100', () => {
   const entry = buildKevDraftEntry({ cveID: 'CVE-2026-12345' }, null, null);
   assert.ok(entry.rwep_score >= 0 && entry.rwep_score <= 100, `rwep_score out of bounds: ${entry.rwep_score}`);
 });
+
+test('audit X P1 — buildKevDraftEntry rwep_factors uses schema-required post-weight numeric shape', () => {
+  // The CVE catalog JSON schema requires `rwep_factors` to have:
+  //   cisa_kev, poc_available, ai_factor, active_exploitation, blast_radius,
+  //   patch_available, live_patch_available, reboot_required — all NUMBERS.
+  // Pre-fix the auto-discovery builder stored the SHAPE-A boolean +
+  // string-ladder bag, which the strict catalog validator (loaded by
+  // curate-apply gate) rejected as malformed. Result: KEV-discovered drafts
+  // were permanently unpromotable.
+  const entry = buildKevDraftEntry({ cveID: 'CVE-2026-55555', vulnerabilityName: 'X' }, null, null);
+  const f = entry.rwep_factors;
+  // Schema-required keys present and numeric.
+  const required = ['cisa_kev', 'poc_available', 'ai_factor', 'active_exploitation',
+    'blast_radius', 'patch_available', 'live_patch_available', 'reboot_required'];
+  for (const k of required) {
+    assert.ok(k in f, `rwep_factors missing required key ${k}`);
+    assert.equal(typeof f[k], 'number', `rwep_factors.${k} must be a number, got ${typeof f[k]}`);
+    assert.ok(Number.isFinite(f[k]), `rwep_factors.${k} must be finite`);
+  }
+  // Shape A keys (ai_assisted_weapon, ai_discovered) must NOT pollute the
+  // schema-required object — they live in the buildScoringInputs internal
+  // bag, not the persisted rwep_factors.
+  assert.ok(!('ai_assisted_weapon' in f), 'rwep_factors must not carry SHAPE-A key ai_assisted_weapon');
+  assert.ok(!('ai_discovered' in f), 'rwep_factors must not carry SHAPE-A key ai_discovered');
+  // Sum of post-weight contributions must reproduce the stored rwep_score
+  // (within rounding tolerance) since blast_radius weight=30 mirrors the
+  // raw cap — see scoring.js header comment.
+  const sum = Object.values(f).reduce((s, v) => s + v, 0);
+  assert.ok(Math.abs(sum - entry.rwep_score) <= 1,
+    `rwep_factors sum ${sum} must reproduce rwep_score ${entry.rwep_score} (post-weight invariant)`);
+});
+
+test('audit X P1 — buildKevDraftEntry rwep_factors numeric values match expected weights', () => {
+  // Defaults from buildScoringInputs: cisa_kev=true, poc_available=true,
+  // ai=false, active_exploitation='suspected' (0.5 multiplier),
+  // blast_radius=15, no patch, no live-patch, reboot_required=true.
+  // Expected post-weight contributions (per scoring.RWEP_WEIGHTS):
+  //   cisa_kev: 25, poc_available: 20, ai_factor: 0,
+  //   active_exploitation: 20 * 0.5 = 10, blast_radius: 15,
+  //   patch_available: 0, live_patch_available: 0, reboot_required: 5.
+  const entry = buildKevDraftEntry({ cveID: 'CVE-2026-55556' }, null, null);
+  const f = entry.rwep_factors;
+  assert.equal(f.cisa_kev, 25);
+  assert.equal(f.poc_available, 20);
+  assert.equal(f.ai_factor, 0);
+  assert.equal(f.active_exploitation, 10);
+  assert.equal(f.blast_radius, 15);
+  assert.equal(f.patch_available, 0);
+  assert.equal(f.live_patch_available, 0);
+  assert.equal(f.reboot_required, 5);
+});
+
+test('audit X P1 — buildKevDraftEntry source_verified is a YYYY-MM-DD string (KEV listing is the verification)', () => {
+  // Pre-fix source_verified was null, which (a) violated the strict-catalog
+  // schema's `^\d{4}-\d{2}-\d{2}$` pattern and (b) left operators no signal
+  // that the KEV listing had in fact authoritatively confirmed the CVE id.
+  // Now: stamp with TODAY because the KEV listing IS the verification
+  // source for the auto-import.
+  const entry = buildKevDraftEntry({ cveID: 'CVE-2026-55557' }, null, null);
+  assert.equal(typeof entry.source_verified, 'string',
+    'source_verified must be a YYYY-MM-DD string for strict-schema compliance');
+  assert.match(entry.source_verified, /^\d{4}-\d{2}-\d{2}$/,
+    `source_verified must match YYYY-MM-DD; got ${JSON.stringify(entry.source_verified)}`);
+});
+
+test('audit X P1 — buildKevDraftEntry validates against the schema-required active_exploitation enum', () => {
+  // active_exploitation is a string on the entry (top-level), not on
+  // rwep_factors — the schema enum is { confirmed, suspected, none, unknown }.
+  const entry = buildKevDraftEntry({ cveID: 'CVE-2026-55558' }, null, null);
+  const allowed = new Set(['confirmed', 'suspected', 'none', 'unknown']);
+  assert.ok(allowed.has(entry.active_exploitation),
+    `active_exploitation must be one of ${[...allowed].join(', ')}; got ${entry.active_exploitation}`);
+});

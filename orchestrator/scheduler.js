@@ -118,6 +118,16 @@ function _shouldBootstrapFire(key, intervalMs) {
  * @returns {Function}          Call to stop further firings.
  */
 function scheduleEvery(intervalMs, handler) {
+  // T P1-4: lower-bound guard. v0.12.12 added the INT32 overflow clamp
+  // (upper bound) but never asserted intervalMs > 0. `scheduleEvery(0, fn)`
+  // would set a 0ms interval that fires ~10k times per second; negatives
+  // (-100) coerce the same way and NaN drives setInterval into a 1ms tick.
+  // All three exhaust the event loop. Refuse the call rather than silently
+  // floor — the scheduler is a long-lived primitive and a footgun here
+  // poisons every periodic task in the watcher.
+  if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
+    throw new RangeError(`scheduleEvery: intervalMs must be a positive finite number, got ${intervalMs}`);
+  }
   const startedAt = Date.now();
   let lastFired = startedAt;
   const tick = () => {
