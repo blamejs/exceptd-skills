@@ -46,7 +46,7 @@
     "feeds_into": [
       {
         "playbook_id": "framework",
-        "condition": "compliance_theater_check.verdict == 'theater'"
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
       },
       {
         "playbook_id": "cred-stores",

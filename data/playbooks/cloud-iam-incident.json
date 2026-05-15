@@ -48,11 +48,11 @@
     "feeds_into": [
       {
         "playbook_id": "cred-stores",
-        "condition": "finding.blast_radius >= 4"
+        "condition": "analyze.blast_radius_score >= 4"
       },
       {
         "playbook_id": "framework",
-        "condition": "compliance_theater_check.verdict == 'theater'"
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
       },
       {
         "playbook_id": "sbom",
@@ -960,11 +960,11 @@
           "target_playbook": "sbom"
         },
         {
-          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "condition": "analyze.compliance_theater_check.verdict == 'theater'",
           "action": "notify_legal"
         },
         {
-          "condition": "cloudtrail_logging_disabled_event fired AND no_re_enable_within_1h == true",
+          "condition": "cloudtrail_logging_disabled_event == true AND cloudtrail_re_enabled_within_1h == false",
           "action": "raise_severity"
         }
       ]
@@ -990,7 +990,7 @@
           "id": "review-90d-iam-events",
           "description": "Review the last 90 days of IAM events on every account in the org reachable from the compromised principal. Revoke unrecognised cross-account trusts, tighten SCPs / Org Policies / Management Group policies, rotate KMS keys with policy changes in the window, review billing anomalies for crypto-mining footprint, decommission any out-of-band-created resources.",
           "preconditions": [
-            "audit_log_coverage >= 90d == true",
+            "audit_log_coverage_days >= 90",
             "iam_read_only_across_org == true"
           ],
           "priority": 2,
