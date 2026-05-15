@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { withFileSnapshot } = require('./_helpers/snapshot-restore');
 
 const ROOT = path.join(__dirname, '..');
 const IDX = path.join(ROOT, 'data', '_indexes');
@@ -21,9 +22,13 @@ test('build-indexes --only <name> rebuilds just that output (plus dependsOn clos
   // dependency closure is observed.)
 });
 
-test('build-indexes --only <unknown> exits non-zero with a helpful error', () => {
+test('build-indexes --only <unknown> exits 2 with a helpful error', () => {
+  // build-indexes.js emits exit 2 for unknown-output (validation refusal,
+  // distinct from runtime gate failures which use exit 1). Pinning the
+  // exact code keeps this test from passing by coincidence when the unknown-
+  // output branch is dead and some unrelated failure produces a non-zero exit.
   const r = run(['--only', 'nope']);
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 2, `expected exit 2 (validation refusal); got ${r.status}; stderr: ${r.stderr}`);
   assert.match(r.stderr || '', /unknown output/);
 });
 
@@ -36,15 +41,19 @@ test('build-indexes --changed no-ops when sources unchanged', () => {
   assert.match(r.stdout, /no outputs need rebuilding/);
 });
 
-test('build-indexes --changed picks up a touched skill body', () => {
+test('build-indexes --changed picks up a touched skill body', async () => {
   // Pick a low-stakes skill body to mutate.
   const skillPath = path.join(ROOT, 'skills', 'compliance-theater', 'skill.md');
-  const original = fs.readFileSync(skillPath);
 
-  // Full rebuild first so _meta records current hashes.
-  run(['--quiet']);
-  try {
-    // Append a trailing newline → hash diff. Restore after the assertion.
+  // withFileSnapshot pre-captures bytes and registers SIGINT/SIGTERM/exit
+  // restorers. The previous try/finally pattern left a polluted skill on
+  // disk if the test was Ctrl-C'd mid-write — that broke Ed25519 verify
+  // for every downstream test until the operator manually restored.
+  await withFileSnapshot([skillPath], async () => {
+    const original = fs.readFileSync(skillPath);
+    // Full rebuild first so _meta records current hashes.
+    run(['--quiet']);
+    // Append a trailing newline → hash diff.
     fs.writeFileSync(skillPath, original.toString('utf8') + '\n');
     const r = run(['--changed']);
     assert.equal(r.status, 0);
@@ -52,11 +61,10 @@ test('build-indexes --changed picks up a touched skill body', () => {
     assert.match(r.stdout, /theater-fingerprints\.json/);
     // jurisdiction-clocks does NOT depend on skill bodies → should NOT be rebuilt.
     assert.doesNotMatch(r.stdout, /jurisdiction-clocks\.json/);
-  } finally {
-    fs.writeFileSync(skillPath, original);
-    // Final full rebuild so the working tree is clean for downstream tests.
-    run(['--quiet']);
-  }
+  });
+  // Final full rebuild so the working tree _indexes match the restored
+  // skill body (otherwise _indexes still reference the polluted hash).
+  run(['--quiet']);
 });
 
 test('build-indexes --parallel produces byte-identical output to sequential mode', () => {

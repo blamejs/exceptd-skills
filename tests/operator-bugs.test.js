@@ -70,7 +70,13 @@ test('#31 session-id collision refused without --force-overwrite', () => {
   assert.equal(r1.status, 0, 'first run must succeed');
   // Second run with same session-id should be refused.
   const r2 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
-  assert.notEqual(r2.status, 0, 'second run must refuse the collision');
+  // Session-id collision without --force-overwrite sets
+  // process.exitCode = EXIT_CODES.SESSION_ID_COLLISION (= 7) in cmdRun.
+  // Pre-v0.12.24 this was 3, but exit 3 also meant "ran-but-no-evidence"
+  // in cmdCi — two semantics for one code. v0.12.24 split them so callers
+  // can distinguish collision (retry with fresh --session-id) from missing
+  // evidence (retry with stdin).
+  assert.equal(r2.status, 7, 'second run must exit 7 (SESSION_ID_COLLISION)');
   const err = tryJson(r2.stderr.trim());
   assert.ok(err, 'refusal should be JSON');
   assert.match(err.error, /Session-id collision|already exists/);
@@ -341,7 +347,10 @@ test('#73 indicators_evaluated is an array', () => {
 
 test('#76 run --format garbage returns structured JSON error', () => {
   const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'garbage'], { input: '{}' });
-  assert.notEqual(r.status, 0, '--format garbage must exit non-zero');
+  // emitError() sets process.exitCode = 1 universally (bin/exceptd.js:640).
+  // Pinning to 1 catches the regression where this verb starts routing
+  // through a path that exits 2 (unknown-verb) or 0 (silent acceptance).
+  assert.equal(r.status, 1, '--format garbage must exit 1 (emitError path)');
   const err = tryJson(r.stderr.trim()) || tryJson(r.stdout.trim());
   assert.ok(err && err.ok === false, 'output must include {ok:false} JSON error');
   assert.match(err.error, /not in accepted set/);
@@ -349,10 +358,11 @@ test('#76 run --format garbage returns structured JSON error', () => {
 
 test('#76 ci --format garbage returns structured JSON error', () => {
   const r = cli(['ci', '--scope', 'code', '--format', 'garbage']);
-  // Pin exit 2 (= "ci flag-parse rejection") so a regression that flips this
-  // to exit 1 (= "ok:false from emit") or exit 0 (= silently accepts garbage)
-  // doesn't slip past as "still non-zero, looks fine."
-  assert.equal(r.status, 2, 'ci --format garbage must exit 2 (flag-validation rejection)');
+  // v0.12.24 routed --format validation through emitError (consistent with
+  // every other flag-parse rejection in cmdCi). emitError exits 1, NOT 2 —
+  // exit 2 is reserved for `DETECTED_ESCALATE`, which is a verdict-class
+  // outcome, not a flag-parse outcome. The structured error body is preserved.
+  assert.equal(r.status, 1, 'ci --format garbage must exit 1 (flag-validation rejection via emitError)');
   const err = tryJson(r.stderr.trim());
   assert.ok(err, 'rejection must be parseable JSON');
   assert.equal(err.ok, false, 'body must carry ok:false');
@@ -665,7 +675,7 @@ test('#98 attest export --format garbage on a real session returns format error'
   const seedRun = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid, '--force-overwrite'], { input: '{}' });
   assert.equal(seedRun.status, 0, 'pre-stage run must succeed so attest-export sees a real session');
   const r = cli(['attest', 'export', sid, '--format', 'garbage']);
-  assert.notEqual(r.status, 0, 'attest export with garbage format must exit non-zero');
+  assert.equal(r.status, 1, 'attest export with garbage format must exit 1 (emitError --format validation)');
   const err = tryJson(r.stderr.trim());
   assert.ok(err, 'rejection must be parseable JSON on stderr');
   assert.equal(err.ok, false, 'body must carry ok:false');
@@ -679,7 +689,7 @@ test('#98 attest export on missing session id returns session-not-found error', 
   // arm they hit. Pre-strengthening one regex matched both messages, so
   // the runner could have flipped the arms and the test wouldn't notice.
   const r = cli(['attest', 'export', 'never-existed-' + Date.now(), '--format', 'json']);
-  assert.notEqual(r.status, 0, 'missing session must exit non-zero');
+  assert.equal(r.status, 1, 'missing session must exit 1 (emitError session-not-found)');
   const err = tryJson(r.stderr.trim());
   assert.ok(err, 'rejection must be parseable JSON on stderr');
   assert.equal(err.ok, false, 'body must carry ok:false');
@@ -712,7 +722,12 @@ test('#100 ok:false from preflight-halt exits non-zero', () => {
   assert.notEqual(data.ok, undefined,
     'data.ok must be present (true or false) — undefined means the runner emitted a body without the contract field');
   if (data.ok === false) {
-    assert.notEqual(r.status, 0, 'ok:false must exit non-zero (contract: ok:false ↔ exit ≠ 0)');
+    // emit() universal contract (bin/exceptd.js:615) sets exitCode = 1
+    // whenever the emitted body has ok:false, unless a caller already
+    // chose a different non-zero code. Pin to 1 — notEqual(0) would
+    // silently pass if a future regression swapped to exit 2 (which
+    // collides with the "unknown verb" code).
+    assert.equal(r.status, 1, 'ok:false must exit 1 (universal emit() contract)');
   } else {
     assert.equal(data.ok, true, 'data.ok must be strictly true or false, never another truthy value');
     assert.equal(r.status, 0, 'ok:true must exit 0 (contract: ok:true ↔ exit 0)');
@@ -874,7 +889,7 @@ test('#115 ci --required filters to exactly the named playbooks', () => {
 
 test('#115 ci --required rejects unknown playbook id', () => {
   const r = cli(['ci', '--required', 'totally-not-a-playbook', '--json']);
-  assert.notEqual(r.status, 0, 'unknown --required playbook must exit non-zero');
+  assert.equal(r.status, 1, 'unknown --required playbook must exit 1 (emitError unknown-playbook refusal)');
   const err = tryJson(r.stderr.trim());
   assert.ok(err && err.ok === false);
   assert.match(err.error, /unknown playbook/);
@@ -1023,7 +1038,12 @@ test('#126 attest diff total_compared matches observation count when identical',
 
 test('#129 refresh --from-cache <missing> emits structured hint, not stack trace', () => {
   const r = cli(['refresh', '--from-cache', '/totally/does/not/exist']);
-  assert.notEqual(r.status, 0, 'missing cache dir must exit non-zero');
+  // The missing-cache branch in lib/refresh-external.js throws a hint
+  // error without _exceptd_exit_code, so the top-level handler defaults
+  // to exit 2 (lib/refresh-external.js:1442). Signature-validation
+  // refusals from the same file set _exceptd_exit_code = 4, so notEqual(0)
+  // would silently accept either — pin the exact missing-cache code.
+  assert.equal(r.status, 2, 'missing cache dir must exit 2 (refresh-external hint refusal default)');
   const combined = (r.stdout || '') + (r.stderr || '');
   assert.doesNotMatch(combined, /at Object\.<anonymous>|^\s*at .*\.js:\d+/m,
     'no raw Node stack trace — should be a hinted error');
@@ -1066,7 +1086,7 @@ test('#131 run <skill-name> suggests the right playbook', () => {
   // Pre-0.11.14: "Playbook not found." Post-0.11.14: error includes a hint
   // pointing at the playbook that loads that skill.
   const r = cli(['run', 'kernel-lpe-triage', '--evidence', '-', '--json'], { input: '{}' });
-  assert.notEqual(r.status, 0, 'unknown playbook must exit non-zero');
+  assert.equal(r.status, 1, 'unknown playbook must exit 1 (emitError refusal from cmdRun playbook lookup)');
   const err = tryJson(r.stderr.trim());
   assert.ok(err && err.ok === false, 'stderr must carry structured JSON error');
   assert.match(err.error, /SKILL.*not.*PLAYBOOK|skill.*playbook|exceptd skill|exceptd plan/i,
@@ -1077,7 +1097,7 @@ test('#131 run <skill-name> suggests the right playbook', () => {
 
 test('#131 run <typo-playbook-id> suggests nearest playbooks', () => {
   const r = cli(['run', 'secret', '--evidence', '-', '--json'], { input: '{}' });
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 1, 'typo-playbook-id must exit 1 (emitError unknown-playbook with suggestion)');
   const err = tryJson(r.stderr.trim());
   assert.match(err.error, /Did you mean|exceptd plan|secrets/i,
     'partial-match must suggest the canonical id');
@@ -1163,7 +1183,10 @@ test('refresh --network shows clear hint when registry is unreachable', () => {
   const r = cli(['refresh', '--network', '--json', '--timeout', '500'], {
     env: { EXCEPTD_REGISTRY_FIXTURE: fakePath }
   });
-  assert.notEqual(r.status, 0, 'unreachable registry must exit non-zero');
+  // lib/refresh-network.js:294 pins exitCode = 2 for the unreachable
+  // branch. Pinning the code keeps this from masking a regression to
+  // exit 1 (would conflate unreachable with generic validation refusal).
+  assert.equal(r.status, 2, 'unreachable registry must exit 2 (refresh-network unreachable branch)');
   // Pre-strengthening only checked the exit code. The contract that
   // actually matters to operators is "I get a hint telling me what to
   // do" — without it, refresh --network is the silent-no-op class of
@@ -1391,13 +1414,13 @@ test('#127 emit() body with ok:false sets non-zero exit (universal contract)', (
   const sawOkFalse = stdoutBody.ok === false || stderrBody.ok === false;
   assert.equal(sawOkFalse, true,
     `attest verify on a missing session id MUST produce ok:false in stdout or stderr (the session-not-found gate is unavoidable). If false, the runner found a way around the gate — that's the regression. stdout=${JSON.stringify(r.stdout.slice(0,300))} stderr=${JSON.stringify(r.stderr.slice(0,300))}`);
-  assert.notEqual(r.status, 0,
-    'any ok:false response (stdout OR stderr) must yield non-zero exit — the universal emit() contract');
+  assert.equal(r.status, 1,
+    'ok:false on stdout OR stderr must exit 1 — universal emit() contract (bin/exceptd.js:615)');
 });
 
 test('#127 attest diff with missing session ids exits non-zero', () => {
   const r = cli(['attest', 'diff', 'does-not-exist-a', '--against', 'does-not-exist-b', '--json']);
-  assert.notEqual(r.status, 0, 'attest diff with missing sessions must exit non-zero');
+  assert.equal(r.status, 1, 'attest diff missing sessions must exit 1 (emitError session-not-found, universal emit contract)');
   // Pre-strengthening, only the exit code was checked — a regression that
   // exited non-zero for an UNRELATED reason (e.g. CLI crashed before
   // session lookup) would have passed. Drill into stderr and confirm the
@@ -1481,7 +1504,7 @@ test('#87 doctor --fix is registered (smoke)', () => {
   // exercises the dispatch + flag-registration surface without invoking the
   // mutating code path at all.
   const r = cli(['doctor', '--help']);
-  assert.notEqual(r.status, 2, 'doctor --help must not be an unknown-command error');
+  assert.notEqual(r.status, 2, 'doctor --help must not be an unknown-command error'); // allow-notEqual: refusal-pin (rejects specific unknown-command code 2; help can exit 0 or non-zero codes for help-render)
   const text = (r.stdout || '') + (r.stderr || '');
   assert.match(text, /--fix\b/,
     'doctor --help must advertise the --fix flag so operators can discover it. Got: ' + text.slice(0, 400));

@@ -21,7 +21,7 @@ function run(args) {
   return spawnSync(
     process.execPath,
     [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-fixture', FIX, '--quiet', '--report-out', reportPath, ...args],
-    { encoding: 'utf8', cwd: ROOT }
+    { encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } }
   );
 }
 
@@ -59,8 +59,11 @@ test('refresh-external --from-cache reads kev/epss/nvd/rfc/pins from a cache dir
     const reportPath = mkReport();
     const r = spawnSync(
       process.execPath,
-      [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-cache', tmp, '--source', 'kev', '--quiet', '--report-out', reportPath],
-      { encoding: 'utf8', cwd: ROOT }
+      // --force-stale bypasses v0.12.24's `_index.json.sig` requirement +
+      // max-age check; this test seeds a minimal cache with empty entries +
+      // no signature, which the production gate (correctly) refuses.
+      [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-cache', tmp, '--source', 'kev', '--force-stale', '--quiet', '--report-out', reportPath],
+      { encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } }
     );
     assert.equal(r.status, 0, `stderr: ${r.stderr}`);
     const report = JSON.parse(fs2.readFileSync(reportPath, 'utf8'));
@@ -73,11 +76,17 @@ test('refresh-external --from-cache reads kev/epss/nvd/rfc/pins from a cache dir
   }
 });
 
-test('refresh-external --from-cache <nonexistent> exits non-zero', () => {
+test('refresh-external --from-cache <nonexistent> exits 2 (generic hint refusal)', () => {
+  // The missing-cache branch in lib/refresh-external.js throws a hint
+  // error without setting _exceptd_exit_code, so the top-level handler
+  // defaults to exit 2 (generic refusal). Signature-validation refusals
+  // set _exceptd_exit_code = 4. Pin the exact value so a future change
+  // that moves missing-cache to a different code surfaces here, not as
+  // a silent passing test.
   const r = spawnSync(
     process.execPath,
     [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-cache', '/does/not/exist/cache', '--quiet'],
     { encoding: 'utf8', cwd: ROOT }
   );
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 2, `expected exit 2 (missing-cache refusal); got ${r.status}; stderr: ${r.stderr}`);
 });

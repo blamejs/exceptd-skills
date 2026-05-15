@@ -149,10 +149,12 @@ test("gate 1: verify.js fires on a byte-flipped signature in manifest.json", () 
     );
     // lib/verify.js exit-1 path covers the `invalid` branch
     // (line 253: "if (result.invalid.length > 0) { ... process.exit(1); }").
-    assert.notEqual(
+    // Pin to exact code 1: notEqual(0) would silently pass if a future
+    // change made verify.js exit 2/3 on tamper.
+    assert.equal(
       r.status,
-      0,
-      `verify.js must exit non-zero on a tampered signature.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `verify.js must exit 1 on a tampered signature (process.exit(1) branch).\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       (r.stderr || "") + (r.stdout || ""),
@@ -236,10 +238,10 @@ test("gate 7: lint-skills.js fires on a skill missing the Threat Context section
     // ("process.exit(failed === 0 ? 0 : 1);"). Trigger is the
     // findMissingSections() branch: line 453 pushes
     // 'body: missing required section "Threat Context"'.
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `lint-skills.js must exit non-zero on a skill missing "Threat Context".\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `lint-skills.js must exit 1 on a skill missing "Threat Context" (failed>0 branch).\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stdout,
@@ -313,10 +315,10 @@ test("gate 9: validate-catalog-meta.js fires on a catalog missing _meta.tlp", ()
     );
     // Exit-1 path: line 191
     // ("process.exit(failed === 0 ? 0 : 1);")
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `validate-catalog-meta.js must exit non-zero on a catalog missing _meta.tlp.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `validate-catalog-meta.js must exit 1 on a catalog missing _meta.tlp (failed>0 branch).\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
   } finally {
     rmrf(tmp);
@@ -367,10 +369,10 @@ test("Audit G F2: SBOM gate fires when a skill named in SBOM components is renam
       [path.join(ROOT, "scripts", "check-sbom-currency.js"), "--root", tmp],
       { encoding: "utf8" }
     );
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `check-sbom-currency.js must exit non-zero on a renamed skill not reflected in SBOM.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `check-sbom-currency.js must exit 1 on a renamed skill not reflected in SBOM.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -423,7 +425,7 @@ test("Audit G F2: SBOM gate fires on a version-bumped skill", () => {
       [path.join(ROOT, "scripts", "check-sbom-currency.js"), "--root", tmp],
       { encoding: "utf8" }
     );
-    assert.notEqual(r.status, 0, "SBOM gate must fire on version skew");
+    assert.equal(r.status, 1, "SBOM gate must exit 1 on version skew");
     assert.match(
       r.stderr,
       /version 1\.0\.0 != manifest\.skills version 2\.0\.0/,
@@ -461,10 +463,10 @@ test("Audit G F1: validate-indexes.js rejects an empty source_hashes table", () 
       [path.join(tmp, "lib", "validate-indexes.js")],
       { cwd: tmp, encoding: "utf8" }
     );
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `validate-indexes.js must reject an empty source_hashes table.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `validate-indexes.js must exit 1 on empty source_hashes table.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -523,10 +525,10 @@ test("gate 10: check-sbom-currency.js fires on drifted skill count", () => {
     );
     // Exit-1 path: drift detected. The script prints
     // "SBOM skill count 99 != live 2" / "SBOM catalog count 99 != live 2".
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `check-sbom-currency.js must exit non-zero when sbom.cdx.json drifts from manifest.json + data/.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `check-sbom-currency.js must exit 1 when sbom.cdx.json drifts from manifest.json + data/.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -590,10 +592,10 @@ test("gate 11: validate-indexes.js fires on a hash mismatch in data/_indexes/_me
     );
     // Exit-1 path: line 83 ("process.exit(1)") after the
     // "[validate-indexes] indexes STALE:" header.
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `validate-indexes.js must exit non-zero on a recorded-hash mismatch.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `validate-indexes.js must exit 1 on a recorded-hash mismatch.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -650,10 +652,10 @@ test("gate 12: validate-vendor.js fires on a vendored file modified outside _PRO
     // Exit-1 path: line 80 ("process.exit(1)") after
     // "[validate-vendor] vendor tree DRIFT:" header. The hash compare
     // happens at line 60 of lib/validate-vendor.js.
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `validate-vendor.js must exit non-zero when a vendored file's bytes drift from _PROVENANCE.json.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `validate-vendor.js must exit 1 when a vendored file's bytes drift from _PROVENANCE.json.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -736,10 +738,10 @@ test("gate 13: validate-package.js fires when a files-allowlist entry is missing
     // Exit-1 path: line 157 ("process.exit(1)") after the issues list.
     // The expected issue line is built at line 124:
     // "required file missing from publish tarball: LICENSE".
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `validate-package.js must exit non-zero when a files-allowlist entry is absent.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `validate-package.js must exit 1 when a files-allowlist entry is absent.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     assert.match(
       r.stderr,
@@ -861,10 +863,10 @@ test("gate 14: verify-shipped-tarball.js fires when a skill body is tampered pos
     // "FAIL — shipped tarball would be broken on every fresh install."
     // message. The verification loop at line 122 detects that
     // crypto.verify(...) returns false for the tampered content.
-    assert.notEqual(
+    assert.equal(
       r.status,
-      0,
-      `verify-shipped-tarball.js must exit non-zero when shipped bytes differ from what was signed.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+      1,
+      `verify-shipped-tarball.js must exit 1 when shipped bytes differ from what was signed.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
     // The gate ALSO refuses tarballs whose top-level manifest_signature
     // is missing or invalid (envelope-tamper defence added in v0.12.19).

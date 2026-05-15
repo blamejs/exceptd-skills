@@ -37,13 +37,12 @@ Changes to the following paths require maintainer review per `.github/CODEOWNERS
 - `/manifest.json` — skill registry + Ed25519 signatures
 - `/lib/verify.js`, `/lib/sign.js`, `/lib/scoring.js` — signing and RWEP scoring code
 - `/keys/` — signing public key
-- `/skills/` — all skill content, including the v0.4.0 additions:
+- `/skills/` — all skill content. High-trust skill paths:
   - `/skills/attack-surface-pentest/`
   - `/skills/fuzz-testing-strategy/`
   - `/skills/dlp-gap-analysis/`
   - `/skills/supply-chain-integrity/`
   - `/skills/defensive-countermeasure-mapping/`
-  - and the v0.5.0 additions:
   - `/skills/identity-assurance/`
   - `/skills/ot-ics-security/`
   - `/skills/coordinated-vuln-disclosure/`

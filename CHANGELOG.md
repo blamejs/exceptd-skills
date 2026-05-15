@@ -1,5 +1,109 @@
 # Changelog
 
+## 0.12.24 — 2026-05-15
+
+**Patch: security defenses, exit-code centralisation, bundle correctness, air-gap honesty, cache integrity, error-message UX, test-infra hardening, doc reconciliation.**
+
+### Security defenses
+
+- **`--playbook` and positional `<playbook_id>` rejected with structured error when the id does not match `/^[a-z][a-z0-9-]{0,63}$/`.** `loadPlaybook(id)` previously did `path.join(PLAYBOOK_DIR, id + '.json')` with no charset gate; an operator who passed `--playbook ../../../etc/hosts` could exfiltrate any `*.json` file on disk via `brief` / `govern` / `direct` / `look` / `run --explain` output. Validator applies at 15 CLI sites plus the library entry point.
+- **`--attestation-root` refuses all-dots segments** (`.`, `..`, `...`) in addition to the prior `..` segment refusal.
+- **`--session-id` validation centralised** through `lib/id-validation.js`. Six previously duplicated `/^[A-Za-z0-9._-]{1,64}$/` sites now route through `validateIdComponent(value, role)` with `role ∈ {session, playbook, filename}`.
+
+### Trust chain
+
+- **`loadExpectedFingerprintFirstLine` refuses UTF-16BE-without-BOM pin files.** Heuristic: first two bytes are `00` followed by printable ASCII → reject. Operators see a `null` return instead of mojibake (in addition to the UTF-16LE/BE-with-BOM refusals from v0.12.23).
+- **`KEYS_ROTATED=1` override doubled with `console.error`** at every site that emits the `EXCEPTD_KEYS_ROTATED_OVERRIDE` warning. `NODE_NO_WARNINGS=1` no longer silences security-relevant audit events.
+- **`refresh-network` outer try/catch narrowed.** Previously a `try { ... } catch { /* warn-and-continue */ }` block silently absorbed any error from the inner pin-check emit. The catch now swallows only `ENOENT` / `EACCES` from the pin loader; every other error hard-fails with `process.exitCode = 5`.
+- **`verify-shipped-tarball.js`** KEYS_ROTATED override now emits the `EXCEPTD_KEYS_ROTATED_OVERRIDE` warning code, matching the three other pin-loader sites.
+
+### Cache integrity
+
+- **`readCachedJson` verifies SHA-256** against `_index.json.entries[<source>/<id>].sha256` for every cache read. Mismatch refuses with structured `{ ok: false, error: 'cache-integrity', _exceptd_exit_code: 4 }`. Closes the local-attacker primitive where swapping cached payloads via `.cache/upstream/` injected attacker-controlled CVE intel that the maintainer's signing key then attested as authoritative.
+- **`_index.json` signed via Ed25519 at prefetch time** (sidecar `_index.json.sig`); `--from-cache` consumers verify before reading. When `.keys/private.pem` is absent at prefetch time, the cache ships unsigned and the consume path warns. `--force-stale` is the operator escape for caches predating this gate.
+- **`--from-cache` max-age check (7-day default)** with `--force-stale` / `EXCEPTD_FORCE_STALE=1` override. Catalog freshness is a Hard Rule #1 obligation; a 6-month-old cache writing `last_verified: TODAY` into the catalog manufactures false freshness.
+- **`--from-fixture` gated behind `EXCEPTD_TEST_HARNESS=1`.** The flag passes fixture diffs through as authoritative with no integrity check; outside the test harness, refuses with a clear hint.
+- **Future-dated `fetched_at`** treated as poison (negative age → reject).
+
+### Air-gap defenses
+
+- **`refresh --network`, `doctor --registry-check`, `auto-discovery` Datatracker fetch, and `prefetch`** now honor `--air-gap` and `EXCEPTD_AIR_GAP=1`. The four leak paths cycle 8 identified are closed; operators in regulated environments get a real guarantee.
+- **`--air-gap` flag and `EXCEPTD_AIR_GAP=1` env are equivalent** at every site that consumes either.
+- **AI-consumer telemetry advisory.** When `--air-gap` is active, exceptd emits a one-time stderr advisory noting that the operator's AI agent may still call its model API. Routed through stderr so JSON-mode consumers see only structured stdout.
+- **Air-gap completeness lint rule** in `lib/lint-skills.js` flags playbook artifacts whose `source` contains a network pattern (`https://`, `http://`, `gh api`, `gh release`, `curl`, `wget`, `fetch`) without `air_gap_alternative`.
+- **Playbook schema constraint**: when `_meta.air_gap_mode === true`, every artifact with a network-shaped `source` MUST declare `air_gap_alternative` (JSON Schema 2020-12 `if/then`).
+
+### `attest verify` replay isolation
+
+- **`attest verify <session-id>` partitions `kind: replay` records out of `results[]` into a new `replay_results[]` array.** Previously every JSON file under `.exceptd/attestations/<sid>/` was sidecar-verified and counted in `results[]`, inflating "N/N verified" counts and elevating replay tamper to exit 6 indistinguishably from attestation tamper.
+- **Attestation tamper still exits 6.** Replay tamper sets `body.replay_tamper = true` + `body.warnings = [...]` and exits 0 — replay records are an audit trail, distinct in remediation from a tampered attestation.
+- **Both arrays sorted for determinism** (attestations by `captured_at`, replays by `replayed_at`).
+- **`attest diff --against`** prefers `attestation.json` over filesystem-order; skips replay records when selecting the comparison target.
+
+### Concurrency + exit-code surface
+
+- **`lib/exit-codes.js` is the single source of truth.** Every `process.exitCode = N` site in `bin/exceptd.js` references `EXIT_CODES.LOCK_CONTENTION` / `STORAGE_EXHAUSTED` / `SESSION_ID_COLLISION` etc. instead of bare numbers. `exceptd doctor --exit-codes` dumps the map so docs cannot drift from runtime.
+- **Exit-code 3 overload split.** Pre-v0.12.24 exit 3 meant both "session-id collision" (cmdRun) AND "ran-but-no-evidence" (cmdCi). Session-id collision now uses `SESSION_ID_COLLISION = 7`; ran-but-no-evidence keeps `RAN_NO_EVIDENCE = 3`.
+- **`cmdRunMulti` propagates `lock_contention`** from per-playbook persist failure into the aggregate `process.exitCode = 8`. Previously the aggregate gate collapsed every persist failure to 1, hiding the lock-busy signal that callers retry on.
+- **ENOSPC vs EEXIST distinction.** Storage exhaustion (`ENOSPC` / `EROFS` / `EDQUOT`) on lockfile or attestation write now sets `process.exitCode = 9 STORAGE_EXHAUSTED` with `body.storage_exhausted = true`. Operator runbooks looping on 8/retry through a full disk now branch on the right signal.
+- **`run --all` aggregate precedence:** `LOCK_CONTENTION > STORAGE_EXHAUSTED > GENERIC_FAILURE`.
+
+### Bundle correctness (CSAF / SARIF / OpenVEX)
+
+- **CSAF `product_tree.branches[]`** synthesised as a 3-level vendor → product_name → product_version hierarchy from either a new optional `affected_products[{ vendor, product, version }]` catalog field or a heuristic parse of the existing `affected_components[]` strings. Closes the ENISA conformance gap.
+- **Strict CVSS 3.x vector parse.** `parseCvss31Vector(v)` accepts both versions CSAF 2.0 cvss_v3 permits (3.0 and 3.1) and validates the full grammar. Malformed vectors (`AV:X`, unknown metric values, out-of-order metrics) and unsupported versions (2.0, 4.0) skip the `cvss_v3` block and emit `csaf_cvss_invalid` to `runtime_errors[]`.
+- **OpenVEX URN routing by id prefix.** `vulnIdToUrn(id)` routes `CVE-*` → `urn:cve:`, `GHSA-*` → `urn:ghsa:`, `RUSTSEC-*` → `urn:rustsec:`, `MAL-*` → `urn:malicious-package:`, everything else → `urn:exceptd:advisory:`. Pre-v0.12.24, GHSA/RUSTSEC/MAL all emitted under `urn:cve:` and downstream VEX ingesters resolved them against the CVE List incorrectly.
+- **OpenVEX `status: fixed`** carries an `impact_statement` trail referencing the operator's evidence (e.g. `Operator verified fixed via evidence_hash=<sha256[:16]>`).
+- **`--tlp <CLEAR|GREEN|AMBER|AMBER+STRICT|RED>`** populates CSAF `document.distribution.tlp.label`. When omitted, the field is absent entirely. MISP / Trusted-Repository consumers gating on TLP no longer reject the document.
+- **SARIF `invocations[].executionSuccessful`** reflects classification (`false` when inconclusive). Pre-v0.12.24 hard-coded `true`.
+
+### Engine internals
+
+- **`runtime_errors[]` capped + per-kind deduped.** New helper `pushRunError(arr, entry, opts)` replaces 13 push sites. Per-kind cap defaults to 100; total cap 1000; overflow records as a `_truncated` sentinel. Closes the 39 MB worst-case attestation bloat under pathological catalog states.
+- **`live_patch_tools[]` schema split.** New optional `vendor_update_paths[]` field separates true live-patch tools (kpatch, kGraft, Canonical Livepatch) from vendor-update mechanisms (npm yank, IDE update, package version pin). RWEP `live_patch_available` factor remains gated on the narrower `live_patch_tools[]`, so the score no longer over-credits vendor-update-only entries.
+
+### CLI surface
+
+- **`attest prune <session-id>` verb** removes an attestation session. Modes: `--force` (specific session), `--all-older-than <days> --force` (bulk), `--playbook <id>` (scoped), `--dry-run` (list without delete). Refuses `.` / `..` / all-dots ids and paths that resolve outside the attestation root.
+- **Levenshtein flag-typo suggestions.** Unknown flags trigger a per-verb allowlist lookup; suggestions fire at edit distance ≤ 2 AND ≤ flag.length/2. `--evidnce ev.json` now sees `{ ok: false, error: 'unknown flag --evidnce', suggested: 'evidence' }`.
+- **Missing-value detection.** Value-bearing flags that parsed as `true` (i.e. no value) emit `--<flag> requires a value`.
+- **Help-text completeness.** `run`, `ai-run`, `ingest`, `run-all` help blocks document `--vex` / `--evidence-dir` / `--attestation-root` / `--mode`. `ai-run --help` adds an exit-code table (0/1/3/8/9). `ci --help` exit-code table corrected to omit 6/8 (cmdCi cannot emit them). Top-level `exceptd help` adds unknown-verb exit 2. `attest --help` documents `--since` under `list`; corrects `export --format` enumeration to match implementation.
+- **`discover` / `ask`** document "always exits 0" so CI gates branch on JSON shape rather than exit code.
+
+### Error-message UX
+
+- **`dispatchPlaybook` catch-all, `cmdAiRun` runner-threw, `cmdLint` catch, `cmdReattest replay.reason` falsy path, `cmdRun` "no playbook resolved", `attest <subverb>` missing session-id** all wrap bare `e.message` with verb name + remediation hint pointing at the issue tracker.
+- **Six sites of "playbook X has no directives"** consolidated into a shared helper.
+- **JSON-mode stderr bypass sites** at `cmdRun` persist failure / `cmdIngest` persist failure / `cmdCi --format` validation route through `emitError` for consistent ok-false → exit-code mapping.
+
+### Hard Rule #5 — global-first quality
+
+- **`framework.json`** `framework_lag_declaration` rewritten with substantive per-framework gaps (NIST CA-7, EU NIS2 Art.21(2), UK CAF Principle A, AU Essential 8 Strategy 1, ISO/IEC 27001:2022 A.5.1). The meta-playbook now models the pattern instead of paper-name-dropping the frameworks.
+- **`containers.json`** AU clause: E8 Strategy 1 Application Control bound to OPA/Kyverno privileged-pod admission (replaces the prior "Macro Settings by analogy" mismatch).
+- **`crypto-codebase.json`** UK CAF C.5 + PSTI gap explicit: CAF mandates outcome-tested cryptography but doesn't require PQC-by-default / constant-time / KDF minima; PSTI scope is connected products only.
+- **`library-author.json`** CAF C1.b + E8 Strategy 5 specific gaps (no SLSA L3+ provenance requirement; admin-privilege restriction doesn't reach build-time signing-key access).
+- **`secrets.json`** adds NIST IA-5 with detection-of-credentials-in-source gap; E8 alignment shifts to Strategy 1 Application Control (restricting CI agent secret-store reads) instead of MFA (which static bearer tokens bypass). Adds 4 AU `per_framework_gaps[]` entries (Strategy 1 / Strategy 4 / ISM-1546 / ISM-1559) with compliance-theater tests embedded.
+- **`hardening.json`** adds NIS2 Art.21(2)(c) + DORA Art.9(4) hardening-attestation gap.
+
+### Operator-facing docs
+
+- **`engines.node`** widened from `>=24.0.0` to `>=22.11.0`. Node 22 LTS through Apr 2027 is the corporate default; the prior pin excluded most enterprise installs.
+- **Keywords** add `csaf-2.0`, `openvex`, `sarif`, `ed25519`, `provenance`, `attestation` (22 → 28 entries, alphabetised).
+- **README install section** adds a "First run" snippet (`exceptd doctor --signatures` + fingerprint pin + npm provenance verify). New `agents/` description documents the markdown role-card scaffolding for skill authors.
+- **CHANGELOG retroactive cleanup.** Operator-facing slot-token leakage removed from the v0.12.21 and v0.12.23 Internal sections.
+- **`MAINTAINERS.md`** version-pinned subheadings collapsed into a single "High-trust skill paths" list.
+- **Landing site (https://exceptd.com/)** refreshed: `softwareVersion: 0.12.24`, "35 jurisdictions" across every body-copy occurrence (was "34"), `exceptd plan` → `exceptd brief --all`, `exceptd scan` → `exceptd discover`, "13-gate predeploy" → "14-gate predeploy".
+
+### Internal — test infra hardening
+
+- **`tests/_helpers/snapshot-restore.js`** new helper. `withFileSnapshot([paths], async () => {...})` wraps mutation tests; restoration fires on normal completion, thrown error, SIGINT, SIGTERM, and `process.exit`. Closes the historical "smoke test mutates state, SIGINT skips finally, leaves polluted file on disk" class.
+- **20+ coincidence-passing `notEqual(r.status, 0)` test sites pinned** to exact exit codes across `predeploy-gate-coverage`, `operator-bugs`, `build-incremental`, `refresh-swarm`, `orchestrator-audit-f`, `cli-coverage`, `prefetch`.
+- **`scripts/check-test-coverage.js` predeploy gate extended** with a `coincidence-assert` ban: any new `assert.notEqual(*.status, *)` site fails the gate unless the same line carries `// allow-notEqual: <reason>`.
+- **14 `audit-*-fixes.test.js` files renamed** to behavior-framed names (`runtime-errors-and-vex-disposition`, `attestation-trust-boundary`, `csaf-bundle-correctness`, `cli-flag-validation`, `playbook-runner-error-paths`, `framework-gap-completeness`, `rwep-scoring-edge-cases`, `cli-subverb-dispatch`, `openvex-emission`, `predeploy-gate-coverage`, `cli-exit-codes`, `playbook-schema-validation`, `attestation-signature-roundtrip`, `cve-catalog-shape`).
+- **New coverage**: `cli-playbook-traversal.test.js`, `attest-verify-replay-isolation.test.js`, `cmd-run-multi-lock-contention.test.js`, `openvex-urn-routing.test.js`, `lib-exit-codes.test.js`, `lib-id-validation.test.js`, `lib-flag-suggest.test.js`.
+
+Test count: 995 → 1043 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
+
 ## 0.12.23 — 2026-05-15
 
 **Patch: doc-vs-code reconciliation, trust-chain pin loader hardening, attest list/show replay isolation, global-first framework coverage backfill.**
@@ -39,8 +143,8 @@
 
 ### Internal
 
-- **Source-comment slot-token scrub broadened** to cover bare audit slot-tokens (`KK P1-N`, `R-F8`, `S P1-A`, etc.) without the leading `audit` prefix. Previous scrubs only matched `(audit|Audit)\s+[A-Z]+`; the new sweep covers comment-only references across `bin/`, `lib/`, `scripts/`, and `tests/`. Test logic and code logic untouched.
-- **`tests/audit-mm-nn-fixes.test.js` tightened** — the UTF-16BE odd-length-payload refusal test was asserting `notEqual(r.status, 0)`, the exact coincidence-passing-tests anti-pattern the project rule explicitly forbids. Changed to `assert.equal(r.status, 1)`.
+- **Internal code comments stripped of stray maintenance-tracking tokens (no behavior change).**
+- **Exit-code assertion in the UTF-16BE odd-length-payload test tightened** from `notEqual(r.status, 0)` to `assert.equal(r.status, 1)` per project anti-coincidence rule.
 
 Test count and predeploy gates land alongside this entry; see the predeploy log on the release commit.
 
@@ -173,7 +277,7 @@ UK CAF + AU Essential 8 / ISM entries added to the framework-control-gap declara
 
 ### Source comments
 
-Cleanup pass across `bin/`, `lib/`, `scripts/` — comments now describe behavior, not work-stream.
+Source comments rewritten to describe behavior.
 
 Test count: 840 → 941 (938 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
 

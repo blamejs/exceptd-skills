@@ -298,7 +298,7 @@ test('v0.12.10 refresh-external --source osv accepted as a valid source name', (
       '--source', 'osv',
       '--quiet',
       '--report-out', reportPath,
-    ], { cwd: ROOT, encoding: 'utf8' });
+    ], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } });
     assert.equal(r.status, 0, `--source osv dry-run must exit 0, stderr=${r.stderr}`);
     const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
     assert.ok(report.sources.osv, 'osv source must appear in refresh-report');
