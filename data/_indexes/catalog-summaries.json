@@ -18,13 +18,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 29,
+      "entry_count": 30,
       "sample_keys": [
         "AML.T0001",
+        "AML.T0040",
         "AML.T0010",
         "AML.T0016",
-        "AML.T0017",
-        "AML.T0018"
+        "AML.T0017"
       ]
     },
     "attack-techniques.json": {
@@ -172,7 +172,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 78,
+      "entry_count": 87,
       "sample_keys": [
         "ALL-AI-PIPELINE-INTEGRITY",
         "ALL-MCP-TOOL-TRUST",

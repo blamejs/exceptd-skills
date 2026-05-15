@@ -463,7 +463,8 @@
     "relevance": "Transport Services (TAPS) architecture — abstracts the choice of underlying transport (TCP, QUIC, SCTP) behind a unified API that selects the protocol at runtime based on path conditions. Forward-watch relevance: webapp / AI-API client libraries that adopt TAPS may transparently shift between TCP-HTTP/2 and QUIC-HTTP/3 mid-session, complicating boundary inspection assumptions that pin to a single transport. Currently tracked as a deployment-watch item rather than an operational control point.",
     "lag_notes": "Architecture document; companion documents (TAPS implementation, TAPS programming interface) are still in progress at IETF TAPS WG. Enterprise tooling impact is forward-looking.",
     "skills_referencing": [
-      "webapp-security"
+      "webapp-security",
+      "sector-telecom"
     ],
     "last_verified": "2026-05-15"
   },

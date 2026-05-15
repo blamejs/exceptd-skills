@@ -3165,6 +3165,100 @@
         }
       ]
     },
+    "sector-telecom": {
+      "path": "skills/sector-telecom/skill.md",
+      "total_bytes": 20782,
+      "total_lines": 260,
+      "frontmatter": {
+        "line_start": 1,
+        "line_end": 74,
+        "byte_start": 0,
+        "byte_end": 1909
+      },
+      "sections": [
+        {
+          "name": "Threat Context (mid-2026)",
+          "normalized_name": "threat-context",
+          "line": 76,
+          "byte_start": 1910,
+          "byte_end": 5098,
+          "bytes": 3188,
+          "h3_count": 0
+        },
+        {
+          "name": "Framework Lag Declaration",
+          "normalized_name": "framework-lag-declaration",
+          "line": 90,
+          "byte_start": 5098,
+          "byte_end": 7180,
+          "bytes": 2082,
+          "h3_count": 0
+        },
+        {
+          "name": "TTP Mapping",
+          "normalized_name": "ttp-mapping",
+          "line": 94,
+          "byte_start": 7180,
+          "byte_end": 8614,
+          "bytes": 1434,
+          "h3_count": 0
+        },
+        {
+          "name": "Exploit Availability Matrix",
+          "normalized_name": "exploit-availability-matrix",
+          "line": 108,
+          "byte_start": 8614,
+          "byte_end": 9808,
+          "bytes": 1194,
+          "h3_count": 0
+        },
+        {
+          "name": "Analysis Procedure",
+          "normalized_name": "analysis-procedure",
+          "line": 121,
+          "byte_start": 9808,
+          "byte_end": 15637,
+          "bytes": 5829,
+          "h3_count": 7
+        },
+        {
+          "name": "Output Format",
+          "normalized_name": "output-format",
+          "line": 183,
+          "byte_start": 15637,
+          "byte_end": 17152,
+          "bytes": 1515,
+          "h3_count": 0
+        },
+        {
+          "name": "Compliance Theater Check",
+          "normalized_name": "compliance-theater-check",
+          "line": 231,
+          "byte_start": 17152,
+          "byte_end": 19359,
+          "bytes": 2207,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 243,
+          "byte_start": 19359,
+          "byte_end": 20110,
+          "bytes": 751,
+          "h3_count": 0
+        },
+        {
+          "name": "Hand-Off / Related Skills",
+          "normalized_name": "hand-off",
+          "line": 253,
+          "byte_start": 20110,
+          "byte_end": 20782,
+          "bytes": 672,
+          "h3_count": 0
+        }
+      ]
+    },
     "api-security": {
       "path": "skills/api-security/skill.md",
       "total_bytes": 35524,

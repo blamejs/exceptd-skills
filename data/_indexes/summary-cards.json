@@ -1351,6 +1351,60 @@
         "supply-chain-integrity"
       ]
     },
+    "sector-telecom": {
+      "description": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security",
+      "threat_context_excerpt": "**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The 2024–2026 campaign — disclosed in successive Five Eyes joint advisories from October 2024 onward (CISA / NSA / FBI joint product reissued through 2025–2026) — compromised at least nine US carriers (publicly named: AT&T, Verizon, T-Mobile US, Lumen, Charter, Cox, Windstream, Consolidated, plus undisclosed others) and extended to AU / CA / NZ / UK Tier-1 carriers. Threat actor TTPs map to T1199 (Trusted Relationship) via OEM vendor supply chain, T1098 (Account Manipulation) for persistent admin access on NMS, and ...",
+      "produces": "The investigation evidence bundle returned by phase 5 + 6 has this shape:\n\n```json\n{\n  \"session_id\": \"telecom-<iso>\",\n  \"playbook_id\": \"sector-telecom\",\n  \"classification\": \"detected | clean | not_detected | inconclusive\",\n  \"evidence_hash\": \"sha256:...\",\n  \"telecom_specific_findings\": {\n    \"li_gateway_audit\": {\n      \"anomalous_activations\": 0,\n      \"activations_outside_ticket\": 0,\n      \"outbound_tunnel_to_non_allowlist_ip\": 0\n    },\n    \"gnb_attestation_state\": {\n      \"expected_hashes_compared\": 0,\n      \"drifted_basestations\": [],\n      \"downgrade_events\": 0\n    },\n    \"signaling_anomal ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-287",
+          "CWE-306",
+          "CWE-918"
+        ],
+        "d3fend_refs": [
+          "D3-NTA",
+          "D3-NTPM",
+          "D3-IOPR",
+          "D3-NI"
+        ],
+        "framework_gaps": [
+          "FCC-CPNI-4.1",
+          "FCC-Cyber-Incident-Notification-2024",
+          "NIS2-Annex-I-Telecom",
+          "DORA-Art-21-Telecom-ICT",
+          "UK-CAF-B5",
+          "AU-ISM-1556",
+          "GSMA-NESAS-Deployment",
+          "3GPP-TR-33.926",
+          "ITU-T-X.805"
+        ],
+        "atlas_refs": [
+          "AML.T0040"
+        ],
+        "attack_refs": [
+          "T1071",
+          "T1078",
+          "T1098",
+          "T1190",
+          "T1199",
+          "T1556"
+        ],
+        "rfc_refs": [
+          "RFC-9622"
+        ],
+        "dlp_refs": []
+      },
+      "trigger_count": 22,
+      "atlas_count": 1,
+      "attack_count": 6,
+      "framework_gap_count": 9,
+      "cwe_count": 3,
+      "d3fend_count": 4,
+      "rfc_count": 1,
+      "last_threat_review": "2026-05-15",
+      "path": "skills/sector-telecom/skill.md",
+      "handoff_targets": []
+    },
     "api-security": {
       "description": "API security for mid-2026 — OWASP API Top 10 2023, AI-API specific (rate limits, prompt-shape egress, MCP HTTP transport), GraphQL + gRPC + REST + WebSocket attack surfaces, API gateway posture, BOLA/BFLA/SSRF/Mass Assignment",
       "threat_context_excerpt": "APIs are now the integration substrate of every non-trivial system. The mid-2026 enterprise app is a thin shell of UI calling a fan-out of REST, GraphQL, gRPC, and WebSocket APIs — many of which themselves call **AI-API services** (OpenAI, Anthropic, Google Gemini, AWS Bedrock, Azure OpenAI) on the user's behalf. Legacy web-application firewalls were built for HTML form posts and inspect REST badly, GraphQL barely, gRPC binary framing not at all, and AI-API egress not at all. The defensive perimeter has moved from the WAF to the **API gateway and the egress policy**.",

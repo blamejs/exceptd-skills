@@ -125,11 +125,12 @@
         ]
       },
       "CWE-918": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "api-security",
           "attack-surface-pentest",
           "mcp-agent-trust",
+          "sector-telecom",
           "webapp-security"
         ]
       },
@@ -244,7 +245,7 @@
         ]
       },
       "CWE-287": {
-        "count": 9,
+        "count": 10,
         "skills": [
           "age-gates-child-safety",
           "api-security",
@@ -254,15 +255,17 @@
           "sector-energy",
           "sector-financial",
           "sector-healthcare",
+          "sector-telecom",
           "webapp-security"
         ]
       },
       "CWE-306": {
-        "count": 3,
+        "count": 4,
         "skills": [
           "identity-assurance",
           "ot-ics-security",
-          "sector-energy"
+          "sector-energy",
+          "sector-telecom"
         ]
       },
       "CWE-798": {
@@ -340,25 +343,27 @@
         ]
       },
       "D3-IOPR": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
-          "rag-pipeline-security"
+          "rag-pipeline-security",
+          "sector-telecom"
         ]
       },
       "D3-NTA": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
           "attack-surface-pentest",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
-          "rag-pipeline-security"
+          "rag-pipeline-security",
+          "sector-telecom"
         ]
       },
       "D3-CBAN": {
@@ -410,18 +415,20 @@
         ]
       },
       "D3-NI": {
-        "count": 2,
-        "skills": [
-          "ai-c2-detection",
-          "defensive-countermeasure-mapping"
-        ]
-      },
-      "D3-NTPM": {
         "count": 3,
         "skills": [
           "ai-c2-detection",
           "defensive-countermeasure-mapping",
-          "dlp-gap-analysis"
+          "sector-telecom"
+        ]
+      },
+      "D3-NTPM": {
+        "count": 4,
+        "skills": [
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "sector-telecom"
         ]
       },
       "D3-FE": {
@@ -834,6 +841,60 @@
           "ot-ics-security",
           "sector-energy"
         ]
+      },
+      "FCC-CPNI-4.1": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "FCC-Cyber-Incident-Notification-2024": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "NIS2-Annex-I-Telecom": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "DORA-Art-21-Telecom-ICT": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "UK-CAF-B5": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "AU-ISM-1556": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "GSMA-NESAS-Deployment": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "3GPP-TR-33.926": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "ITU-T-X.805": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
       }
     },
     "atlas_refs": {
@@ -930,6 +991,12 @@
           "ot-ics-security",
           "supply-chain-integrity"
         ]
+      },
+      "AML.T0040": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
       }
     },
     "attack_refs": {
@@ -964,7 +1031,7 @@
         ]
       },
       "T1190": {
-        "count": 12,
+        "count": 13,
         "skills": [
           "ai-attack-surface",
           "api-security",
@@ -977,6 +1044,7 @@
           "sector-energy",
           "sector-federal-government",
           "sector-financial",
+          "sector-telecom",
           "webapp-security"
         ]
       },
@@ -997,9 +1065,10 @@
         ]
       },
       "T1071": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "ai-c2-detection"
+          "ai-c2-detection",
+          "sector-telecom"
         ]
       },
       "T1102": {
@@ -1021,7 +1090,7 @@
         ]
       },
       "T1078": {
-        "count": 10,
+        "count": 11,
         "skills": [
           "age-gates-child-safety",
           "api-security",
@@ -1032,7 +1101,8 @@
           "incident-response-playbook",
           "sector-energy",
           "sector-financial",
-          "sector-healthcare"
+          "sector-healthcare",
+          "sector-telecom"
         ]
       },
       "T1567": {
@@ -1081,9 +1151,10 @@
         ]
       },
       "T1556": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "identity-assurance"
+          "identity-assurance",
+          "sector-telecom"
         ]
       },
       "T1110": {
@@ -1117,6 +1188,18 @@
         "skills": [
           "incident-response-playbook",
           "sector-financial"
+        ]
+      },
+      "T1098": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "T1199": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
         ]
       },
       "T1552": {
@@ -1309,6 +1392,12 @@
         "skills": [
           "pqc-first"
         ]
+      },
+      "RFC-9622": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
       }
     },
     "dlp_refs": {}
@@ -1317,7 +1406,7 @@
     "cwe_refs": [
       {
         "id": "CWE-287",
-        "count": 9,
+        "count": 10,
         "skills": [
           "age-gates-child-safety",
           "api-security",
@@ -1327,6 +1416,7 @@
           "sector-energy",
           "sector-financial",
           "sector-healthcare",
+          "sector-telecom",
           "webapp-security"
         ]
       },
@@ -1425,13 +1515,14 @@
         ]
       },
       {
-        "id": "CWE-1357",
-        "count": 4,
+        "id": "CWE-918",
+        "count": 5,
         "skills": [
-          "coordinated-vuln-disclosure",
-          "mlops-security",
-          "sector-federal-government",
-          "supply-chain-integrity"
+          "api-security",
+          "attack-surface-pentest",
+          "mcp-agent-trust",
+          "sector-telecom",
+          "webapp-security"
         ]
       }
     ],
@@ -1450,6 +1541,32 @@
         ]
       },
       {
+        "id": "D3-IOPR",
+        "count": 7,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "rag-pipeline-security",
+          "sector-telecom"
+        ]
+      },
+      {
+        "id": "D3-NTA",
+        "count": 7,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "rag-pipeline-security",
+          "sector-telecom"
+        ]
+      },
+      {
         "id": "D3-CSPP",
         "count": 6,
         "skills": [
@@ -1462,27 +1579,13 @@
         ]
       },
       {
-        "id": "D3-IOPR",
-        "count": 6,
+        "id": "D3-NTPM",
+        "count": 4,
         "skills": [
-          "ai-attack-surface",
           "ai-c2-detection",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
-          "fuzz-testing-strategy",
-          "rag-pipeline-security"
-        ]
-      },
-      {
-        "id": "D3-NTA",
-        "count": 6,
-        "skills": [
-          "ai-attack-surface",
-          "ai-c2-detection",
-          "attack-surface-pentest",
-          "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
-          "rag-pipeline-security"
+          "sector-telecom"
         ]
       },
       {
@@ -1504,12 +1607,12 @@
         ]
       },
       {
-        "id": "D3-NTPM",
+        "id": "D3-NI",
         "count": 3,
         "skills": [
           "ai-c2-detection",
           "defensive-countermeasure-mapping",
-          "dlp-gap-analysis"
+          "sector-telecom"
         ]
       },
       {
@@ -1527,14 +1630,6 @@
         "skills": [
           "defensive-countermeasure-mapping",
           "kernel-lpe-triage"
-        ]
-      },
-      {
-        "id": "D3-CA",
-        "count": 2,
-        "skills": [
-          "ai-c2-detection",
-          "defensive-countermeasure-mapping"
         ]
       }
     ],
@@ -1753,12 +1848,19 @@
           "ai-attack-surface",
           "rag-pipeline-security"
         ]
+      },
+      {
+        "id": "AML.T0040",
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
       }
     ],
     "attack_refs": [
       {
         "id": "T1190",
-        "count": 12,
+        "count": 13,
         "skills": [
           "ai-attack-surface",
           "api-security",
@@ -1771,12 +1873,13 @@
           "sector-energy",
           "sector-federal-government",
           "sector-financial",
+          "sector-telecom",
           "webapp-security"
         ]
       },
       {
         "id": "T1078",
-        "count": 10,
+        "count": 11,
         "skills": [
           "age-gates-child-safety",
           "api-security",
@@ -1787,7 +1890,8 @@
           "incident-response-playbook",
           "sector-energy",
           "sector-financial",
-          "sector-healthcare"
+          "sector-healthcare",
+          "sector-telecom"
         ]
       },
       {
@@ -1992,9 +2096,17 @@
       "D3-SCP"
     ],
     "framework_gaps": [
+      "3GPP-TR-33.926",
       "ALL-MCP-TOOL-TRUST",
+      "AU-ISM-1556",
       "CWE-Top-25-2024-meta",
       "CycloneDX-v1.6-SBOM",
+      "DORA-Art-21-Telecom-ICT",
+      "FCC-CPNI-4.1",
+      "FCC-Cyber-Incident-Notification-2024",
+      "GSMA-NESAS-Deployment",
+      "ITU-T-X.805",
+      "NIS2-Annex-I-Telecom",
       "NIST-800-53-SI-12",
       "NIST-800-53-SI-2",
       "NIST-800-63B-rev4",
@@ -2004,20 +2116,23 @@
       "PCI-DSS-4.0-6.3.3",
       "PTES-Pre-engagement",
       "SPDX-v3.0-SBOM",
+      "UK-CAF-B5",
       "VEX-CSAF-v2.1"
     ],
-    "atlas_refs": [],
+    "atlas_refs": [
+      "AML.T0040"
+    ],
     "attack_refs": [
-      "T1071",
+      "T1098",
       "T1102",
       "T1110",
       "T1133",
       "T1195.002",
+      "T1199",
       "T1213",
       "T1505",
       "T1548.001",
       "T1552",
-      "T1556",
       "T1566.001",
       "T1566.002",
       "T1566.003",
@@ -2034,6 +2149,7 @@
       "RFC-9000",
       "RFC-9106",
       "RFC-9420",
+      "RFC-9622",
       "RFC-9794"
     ],
     "dlp_refs": []
@@ -2143,8 +2259,7 @@
       "RFC-8705",
       "RFC-9112",
       "RFC-9116",
-      "RFC-9449",
-      "RFC-9622"
+      "RFC-9449"
     ],
     "dlp_refs": [
       "DLP-CHAN-CLIPBOARD-AI",

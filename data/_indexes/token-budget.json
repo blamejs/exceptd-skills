@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1430239,
-    "total_approx_tokens": 357564,
-    "skill_count": 38
+    "total_chars": 1450921,
+    "total_approx_tokens": 362735,
+    "skill_count": 39
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -1840,6 +1840,61 @@
           "bytes": 3375,
           "chars": 3349,
           "approx_tokens": 837
+        }
+      }
+    },
+    "sector-telecom": {
+      "path": "skills/sector-telecom/skill.md",
+      "bytes": 20782,
+      "chars": 20682,
+      "lines": 260,
+      "approx_tokens": 5171,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 3188,
+          "chars": 3174,
+          "approx_tokens": 794
+        },
+        "framework-lag-declaration": {
+          "bytes": 2082,
+          "chars": 2080,
+          "approx_tokens": 520
+        },
+        "ttp-mapping": {
+          "bytes": 1434,
+          "chars": 1422,
+          "approx_tokens": 356
+        },
+        "exploit-availability-matrix": {
+          "bytes": 1194,
+          "chars": 1194,
+          "approx_tokens": 299
+        },
+        "analysis-procedure": {
+          "bytes": 5829,
+          "chars": 5773,
+          "approx_tokens": 1443
+        },
+        "output-format": {
+          "bytes": 1515,
+          "chars": 1515,
+          "approx_tokens": 379
+        },
+        "compliance-theater-check": {
+          "bytes": 2207,
+          "chars": 2203,
+          "approx_tokens": 551
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 751,
+          "chars": 751,
+          "approx_tokens": 188
+        },
+        "hand-off": {
+          "bytes": 672,
+          "chars": 662,
+          "approx_tokens": 166
         }
       }
     },

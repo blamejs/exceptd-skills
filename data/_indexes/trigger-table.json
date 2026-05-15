@@ -1046,6 +1046,72 @@
   "smart meter security": [
     "sector-energy"
   ],
+  "telecom security": [
+    "sector-telecom"
+  ],
+  "5g core": [
+    "sector-telecom"
+  ],
+  "salt typhoon": [
+    "sector-telecom"
+  ],
+  "volt typhoon": [
+    "sector-telecom"
+  ],
+  "gnb integrity": [
+    "sector-telecom"
+  ],
+  "lawful intercept": [
+    "sector-telecom"
+  ],
+  "calea": [
+    "sector-telecom"
+  ],
+  "fcc cpni": [
+    "sector-telecom"
+  ],
+  "4-business-day notification": [
+    "sector-telecom"
+  ],
+  "gsma nesas": [
+    "sector-telecom"
+  ],
+  "ss7": [
+    "sector-telecom"
+  ],
+  "diameter": [
+    "sector-telecom"
+  ],
+  "gtp": [
+    "sector-telecom"
+  ],
+  "3gpp ts 33.501": [
+    "sector-telecom"
+  ],
+  "3gpp tr 33.926": [
+    "sector-telecom"
+  ],
+  "o-ran": [
+    "sector-telecom"
+  ],
+  "n6 n9 isolation": [
+    "sector-telecom"
+  ],
+  "nis2 annex i": [
+    "sector-telecom"
+  ],
+  "uk tsa 2021": [
+    "sector-telecom"
+  ],
+  "au soci": [
+    "sector-telecom"
+  ],
+  "tssr": [
+    "sector-telecom"
+  ],
+  "itu-t x.805": [
+    "sector-telecom"
+  ],
   "api security": [
     "api-security"
   ],

@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.12.26 — 2026-05-15
+
+**Patch: sector-telecom skill ships, with supporting framework-gap and ATLAS catalog scaffolding. Closes the cycle 8 LLL P1 finding that the unmodeled RWEP signal from Salt Typhoon-class campaigns was the highest gap in the catalog.**
+
+### New skill: `sector-telecom`
+
+Telecom and 5G security skill covering Salt Typhoon and Volt Typhoon TTPs, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7, Diameter, GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity attestation, OEM-equipment supply-chain compromise, and AI-RAN / O-RAN security.
+
+The skill walks the seven-phase contract with telecom-specific jurisdictional clocks (FCC 47 CFR 64.2011 4-business-day rule, NIS2 Art. 23 24h initial, DORA Art. 19 4h for financial-touching incidents, UK TSA 2021 + Ofcom, AU SOCI / TSSR, JP MIC, IN CERT-In 6h, SG IMDA TCCSCoP, NZ TICSA, CA Bill C-26), evidence capture for LI provisioning audit logs / gNB firmware hashes / NMS access logs / signaling-flow statistics / cross-PLMN exchange patterns / eUICC SIM-swap events / 5GC slice-isolation tests / OEM remote-support tunnel inventory / NESAS deployment posture, and the standard analyze → validate → close phases against the new framework-gap entries.
+
+Compliance Theater Check enumerates seven posture-vs-actual tests specific to telecom: CPNI annual certification, GSMA NESAS deployment vs runtime, OEM firmware verification chain, 3GPP TR 33.926 deployment posture, ITU-T X.805 validation, signaling firewall PLMN-list refresh cadence, and LI-gateway MFA scope.
+
+Manifest skill count 38 → 39.
+
+### Catalog scaffolding to support the skill
+
+Nine telecom-specific framework-gap entries added to `data/framework-control-gaps.json` (totals 78 → 87 entries):
+
+- **FCC-CPNI-4.1** — 47 CFR 64.2009(e) CPNI annual certification + operational compliance, gap against Salt Typhoon LI-system vector
+- **FCC-Cyber-Incident-Notification-2024** — 47 CFR 64.2011 4-business-day rule, gap against LI-only compromise (no PII exfil) + signaling abuse + slow-roll campaign timing
+- **NIS2-Annex-I-Telecom** — telecom as essential entity, gap against LI-gateway access controls + OEM firmware attestation + AI-RAN coverage
+- **DORA-Art-21-Telecom-ICT** — ICT third-party risk through telecom services, gap against telecom-financial cadence misalignment + slice-isolation
+- **UK-CAF-B5** — resilient networks principle, gap against signaling-anomaly + gNB attestation + slice-isolation outcome tests
+- **AU-ISM-1556** — privileged-user MFA, gap against telecom NMS service accounts + LI-gateway operator credentials + OEM remote-support tunnels
+- **GSMA-NESAS-Deployment** — NESAS product-time vs operator-attested-runtime posture gap
+- **3GPP-TR-33.926** — SCAS submission-time test gap against post-deployment adversary-modified firmware + cross-spec N6/N9 isolation testing gap
+- **ITU-T-X.805** — 2003 reference architecture gap against modern Salt Typhoon / signaling abuse / slice-isolation threat models
+
+One ATLAS technique added to `data/atlas-ttps.json`:
+
+- **AML.T0040 Tool / Plugin Compromise** — anchors the AI-RAN xApp / rApp + MCP-class plugin attack class. Real-world instances: CVE-2026-30623 (Anthropic MCP SDK stdio command-injection), three Pwn2Own Berlin 2026 collisions (Viettel Claude Code, STARLabs LM Studio, Compass OpenAI Codex). `secure_ai_v2_layer: true`, `maturity: high`.
+
+Total ATLAS entries: 29 → 30.
+
+### RFC reverse-reference
+
+`data/rfc-references.json` RFC-9622 (TAPS Architecture) `skills_referencing` array gains `sector-telecom` (paired with the existing `webapp-security` reference) to satisfy the manifest forward-reference invariant.
+
+### AGENTS.md Quick Skill Reference
+
+Adds the `sector-telecom` row to the skill trigger table.
+
+Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 39/39 signed; manifest envelope signed.
+
 ## 0.12.25 — 2026-05-15
 
 **Data-refresh release: catalog freshness, Hard Rule #7 AI-discovery posture, ATLAS v5.4 + ATT&CK v19 standards bumps, Pwn2Own Berlin 2026 forward-watch, NGINX Rift, framework deltas (PCI 4.0.1 / HIPAA 2026 NPRM / EU AI Act ITS / DORA RTS).**

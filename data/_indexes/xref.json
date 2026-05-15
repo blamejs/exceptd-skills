@@ -72,6 +72,7 @@
       "api-security",
       "attack-surface-pentest",
       "mcp-agent-trust",
+      "sector-telecom",
       "webapp-security"
     ],
     "CWE-1395": [
@@ -154,12 +155,14 @@
       "sector-energy",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "webapp-security"
     ],
     "CWE-306": [
       "identity-assurance",
       "ot-ics-security",
-      "sector-energy"
+      "sector-energy",
+      "sector-telecom"
     ],
     "CWE-798": [
       "cloud-security",
@@ -217,7 +220,8 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
-      "rag-pipeline-security"
+      "rag-pipeline-security",
+      "sector-telecom"
     ],
     "D3-NTA": [
       "ai-attack-surface",
@@ -225,7 +229,8 @@
       "attack-surface-pentest",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
-      "rag-pipeline-security"
+      "rag-pipeline-security",
+      "sector-telecom"
     ],
     "D3-CBAN": [
       "defensive-countermeasure-mapping",
@@ -259,12 +264,14 @@
     ],
     "D3-NI": [
       "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "sector-telecom"
     ],
     "D3-NTPM": [
       "ai-c2-detection",
       "defensive-countermeasure-mapping",
-      "dlp-gap-analysis"
+      "dlp-gap-analysis",
+      "sector-telecom"
     ],
     "D3-FE": [
       "defensive-countermeasure-mapping",
@@ -511,6 +518,33 @@
     "NERC-CIP-007-6-R4": [
       "ot-ics-security",
       "sector-energy"
+    ],
+    "FCC-CPNI-4.1": [
+      "sector-telecom"
+    ],
+    "FCC-Cyber-Incident-Notification-2024": [
+      "sector-telecom"
+    ],
+    "NIS2-Annex-I-Telecom": [
+      "sector-telecom"
+    ],
+    "DORA-Art-21-Telecom-ICT": [
+      "sector-telecom"
+    ],
+    "UK-CAF-B5": [
+      "sector-telecom"
+    ],
+    "AU-ISM-1556": [
+      "sector-telecom"
+    ],
+    "GSMA-NESAS-Deployment": [
+      "sector-telecom"
+    ],
+    "3GPP-TR-33.926": [
+      "sector-telecom"
+    ],
+    "ITU-T-X.805": [
+      "sector-telecom"
     ]
   },
   "atlas_refs": {
@@ -580,6 +614,9 @@
       "mlops-security",
       "ot-ics-security",
       "supply-chain-integrity"
+    ],
+    "AML.T0040": [
+      "sector-telecom"
     ]
   },
   "attack_refs": {
@@ -613,6 +650,7 @@
       "sector-energy",
       "sector-federal-government",
       "sector-financial",
+      "sector-telecom",
       "webapp-security"
     ],
     "T1195.001": [
@@ -626,7 +664,8 @@
       "rag-pipeline-security"
     ],
     "T1071": [
-      "ai-c2-detection"
+      "ai-c2-detection",
+      "sector-telecom"
     ],
     "T1102": [
       "ai-c2-detection"
@@ -647,7 +686,8 @@
       "incident-response-playbook",
       "sector-energy",
       "sector-financial",
-      "sector-healthcare"
+      "sector-healthcare",
+      "sector-telecom"
     ],
     "T1567": [
       "age-gates-child-safety",
@@ -677,7 +717,8 @@
       "supply-chain-integrity"
     ],
     "T1556": [
-      "identity-assurance"
+      "identity-assurance",
+      "sector-telecom"
     ],
     "T1110": [
       "identity-assurance"
@@ -696,6 +737,12 @@
     "T1486": [
       "incident-response-playbook",
       "sector-financial"
+    ],
+    "T1098": [
+      "sector-telecom"
+    ],
+    "T1199": [
+      "sector-telecom"
     ],
     "T1552": [
       "cloud-security"
@@ -812,6 +859,9 @@
     ],
     "RFC-9106": [
       "pqc-first"
+    ],
+    "RFC-9622": [
+      "sector-telecom"
     ]
   },
   "dlp_refs": {}
