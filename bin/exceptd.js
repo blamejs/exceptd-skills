@@ -722,7 +722,22 @@ function hasReadableStdin() {
   let st;
   try { st = fs.fstatSync(0); }
   catch { return !process.stdin.isTTY; /* fstat failed — fall back */ }
+  // POSIX pipes / FIFOs / sockets / character devices report size 0
+  // even when bytes are queued (or about to be). Trust them — a real
+  // `echo '{...}' | exceptd run` pipeline lands here, and readFileSync(0)
+  // will read to EOF cleanly. If the write end is open and no bytes
+  // arrive, the read blocks — that's the operator's contract, not the
+  // CLI's to second-guess. Wrapped test harnesses that never write
+  // should pass `--evidence -` explicitly.
+  if (typeof st.isFIFO === "function" && st.isFIFO()) return true;
+  if (typeof st.isSocket === "function" && st.isSocket()) return true;
+  if (typeof st.isCharacterDevice === "function" && st.isCharacterDevice()) return true;
+  // Regular file (e.g. `exceptd run <evidence.json` shell redirect).
+  // size 0 here means a legitimately empty file.
   if (typeof st.size === "number" && st.size > 0) return true;
+  // Windows fallback: pipes don't surface as FIFOs via fstat on win32
+  // (they appear as regular files with size 0 even when bytes queued).
+  // Preserve the legacy truthy check so MSYS-bash piping keeps working.
   if (process.platform === "win32") return !process.stdin.isTTY;
   return false;
 }
