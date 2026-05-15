@@ -31,6 +31,7 @@
     "sector-federal-government",
     "sector-financial",
     "sector-healthcare",
+    "sector-telecom",
     "security-maturity-tiers",
     "skill-update-loop",
     "supply-chain-integrity",
@@ -294,6 +295,7 @@
       "rag-pipeline-security",
       "supply-chain-integrity"
     ],
+    "sector-telecom": [],
     "api-security": [
       "ai-c2-detection",
       "defensive-countermeasure-mapping",
@@ -425,6 +427,7 @@
     "sector-federal-government": 4,
     "sector-financial": 5,
     "sector-healthcare": 4,
+    "sector-telecom": 0,
     "security-maturity-tiers": 1,
     "skill-update-loop": 2,
     "supply-chain-integrity": 15,
@@ -465,6 +468,7 @@
     "sector-federal-government": 9,
     "sector-financial": 12,
     "sector-healthcare": 12,
+    "sector-telecom": 0,
     "security-maturity-tiers": 0,
     "skill-update-loop": 21,
     "supply-chain-integrity": 2,

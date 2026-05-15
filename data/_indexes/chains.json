@@ -3804,11 +3804,12 @@
       "sector-healthcare",
       "sector-financial",
       "sector-energy",
+      "sector-telecom",
       "api-security",
       "cloud-security",
       "age-gates-child-safety"
     ],
-    "skill_count": 9,
+    "skill_count": 10,
     "chain": {
       "atlas": [
         {
@@ -3820,6 +3821,11 @@
           "id": "AML.T0017",
           "name": "Discover ML Model Ontology",
           "tactic": "Discovery"
+        },
+        {
+          "id": "AML.T0040",
+          "name": "Tool / Plugin Compromise",
+          "tactic": "Execution"
         },
         {
           "id": "AML.T0051",
@@ -3837,9 +3843,12 @@
         "T0883",
         "T1059",
         "T1068",
+        "T1071",
         "T1078",
+        "T1098",
         "T1110",
         "T1190",
+        "T1199",
         "T1486",
         "T1505",
         "T1530",
@@ -3849,9 +3858,39 @@
       ],
       "framework_gaps": [
         {
+          "id": "3GPP-TR-33.926",
+          "framework": "3GPP",
+          "control_name": "3GPP Security Assurance Specification (gNB / eNB)"
+        },
+        {
+          "id": "AU-ISM-1556",
+          "framework": "au-ism",
+          "control_name": "Multi-factor authentication for privileged users (telecom NMS application)"
+        },
+        {
+          "id": "DORA-Art-21-Telecom-ICT",
+          "framework": "DORA",
+          "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)"
+        },
+        {
+          "id": "FCC-CPNI-4.1",
+          "framework": "FCC-CPNI",
+          "control_name": "CPNI Annual Certification + Operational Compliance"
+        },
+        {
+          "id": "FCC-Cyber-Incident-Notification-2024",
+          "framework": "FCC",
+          "control_name": "FCC Cyber Incident Notification (4 business days)"
+        },
+        {
           "id": "FedRAMP-Rev5-Moderate",
           "framework": "FedRAMP Rev 5 Moderate",
           "control_name": "FedRAMP Moderate baseline (NIST 800-53 Rev 5 tailoring)"
+        },
+        {
+          "id": "GSMA-NESAS-Deployment",
+          "framework": "GSMA-NESAS",
+          "control_name": "NESAS at-deployment posture"
         },
         {
           "id": "HIPAA-Security-Rule-164.312(a)(1)",
@@ -3879,9 +3918,19 @@
           "control_name": "Outsourced development"
         },
         {
+          "id": "ITU-T-X.805",
+          "framework": "ITU-T",
+          "control_name": "ITU-T X.805 — 8-dimension security architecture for end-to-end communications"
+        },
+        {
           "id": "NERC-CIP-007-6-R4",
           "framework": "NERC CIP-007-6 (BES Cyber System Security Management)",
           "control_name": "Security event monitoring"
+        },
+        {
+          "id": "NIS2-Annex-I-Telecom",
+          "framework": "NIS2",
+          "control_name": "NIS2 Annex I — telecommunications essential entities"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -3942,9 +3991,35 @@
           "id": "SWIFT-CSCF-v2026-1.1",
           "framework": "SWIFT Customer Security Controls Framework v2026",
           "control_name": "SWIFT Environment Protection"
+        },
+        {
+          "id": "UK-CAF-B5",
+          "framework": "UK-CAF",
+          "control_name": "Resilient networks and systems"
         }
       ],
-      "d3fend": [],
+      "d3fend": [
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-NI",
+          "name": "Network Isolation",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-NTPM",
+          "name": "Network Traffic Policy Mapping",
+          "tactic": "Model"
+        }
+      ],
       "rfc_refs": [
         {
           "id": "RFC-6749",
@@ -3987,6 +4062,11 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-9622",
+          "title": "An Architecture for Transport Services",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-9700",
           "title": "Best Current Practice for OAuth 2.0 Security",
           "status": "Best Current Practice"
@@ -4005,15 +4085,21 @@
     "referencing_skills": [
       "identity-assurance",
       "ot-ics-security",
-      "sector-energy"
+      "sector-energy",
+      "sector-telecom"
     ],
-    "skill_count": 3,
+    "skill_count": 4,
     "chain": {
       "atlas": [
         {
           "id": "AML.T0010",
           "name": "ML Supply Chain Compromise",
           "tactic": "Initial Access"
+        },
+        {
+          "id": "AML.T0040",
+          "name": "Tool / Plugin Compromise",
+          "tactic": "Execution"
         },
         {
           "id": "AML.T0051",
@@ -4025,12 +4111,45 @@
         "T0855",
         "T0883",
         "T1068",
+        "T1071",
         "T1078",
+        "T1098",
         "T1110",
         "T1190",
+        "T1199",
         "T1556"
       ],
       "framework_gaps": [
+        {
+          "id": "3GPP-TR-33.926",
+          "framework": "3GPP",
+          "control_name": "3GPP Security Assurance Specification (gNB / eNB)"
+        },
+        {
+          "id": "AU-ISM-1556",
+          "framework": "au-ism",
+          "control_name": "Multi-factor authentication for privileged users (telecom NMS application)"
+        },
+        {
+          "id": "DORA-Art-21-Telecom-ICT",
+          "framework": "DORA",
+          "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)"
+        },
+        {
+          "id": "FCC-CPNI-4.1",
+          "framework": "FCC-CPNI",
+          "control_name": "CPNI Annual Certification + Operational Compliance"
+        },
+        {
+          "id": "FCC-Cyber-Incident-Notification-2024",
+          "framework": "FCC",
+          "control_name": "FCC Cyber Incident Notification (4 business days)"
+        },
+        {
+          "id": "GSMA-NESAS-Deployment",
+          "framework": "GSMA-NESAS",
+          "control_name": "NESAS at-deployment posture"
+        },
         {
           "id": "IEC-62443-3-3",
           "framework": "IEC 62443-3-3 (Industrial communication networks — security for IACS)",
@@ -4042,9 +4161,19 @@
           "control_name": "Outsourced development"
         },
         {
+          "id": "ITU-T-X.805",
+          "framework": "ITU-T",
+          "control_name": "ITU-T X.805 — 8-dimension security architecture for end-to-end communications"
+        },
+        {
           "id": "NERC-CIP-007-6-R4",
           "framework": "NERC CIP-007-6 (BES Cyber System Security Management)",
           "control_name": "Security event monitoring"
+        },
+        {
+          "id": "NIS2-Annex-I-Telecom",
+          "framework": "NIS2",
+          "control_name": "NIS2 Annex I — telecommunications essential entities"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -4075,9 +4204,35 @@
           "id": "SOC2-CC6-logical-access",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Logical and Physical Access Controls"
+        },
+        {
+          "id": "UK-CAF-B5",
+          "framework": "UK-CAF",
+          "control_name": "Resilient networks and systems"
         }
       ],
-      "d3fend": [],
+      "d3fend": [
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-NI",
+          "name": "Network Isolation",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-NTPM",
+          "name": "Network Traffic Policy Mapping",
+          "tactic": "Model"
+        }
+      ],
       "rfc_refs": [
         {
           "id": "RFC-6749",
@@ -4098,6 +4253,11 @@
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9622",
+          "title": "An Architecture for Transport Services",
+          "status": "Proposed Standard"
         },
         {
           "id": "RFC-9700",
@@ -6668,9 +6828,10 @@
       "mcp-agent-trust",
       "attack-surface-pentest",
       "webapp-security",
+      "sector-telecom",
       "api-security"
     ],
-    "skill_count": 4,
+    "skill_count": 5,
     "chain": {
       "atlas": [
         {
@@ -6687,6 +6848,11 @@
           "id": "AML.T0017",
           "name": "Discover ML Model Ontology",
           "tactic": "Discovery"
+        },
+        {
+          "id": "AML.T0040",
+          "name": "Tool / Plugin Compromise",
+          "tactic": "Execution"
         },
         {
           "id": "AML.T0043",
@@ -6706,18 +6872,52 @@
       ],
       "attack_refs": [
         "T1059",
+        "T1071",
         "T1078",
+        "T1098",
         "T1133",
         "T1190",
         "T1195.001",
+        "T1199",
         "T1505",
+        "T1556",
         "T1567"
       ],
       "framework_gaps": [
         {
+          "id": "3GPP-TR-33.926",
+          "framework": "3GPP",
+          "control_name": "3GPP Security Assurance Specification (gNB / eNB)"
+        },
+        {
           "id": "ALL-MCP-TOOL-TRUST",
           "framework": "ALL",
           "control_name": "MCP/Agent Tool Trust Boundaries"
+        },
+        {
+          "id": "AU-ISM-1556",
+          "framework": "au-ism",
+          "control_name": "Multi-factor authentication for privileged users (telecom NMS application)"
+        },
+        {
+          "id": "DORA-Art-21-Telecom-ICT",
+          "framework": "DORA",
+          "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)"
+        },
+        {
+          "id": "FCC-CPNI-4.1",
+          "framework": "FCC-CPNI",
+          "control_name": "CPNI Annual Certification + Operational Compliance"
+        },
+        {
+          "id": "FCC-Cyber-Incident-Notification-2024",
+          "framework": "FCC",
+          "control_name": "FCC Cyber Incident Notification (4 business days)"
+        },
+        {
+          "id": "GSMA-NESAS-Deployment",
+          "framework": "GSMA-NESAS",
+          "control_name": "NESAS at-deployment posture"
         },
         {
           "id": "ISO-27001-2022-A.8.28",
@@ -6728,6 +6928,16 @@
           "id": "ISO-27001-2022-A.8.30",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Outsourced development"
+        },
+        {
+          "id": "ITU-T-X.805",
+          "framework": "ITU-T",
+          "control_name": "ITU-T X.805 — 8-dimension security architecture for end-to-end communications"
+        },
+        {
+          "id": "NIS2-Annex-I-Telecom",
+          "framework": "NIS2",
+          "control_name": "NIS2 Annex I — telecommunications essential entities"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -6793,6 +7003,11 @@
           "id": "SWIFT-CSCF-v2026-1.1",
           "framework": "SWIFT Customer Security Controls Framework v2026",
           "control_name": "SWIFT Environment Protection"
+        },
+        {
+          "id": "UK-CAF-B5",
+          "framework": "UK-CAF",
+          "control_name": "Resilient networks and systems"
         }
       ],
       "d3fend": [
@@ -6817,14 +7032,29 @@
           "tactic": "Harden"
         },
         {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-MFA",
           "name": "Multi-factor Authentication",
           "tactic": "Harden"
         },
         {
+          "id": "D3-NI",
+          "name": "Network Isolation",
+          "tactic": "Isolate"
+        },
+        {
           "id": "D3-NTA",
           "name": "Network Traffic Analysis",
           "tactic": "Detect"
+        },
+        {
+          "id": "D3-NTPM",
+          "name": "Network Traffic Policy Mapping",
+          "tactic": "Model"
         }
       ],
       "rfc_refs": [
@@ -6856,6 +7086,11 @@
         {
           "id": "RFC-9421",
           "title": "HTTP Message Signatures",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-9622",
+          "title": "An Architecture for Transport Services",
           "status": "Proposed Standard"
         },
         {

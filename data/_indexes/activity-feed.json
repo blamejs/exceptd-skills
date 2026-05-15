@@ -2,16 +2,23 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 50
+    "event_count": 51
   },
   "events": [
+    {
+      "date": "2026-05-15",
+      "type": "skill_review",
+      "artifact": "sector-telecom",
+      "path": "skills/sector-telecom/skill.md",
+      "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security"
+    },
     {
       "date": "2026-05-15",
       "type": "catalog_update",
       "artifact": "data/atlas-ttps.json",
       "path": "data/atlas-ttps.json",
       "schema_version": "1.0.0",
-      "entry_count": 29
+      "entry_count": 30
     },
     {
       "date": "2026-05-15",
@@ -35,7 +42,7 @@
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 78
+      "entry_count": 87
     },
     {
       "date": "2026-05-15",
@@ -364,7 +371,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 38 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 39 skills, 11 catalogs"
     }
   ]
 }

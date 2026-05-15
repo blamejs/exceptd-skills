@@ -32,6 +32,7 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "security-maturity-tiers",
       "skill-update-loop",
       "supply-chain-integrity",
@@ -41,7 +42,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 38
+    "skill_count": 39
   },
   "UK": {
     "skills": [
@@ -74,6 +75,7 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "security-maturity-tiers",
       "skill-update-loop",
       "supply-chain-integrity",
@@ -83,7 +85,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 36
+    "skill_count": 37
   },
   "AU": {
     "skills": [
@@ -117,6 +119,7 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "security-maturity-tiers",
       "skill-update-loop",
       "supply-chain-integrity",
@@ -126,7 +129,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 37
+    "skill_count": 38
   },
   "SG": {
     "skills": [
@@ -147,11 +150,12 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "threat-modeling-methodology",
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 19
+    "skill_count": 20
   },
   "JP": {
     "skills": [
@@ -174,12 +178,13 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "supply-chain-integrity",
       "threat-modeling-methodology",
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 22
+    "skill_count": 23
   },
   "IN": {
     "skills": [
@@ -197,10 +202,11 @@
       "researcher",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "threat-modeling-methodology"
     ],
     "example_excerpts": {},
-    "skill_count": 15
+    "skill_count": 16
   },
   "CA": {
     "skills": [
@@ -216,11 +222,12 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "skill-update-loop",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 14
+    "skill_count": 15
   },
   "BR": {
     "skills": [
@@ -299,10 +306,11 @@
   },
   "NZ": {
     "skills": [
-      "sector-financial"
+      "sector-financial",
+      "sector-telecom"
     ],
     "example_excerpts": {},
-    "skill_count": 1
+    "skill_count": 2
   },
   "KR": {
     "skills": [
@@ -418,6 +426,7 @@
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
+      "sector-telecom",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
@@ -426,7 +435,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 37
+    "skill_count": 38
   },
   "VN": {
     "skills": [
@@ -484,9 +493,11 @@
     "skill_count": 1
   },
   "TR": {
-    "skills": [],
+    "skills": [
+      "sector-telecom"
+    ],
     "example_excerpts": {},
-    "skill_count": 0
+    "skill_count": 1
   },
   "TH": {
     "skills": [],

@@ -3,10 +3,10 @@
     "schema_version": "1.0.0",
     "reference_date": "2026-05-01",
     "note": "Stale-content snapshot derived from audit-cross-skill checks. Re-runs of build-indexes against the same inputs produce byte-identical output (reference_date is manifest.threat_review_date, not 'now'). audit-cross-skill.js remains the canonical interactive audit.",
-    "finding_count": 1,
+    "finding_count": 3,
     "by_severity": {
       "high": 0,
-      "medium": 1,
+      "medium": 3,
       "low": 0
     }
   },
@@ -15,7 +15,19 @@
       "severity": "medium",
       "category": "badge_drift",
       "artifact": "README.md",
+      "detail": "skills badge shows 38, manifest has 39"
+    },
+    {
+      "severity": "medium",
+      "category": "badge_drift",
+      "artifact": "README.md",
       "detail": "jurisdictions badge shows 35, live count is 34"
+    },
+    {
+      "severity": "medium",
+      "category": "researcher_claim_drift",
+      "artifact": "skills/researcher/skill.md",
+      "detail": "claims 37 specialized skills downstream; live count is 38"
     }
   ]
 }

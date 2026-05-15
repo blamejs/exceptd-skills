@@ -1964,5 +1964,167 @@
     "attack_refs": [
       "T1195.001"
     ]
+  },
+  "FCC-CPNI-4.1": {
+    "framework": "FCC-CPNI",
+    "control_id": "47-CFR-64.2009(e)",
+    "control_name": "CPNI Annual Certification + Operational Compliance",
+    "designed_for": "Annual certification by US telecom carriers that they have established operating procedures to comply with CPNI rules; covers customer-proprietary network info disclosure to law enforcement and third parties.",
+    "misses": [
+      "Lawful-intercept (LI) gateway compromise detection — CPNI rules predate Salt Typhoon-class adversary access to CALEA-mandated systems",
+      "Anomalous LI activation requests from compromised admin accounts",
+      "Cross-PLMN signaling spike detection (SS7 / Diameter / GTP)",
+      "OEM firmware drift attestation on equipment that touches CPNI flows"
+    ],
+    "real_requirement": "Annual CPNI certification PLUS quarterly LI-gateway activation audit (PRC / Salt-Typhoon-class threat model), gNB firmware hash attestation, signaling-anomaly baselines per PLMN-pair.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": ["AML.T0040"],
+    "attack_refs": ["T1078", "T1098", "T1199"]
+  },
+  "FCC-Cyber-Incident-Notification-2024": {
+    "framework": "FCC",
+    "control_id": "47-CFR-64.2011",
+    "control_name": "FCC Cyber Incident Notification (4 business days)",
+    "designed_for": "Notification rule requiring US telecom carriers to report PII or CPNI breaches within 4 business days of discovery (effective 2024-03-13).",
+    "misses": [
+      "No requirement to notify on lawful-intercept-system compromise that does not exfiltrate PII directly (e.g. Salt Typhoon access to LI feeds covering counter-intelligence targets)",
+      "No requirement to notify on signaling-protocol intrusion (SS7 / Diameter abuse) absent PII loss",
+      "4-business-day window is too slow for an ongoing nation-state campaign — peer regulators set tighter limits (NIS2 24h, DORA 4h)",
+      "No structured-data feed for cross-carrier IOC sharing"
+    ],
+    "real_requirement": "4-business-day window paired with 24-hour preliminary signal-flag for LI-system compromise + structured CISA / NSA / FBI IOC handoff format.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199", "T1078"]
+  },
+  "NIS2-Annex-I-Telecom": {
+    "framework": "NIS2",
+    "control_id": "Annex-I-Telecommunications",
+    "control_name": "NIS2 Annex I — telecommunications essential entities",
+    "designed_for": "NIS2 Directive (EU) 2022/2555 Annex I classifies telecom providers as essential entities, mandating risk management measures + 24h incident notification + supply-chain due diligence.",
+    "misses": [
+      "No specific obligations on lawful-intercept-system access controls (national-security scope deferred to MS-level law)",
+      "Supply-chain due diligence (Art. 21(2)(d)) does not name OEM-vendor-equipment firmware integrity attestation specifically",
+      "AI-RAN security obligations absent — O-RAN deployments span the entity boundary in ways the NIS2 risk-management framework does not yet model",
+      "24h notification clock starts at significant-incident-detection but signaling-protocol intrusion + slow-roll campaigns evade the trigger"
+    ],
+    "real_requirement": "Annex I + explicit LI-gateway operator-attested firmware hash + AI-RAN model-tampering controls + cross-PLMN signaling baseline obligation.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": ["AML.T0040"],
+    "attack_refs": ["T1199", "T1078", "T1098"]
+  },
+  "DORA-Art-21-Telecom-ICT": {
+    "framework": "DORA",
+    "control_id": "Art-21-Telecom-ICT",
+    "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)",
+    "designed_for": "DORA Reg. (EU) 2022/2554 Art. 21 ICT third-party risk management; applies to financial entities consuming telecom-provided ICT services.",
+    "misses": [
+      "Telecom-to-financial trust boundary is asymmetric — DORA binds the financial entity but telecom providers (essential entities under NIS2) may not align reporting cadences",
+      "Lawful-intercept access by the telecom upstream is not in DORA scope but creates a parallel data-exposure surface",
+      "CTPP (critical third-party provider) oversight does not yet cover OEM equipment vendors transitively",
+      "No bridge to 5G slice-isolation obligations for financial-sector dedicated network slices"
+    ],
+    "real_requirement": "DORA Art. 21 + alignment with NIS2 telecom-essential-entity reporting + slice-isolation attestation for finance-dedicated 5G slices.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199"]
+  },
+  "UK-CAF-B5": {
+    "framework": "UK-CAF",
+    "control_id": "Principle-B5",
+    "control_name": "Resilient networks and systems",
+    "designed_for": "NCSC Cyber Assessment Framework Principle B5 — outcome-tested network resilience for essential service operators (incl. telecom under TSA 2021).",
+    "misses": [
+      "Signaling-protocol attack-surface (SS7 / Diameter / GTP) not in CAF B5 outcome tests",
+      "gNB / DU / CU integrity attestation not modeled — CAF B5 expects network-availability resilience, not equipment-supply-chain attestation",
+      "Lawful-intercept access path covered by separate IPA 2016 + TSA 2021 + Code of Practice — not CAF scope",
+      "AI-RAN slice-isolation testing not in the CAF outcome catalog"
+    ],
+    "real_requirement": "CAF B5 + signaling-anomaly detection + gNB firmware attestation outcome test + slice-isolation outcome test.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199", "T1078"]
+  },
+  "AU-ISM-1556": {
+    "framework": "au-ism",
+    "control_id": "ISM-1556",
+    "control_name": "Multi-factor authentication for privileged users (telecom NMS application)",
+    "designed_for": "Australian Government ISM control ISM-1556 — phishing-resistant MFA for privileged users + remote access.",
+    "misses": [
+      "Telecom NMS service accounts (which hold gNB / EMS / OSS access) often bypass human MFA",
+      "Service-account credential management policy is ISM-1559 (covered separately); ISM-1556 alone is insufficient for telecom OEM-vendor support tunnels",
+      "Lawful-intercept gateway operator credentials specifically uncovered — these are not always classified as privileged in telecom RBAC models",
+      "OEM remote-support inbound tunnels (Cisco TAC, Ericsson ENS) often pass credentials via shared mailbox — defeats MFA intent"
+    ],
+    "real_requirement": "ISM-1556 + telecom-NMS service-account FIDO2 enforcement + LI-gateway-specific MFA + OEM remote-support-tunnel federated-MFA mandate.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1078", "T1098"]
+  },
+  "GSMA-NESAS-Deployment": {
+    "framework": "GSMA-NESAS",
+    "control_id": "NESAS-Deployment-Gap",
+    "control_name": "NESAS at-deployment posture",
+    "designed_for": "GSMA Network Equipment Security Assurance Scheme — product-time certification of telecom OEM equipment against 3GPP SCAS test cases (GSMA FS.13 / FS.14 / FS.15).",
+    "misses": [
+      "Certification is product-time (one snapshot, vendor-attested); deployment posture drifts as firmware / config evolves",
+      "No post-deployment attested-runtime check — operator has no canonical way to confirm a running gNB matches the certified build",
+      "Firmware update cadence is not tied to NESAS re-certification — vendor patches between certifications run uncertified",
+      "NESAS scope excludes the EMS / OSS / NMS systems that operate the equipment, which is where Salt Typhoon-class campaigns gained access"
+    ],
+    "real_requirement": "NESAS product-time certification PLUS operator-attested-runtime gNB hash + EMS / OSS NESAS-equivalent scheme + firmware-update-cadence-tied recertification.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199"]
+  },
+  "3GPP-TR-33.926": {
+    "framework": "3GPP",
+    "control_id": "TR-33.926",
+    "control_name": "3GPP Security Assurance Specification (gNB / eNB)",
+    "designed_for": "3GPP TR 33.926 Security Assurance Specification — security test cases applied against the gNB / eNB product class, paired with the broader 5G security architecture in TS 33.501.",
+    "misses": [
+      "TR 33.926 covers the equipment itself; the AI-RAN / O-RAN deployment is outside scope (O-RAN SFG / WG11 handles separately)",
+      "Test cases assume deterministic equipment behavior — adversary-modified firmware that passes TR 33.926 tests at submission time is undetected after the fact",
+      "N6 / N9 interface isolation testing is in TS 33.501 not TR 33.926 — operators consume both, gap is at the join",
+      "No bridge to ISM-1556-class operator-account hardening for the NMS that operates the certified equipment"
+    ],
+    "real_requirement": "TR 33.926 + post-deployment hash-attestation + O-RAN security WG11 alignment + cross-spec join testing between TR 33.926 and TS 33.501.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199"]
+  },
+  "ITU-T-X.805": {
+    "framework": "ITU-T",
+    "control_id": "X.805",
+    "control_name": "ITU-T X.805 — 8-dimension security architecture for end-to-end communications",
+    "designed_for": "ITU-T Recommendation X.805 (2003) — generic 8-dimension security architecture (access control, authentication, non-repudiation, data confidentiality, communication security, data integrity, availability, privacy) for telecom networks.",
+    "misses": [
+      "Specification predates 5G, O-RAN, AI-RAN, and CALEA / IPA-LI surface evolution; control language remains generic",
+      "No mapping to modern threat models (Salt Typhoon, signaling-protocol abuse)",
+      "Treated as reference architecture, not as a deployment-validation framework — operators rarely audit posture against X.805 dimensions directly",
+      "No bridge to NESAS / 3GPP / NIS2 / FCC CPNI specific obligations"
+    ],
+    "real_requirement": "X.805 8-dimension framing PLUS modern-threat-model annexes (LI-system compromise, signaling-protocol abuse, slice-isolation) + deployment-validation checklist.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1199"]
   }
 }
