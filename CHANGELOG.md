@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.12.27 — 2026-05-15
+
+**Patch: opt-in `--bundle-deterministic` mode for reproducible CSAF + OpenVEX + close-envelope bytes. Closes cycle 6 III P2-E + cycle 7 CCC bundle-non-determinism finding.**
+
+### New flags
+
+- **`--bundle-deterministic`** (boolean, off by default) — when set, the bundle-emit path produces byte-stable output for the same inputs. CSAF `tracking.initial_release_date` / `current_release_date` / `generator.date` / `revision_history[0].date`, OpenVEX top-level `timestamp` + per-statement `timestamp`, close-envelope `acceptance_date` + `regression_schedule.next_run` + `generated_at` all freeze to a single epoch. Auto-generated session IDs derive deterministically from `sha256(playbook_id ∥ evidence_hash ∥ engine_version)` rather than `crypto.randomBytes`. CSAF `vulnerabilities[]` + OpenVEX `statements[]` arrays sort by primary id.
+- **`--bundle-epoch <ISO-8601>`** (value-bearing, optional) — operator-supplied freeze epoch. When omitted, the deterministic mode falls back to `playbook._meta.last_threat_review` (the canonical "this catalog was last reviewed at" timestamp). Honored only when `--bundle-deterministic` is set.
+
+Both flags wired for `run`, `ci`, `run-all`, `ai-run`, `ingest`. Per-verb help blocks document them.
+
+### Why
+
+- **CI bundle diffing**: `git diff` over `evidence_package.bundle_body` against a baseline becomes signal-bearing only when drift is signal, not noise. Pre-v0.12.27 the same evidence produced ~640 bytes of timestamp drift across CSAF + OpenVEX + close-envelope per run.
+- **Auditor evidence reuse**: ISO 27001 / SOC 2 audits expect re-emit against the same submission to produce byte-equal evidence.
+- **SLSA / Sigstore alignment**: reproducible build evidence requires deterministic outputs the verifier can hash and compare.
+
+CSAF 2.0 §3.1.11.2-5 permits identical `initial_release_date` / `current_release_date` for never-revised advisories; freezing to a catalog epoch is spec-compliant. The strict-validator pass (BSI CSAF Validator) accepts the deterministic-mode output unchanged.
+
+### Default-mode regression guard
+
+When neither flag is set, bundle output is byte-identical to v0.12.26 — no existing operator sees a behavioral change. A regression test pins this: two consecutive runs in default mode produce different CSAF `tracking.initial_release_date` values, asserting the determinism is opt-in and cannot accidentally activate.
+
+### Test coverage
+
+`tests/bundle-determinism.test.js` (new, 7 exact-code tests):
+1. Two runs same inputs + same epoch → byte-identical CSAF/OpenVEX/summary
+2. Different `--bundle-epoch` → bundles differ only in timestamp fields
+3. Different evidence → bundles differ in `vulnerabilities[]` length; timestamps frozen
+4. Default mode → regression-guard timestamp drift
+5. `--bundle-epoch invalid-iso` → exit 1 + structured error
+6. `--bundle-deterministic` without `--bundle-epoch` falls back to `playbook._meta.last_threat_review`
+7. Array sort: random-order CVE evidence → `vulnerabilities[]` always ascending by `cve_id`
+
+Existing CSAF + OpenVEX + CLI test suites pass unchanged (53/53 + 30/30; no default-mode regression).
+
+Test count: 1058 pass (5 skipped). Predeploy gates: 14/14. Skills: 39/39 signed.
+
 ## 0.12.26 — 2026-05-15
 
 **Patch: sector-telecom skill ships, with supporting framework-gap and ATLAS catalog scaffolding. Closes the cycle 8 LLL P1 finding that the unmodeled RWEP signal from Salt Typhoon-class campaigns was the highest gap in the catalog.**
