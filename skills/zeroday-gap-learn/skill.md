@@ -23,7 +23,7 @@ forward_watch:
   - New ATLAS TTP additions in each ATLAS release
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-14"
 ---
 
 # Zero-Day Learning Loop
@@ -99,6 +99,7 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Partial | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
 | CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Pending | Yes (worm in-wild) | No (engineering-grade chain) | n/a | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
 | MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogues vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
+| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No (candidate within days) | Yes (one-liner vs /usr/bin/su) | No (human-discovered by V12 security team) | 20 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
 
 Per AGENTS.md DR-8: every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
@@ -195,6 +196,48 @@ Output: Lesson entry for data/zeroday-lessons.json
 1. **CRYPTO-SUBSYSTEM-INTEGRITY**: Network controls claiming compliance via IPsec must include: kernel CVE status for IPsec-related CVEs, and explicit acknowledgment if IPsec-based controls are degraded by an unpatched IPsec CVE.
 
 2. **PRE-PATCH-DISCLOSURE-RESPONSE**: For vulnerabilities disclosed before patches exist: immediately inventory affected systems, isolate high-risk systems at network layer, deploy detection rules, commit to patch timeline.
+
+---
+
+### Lesson: CVE-2026-46300 (Fragnesia — Dirty Frag Sequel)
+
+**Attack vector:** Page-cache corruption via XFRM ESP-in-TCP skb coalescing. `skb_try_coalesce()` drops the `SKBFL_SHARED_FRAG` marker when coalescing paged fragments between socket buffers, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user deterministically overwrites read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell. Disclosed 2026-05-13 by William Bowling (V12 security team). Same primitive class as Dirty Frag (CVE-2026-43284 / CVE-2026-43500) — Fragnesia is the sibling bug introduced by the patch for the original Dirty Frag.
+
+**What control should have prevented this:**
+- Module-unload mitigation: blacklist `esp4` / `esp6` / `rxrpc` in `/etc/modprobe.d/`. Identical to the Dirty Frag mitigation set — operators who retained that blacklist after patching Dirty Frag are already mitigated for Fragnesia at zero additional operational cost.
+- Bug-family-aware patch policy: when a CVE patch lands, retain the pre-patch compensating controls until the patched code has soaked. Operators who removed the Dirty Frag blacklist on patch landing re-exposed the host to the sibling bug.
+
+**What control should have detected this:**
+- Page-cache integrity verification: read the binary through the page cache (`vmtouch -v <path>; sha256sum <path>`), drop caches, re-read from disk, compare hashes. Mismatch is the primary forensic signature. File-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) miss this entirely because the on-disk file is unchanged.
+- No major framework requires page-cache-aware integrity verification.
+
+**Framework coverage assessment:**
+
+| Framework | Control | Assessment |
+|---|---|---|
+| NIST 800-53 SI-2 | Flaw Remediation | Present but insufficient: 30-day SLA is exploitation window for deterministic public PoC; module-unload is non-reboot and immediate but not required as a compensating control |
+| ISO 27001 A.8.8 | Technical vulnerability management | Present but insufficient: same "appropriate timescales" gap |
+| NIS2 Art. 21(2)(c) | Patch-management measures | Present but insufficient: undefined for fast-cycle kernel LPEs with public PoC; module-blacklist not in scope |
+| DORA Art. 9 | ICT incident management | Present but insufficient: presumes vendor-patch cadence; module-unload as immediate mitigation has no place in the typical DORA evidence pack |
+| UK CAF B4 | System security | Silent on subsystem module disable as a compensating control |
+| AU ISM-1546 / Essential 8 | Patch applications | ML3 48h anchors on advisory date, not PoC availability; still long for a deterministic public exploit |
+| ISO 27001 A.5.7 | Threat intelligence | Collects feeds; does not require operational pivot when intel shows a same-family sequel to a previously-patched bug |
+| Any framework | Page-cache integrity verification | Missing entirely — on-disk file-integrity tools cannot detect this class |
+
+**New control requirements generated:**
+
+1. **PAGE-CACHE-INTEGRITY-VERIFICATION**: For setuid binaries on production hosts, periodically (or on alert) read the binary through the page cache, drop caches, re-read from disk, and compare hashes. Mismatch indicates page-cache-resident corruption that on-disk-only file-integrity tools cannot detect.
+
+2. **BUG-FAMILY-MITIGATION-PERSISTENCE**: When a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked for a stated review period. Patches for one bug in a primitive class can introduce sibling bugs in the same class — the Dirty Frag → Fragnesia chain is the canonical example.
+
+3. **SCANNER-PAPER-COMPLIANCE-TEST**: A vulnerability scanner that reports "patched" based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?
+
+**Exposure scoring:**
+- RWEP: 20 today. Will jump to 55+ on CISA KEV listing (+25) and to 65+ on confirmed active exploitation (+20 more).
+- Audit-passing orgs still exposed: ~75%. Operators who retained the Dirty Frag module blacklist are already mitigated. Operators who relied on kernel-package-version alone with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window.
+- Coverage failure: on-disk file-integrity tools (AIDE, Tripwire) report clean while the page-cache copy of /usr/bin/su is corrupted.
+
+**Class-level lesson:** "patch landed therefore safe" assumes patches close bug families. The Dirty Frag → Fragnesia pattern shows a patch can introduce a sibling bug in the same primitive class. Treat every patch in a primitive class as opening a new soak window during which the pre-patch compensating controls remain active.
 
 ---
 

@@ -40,6 +40,15 @@ on:
         required: false
         default: 'false'
 
+# HH P1-1: Scorecard TokenPermissionsID — declare the workflow-level default
+# at the minimum scope (`contents: read`). Per-job blocks below retain the
+# elevated scopes (publish needs `contents: write` + `id-token: write`).
+# Without this top-level declaration the GITHUB_TOKEN inherits the repository
+# default, which Scorecard flags as an unscoped write-capable token even on
+# read-only jobs.
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate (gates + e2e + npm pack preview)

@@ -20,7 +20,7 @@
  * in .github/workflows/ci.yml. Test coverage in tests/predeploy.test.js
  * asserts the two stay in sync.
  *
- * Audit G F5 — when the manifest-snapshot gate fails, the fix is NOT to
+ * when the manifest-snapshot gate fails, the fix is NOT to
  * run `npm run refresh-snapshot` blindly. The refresh script now refuses
  * unless the operator passes `--commit-only` or sets
  * EXCEPTD_SNAPSHOT_AUDIT_ACK=1. This is intentional: a failing snapshot
@@ -71,7 +71,7 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-cve-catalog.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
-  // Audit G F13 — the "validate-cves --offline --no-fail" and
+  // the "validate-cves --offline --no-fail" and
   // "validate-rfcs --offline --no-fail" gates were enumeration-only sanity
   // checks: `--no-fail` forced them to always exit 0, so they never blocked
   // a release on a real catalog problem. The deep catalog validation is
@@ -94,7 +94,7 @@ const GATES = [
   },
   {
     // Informational — surfaces the forward_watch horizon across all skills.
-    // Audit G F12: an exit code of 0 means "ok", 1 means "items present
+    // an exit code of 0 means "ok", 1 means "items present
     // (informational)", 2+ means a runtime error in the gate itself.
     // The runner now distinguishes the two: 0/1 stay informational, 2+
     // surface as a real failure. Pre-fix, any non-zero exit was rolled up
@@ -177,7 +177,7 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-playbooks.js")],
     ciJobName: "Validate playbooks",
     informational: true,
-    // audit Y F30: cap informational acceptance at exit 1 so a CRASH (137 OOM,
+    // cap informational acceptance at exit 1 so a CRASH (137 OOM,
     // 139 SIGSEGV, 134 SIGABRT, etc.) surfaces as a real failure instead of
     // being absorbed under the informational bucket. Matches the
     // forward-watch gate (line ~111) which already pins the same ceiling.
@@ -198,7 +198,7 @@ function runGate(gate) {
     }
   }
   const t0 = Date.now();
-  // Audit G F21 — spawn the child with piped stdio + tee to the parent so we
+  // spawn the child with piped stdio + tee to the parent so we
   // can count `WARN ` lines for the summary table. We still want the live
   // output, so each chunk is forwarded as it arrives.
   const { spawnSync } = require("child_process");
@@ -222,7 +222,7 @@ function runGate(gate) {
   if (r.status === 0) {
     return { status: "passed", durationMs, warnCount };
   }
-  // Audit G F12 — gates may declare informationalMaxExitCode to distinguish
+  // gates may declare informationalMaxExitCode to distinguish
   // "soft signal" (exit codes 0..N) from "crash" (> N). Default behaviour
   // for an informational gate without that field stays the same.
   if (gate.informational) {

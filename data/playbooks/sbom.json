@@ -354,6 +354,24 @@
             "control_id": "Art.14",
             "designed_for": "Actively-exploited-vulnerability 24-hour notification.",
             "insufficient_because": "Notification window is tight; many orgs lack the SBOM-to-active-exploit correlation infrastructure to detect within window. Process gap, not control-text gap."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "A4 — Supply chain",
+            "designed_for": "NCSC CAF outcome that supply-chain risks to the essential function are understood and managed.",
+            "insufficient_because": "Outcome is met by an SBOM-of-record at a point in time. Continuous transitive drift, VEX correlation, and AI-codegen provenance fall outside the outcome's reporting cadence; an annual CAF review can return 'achieved' against a stale inventory."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 1 — Patch applications",
+            "designed_for": "ASD mitigation strategy for application patching, with maturity levels 1-3.",
+            "insufficient_because": "Strategy tempo (48-hour ML3 for internet-facing) assumes the org can enumerate which applications carry a CVE. Without continuous SBOM-to-CVE correlation, the patch clock does not start until the org happens to notice."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1546",
+            "designed_for": "Australian Government ISM control on software supply-chain risk management for sourced software.",
+            "insufficient_because": "Control evidence is sourced-software-centric. Open-source transitive dependencies and AI-coding-assistant-emitted code are not 'sourced' under the ISM's evidence model; the control cannot bind their integrity."
           }
         ]
       },

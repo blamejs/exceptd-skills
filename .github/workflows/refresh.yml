@@ -19,6 +19,14 @@ on:
         required: false
         default: ''
 
+# HH P1-2: Scorecard TokenPermissionsID — top-level minimum-scope default
+# (`contents: read`). The job below opens an automated PR and so retains
+# the elevated `contents: write` + `pull-requests: write` + `issues: write`
+# scopes at the job level; this declaration only sets the default for any
+# future read-only job added to the workflow.
+permissions:
+  contents: read
+
 jobs:
   refresh:
     name: Refresh + open PR on diffs

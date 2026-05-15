@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-14"
 ---
 
 # Threat Model Currency Assessment
@@ -70,13 +70,14 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ### Class 3: IPsec Subsystem Exploitation (Network Control Bypass)
 
-**2026 reality:** Dirty Frag (CVE-2026-43284/43500) exploits the IPsec implementation itself. Network segmentation controls that rely on IPsec cannot be claimed as compensating controls for unpatched systems.
+**2026 reality:** Dirty Frag (CVE-2026-43284/43500) exploits the IPsec implementation itself. Fragnesia (CVE-2026-46300, disclosed 2026-05-13) is the sibling page-cache-corruption bug introduced by the Dirty Frag patch — same primitive class, same XFRM ESP-in-TCP code path, same `blacklist esp4 / esp6 / rxrpc` mitigation. Network segmentation controls that rely on IPsec cannot be claimed as compensating controls for unpatched systems. Threat intel decays in days, not quarters: Dirty Frag and Fragnesia landed two weeks apart in the same primitive class.
 
 **Currency check questions:**
 - Does the threat model include exploitation of cryptographic subsystems as a bypass for network isolation controls?
 - Are IPsec-dependent network controls flagged for review when kernel CVEs affecting IPsec are published?
+- Does the threat model treat a CVE patch as opening a soak window during which the pre-patch compensating controls remain active? (Fragnesia precedent — Dirty Frag patch introduced a sibling bug in the same primitive class.)
 
-**If unchecked:** Network segmentation controls may be claimed as compensating controls when they are actually part of the attack surface.
+**If unchecked:** Network segmentation controls may be claimed as compensating controls when they are actually part of the attack surface. "Patch landed therefore safe" misses sibling-bug introductions.
 
 ---
 
@@ -267,7 +268,7 @@ The 14-class checklist above *is* the TTP map. Each class is a coverage requirem
 |---|---|---|---|
 | 1 — AI-discovered kernel LPE | T1068 (Exploitation for Privilege Escalation) | cve-catalog.json: CVE-2026-31431 | Threat model assumes human-speed exploit discovery |
 | 2 — Deterministic LPE | T1068 | cve-catalog.json: CVE-2026-31431 | IR plan treats LPE as probabilistic |
-| 3 — IPsec subsystem LPE | T1068 | cve-catalog.json: CVE-2026-43284 / CVE-2026-43500 | Network-segmentation claimed as compensating control for the attack surface itself |
+| 3 — IPsec subsystem LPE | T1068 | cve-catalog.json: CVE-2026-43284 / CVE-2026-43500 / CVE-2026-46300 | Network-segmentation claimed as compensating control for the attack surface itself; patch-landed-therefore-safe assumes patches close bug families (Fragnesia disproved this in days) |
 | 4 — Prompt injection RCE | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak) | atlas-ttps.json + CVE-2025-53773 | Prompt injection treated as T&S, not security |
 | 5 — MCP supply chain RCE | AML.T0010 (ML Supply Chain Compromise), T1190 (Exploit Public-Facing Application) | atlas-ttps.json + CVE-2026-30615 | AI plugin ecosystem out of supply-chain scope |
 | 6 — AI-assisted weaponization | AML.T0016 (Obtain Capabilities: Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
@@ -295,6 +296,7 @@ A threat model is "current" only if it accounts for every `data/cve-catalog.json
 | CVE-2026-30615 | Windsurf MCP local-vector RCE | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
 | CVE-2026-43284 | Dirty Frag (ESP/IPsec) | 7.8 | 38 | No | Yes — chain component | No | No | Required if IPsec-based controls are claimed as compensating. |
 | CVE-2026-43500 | Dirty Frag (RxRPC) | 7.6 | 32 | No | Yes — chain component | No | No | Required when chained with CVE-2026-43284 in IR scenario planning. |
+| CVE-2026-46300 | Fragnesia | 7.8 | 20 (today) / 55+ on KEV | No (candidate) | Yes — one-liner vs /usr/bin/su | No (human-discovered by V12 security team) | Yes (kpatch / canonical-livepatch / KernelCare) | Required when the threat model claims patches close bug families — Fragnesia is the sibling bug introduced by the Dirty Frag patch; the same `blacklist esp4 / esp6 / rxrpc` mitigation covers both. Treat as the canonical "today" example of threat-intel decay measured in days, not quarters. |
 
 The hard rule for currency scoring: every CVE in the catalog with RWEP >= 50 (currently CVE-2026-31431) must appear in the threat model under its named threat or its CVE ID. RWEP 40–49 entries should appear if the org uses the affected technology. Sub-40 entries appear by exception.
 

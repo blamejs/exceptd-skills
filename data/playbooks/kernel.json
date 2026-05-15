@@ -70,12 +70,14 @@
     "cve_refs": [
       "CVE-2026-31431",
       "CVE-2026-43284",
-      "CVE-2026-43500"
+      "CVE-2026-43500",
+      "CVE-2026-46300"
     ],
     "cwe_refs": [
       "CWE-416",
       "CWE-362",
-      "CWE-787"
+      "CWE-787",
+      "CWE-672"
     ],
     "d3fend_refs": [
       "D3-KBPI",
@@ -186,6 +188,24 @@
             "control_id": "Art.21(2)(c)",
             "designed_for": "Vulnerability handling and disclosure for essential entities.",
             "insufficient_because": "Specifies process, not tempo. Permits patch-handling procedures that don't differentiate weaponized-in-hours kernel LPEs from theoretical issues."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B4 — System security",
+            "designed_for": "NCSC CAF outcome that operational systems are protected against cyber attack, including timely patching.",
+            "insufficient_because": "Outcome-based — does not bind a tempo to KEV-listed kernel LPEs. Regulator interpretation of 'timely' varies; a 30-day reading is defensible under CAF while the public PoC weaponizes in hours."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 2 — Patch operating systems",
+            "designed_for": "ASD mitigation strategy for OS patching, with maturity levels 1-3.",
+            "insufficient_because": "Maturity Level 3 requires patching within 48 hours of vendor release for internet-facing services and 1 month for workstations. Neither tempo references CISA KEV or PoC availability; a kernel LPE with a same-day public exploit can satisfy ML3 while remaining exposed."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1493",
+            "designed_for": "Australian Government ISM control for applying patches, updates, or vendor mitigations within 48 hours of release when an exploit exists.",
+            "insufficient_because": "48-hour clock anchors to vendor patch availability, not KEV listing. Kernels with live-patch capability go undocumented as a deployed mitigation; the control does not require live-patching as a fallback when reboot windows exceed 48 hours."
           }
         ]
       },

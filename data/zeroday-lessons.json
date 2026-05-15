@@ -688,5 +688,107 @@
       "basis": "MCP ecosystem patch hygiene lags traditional CVE timelines. Most AI-agent operators do not maintain an explicit MCP tool allowlist; SI-10 audits accept the MCP plugin as a vendored dependency without auditing its argv handling.",
       "theater_pattern": "vendored_mcp_plugin_inherits_vendor_trust"
     }
+  },
+  "CVE-2026-46300": {
+    "name": "Fragnesia",
+    "lesson_date": "2026-05-14",
+    "attack_vector": {
+      "description": "Page-cache corruption via XFRM ESP-in-TCP skb coalescing in the Linux kernel. skb_try_coalesce() drops the SKBFL_SHARED_FRAG marker when coalescing paged fragments, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). Unprivileged local user can overwrite read-only file data in the kernel page cache without touching the on-disk file. Public PoC targets /usr/bin/su for a deterministic root shell.",
+      "privileges_required": "unprivileged local user or container process",
+      "complexity": "deterministic, no race condition",
+      "ai_factor": "Human-discovered by William Bowling (V12 security team). Not AI-discovered, but lives in the same primitive class as the AI-discoverable Dirty Frag family — the upstream patch for Dirty Frag introduced this sibling bug."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Module-unload mitigation: blacklist esp4 / esp6 / rxrpc in /etc/modprobe.d/ where IPsec and Kerberos-AFS are not required. Identical mitigation set to Dirty Frag (CVE-2026-43284 / CVE-2026-43500) — any host already mitigated for Dirty Frag by module blacklist is already mitigated for Fragnesia.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Eliminates the attack surface on hosts that don't need ESP or RxRPC. Full kernel update via vendor channels closes the bug everywhere else; live-patch is the non-reboot path."
+      },
+      "detection": {
+        "what_would_have_worked": "Page-cache integrity monitoring — read a setuid binary through the page cache (`vmtouch` + `sha256sum`) and compare to a freshly-read-from-disk copy after `echo 3 > /proc/sys/vm/drop_caches`. Mismatch is the primary forensic signature.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "File-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) miss this entirely — the on-disk file is unchanged. Detection coverage requires page-cache-aware integrity checks, which no major framework requires."
+      },
+      "response": {
+        "what_would_have_worked": "Module unload + kernel update + venv-style page-cache flush of long-running processes that hold a setuid binary mapped read-only.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Reduces blast radius post-exploitation. The corrupted page-cache entry survives until the affected page is evicted or the process re-maps the file — drop_caches is the operational reset."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA is exploitation window for a deterministic public PoC. Module-unload mitigation is non-reboot and available immediately but is not a required compensating control under SI-2."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; standard 30-day interpretation is unsafe for deterministic LPE with public PoC."
+      },
+      "NIS2-Art21-2c": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch-management measures are undefined for fast-cycle kernel LPEs with public PoC."
+      },
+      "DORA-Art9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; module-unload as immediate mitigation has no place in the typical DORA evidence pack."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System security principle is silent on subsystem module disable as a compensating control for unpatched kernel LPE."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": "partial",
+        "gap": "Essential 8 patch-applications maturity ladder anchors on advisory date, not on PoC availability. ML3 48h is still long for a deterministic public exploit."
+      },
+      "FILE-INTEGRITY-CONTROLS": {
+        "covered": false,
+        "adequate": false,
+        "gap": "AIDE / Tripwire / IMA in measure-only mode hash on-disk bytes and miss page-cache-resident corruption entirely. No framework requires page-cache-aware integrity verification."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-016",
+        "name": "PAGE-CACHE-INTEGRITY-VERIFICATION",
+        "description": "For setuid binaries on production hosts: periodically (or on alert) read the binary through the page cache, drop caches, re-read from disk, and compare hashes. Mismatch indicates page-cache-resident corruption that on-disk-only file-integrity tools cannot detect.",
+        "evidence": "CVE-2026-46300 (Fragnesia) — corrupts the page-cache copy of /usr/bin/su without modifying the on-disk file. AIDE / Tripwire / IMA measure-only show clean.",
+        "gap_closes": [
+          "FILE-INTEGRITY-CONTROLS"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-017",
+        "name": "BUG-FAMILY-MITIGATION-PERSISTENCE",
+        "description": "When a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked for a stated review period. Patches for one bug in a primitive class can introduce sibling bugs in the same class; the original compensating control may still apply to the sibling.",
+        "evidence": "CVE-2026-46300 (Fragnesia) — introduced by the patch for CVE-2026-43284 / CVE-2026-43500 (Dirty Frag). The esp4 / esp6 / rxrpc blacklist used for Dirty Frag mitigation is identically effective against Fragnesia.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-2c"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-018",
+        "name": "SCANNER-PAPER-COMPLIANCE-TEST",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "evidence": "CVE-2026-46300 — kernels patched for Dirty Frag but predating the Fragnesia patch report 'patched for CVE-2026-43284' while still exposed to CVE-2026-46300.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Operators who already blacklisted esp4 / esp6 / rxrpc for Dirty Frag are already mitigated. Operators who relied on kernel-package-version alone (a scanner saying 'patched') with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window. Exposure drops sharply if CISA KEV-lists the CVE (federal 21-day SLA fires) or if active exploitation is observed.",
+      "theater_pattern": "patch_management"
+    }
   }
 }

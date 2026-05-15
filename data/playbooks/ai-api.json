@@ -261,6 +261,24 @@
             "control_id": "CC6",
             "designed_for": "Logical and physical access controls.",
             "insufficient_because": "Same as AC-2 — authorized service account, no access-control finding even when account is being abused as C2."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "C1 — Security monitoring",
+            "designed_for": "NCSC CAF outcome that security monitoring detects threats to the essential function.",
+            "insufficient_because": "Monitoring outcome requires a baseline of normal; vendor AI-API traffic is new enough that the established baseline classifies all of it as normal. The outcome can be 'achieved' while C2 traverses the same channel undetected."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 5 — Restrict admin privileges",
+            "designed_for": "ASD mitigation strategy limiting administrative privilege scope and re-validation cadence.",
+            "insufficient_because": "Privilege restriction targets human admin accounts. The AI service account is non-human, holds the API token, and is excluded from the strategy's quarterly re-validation requirement on standard ML2 implementations."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1841",
+            "designed_for": "Australian Government ISM control on event logging for cloud and SaaS services.",
+            "insufficient_because": "Logging scope assumes the org receives audit logs from the SaaS provider. AI-API providers expose request/response metadata but not prompt content, so the control's detection value collapses on the exfil-via-prompt channel."
           }
         ]
       },

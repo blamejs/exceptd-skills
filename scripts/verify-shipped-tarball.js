@@ -18,8 +18,7 @@
  * The bug was invisible because CI's verify ran against the SOURCE tree,
  * not the shipped tarball. This gate closes that gap.
  *
- * Audit G:
- *   F9  — After the first-pass extraction (using the source-tree parseTar),
+ * *   F9  — After the first-pass extraction (using the source-tree parseTar),
  *         re-parse the tarball using the parseTar shipped INSIDE the
  *         extracted tree itself. If the two parses disagree, fail with a
  *         structured error. Catches the class where the shipped parser
@@ -45,7 +44,7 @@ const path = require("path");
 const os = require("os");
 const { spawnSync } = require("child_process");
 
-// v0.12.16 (audit I P1-1): mirror the byte-stability normalize() contract
+// v0.12.16: mirror the byte-stability normalize() contract
 // from lib/sign.js + lib/verify.js + lib/refresh-network.js. Duplicated
 // (not require'd) to keep this script's dep surface minimal and to ensure
 // a bug in the normalize() implementation in lib/ doesn't simultaneously
@@ -58,7 +57,7 @@ function normalizeSkillBytes(buf) {
   return Buffer.from(s.replace(/\r\n/g, "\n"), "utf8");
 }
 
-// Audit O P1-C: in-line manifest-signature verifier for the extracted
+// C: in-line manifest-signature verifier for the extracted
 // tarball. Kept here (rather than imported) for the same defense-in-depth
 // reasoning as normalizeSkillBytes: a bug in lib/verify.js's verifier
 // should not also disable this gate (we want at least one independent
@@ -109,7 +108,7 @@ function verifyExtractedManifestSignature(manifest, publicKeyPem) {
   return ok ? { status: "valid" } : { status: "invalid", reason: "Ed25519 manifest signature did not verify against extracted public.pem" };
 }
 
-// Audit P P1-A: exported so tests/normalize-contract.test.js can assert
+// A: exported so tests/normalize-contract.test.js can assert
 // byte-identical normalize() behavior across all four implementations.
 module.exports = {
   normalizeSkillBytes,
@@ -125,7 +124,7 @@ function fail(msg, code = 1) {
   process.exit(code);
 }
 
-// Audit P P1-A: gate the script body behind require.main === module so
+// A: gate the script body behind require.main === module so
 // tests can `require()` this file to load the exported helpers (notably
 // normalizeSkillBytes for the byte-stability contract test) without
 // invoking npm pack as a side effect of import.
@@ -176,7 +175,7 @@ try {
   }
   emit(`extracted to ${pkgRoot}`);
 
-  // Audit G F9 — load the extracted tree's OWN parseTar and re-parse the
+  // load the extracted tree's OWN parseTar and re-parse the
   // tarball. If the two parsers diverge on entry list or content, the
   // gate trips: this means CI exercised a different parser than operators
   // will. Defense against drift between source and shipped tarball when
@@ -248,7 +247,7 @@ try {
   const pubPem = fs.readFileSync(pubKeyPath, "utf8");
   const pubKey = crypto.createPublicKey(pubPem);
 
-  // Audit O P1-C: verify the top-level manifest_signature on the
+  // C: verify the top-level manifest_signature on the
   // EXTRACTED manifest.json. Per-skill signatures only sign the skill body
   // bytes — they do not sign skill.name / skill.path / skill.atlas_refs or
   // any other manifest envelope metadata. A tarball whose body bytes are
@@ -286,7 +285,7 @@ try {
     emit(`*** Something between sign and pack is swapping the key. Verify will fail below. ***`);
   }
 
-  // Audit G F4 — key-pin cross-check against the EXTRACTED tree. The pin
+  // key-pin cross-check against the EXTRACTED tree. The pin
   // is consumed from keys/EXPECTED_FINGERPRINT in the extracted package —
   // that's the file operators will actually receive on `npm install`.
   // Warn when absent, fail when present-but-mismatched (unless KEYS_ROTATED).
@@ -323,7 +322,7 @@ try {
       failures.push(`${s.name}: file not found at ${s.path}`);
       continue;
     }
-    // v0.12.16 (audit I P1-1): the prior code passed the raw file bytes
+    // v0.12.16: the prior code passed the raw file bytes
     // directly to crypto.verify. lib/sign.js + lib/verify.js both NORMALIZE
     // bytes (strip UTF-8 BOM, convert CRLF -> LF) before sign/verify, per
     // the byte-stability contract in lib/verify.js's normalize() header.

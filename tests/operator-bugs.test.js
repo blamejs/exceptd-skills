@@ -396,8 +396,11 @@ test('#82 SARIF bundle via CLI includes indicator results when one fires', () =>
   // the runner to "operator submission drove this result," not "the runner
   // emits indicator_hit unconditionally."
   const results = data.runs?.[0]?.results || [];
+  // audit CC P2-6: SARIF ruleIds are playbook-prefixed
+  // (`<playbook-slug>/<rule>`) so cross-playbook merges don't dedupe by
+  // ruleId. Match on the suffix instead of an exact equality.
   const matching = results.filter(res =>
-    res.ruleId === 'publish-workflow-uses-static-token' &&
+    /(?:^|\/)publish-workflow-uses-static-token$/.test(String(res.ruleId)) &&
     res.properties?.kind === 'indicator_hit'
   );
   assert.equal(matching.length, 1,
@@ -556,10 +559,14 @@ test('#91 CSAF emits framework_gap_mapping as document.notes (not pseudo-vulnera
   assert.equal(fwGapVulns.length, 0,
     'framework gaps must NOT appear as vulnerabilities[] entries — they pollute downstream CSAF consumers');
   // Positive assertion: gaps land in document.notes[].
+  // audit CC P1-3: a separate `category: general` note may also appear when
+  // no --publisher-namespace was supplied. Filter to category=details
+  // before counting + asserting the framework-gap content shape.
   const notes = data?.document?.notes || [];
   assert.ok(Array.isArray(notes), 'document.notes must be an array');
-  assert.ok(notes.length >= 1, 'library-author playbook surfaces at least one framework gap as a note');
-  for (const n of notes) {
+  const gapNotes = notes.filter(n => n.category === 'details');
+  assert.ok(gapNotes.length >= 1, 'library-author playbook surfaces at least one framework gap as a category=details note');
+  for (const n of gapNotes) {
     assert.equal(n.category, 'details', 'framework-gap notes use category: details');
     assert.ok(typeof n.text === 'string' && n.text.length > 0,
       'each framework-gap note must carry a non-empty text body');
@@ -1444,41 +1451,23 @@ test('#E7 jurisdiction clock pending without --ack on detected classification', 
 
 // ===================================================================
 test('#87 doctor --fix is registered (smoke)', () => {
-  // v0.12.4 ROOT-CAUSE FIX: this test previously invoked `exceptd doctor --fix`
-  // directly. On any machine where `.keys/private.pem` was missing (every CI
-  // run, every fresh clone), `--fix` would synchronously spawn
-  // `lib/sign.js generate-keypair`, which OVERWRITES `keys/public.pem` with
-  // a fresh Ed25519 public key. After that, every committed manifest signature
-  // (signed against the OLD key) fails to verify against the NEW public.pem.
-  // Result: every v0.11.x and v0.12.x release shipped a tarball where 0/38
-  // skills verified on fresh `npm install`. The bug was invisible because
-  // CI's verify step (gate 1) ran BEFORE this test (gate 2), so verify saw
-  // the original key. The new verify-shipped-tarball gate (gate 14) ran
-  // AFTER this test, and packed/verified against the overwritten key.
+  // Dispatch-table-only smoke test. The earlier shape of this test invoked
+  // `exceptd doctor --fix` directly. On any machine where `.keys/private.pem`
+  // was missing (every CI run, every fresh clone), `--fix` synchronously
+  // spawned `lib/sign.js generate-keypair`, which overwrote `keys/public.pem`
+  // with a fresh Ed25519 public key. Every committed manifest signature
+  // (signed against the OLD key) then failed to verify against the NEW
+  // public.pem. Result: every v0.11.x and v0.12.x release shipped a tarball
+  // where 0/38 skills verified on fresh `npm install`.
   //
-  // Fix: pre-stage a dummy `.keys/private.pem` so `--fix` sees "private key
-  // already present" and short-circuits without generating. Restore the
-  // pre-test state in finally{}. The test still verifies that the verb is
-  // registered + emits JSON, which is all the smoke check needs to assert.
-  const keysDir = path.join(ROOT, '.keys');
-  const privPath = path.join(keysDir, 'private.pem');
-  const hadKey = fs.existsSync(privPath);
-  let stashed = null;
-  if (hadKey) {
-    // Already maintainer-state — test passes through doctor's short-circuit.
-  } else {
-    fs.mkdirSync(keysDir, { recursive: true });
-    // Empty file is sufficient: lib/sign.js generate-keypair checks
-    // `fs.existsSync(PRIVATE_KEY_PATH)` and exits before any key write.
-    fs.writeFileSync(privPath, '');
-    stashed = privPath;
-  }
-  try {
-    const r = cli(['doctor', '--fix', '--json'], { env: { EXCEPTD_RAW_JSON: '1' } });
-    assert.notEqual(r.status, 2, 'doctor --fix should not be an unknown-flag error');
-    const data = tryJson(r.stdout);
-    assert.ok(data, 'doctor --fix should emit JSON');
-  } finally {
-    if (stashed && fs.existsSync(stashed)) fs.unlinkSync(stashed);
-  }
+  // The pre-stage-a-dummy-key workaround still touched the real .keys/ dir,
+  // which leaked state on Ctrl-C. Replace with a non-mutating probe: spawn
+  // `exceptd doctor --help` and assert the help text advertises --fix. This
+  // exercises the dispatch + flag-registration surface without invoking the
+  // mutating code path at all.
+  const r = cli(['doctor', '--help']);
+  assert.notEqual(r.status, 2, 'doctor --help must not be an unknown-command error');
+  const text = (r.stdout || '') + (r.stderr || '');
+  assert.match(text, /--fix\b/,
+    'doctor --help must advertise the --fix flag so operators can discover it. Got: ' + text.slice(0, 400));
 });

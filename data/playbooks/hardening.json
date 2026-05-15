@@ -62,7 +62,8 @@
     "cve_refs": [
       "CVE-2026-31431",
       "CVE-2026-43284",
-      "CVE-2026-43500"
+      "CVE-2026-43500",
+      "CVE-2026-46300"
     ],
     "cwe_refs": [
       "CWE-732",
@@ -183,6 +184,30 @@
             "control_id": "Application Hardening / OS Hardening",
             "designed_for": "Hardening application + OS with documented baseline.",
             "insufficient_because": "Maturity Level 1-3 are progressive but each accepts attestation evidence at the time of assessment. No real-time drift requirement at any maturity level."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(e)",
+            "designed_for": "Security in network and information systems acquisition, development and maintenance.",
+            "insufficient_because": "Names secure configuration as essential measure. Implementing acts have not bound kernel-level hardening flags or continuous attestation; classical CIS-benchmark posture satisfies the article's text."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.9",
+            "designed_for": "ICT systems, protocols and tools — protective and preventative measures.",
+            "insufficient_because": "Article requires 'state-of-the-art' protective measures without enumerating kernel hardening flags. Financial-entity ICT can be DORA-compliant while kernel hardening posture remains weak relative to the current LPE threat landscape."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B4 — System security",
+            "designed_for": "NCSC CAF outcome that operational systems are protected against cyber attack.",
+            "insufficient_because": "Outcome-based. Achievable on a baseline-documented configuration even when live hardening flags (kernel.kptr_restrict, kernel.dmesg_restrict, kernel.yama.ptrace_scope) drift downward between assessments."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1417",
+            "designed_for": "Australian Government ISM control on hardening operating system configurations.",
+            "insufficient_because": "Control evidences a hardened baseline at deployment. Post-deployment sysctl drift, manual override during incident response, or fleet-management config-push regressions are not detected by the ISM's evidence model."
           }
         ]
       },

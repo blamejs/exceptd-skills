@@ -289,6 +289,24 @@
             "control_id": "Art.13 / Annex I",
             "designed_for": "Essential cybersecurity requirements for products with digital elements.",
             "insufficient_because": "Manufacturer of an MCP server is captured, but tool sideloading by developers is not — and the CRA's manufacturer obligations don't translate cleanly to maintainer-signed packages on npm/PyPI."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "A4 — Supply chain",
+            "designed_for": "NCSC CAF outcome that supply-chain risks to the essential function are understood and managed.",
+            "insufficient_because": "Outcome is scoped to suppliers the org has a relationship with. Developer-installed MCP servers reach the engineering environment without ever being onboarded as a supplier; the outcome cannot be assessed against an inventory that does not include them."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 3 — Application control",
+            "designed_for": "ASD mitigation strategy restricting execution to an approved set of applications.",
+            "insufficient_because": "Application control gates classical executables. MCP servers run inside the developer's IDE or AI client as plugin modules — they bypass the strategy's enforcement surface entirely on standard ML2/ML3 implementations."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1546",
+            "designed_for": "Australian Government ISM control on software supply-chain risk management for sourced software.",
+            "insufficient_because": "Targets sourced software with a procurement trail. Developer-initiated MCP plugin installation produces no procurement artefact, so the control's evidence requirements cannot bind."
           }
         ]
       },

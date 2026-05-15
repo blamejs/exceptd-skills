@@ -1,14 +1,16 @@
 ---
 name: kernel-lpe-triage
 version: "1.0.0"
-description: Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, live-patch vs. reboot remediation paths, framework gap declarations
+description: Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations
 triggers:
   - kernel lpe
   - privilege escalation
   - copy fail
   - dirty frag
+  - fragnesia
   - cve-2026-31431
   - cve-2026-43284
+  - cve-2026-46300
   - linux root
   - kernel patch
   - live kernel patch
@@ -45,7 +47,7 @@ d3fend_refs:
   - D3-PHRA
   - D3-PSEP
   - D3-SCP
-last_threat_review: "2026-05-13"
+last_threat_review: "2026-05-14"
 ---
 
 # Kernel LPE Triage
@@ -95,6 +97,34 @@ The IPsec dimension is critical: organizations with network segmentation control
 
 ---
 
+### Fragnesia — CVE-2026-46300
+
+**Classification:** Local Privilege Escalation | Dirty Frag family sequel | Human-Discovered  
+**CVSS:** 7.8 (High) | **RWEP:** 20/100 (will jump to 55+ on CISA KEV listing)
+
+Disclosed 2026-05-13 by William Bowling (V12 security team). Same primitive class as Dirty Frag — Fragnesia is the sibling bug introduced by the patch for CVE-2026-43284 / CVE-2026-43500. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
+
+Key characteristics:
+- **Deterministic exploitation** — no race condition, no kernel-version fingerprinting beyond the affected_versions range.
+- **Public PoC** — one-liner against `/usr/bin/su` from the V12 disclosure.
+- **Page-cache corruption without on-disk write** — file-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) cannot detect the corruption.
+- **Module-unload mitigation is identical to Dirty Frag** — blacklist `esp4`, `esp6`, `rxrpc` in `/etc/modprobe.d/`. Any host already mitigated for Dirty Frag by module blacklist is already mitigated for Fragnesia, with no further action required.
+- **Live-patch is non-reboot** — AlmaLinux + CloudLinux kernels in testing as of 2026-05-13; Canonical Livepatch + kpatch follow standard cadence.
+- **Not CISA KEV-listed as of 2026-05-14**, no active exploitation observed in the wild yet. RWEP today is 20; expect 55+ if KEV-listed, 65+ if active exploitation confirmed.
+
+**Lesson for operators:** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. Fragnesia is the canonical case — the Dirty Frag patch introduced Fragnesia, and the same `modprobe -r esp4 esp6 rxrpc` mitigation covers both.
+
+**Detection signature (page-cache-aware):**
+```
+# Drop caches, read fresh from disk, compare to page-cache-resident copy
+sha256sum /usr/bin/su
+echo 3 > /proc/sys/vm/drop_caches
+sha256sum /usr/bin/su
+# Mismatch indicates page-cache corruption — primary forensic signature
+```
+
+---
+
 ## Framework Lag Declaration
 
 | Framework | Control | Designed For | Fails Because |
@@ -135,6 +165,7 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 | CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | Yes (kpatch/livepatch/kGraft) | Yes |
 | CVE-2026-43284 (Dirty Frag ESP) | 7.8 | 38 | No | Yes | No | Suspected | Yes | No (kpatch RHEL-only) | Yes |
 | CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 81 | No | Yes (chain component) | No | Suspected | Yes | Partial (kpatch) | Yes if no live patch |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 20 | No (likely candidate) | Yes — one-liner vs /usr/bin/su | No | None observed | Yes (testing on Alma/CloudLinux) | Yes (kpatch / canonical-livepatch / KernelCare) | No (module-unload mitigation is non-reboot) |
 
 ---
 
@@ -142,7 +173,7 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 
 Run this check for any org claiming patch-management compliance for kernel LPE class CVEs:
 
-> "Your patch-management control (NIST SI-2 / ISO 27001:2022 A.8.8 / PCI-DSS v4 6.3.3 / NIS2 Art. 21(2)(g) / UK-CAF B4 / AU-ISM-1493) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public deterministic exploit requiring no privileges and KEV listing dated 2026-03-15. What is the actual time, on this fleet, between KEV listing and confirmed patch-or-mitigate for the affected kernel versions? If that interval exceeds 72 hours without live-patching as a deployed capability for the affected hosts, the patch-management control is theater for the KEV-class kernel-LPE threat surface."
+> "Your patch-management control (NIST SI-2 / ISO 27001:2022 A.8.8 / PCI-DSS v4 6.3.3 / NIS2 Art. 21(2)(g) / UK-CAF B4 / AU-ISM-1493) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public deterministic exploit requiring no privileges and KEV listing dated 2026-05-01. What is the actual time, on this fleet, between KEV listing and confirmed patch-or-mitigate for the affected kernel versions? If that interval exceeds 72 hours without live-patching as a deployed capability for the affected hosts, the patch-management control is theater for the KEV-class kernel-LPE threat surface."
 
 **Theater fingerprints (any of these reduces the control to paper compliance):**
 
@@ -190,6 +221,20 @@ Patched versions:
 Exposed if: IPsec or RxRPC modules loaded AND kernel < patched version
 Check: lsmod | grep -E 'esp|xfrm|rxrpc'
 Additional exposure: any IPsec-based network control becomes unreliable
+```
+
+**Fragnesia (CVE-2026-46300):**
+```
+Exposed if: kernel >= 5.10 AND kernel < [Fragnesia-patched version for distribution]
+            AND any of esp4 / esp6 / rxrpc loaded
+Check: uname -r; lsmod | grep -E '^(esp4|esp6|rxrpc)\b'
+Mitigation (no reboot): blacklist the unused modules in /etc/modprobe.d/fragnesia.conf
+  install esp4  /bin/false
+  install esp6  /bin/false
+  install rxrpc /bin/false
+  (or just: modprobe -r esp4 esp6 rxrpc; only ESP / RxRPC users need to retain them)
+Identical mitigation set to Dirty Frag — hosts already blacklisted from the
+CVE-2026-43284/43500 response are already mitigated for Fragnesia.
 ```
 
 ### Step 3: Score exposure level
@@ -267,6 +312,7 @@ Produce this structure:
 | CVE-2026-31431 (Copy Fail) | [Exposed / Live-patched / Patched] | [Critical/High/Medium/Low] |
 | CVE-2026-43284 (Dirty Frag ESP) | [Exposed / Patched] | [Critical/High/Medium/Low] |
 | CVE-2026-43500 (Dirty Frag RxRPC) | [Exposed / Patched] | [Critical/High/Medium/Low] |
+| CVE-2026-46300 (Fragnesia) | [Exposed / Module-unloaded / Live-patched / Patched] | [Critical/High/Medium/Low] |
 
 ### IPsec Control Impact
 [If applicable: which network controls are affected by Dirty Frag]
@@ -287,6 +333,7 @@ Produce this structure:
 CVE-2026-31431: CVSS 7.8 / RWEP 90 — immediate action required (4h)
 CVE-2026-43284: CVSS 7.8 / RWEP 38 — remediate within 7 days; disable RxRPC/IPsec chain if not required
 CVE-2026-43500: CVSS 7.6 / RWEP 32 — remediate within 7 days; consider disabling RxRPC module
+CVE-2026-46300: CVSS 7.8 / RWEP 20 — patch within standard cycle; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess if CISA KEV-listed (expected RWEP 55+).
 ```
 
 ---

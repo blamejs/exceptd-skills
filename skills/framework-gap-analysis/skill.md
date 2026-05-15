@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-14"
 ---
 
 # Framework Gap Analysis
@@ -75,6 +75,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 |---|---|---|
 | NIST 800-53 SI-2 vs. deterministic LPE | T1068 (Exploitation for Privilege Escalation), T1548.001 | Patch SLA permits active exploitation window |
 | NIST 800-53 SC-8/SC-28 vs. Dirty Frag | T1190 (Exploit Public-Facing Application) via IPsec subsystem | Cryptographic control is the attack surface |
+| NIST 800-53 SI-2 vs. Fragnesia (Dirty Frag sequel) | T1068 (Exploitation for Privilege Escalation) via XFRM ESP-in-TCP skb coalesce | Patch SLA assumes patches close bug families; the Dirty Frag patch introduced this sibling bug |
 | NIST 800-53 AC-2 vs. prompt injection | AML.T0051 (LLM Prompt Injection), AML.T0054 | Authorized identity executes attacker intent |
 | NIST 800-53 SI-3 vs. AI-generated malware | AML.T0016 (adversary Develop Capabilities — payload generation), AML.T0018 | Signature-based detection has zero coverage |
 | ISO 27001 A.8.8 vs. CISA KEV class | T1068, T1203 | "Appropriate timescales" undefined for AI-accelerated weaponization |
@@ -93,6 +94,7 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 |---|---|---|---|---|---|---|---|
 | CVE-2026-31431 (Copy Fail) | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
 | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited (subsystem-dependent) | Suspected |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 20 (today) / 55+ on KEV | No (candidate) | Yes (one-liner vs /usr/bin/su) | No | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Suspected |
 
@@ -126,8 +128,9 @@ The following gaps are documented with evidence. When a control from this list i
 
 **Fails for:**
 - CVE-2026-43284/CVE-2026-43500 (Dirty Frag): The exploit runs through the IPsec implementation. A system using IPsec to satisfy SC-8 compliance cannot claim IPsec as a compensating control for Dirty Frag — the control is the attack surface.
+- CVE-2026-46300 (Fragnesia): Same class as Dirty Frag — page-cache corruption via XFRM ESP-in-TCP skb coalescing. Introduced by the Dirty Frag patch. SC-8 IPsec-based compliance is invalidated identically; operators who removed the Dirty Frag `blacklist esp4 / esp6 / rxrpc` mitigation when that patch landed re-opened the IPsec attack surface for Fragnesia.
 
-**What a real control requires:** Cryptographic controls for SC-8/SC-28 compliance must include integrity assurance for the cryptographic subsystem itself, not just assurance that the subsystem is configured. Kernel subsystem integrity monitoring (eBPF-based, read-only kernel text verification) as a compensating layer.
+**What a real control requires:** Cryptographic controls for SC-8/SC-28 compliance must include integrity assurance for the cryptographic subsystem itself, not just assurance that the subsystem is configured. Kernel subsystem integrity monitoring (eBPF-based, read-only kernel text verification) as a compensating layer. When a CVE patch lands in a cryptographic subsystem, retain the pre-patch compensating controls until the patched code has soaked — the Fragnesia precedent demonstrates the sibling-bug risk.
 
 ---
 
@@ -370,5 +373,6 @@ Specific high-confidence theater signals (each triggers a mandatory Framework La
 | Org claims AC-2 / CC6 as adequate for AI-agent access control | CVE-2025-53773 demonstrates AML.T0051 routing around the identity model entirely |
 | Org claims A.5.19 / SA-12 vendor management as adequate for MCP servers | CVE-2026-30615 demonstrates AML.T0010 supply-chain RCE via attacker-controlled HTML processed by the MCP client (local-vector, not network) |
 | Org claims IPsec-based SC-8 segmentation as adequate without a kernel-patch status check | CVE-2026-43284 makes the IPsec implementation the attack surface |
+| Org removed the esp4 / esp6 / rxrpc module-blacklist mitigation once Dirty Frag was patched | CVE-2026-46300 (Fragnesia) is in the same primitive class, was introduced by the Dirty Frag patch, and is mitigated by the same blacklist |
 
 When this check fires, hand off to the compliance-theater skill for the theater-pattern detection test and to policy-exception-gen if the org needs to grant a defensible exception with concrete compensating controls.

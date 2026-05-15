@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-14"
 ---
 
 # Compliance Theater Detection
@@ -98,6 +98,7 @@ The theater patterns most acutely under attack today are those backed by high-RW
 | Vendor Management Theater (AI APIs / MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Suspected |
 | Access Control Theater (AI agents) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | Network Segmentation Theater (IPsec) | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited (subsystem-dependent) | Suspected |
+| Patch Management Theater (Bug-Family Sequel) | CVE-2026-46300 (Fragnesia) | 7.8 | 20 (today) / 55+ on KEV | No (candidate) | Yes (one-liner vs /usr/bin/su) | No | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
 | Incident Response Theater (AI pipeline) | SesameOp campaign + AML.T0096 | N/A | High | N/A | ATLAS-documented | Yes | N/A | Confirmed campaign |
 | Change Management Theater (AI models) | Continuous provider updates | N/A | Medium | N/A | N/A | N/A | N/A | Ongoing (uncontrolled) |
 | Security Awareness Theater (AI phishing) | AI-generated phishing baseline (82.6%) | N/A | High | N/A | Operational | Yes | N/A | Confirmed (industry-wide) |
@@ -131,6 +132,8 @@ The first three rows (Critical / Critical / High RWEP with public PoC or active 
 ```
 
 **What a real control looks like:** Tiered SLA: CISA KEV = 4 hours to live-patch or isolate; public PoC = 24 hours; Critical (no public PoC) = 72 hours; High = 7 days. Live patching capability deployed and verified quarterly.
+
+**Bug-family sequel sub-pattern (Fragnesia, CVE-2026-46300):** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. The Dirty Frag patch introduced Fragnesia — a sibling page-cache-corruption bug in the same primitive class. The module-unload mitigation (`blacklist esp4 / esp6 / rxrpc`) covers both. A patch-management program that removed the Dirty Frag blacklist when the patch landed re-exposed the host to Fragnesia. Theater signal: a vulnerability scanner that reports "patched for CVE-2026-43284" while the kernel still lacks the CVE-2026-46300 patch and the module blacklist has been removed.
 
 ---
 

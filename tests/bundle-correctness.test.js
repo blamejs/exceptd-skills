@@ -118,7 +118,10 @@ describe('SARIF 2.1.0 — B6 (locations) + B7 (null property bag)', () => {
   });
 
   it('framework-gap results carry kind: informational (B3 SARIF analogue)', () => {
-    const gapResults = bundle.runs[0].results.filter(r => String(r.ruleId).startsWith('framework-gap-'));
+    // audit CC P2-6: ruleIds are now playbook-prefixed (e.g.
+    // `kernel/framework-gap-0`), so match on the suffix rather than the
+    // bare prefix.
+    const gapResults = bundle.runs[0].results.filter(r => /(?:^|\/)framework-gap-\d+/.test(String(r.ruleId)));
     if (gapResults.length === 0) return; // playbook has none — skip
     for (const r of gapResults) {
       assert.equal(r.kind, 'informational', 'framework-gap results must declare kind: informational');
@@ -317,9 +320,14 @@ describe('audit W P2-D — CSAF framework gaps move from vulnerabilities[] to do
     const { bundles, analyze } = emitBundlesWith();
     const csaf = bundles['csaf-2.0'];
     const gapCount = (analyze.framework_gap_mapping || []).length;
-    const notes = csaf.document.notes || [];
-    assert.equal(notes.length, gapCount, 'document.notes[] count must match framework_gap_mapping.length');
-    for (const n of notes) {
+    const allNotes = csaf.document.notes || [];
+    // audit CC P1-3: when neither --publisher-namespace nor a URL-shaped
+    // --operator is supplied, an explanatory note is emitted alongside the
+    // framework-gap notes. Filter to the framework-gap subset before the
+    // count assertion.
+    const gapNotes = allNotes.filter(n => n.category === 'details');
+    assert.equal(gapNotes.length, gapCount, 'document.notes[] (category=details) count must match framework_gap_mapping.length');
+    for (const n of gapNotes) {
       assert.equal(n.category, 'details', 'framework-gap notes use category: details');
       assert.ok(typeof n.text === 'string' && n.text.length > 0);
     }

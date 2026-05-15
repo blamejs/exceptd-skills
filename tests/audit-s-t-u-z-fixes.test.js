@@ -135,7 +135,8 @@ test('S P1-A: array attestation does NOT satisfy any FP check (every required ch
       'fp_checks_unsatisfied must surface on the result');
     assert.equal(ind.fp_checks_unsatisfied.length, 2,
       'both required FP checks must be listed as unsatisfied');
-    assert.notEqual(det.classification, 'detected');
+    assert.equal(det.classification, 'inconclusive',
+      'when any indicator is FP-downgraded, overall classification must pin to inconclusive (v0.12.19 contract).');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

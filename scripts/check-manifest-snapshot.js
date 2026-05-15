@@ -190,7 +190,7 @@ if (require.main === module) {
       process.exit(2);
     }
 
-    // Audit G F23 — when manifest-snapshot.sha256 is present, validate that
+    // when manifest-snapshot.sha256 is present, validate that
     // the on-disk snapshot still hashes to the recorded value. Catches a
     // hand-edit of manifest-snapshot.json that bypassed refresh-manifest-
     // snapshot.js (so the F5 commit-only guard never had a chance to fire).
