@@ -498,8 +498,8 @@ describe('audit CC — CLI flag plumbing', () => {
       '--csaf-status', 'finel',
       '--json',
     ], { input: sub });
-    assert.notEqual(r.status, 0,
-      '--csaf-status finel must exit non-zero (rejected at CLI input)');
+    assert.equal(r.status, 1,
+      '--csaf-status finel must exit 1 (arg-validation refusal at CLI input)');
     const err = tryJson(r.stderr) || tryJson(r.stdout);
     assert.ok(err && err.ok === false,
       `must emit an ok:false body; got stderr=${r.stderr.slice(0, 200)}`);
@@ -513,7 +513,8 @@ describe('audit CC — CLI flag plumbing', () => {
       '--publisher-namespace', 'not-a-url',
       '--json',
     ], { input: sub });
-    assert.notEqual(r.status, 0);
+    assert.equal(r.status, 1,
+      '--publisher-namespace not-a-url must exit 1 (arg-validation refusal)');
     const err = tryJson(r.stderr) || tryJson(r.stdout);
     assert.ok(err && err.ok === false);
     assert.match(String(err.error || ''), /publisher-namespace/i);

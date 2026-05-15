@@ -85,8 +85,12 @@ function assertExpectedFingerprint(pubKeyPem) {
   } catch (e) {
     return `EXPECTED_FINGERPRINT check: failed to derive live fingerprint: ${e.message}`;
   }
-  const raw = fs.readFileSync(pinPath, "utf8");
-  const firstLine = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length > 0) || "";
+  // KK P1-5: route through the shared lib/verify loader so a BOM-prefixed
+  // pin file (Notepad with files.encoding=utf8bom) is tolerated identically
+  // across every verify site. The helper strips leading U+FEFF + ignores
+  // comment lines.
+  const { loadExpectedFingerprintFirstLine } = require(path.join(PKG_ROOT, "lib", "verify.js"));
+  const firstLine = loadExpectedFingerprintFirstLine(pinPath) || "";
   if (firstLine === liveFp) return null;
   if (process.env.KEYS_ROTATED === "1") return null;
   return (
@@ -644,7 +648,21 @@ function readJsonFile(filePath) {
     text = buf.slice(2).toString("utf16le");
   } else if (buf.length >= 2 && buf[0] === 0xFE && buf[1] === 0xFF) {
     // UTF-16 BE: Node has no native decoder. Swap byte pairs to LE, then decode.
-    const swapped = Buffer.allocUnsafe(buf.length - 2);
+    //
+    // refuse odd-length payloads up front rather than carry
+    // the trailing byte through a partial swap. A UTF-16BE payload by
+    // definition has an even byte count after the BOM; odd-length input is
+    // either truncated or not UTF-16BE at all.
+    //
+    // use Buffer.alloc (zero-initialised) instead of
+    // Buffer.allocUnsafe so an unexpected loop bound never lets uninitialised
+    // heap bytes leak into the decoded string and downstream JSON.parse
+    // error message.
+    const payloadLength = buf.length - 2;
+    if (payloadLength % 2 !== 0) {
+      throw new Error(`failed to read ${filePath}: UTF-16BE payload must have an even byte count after BOM; got ${payloadLength} bytes — file may be truncated.`);
+    }
+    const swapped = Buffer.alloc(payloadLength);
     for (let i = 2; i < buf.length - 1; i += 2) {
       swapped[i - 2] = buf[i + 1];
       swapped[i - 1] = buf[i];
@@ -704,15 +722,17 @@ function loadRunner() {
  * Strategy:
  *
  *   1. If isTTY is truthy → operator is at a terminal, never read stdin.
- *   2. Probe `fs.fstatSync(0)`:
- *      - On POSIX pipes / regular files, `stat.size` is reliable.
- *      - On Windows, fstat on a pipe returns size === 0 even when data
- *        is queued — so size === 0 alone cannot decide.
- *   3. When size > 0 → real data is queued; safe to read.
- *   4. When size === 0 AND isTTY is falsy:
- *      - On POSIX, treat as empty (wrapped duplexer / closed stdin).
- *      - On Windows, fall back to the legacy truthy check so we don't
- *        regress the MSYS-bash auto-detect (R-F3 in v0.12.16).
+ *   2. POSIX: trust isFIFO / isSocket / isCharacterDevice. Regular file
+ *      requires size > 0 (empty file redirection should not be treated
+ *      as piped input).
+ *   3. Windows: `isTTY === false` strict (filters out wrapped test
+ *      duplexers which leave isTTY === undefined). DO NOT gate on size
+ *      because Windows pipes report as regular files with size 0 even
+ *      when bytes are queued — gating would silently skip every
+ *      `echo {...} | exceptd run` invocation.
+ *   4. If a wrapped test harness on Windows does want stdin auto-read
+ *      to skip, the harness must set `process.stdin.isTTY = undefined`
+ *      explicitly (Mocha/Jest do this by default).
  *
  * Returns `true` if the caller may safely fs.readFileSync(0) without
  * risking an indefinite block on a wrapped empty stream.
@@ -721,7 +741,17 @@ function hasReadableStdin() {
   if (process.stdin.isTTY) return false;
   let st;
   try { st = fs.fstatSync(0); }
-  catch { return !process.stdin.isTTY; /* fstat failed — fall back */ }
+  catch {
+    // KK P1-4: fstat failed — tighten the Windows fallback to require
+    // `isTTY === false` STRICTLY (not falsy). Pre-fix `!process.stdin.isTTY`
+    // returned true when isTTY was undefined (Mocha/Jest test harness with
+    // wrapped duplexer on Windows), so the caller called `fs.readFileSync(0)`
+    // and blocked indefinitely waiting on an EOF that never came. The legacy
+    // MSYS-bash piping scenario (R-F3 in v0.12.16) sets isTTY === false on
+    // win32 when piped, so the strict check preserves that working case.
+    if (process.platform === "win32") return process.stdin.isTTY === false;
+    return false;
+  }
   // POSIX pipes / FIFOs / sockets / character devices report size 0
   // even when bytes are queued (or about to be). Trust them — a real
   // `echo '{...}' | exceptd run` pipeline lands here, and readFileSync(0)
@@ -737,8 +767,13 @@ function hasReadableStdin() {
   if (typeof st.size === "number" && st.size > 0) return true;
   // Windows fallback: pipes don't surface as FIFOs via fstat on win32
   // (they appear as regular files with size 0 even when bytes queued).
-  // Preserve the legacy truthy check so MSYS-bash piping keeps working.
-  if (process.platform === "win32") return !process.stdin.isTTY;
+  // Trust isTTY === false strictly — that filters out wrapped test
+  // duplexers (which leave isTTY === undefined) while keeping cmd.exe /
+  // PowerShell / MSYS pipes working (isTTY === false when piped). Do NOT
+  // gate on size > 0 here: a Windows pipe with bytes queued reports as
+  // a regular file with size 0, and gating would silently skip every
+  // `echo {...} | exceptd run|ingest|ai-run` invocation.
+  if (process.platform === "win32" && process.stdin.isTTY === false) return true;
   return false;
 }
 
@@ -1020,7 +1055,20 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.operator = normalized;
   }
 
-  // audit CC P1-3: --publisher-namespace <url> threads into the CSAF
+  // NN P1-1 / P1-2 / P1-5: --csaf-status and --publisher-namespace shape the
+  // CSAF bundle emitted by phases 5-7. Verbs that don't drive those phases
+  // (brief, plan, govern, direct, look, attest, list-attestations, discover,
+  // doctor, lint, ask, verify-attestation, reattest) never assemble a
+  // bundle, so silently consuming these flags is a UX trap. Refuse on those
+  // verbs so the operator knows the flag was discarded — same pattern as
+  // EE P1-6 closed for --ack. Error message templates and emitError prefixes
+  // use the in-scope `cmd` verb so a brief invocation says "brief:" rather
+  // than misattributing the flag to run.
+  const BUNDLE_FLAG_RELEVANT_VERBS = new Set([
+    "run", "ci", "run-all", "ai-run", "ingest",
+  ]);
+
+  // --publisher-namespace <url> threads into the CSAF
   // bundle's document.publisher.namespace field. CSAF §3.1.7.4 requires the
   // namespace to be the publisher's trust anchor — i.e. the OPERATOR
   // running the scan, not the tooling vendor. Pre-fix this was hard-coded
@@ -1028,28 +1076,35 @@ function dispatchPlaybook(cmd, argv) {
   // accuracy. Validation mirrors --operator (string, ≤256 chars, no
   // ASCII / Unicode control characters), plus a URL-shape check (`^https?:`).
   if (args["publisher-namespace"] !== undefined) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --publisher-namespace is irrelevant on this verb (no CSAF bundle is assembled). --publisher-namespace only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}. Re-invoke without --publisher-namespace, or pass it on \`exceptd run ${cmd === "brief" ? args._[0] || "<playbook>" : "<playbook>"} --publisher-namespace <url>\` once you're past the briefing step.`,
+        { verb: cmd, flag: "publisher-namespace", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
     const ns = args["publisher-namespace"];
     if (typeof ns !== "string") {
-      return emitError("run: --publisher-namespace must be a string.", { provided: typeof ns }, pretty);
+      return emitError(`${cmd}: --publisher-namespace must be a string.`, { provided: typeof ns }, pretty);
     }
     // eslint-disable-next-line no-control-regex
     if (/[\x00-\x1F\x7F]/.test(ns)) {
       return emitError(
-        "run: --publisher-namespace contains ASCII control characters. Refusing — these would corrupt CSAF rendering and break URL parsing in downstream consumers.",
+        `${cmd}: --publisher-namespace contains ASCII control characters. Refusing — these would corrupt CSAF rendering and break URL parsing in downstream consumers.`,
         { provided_length: ns.length },
         pretty
       );
     }
     if (ns.length === 0 || ns.length > 256) {
       return emitError(
-        `run: --publisher-namespace length ${ns.length} out of bounds (1–256).`,
+        `${cmd}: --publisher-namespace length ${ns.length} out of bounds (1–256).`,
         { provided_length: ns.length },
         pretty
       );
     }
     if (!/^https?:\/\//i.test(ns)) {
       return emitError(
-        "run: --publisher-namespace must be a URL starting with http:// or https:// (e.g. https://your-org.example). CSAF §3.1.7.4 requires the namespace to be the publisher's trust anchor.",
+        `${cmd}: --publisher-namespace must be a URL starting with http:// or https:// (e.g. https://your-org.example). CSAF §3.1.7.4 requires the namespace to be the publisher's trust anchor.`,
         { provided: ns.slice(0, 80) },
         pretty
       );
@@ -1057,18 +1112,25 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.publisherNamespace = ns;
   }
 
-  // audit CC P1-1: --csaf-status promotes the CSAF tracking.status from the
+  // --csaf-status promotes the CSAF tracking.status from the
   // runtime default (`interim`) to `final` for operators who have reviewed
   // the advisory and accept the immutable-advisory contract of CSAF
   // §3.1.11.3.5.1. Accepts the three CSAF spec values; anything else is
   // rejected at input so an operator typo (`finel`) doesn't silently fall
   // back to interim and produce surprise.
   if (args["csaf-status"] !== undefined) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --csaf-status is irrelevant on this verb (no CSAF bundle is assembled). --csaf-status only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}. Re-invoke without --csaf-status, or pass it on \`exceptd run ${cmd === "brief" ? args._[0] || "<playbook>" : "<playbook>"} --csaf-status <status>\` once you're past the briefing step.`,
+        { verb: cmd, flag: "csaf-status", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
     const cs = args["csaf-status"];
     const allowed = ["draft", "interim", "final"];
     if (typeof cs !== "string" || !allowed.includes(cs)) {
       return emitError(
-        `run: --csaf-status must be one of ${JSON.stringify(allowed)}. Got: ${JSON.stringify(String(cs)).slice(0, 40)}`,
+        `${cmd}: --csaf-status must be one of ${JSON.stringify(allowed)}. Got: ${JSON.stringify(String(cs)).slice(0, 40)}`,
         { provided: cs },
         pretty
       );
@@ -1305,6 +1367,15 @@ Flags:
   --ack                   Mark explicit operator consent to the jurisdiction
                           obligations surfaced by govern. Persisted under
                           attestation.operator_consent.
+  --csaf-status <s>       CSAF tracking.status for the close.evidence_package
+                          bundle. One of: draft | interim (default) | final.
+                          'final' commits to CSAF §3.1.11.3.5.1 immutability —
+                          set this only after operator review of the advisory.
+  --publisher-namespace <url>
+                          CSAF document.publisher.namespace (§3.1.7.4). The
+                          publisher trust anchor — i.e. the operator's
+                          organisation, NOT the tooling vendor. Must be an
+                          http://… or https://… URL, ≤256 chars.
   --diff-from-latest      Compare evidence_hash against the most recent prior
                           attestation for the same playbook in
                           .exceptd/attestations/. Emits status: unchanged | drifted.
@@ -1333,7 +1404,21 @@ Flags:
   --pretty                Indented JSON output.
 
 Attestation is persisted to .exceptd/attestations/<session_id>/ on every
-successful run (single: attestation.json; multi: <playbook_id>.json).`,
+successful run (single: attestation.json; multi: <playbook_id>.json).
+
+Exit codes (per-verb, post-run):
+  0  PASS                  Run completed; classification clean, RWEP under cap.
+  1  Framework error       Runner threw, unreadable evidence, etc.
+  2  FAIL (detected)       classification=detected OR rwep ≥ escalate cap.
+  3  Ran-but-no-evidence   All inconclusive AND no --evidence supplied.
+  4  Blocked               Result returned ok:false (preflight halt).
+  5  CLOCK_STARTED         --block-on-jurisdiction-clock fired.
+  8  LOCK_CONTENTION       persistAttestation could not acquire the per-slot
+                           attestation lock after the bounded retry budget
+                           (~1-2s). Distinct from 1 so callers can retry the
+                           operation rather than treat it as a hard failure.
+                           Surfaces as body.lock_contention=true,
+                           body.exit_code=8.`,
     ingest: `ingest — alias for 'run' matching AGENTS.md terminology.
 
 Flags:
@@ -1493,6 +1578,11 @@ Flags:
                           summary (5-field digest), markdown (human digest).
                           Bundles (csaf-2.0/sarif/openvex) live on per-run
                           attestations, not the aggregate ci verdict.
+  --csaf-status <s>       CSAF tracking.status threaded into per-run bundles.
+                          One of: draft | interim (default) | final.
+  --publisher-namespace <url>
+                          CSAF document.publisher.namespace (§3.1.7.4). The
+                          operator's organisation URL, NOT the tooling vendor.
   --json                  Force single-line JSON (overrides any TTY heuristics).
   --pretty                Indented JSON output (implies --json).
 
@@ -2231,10 +2321,17 @@ function cmdRun(runner, args, runOpts, pretty) {
       filename: "attestation.json",
     });
     if (!persistResult.ok) {
-      // Session-id collision without --force-overwrite. Refuse, surface the
-      // existing path so the operator can decide, and emit JSON to stderr
-      // matching the unified error shape. Exit non-zero — a silent overwrite
-      // is a tamper-evidence violation.
+      // Session-id collision without --force-overwrite, OR --force-overwrite
+      // lost the lockfile race. Refuse, surface the existing path so the
+      // operator can decide, emit JSON to stderr matching the unified error
+      // shape. Exit non-zero — a silent overwrite is a tamper-evidence
+      // violation. v0.12.14: exitCode + return instead of process.exit so
+      // the stderr line drains under piped CI consumers.
+      //
+      // When persistAttestation lost the lockfile race it pinned
+      // process.exitCode = 8 (LOCK_CONTENTION) before returning. Don't
+      // overwrite that with 3 — preserve the exit-8 contract callers depend
+      // on to distinguish lock-busy from collision.
       const err = {
         ok: false,
         error: persistResult.error,
@@ -2242,10 +2339,14 @@ function cmdRun(runner, args, runOpts, pretty) {
         hint: "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
         verb: "run",
       };
-      // v0.12.14: exitCode + return instead of process.exit
-      // so the stderr line drains under piped CI consumers.
+      if (persistResult.lock_contention) {
+        err.lock_contention = true;
+        err.exit_code = 8;
+      }
       process.stderr.write(JSON.stringify(err) + "\n");
-      process.exitCode = 3;
+      if (!persistResult.lock_contention) {
+        process.exitCode = 3;
+      }
       return;
     }
     if (persistResult.prior_session_id) {
@@ -2714,6 +2815,32 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
 
     const result = runner.run(id, directiveId, submission, perRunOpts);
 
+    // NN P1-4: mirror the cmdRun consent gate (EE P1-6). --ack consent only
+    // counts when a jurisdiction clock is actually at stake on THIS
+    // playbook's verdict — i.e. its detect.classification === 'detected'.
+    // Pre-fix cmdRunMulti passed `perRunOpts.operator_consent` for every
+    // playbook in the iteration regardless of that playbook's individual
+    // classification, so a single --ack on a run-all invocation persisted
+    // explicit consent into attestations whose run never started a clock.
+    // Now: per-playbook gating with the same `ack_skipped_reason` surface
+    // cmdRun emits, so consumers see exactly which playbooks consumed the
+    // ack and which didn't.
+    const perDetectClassification = result && result.phases && result.phases.detect
+      ? result.phases.detect.classification
+      : null;
+    const perConsentApplies =
+      !!perRunOpts.operator_consent && perDetectClassification === "detected";
+    if (result && perRunOpts.operator_consent) {
+      result.operator_consent = perRunOpts.operator_consent;
+      result.ack = !!perRunOpts.operator_consent.explicit;
+      result.ack_applied = perConsentApplies;
+      if (!perConsentApplies) {
+        result.ack_skipped_reason = `classification=${perDetectClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
+      }
+    } else if (result) {
+      result.ack = false;
+    }
+
     // Persist per-playbook attestation under the shared session.
     if (result && result.ok) {
       const persisted = persistAttestation({
@@ -2722,7 +2849,9 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
         directiveId,
         evidenceHash: result.evidence_hash,
         operator: perRunOpts.operator,
-        operatorConsent: perRunOpts.operator_consent,
+        // NN P1-4: gate consent persistence on this playbook's
+        // classification, not on the aggregate run's --ack presence.
+        operatorConsent: perConsentApplies ? perRunOpts.operator_consent : null,
         submission,
         runOpts: perRunOpts,
         forceOverwrite: !!args["force-overwrite"],
@@ -2830,21 +2959,42 @@ function cmdIngest(runner, args, runOpts, pretty) {
   // calls with the same session-id silently clobbered the audit trail and no
   // .sig sidecar was written.
   if (result && result.ok && result.session_id) {
+    // Mirror cmdRun / cmdRunMulti: gate operator_consent persistence on
+    // classification === 'detected'. --ack is meaningful only when a
+    // jurisdiction clock is at stake; persisting consent on a
+    // not-detected ingest forges audit-trail consent for a clock that
+    // never started.
+    const ingestClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+    const ingestConsentApplies = ingestClassification === "detected";
+    if (runOpts.operator_consent && !ingestConsentApplies) {
+      result.ack = true;
+      result.ack_applied = false;
+      result.ack_skipped_reason = `classification=${ingestClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
+    }
     const persisted = persistAttestation({
       sessionId: result.session_id,
       playbookId: result.playbook_id,
       directiveId: result.directive_id,
       evidenceHash: result.evidence_hash,
       operator: runOpts.operator,
-      operatorConsent: runOpts.operator_consent,
+      operatorConsent: ingestConsentApplies ? runOpts.operator_consent : null,
       submission: cleanedSubmission,
       runOpts,
       forceOverwrite: !!args["force-overwrite"],
       filename: "attestation.json",
     });
     if (!persisted.ok) {
-      // Surface the collision; do not silently clobber.
-      return emitError(persisted.error, { session_id: result.session_id, existing_path: persisted.existingPath }, pretty);
+      // Surface the collision; do not silently clobber. Preserve
+      // LOCK_CONTENTION exit 8 set by persistAttestation when
+      // --force-overwrite hit the lockfile race.
+      const ctx = { session_id: result.session_id, existing_path: persisted.existingPath };
+      if (persisted.lock_contention) {
+        ctx.lock_contention = true;
+        ctx.exit_code = 8;
+        process.stderr.write(JSON.stringify({ ok: false, error: persisted.error, ...ctx }) + "\n");
+        return;
+      }
+      return emitError(persisted.error, ctx, pretty);
     }
     if (persisted.prior_session_id) {
       result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
@@ -3049,11 +3199,23 @@ function persistAttestation(args) {
         // from a hard failure (write error, permission denial). The sync
         // spin budget was bounded above so we hit this return after ~1-2s
         // of contention rather than the prior ~10s.
+        //
+        // PP P1-2: emit() auto-maps any ok:false body to process.exitCode = 1
+        // (it only writes exitCode = 1 when the current value is 0). Pre-fix
+        // the LOCK_CONTENTION return collapsed onto exit 1 along with every
+        // other hard failure — defeating the "callers can distinguish
+        // lock-busy from hard failure" promise. Pin process.exitCode = 8
+        // HERE, before the caller hands the body to emit(); emit() will
+        // preserve the already-non-zero value. Exit code 8 is reserved
+        // exclusively for LOCK_CONTENTION (attestation persist); see the
+        // exit-code table in printGlobalHelp().
+        process.exitCode = 8;
         return {
           ok: false,
           error: `LOCK_CONTENTION: Failed to acquire attestation lock at ${path.relative(process.cwd(), lockPath)} after ${MAX_RETRIES} attempts (~1-2s of contention). Retry the operation; if it persists, inspect the lockfile for a stale holder.`,
           existingPath: path.relative(process.cwd(), filePath),
           lock_contention: true,
+          exit_code: 8,
         };
       }
       try {
@@ -3147,20 +3309,25 @@ function maybeSignAttestation(filePath) {
         key: privateKey,
         dsaEncoding: "ieee-p1363",
       });
+      // KK P1-1: the sidecar's Ed25519 signature covers ONLY the
+      // attestation file bytes. Fields that travel inside the .sig but are
+      // NOT in the signed message are replay-rewrite trivial: an attacker
+      // who can write the directory can mutate them without invalidating
+      // the signature. Drop `signed_at`, `signs_path`, `signs_sha256` from
+      // the sidecar shape — they were unsigned metadata posing as
+      // attestation context. Operators reading freshness use filesystem
+      // mtime; the attestation file's `captured_at` field is what's
+      // signed. The sidecar now carries only the algorithm tag, the
+      // Ed25519 signature payload, and an explanatory note.
       fs.writeFileSync(sigPath, JSON.stringify({
         algorithm: "Ed25519",
         signature_base64: sig.toString("base64"),
-        signed_at: new Date().toISOString(),
-        signs_path: path.basename(filePath),
-        signs_sha256: crypto.createHash("sha256").update(content).digest("base64"),
+        note: "Ed25519 signature covers the attestation file bytes only. Use filesystem mtime for freshness; use the attestation's `captured_at` for the signed timestamp.",
       }, null, 2));
     } else {
       fs.writeFileSync(sigPath, JSON.stringify({
         algorithm: "unsigned",
         signed: false,
-        signed_at: null,
-        signs_path: path.basename(filePath),
-        signs_sha256: crypto.createHash("sha256").update(content).digest("base64"),
         note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `node lib/sign.js generate-keypair` to enable signing.",
       }, null, 2));
     }
@@ -3287,7 +3454,7 @@ function verifyAttestationSidecar(attFile) {
   let sigDoc;
   try { sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8")); }
   catch (e) {
-    // Audit AA P1-2: a corrupt-JSON sidecar is observationally indistinguishable
+    // a corrupt-JSON sidecar is observationally indistinguishable
     // from sidecar tamper — an attacker who can rewrite attestation.json can
     // also truncate / mangle the .sig file. Surface as a distinct
     // tamper-class reason so callers can require --force-replay. Pre-fix,
@@ -3303,7 +3470,7 @@ function verifyAttestationSidecar(attFile) {
     };
   }
   if (sigDoc.algorithm === "unsigned") {
-    // Audit AA P1-1: `algorithm: "unsigned"` is only legitimate when written
+    // `algorithm: "unsigned"` is only legitimate when written
     // by maybeSignAttestation() at attestation-creation time on a host
     // WITHOUT .keys/private.pem. If the verifying host HAS a private key,
     // an "unsigned" sidecar is a substitution attack: tamper attestation.json
@@ -3320,6 +3487,24 @@ function verifyAttestationSidecar(attFile) {
       };
     }
     return { file: attFile, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
+  }
+  // KK P1-3: strict algorithm check. Pre-fix the verifier branched only on
+  // `=== "unsigned"`; null, undefined, "RSA-PSS", arrays, etc. fell through
+  // to crypto.verify with the default Ed25519 args — which would either
+  // succeed against the wrong-algorithm signature bytes accidentally (an
+  // attacker who can write the sidecar can replay an existing Ed25519
+  // signature under a downgrade-bait algorithm tag) or throw a generic
+  // verify error. Refuse anything that isn't exactly "Ed25519" or
+  // "unsigned" with a structured tamper class so callers can route the
+  // refusal through the same exit-6 path as other tamper events.
+  if (sigDoc.algorithm !== "Ed25519") {
+    return {
+      file: attFile,
+      signed: false,
+      verified: false,
+      reason: "unsupported algorithm: " + JSON.stringify(sigDoc.algorithm),
+      tamper_class: "algorithm-unsupported",
+    };
   }
   if (!pubKey) {
     return { file: attFile, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
@@ -3388,7 +3573,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // tampering. `verified === false && signed === true` is the real tamper
   // signal.
   const verify = verifyAttestationSidecar(attFile);
-  // Audit AA P1-1 + P1-2: collapse tamper-class detection. Any non-benign
+  // 2: collapse tamper-class detection. Any non-benign
   // sidecar state (signed-but-invalid, sidecar-corrupt, unsigned-substitution)
   // refuses replay unless --force-replay is set. The pre-fix shape only
   // refused on `verify.signed && !verify.verified` (signed-tamper) and on
@@ -3396,7 +3581,20 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // "unsigned" sidecars on a host WITH a private key fell into the benign
   // NOTE branch and replay proceeded against forged input.
   const isSignedTamper = verify.signed && !verify.verified;
-  const isClassTamper = !verify.signed && (verify.tamper_class === "sidecar-corrupt" || verify.tamper_class === "unsigned-substitution");
+  const isClassTamper = !verify.signed && (
+    verify.tamper_class === "sidecar-corrupt"
+    || verify.tamper_class === "unsigned-substitution"
+    // KK P1-3: extend tamper-class refusal to algorithm-unsupported sidecars
+    // (anything other than "Ed25519" or "unsigned"). Pre-fix, the verifier
+    // pre-strict-check would crypto.verify against default Ed25519 args and
+    // return signed:true + verified:false on failure — which DID land in
+    // isSignedTamper. But a sidecar that throws inside crypto.verify (e.g.
+    // signature_base64 missing on the downgrade-bait shape) was routed
+    // through the catch block and emerged as signed:true + verified:false
+    // by happy accident. The strict pre-check now surfaces the class
+    // directly; refuse on that class too.
+    || verify.tamper_class === "algorithm-unsupported"
+  );
   if ((isSignedTamper || isClassTamper) && !args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] TAMPERED: attestation at ${attFile} failed Ed25519 verification (${verify.reason}). Refusing to replay against forged input. Pass --force-replay to override (the replay output records sidecar_verify so the audit trail captures the override).\n`);
     const body = {
@@ -3441,7 +3639,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
   } else if (!verify.signed && verify.reason && verify.reason.includes("no .sig sidecar") && args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding missing .sig sidecar on ${attFile}. The replay output records sidecar_verify so the override is audit-visible.\n`);
   } else if (!verify.signed && verify.reason && verify.reason.startsWith("attestation explicitly unsigned") && !args["force-replay"]) {
-    // Audit AA P1-1: legitimately-unsigned attestations (written when the
+    // legitimately-unsigned attestations (written when the
     // attesting host had no private key) require --force-replay to consume.
     // Pre-fix, the NOTE branch accepted them silently — which let an
     // attacker swap a valid .sig with the unsigned stub on a host that
@@ -3520,6 +3718,57 @@ function cmdReattest(runner, args, runOpts, pretty) {
     }
   }
 
+  const replayedAt = new Date().toISOString();
+  const sidecarVerifyClass = classifySidecarVerify(verify);
+  const forceReplay = !!args["force-replay"];
+
+  // KK P1-2: persist a `replay-<isoZ>.json` audit record under the session
+  // directory whenever cmdReattest produced a replay verdict. Pre-fix the
+  // force-replay branches emitted the override body to stdout but never
+  // wrote it to disk; once the operator's shell closed the override was
+  // invisible to any subsequent auditor. Now every replay writes a new
+  // file alongside the original attestation.json, signed via the standard
+  // maybeSignAttestation path so the audit chain remains tamper-evident.
+  // The file is picked up automatically by `attest verify <sid>` (which
+  // already iterates every *.json under the session dir).
+  //
+  // Filename shape: ISO-8601 uses ':' which the persistAttestation regex
+  // refuses; substitute ':' with '-' and keep millisecond precision so
+  // multiple replays in the same second do not collide on EEXIST. The
+  // resulting filename satisfies /^[A-Za-z0-9._-]{1,64}\.json$/.
+  const replayFilename = "replay-" + replayedAt.replace(/:/g, "-") + ".json";
+  let replayPersisted = null;
+  try {
+    const replayBody = {
+      kind: "replay",
+      session_id: sessionId,
+      playbook_id: prior.playbook_id,
+      directive_id: prior.directive_id,
+      status,
+      prior_evidence_hash: priorHash,
+      replay_evidence_hash: newHash,
+      prior_captured_at: prior.captured_at,
+      replayed_at: replayedAt,
+      replay_classification: replay.phases && replay.phases.detect && replay.phases.detect.classification,
+      replay_rwep_adjusted: replay.phases && replay.phases.analyze && replay.phases.analyze.rwep && replay.phases.analyze.rwep.adjusted,
+      sidecar_verify: verify,
+      sidecar_verify_class: sidecarVerifyClass,
+      force_replay: forceReplay,
+    };
+    const replayPath = path.join(path.dirname(attFile), replayFilename);
+    // O_EXCL 'wx' — millisecond-level filename + EEXIST refusal so two
+    // concurrent reattests do not silently overwrite each other.
+    fs.writeFileSync(replayPath, JSON.stringify(replayBody, null, 2), { flag: "wx" });
+    maybeSignAttestation(replayPath);
+    replayPersisted = { ok: true, path: replayPath };
+  } catch (e) {
+    // Non-fatal — the stdout emit is the operator's primary surface; a
+    // disk-persistence failure shouldn't mask the verdict. Surface the
+    // condition in the response body so an operator-side audit pipeline
+    // can re-run the persist later.
+    replayPersisted = { ok: false, error: String((e && e.message) || e) };
+  }
+
   emit({
     ok: true,
     verb: "reattest",
@@ -3530,13 +3779,13 @@ function cmdReattest(runner, args, runOpts, pretty) {
     prior_evidence_hash: priorHash,
     replay_evidence_hash: newHash,
     prior_captured_at: prior.captured_at,
-    replayed_at: new Date().toISOString(),
+    replayed_at: replayedAt,
     replay_classification: replay.phases && replay.phases.detect && replay.phases.detect.classification,
     replay_rwep_adjusted: replay.phases && replay.phases.analyze && replay.phases.analyze.rwep && replay.phases.analyze.rwep.adjusted,
     // F10: persist the sidecar verify result + the force-replay flag so the
     // audit trail records whether the replay was authenticated input.
     sidecar_verify: verify,
-    // Audit AA P1-1: emit a one-token classification label alongside the
+    // emit a one-token classification label alongside the
     // full sidecar_verify object so log scrapers / dashboards can filter on
     // override events without parsing reason strings. Values:
     //   'verified'             — Ed25519 sidecar verified
@@ -3544,16 +3793,22 @@ function cmdReattest(runner, args, runOpts, pretty) {
     //   'sidecar-corrupt'      — sidecar JSON parse failure (tamper class)
     //   'unsigned-substitution'— "unsigned" sidecar on a host with private key
     //                            (substitution attack signal)
+    //   'algorithm-unsupported'— sidecar algorithm field is neither "Ed25519"
+    //                            nor "unsigned" (downgrade-bait substitution)
     //   'explicitly-unsigned'  — legitimately-unsigned attestation
     //   'no-sidecar'           — sidecar file absent
     //   'no-public-key'        — infra-missing (operator-side keys/public.pem absent)
-    sidecar_verify_class: classifySidecarVerify(verify),
-    force_replay: !!args["force-replay"],
+    sidecar_verify_class: sidecarVerifyClass,
+    force_replay: forceReplay,
+    // KK P1-2: surface the persisted replay-record path (or persistence
+    // failure reason) so an auditor reading the CLI response can locate the
+    // on-disk artifact without re-deriving the filename.
+    replay_persisted: replayPersisted,
   }, pretty);
 }
 
 /**
- * Audit AA P1-1: map a verifyAttestationSidecar() result to a one-token
+ * map a verifyAttestationSidecar() result to a one-token
  * classification label. The label is persisted alongside the full
  * sidecar_verify object so auditors can filter override events by class
  * without regexing the human-readable reason string.
@@ -3564,6 +3819,9 @@ function classifySidecarVerify(verify) {
   if (verify.signed && !verify.verified) return "tampered";
   if (verify.tamper_class === "sidecar-corrupt") return "sidecar-corrupt";
   if (verify.tamper_class === "unsigned-substitution") return "unsigned-substitution";
+  // KK P1-3: algorithm-unsupported is its own class label so log scrapers /
+  // dashboards can filter downgrade-bait events without parsing the reason.
+  if (verify.tamper_class === "algorithm-unsupported") return "algorithm-unsupported";
   if (typeof verify.reason === "string" && verify.reason.startsWith("attestation explicitly unsigned")) return "explicitly-unsigned";
   if (typeof verify.reason === "string" && verify.reason.includes("no .sig sidecar")) return "no-sidecar";
   if (typeof verify.reason === "string" && verify.reason.includes("no public key")) return "no-public-key";
@@ -3689,7 +3947,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
         pretty
       );
     }
-    // Audit AA P1-1: on the verifying host, detect "unsigned" sidecar
+    // on the verifying host, detect "unsigned" sidecar
     // substitution by checking whether .keys/private.pem is present. A
     // legitimately-unsigned attestation cannot coexist with a private key on
     // the same host — that combination is sidecar substitution (attacker
@@ -3699,7 +3957,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
     const results = files.map(f => {
       const sigPath = path.join(dir, f + ".sig");
       if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
-      // Audit AA P1-2: wrap JSON.parse so a corrupt sidecar surfaces as a
+      // wrap JSON.parse so a corrupt sidecar surfaces as a
       // structured tamper-class result (signed:false, verified:false,
       // tamper_class:"sidecar-corrupt") rather than throwing into the outer
       // dispatcher catch → exit 1. Pre-fix, a corrupt .sig produced a
@@ -3717,7 +3975,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
         };
       }
       if (sigDoc.algorithm === "unsigned") {
-        // Audit AA P1-1: substitution detection.
+        // substitution detection.
         if (hasPrivKey) {
           return {
             file: f,
@@ -3728,6 +3986,20 @@ function cmdAttest(runner, args, runOpts, pretty) {
           };
         }
         return { file: f, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
+      }
+      // KK P1-3: strict algorithm check (mirrors verifyAttestationSidecar).
+      // Anything that isn't exactly "Ed25519" or "unsigned" is refused as
+      // tamper-class. Pre-fix null / "RSA-PSS" / arrays fell through to
+      // crypto.verify with Ed25519 defaults, producing either an opaque
+      // verify-throw or a downgrade-bait acceptance path.
+      if (sigDoc.algorithm !== "Ed25519") {
+        return {
+          file: f,
+          signed: false,
+          verified: false,
+          reason: "unsupported algorithm: " + JSON.stringify(sigDoc.algorithm),
+          tamper_class: "algorithm-unsupported",
+        };
       }
       if (!pubKey) return { file: f, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
       // C: normalize before crypto.verify — mirrors the signer
@@ -3751,7 +4023,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // → exitCode = 1 auto-promotion would stop at 1; tamper is distinct
     // from generic failure, so explicitly raise to 6 (cmdReattest's code).
     //
-    // Audit AA P1-1 + P1-2: extend the tamper predicate to cover the new
+    // 2: extend the tamper predicate to cover the new
     // tamper_class variants. Pre-fix the predicate was `r.signed && !r.verified`
     // which missed (a) corrupt-JSON sidecars (signed:false) and (b) "unsigned"
     // sidecar substitution on hosts with a private key (signed:false). Both
@@ -3760,6 +4032,9 @@ function cmdAttest(runner, args, runOpts, pretty) {
       (r.signed && !r.verified)
       || r.tamper_class === "sidecar-corrupt"
       || r.tamper_class === "unsigned-substitution"
+      // KK P1-3: a sidecar whose algorithm field is not "Ed25519" or
+      // "unsigned" is a downgrade-bait substitution; promote to exit 6.
+      || r.tamper_class === "algorithm-unsupported"
     );
     const body = { verb: "attest verify", session_id: sessionId, results };
     if (tampered) {
@@ -4758,13 +5033,21 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // or `reattest` with the returned id. Now: same persistAttestation
     // shape as cmdRun, so AI-facing flow round-trips cleanly.
     if (result.session_id) {
+      // Mirror cmdRun: gate operator_consent on classification === 'detected'.
+      const aiClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+      const aiConsentApplies = aiClassification === "detected";
+      if (runOpts.operator_consent && !aiConsentApplies) {
+        result.ack = true;
+        result.ack_applied = false;
+        result.ack_skipped_reason = `classification=${aiClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
+      }
       const persistResult = persistAttestation({
         sessionId: result.session_id,
         playbookId: result.playbook_id || playbookId,
         directiveId: result.directive_id || directiveId,
         evidenceHash: result.evidence_hash,
         operator: runOpts.operator,
-        operatorConsent: runOpts.operator_consent,
+        operatorConsent: aiConsentApplies ? runOpts.operator_consent : null,
         submission,
         runOpts,
         forceOverwrite: !!args["force-overwrite"],
@@ -4773,12 +5056,21 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       if (!persistResult.ok && !args["force-overwrite"]) {
         // Collision without --force-overwrite. AI agents typically pass
         // unique session ids each run, so this path is rare but surface
-        // it cleanly via the same JSONL contract.
-        process.stdout.write(JSON.stringify({
+        // it cleanly via the same JSONL contract. Preserve LOCK_CONTENTION
+        // exit 8 set by persistAttestation when --force-overwrite hit the
+        // lockfile race — don't clobber with exit 3.
+        const eventBody = {
           event: "error", reason: persistResult.error,
           existing_attestation: persistResult.existingPath,
-        }) + "\n");
-        process.exitCode = 3;
+        };
+        if (persistResult.lock_contention) {
+          eventBody.lock_contention = true;
+          eventBody.exit_code = 8;
+        }
+        process.stdout.write(JSON.stringify(eventBody) + "\n");
+        if (!persistResult.lock_contention) {
+          process.exitCode = 3;
+        }
         return;
       }
     }
@@ -4862,21 +5154,31 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // too. Without this, the session_id emitted in the `done` frame
     // can't be resolved by `attest show / verify / diff` or `reattest`.
     if (result.session_id) {
+      // Mirror cmdRun: gate operator_consent on classification === 'detected'.
+      const aiClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+      const aiConsentApplies = aiClassification === "detected";
       const persistResult = persistAttestation({
         sessionId: result.session_id,
         playbookId: result.playbook_id || playbookId,
         directiveId: result.directive_id || directiveId,
         evidenceHash: result.evidence_hash,
         operator: runOpts.operator,
-        operatorConsent: runOpts.operator_consent,
+        operatorConsent: aiConsentApplies ? runOpts.operator_consent : null,
         submission,
         runOpts,
         forceOverwrite: !!args["force-overwrite"],
         filename: "attestation.json",
       });
       if (!persistResult.ok && !args["force-overwrite"]) {
-        writeLine({ event: "error", reason: persistResult.error,
-                    existing_attestation: persistResult.existingPath });
+        const eventBody = { event: "error", reason: persistResult.error,
+                            existing_attestation: persistResult.existingPath };
+        if (persistResult.lock_contention) {
+          eventBody.lock_contention = true;
+          eventBody.exit_code = 8;
+          writeLine(eventBody);
+          return finish(8);
+        }
+        writeLine(eventBody);
         return finish(3);
       }
     }

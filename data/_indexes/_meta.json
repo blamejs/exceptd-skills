@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-14T23:57:30.181Z",
+  "generated_at": "2026-05-15T06:49:36.722Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 50,
   "source_hashes": {
-    "manifest.json": "4b198eb657d469f7e3662489fdbb1de0938de8436064413c981ebbd442555f12",
+    "manifest.json": "2adf0e88322f3903ffd323dbcee69b406c7d801a1539cb1e79e569e47bbafc4c",
     "data/atlas-ttps.json": "20339e0ae3cd89c06f1385be31c50f408f827edc2e8ab8aef026ade3bcf0a917",
     "data/attack-techniques.json": "6db08a8e8a4d03d9309b1d185112de7f3c9595d2cd3d24566b7ce0b3b8aa5d1a",
     "data/cve-catalog.json": "7936ba3c8f27156235bf327830e8f1a684658865e97f089aed98b2a7cdbb88ef",
@@ -25,7 +25,7 @@
     "skills/rag-pipeline-security/skill.md": "78f00a39e66f08da2894e28eeedb32137295ca019eba7110ab28282d613a97eb",
     "skills/ai-c2-detection/skill.md": "095cab9daa072bfabc87152aea1b61ccd6da8f531753b05c181629f04014b5ca",
     "skills/policy-exception-gen/skill.md": "79db45ba722a6dd9bba25bf84e0b52cf659b56b662193cef80a8273337e41df9",
-    "skills/threat-model-currency/skill.md": "d2b065610ed2f8cdece4f19a95b4e2122c150fc924b7b45fbed17f32a75f3a08",
+    "skills/threat-model-currency/skill.md": "4badf98c3d8ca5f5c9854cbb25ed994491c39a88ff1aa354b72c50e59a7d3261",
     "skills/global-grc/skill.md": "e0487de49679172347653d8c191d1f269193de6f444f6b0c6396d326e45bd72e",
     "skills/zeroday-gap-learn/skill.md": "086df0fe792c80ca864da6917958bf3df7be5ba02df1c5894972a69353306ee6",
     "skills/pqc-first/skill.md": "a5eb776e1ea3bb422a4c18a3bdf39ad2ec1651b3c25e65c89428ba319141b275",
