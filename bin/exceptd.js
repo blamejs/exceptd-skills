@@ -909,6 +909,11 @@ function dispatchPlaybook(cmd, argv) {
             "force-overwrite", "no-stream", "block-on-jurisdiction-clock",
             "force-replay",
             "json-stdout-only", "fix", "human", "json", "strict-preconditions",
+            // v0.12.27: --bundle-deterministic opts the bundle build into
+            // byte-stable output (frozen timestamps, deterministic session_id
+            // fallback, sorted vulnerabilities[] / statements[]). Pairs with
+            // --bundle-epoch <ISO> for the frozen timestamp value.
+            "bundle-deterministic",
             // v0.12.9: doctor --shipped-tarball runs the verify-shipped-tarball
             // gate alongside --signatures. doctor --registry-check + --signatures
             // were already accepted; explicit registration removes the silent
@@ -1266,6 +1271,55 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.csafStatus = cs;
   }
 
+  // --bundle-deterministic + --bundle-epoch (v0.12.27): opt-in deterministic
+  // bundle emit. When set, CSAF / OpenVEX / close-envelope timestamps freeze
+  // to the supplied epoch (or the playbook's last_threat_review fallback),
+  // the auto-generated session_id derives from sha256(playbook + evidence_hash
+  // + engine_version) when the operator did not pass --session-id, and
+  // vulnerabilities[] / statements[] sort deterministically. Opt-in so the
+  // default emit path stays byte-identical to pre-v0.12.27 output.
+  if (args["bundle-deterministic"] !== undefined && args["bundle-deterministic"] !== false) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --bundle-deterministic is irrelevant on this verb (no bundle is assembled). --bundle-deterministic only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}.`,
+        { verb: cmd, flag: "bundle-deterministic", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
+    runOpts.bundleDeterministic = true;
+  }
+  if (args["bundle-epoch"] !== undefined) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --bundle-epoch is irrelevant on this verb (no bundle is assembled). --bundle-epoch only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}.`,
+        { verb: cmd, flag: "bundle-epoch", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
+    const epoch = args["bundle-epoch"];
+    if (typeof epoch !== "string") {
+      return emitError(
+        `${cmd}: --bundle-epoch must be a string ISO-8601 timestamp.`,
+        { verb: cmd, flag: "bundle-epoch", provided: typeof epoch },
+        pretty
+      );
+    }
+    // Reuse validateIsoSince — the same calendar-shape gate used for --since.
+    const isoErr = validateIsoSince(epoch);
+    if (isoErr) {
+      return emitError(
+        `${cmd}: --bundle-epoch must be a parseable ISO-8601 calendar timestamp (e.g. 2026-01-01T00:00:00Z). Got: ${JSON.stringify(epoch).slice(0, 80)}`,
+        { verb: cmd, flag: "bundle-epoch", provided: epoch.slice(0, 80) },
+        pretty
+      );
+    }
+    // Normalise to a full ISO timestamp so downstream consumers don't have
+    // to handle the date-only shape. Date-only inputs render as
+    // YYYY-MM-DDT00:00:00.000Z; full timestamps round-trip unchanged modulo
+    // ms precision (Date.prototype.toISOString always emits ms).
+    runOpts.bundleEpoch = new Date(epoch).toISOString();
+  }
+
   // --ack: operator acknowledges the jurisdiction obligations surfaced by
   // govern. Captured in attestation; downstream tooling can check whether
   // consent was explicit vs. implicit. AGENTS.md says the AI should surface
@@ -1512,6 +1566,16 @@ Flags:
                           publisher trust anchor — i.e. the operator's
                           organisation, NOT the tooling vendor. Must be an
                           http://… or https://… URL, ≤256 chars.
+  --bundle-deterministic  Emit byte-stable CSAF / OpenVEX / close envelope.
+                          Freezes tracking + timestamp fields to a single
+                          epoch, derives session_id from evidence hash when
+                          not supplied via --session-id, and sorts
+                          vulnerabilities[] / statements[] ascending.
+                          Off by default; opt-in for reproducible-build
+                          pipelines + diff-friendly attestation review.
+  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic. ISO-8601
+                          calendar timestamp (date or date+time). Falls back
+                          to the playbook's last_threat_review when omitted.
   --diff-from-latest      Compare evidence_hash against the most recent prior
                           attestation for the same playbook in
                           .exceptd/attestations/. Emits status: unchanged | drifted.
@@ -1589,6 +1653,8 @@ Flags:
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
+  --bundle-deterministic  Emit byte-stable bundles (frozen timestamps).
+  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
   --pretty                Indented JSON output.
 
 Exit codes: 0 PASS, 1 framework, 4 blocked, 7 SESSION_ID_COLLISION,
@@ -1716,6 +1782,8 @@ Flags:
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
+  --bundle-deterministic  Emit byte-stable bundles for reproducible pipelines.
+  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
   --evidence <file|->     Single-shot mode: pre-supplied submission JSON.
   --operator <name>       Bind the attestation to a specific identity.
   --ack                   Mark explicit operator consent (jurisdiction clock).
@@ -1794,6 +1862,8 @@ Flags:
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
+  --bundle-deterministic  Emit byte-stable bundles across per-playbook runs.
+  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
   --json                  Force single-line JSON (overrides any TTY heuristics).
   --pretty                Indented JSON output (implies --json).
 
@@ -1874,7 +1944,9 @@ Flags (selected — see \`exceptd run --help\` for the full list):
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
-                          Must be an http://… or https://… URL, ≤256 chars.`,
+                          Must be an http://… or https://… URL, ≤256 chars.
+  --bundle-deterministic  Emit byte-stable bundles across the multi-run set.
+  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.`,
   };
   process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
 }
