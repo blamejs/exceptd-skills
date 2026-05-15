@@ -2,7 +2,7 @@
 
 ## 0.12.22 — 2026-05-15
 
-**Patch: trust-chain attestation sidecar redesign, CSAF spec-compliance fixes, CLI flag scoping, concurrency exit-code surface, comment-scrub redo.**
+**Patch: trust-chain attestation sidecar redesign, CSAF spec-compliance fixes, CLI flag scoping, concurrency exit-code surface.**
 
 ### Trust chain
 
@@ -33,7 +33,7 @@
 
 ### Test quality
 
-- **5 `notEqual(r.status, 0)` assertions tightened to exact-value `assert.equal(r.status, 1)`** in `audit-cc-csaf-fixes.test.js` and `audit-ee-gg-cli-fixes.test.js`. Closes the same coincidence-passing-tests regression that the v0.12.21 entry's tightening pass left half-done.
+- **5 exit-code assertions tightened from `notEqual(r.status, 0)` to exact-value `assert.equal(r.status, 1)`** across the CSAF and CLI-flag regression suites. Closes the same coincidence-passing-tests regression the v0.12.21 entry's tightening pass left half-done.
 - **CVE-curation tests no longer mutate `data/cve-catalog.json`** in the repo root. Three tests previously injected synthetic `CVE-9999-*` drafts into the live catalog with a `finally{}` restore — a Ctrl-C between mutation and restoration leaked state into the repo. The refresh tests now use the existing `--catalog <path>` flag against a tempdir copy; the validate test uses the in-process module API directly.
 - **Three e2e expect.json files** (`14-framework-jurisdiction-gap`, `16-containers-root-user`, `19-crypto-rsa-2048-eol`) now assert `phases.close.jurisdiction_notifications[0].jurisdiction` is populated. Field-presence-without-content was the previous shape.
 
@@ -42,11 +42,7 @@
 - **`data/playbooks/runtime.json domain.cve_refs[]`** completes the Dirty-Frag family by adding `CVE-2026-43284` and `CVE-2026-43500` (already referenced by `kernel.json` and `hardening.json`).
 - **`skills/threat-model-currency/skill.md`** inline `last_threat_review` date aligned to frontmatter (`2026-05-14`).
 
-### Source comments
-
-A second cleanup pass across `bin/`, `lib/`, `scripts/` — comments describe behavior, not work-stream.
-
-Test count: 941 → 999+ (regression coverage for each closure above). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
+Test count: 941 → 992 (989 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
 
 ## 0.12.21 — 2026-05-14
 
