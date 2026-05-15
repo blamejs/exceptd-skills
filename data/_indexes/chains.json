@@ -1834,6 +1834,326 @@
       "rfc_refs": []
     }
   },
+  "CVE-2024-21626": {
+    "name": "runc /proc/self/fd leak (Leaky Vessels)",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.65,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2024-3094": {
+    "name": "xz-utils liblzma backdoor",
+    "rwep": 70,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.86,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2024-3154": {
+    "name": "CRI-O arbitrary kernel-module load",
+    "rwep": 30,
+    "cvss": 8.1,
+    "cisa_kev": false,
+    "epss_score": 0.012,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-43472": {
+    "name": "MLflow path-traversal arbitrary file read",
+    "rwep": 30,
+    "cvss": 7.5,
+    "cisa_kev": false,
+    "epss_score": 0.014,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-10148": {
+    "name": "SolarWinds Orion API authentication bypass (SUNBURST chain)",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.945,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-3519": {
+    "name": "Citrix NetScaler ADC/Gateway unauth RCE (CitrixBleed precursor)",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.967,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2024-1709": {
+    "name": "ConnectWise ScreenConnect auth-bypass",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.973,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-20182": {
+    "name": "Cisco SD-WAN authentication bypass to admin",
+    "rwep": 65,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.5,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2024-40635": {
+    "name": "containerd integer overflow IP mask leak",
+    "rwep": 30,
+    "cvss": 5.9,
+    "cisa_kev": false,
+    "epss_score": 0.005,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "MAL-2026-TANSTACK-MINI": {
+    "name": "Mini Shai-Hulud (TanStack worm)",
+    "rwep": 55,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "MAL-2026-ANTHROPIC-MCP-STDIO": {
+    "name": "Anthropic SDK MCP STDIO command-injection (embargoed)",
+    "rwep": 25,
+    "cvss": 9,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-GTIG-AI-2FA": {
+    "name": "GTIG-tracked AI-built 2FA-bypass zero-day (placeholder)",
+    "rwep": 55,
+    "cvss": 8.1,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-30623": {
+    "name": "Anthropic MCP SDK stdio command-injection",
+    "rwep": 30,
+    "cvss": 8.8,
+    "cisa_kev": false,
+    "epss_score": 0.02,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-12686": {
+    "name": "Synology BeeStation unauth RCE (Pwn2Own Ireland 2025)",
+    "rwep": 50,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": 0.04,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-62847": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 1/3)",
+    "rwep": 45,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": 0.03,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-62848": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 2/3)",
+    "rwep": 45,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": 0.03,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-62849": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 3/3)",
+    "rwep": 40,
+    "cvss": 8.8,
+    "cisa_kev": false,
+    "epss_score": 0.02,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-59389": {
+    "name": "QNAP Hyper Data Protector critical RCE (Pwn2Own Ireland 2025)",
+    "rwep": 45,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": 0.05,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-11837": {
+    "name": "QNAP Malware Remover code-injection",
+    "rwep": 40,
+    "cvss": 8,
+    "cisa_kev": false,
+    "epss_score": 0.025,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-42945": {
+    "name": "NGINX Rift",
+    "rwep": 40,
+    "cvss": 9.2,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-20": {
     "name": "Improper Input Validation",
     "category": "Validation",

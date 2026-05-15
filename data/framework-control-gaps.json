@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-01",
+    "last_updated": "2026-05-15",
     "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history.",
     "tlp": "CLEAR",
     "source_confidence": {
@@ -308,6 +308,108 @@
       "T1195.002"
     ]
   },
+  "DORA-RTS-Subcontracting": {
+    "framework": "EU DORA (Regulation 2022/2554) — RTS on subcontracting of ICT services supporting critical or important functions",
+    "control_id": "RTS-Subcontracting-2024",
+    "control_name": "Regulatory Technical Standard on subcontracting (Commission Delegated Regulation supplementing Art. 30(5))",
+    "designed_for": "Mandates contractual + register-level visibility of the full subcontracting chain for ICT services supporting critical or important functions of financial entities. Active 2026-01-17 (Commission Delegated Regulation (EU) 2025/420). Cross-walks to ESMA/EBA/EIOPA joint guidelines on the register of information, EU NIS2 Art. 21(2)(d), UK PRA SS2/21, AU CPS 230.",
+    "misses": [
+      "AI-provider sub-processor chain — model APIs, embedding services, vector stores, fine-tune providers compose under a single user-facing endpoint with sub-processor visibility that the RTS register fields do not enumerate",
+      "MCP server distribution: an MCP server installed by a developer is a de-facto subcontractor for any ICT function the agent supports, with no contractual nexus the financial entity controls",
+      "Concentration risk fields capture cloud-provider concentration but not foundation-model concentration (3-4 frontier LLM providers underpin most production AI workflows in 2026)",
+      "Cross-border AI inference routing is not captured in the residency fields — model API calls regularly traverse multiple jurisdictions inside a single 'sub-processor' line item"
+    ],
+    "real_requirement": "RTS subcontracting register must add: (1) AI sub-processor enumeration (model provider, embedding provider, vector store, RAG corpus host) per ICT service line, (2) MCP server inventory treated as a subcontractor class, (3) foundation-model concentration analysis alongside cloud-provider concentration, (4) per-call inference-routing residency for AI services, (5) explicit cross-walk to UK PRA SS2/21 + AU CPS 230 for cross-border AI sub-processor disclosure.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002"
+    ]
+  },
+  "DORA-ITS-TLPT": {
+    "framework": "EU DORA (Regulation 2022/2554) — ITS on threat-led penetration testing under Art. 26",
+    "control_id": "ITS-TLPT-2026",
+    "control_name": "Implementing Technical Standard on Threat-Led Penetration Testing (TLPT) for significant financial entities",
+    "designed_for": "Operationalises Art. 26 TLPT obligations: scope, methodology, certifications for testers, intelligence-led red-team execution aligned with TIBER-EU. Active 2026-Q3. Cross-walks to UK CBEST, AU CORIE, NL TIBER-NL, ECB TIBER-EU framework, NIST SP 800-115.",
+    "misses": [
+      "AI/MCP asset classes not enumerated in the TLPT scoping template — model APIs, RAG pipelines, MCP servers, embedding stores, agent runtimes",
+      "Threat-intelligence inputs do not include AI-discovered zero-day classes (41% of 2025 zero-days were AI-discovered) or AI-augmented offensive TTPs",
+      "Provider-side authorisation language for adversarial prompt-injection testing against third-party AI providers is unaddressed — many AI providers' acceptable-use policies prohibit adversarial testing without separate negotiation",
+      "TLPT-tester certifications do not yet include AI/MCP-specific competencies (prompt injection, RAG poisoning, agent escape)"
+    ],
+    "real_requirement": "ITS-TLPT must add: (1) AI/MCP asset enumeration in the scoping template, (2) AI-augmented threat intelligence inputs (ATLAS TTPs, AI-discovered CVE classes), (3) standard authorisation clauses for adversarial testing against third-party AI providers, (4) AI/MCP competency requirements for TLPT-tester certifications, (5) cross-walk to TIBER-EU + UK CBEST + AU CORIE updated scope language.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1059"
+    ]
+  },
+  "DORA-RTS-Incident-Classification": {
+    "framework": "EU DORA (Regulation 2022/2554) — RTS on classification of major ICT-related incidents under Art. 18(3)",
+    "control_id": "RTS-Incident-Classification-2024",
+    "control_name": "RTS specifying classification criteria for major ICT-related incidents and significant cyber threats (Commission Delegated Regulation (EU) 2024/1772)",
+    "designed_for": "Defines the quantitative + qualitative thresholds that promote an ICT incident to 'major' status, triggering the 4h / 24h / 30d notification cascade. Cross-walks to NIS2 Art. 23 incident classification, UK FCA SUP 15.3 operational incident reporting, AU APRA CPS 234, US OCC heightened standards.",
+    "misses": [
+      "AI-specific incident classes (prompt injection, RAG poisoning, model theft, deepfake-mediated BEC) are not enumerated in the qualitative criteria — operators classify them under generic 'data integrity' / 'service degradation' fields, losing AI-specific severity signal",
+      "Quantitative thresholds (clients affected, transactions impacted, recovery duration) presume a transactional ICT service. AI-augmented decision incidents (an LLM emitting incorrect risk advice for hours before detection) don't fit the transaction-count threshold",
+      "Reputational impact criteria don't address AI-related public-trust events (model outputting harmful content via prompt injection) with the granularity required",
+      "Significant-cyber-threat criteria do not yet contemplate ATLAS-class adversary signal as a trigger for proactive notification"
+    ],
+    "real_requirement": "RTS classification must add: (1) AI-incident class enumeration in the qualitative criteria, (2) AI-specific quantitative measures (model invocations affected, agent actions taken on injected intent, RAG corpus integrity loss), (3) ATLAS-class adversary indicators as significant-cyber-threat triggers, (4) cross-walk to NIS2 Art. 23 + UK FCA SUP 15.3 + AU CPS 234 with AI-class fields.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0054",
+      "AML.T0057"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "DORA-IA-CTPP-Oversight": {
+    "framework": "EU DORA (Regulation 2022/2554) — Implementing Acts for critical-third-party-provider (CTPP) oversight under Art. 31-44",
+    "control_id": "IA-CTPP-Oversight-2026",
+    "control_name": "Implementing acts designating critical ICT third-party service providers and operationalising the Lead Overseer regime",
+    "designed_for": "Establishes the criteria, designation procedure, and Lead Overseer (LO) powers for CTPPs supplying financial entities. First designations expected H2 2026 across hyperscale cloud, network, and core-banking providers. Cross-walks to UK FSMA s.312 critical-third-party regime, AU APRA CPS 230 material service providers, US Treasury TLAC for systemic cloud providers.",
+    "misses": [
+      "Frontier-AI providers (OpenAI, Anthropic, Google DeepMind, xAI) are functionally critical to many financial entities' workflows but are not on the H2 2026 designation candidate list — their ICT-service taxonomy doesn't map cleanly to the CTPP criteria (concentration, substitutability, criticality of functions supported)",
+      "MCP server / agent-runtime providers as CTPPs: no contemplated route to designation despite being in the trust path of every AI-augmented financial workflow",
+      "Lead Overseer audit access fields presume conventional cloud audit conventions (SOC2 reports, attestation letters) — frontier-AI providers' model-card / system-card / evaluation-report artifacts have no equivalent treatment",
+      "Cross-border LO coordination with UK FCA + AU APRA does not yet cover AI-provider concentration risk"
+    ],
+    "real_requirement": "CTPP oversight implementing acts must add: (1) frontier-AI provider designation criteria distinct from cloud-provider criteria, (2) MCP/agent-runtime provider class with route to designation when reaching concentration thresholds, (3) Lead Overseer audit framework that includes model cards, system cards, evaluation reports, training-data manifests, (4) UK FCA / AU APRA + EU DORA joint AI-provider oversight protocol.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ]
+  },
   "EU-AI-Act-Art-15": {
     "framework": "EU Artificial Intelligence Act (2024/1689)",
     "control_id": "Art. 15",
@@ -331,6 +433,100 @@
       "AML.T0051",
       "AML.T0054",
       "AML.T0057"
+    ],
+    "attack_refs": []
+  },
+  "EU-AI-Act-Art-53-GPAI": {
+    "framework": "EU Artificial Intelligence Act (2024/1689) — General-Purpose AI provider obligations",
+    "control_id": "Art. 53",
+    "control_name": "Obligations for providers of general-purpose AI (GPAI) models",
+    "designed_for": "Providers of general-purpose AI models placed on the EU market. Active 2026-08-02. Requires technical documentation, downstream-provider information package, copyright-policy disclosure, and a summary of training content. Cross-walks to UK AISI voluntary commitments, US NIST AI RMF GPAI profile, OECD AI Principles GPAI annex, ISO/IEC 42001:2023.",
+    "misses": [
+      "Training-data summary granularity — the prescribed 'sufficiently detailed' standard is operationally undefined; providers can satisfy with sector-level descriptors that defeat copyright/audit traceability",
+      "Downstream-provider information package contemplates documentation handoff but not runtime telemetry — a downstream provider integrating a GPAI cannot verify the production model is the documented model",
+      "Copyright-policy disclosure does not require attestation against specific corpora (text, image, code) — operators face Art. 53 compliance without resolving the upstream rightsholder question",
+      "No technical mechanism prescribed for the training-content summary to be machine-verifiable (no SLSA-equivalent, no signed manifest)"
+    ],
+    "real_requirement": "Art. 53 implementation must add: (1) machine-readable training-data-summary schema with corpus-level granularity sufficient for copyright audit, (2) signed downstream-provider documentation bound to the production model fingerprint, (3) per-corpus copyright-policy attestation distinct from generic policy disclosure, (4) cross-walk to ISO/IEC 42001 audit evidence + NIST AI RMF GPAI profile.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
+    ],
+    "attack_refs": []
+  },
+  "EU-AI-Act-Art-55-Systemic": {
+    "framework": "EU Artificial Intelligence Act (2024/1689) — GPAI with systemic risk",
+    "control_id": "Art. 55",
+    "control_name": "Additional obligations for providers of GPAI models with systemic risk",
+    "designed_for": "Providers of GPAI models presumed to have systemic risk (cumulative training compute ≥ 10^25 FLOPs benchmark; AI Office may designate other models). Active 2026-08-02. Requires model evaluation including adversarial testing, systemic-risk assessment + mitigation, serious-incident reporting to AI Office + national authorities, and energy/cybersecurity protection at the model layer. Cross-walks to UK AISI safety evaluations, US AISI consortium, NIST AI RMF systemic-risk profile.",
+    "misses": [
+      "Adversarial-evaluation methodology is not prescribed — providers self-define the red-team scope, leaving prompt-injection coverage, agentic-task exploitation, RAG-poisoning resistance, and MCP-trust scenarios at provider discretion",
+      "Energy-consumption reporting cadence + units of measurement are not standardised — comparison across providers is operationally impossible",
+      "Serious-incident reporting clock (15-day initial / report-without-undue-delay) does not align with DORA's 4h or NIS2's 24h — financial-entity operators using a systemic GPAI face conflicting clocks",
+      "Cybersecurity protection at the model layer (weights, fine-tune adapters, system prompts) has no concrete control catalogue — Art. 55(1)(d) is the most operationally underspecified obligation in the Act"
+    ],
+    "real_requirement": "Art. 55 operationalisation must add: (1) prescribed adversarial-evaluation methodology covering OWASP LLM Top 10 + ATLAS TTPs + MCP-trust scenarios, (2) standardised energy reporting (kWh per million tokens, training compute under ISO/IEC TR 24028), (3) reconciled incident-reporting clocks with DORA Art. 19 + NIS2 Art. 23, (4) explicit control catalogue for model-layer cybersecurity (weights provenance, system-prompt integrity, fine-tune access control).",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020",
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "EU-AI-Act-Annex-IX-Conformity": {
+    "framework": "EU Artificial Intelligence Act (2024/1689) — Annex IX conformity assessment",
+    "control_id": "Annex IX",
+    "control_name": "Conformity assessment based on internal control or notified body assessment for high-risk AI systems",
+    "designed_for": "Sets the conformity-assessment route for high-risk AI systems (Art. 43). Internal control (Annex VI) suffices for most providers; notified-body assessment (Annex VII) applies to specific Annex III categories. Active 2026-08-02 for high-risk obligations. Cross-walks to EU CRA Annex VIII conformity, EU MDR clinical-AI conformity, UK MHRA AI-as-a-Medical-Device, AU TGA Software-as-Medical-Device.",
+    "misses": [
+      "Internal-control conformity assessment is self-attestation — there is no third-party verification of Art. 9 risk management, Art. 10 data governance, Art. 15 cybersecurity claims for most high-risk AI",
+      "Notified-body capacity is constrained — the small number of designated notified bodies (under 30 across the Union as of 2026-Q2) creates assessment-queue risk that operators cannot mitigate",
+      "Conformity reassessment after substantial modification is undefined operationally — fine-tuning, retrieval-augmentation, or system-prompt change triggers conformity-renewal uncertainty",
+      "No cross-walk between Annex IX and EU CRA Annex VIII for products that are both AI systems and products-with-digital-elements — dual-track conformity creates duplicate audit + drift risk"
+    ],
+    "real_requirement": "Annex IX implementation must add: (1) third-party sample audit of internal-control attestations (e.g. risk-based annual sampling by AI Office), (2) notified-body scope expansion + capacity guarantees, (3) operational definition of 'substantial modification' for fine-tuning / RAG / system-prompt changes, (4) joint Annex IX + CRA Annex VIII conformity track for dual-status products.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018"
+    ],
+    "attack_refs": []
+  },
+  "EU-AI-Act-GPAI-CoP": {
+    "framework": "EU Artificial Intelligence Act (2024/1689) — Code of Practice for GPAI",
+    "control_id": "GPAI-CoP-2026",
+    "control_name": "Code of Practice for general-purpose AI (signed 2026-02; presumed-compliance route for Art. 53 + 55)",
+    "designed_for": "Voluntary code (drafted by AI Office working groups) that, when followed, provides a presumption of compliance with Art. 53 + 55 until harmonised standards are published. Signed by major GPAI providers 2026-02. Cross-walks to ISO/IEC 42001:2023 (companion standard), UK AISI voluntary commitments, US NIST AI RMF GPAI profile.",
+    "misses": [
+      "Voluntary-code legal status: non-signatories must demonstrate Art. 53 / 55 compliance through alternative means with no defined evidentiary standard",
+      "Code does not bind the AI Office on enforcement discretion — a signatory operator following the Code can still face investigation if the AI Office considers the Code itself insufficient for a specific case",
+      "Cross-jurisdiction recognition: UK + US AI safety institutes have not formally cross-recognised the Code, so an operator producing the same documentation for AI Office + UK AISI + US AISI faces format-divergence overhead",
+      "Code sunsets when harmonised standards under Art. 40 are published — operators investing in Code-conformant tooling face a re-implementation cliff at the standards-publication date"
+    ],
+    "real_requirement": "GPAI Code-of-Practice path must add: (1) defined evidentiary equivalence for non-signatory compliance, (2) AI-Office commitment on enforcement deference for code-conformant signatories, (3) joint AI Office + UK AISI + US AISI common-format recognition, (4) transition plan when Art. 40 harmonised standards supersede the Code.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0018",
+      "AML.T0020"
     ],
     "attack_refs": []
   },
@@ -411,6 +607,112 @@
     "attack_refs": [
       "T1071",
       "T1530"
+    ]
+  },
+  "HIPAA-Security-Rule-2026-NPRM-164.308": {
+    "framework": "HIPAA Security Rule (45 CFR § 164.308) — 2026 Notice of Proposed Rulemaking",
+    "control_id": "164.308-NPRM",
+    "control_name": "Proposed expansion of administrative safeguards (2026 NPRM, expected final rule Q3 2026)",
+    "designed_for": "Administrative safeguards: security management process, workforce training, contingency planning, evaluation. NPRM (HHS-OCR-0945-AA82, published 2024-12-27) proposes expansions: mandatory written security plan reviewed at least annually, mandatory technology asset inventory, mandatory network map, mandatory documented contingency / incident-response procedure with tabletop exercises, mandatory authentication-related risk analysis. Cross-walks to NIST 800-66r2, ISO 27799, EU GDPR Art. 32.",
+    "misses": [
+      "AI assistants in healthcare workflows (ambient scribes, coding assistants, decision support) are not enumerated in the proposed technology-asset-inventory categories — operators will inventory EHRs + workstations but not the AI providers handling PHI",
+      "Network map requirement is silent on AI-API egress paths — a complete network map under the NPRM can still omit the model-provider endpoints that PHI flows to",
+      "Tabletop-exercise scope does not require AI-specific incident scenarios (prompt injection extracting PHI, RAG poisoning corrupting clinical recommendations)",
+      "Workforce-training mandate does not specifically require training on AI-handling of PHI; covered entities can satisfy with generic security training"
+    ],
+    "real_requirement": "164.308 NPRM implementation must add: (1) AI assistants + model-API providers as enumerated technology-asset categories, (2) network-map requirement extended to AI-API egress including BAA / training-opt-out attestation per route, (3) tabletop-exercise catalogue covering AI-specific PHI loss scenarios, (4) workforce training module specific to AI handling of PHI. Note: final rule still pending — track HHS-OCR publication date Q3 2026.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1530"
+    ]
+  },
+  "HIPAA-Security-Rule-2026-NPRM-164.310": {
+    "framework": "HIPAA Security Rule (45 CFR § 164.310) — 2026 Notice of Proposed Rulemaking",
+    "control_id": "164.310-NPRM",
+    "control_name": "Proposed expansion of physical safeguards including network-access logging (2026 NPRM)",
+    "designed_for": "Physical safeguards: facility access controls, workstation security, device + media controls. NPRM proposes a network-access logging mandate for all systems handling ePHI plus deployed-asset inventory + media-disposal verification. Cross-walks to NIST 800-66r2, AU My Health Records Act, UK NHS DSPT.",
+    "misses": [
+      "Network-access logging mandate is silent on AI-API session logs — a covered entity satisfying the rule with EHR audit logs can still have unrecorded PHI flowing to AI providers",
+      "Workstation security expansion does not address developer endpoints with AI coding assistants installed (which may ingest PHI through ambient inclusion)",
+      "Media-disposal verification does not contemplate AI training-data residency — PHI shared with an AI provider for in-context inference may persist in their training-eligibility set absent explicit opt-out",
+      "Deployed-asset inventory does not require MCP-server enumeration on developer / clinician endpoints"
+    ],
+    "real_requirement": "164.310 NPRM implementation must add: (1) AI-API session logging treated as in-scope under the network-access-logging mandate, (2) developer-endpoint workstation security extended to AI assistants with PHI exposure, (3) media-disposal verification extended to AI training-data opt-out attestation, (4) MCP-server enumeration in the deployed-asset inventory. Final rule pending.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-30615"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1071"
+    ]
+  },
+  "HIPAA-Security-Rule-2026-NPRM-164.312": {
+    "framework": "HIPAA Security Rule (45 CFR § 164.312) — 2026 Notice of Proposed Rulemaking",
+    "control_id": "164.312-NPRM",
+    "control_name": "Proposed technical safeguards: MFA on PHI access, encryption at rest, anti-malware, vulnerability scan + patch schedule (2026 NPRM)",
+    "designed_for": "Technical safeguards: access control, audit, integrity, transmission security. NPRM proposes mandatory MFA on all PHI access, mandatory encryption of ePHI at rest, mandatory anti-malware on ePHI-handling systems, mandatory vulnerability scanning every 6 months + patch schedule (critical patches within reasonable time per asset criticality). Cross-walks to NIST 800-66r2, NIST 800-53 SI-2, EU GDPR Art. 32, AU APP 11.",
+    "misses": [
+      "MFA mandate is silent on AI-agent session authentication — an agent acting on a clinician's behalf can satisfy the MFA gate once and then perform unbounded subsequent PHI access without re-authentication",
+      "Encryption-at-rest mandate does not address PHI residing in AI-provider conversation history, vector embeddings, or fine-tune-eligible corpora",
+      "Anti-malware mandate is undefined for AI-augmented systems — prompt-injection-driven malicious actions are not 'malware' in the signature-matching sense but produce equivalent harm",
+      "Vulnerability-scan cadence (6 months) is exploitation-acceptance for AI-discovered zero-days (41% of 2025 zero-days were AI-discovered, average disclosure-to-PoC under 30 days); patch-schedule language is risk-based without CISA-KEV-class tiering"
+    ],
+    "real_requirement": "164.312 NPRM implementation must add: (1) per-action MFA-equivalent for AI-agent PHI access (delegated-authority attestation), (2) encryption-at-rest extended to AI-provider artifacts (conversation history, embeddings, fine-tune sets), (3) prompt-injection + RAG-poisoning detection as anti-malware-equivalent for AI-augmented systems, (4) CISA-KEV-class patch tier (< 72h) layered over the 6-month scan cadence. Final rule pending.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773",
+      "CVE-2026-30615",
+      "CVE-2026-31431"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1068",
+      "T1078"
+    ]
+  },
+  "HIPAA-Security-Rule-2026-NPRM-164.314": {
+    "framework": "HIPAA Security Rule (45 CFR § 164.314) — 2026 Notice of Proposed Rulemaking",
+    "control_id": "164.314-NPRM",
+    "control_name": "Proposed updates to BAA contract requirements (2026 NPRM)",
+    "designed_for": "Organizational requirements: business associate agreements (BAAs), requirements for group health plans. NPRM proposes expanded BAA language: annual workforce-training attestation by business associate, breach-notification clock alignment with HIPAA Breach Notification Rule (60-day outer limit), explicit sub-business-associate flow-down, written technical-safeguards attestation by business associate. Cross-walks to NIST 800-66r2, EU GDPR Art. 28 processor agreements, AU APP 11 third-party clauses.",
+    "misses": [
+      "Sub-business-associate flow-down does not specifically address AI sub-processor chains — an AI provider integrating embedding / vector / fine-tune sub-services produces a deeper subprocessor chain than the BAA template anticipates",
+      "Technical-safeguards attestation does not require AI-specific clauses: prompt retention policy, training-opt-out attestation, model-version pinning, AI-incident notification timeline distinct from generic breach notification",
+      "Annual training attestation does not contemplate AI-specific PHI handling training for business-associate workforce",
+      "60-day breach-notification clock does not align with prompt-leakage detection latency — PHI leaked through prompt-injection may not be detected within the BAA notification window"
+    ],
+    "real_requirement": "164.314 NPRM implementation must add: (1) AI-sub-processor explicit flow-down template, (2) AI-specific BAA clauses (prompt retention, training opt-out, model version pinning, AI-incident reporting timeline), (3) AI-handling training requirement for business-associate workforce, (4) accelerated notification clock for AI-mediated PHI loss class. Final rule pending.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0054"
+    ],
+    "attack_refs": [
+      "T1195.001"
     ]
   },
   "HITRUST-CSF-v11.4-09.l": {
@@ -1244,6 +1546,98 @@
     "atlas_refs": [],
     "attack_refs": [
       "T1068"
+    ]
+  },
+  "PCI-DSS-4.0.1-6.4.3": {
+    "framework": "PCI DSS 4.0.1 (effective 2025-03-31 — supersedes 4.0)",
+    "control_id": "6.4.3",
+    "control_name": "Payment-page scripts are managed: script inventory + integrity check + authorisation",
+    "designed_for": "All payment-page scripts (including those served from third-parties) loaded in the consumer browser must be authorised, integrity-monitored, and inventoried. 4.0.1 retained the 4.0 requirement but tightened the script-management language and made the requirement non-best-practice (mandatory for v4.0.1 compliance from 2025-03-31). Cross-walks to OWASP ASVS V14 client-side controls, EU PSD2 SCA-RTS Art. 18 client-side fraud monitoring, UK FCA SCA-RTS.",
+    "misses": [
+      "AI-generated payment-page widgets / chat-commerce embeds — Subresource Integrity (SRI) requires a static hash, but AI-generated dynamic scripts produce per-session content that defeats fixed-hash integrity checking",
+      "Agent-mediated checkout (an AI agent fetching the payment page on behalf of the customer) is silent in the script-management language — the inventory contemplates browser-loaded scripts not agent-fetched ones",
+      "MCP-server-injected helper scripts in developer environments can poison test-mode payment pages without surfacing in production script inventory",
+      "Cross-walk to EU PSD2 SCA-RTS Art. 18 client-side fraud monitoring is not explicit — operators run two parallel monitoring programs without integration"
+    ],
+    "real_requirement": "6.4.3 operationalisation must add: (1) dynamic-content integrity (CSP report-uri + runtime DOM-equivalent hashes for AI-generated payment widgets), (2) agent-mediated checkout treated as in-scope with delegated-authority attestation, (3) MCP-server allowlisting on developer endpoints that touch payment-page test environments, (4) integrated reporting with PSD2 SCA-RTS Art. 18 + UK FCA SCA-RTS.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1195.001"
+    ]
+  },
+  "PCI-DSS-4.0.1-11.6.1": {
+    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "control_id": "11.6.1",
+    "control_name": "Change-and-tamper-detection mechanism on payment pages",
+    "designed_for": "Mandatory runtime DOM-integrity monitoring on payment pages: alert on unauthorised modifications to HTTP headers / payment-page content; tamper-detection alerts at least weekly (or based on risk analysis). Cross-walks to OWASP ASVS V14, EU PSD2 SCA-RTS Art. 18.",
+    "misses": [
+      "Tamper-detection-weekly cadence is exploitation-acceptance for Magecart-class threats with public PoC; a Magecart compromise active 6 days before next scheduled scan has cleared millions of transactions",
+      "AI-generated payment-page content (dynamic widgets, personalised messaging) creates baseline noise that suppresses tamper alerts unless the tooling distinguishes legitimate AI variation from malicious modification",
+      "Detection mechanism scope is the consumer browser only — agent-mediated checkout, mobile-app-embedded payment SDKs, kiosk-mode terminals are out of the literal 11.6.1 scope despite being equivalent attack surface",
+      "No required integration with CSP report-uri, no required Reporting API integration — operators run tamper detection alongside CSP reporting without correlated analysis"
+    ],
+    "real_requirement": "11.6.1 implementation must add: (1) continuous (sub-hour) tamper detection for CDE-scoped payment pages, (2) AI-aware baselining that distinguishes legitimate dynamic content from injection, (3) extension to all payment-page-equivalent surfaces (mobile SDK, kiosk, agent-mediated), (4) mandatory CSP report-uri + Reporting API correlation.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1059"
+    ]
+  },
+  "PCI-DSS-4.0.1-12.3.3": {
+    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "control_id": "12.3.3",
+    "control_name": "Cryptographic cipher suites and protocols inventory + annual review",
+    "designed_for": "Every cipher suite and cryptographic protocol in use must be documented, inventoried with version, and reviewed at least once every 12 months. 4.0.1 retained 4.0 requirement and clarified that the inventory must cover all CDE-touching systems. Cross-walks to NIST SP 800-52r2, NIST SP 800-131A, EU ENISA cryptographic guidelines, UK NCSC cryptographic guidance, ISO/IEC 18033, NIST PQC migration roadmap (FIPS 203/204/205).",
+    "misses": [
+      "Annual cadence is incompatible with PQC migration timeline — NIST FIPS 203/204/205 finalisation (2024-08), CNSA 2.0 hard deadlines (2027-2030), and harvest-now-decrypt-later threat model require quarterly cipher-suite review",
+      "Inventory scope does not explicitly include AI provider TLS termination cipher suites — PHI / cardholder data flowing to AI providers traverses cipher suites the inventory may not capture",
+      "MCP server-to-client TLS configurations are not in the literal CDE perimeter and so are not inventoried, despite carrying delegated authority that can reach CDE systems",
+      "No hybrid-PQC ecosystem readiness check — operators face a CNSA 2.0 (2027 federal, 2030 broader) cliff without a 4.0.1-mandated inventory of hybrid-PQC capability per cipher suite"
+    ],
+    "real_requirement": "12.3.3 implementation must add: (1) quarterly cipher-suite + protocol review (annual is too slow given PQC migration), (2) inventory scope extended to AI-provider egress + MCP-server transports, (3) hybrid-PQC readiness column per cipher suite (X25519+ML-KEM, ECDSA+ML-DSA), (4) cross-walk to NIST PQC migration roadmap + CNSA 2.0 timelines.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": []
+  },
+  "PCI-DSS-4.0.1-12.10.7": {
+    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "control_id": "12.10.7",
+    "control_name": "Incident response procedure for confirmed PAN exposure: escalation, regulator + brand notification, customer notification",
+    "designed_for": "Defined incident-response procedure when PAN (Primary Account Number) is confirmed exposed, including escalation paths, regulator and card-brand notification, and customer-notification language. 4.0.1 retained 4.0 and tightened the escalation-procedure documentation. Cross-walks to EU PSD2 incident reporting, NIS2 Art. 23, UK FCA SUP 15.3, AU APRA CPS 234, NIST SP 800-61r3.",
+    "misses": [
+      "AI-mediated PAN exposure class (prompt injection extracting PAN from a banking copilot's context window; RAG corpus indexing PAN by error) is not in the response-procedure template — operators handle it as a generic exposure with sub-optimal containment",
+      "Notification clock harmonisation: 12.10.7 references card-brand timelines that are not aligned with PSD2 / NIS2 / DORA financial-entity clocks; cross-jurisdiction operators face contradictory deadlines",
+      "Escalation procedure does not require AI-incident sub-classification (model-extraction vs. prompt-injection vs. RAG-corruption) for forensic + remediation routing",
+      "Customer-notification language template does not address AI-mediated exposure (which differs from database-breach exposure operationally — the PAN was leaked to a third-party AI provider, not extracted by an adversary)"
+    ],
+    "real_requirement": "12.10.7 implementation must add: (1) AI-mediated PAN-exposure scenarios in the response-procedure template, (2) notification-clock harmonisation table covering card-brand + PSD2 + NIS2 + DORA + UK FCA + AU CPS 234, (3) AI-incident sub-classification in escalation routing, (4) customer-notification language addressing third-party-AI-provider exposure distinct from adversary exfiltration.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2025-53773"
+    ],
+    "atlas_refs": [
+      "AML.T0054",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1071",
+      "T1530"
     ]
   },
   "PSD2-RTS-SCA": {

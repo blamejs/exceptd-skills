@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.12.25 — 2026-05-15
+
+**Data-refresh release: catalog freshness, Hard Rule #7 AI-discovery posture, ATLAS v5.4 + ATT&CK v19 standards bumps, Pwn2Own Berlin 2026 forward-watch, NGINX Rift, framework deltas (PCI 4.0.1 / HIPAA 2026 NPRM / EU AI Act ITS / DORA RTS).**
+
+### CVE catalog adds (20)
+
+Twenty CVE entries added with paired `data/exploit-availability.json` records, all marked `_draft: true` + `_auto_imported: true` for editorial review:
+
+- **NGINX Rift CVE-2026-42945** — heap buffer overflow in `ngx_http_rewrite_module` (18-year-old code), CVSS 9.2 v4, unauthenticated RCE, AI-discovered by depthfirst autonomous analysis platform. Disclosed 2026-05-13; patches in nginx 1.30.1 / 1.31.0 / Plus R32 P6 / R36 P4. Public PoC. Live-patch workaround: replace unnamed PCRE captures (`$1`-`$9`) with named captures in rewrite directives. KEV-watch entry queued.
+- **LiteLLM CVE-2026-30623** — Anthropic MCP SDK stdio command-injection (April 2026 advisory). Patches in LiteLLM proxy + downstream consumers.
+- **CVE-2026-20182 Cisco SD-WAN** — auth-bypass → admin (CISA KEV-listed 2026-05-14).
+- **CVE-2024-21626 Leaky Vessels (runc)** — `/proc/self/fd` container escape. KEV-listed.
+- **CVE-2024-3094 xz-utils / liblzma backdoor** — supply-chain trust-anchor compromise. KEV-listed.
+- **CVE-2024-3154 CRI-O kernel-module load** on container creation.
+- **CVE-2024-40635 containerd** — integer overflow → IP mask leak.
+- **CVE-2023-43472 MLflow** — path-traversal arbitrary file read.
+- **CVE-2020-10148 SolarWinds Orion / SUNBURST** — auth-bypass primary supply-chain compromise.
+- **CVE-2023-3519 Citrix NetScaler** — unauthenticated RCE. KEV-listed.
+- **CVE-2024-1709 ConnectWise ScreenConnect** — auth-bypass. KEV-listed.
+- **CVE-2025-12686 Synology BeeStation** — unauth RCE (Pwn2Own Ireland 2025).
+- **CVE-2025-62847 / CVE-2025-62848 / CVE-2025-62849 QNAP QTS/QuTS hero** — Pwn2Own Ireland 2025 chain (three separate entries, all patched).
+- **CVE-2025-59389 QNAP Hyper Data Protector** — critical RCE (Summoning Team / Sina Kheirkhah at Pwn2Own Ireland 2025).
+- **CVE-2025-11837 QNAP Malware Remover** — code-injection in a security tool (high theater-detection value: a security product is itself the attack surface).
+- **MAL-2026-TANSTACK-MINI Mini Shai-Hulud** — TeamPCP-attributed worm chain (TanStack + node-ipc + Mistral AI + UiPath + Guardrails AI, May 2026).
+- **MAL-2026-ANTHROPIC-MCP-STDIO** — STDIO command-injection class disclosed by Ox Security spanning 30+ MCP servers.
+- **CVE-2026-GTIG-AI-2FA placeholder** — Google GTIG first documented AI-built in-the-wild zero-day exploit (May 2026), semantic-logic 2FA bypass.
+
+### Hard Rule #7 — AI-discovery posture
+
+- **AI-discovery rate raised from 10% → 33%** by promoting `ai_discovered: true` on Copy Fail (CVE-2026-31431, already true), NGINX Rift, and the GTIG zero-day; tracks toward the 41% reference rate cited in AGENTS.md. Catalog entries with speculative AI attribution (Fragnesia, Dirty Frag pair) explicitly classified as `human_researcher` with `ai_discovery_notes` recording the rationale.
+- **`zeroday-lessons.json` schema additions** — `ai_discovered_zeroday` (bool), `ai_discovery_source` (enum: vendor_research / bug_bounty_ai_augmented / academic_ai_fuzzing / threat_actor_ai_built / human_researcher / unknown), `ai_discovery_date` (ISO), `ai_assist_factor` (low/moderate/high/very_high). All 10 existing entries backfilled with the new fields.
+- **`exploit-availability.json` `ai_assist_factor` ladder** backfilled across all entries with the same enum.
+- **`cve-catalog.json` schema tightened** — `ai_discovered` is boolean-only (was `["boolean", "string"]`; RWEP scoring treated truthy strings as positive, masking malformed entries). `ai_assisted_weaponization` is now required (paired with `ai_discovered`). New optional `ai_discovery_source` / `ai_discovery_date` / `ai_discovery_notes` fields.
+- **CVE-2025-53773 cross-file consistency** reconciled — `ai_assisted_weaponization: true` (cve-catalog) vs `ai_discovery_confirmed: false` + `ai_tool_enabled: true` (exploit-availability) is a real semantic distinction (development-time AI assistance vs discovery-time AI involvement vs tool-aided exploitation); both files now carry `ai_discovery_source: "unknown"` + a clarifying `ai_discovery_notes` block.
+- **GTIG canonical case** (first AI-built ITW zero-day, 2026-05-11) + **NGINX Rift AI-discovery anchor** added to seven AI-class skills (ai-attack-surface, ai-risk-management, zeroday-gap-learn, exploit-scoring, ai-c2-detection, mcp-agent-trust, rag-pipeline-security). The skills now reference the 41% AI-discovery rate explicitly per Hard Rule #7 vocabulary.
+- **CTID Secure AI v2 (2026-05-06)** references added to the same five AI-class skills.
+
+### Standards version bumps
+
+- **ATLAS v5.1.0 → v5.4.0** + CTID Secure AI v2 layer (May 2026). `data/atlas-ttps.json` entry count 15 → 29. Existing entries gain `secure_ai_v2_layer` + `maturity` fields per CTID's classification. New AI-attack techniques: AML.T0097-T0108 plus sub-techniques.
+- **MITRE ATT&CK v17 → v19.0**. `data/attack-techniques.json` entry count 79 → 91. Defense Evasion (TA0005) split into Stealth (TA0005, retained for non-impair techniques) + Defense Impairment (TA0112). `T1562.001`, `T1562.006`, `T1027` carry a `tactic_moved_from` annotation. Detection Strategies (DSxxxx — v18 first-class addition) populated on every technique cited by skills.
+- **AGENTS.md Hard Rule #12 + DR-7 + Pre-Ship Checklist** split into separate ATLAS-monthly and ATT&CK-semi-annual cadence pins (cycle 7 LLL recommendation; ATLAS now ships monthly per CTID, ATT&CK ships twice yearly).
+- **15 skills' `last_threat_review` dates bumped to 2026-05-15** where ATLAS / ATT&CK refs changed.
+
+### Framework deltas
+
+- **PCI DSS 4.0.1** (active 2025-03-31): four control-gap entries added (Req 6.4.3 payment-page scripts, Req 11.6.1 change/tamper detection, Req 12.3.3 cipher-suite inventory, Req 12.10.7 PAN-exposure escalation).
+- **HIPAA Security Rule 2026 NPRM** (HHS-OCR-0945-AA82): four entries covering proposed 164.308 / 164.310 / 164.312 / 164.314 amendments. Marked "Final rule pending Q3 2026" — citations refresh on next release.
+- **EU AI Act implementing standards**: four entries for Art. 53 GPAI provider obligations, Art. 55 systemic-risk, Annex IX conformity assessment, GPAI Code of Practice (signed Feb 2026; full application 2026-08-02).
+- **DORA RTS/ITS**: four entries for subcontracting RTS (EU 2025/420, active 2026-01-17), threat-led-pen-test ITS (active 2026-Q3), incident-classification thresholds RTS, and critical-third-party-provider oversight implementing acts.
+- **`data/global-frameworks.json`** `EU.frameworks.DORA` and `EU.frameworks.EU_AI_ACT` refreshed with 2026 implementing-measures blocks + expanded `framework_gaps` + `ai_coverage` + `theater_risk` fields.
+
+### RFC + ATLAS orphans
+
+- **7 RFC orphans added** to `data/rfc-references.json`: RFC 7644 (SCIM 2.0), RFC 8460 (SMTP-TLS-RPT), RFC 8617 (ARC), RFC 8705 (mTLS OAuth), RFC 9112 (HTTP/1.1 revised), RFC 9449 (DPoP), RFC 9622 (TAPS Architecture). Each cited by ≥1 shipped skill (Hard Rule #4 closure).
+- **1 ATLAS orphan**: AML.T0001 (Victim Research / Reconnaissance) — referenced by `defensive-countermeasure-mapping` skill but not in `data/atlas-ttps.json` pre-v0.12.25.
+
+### Pwn2Own Berlin 2026 forward-watch
+
+Fifteen forward-watch entries placed across nine skills' `forward_watch:` frontmatter arrays (no aggregate `data/forward-watch.json` exists; project tracks in skill frontmatter only):
+
+- **NGINX Rift CVE-2026-42945** — KEV-listing prediction window 14 days from disclosure (2026-05-27 estimated)
+- **LiteLLM** 3-bug chain (k3vg3n) + full SSRF + Code Injection (Out Of Bounds) — embargo ends 2026-08-12
+- **LM Studio** 5-bug chain (STARLabs SG)
+- **OpenAI Codex** CWE-150 improper neutralization (Compass Security)
+- **Chroma vector DB** CWE-190 + CWE-362 chain
+- **NVIDIA Megatron Bridge** ×2 (overly-permissive allowed list + path traversal)
+- **NV Container Toolkit** container escape ($50K, chompie/IBM X-Force XOR)
+- **Windows 11 LPE ×3** (DEVCORE Improper Access Control, Marcin Wiązowski heap overflow, Kentaro Kawane GMO double Use-After-Free)
+- **RHEL race-condition LPE** (chompie/IBM X-Force XOR)
+- **Claude Code MCP collision** (Viettel Cyber Security — scored as collision, indicating a public MCP-class CVE is in flight)
+- **Microsoft Edge** 4-bug sandbox escape (Orange Tsai/DEVCORE) — out-of-current-playbook scope, tracked for completeness
+
+### Catalog scoring
+
+- **RWEP scoring divergence on 10 new entries reconciled** with `scoreCustom()` formula. Pre-correction the stored scores diverged by 10-38 points from the formula (most extreme: NGINX Rift stored 78, formula 40 — patch + live-patch availability + zero observed exploitation walks the score down despite the AI-discovery bonus). All entries now within ±5 of formula.
+
+### Deferred to v0.12.26
+
+- **`sector-telecom` skill** — drafted (370 LOC, Salt Typhoon / Volt Typhoon / 5G core / lawful-intercept abuse / signaling-protocol attacks / OEM supply chain) but the body lint surfaced 13 issues (3 missing required sections, atlas_refs and framework_gaps referencing entries not yet in catalog, placeholder language). Folding into v0.12.26 with the proper catalog scaffolding rather than rushing a half-complete skill.
+
+Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
+
 ## 0.12.24 — 2026-05-15
 
 **Patch: security defenses, exit-code centralisation, bundle correctness, air-gap honesty, cache integrity, error-message UX, test-infra hardening, doc reconciliation.**

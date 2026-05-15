@@ -131,6 +131,7 @@
   "SG": {
     "skills": [
       "age-gates-child-safety",
+      "ai-attack-surface",
       "api-security",
       "cloud-security",
       "container-runtime-security",
@@ -140,6 +141,7 @@
       "global-grc",
       "identity-assurance",
       "incident-response-playbook",
+      "mcp-agent-trust",
       "mlops-security",
       "researcher",
       "sector-federal-government",
@@ -149,7 +151,7 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 17
+    "skill_count": 19
   },
   "JP": {
     "skills": [

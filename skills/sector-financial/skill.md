@@ -73,7 +73,7 @@ forward_watch:
   - BCB Resolução BCB 85 (cyber policy for FIs) and Brazil PIX fraud-typology updates
   - OSFI B-13 (Technology and Cyber Risk Management) post-2024 examination findings
   - TIBER-EU framework v2.0 alignment with DORA TLPT RTS (JC 2024/40); cross-recognition with CBEST and iCAST
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-15"
 ---
 
 # Sector — Financial Services Cybersecurity (mid-2026)

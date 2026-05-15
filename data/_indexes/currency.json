@@ -28,7 +28,7 @@
       "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 8,
       "action_required": false
     },
     {
@@ -55,7 +55,7 @@
       "days_since_review": -10,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 3,
       "action_required": false
     },
     {
@@ -64,7 +64,7 @@
       "days_since_review": -10,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 4,
+      "forward_watch_count": 5,
       "action_required": false
     },
     {
@@ -91,7 +91,7 @@
       "days_since_review": -10,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 1,
       "action_required": false
     },
     {
@@ -190,7 +190,7 @@
       "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 4,
       "action_required": false
     },
     {
@@ -199,7 +199,7 @@
       "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 4,
       "action_required": false
     },
     {
@@ -244,7 +244,7 @@
       "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 1,
       "action_required": false
     },
     {
@@ -316,7 +316,7 @@
       "days_since_review": -10,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 6,
+      "forward_watch_count": 8,
       "action_required": false
     },
     {
@@ -343,7 +343,7 @@
       "days_since_review": -10,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 1,
       "action_required": false
     },
     {

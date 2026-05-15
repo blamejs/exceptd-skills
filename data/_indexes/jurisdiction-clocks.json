@@ -38,9 +38,9 @@
             "trigger": "Major ICT-related incident (RTO/RPO breach, high financial impact, reputational damage)",
             "stages": null,
             "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554",
-            "authority": "ESAs (EBA, EIOPA, ESMA)"
+            "authority": "ESAs (EBA, EIOPA, ESMA) + Lead Overseers (CTPP regime from H2 2026)"
           },
-          "authority": "ESAs (EBA, EIOPA, ESMA)"
+          "authority": "ESAs (EBA, EIOPA, ESMA) + Lead Overseers (CTPP regime from H2 2026)"
         },
         "EU_CRA": {
           "breach_notification": {

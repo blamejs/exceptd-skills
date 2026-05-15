@@ -23,7 +23,7 @@ forward_watch:
   - New ATLAS TTP additions in each ATLAS release
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
-last_threat_review: "2026-05-14"
+last_threat_review: "2026-05-15"
 ---
 
 # Zero-Day Learning Loop
@@ -44,7 +44,7 @@ The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally e
 
 The zero-day learning cycle has compressed. The frameworks have not.
 
-- **41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering** (AGENTS.md DR-5). Copy Fail (CVE-2026-31431) was AI-found in approximately one hour. The historical learning rhythm — researcher disclosure → industry analysis → framework update cycle measured in quarters or years — is incompatible with AI-discovery cadence measured in weeks.
+- **41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering** (AGENTS.md DR-5 / GTIG 2025). Copy Fail (CVE-2026-31431) was AI-found in approximately one hour; Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical 2026 anchor case — Zellic's agentic code-auditing tool surfaced an 18-year-old Linux kernel page-cache primitive in load-bearing OSS. The first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case). The exceptd catalog's 2026 AI-discovery rate now stands at 40% (4/10), tracking the GTIG reference. The historical learning rhythm — researcher disclosure → industry analysis → framework update cycle measured in quarters or years — is incompatible with AI-discovery cadence measured in weeks. CTID Secure AI v2 (2026-05-06) replaces v1 as the alignment target for the learning-loop outputs.
 - **The compounding consequence**: when a zero-day is announced, the relevant question is no longer "when will the patch ship?" but "what control, if it had existed, would have stopped this, and how do we add that control to the next thousand systems before the AI-generated variant lands?" Without a running learning loop, every novel TTP becomes a one-off incident response rather than a control-system improvement.
 - **AI-acceleration also compresses variant generation.** A single disclosed primitive (Copy Fail's deterministic page-cache CoW; SesameOp's AI-API C2 channel) can be re-applied by AI tooling to adjacent code paths within days. Frameworks that only respond to specific CVE-IDs miss the class-level lesson entirely.
 - **Compliance frameworks do not include zero-day learning as a required control category.** The "learn from incidents" language in NIST CSF 2.0 IMPROVE and ISO 27001:2022 A.5.7 is process-only, no required artifact. An org can be fully compliant while patching every CVE and learning nothing.

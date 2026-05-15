@@ -9,7 +9,7 @@
       "path": "data/atlas-ttps.json",
       "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.1.0 (November 2025).",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-13",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -18,29 +18,29 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 15,
+      "entry_count": 29,
       "sample_keys": [
+        "AML.T0001",
         "AML.T0010",
         "AML.T0016",
         "AML.T0017",
-        "AML.T0018",
-        "AML.T0020"
+        "AML.T0018"
       ]
     },
     "attack-techniques.json": {
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-13",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
         "default_review_cadence_days": 90,
         "stale_after_days": 180,
         "rebuild_after_days": 365,
-        "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md hard rule #8 requires the bump to be intentional, not silent."
+        "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
       },
-      "entry_count": 79,
+      "entry_count": 91,
       "sample_keys": [
         "T0001",
         "T0017",
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 10,
+      "entry_count": 30,
       "sample_keys": [
         "CVE-2025-53773",
         "CVE-2026-30615",
@@ -140,8 +140,8 @@
     "exploit-availability.json": {
       "path": "data/exploit-availability.json",
       "purpose": "Per-CVE exploit availability: PoC public status, weaponization signal, AI-assist status, blast-radius. Project-curated (B2 Admiralty confidence) with source citations.",
-      "schema_version": "1.0.0",
-      "last_updated": "2026-05-01",
+      "schema_version": "1.1.0",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -150,7 +150,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 10,
+      "entry_count": 30,
       "sample_keys": [
         "CVE-2025-53773",
         "CVE-2026-30615",
@@ -163,7 +163,7 @@
       "path": "data/framework-control-gaps.json",
       "purpose": "Per-control framework gap declarations: SI-2, A.8.8, PCI 6.3.3, etc. Each entry names the control, the lag, the evidence CVE, and remediation guidance.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-01",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -172,7 +172,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 62,
+      "entry_count": 78,
       "sample_keys": [
         "ALL-AI-PIPELINE-INTEGRITY",
         "ALL-MCP-TOOL-TRUST",
@@ -185,7 +185,7 @@
       "path": "data/global-frameworks.json",
       "purpose": "Multi-jurisdiction framework registry: 34 jurisdictions × applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps. Cross-cutting authority for jurisdiction-clocks index.",
       "schema_version": "1.3.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -207,7 +207,7 @@
       "path": "data/rfc-references.json",
       "purpose": "IETF RFCs + active Internet-Drafts cited by skills (TLS, IPsec, PQ crypto migration, HTTP/3, CT). Cross-validated against IETF Datatracker via validate-rfcs.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 31,
+      "entry_count": 38,
       "sample_keys": [
         "RFC-4301",
         "RFC-4303",
@@ -228,8 +228,8 @@
     "zeroday-lessons.json": {
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
-      "schema_version": "1.0.0",
-      "last_updated": "2026-05-13",
+      "schema_version": "1.1.0",
+      "last_updated": "2026-05-15",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 10,
+      "entry_count": 15,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

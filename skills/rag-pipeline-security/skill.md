@@ -37,14 +37,16 @@ d3fend_refs:
   - D3-FAPA
   - D3-IOPR
   - D3-NTA
-last_threat_review: "2026-05-13"
+forward_watch:
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity (integer overflow + race condition); track patch and downstream RAG pipeline advisory
+last_threat_review: "2026-05-15"
 ---
 
 # RAG Pipeline Security Assessment
 
 ## Threat Context (mid-2026)
 
-Retrieval-Augmented Generation (RAG) pipelines introduce a unique attack surface that exists at the intersection of traditional data security and AI-specific vulnerabilities. No current compliance framework has adequate controls for this attack surface. The threats in this skill are not theoretical — they have been demonstrated in research and observed in production incidents.
+Retrieval-Augmented Generation (RAG) pipelines introduce a unique attack surface that exists at the intersection of traditional data security and AI-specific vulnerabilities. No current compliance framework has adequate controls for this attack surface. The threats in this skill are not theoretical — they have been demonstrated in research and observed in production incidents. Operational context: 41% of 2025 zero-days were AI-discovered (GTIG 2025); the first AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass), and Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical AI-driven autonomous-discovery anchor (Zellic agentic auditor, 18-year-old Linux kernel primitive). RAG corpus trust posture should align to CTID Secure AI v2 (2026-05-06, replaces v1) — embedding-store integrity is in-scope.
 
 A RAG pipeline has five attack surfaces:
 

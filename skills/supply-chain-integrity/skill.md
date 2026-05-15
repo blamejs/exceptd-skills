@@ -54,6 +54,8 @@ forward_watch:
   - SPDX 3.1 — AI profile maturation, dataset provenance schema stabilization
   - EU CRA (Regulation 2024/2847) — implementing acts for technical documentation and SBOM submission expected through 2027
   - OpenSSF model-signing — emerging Sigstore-based signing standard for ML model weights; track for production adoption
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM-attestation impact
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM-attestation impact
 cwe_refs:
   - CWE-1357
   - CWE-1395
@@ -64,7 +66,7 @@ d3fend_refs:
   - D3-CBAN
   - D3-EAL
   - D3-EHB
-last_threat_review: "2026-05-13"
+last_threat_review: "2026-05-15"
 ---
 
 # Supply-Chain Integrity Assessment
