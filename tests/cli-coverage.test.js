@@ -586,7 +586,7 @@ test('run --force-stale overrides the threat_currency_score < 50 hard block', ()
       'currency<50 without --force-stale must produce ok:false');
     assert.match(blockedData.blocked_by || blockedData.reason || '', /currency|threat_currency_score/,
       'block reason must mention currency / threat_currency_score');
-    assert.notEqual(rBlocked.status, 0, 'currency block must exit non-zero');
+    assert.equal(rBlocked.status, 1, 'currency block must exit 1 (precondition refusal via emit ok:false → auto-map)');
 
     // With --force-stale: the run completes.
     const rForced = cli(['run', 'library-author', '--evidence', '-', '--force-stale',

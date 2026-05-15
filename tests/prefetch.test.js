@@ -83,7 +83,7 @@ test('prefetch refuses unknown --source values', () => {
     [path.join(ROOT, 'lib', 'prefetch.js'), '--no-network', '--source', 'made-up'],
     { encoding: 'utf8' }
   );
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 2, 'unknown --source must exit 2 (flag-validation rejection in prefetch parseArgs)');
   assert.match(r.stderr || '', /unknown source/);
 });
 

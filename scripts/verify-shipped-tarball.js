@@ -300,6 +300,15 @@ try {
     const liveFpLine = `SHA256:${pubFp}`;
     if (firstLine !== liveFpLine) {
       if (process.env.KEYS_ROTATED === "1") {
+        // Surface the override through the structured warning channel as
+        // well so any caller listening on `process.on('warning')` can
+        // observe the key-rotation acceptance. Matches the three peer
+        // sites (bin/exceptd.js, lib/refresh-network.js, lib/verify.js).
+        process.emitWarning(
+          `extracted public.pem fingerprint ${liveFpLine} differs from pin ${firstLine}; KEYS_ROTATED=1 accepted. ` +
+          `Update keys/EXPECTED_FINGERPRINT to lock the new pin.`,
+          { code: "EXCEPTD_KEYS_ROTATED_OVERRIDE" }
+        );
         emit(`WARN: extracted public.pem fingerprint ${liveFpLine} differs from pin ${firstLine}; KEYS_ROTATED=1 accepted`);
       } else {
         fail(

@@ -39,7 +39,7 @@ function loadRunner() {
 
 // ---------------------------------------------------------------------------
 // Test harness: build a CSAF bundle against a synthesized matched_cves entry.
-// Mirrors closeWithSyntheticMatchedId() from audit-cc-csaf-fixes.test.js so
+// Mirrors closeWithSyntheticMatchedId() from csaf-bundle-correctness.test.js so
 // the two suites exercise the same code path.
 // ---------------------------------------------------------------------------
 
@@ -169,7 +169,7 @@ describe('audit MM P1-C — cvss_v3 block dropped for 2.0 / 4.0 vectors', () => 
     assert.equal(hasCvssV3, false,
       'CVSS:4.0 vector must not produce a cvss_v3 block (CSAF 2.0 enum allows only 3.0 / 3.1)');
     // runtime_error must surface so operators see the gap.
-    const unsupported = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cvss_v3_version_unsupported');
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
     assert.equal(unsupported.length, 1,
       `bundle_cvss_v3_version_unsupported must surface exactly once; got ${unsupported.length}`);
     assert.match(String(unsupported[0].reason || ''), /4\.0/,
@@ -189,7 +189,7 @@ describe('audit MM P1-C — cvss_v3 block dropped for 2.0 / 4.0 vectors', () => 
     const hasCvssV3 = Array.isArray(vuln.scores) && vuln.scores.some(s => s && s.cvss_v3);
     assert.equal(hasCvssV3, false,
       'CVSS:2.0 vector must not produce a cvss_v3 block');
-    const unsupported = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cvss_v3_version_unsupported');
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
     assert.equal(unsupported.length, 1);
   });
 
@@ -209,7 +209,7 @@ describe('audit MM P1-C — cvss_v3 block dropped for 2.0 / 4.0 vectors', () => 
     assert.equal(cvssV3.version, '3.1');
     assert.equal(cvssV3.baseScore, 9.3);
     // No runtime_error should fire for the supported version.
-    const unsupported = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cvss_v3_version_unsupported');
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
     assert.deepEqual(unsupported, []);
   });
 

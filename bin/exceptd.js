@@ -58,6 +58,15 @@ const { spawnSync } = require("child_process");
 // (e.g. <somewhere>/node_modules/@blamejs/exceptd-skills).
 const PKG_ROOT = path.resolve(__dirname, "..");
 
+// Centralised exit-code constants + id validators + flag-typo suggester.
+// Replacing the prior bare-numbers + inline-regex pattern with named
+// constants so a new verb cannot regress the exit-code contract by typo,
+// and so the help-text dump (`doctor --exit-codes`) and the runtime
+// behavior share the same source of truth.
+const { EXIT_CODES, listExitCodes } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
+const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
+const { suggestFlag, flagsFor } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+
 /**
  * Factor the EXPECTED_FINGERPRINT pin check used by
  * the attestation pipeline. Centralizes the policy (compute live SHA-256
@@ -277,9 +286,9 @@ v0.12.0 canonical surface
 
   ci                         One-shot CI gate. Exit codes: 0 PASS, 1 framework error,
                              2 detected/escalate, 3 ran-but-no-evidence,
-                             4 blocked (ok:false), 5 jurisdiction clock started,
-                             6 TAMPERED (sidecar verification failed),
-                             8 LOCK_CONTENTION (concurrent playbook lock held).
+                             4 blocked (ok:false), 5 jurisdiction clock started.
+                             (Codes 6/7/8/9 surface on attest verify / run /
+                             ai-run / ingest, not ci.)
                              --all | --scope <type> | (auto-detect)
                              --max-rwep <n>         cap below playbook default
                              --block-on-jurisdiction-clock
@@ -354,6 +363,8 @@ Examples:
   exceptd attest verify <session-id>                # tamper check
   exceptd ci --scope code --max-rwep 70             # gate every code playbook
   exceptd ask "I think someone replaced npm packages"   # natural-language route
+
+Unknown verbs exit 2 with a structured ok:false body on stderr.
 
 Full documentation: ${PKG_ROOT}/README.md
 Project rules:      ${PKG_ROOT}/AGENTS.md
@@ -873,6 +884,10 @@ function detectVexShape(doc) {
 }
 
 function firstDirectiveId(runner, playbookId) {
+  // Defense-in-depth: callers that touch this helper directly (test
+  // harnesses, library consumers) still get path-traversal refusal.
+  const r = validateIdComponent(playbookId, "playbook");
+  if (!r.ok) throw new Error(`invalid playbook id (${r.reason}): ${typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId}`);
   const pb = runner.loadPlaybook(playbookId);
   if (!pb.directives || !pb.directives.length) {
     throw new Error(`Playbook ${playbookId} has no directives.`);
@@ -898,7 +913,9 @@ function dispatchPlaybook(cmd, argv) {
             // gate alongside --signatures. doctor --registry-check + --signatures
             // were already accepted; explicit registration removes the silent
             // "unknown bool flag" surface in parseArgs.
-            "shipped-tarball", "registry-check", "signatures", "currency", "cves", "rfcs"],
+            "shipped-tarball", "registry-check", "signatures", "currency", "cves", "rfcs",
+            // doctor --exit-codes dumps the canonical exit-code table.
+            "exit-codes"],
     multi: ["playbook", "format"],
   });
   // v0.11.2 bug #60: flip defaults to human-readable. JSON via explicit --json
@@ -915,31 +932,112 @@ function dispatchPlaybook(cmd, argv) {
   // Hoist into module-level state so emit() can read it without plumbing.
   global.__exceptdWantJson = args._jsonMode;
   const pretty = !!args.pretty;
-  const runOpts = {
-    airGap: !!args["air-gap"],
-    forceStale: !!args["force-stale"],
-  };
-  if (args["session-id"]) {
-    // v0.12.12: --session-id is a filesystem path component (resolves to
-    // .exceptd/attestations/<id>/attestation.json). Operator-supplied input
-    // with `..` or path separators escapes the attestation root. Validate
-    // strict allowlist before propagating.
-    const sid = args["session-id"];
-    if (typeof sid !== "string" || !/^[A-Za-z0-9._-]{1,64}$/.test(sid)) {
+
+  // Flag-typo defense: anything supplied by the operator that isn't on the
+  // verb's allowlist gets a Levenshtein suggestion + immediate refusal.
+  // Pre-fix, `exceptd run --evidnce ev.json` silently absorbed --evidnce as
+  // a boolean flag and produced a cryptic downstream error when the runner
+  // got no evidence. Now: refuse at the dispatcher with the suggested
+  // correct flag so operators see the typo before any side effects run.
+  //
+  // Ignore parser-internal scratch keys (`_jsonMode`, leading-underscore) +
+  // the bare-positional bucket (`_`). REQUIRES_VALUE catches the
+  // value-bearing flags that parsed as boolean true (i.e. the operator
+  // forgot the value).
+  // Value-bearing flags only. Boolean flags (--ack, --latest, --force-replay,
+  // --force-stale, --ci, --pretty, etc.) are intentionally absent because
+  // their `true` parse is the canonical operator intent.
+  const REQUIRES_VALUE = new Set([
+    "evidence", "evidence-dir", "session-id", "operator", "csaf-status",
+    "publisher-namespace", "mode", "scope", "playbook", "phase", "tlp",
+    "against", "since", "bundle-epoch", "attestation-root", "format",
+  ]);
+  const verbAllowlist = flagsFor(cmd);
+  const allowlistSet = new Set(verbAllowlist);
+  // Internal-passthrough flags used by the parser / dispatcher that aren't
+  // in the operator-facing allowlist but must not trigger the typo check.
+  // The allowlist in lib/flag-suggest.js is operator-facing-only — these
+  // are the legacy/internal escape hatches that still need to flow
+  // through without a refusal.
+  const PASSTHROUGH_FLAGS = new Set([
+    "directive", "domain", "phase", "signal-list", "explain",
+    "signatures", "currency", "cves", "rfcs", "shipped-tarball",
+    "human", "json-stdout-only", "max-rwep", "diff-from-latest",
+    "upstream-check", "latest", "force-replay", "flat", "directives",
+    "fix", "session-key", "all", "scope", "playbook",
+  ]);
+  for (const key of Object.keys(args)) {
+    if (key === "_" || key.startsWith("_")) continue;
+    // Per-verb help is universal even when not in the allowlist.
+    if (key === "help" || key === "h") continue;
+    if (PASSTHROUGH_FLAGS.has(key)) {
+      if (REQUIRES_VALUE.has(key) && args[key] === true) {
+        return emitError(
+          `${cmd}: --${key} requires a value.`,
+          { verb: cmd, flag: key },
+          pretty
+        );
+      }
+      continue;
+    }
+    if (allowlistSet.has(key)) {
+      if (REQUIRES_VALUE.has(key) && args[key] === true) {
+        return emitError(
+          `${cmd}: --${key} requires a value.`,
+          { verb: cmd, flag: key },
+          pretty
+        );
+      }
+      continue;
+    }
+    // Refuse only when a close suggestion exists (likely typo). Unknown
+    // flags with no near-match fall through to verb-level handling so a
+    // future addition doesn't require an allowlist edit in this file
+    // before it can ship. The PASSTHROUGH_FLAGS list above plus the
+    // per-verb allowlist in lib/flag-suggest.js together cover every
+    // shipped flag; anything that misses both AND has a typo suggestion
+    // is the case operators benefit from refusing.
+    const suggestion = suggestFlag(key, verbAllowlist);
+    if (suggestion) {
       return emitError(
-        "run: --session-id must match /^[A-Za-z0-9._-]{1,64}$/ (alphanumeric, dot, underscore, hyphen; up to 64 chars). Path separators and '..' are rejected.",
-        { provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
+        `unknown flag --${key}`,
+        { verb: cmd, suggested: suggestion },
         pretty
       );
     }
-    // The character-class regex accepts any all-dots string (`.`, `..`,
-    // `...`); each resolves into or above the attestation root. Refuse
-    // them explicitly so the attestation is never written outside the
-    // intended directory.
-    if (/^\.+$/.test(sid)) {
+  }
+  const runOpts = {
+    // Air-gap can be requested via the explicit flag OR the
+    // EXCEPTD_AIR_GAP=1 environment variable. The env-var path is for
+    // operators who export it once at shell-init time so every subsequent
+    // invocation inherits the disposition without remembering the flag.
+    airGap: !!args["air-gap"] || process.env.EXCEPTD_AIR_GAP === "1",
+    forceStale: !!args["force-stale"],
+  };
+  // Air-gap advisory (one-time per process). Routed to stderr so JSON
+  // consumers on stdout don't see it. The exceptd CLI does not perform
+  // network egress in air-gap mode, but a host AI driving exceptd may
+  // still call its model API — surface the boundary so operators verify
+  // their agent runtime is offline too.
+  if (runOpts.airGap && !process.env.EXCEPTD_AIR_GAP_NOTICE_SHOWN) {
+    process.stderr.write(
+      `[exceptd] air-gap: exceptd will not perform network egress. Your AI agent may still call its model API; verify your agent runtime is also offline.\n`
+    );
+    process.env.EXCEPTD_AIR_GAP_NOTICE_SHOWN = "1";
+  }
+  if (args["session-id"]) {
+    // --session-id is a filesystem path component (resolves to
+    // .exceptd/attestations/<id>/attestation.json). Operator-supplied input
+    // with `..` or path separators escapes the attestation root. Route
+    // through the shared validateIdComponent('session') helper so the regex
+    // + all-dots refusal stay aligned with persistAttestation /
+    // validateSessionIdForRead.
+    const sid = args["session-id"];
+    const r = validateIdComponent(sid, "session");
+    if (!r.ok) {
       return emitError(
-        "run: --session-id cannot consist entirely of dots (rejected: '.', '..', etc.).",
-        { provided: sid },
+        `run: --session-id ${r.reason}. Path separators and '..' are rejected.`,
+        { provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
         pretty
       );
     }
@@ -954,9 +1052,24 @@ function dispatchPlaybook(cmd, argv) {
     if (typeof ar !== "string" || ar.length === 0) {
       return emitError("run: --attestation-root must be a non-empty string.", { provided: typeof ar }, pretty);
     }
-    if (ar.split(/[\\/]/).some(seg => seg === "..")) {
+    const arSegments = ar.split(/[\\/]/);
+    if (arSegments.some(seg => seg === "..")) {
       return emitError(
         "run: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.",
+        { provided: ar.slice(0, 200) },
+        pretty
+      );
+    }
+    // All-dots segments (`.`, `..`, `...`, etc.) all resolve into or above
+    // the intended parent directory, defeating the attestation-root
+    // confinement check. Refuse any non-empty segment that is entirely dots
+    // — the leading-`.` empty segment of an absolute POSIX path is allowed,
+    // and a single `.` mid-path means "this dir" but is collapsed by
+    // path.resolve anyway; explicit refusal is cheaper than reasoning about
+    // every collapsed-equivalent shape.
+    if (arSegments.some(seg => seg.length > 0 && /^\.+$/.test(seg))) {
+      return emitError(
+        "run: --attestation-root path segment cannot consist entirely of dots (rejected: '.', '..', '...', etc.). Pass an absolute path or a project-relative path without traversal.",
         { provided: ar.slice(0, 200) },
         pretty
       );
@@ -1221,7 +1334,15 @@ function dispatchPlaybook(cmd, argv) {
         return emitError(`Playbook not found: "${wanted}". ${hint}`, { verb: cmd, wanted, type: "playbook_not_found" }, pretty);
       }
     }
-    emitError(e.message, { verb: cmd }, pretty);
+    // Wrap bare e.message so operators see the verb that triggered the
+    // failure + the next action they can take. Re-running with --pretty
+    // expands the cause for log-scraping; the GitHub-issues pointer lets
+    // operators report reproducible-but-unhandled exceptions.
+    emitError(
+      `${cmd}: internal error (${e && e.message ? e.message : String(e)}). Re-run with --pretty for context; file at https://github.com/blamejs/exceptd-skills/issues if reproducible.`,
+      { verb: cmd },
+      pretty
+    );
   }
 }
 
@@ -1428,19 +1549,38 @@ Exit codes (per-verb, post-run):
   3  Ran-but-no-evidence   All inconclusive AND no --evidence supplied.
   4  Blocked               Result returned ok:false (preflight halt).
   5  CLOCK_STARTED         --block-on-jurisdiction-clock fired.
+  6  TAMPERED              Surfaced by attest verify; sidecar verification failed.
+  7  SESSION_ID_COLLISION  run --session-id duplicate without --force-overwrite.
   8  LOCK_CONTENTION       persistAttestation could not acquire the per-slot
                            attestation lock after the bounded retry budget
                            (~1-2s). Distinct from 1 so callers can retry the
                            operation rather than treat it as a hard failure.
                            Surfaces as body.lock_contention=true,
                            body.exit_code=8.
-  6-7 — reserved (6=TAMPERED on attest verifier; 7 unused)`,
+  9  STORAGE_EXHAUSTED     Attestation write hit ENOSPC / EDQUOT / EROFS.
+
+Other operator-facing flags (full list in source; surfaced here for grep):
+  --vex <file>            CycloneDX / OpenVEX disposition filter.
+  --evidence-dir <dir>    Per-playbook submission files.
+  --attestation-root <p>  Override .exceptd/ root for this run.
+  --mode <m>              Investigation mode (self_service | authorized_pentest
+                          | ir_response | ctf | research | compliance_audit).`,
     ingest: `ingest — alias for 'run' matching AGENTS.md terminology.
 
 Flags:
   --domain <id>           Playbook ID (overrides submission.playbook_id).
   --directive <id>        Directive ID (overrides submission.directive_id).
   --evidence <file|->     Submission JSON. May include playbook_id/directive_id.
+  --session-id <id>       Reuse a specific session id (must satisfy
+                          /^[A-Za-z0-9._-]{1,64}$/).
+  --force-overwrite       Override session-id collision refusal.
+  --operator <name>       Bind attestation to a specific identity.
+  --ack                   Explicit operator consent for jurisdiction clock.
+  --attestation-root <p>  Override .exceptd/ root for this ingest.
+  --mode <m>              Investigation mode (self_service | authorized_pentest
+                          | ir_response | ctf | research | compliance_audit).
+  --air-gap               Honor air_gap_alternative paths.
+  --force-stale           Override threat_currency_score<50 gate.
   --csaf-status <s>       CSAF tracking.status for the close.evidence_package
                           bundle. One of: draft | interim (default) | final.
                           'final' commits to CSAF §3.1.11.3.5.1 immutability —
@@ -1449,7 +1589,10 @@ Flags:
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
-  --pretty                Indented JSON output.`,
+  --pretty                Indented JSON output.
+
+Exit codes: 0 PASS, 1 framework, 4 blocked, 7 SESSION_ID_COLLISION,
+8 LOCK_CONTENTION, 9 STORAGE_EXHAUSTED.`,
     reattest: `reattest [<session-id> | --latest] — replay a prior session and diff the evidence_hash.
 
 Args / flags:
@@ -1475,20 +1618,26 @@ Lists every attestation under .exceptd/attestations/<session_id>/, sorted
 newest-first, with truncated evidence_hash + capture timestamp + file path.`,
     attest: `attest <subverb> <session-id> — auditor-facing attestation operations.
 
-Subverbs:
+Subverbs (list | show | export | verify | diff):
   attest show <sid>       Emit the full (unredacted) attestation.
   attest list             Inventory every prior attestation under
                           ~/.exceptd/attestations/ (or EXCEPTD_HOME when set).
-                          Filter with --playbook <id> or --since <ISO>. Newest
-                          first; truncated evidence_hash + capture timestamp +
-                          path per entry.
+                          Filter with --playbook <id> or --since <ISO> (must
+                          be a parseable ISO-8601 timestamp). Newest first;
+                          truncated evidence_hash + capture timestamp + path
+                          per entry.
   attest export <sid>     Emit redacted JSON suitable for audit submission.
                           Strips raw artifact values; preserves evidence_hash,
                           signature, classification, RWEP, remediation choice.
-                          --format <csaf|sarif|openvex> wraps the export in the
-                          named envelope (default: redacted JSON).
+                          --format <csaf|csaf-2.0|json> wraps the export
+                          (default: redacted JSON; csaf yields a CSAF 2.0
+                          envelope).
   attest verify <sid>     Verify .sig sidecar against keys/public.pem.
-                          Reports tamper status per attestation file.
+                          Reports tamper status per attestation file. Replay
+                          records (kind=replay) verify under replay_results;
+                          a replay-record tamper raises body.replay_tamper +
+                          warnings[] but does NOT exit non-zero (the audit
+                          trail can be regenerated via reattest).
   attest diff <sid>       Diff <sid> against the most-recent prior attestation
                           for the same playbook, or against --against <other-sid>
                           for an explicit pair. Reports unchanged | drifted |
@@ -1499,7 +1648,8 @@ All subverbs honor --pretty for indented JSON output.
 Exit codes (attest verify):
   0  verification succeeded
   1  generic failure
-  6  TAMPERED (sidecar or signature mismatch)`,
+  6  TAMPERED (sidecar or signature mismatch on an attestation; replay-record
+              tamper warns but exits 0)`,
     discover: `discover — context-aware playbook recommender (v0.11.0).
 
 Replaces: scan + dispatch + recommend.
@@ -1514,7 +1664,11 @@ Flags:
   --json                  Emit JSON (default is human-readable text).
   --pretty                Indented JSON output (implies --json).
 
-Output: context + recommended_playbooks[] + next_steps[].`,
+Output: context + recommended_playbooks[] + next_steps[].
+
+discover always exits 0 (recommendations are informational; absence of a
+match is not a failure). JSON output is the canonical surface — humans see
+a digest by default; pass --json for the structured shape.`,
     doctor: `doctor — one-shot health check (v0.11.0).
 
 Replaces: currency + verify + validate-cves + validate-rfcs + signing-status.
@@ -1562,7 +1716,20 @@ Flags:
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           operator's organisation URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
+  --evidence <file|->     Single-shot mode: pre-supplied submission JSON.
+  --operator <name>       Bind the attestation to a specific identity.
+  --ack                   Mark explicit operator consent (jurisdiction clock).
+  --force-overwrite       Override session-id collision refusal.
+  --session-id <id>       Reuse a specific session id (must satisfy
+                          /^[A-Za-z0-9._-]{1,64}$/).
   --pretty                Indented JSON output (single-shot only).
+
+Exit codes:
+  0  done                  Run completed; emitted {"event":"done","ok":true}.
+  1  framework error       Engine threw or stdin parse failure.
+  3  SESSION_ID_COLLISION  --session-id duplicate; pass --force-overwrite or fresh id.
+  8  LOCK_CONTENTION       Concurrent persistAttestation lock held.
+  9  STORAGE_EXHAUSTED     Disk/quota/RO filesystem on attestation write.
 
 Stdin event grammar (one JSON object per line):
   {"event":"evidence","payload":{"observations":{},"verdict":{}}}
@@ -1597,7 +1764,9 @@ Args / flags:
 
 Output: { verb, question, routed_to:[ids], confidence, next_step,
 full_match_list }. Empty match list when no token overlap — surfaces a
-hint pointing at \`exceptd brief --all\` / \`exceptd discover\`.`,
+hint pointing at \`exceptd brief --all\` / \`exceptd discover\`.
+
+ask always exits 0. JSON via --json (default is a one-line digest on TTY).`,
     ci: `ci [--all|--scope <type>] — one-shot CI gate (v0.11.0).
 
 Top-level CI verb. Equivalent to \`run --all --ci\` but with a clean
@@ -1642,13 +1811,9 @@ Exit codes:
                            close.notification_actions entry started a
                            regulatory clock (NIS2 24h, GDPR 72h, DORA 4h,
                            etc.) and the operator has not acked.
-  6  TAMPERED              Attestation sidecar verification failed (Ed25519
-                           signature mismatch on a prior session referenced
-                           by the run, or the replay record's sidecar did
-                           not verify against keys/public.pem).
-  8  LOCK_CONTENTION       Concurrent run holds the per-playbook attestation
-                           lock; the bounded retry budget (~1-2s) elapsed
-                           without acquiring it. Retry the operation.
+
+(ci does not persist attestations per-run; exit codes 6/7/8/9 surface on
+\`attest verify\` and on \`run\` / \`ai-run\` / \`ingest\`, not on \`ci\`.)
 
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
@@ -1740,9 +1905,22 @@ function cmdLint(runner, args, runOpts, pretty) {
   if (!playbookId || !evidencePath) {
     return emitError("lint: usage: exceptd lint <playbook> <evidence-file|->", null, pretty);
   }
+  if (refuseInvalidPlaybookId("lint", playbookId, pretty)) return;
   let pb;
   try { pb = runner.loadPlaybook(playbookId); }
-  catch (e) { return emitError(`lint: ${e.message}`, { playbook: playbookId }, pretty); }
+  catch (e) {
+    // Route the not-found / load-error case through the skill-to-playbook
+    // hint helper so an operator who typed a skill id (kernel-lpe-triage)
+    // gets the same actionable pointer dispatchPlaybook surfaces for cmdRun.
+    const m = e && e.message && e.message.match(/^Playbook not found: ([^\s(]+)/);
+    if (m) {
+      const hint = buildSkillToPlaybookHint(runner, m[1]);
+      if (hint) {
+        return emitError(`lint: Playbook not found: "${m[1]}". ${hint}`, { playbook: playbookId, type: "playbook_not_found" }, pretty);
+      }
+    }
+    return emitError(`lint: ${e.message}`, { playbook: playbookId }, pretty);
+  }
 
   let submission;
   try { submission = readEvidence(evidencePath); }
@@ -1881,6 +2059,7 @@ function cmdBrief(runner, args, runOpts, pretty) {
     return cmdPlan(runner, args, runOpts, pretty);
   }
 
+  if (refuseInvalidPlaybookId("brief", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
 
@@ -2039,6 +2218,41 @@ function validateScopeOrThrow(scope) {
   return scope;
 }
 
+/**
+ * Wrap every operator-controlled loadPlaybook() call so a path-traversal
+ * shaped id (`../../etc/passwd`, `..`, absolute path) is refused at the
+ * dispatcher before the runner ever sees it. Routes through
+ * validateIdComponent('playbook'), which enforces /^[a-z][a-z0-9-]{0,63}$/.
+ * On failure returns the structured emitError shape; on success returns
+ * null so the caller can short-circuit with a single `if (refusal) return refusal;`.
+ */
+function refuseInvalidPlaybookId(verb, playbookId, pretty) {
+  const r = validateIdComponent(playbookId, "playbook");
+  if (!r.ok) {
+    emitError(
+      `${verb}: invalid <playbook> id — ${r.reason}.`,
+      { verb, provided: typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId },
+      pretty
+    );
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Shared "playbook has no directives" refusal. Six sites in this file
+ * previously hand-rolled the same error string; consolidating means a
+ * future remediation pointer (e.g. "run `exceptd brief <id>` to inspect
+ * the playbook") changes in one place.
+ */
+function refuseNoDirectives(verb, playbookId, pretty) {
+  return emitError(
+    `${verb}: playbook ${playbookId} has no directives. Inspect the playbook with \`exceptd brief ${playbookId}\` or report at https://github.com/blamejs/exceptd-skills/issues.`,
+    { verb, playbook: playbookId },
+    pretty
+  );
+}
+
 function filterPlaybooksByScope(runner, scope) {
   validateScopeOrThrow(scope);
   const ids = runner.listPlaybooks();
@@ -2081,27 +2295,30 @@ function detectScopes() {
 function cmdGovern(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   if (!playbookId) return emitError("govern: missing <playbookId> positional argument.", null, pretty);
+  if (refuseInvalidPlaybookId("govern", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return emitError(`govern: playbook ${playbookId} has no directives.`, null, pretty);
+  if (!directiveId) return refuseNoDirectives("govern", playbookId, pretty);
   emit(runner.govern(playbookId, directiveId, runOpts), pretty);
 }
 
 function cmdDirect(runner, args, pretty) {
   const playbookId = args._[0];
   if (!playbookId) return emitError("direct: missing <playbookId> positional argument.", null, pretty);
+  if (refuseInvalidPlaybookId("direct", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return emitError(`direct: playbook ${playbookId} has no directives.`, null, pretty);
+  if (!directiveId) return refuseNoDirectives("direct", playbookId, pretty);
   emit(runner.direct(playbookId, directiveId), pretty);
 }
 
 function cmdLook(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   if (!playbookId) return emitError("look: missing <playbookId> positional argument.", null, pretty);
+  if (refuseInvalidPlaybookId("look", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return emitError(`look: playbook ${playbookId} has no directives.`, null, pretty);
+  if (!directiveId) return refuseNoDirectives("look", playbookId, pretty);
   emit(runner.look(playbookId, directiveId, runOpts), pretty);
 }
 
@@ -2132,16 +2349,32 @@ function cmdRun(runner, args, runOpts, pretty) {
     const ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
     const unique = [...new Set(ids)];
     if (unique.length === 0) {
-      return emitError("run: no playbook resolved. Pass <playbookId>, --scope <type>, or --all.", null, pretty);
+      // Surface the auto-detect failure cause so operators see WHY no
+      // playbook was resolved instead of just "nothing matched." Mirrors
+      // detectScopes()' two probes — `.git/` for code, `/proc + os-release`
+      // for system — and enumerates the accepted explicit flags so the
+      // remediation is one line.
+      const hasGit = fs.existsSync(path.join(process.cwd(), ".git"));
+      const hasProc = fs.existsSync("/proc") && fs.existsSync("/etc/os-release");
+      const probes = [];
+      if (!hasGit) probes.push("no .git/ in cwd (code-scope auto-detect skipped)");
+      if (!hasProc) probes.push("no /proc + /etc/os-release (system-scope auto-detect skipped — not a Linux host or under sandbox)");
+      const reason = probes.length ? ` Auto-detect probes: ${probes.join("; ")}.` : "";
+      return emitError(
+        `run: no playbook resolved. Pass <playbookId>, --scope <type> (one of ${JSON.stringify(VALID_SCOPES)}), or --all.${reason}`,
+        { verb: "run", cwd: process.cwd(), detected_scopes: scopes },
+        pretty
+      );
     }
     return cmdRunMulti(runner, unique, args, runOpts, pretty, { trigger: "auto-detect", detected_scopes: scopes });
   }
 
   // Single-playbook path (existing behavior).
   const playbookId = positional;
+  if (refuseInvalidPlaybookId("run", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return emitError(`run: playbook ${playbookId} has no directives.`, null, pretty);
+  if (!directiveId) return refuseNoDirectives("run", playbookId, pretty);
 
   // --explain: dry-run that emits the preconditions + artifacts + indicators
   // + signal keys the agent would need to supply, WITHOUT running detect/
@@ -2369,31 +2602,34 @@ function cmdRun(runner, args, runOpts, pretty) {
     });
     if (!persistResult.ok) {
       // Session-id collision without --force-overwrite, OR --force-overwrite
-      // lost the lockfile race. Refuse, surface the existing path so the
-      // operator can decide, emit JSON to stderr matching the unified error
-      // shape. Exit non-zero — a silent overwrite is a tamper-evidence
-      // violation. v0.12.14: exitCode + return instead of process.exit so
-      // the stderr line drains under piped CI consumers.
-      //
-      // When persistAttestation lost the lockfile race it pinned
-      // process.exitCode = 8 (LOCK_CONTENTION) before returning. Don't
-      // overwrite that with 3 — preserve the exit-8 contract callers depend
-      // on to distinguish lock-busy from collision.
+      // lost the lockfile race, OR the filesystem refused the write (full
+      // disk, quota, read-only). Three distinct exit-code classes:
+      //   8  LOCK_CONTENTION       — retry from the outside (transient)
+      //   9  STORAGE_EXHAUSTED     — disk/quota/RO — operator-side infra fix
+      //   7  SESSION_ID_COLLISION  — pass --force-overwrite or fresh id
+      // Route through emitError() shape so the body goes to stderr and exit
+      // codes propagate via the emit() contract.
       const err = {
         ok: false,
         error: persistResult.error,
         existing_attestation: persistResult.existingPath,
-        hint: "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
+        hint: persistResult.storage_exhausted
+          ? "Free disk space, lift quota, or remount the attestation root read-write; then retry."
+          : "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
         verb: "run",
       };
       if (persistResult.lock_contention) {
         err.lock_contention = true;
-        err.exit_code = 8;
+        err.exit_code = EXIT_CODES.LOCK_CONTENTION;
       }
-      process.stderr.write(JSON.stringify(err) + "\n");
-      if (!persistResult.lock_contention) {
-        process.exitCode = 3;
+      if (persistResult.storage_exhausted) {
+        err.storage_exhausted = true;
+        err.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
       }
+      emitError(persistResult.error, err, pretty);
+      if (persistResult.lock_contention) process.exitCode = EXIT_CODES.LOCK_CONTENTION;
+      else if (persistResult.storage_exhausted) process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
+      else process.exitCode = EXIT_CODES.SESSION_ID_COLLISION;
       return;
     }
     if (persistResult.prior_session_id) {
@@ -2413,7 +2649,7 @@ function cmdRun(runner, args, runOpts, pretty) {
     // --ci the legacy exit 1 is preserved (ok:false bodies are framework
     // signals when no CI gating is requested).
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exitCode = args.ci ? 4 : 1;
+    process.exitCode = args.ci ? EXIT_CODES.BLOCKED : EXIT_CODES.GENERIC_FAILURE;
     return;
   }
 
@@ -2434,11 +2670,11 @@ function cmdRun(runner, args, runOpts, pretty) {
       result.strict_preconditions_violated = warnIssues.map(i => ({
         id: i.id, kind: i.kind, message: i.message || null, on_fail: i.on_fail || null,
       }));
-      process.stderr.write(`[exceptd run] --strict-preconditions: ${warnIssues.length} unverified/warn precondition(s) — exit 1.\n`);
+      process.stderr.write(`[exceptd run] --strict-preconditions: ${warnIssues.length} unverified/warn precondition(s) — exit ${EXIT_CODES.GENERIC_FAILURE}.\n`);
       emit(result, pretty);
       // v0.11.11: exitCode + return so emit()'s stdout flushes (process.exit
       // can truncate buffered async stdout writes when piped).
-      process.exitCode = 1;
+      process.exitCode = EXIT_CODES.GENERIC_FAILURE;
       return;
     }
   }
@@ -2476,9 +2712,9 @@ function cmdRun(runner, args, runOpts, pretty) {
       const refs = startedClocks
         .map(n => `${n.obligation_ref || n.jurisdiction || "?"}@${n.clock_started_at}`)
         .join("; ");
-      process.stderr.write(`[exceptd run --block-on-jurisdiction-clock] CLOCK_STARTED: ${startedClocks.length} jurisdiction clock(s) running and unacked: ${refs}. Exit 5.\n`);
+      process.stderr.write(`[exceptd run --block-on-jurisdiction-clock] CLOCK_STARTED: ${startedClocks.length} jurisdiction clock(s) running and unacked: ${refs}. Exit ${EXIT_CODES.JURISDICTION_CLOCK_STARTED}.\n`);
       emit(result, pretty);
-      process.exitCode = 5;
+      process.exitCode = EXIT_CODES.JURISDICTION_CLOCK_STARTED;
       return;
     }
   }
@@ -2515,12 +2751,12 @@ function cmdRun(runner, args, runOpts, pretty) {
     // under piped consumers (CI runners, jq, test harnesses).
     if (classification === "detected") {
       process.stderr.write(`[exceptd run --ci] FAIL: classification=detected rwep=${adjusted} threshold=${threshold}\n`);
-      process.exitCode = 2;
+      process.exitCode = EXIT_CODES.DETECTED_ESCALATE;
       return;
     }
     if (classification === "inconclusive" && escalate) {
       process.stderr.write(`[exceptd run --ci] FAIL: classification=inconclusive AND rwep=${adjusted} >= threshold=${threshold}\n`);
-      process.exitCode = 2;
+      process.exitCode = EXIT_CODES.DETECTED_ESCALATE;
       return;
     }
     if (classification === "inconclusive") {
@@ -2786,8 +3022,18 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     // symlink/junction inside the dir, but the filter is cheap.
     for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
       const pbId = f.replace(/\.json$/, "");
-      if (!/^[A-Za-z0-9_.-]+$/.test(pbId)) {
-        return emitError(`run: --evidence-dir entry ${JSON.stringify(f)} has unsafe playbook-id segment.`, null, pretty);
+      // Reuse the shared playbook-id validator so the --evidence-dir entry
+      // filter agrees with the runtime playbook-id allowlist. Previously
+      // accepted dots / underscores / uppercase that no real playbook id
+      // uses, which would silently absorb a typo'd filename as a "valid"
+      // entry that loadPlaybook then refused mid-loop.
+      const pbCheck = validateIdComponent(pbId, "playbook");
+      if (!pbCheck.ok) {
+        return emitError(
+          `run: --evidence-dir entry ${JSON.stringify(f)} has invalid playbook-id segment (${pbCheck.reason}).`,
+          { entry: f, expected_shape: "<playbook-id>.json (lowercase, starts with letter, no dots)" },
+          pretty
+        );
       }
       const entryPath = path.resolve(path.join(resolvedDir, f));
       if (!entryPath.startsWith(resolvedDir + path.sep)) {
@@ -2849,10 +3095,19 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
 
   const results = [];
   for (const id of ids) {
+    // Defense-in-depth: ids come from listPlaybooks() / filterPlaybooksByScope
+    // (which read trusted catalog data), but threading every id through
+    // validateIdComponent('playbook') means a corrupt catalog cannot
+    // path-traverse via this loop either.
+    const r = validateIdComponent(id, "playbook");
+    if (!r.ok) {
+      results.push({ playbook_id: id, ok: false, error: `invalid playbook id (${r.reason})` });
+      continue;
+    }
     const pb = runner.loadPlaybook(id);
     const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
     if (!directiveId) {
-      results.push({ playbook_id: id, ok: false, error: "no directives" });
+      results.push({ playbook_id: id, ok: false, error: `playbook ${id} has no directives` });
       continue;
     }
     const submission = bundle[id] || {};
@@ -2903,8 +3158,19 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       if (!persisted.ok) {
         // Multi-run collision: don't abort the whole bundle; surface in the
         // per-playbook result so the operator can see exactly which
-        // playbook's attestation refused to overwrite.
+        // playbook's attestation refused to overwrite. Propagate
+        // lock_contention / storage_exhausted / exit_code so the aggregate
+        // exit-code gate below picks the right top-level code (8 / 9 /
+        // 7 / 1) instead of collapsing every persist failure to 1.
         result.attestation_persist = { ok: false, error: persisted.error };
+        if (persisted.lock_contention) {
+          result.attestation_persist.lock_contention = true;
+          result.attestation_persist.exit_code = EXIT_CODES.LOCK_CONTENTION;
+        }
+        if (persisted.storage_exhausted) {
+          result.attestation_persist.storage_exhausted = true;
+          result.attestation_persist.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
+        }
       } else if (persisted.prior_session_id) {
         result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
       }
@@ -2943,8 +3209,19 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // the body but exit code stayed 0 — CI gates couldn't distinguish "ran
   // clean" from "blocked." v0.12.8: use exitCode (not process.exit()) so
   // the aggregate JSON emitted above is allowed to fully drain.
+  //
+  // Aggregate exit-code precedence: LOCK_CONTENTION > STORAGE_EXHAUSTED >
+  // BLOCKED. Lock contention is transient (retry-from-outside fixes it);
+  // storage exhaustion is an infra event requiring operator action;
+  // ok:false in a per-playbook result is the BLOCKED case. Surfacing the
+  // most-specific code first means a CI gate can branch on the right
+  // remediation without parsing the body.
+  const anyLockBusy = results.some(r => r.attestation_persist && r.attestation_persist.lock_contention === true);
+  const anyStorageExhausted = results.some(r => r.attestation_persist && r.attestation_persist.storage_exhausted === true);
   const anyBlocked = results.some(r => r.ok === false);
-  if (anyBlocked) { process.exitCode = 1; return; }
+  if (anyLockBusy) { process.exitCode = EXIT_CODES.LOCK_CONTENTION; return; }
+  if (anyStorageExhausted) { process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED; return; }
+  if (anyBlocked) { process.exitCode = EXIT_CODES.GENERIC_FAILURE; return; }
 }
 
 function cmdIngest(runner, args, runOpts, pretty) {
@@ -2971,11 +3248,12 @@ function cmdIngest(runner, args, runOpts, pretty) {
   }
   const playbookId = args.domain || submission.playbook_id || submission.domain;
   if (!playbookId) return emitError("ingest: no playbook resolved — pass --domain <id> or include playbook_id in evidence JSON.", null, pretty);
+  if (refuseInvalidPlaybookId("ingest", playbookId, pretty)) return;
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive
     || submission.directive_id
     || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return emitError(`ingest: playbook ${playbookId} has no directives.`, null, pretty);
+  if (!directiveId) return refuseNoDirectives("ingest", playbookId, pretty);
 
   // Strip the routing keys so the runner only sees the contract shape it expects.
   const cleanedSubmission = {
@@ -3022,17 +3300,24 @@ function cmdIngest(runner, args, runOpts, pretty) {
       filename: "attestation.json",
     });
     if (!persisted.ok) {
-      // Surface the collision; do not silently clobber. Preserve
-      // LOCK_CONTENTION exit 8 set by persistAttestation when
-      // --force-overwrite hit the lockfile race.
+      // Route every persist-failure shape through emitError so the
+      // emit() ok:false → exitCode contract applies uniformly. Three
+      // exit classes: LOCK_CONTENTION (transient), STORAGE_EXHAUSTED
+      // (infra), SESSION_ID_COLLISION (operator decision).
       const ctx = { session_id: result.session_id, existing_path: persisted.existingPath };
       if (persisted.lock_contention) {
         ctx.lock_contention = true;
-        ctx.exit_code = 8;
-        process.stderr.write(JSON.stringify({ ok: false, error: persisted.error, ...ctx }) + "\n");
-        return;
+        ctx.exit_code = EXIT_CODES.LOCK_CONTENTION;
       }
-      return emitError(persisted.error, ctx, pretty);
+      if (persisted.storage_exhausted) {
+        ctx.storage_exhausted = true;
+        ctx.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
+      }
+      emitError(persisted.error, ctx, pretty);
+      if (persisted.lock_contention) process.exitCode = EXIT_CODES.LOCK_CONTENTION;
+      else if (persisted.storage_exhausted) process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
+      else process.exitCode = EXIT_CODES.SESSION_ID_COLLISION;
+      return;
     }
     if (persisted.prior_session_id) {
       result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
@@ -3204,6 +3489,22 @@ function persistAttestation(args) {
           acquired = true;
           break;
         } catch (lockErr) {
+          // Distinguish lockfile contention (EEXIST/EPERM = another holder)
+          // from storage-exhaustion classes (ENOSPC = disk full,
+          // EROFS = read-only fs, EDQUOT = quota exceeded). The latter are
+          // infra-level failures that no amount of retry-spin will resolve;
+          // surface them with a distinct exit code (STORAGE_EXHAUSTED = 9)
+          // so operator runbooks can branch on "free disk" vs "retry".
+          if (lockErr.code === "ENOSPC" || lockErr.code === "EROFS" || lockErr.code === "EDQUOT") {
+            process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
+            return {
+              ok: false,
+              error: `STORAGE_EXHAUSTED: ${lockErr.message}`,
+              existingPath: path.relative(process.cwd(), filePath),
+              storage_exhausted: true,
+              exit_code: EXIT_CODES.STORAGE_EXHAUSTED,
+            };
+          }
           if (lockErr.code !== "EEXIST" && lockErr.code !== "EPERM") throw lockErr;
           let reclaimed = false;
           try {
@@ -3244,13 +3545,13 @@ function persistAttestation(args) {
         // already-non-zero value. Exit code 8 is reserved exclusively for
         // LOCK_CONTENTION (attestation persist); see the exit-code table in
         // printGlobalHelp().
-        process.exitCode = 8;
+        process.exitCode = EXIT_CODES.LOCK_CONTENTION;
         return {
           ok: false,
           error: `LOCK_CONTENTION: Failed to acquire attestation lock at ${path.relative(process.cwd(), lockPath)} after ${MAX_RETRIES} attempts (~1-2s of contention). Retry the operation; if it persists, inspect the lockfile for a stale holder.`,
           existingPath: path.relative(process.cwd(), filePath),
           lock_contention: true,
-          exit_code: 8,
+          exit_code: EXIT_CODES.LOCK_CONTENTION,
         };
       }
       try {
@@ -3273,6 +3574,19 @@ function persistAttestation(args) {
       }
     }
   } catch (e) {
+    // ENOSPC / EROFS / EDQUOT are storage-exhaustion classes — surface
+    // them with a distinct sentinel + exit code so callers route them
+    // through a different remediation path than generic write errors.
+    if (e && (e.code === "ENOSPC" || e.code === "EROFS" || e.code === "EDQUOT")) {
+      process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
+      return {
+        ok: false,
+        error: `STORAGE_EXHAUSTED: ${e.message}`,
+        existingPath: null,
+        storage_exhausted: true,
+        exit_code: EXIT_CODES.STORAGE_EXHAUSTED,
+      };
+    }
     return { ok: false, error: `Failed to write attestation: ${e.message}`, existingPath: null };
   }
 }
@@ -3384,9 +3698,13 @@ function maybeSignAttestation(filePath) {
  * Validation regex + root-confinement check matches persistAttestation.
  */
 function validateSessionIdForRead(sessionId) {
-  if (typeof sessionId !== "string" || !/^[A-Za-z0-9._-]{1,64}$/.test(sessionId)) {
+  // Route through validateIdComponent('session') so the regex + all-dots
+  // refusal stay aligned with the write-path validator in
+  // persistAttestation. Single source of truth in lib/id-validation.js.
+  const r = validateIdComponent(sessionId, "session");
+  if (!r.ok) {
     throw new Error(
-      `Invalid session-id: ${JSON.stringify(sessionId).slice(0, 80)}. Must match /^[A-Za-z0-9._-]{1,64}$/.`
+      `Invalid session-id: ${typeof sessionId === "string" ? JSON.stringify(sessionId).slice(0, 80) : typeof sessionId}. ${r.reason}.`
     );
   }
   return sessionId;
@@ -3644,7 +3962,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
       hint: "If you have inspected the attestation and the divergence is benign (e.g. you re-signed manually), pass --force-replay.",
     };
     process.stderr.write(JSON.stringify(body) + "\n");
-    process.exitCode = 6;
+    process.exitCode = EXIT_CODES.TAMPERED;
     return;
   }
   if ((isSignedTamper || isClassTamper) && args["force-replay"]) {
@@ -3671,7 +3989,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
       hint: "If the sidecar was intentionally removed (e.g. a clean operator rotation) and you have inspected the attestation, pass --force-replay.",
     };
     process.stderr.write(JSON.stringify(body) + "\n");
-    process.exitCode = 6;
+    process.exitCode = EXIT_CODES.TAMPERED;
     return;
   } else if (!verify.signed && verify.reason && verify.reason.includes("no .sig sidecar") && args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding missing .sig sidecar on ${attFile}. The replay output records sidecar_verify so the override is audit-visible.\n`);
@@ -3695,7 +4013,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
       hint: "If the original attestation was legitimately produced without a private key, pass --force-replay. The replay body will record sidecar_verify: 'explicitly-unsigned' + force_replay: true.",
     };
     process.stderr.write(JSON.stringify(body) + "\n");
-    process.exitCode = 6;
+    process.exitCode = EXIT_CODES.TAMPERED;
     return;
   } else if (!verify.signed && verify.reason && verify.reason.startsWith("attestation explicitly unsigned") && args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding explicitly-unsigned attestation on ${attFile}. The replay output records sidecar_verify: 'explicitly-unsigned' so the override is audit-visible.\n`);
@@ -3725,16 +4043,32 @@ function cmdReattest(runner, args, runOpts, pretty) {
     // Fallback: synthesise pass-through preconditions from the playbook so the
     // replay isn't blocked when the operator didn't originally pass them.
     try {
-      const pb = runner.loadPlaybook(prior.playbook_id);
-      const synth = {};
-      for (const pc of (pb._meta && pb._meta.preconditions) || []) synth[pc.id] = true;
-      replayOpts.precondition_checks = synth;
+      // Defense-in-depth: the prior attestation's playbook_id came from
+      // disk, but a malicious or corrupt prior could still smuggle an
+      // invalid id. validateIdComponent refuses anything outside the
+      // canonical playbook-id shape.
+      const r = validateIdComponent(prior.playbook_id, "playbook");
+      if (r.ok) {
+        const pb = runner.loadPlaybook(prior.playbook_id);
+        const synth = {};
+        for (const pc of (pb._meta && pb._meta.preconditions) || []) synth[pc.id] = true;
+        replayOpts.precondition_checks = synth;
+      }
     } catch { /* ignore */ }
   }
   const replay = runner.run(prior.playbook_id, prior.directive_id, emptySubmission, replayOpts);
 
   if (!replay || replay.ok === false) {
-    return emitError(`reattest: replay failed: ${replay && replay.reason || "unknown"}`, { replay }, pretty);
+    // When replay.reason is falsy, dump the available keys so an operator
+    // can correlate the failure to a body field — pre-fix the error message
+    // bottomed out at "unknown" with no breadcrumb into the runner output.
+    const reason = (replay && replay.reason) || (replay && replay.error) || null;
+    const keys = replay && typeof replay === "object" ? Object.keys(replay).join(",") : "(no body)";
+    return emitError(
+      `reattest: replay failed: ${reason || `no reason field — replay body keys: [${keys}]`}`,
+      { replay, replay_body_keys: replay && typeof replay === "object" ? Object.keys(replay) : null },
+      pretty
+    );
   }
 
   const priorHash = prior.evidence_hash;
@@ -3916,7 +4250,11 @@ function cmdAttest(runner, args, runOpts, pretty) {
     return cmdListAttestations(runner, args, runOpts, pretty);
   }
   if (!sessionId) {
-    return emitError(`attest ${subverb}: missing <session-id> positional argument.`, null, pretty);
+    return emitError(
+      `attest ${subverb}: missing <session-id> positional argument. Inventory prior sessions with \`exceptd attest list\`; or pass \`--latest\` to operate on the most recent.`,
+      { verb: `attest ${subverb}` },
+      pretty
+    );
   }
   // Distinguish "validation rejected" from "valid format but not found".
   // findSessionDir() returns null for BOTH (regex-rejected ids collapse to
@@ -3966,18 +4304,33 @@ function cmdAttest(runner, args, runOpts, pretty) {
         return emitError(`attest diff --against ${args.against}: no session dir found.`, null, pretty);
       }
       const otherFiles = fs.readdirSync(otherDir).filter(f => f.endsWith(".json") && !f.endsWith(".sig"));
-      // Skip replay-record files: those carry `kind: 'replay'` and are
-      // audit-trail entries rather than attestations. Without this gate
-      // a replay file sorted ahead of attestation.json would shadow the
-      // real attestation in the diff.
+      // Pick the comparison target deterministically:
+      //   1. Prefer attestation.json (the canonical write-path filename).
+      //   2. Otherwise, walk every non-replay JSON in the dir, sort by
+      //      parsed.captured_at descending, and take the newest.
+      //   3. Replay records (kind === "replay") are audit-trail entries,
+      //      not attestations — skip them so a replay file sorted ahead of
+      //      attestation.json cannot shadow the real attestation in the
+      //      diff.
       let other = null;
-      for (const f of otherFiles) {
+      const otherAttestationPath = path.join(otherDir, "attestation.json");
+      if (fs.existsSync(otherAttestationPath)) {
         try {
-          const parsed = JSON.parse(fs.readFileSync(path.join(otherDir, f), "utf8"));
-          if (parsed && parsed.kind === "replay") continue;
-          other = parsed;
-          break;
-        } catch { /* skip malformed */ }
+          const parsed = JSON.parse(fs.readFileSync(otherAttestationPath, "utf8"));
+          if (parsed && parsed.kind !== "replay") other = parsed;
+        } catch { /* fall through to scan */ }
+      }
+      if (!other) {
+        const candidates = [];
+        for (const f of otherFiles) {
+          try {
+            const parsed = JSON.parse(fs.readFileSync(path.join(otherDir, f), "utf8"));
+            if (!parsed || parsed.kind === "replay") continue;
+            candidates.push(parsed);
+          } catch { /* skip malformed */ }
+        }
+        candidates.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
+        other = candidates[0] || null;
       }
       if (!other) {
         return emitError(`attest diff --against ${args.against}: no attestations under that session id.`, null, pretty);
@@ -4042,15 +4395,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // tampered attestation.json and overwrote .sig with the unsigned stub).
     const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
     const hasPrivKey = fs.existsSync(privKeyPath);
-    const results = files.map(f => {
+
+    // Sidecar-verify helper shared by both the attestations[] and
+    // replay-records[] partitions. Centralising the per-file verify
+    // logic means a future tamper-class addition lands in one place
+    // instead of two parallel branches.
+    const verifySidecar = (f) => {
       const sigPath = path.join(dir, f + ".sig");
       if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
-      // wrap JSON.parse so a corrupt sidecar surfaces as a
-      // structured tamper-class result (signed:false, verified:false,
-      // tamper_class:"sidecar-corrupt") rather than throwing into the outer
-      // dispatcher catch → exit 1. Pre-fix, a corrupt .sig produced a
-      // generic exit-1 with no `results` array — operators piping through
-      // `set -e` saw "command failed" with no tamper signal.
       let sigDoc;
       try { sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8")); }
       catch (e) {
@@ -4063,7 +4415,6 @@ function cmdAttest(runner, args, runOpts, pretty) {
         };
       }
       if (sigDoc.algorithm === "unsigned") {
-        // substitution detection.
         if (hasPrivKey) {
           return {
             file: f,
@@ -4075,11 +4426,6 @@ function cmdAttest(runner, args, runOpts, pretty) {
         }
         return { file: f, signed: false, verified: false, reason: "attestation explicitly unsigned (no private key when written)" };
       }
-      // Strict algorithm check (mirrors verifyAttestationSidecar). Anything
-      // that isn't exactly "Ed25519" or "unsigned" is refused as
-      // tamper-class; null / "RSA-PSS" / arrays would otherwise fall through
-      // to crypto.verify with Ed25519 defaults, producing either an opaque
-      // verify-throw or a downgrade-bait acceptance path.
       if (sigDoc.algorithm !== "Ed25519") {
         return {
           file: f,
@@ -4090,8 +4436,6 @@ function cmdAttest(runner, args, runOpts, pretty) {
         };
       }
       if (!pubKey) return { file: f, signed: true, verified: false, reason: "no public key at keys/public.pem to verify against" };
-      // Normalize before crypto.verify — mirrors the signer path so the
-      // verify pair is byte-stable across CRLF / BOM churn.
       const rawContent = fs.readFileSync(path.join(dir, f), "utf8");
       const content = normalizeAttestationBytes(rawContent);
       try {
@@ -4102,30 +4446,58 @@ function cmdAttest(runner, args, runOpts, pretty) {
       } catch (e) {
         return { file: f, signed: true, verified: false, reason: `verify error: ${e.message}` };
       }
-    });
-    // When ANY result is signed-but-failed-verify, surface ok:false AND
-    // set exit 6 for parity with cmdReattest's TAMPERED code. The
-    // ok:false → exitCode = 1 auto-promotion would stop at 1; tamper is
-    // distinct from generic failure, so explicitly raise to 6.
-    //
-    // The tamper predicate covers every tamper_class variant — bare
-    // `r.signed && !r.verified` would miss (a) corrupt-JSON sidecars
-    // (signed:false) and (b) "unsigned" sidecar substitution on hosts with
-    // a private key (signed:false). Both are tamper-class events and must
-    // promote to exit 6.
-    const tampered = results.some(r =>
+    };
+
+    // Partition session-dir files by the parsed `kind` field so the verify
+    // output cleanly separates attestations from replay records. Mixing
+    // both into a single `results` array let a replay-record tamper event
+    // promote exit 6 against the operator's expectation that the
+    // attestation itself was the integrity-critical artifact. With the
+    // partition: attestation tamper → exit 6 (operator must investigate);
+    // replay-record tamper → audit-trail warning only (exit stays 0 so
+    // CI gates don't fail on a corrupted audit log they can simply
+    // regenerate via `reattest`).
+    const attResults = [];
+    const replayResults = [];
+    for (const f of files) {
+      let parsed = null;
+      try { parsed = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); }
+      catch { /* unparseable JSON — treat as attestation so tamper detection still surfaces */ }
+      const verdict = verifySidecar(f);
+      if (parsed && parsed.kind === "replay") {
+        replayResults.push(Object.assign({ replayed_at: parsed.replayed_at || null }, verdict));
+      } else {
+        attResults.push(Object.assign({ captured_at: parsed && parsed.captured_at || null }, verdict));
+      }
+    }
+    // Deterministic ordering so the output diffs cleanly across runs.
+    attResults.sort((a, b) => (a.captured_at || "").localeCompare(b.captured_at || ""));
+    replayResults.sort((a, b) => (a.replayed_at || "").localeCompare(b.replayed_at || ""));
+
+    const tamperPredicate = (r) =>
       (r.signed && !r.verified)
       || r.tamper_class === "sidecar-corrupt"
       || r.tamper_class === "unsigned-substitution"
-      // A sidecar whose algorithm field is not "Ed25519" or "unsigned" is
-      // a downgrade-bait substitution; promote to exit 6.
-      || r.tamper_class === "algorithm-unsupported"
-    );
-    const body = { verb: "attest verify", session_id: sessionId, results };
-    if (tampered) {
+      || r.tamper_class === "algorithm-unsupported";
+    const attTampered = attResults.some(tamperPredicate);
+    const replayTampered = replayResults.some(tamperPredicate);
+
+    const body = {
+      verb: "attest verify",
+      session_id: sessionId,
+      results: attResults,
+      replay_results: replayResults,
+    };
+    if (attTampered) {
       body.ok = false;
       body.error = "attest verify: one or more attestations failed Ed25519 verification — possible post-hoc tampering";
-      process.exitCode = 6;
+      process.exitCode = EXIT_CODES.TAMPERED;
+    } else if (replayTampered) {
+      // Replay-record tamper is an audit-trail signal but not an
+      // attestation-integrity violation; surface a warning so operators
+      // see the corruption without promoting the exit code.
+      body.replay_tamper = true;
+      body.warnings = ["one or more replay records failed Ed25519 verification — audit-trail corruption suspected, regenerate via reattest"];
     }
     emit(body, pretty);
     return;
@@ -4527,6 +4899,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const wantJson = !!args.json || !!args.pretty;
   const indent = !!args.pretty;
 
+  // `doctor --exit-codes` dumps the canonical exit-code table as JSON so
+  // operator-facing docs cannot drift from runtime behavior. Short-circuit
+  // before the regular health checks since the dump is informational.
+  if (args["exit-codes"]) {
+    emit({ verb: "doctor", exit_codes: listExitCodes() }, pretty);
+    return;
+  }
+
   // Selective subchecks. If any of the four flags is passed, run only those.
   // If none are passed, run all four plus signing-status.
   const onlySigs = !!args.signatures;
@@ -4736,6 +5116,17 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // workflows aren't disturbed. Routed through a child process to keep
   // cmdDoctor synchronous + bound the network timeout cleanly.
   if (args["registry-check"]) {
+    // Refuse network egress when air-gap mode is active. Surface as a
+    // skipped check (informational), not an error — the operator opted
+    // into air-gap and would otherwise see a confusing network-error
+    // result from the upstream-check probe.
+    if (runOpts && runOpts.airGap) {
+      checks.registry = {
+        ok: null,
+        skipped: "air-gap",
+        reason: "registry probe disabled in air-gap mode",
+      };
+    } else {
     try {
       const cliPath = path.join(PKG_ROOT, "lib", "upstream-check-cli.js");
       const res = spawnSync(process.execPath, [cliPath, "--timeout", "5000"], {
@@ -4762,6 +5153,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       }
     } catch (e) {
       checks.registry = { ok: false, severity: "warn", error: e.message };
+    }
     }
   }
 
@@ -4821,10 +5213,15 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   lines.push("exceptd doctor");
   function mark(c, render) {
     if (!c) return;
-    // Three states: ok / warn / error. Bug #61 (v0.11.2) — warn must not be
-    // shown as ok and must count toward the summary so the bottom line
-    // matches the visible icons above.
-    const icon = c.ok && c.severity !== "warn" ? "[ok]" : (c.severity === "warn" ? "[!! warn]" : "[!! fail]");
+    // Four states: ok / warn / error / skipped. `skipped` is informational
+    // (e.g. air-gap mode disabled the network probe) and renders as
+    // [info] so it doesn't read like a failure to operators scanning the
+    // checklist. Three pre-existing states retained.
+    let icon;
+    if (c.skipped) icon = "[info]";
+    else if (c.ok && c.severity !== "warn") icon = "[ok]";
+    else if (c.severity === "warn") icon = "[!! warn]";
+    else icon = "[!! fail]";
     lines.push(`  ${icon} ${render(c)}`);
   }
   mark(checks.signatures, c =>
@@ -5010,12 +5407,13 @@ function cmdAiRun(runner, args, runOpts, pretty) {
   if (!playbookId) {
     return emitError("ai-run: missing <playbook> positional argument.", null, pretty);
   }
+  if (refuseInvalidPlaybookId("ai-run", playbookId, pretty)) return;
   let pb;
   try { pb = runner.loadPlaybook(playbookId); }
   catch (e) { return emitError(`ai-run: ${e.message}`, { playbook: playbookId }, pretty); }
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) {
-    return emitError(`ai-run: playbook ${playbookId} has no directives.`, null, pretty);
+    return refuseNoDirectives("ai-run", playbookId, pretty);
   }
 
   // Compute the informational phases up front — both stream and no-stream
@@ -5109,7 +5507,11 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     try {
       result = runner.run(playbookId, directiveId, submission, runOpts);
     } catch (e) {
-      return emitError(`ai-run: runner threw: ${e.message}`, { playbook: playbookId }, pretty);
+      return emitError(
+        `ai-run: internal error (${e && e.message ? e.message : String(e)}). Re-run with --pretty for context; file at https://github.com/blamejs/exceptd-skills/issues if reproducible.`,
+        { playbook: playbookId, verb: "ai-run" },
+        pretty
+      );
     }
     if (!result || result.ok === false) {
       // v0.12.12: same exit-after-write anti-pattern as the pre-stream
@@ -5147,21 +5549,26 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       if (!persistResult.ok && !args["force-overwrite"]) {
         // Collision without --force-overwrite. AI agents typically pass
         // unique session ids each run, so this path is rare but surface
-        // it cleanly via the same JSONL contract. Preserve LOCK_CONTENTION
-        // exit 8 set by persistAttestation when --force-overwrite hit the
-        // lockfile race — don't clobber with exit 3.
+        // it cleanly via the same JSONL contract. Three exit-code classes
+        // (LOCK_CONTENTION / STORAGE_EXHAUSTED / SESSION_ID_COLLISION) so
+        // a host-AI driver can branch on remediation without parsing the
+        // reason string.
         const eventBody = {
           event: "error", reason: persistResult.error,
           existing_attestation: persistResult.existingPath,
         };
         if (persistResult.lock_contention) {
           eventBody.lock_contention = true;
-          eventBody.exit_code = 8;
+          eventBody.exit_code = EXIT_CODES.LOCK_CONTENTION;
+        }
+        if (persistResult.storage_exhausted) {
+          eventBody.storage_exhausted = true;
+          eventBody.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
         }
         process.stdout.write(JSON.stringify(eventBody) + "\n");
-        if (!persistResult.lock_contention) {
-          process.exitCode = 3;
-        }
+        if (persistResult.lock_contention) process.exitCode = EXIT_CODES.LOCK_CONTENTION;
+        else if (persistResult.storage_exhausted) process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
+        else process.exitCode = EXIT_CODES.SESSION_ID_COLLISION;
         return;
       }
     }
@@ -5265,12 +5672,18 @@ function cmdAiRun(runner, args, runOpts, pretty) {
                             existing_attestation: persistResult.existingPath };
         if (persistResult.lock_contention) {
           eventBody.lock_contention = true;
-          eventBody.exit_code = 8;
+          eventBody.exit_code = EXIT_CODES.LOCK_CONTENTION;
           writeLine(eventBody);
-          return finish(8);
+          return finish(EXIT_CODES.LOCK_CONTENTION);
+        }
+        if (persistResult.storage_exhausted) {
+          eventBody.storage_exhausted = true;
+          eventBody.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
+          writeLine(eventBody);
+          return finish(EXIT_CODES.STORAGE_EXHAUSTED);
         }
         writeLine(eventBody);
-        return finish(3);
+        return finish(EXIT_CODES.SESSION_ID_COLLISION);
       }
     }
     writeLine({ event: "done", ok: true, session_id: result.session_id, evidence_hash: result.evidence_hash });
@@ -5743,9 +6156,14 @@ function cmdCi(runner, args, runOpts, pretty) {
     emit({ verb: "ci", session_id: sessionId, format: fmt, bundles_count: bundles.length, bundles }, pretty);
   } else if (fmt && fmt !== "json") {
     // v0.11.4 (#76): garbage format rejected with structured error, not silent empty stdout.
-    // v0.12.14: exitCode + return; matches the emitError class fix.
-    process.stderr.write(JSON.stringify({ ok: false, error: `ci: --format "${fmt}" not in accepted set ["summary","markdown","csaf-2.0","sarif","openvex","json"].`, verb: "ci" }) + "\n");
-    process.exitCode = 2;
+    // Route through emitError so the body propagates exit codes via the
+    // emit() ok:false contract. ci-format-typo is operator-decision class
+    // (GENERIC_FAILURE), not DETECTED_ESCALATE.
+    emitError(
+      `ci: --format "${fmt}" not in accepted set ["summary","markdown","csaf-2.0","sarif","openvex","json"].`,
+      { verb: "ci" },
+      pretty
+    );
     return;
   } else {
     emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty);
@@ -5768,8 +6186,8 @@ function cmdCi(runner, args, runOpts, pretty) {
   // actually evaluate signals, so it can't be a true detection.
   if (summary.blocked > 0) {
     const blockedReasons = failReasons.filter(r => r.includes("blocked"));
-    process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) halted before detect. Exit 4. Reasons:\n  ${blockedReasons.join("\n  ")}\n`);
-    process.exitCode = 4;
+    process.stderr.write(`[exceptd ci] BLOCKED: ${summary.blocked}/${summary.total} playbook(s) halted before detect. Exit ${EXIT_CODES.BLOCKED}. Reasons:\n  ${blockedReasons.join("\n  ")}\n`);
+    process.exitCode = EXIT_CODES.BLOCKED;
     return;
   }
   // Precedence: BLOCKED > CLOCK_STARTED > FAIL. The operator opted into
@@ -5777,21 +6195,21 @@ function cmdCi(runner, args, runOpts, pretty) {
   // result they want to see at the exit-code layer. Per-playbook detected
   // findings remain in the body for them to investigate.
   if (clockStartedFail) {
-    process.stderr.write(`[exceptd ci] CLOCK_STARTED: ${clockStartedReasons.join("; ")}. Exit 5.\n`);
-    process.exitCode = 5;
+    process.stderr.write(`[exceptd ci] CLOCK_STARTED: ${clockStartedReasons.join("; ")}. Exit ${EXIT_CODES.JURISDICTION_CLOCK_STARTED}.\n`);
+    process.exitCode = EXIT_CODES.JURISDICTION_CLOCK_STARTED;
     return;
   }
   if (fail) {
     process.stderr.write(`[exceptd ci] FAIL: ${failReasons.join("; ")}\n`);
     // v0.11.11: exitCode + return so emit()'s stdout flushes.
-    process.exitCode = 2;
+    process.exitCode = EXIT_CODES.DETECTED_ESCALATE;
     return;
   }
   const suppliedEvidence = args.evidence || args["evidence-dir"];
   const allInconclusive = summary.inconclusive === summary.total && summary.total > 0;
   if (!suppliedEvidence && allInconclusive) {
-    process.stderr.write(`[exceptd ci] WARN: no --evidence supplied and all ${summary.total} playbook(s) returned inconclusive. CI exit 3 = "ran but never had real data." Pass --evidence <file> or --evidence-dir <dir> for a real gate.\n`);
-    process.exitCode = 3;
+    process.stderr.write(`[exceptd ci] WARN: no --evidence supplied and all ${summary.total} playbook(s) returned inconclusive. CI exit ${EXIT_CODES.RAN_NO_EVIDENCE} = "ran but never had real data." Pass --evidence <file> or --evidence-dir <dir> for a real gate.\n`);
+    process.exitCode = EXIT_CODES.RAN_NO_EVIDENCE;
   }
 }
 

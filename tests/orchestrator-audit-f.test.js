@@ -190,9 +190,18 @@ test('P1-5: stale lock (dead PID) is reclaimed', () => {
     encoding: 'utf8', timeout: 4000, env: childEnv(),
   });
   // Either the watcher started (and got killed by timeout — null status /
-  // SIGTERM signal) OR it exited cleanly via shutdown. The key contract:
-  // it must NOT have been blocked by the stale lock (exit 75).
-  assert.notEqual(r.status, 75, `stale lock should be reclaimed; got status=${r.status} stderr=${r.stderr}`);
+  // SIGTERM signal) OR it exited cleanly via shutdown (status 0). The key
+  // contract: it must NOT have been blocked by the stale lock (exit 75).
+  //
+  // Cycle 7 FFF: pre-strengthening this was `notEqual(r.status, 75)` which
+  // silently passes if the watcher regresses to exit 1/2/3/etc. for any
+  // unrelated reason. Pin to the two acceptable outcomes — null (timeout)
+  // or 0 (clean shutdown) — and refuse every other code including the
+  // 75 stale-lock-blocked signal we care about.
+  const acceptable = r.status === null || r.status === 0;
+  assert.ok(acceptable,
+    `stale lock should be reclaimed and watcher proceed; expected status=null (timeout-killed) or 0 (clean shutdown); got status=${r.status} stderr=${r.stderr}`);
+  assert.notEqual(r.status, 75, 'must not be the stale-lock-blocked code'); // allow-notEqual: refusal-pin (asserts NOT the blocked code, paired with positive equal/ok above)
   // Clean up any new lockfile the watcher created.
   try { fs.unlinkSync(lockPath); } catch { /* fine */ }
 });

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * tests/audit-ff-dd-hh-fixes.test.js
+ * tests/playbook-runner-error-paths.test.js
  *
  * Regression coverage for the FF / DD / HH audit batch landing in v0.12.21:
  *
@@ -281,19 +281,26 @@ test('DD P1-1: cross-ref-api cache invalidates when source file mtime changes', 
 // DD P1-2 — persistAttestation lock spin bounded to MAX_RETRIES = 10
 // ============================================================================
 
-test('DD P1-2: persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
+test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
   // The lock body uses `const MAX_RETRIES = 10;` inside the persistAttestation
-  // function (post-DD-P1-2). Read the source and assert the bound has not
-  // crept back up. A purely-numeric assertion is brittle to formatting; we
-  // look for the labeled comment + the assignment together.
+  // function. Anchor on the function name itself rather than a slot-token
+  // comment ("DD P1-2") — those comments are operator-noise per CLAUDE.md
+  // and may be cleaned up by future rewrites, while the function name is
+  // a stable structural landmark.
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // The numeric bound lives in the persistAttestation function; capture
-  // exactly that block (everything between persistAttestation's open and
-  // its closing brace pattern is too tight, so we anchor on the comment
-  // that documents the bound).
-  const match = src.match(/DD P1-2[\s\S]{0,800}const MAX_RETRIES = (\d+);/);
-  assert.notEqual(match, null, 'DD P1-2 documented MAX_RETRIES bound must exist in bin/exceptd.js');
-  assert.equal(Number(match[1]), 10);
+  // Find the persistAttestation function and grab the next MAX_RETRIES
+  // assignment inside its body. Using a function-name-anchored regex makes
+  // the test resilient to any cosmetic comment churn around the bound.
+  const persistIdx = src.indexOf('function persistAttestation(');
+  assert.notEqual(persistIdx, -1, 'persistAttestation function must exist in bin/exceptd.js'); // allow-notEqual: refusal-pin (indexOf returns -1 for missing; structural existence check)
+  // Search within ~6000 chars of the function body — generous enough for
+  // the lock block to relocate but tight enough to refuse a stray match
+  // from a sibling function. The lock block sits well inside this window.
+  const window = src.slice(persistIdx, persistIdx + 6000);
+  const match = window.match(/const MAX_RETRIES = (\d+);/);
+  assert.ok(match, 'persistAttestation body must declare a MAX_RETRIES bound');
+  assert.equal(Number(match[1]), 10,
+    'persistAttestation MAX_RETRIES must be bounded to 10 (was 50 pre-DD-P1-2); raising it back unblocks the unbounded-spin class');
 });
 
 test('DD P1-2: persistAttestation surfaces lock_contention:true sentinel', () => {
@@ -318,6 +325,17 @@ test('DD P1-2: persistAttestation surfaces lock_contention:true sentinel', () =>
 
 const playbookRunner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
+// Capture the pre-suite EXCEPTD_LOCK_DIR ONCE, then restore on every test
+// exit. Pre-strengthening: makeLockDir() set process.env.EXCEPTD_LOCK_DIR
+// without ever restoring it, so the first DD P1-3 test in the file leaked
+// the value into every downstream test in the same node process. This
+// caused real-world flake on suite re-runs in watch mode and confused the
+// playbook-runner's lock-dir resolution in unrelated tests.
+const ORIGINAL_LOCK_DIR_ENV = process.env.EXCEPTD_LOCK_DIR;
+function restoreLockDirEnv() {
+  if (ORIGINAL_LOCK_DIR_ENV === undefined) delete process.env.EXCEPTD_LOCK_DIR;
+  else process.env.EXCEPTD_LOCK_DIR = ORIGINAL_LOCK_DIR_ENV;
+}
 function makeLockDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-locks-'));
   process.env.EXCEPTD_LOCK_DIR = dir;
@@ -325,62 +343,74 @@ function makeLockDir() {
 }
 
 test('DD P1-3: acquireLock reclaims a lockfile whose recorded PID is dead', () => {
-  const dir = makeLockDir();
-  const playbookId = 'pb-stale-pid-' + process.pid;
-  // Pick a PID that almost certainly does not exist. PIDs above the usual
-  // pid_max are a safe choice on Linux/macOS; on Windows process.kill(pid, 0)
-  // returns ESRCH for non-existent PIDs as well.
-  const deadPid = 999999;
-  const lockFile = path.join(dir, `${playbookId}.lock`);
-  fs.writeFileSync(lockFile, JSON.stringify({ pid: deadPid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-stale-pid-' + process.pid;
+    // Pick a PID that almost certainly does not exist. PIDs above the usual
+    // pid_max are a safe choice on Linux/macOS; on Windows process.kill(pid, 0)
+    // returns ESRCH for non-existent PIDs as well.
+    const deadPid = 999999;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: deadPid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
 
-  const result = playbookRunner._acquireLock(playbookId);
-  assert.equal(result, lockFile,
-    'acquireLock must reclaim the lockfile when the recorded PID is not alive');
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(result, lockFile,
+      'acquireLock must reclaim the lockfile when the recorded PID is not alive');
 
-  // Lockfile should now be ours.
-  const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
-  assert.equal(reread.pid, process.pid);
-  playbookRunner._releaseLock(result);
+    // Lockfile should now be ours.
+    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    assert.equal(reread.pid, process.pid);
+    playbookRunner._releaseLock(result);
+  } finally {
+    restoreLockDirEnv();
+  }
 });
 
 test('DD P1-3: acquireLock returns null when lockfile is held by a live PID', () => {
-  const dir = makeLockDir();
-  const playbookId = 'pb-live-pid-' + process.pid;
-  const lockFile = path.join(dir, `${playbookId}.lock`);
-  // Record OUR pid as the holder — guaranteed to be alive.
-  fs.writeFileSync(lockFile, JSON.stringify({ pid: process.pid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
-  // pidAlive checks pid !== process.pid, so use a sibling helper to fake a
-  // different live pid. process.ppid is alive (the test runner's parent) and
-  // is !== process.pid.
-  const livePid = process.ppid && process.ppid !== process.pid ? process.ppid : process.pid + 1;
-  fs.writeFileSync(lockFile, JSON.stringify({ pid: livePid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-live-pid-' + process.pid;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    // Record OUR pid as the holder — guaranteed to be alive.
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: process.pid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+    // pidAlive checks pid !== process.pid, so use a sibling helper to fake a
+    // different live pid. process.ppid is alive (the test runner's parent) and
+    // is !== process.pid.
+    const livePid = process.ppid && process.ppid !== process.pid ? process.ppid : process.pid + 1;
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: livePid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
 
-  let isAlive = false;
-  try { process.kill(livePid, 0); isAlive = true; } catch {}
-  if (!isAlive) {
-    // Skip: couldn't find a reliably-live distinct PID in this environment.
-    return;
+    let isAlive = false;
+    try { process.kill(livePid, 0); isAlive = true; } catch {}
+    if (!isAlive) {
+      // Skip: couldn't find a reliably-live distinct PID in this environment.
+      return;
+    }
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(result, null,
+      'acquireLock must return null when the recorded PID is alive and not the caller');
+    // Lockfile contents unchanged (still the live holder).
+    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    assert.equal(reread.pid, livePid);
+  } finally {
+    restoreLockDirEnv();
   }
-  const result = playbookRunner._acquireLock(playbookId);
-  assert.equal(result, null,
-    'acquireLock must return null when the recorded PID is alive and not the caller');
-  // Lockfile contents unchanged (still the live holder).
-  const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
-  assert.equal(reread.pid, livePid);
 });
 
 test('DD P1-3: acquireLockDiagnostic distinguishes held vs reclaimed', () => {
-  const dir = makeLockDir();
-  const playbookId = 'pb-diag-' + process.pid;
-  const lockFile = path.join(dir, `${playbookId}.lock`);
-  fs.writeFileSync(lockFile, JSON.stringify({ pid: 999998, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-diag-' + process.pid;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: 999998, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
 
-  const diag = playbookRunner._acquireLockDiagnostic(playbookId);
-  assert.equal(diag.ok, true);
-  assert.equal(diag.path, lockFile);
-  assert.equal(diag.reclaimed_from_pid, 999998);
-  playbookRunner._releaseLock(diag.path);
+    const diag = playbookRunner._acquireLockDiagnostic(playbookId);
+    assert.equal(diag.ok, true);
+    assert.equal(diag.path, lockFile);
+    assert.equal(diag.reclaimed_from_pid, 999998);
+    playbookRunner._releaseLock(diag.path);
+  } finally {
+    restoreLockDirEnv();
+  }
 });
 
 // ============================================================================

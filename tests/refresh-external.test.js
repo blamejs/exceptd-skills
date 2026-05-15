@@ -28,7 +28,7 @@ function runDryRun(args = []) {
   const res = spawnSync(
     process.execPath,
     [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-fixture', FIX, '--quiet', '--report-out', reportPath, ...args],
-    { cwd: ROOT, encoding: 'utf8' }
+    { cwd: ROOT, encoding: 'utf8', env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } }
   );
   return { exitCode: res.status, stdout: res.stdout, stderr: res.stderr };
 }
@@ -179,7 +179,7 @@ test('refresh --source <unknown>: stderr surfaces error, exits 2 via exitCode', 
   const r = spawnSync(
     process.execPath,
     [path.join(ROOT, 'lib', 'refresh-external.js'), '--source', 'definitely-not-a-source', '--from-fixture', FIX, '--quiet'],
-    { cwd: ROOT, encoding: 'utf8' }
+    { cwd: ROOT, encoding: 'utf8', env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } }
   );
   assert.equal(r.status, 2, `unknown --source must exit 2 via exitCode; got ${r.status}`);
   assert.match(r.stderr || '', /unknown source/);

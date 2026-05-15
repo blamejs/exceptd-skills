@@ -448,6 +448,57 @@ function coversCveIoc(corpus, cveId) {
 
 // --- Main analyzer ----------------------------------------------------------
 
+// --- Class-level lint: ban coincidence-passing notEqual(r.status, 0) --------
+//
+// CLAUDE.md anti-coincidence rule: every exit-code assertion must pin the
+// EXACT code. `assert.notEqual(r.status, 0)` silently passes when an
+// unrelated failure produces ANY non-zero exit, hiding the regression the
+// test was meant to catch. This lint walks tests/*.test.js and rejects the
+// pattern outright. The `// allow-notEqual: <reason>` opt-out on the same
+// line is the escape hatch for genuine refusal-pins (asserting NOT a
+// specific code) — those must justify themselves inline.
+//
+// Pattern hits any of:
+//   assert.notEqual(r.status, 0)
+//   assert.notEqual(result.status, 0, '...')
+//   assert.notEqual(foo.status, 2, 'must not be unknown-cmd')   ← also refused
+// unless the same line ends with `// allow-notEqual: <reason>`.
+//
+// Cycle 8 JJJ: pre-fix, this class was a per-instance hunt across 25+ test
+// sites. Moving it to a structural lint keeps new tests / new ports from
+// regressing. Fix the class, not the instance (CLAUDE.md pitfall).
+function scanForCoincidenceAsserts(cwd) {
+  const out = [];
+  const testsDir = path.join(cwd, "tests");
+  if (!fs.existsSync(testsDir)) return out;
+  // Match `assert.notEqual( <ident>.status` — the receiver name varies
+  // (r, r1, result, child, etc.) but the .status access is the signal.
+  const banRe = /assert\.notEqual\s*\(\s*[A-Za-z_$][\w$]*\.status\b/;
+  const allowRe = /\/\/\s*allow-notEqual\s*:/;
+  const skipPrefix = "_helpers"; // helpers may legitimately reference the pattern
+  for (const entry of fs.readdirSync(testsDir, { withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    if (entry.name.startsWith(skipPrefix)) continue;
+    if (!entry.name.endsWith(".test.js")) continue;
+    const filePath = path.join(testsDir, entry.name);
+    let body;
+    try { body = fs.readFileSync(filePath, "utf8"); }
+    catch { continue; }
+    const lines = body.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!banRe.test(line)) continue;
+      if (allowRe.test(line)) continue;
+      out.push({
+        file: path.join("tests", entry.name).replace(/\\/g, "/"),
+        line: i + 1,
+        snippet: line.trim(),
+      });
+    }
+  }
+  return out;
+}
+
 function analyze(opts) {
   const cwd = opts.repo || ROOT;
   // v0.12.8: resolve the diff anchor ONCE and thread it through every
@@ -526,6 +577,21 @@ function analyze(opts) {
     }
   }
 
+  // Class-level lint: ban `notEqual(<ident>.status, N)` outside of
+  // refusal-pin allowlist comments. Runs irrespective of the diff —
+  // a coincidence-passing assert that lands via a non-test-coverage
+  // path (someone hand-edits a tests/ file in a docs-only commit) is
+  // still a regression vector the gate must catch.
+  const coincidenceFindings = scanForCoincidenceAsserts(cwd);
+  for (const f of coincidenceFindings) {
+    findings.push({
+      file: f.file,
+      kind: "coincidence-assert",
+      surface: f.snippet,
+      change: `line ${f.line}: pin to exact exit code; see CLAUDE.md anti-coincidence rule. Opt out only with \`// allow-notEqual: <reason>\` on the same line for genuine refusal-pins.`,
+    });
+  }
+
   return { findings, allowlisted, manualReview, totalChanged: changed.length };
 }
 
@@ -595,5 +661,6 @@ module.exports = {
   analyze, parseArgs, categorize,
   extractCliSurface, extractLibExports, extractPlaybookIds, extractCveIocChanges,
   coversCliVerb, coversCliFlag, coversLibExport, coversPlaybookId, coversCveIoc,
+  scanForCoincidenceAsserts,
   DOCS_ALWAYS_GREEN,
 };

@@ -36,7 +36,7 @@ Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/ex
 
 **v0.11.0 collapses the 21-verb CLI into 11 canonical verbs** + flips the default output to human-readable. The new surface: `discover` (scan cwd → recommend playbooks), `brief` (unified info doc, replaces plan + govern + direct + look), `run` (phases 4-7, with flat or nested submission shape, auto-detect cwd context), `ai-run` (JSONL streaming variant for AI conversational flow), `attest` (subverbs: list / show / export / verify / diff — replaces reattest + list-attestations), `doctor` (one-shot health check — signatures + currency + cve/rfc validation + signing status), `ci` (one-shot CI gate, exit-2 on detected or rwep ≥ escalate), `ask` (plain-English routing), `lint` (pre-flight submission shape check). Attestation root moved from cwd-relative `.exceptd/` to `~/.exceptd/attestations/<repo-or-host-tag>/`. v0.10.x verbs (`plan`/`govern`/`direct`/`look`/`scan`/`dispatch`/`currency`/`verify`/`validate-cves`/`validate-rfcs`/`watchlist`/`prefetch`/`build-indexes`/`ingest`/`reattest`/`list-attestations`) still work via one-time deprecation banner — scheduled for removal in v0.13.
 
-**v0.11.1-0.11.7 stability arc** — 30+ operator-reported items fixed across the v0.11.x line: mutex filesystem lockfile, `--vex` filter, `--ci` exit-code gating, `--diff-from-latest`, `--operator`/`--ack` attestation binding, `--format <fmt>` actually transforms output for run + ci, `ask` synonym routing, `lint` shares normalize contract with runner, CSAF/SARIF/OpenVEX bundles include indicator hits + framework gaps (was: empty for posture-only playbooks), CSAF current_release_date populated, SARIF rule definitions for every ruleId, `doctor --fix` for missing private key, `--strict-preconditions` flag, default human output for `attest list`/`lint` on TTY. Permanent regression suite at `tests/operator-bugs.test.js` (35 named test cases) — re-introductions caught at `npm test`, not at user re-report.
+**v0.11 series** — CLI ergonomics and signature-verify hardening: mutex filesystem lockfile, `--vex` filter, `--ci` exit-code gating, `--diff-from-latest`, `--operator`/`--ack` attestation binding, `--format <fmt>` transforms output for `run` and `ci`, `ask` synonym routing, `lint` shares the normalize contract with the runner, CSAF/SARIF/OpenVEX bundles include indicator hits and framework gaps for posture-only playbooks, CSAF `current_release_date` populated, SARIF rule definitions for every ruleId, `doctor --fix` repairs a missing private key, `--strict-preconditions` flag, default human output for `attest list` and `lint` on TTY. Regression coverage at `tests/operator-bugs.test.js` catches re-introductions at `npm test`.
 
 ---
 
@@ -146,6 +146,15 @@ For frequent use, install globally to skip the `npx` resolution every time:
 npm install -g @blamejs/exceptd-skills
 exceptd help
 ```
+
+First run — verify the signing chain and pin the public-key fingerprint for out-of-band checks:
+
+```bash
+exceptd doctor --signatures            # verify Ed25519 chains (38/38 expected)
+cat $(exceptd path)/keys/EXPECTED_FINGERPRINT   # pin fingerprint for OOB verify
+```
+
+Verify on npm: `npm view @blamejs/exceptd-skills@<version> dist.signatures` shows the SLSA v1 provenance attestation.
 
 Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
 
@@ -379,6 +388,10 @@ If your tool has a conventional auto-load filename not listed here and you'd lik
 - **`_meta.json`** — sha256 of every source file. The `validate-indexes` predeploy gate fails if any source changed after the last build; `build-indexes --changed` reads this to know what to rebuild.
 
 Regenerate with `exceptd build-indexes` (full) or `exceptd build-indexes --changed --parallel` (incremental).
+
+## For skill authors — `agents/`
+
+The `agents/` directory ships markdown role cards documenting authoring conventions for contributors writing new skills or playbooks. The cards are reference material for humans and AI assistants editing the repo; the CLI runtime does not load them. Operators consuming `@blamejs/exceptd-skills` can ignore the directory.
 
 ## Data catalogs
 

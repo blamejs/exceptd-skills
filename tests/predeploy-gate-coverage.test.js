@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * tests/audit-pp-fixes.test.js
+ * tests/predeploy-gate-coverage.test.js
  *
  * Regression coverage for the PP audit batch:
  *
@@ -25,6 +25,16 @@ const os = require('node:os');
 const ROOT = path.join(__dirname, '..');
 const playbookRunner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
+// Capture the pre-suite EXCEPTD_LOCK_DIR ONCE; restore at every test exit.
+// Without this, the first makeLockDir() call in the file leaked the value
+// into every subsequent test in the same node process, causing watch-mode
+// re-runs to load lockfiles from a destroyed tmp dir and silently flake.
+const ORIGINAL_LOCK_DIR_ENV = process.env.EXCEPTD_LOCK_DIR;
+function restoreLockDirEnv() {
+  if (ORIGINAL_LOCK_DIR_ENV === undefined) delete process.env.EXCEPTD_LOCK_DIR;
+  else process.env.EXCEPTD_LOCK_DIR = ORIGINAL_LOCK_DIR_ENV;
+}
+
 function makeLockDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-pp-locks-'));
   process.env.EXCEPTD_LOCK_DIR = dir;
@@ -36,6 +46,7 @@ function makeLockDir() {
 // ============================================================================
 
 test('PP P1-1: acquireLock reclaims a same-PID lockfile whose mtime is older than STALE_LOCK_MS', () => {
+  try {
   const dir = makeLockDir();
   const playbookId = 'pb-pp-self-stale-' + process.pid;
   const lockFile = path.join(dir, `${playbookId}.lock`);
@@ -64,9 +75,11 @@ test('PP P1-1: acquireLock reclaims a same-PID lockfile whose mtime is older tha
     'reclaimed lockfile must have a freshly-rewritten mtime (within 5s)',
   );
   playbookRunner._releaseLock(result);
+  } finally { restoreLockDirEnv(); }
 });
 
 test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (legitimate reentrancy block)', () => {
+  try {
   const dir = makeLockDir();
   const playbookId = 'pb-pp-self-fresh-' + process.pid;
   const lockFile = path.join(dir, `${playbookId}.lock`);
@@ -98,9 +111,11 @@ test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (
   );
   // Cleanup — we created it directly.
   try { fs.unlinkSync(lockFile); } catch {}
+  } finally { restoreLockDirEnv(); }
 });
 
 test('PP P1-1: acquireLockDiagnostic returns reclaimed_self_stale_pid: true for stale same-PID orphan', () => {
+  try {
   const dir = makeLockDir();
   const playbookId = 'pb-pp-diag-self-stale-' + process.pid;
   const lockFile = path.join(dir, `${playbookId}.lock`);
@@ -125,9 +140,11 @@ test('PP P1-1: acquireLockDiagnostic returns reclaimed_self_stale_pid: true for 
     'diagnostic must report the prior mtime for audit visibility',
   );
   playbookRunner._releaseLock(diag.path);
+  } finally { restoreLockDirEnv(); }
 });
 
 test('PP P1-1: acquireLockDiagnostic returns held_by_self for fresh same-PID lockfile', () => {
+  try {
   const dir = makeLockDir();
   const playbookId = 'pb-pp-diag-self-fresh-' + process.pid;
   const lockFile = path.join(dir, `${playbookId}.lock`);
@@ -146,6 +163,7 @@ test('PP P1-1: acquireLockDiagnostic returns held_by_self for fresh same-PID loc
   assert.equal(diag.holder_pid, process.pid);
   assert.equal(diag.lock_path, lockFile);
   try { fs.unlinkSync(lockFile); } catch {}
+  } finally { restoreLockDirEnv(); }
 });
 
 // ============================================================================
@@ -246,11 +264,13 @@ test('PP P1-2: emit() preserves an already-set non-zero exitCode (load-bearing f
     true,
     "emit() must gate its ok:false → exitCode=1 mapping on !process.exitCode so a pre-set 8 survives",
   );
-  // And persistAttestation must set exitCode BEFORE returning.
+  // And persistAttestation must set exitCode BEFORE returning. The exit
+  // value is now the EXIT_CODES.LOCK_CONTENTION named constant (post-v0.12.24
+  // centralisation) — accept either the literal `8` or the constant form.
   assert.equal(
-    /process\.exitCode\s*=\s*8;\s*\n\s*return\s*\{\s*\n\s*ok:\s*false,/.test(src),
+    /process\.exitCode\s*=\s*(8|EXIT_CODES\.LOCK_CONTENTION);\s*\n\s*return\s*\{\s*\n\s*ok:\s*false,/.test(src),
     true,
-    "persistAttestation lock-contention site must set process.exitCode = 8 BEFORE the return",
+    "persistAttestation lock-contention site must set process.exitCode = LOCK_CONTENTION BEFORE the return",
   );
   void bin; // touch require'd module so it isn't dead-code-eliminated
   process.exitCode = priorExitCode;

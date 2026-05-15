@@ -6,6 +6,57 @@
   "type": "object",
   "required": ["_meta", "domain", "phases", "directives"],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "_meta": {
+            "type": "object",
+            "properties": { "air_gap_mode": { "const": true } },
+            "required": ["air_gap_mode"]
+          }
+        },
+        "required": ["_meta"]
+      },
+      "then": {
+        "description": "When _meta.air_gap_mode is true, every artifact whose source contains a network-call substring (https://, http://, gh api, gh release, curl, wget, fetch) MUST carry an air_gap_alternative. The runner refuses to use the network when --air-gap is set, so an artifact with no offline fallback cannot be collected and the run is incomplete.",
+        "type": "object",
+        "properties": {
+          "phases": {
+            "type": "object",
+            "properties": {
+              "look": {
+                "type": "object",
+                "properties": {
+                  "artifacts": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "not": {
+                            "type": "object",
+                            "properties": {
+                              "source": {
+                                "type": "string",
+                                "pattern": "(https://|http://|gh api|gh release|curl |wget |fetch )"
+                              }
+                            },
+                            "required": ["source"]
+                          }
+                        },
+                        { "required": ["air_gap_alternative"] }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
 
     "_meta": {

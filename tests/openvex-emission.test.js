@@ -330,13 +330,14 @@ test('Q P2: cmdReattest refuses on missing .sig without --force-replay', () => {
     /TAMPERED-OR-MISSING/,
     'cmdReattest must surface a TAMPERED-OR-MISSING signal on missing sidecar'
   );
-  // The refuse branch must set exitCode = 6 (same as the tamper branch).
-  // Count occurrences of `process.exitCode = 6` — pre-fix there was 1
-  // (tamper only); post-fix there are >= 2 (tamper + missing-sidecar).
-  const matches = fnBody.match(/process\.exitCode\s*=\s*6/g) || [];
+  // The refuse branch must set exitCode = 6 / TAMPERED (same as the tamper
+  // branch). Count occurrences across both the literal `6` and the
+  // v0.12.24 named-constant form `EXIT_CODES.TAMPERED` — pre-fix there
+  // was 1 (tamper only); post-fix there are >= 2 (tamper + missing-sidecar).
+  const matches = fnBody.match(/process\.exitCode\s*=\s*(6|EXIT_CODES\.TAMPERED)/g) || [];
   assert.ok(
     matches.length >= 2,
-    `cmdReattest must set exitCode=6 on BOTH tamper and missing-sidecar paths (found ${matches.length})`
+    `cmdReattest must set exitCode=TAMPERED on BOTH tamper and missing-sidecar paths (found ${matches.length})`
   );
 });
 

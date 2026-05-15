@@ -273,15 +273,21 @@ test('KK P1-2 — attest verify surfaces both the original attestation AND the r
 
     const r = cli(['attest', 'verify', sid, '--json']);
     // Original sidecar is unsigned-substitution (tamper) so verify exits
-    // 6 — but the replay record is still listed in results.
+    // 6. v0.12.24 partitioned replay records out of `results[]` into
+    // `replay_results[]`: the original attestation surfaces in results[]
+    // (and its tamper class drives exit 6); the replay record lives under
+    // `replay_results[]` for audit-trail visibility without inflating the
+    // attestation-verified count.
     assert.equal(r.status, 6,
       `attest verify after a substituted-original force-replay must surface tamper class via exit 6. Got status=${r.status}.`);
     const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
     assert.ok(Array.isArray(body.results),
       'verify must emit a results array');
-    const replayResult = body.results.find((x) => x.file && x.file.startsWith('replay-'));
+    assert.ok(Array.isArray(body.replay_results),
+      'verify must emit a replay_results array (v0.12.24 partition)');
+    const replayResult = body.replay_results.find((x) => x.file && x.file.startsWith('replay-'));
     assert.ok(replayResult,
-      `verify results must include the replay-*.json file. Got files: ${body.results.map((x) => x.file).join(',')}`);
+      `verify replay_results must include the replay-*.json file. Got files: ${body.replay_results.map((x) => x.file).join(',')}`);
   });
 
 // ---------------------------------------------------------------------------
