@@ -1329,6 +1329,72 @@
   "model exfiltration incident": [
     "incident-response-playbook"
   ],
+  "ransomware": [
+    "ransomware-response"
+  ],
+  "ransomware incident": [
+    "ransomware-response"
+  ],
+  "encryption event": [
+    "ransomware-response"
+  ],
+  "akira ransomware": [
+    "ransomware-response"
+  ],
+  "lockbit": [
+    "ransomware-response"
+  ],
+  "alphv": [
+    "ransomware-response"
+  ],
+  "blackcat": [
+    "ransomware-response"
+  ],
+  "cuba ransomware": [
+    "ransomware-response"
+  ],
+  "royal ransomware": [
+    "ransomware-response"
+  ],
+  "blacksuit": [
+    "ransomware-response"
+  ],
+  "hunters international": [
+    "ransomware-response"
+  ],
+  "ransomhub": [
+    "ransomware-response"
+  ],
+  "ofac sanctions ransomware": [
+    "ransomware-response"
+  ],
+  "ransom payment": [
+    "ransomware-response"
+  ],
+  "decryptor availability": [
+    "ransomware-response"
+  ],
+  "no more ransom": [
+    "ransomware-response"
+  ],
+  "cyber insurance ransomware": [
+    "ransomware-response"
+  ],
+  "immutable backup": [
+    "ransomware-response"
+  ],
+  "shadow copy deletion": [
+    "ransomware-response"
+  ],
+  "exfil before encrypt": [
+    "ransomware-response"
+  ],
+  "double extortion": [
+    "ransomware-response"
+  ],
+  "data theft before encryption": [
+    "ransomware-response"
+  ],
   "email security": [
     "email-security-anti-phishing"
   ],
@@ -1436,5 +1502,129 @@
   ],
   "children's online safety": [
     "age-gates-child-safety"
+  ],
+  "cloud iam compromise": [
+    "cloud-iam-incident"
+  ],
+  "aws account takeover": [
+    "cloud-iam-incident"
+  ],
+  "gcp service account compromise": [
+    "cloud-iam-incident"
+  ],
+  "azure managed identity replay": [
+    "cloud-iam-incident"
+  ],
+  "cross account assume role": [
+    "cloud-iam-incident"
+  ],
+  "federated trust abuse": [
+    "cloud-iam-incident",
+    "idp-incident-response"
+  ],
+  "oidc trust policy": [
+    "cloud-iam-incident"
+  ],
+  "workload identity federation": [
+    "cloud-iam-incident"
+  ],
+  "iam access key leak": [
+    "cloud-iam-incident"
+  ],
+  "cloudtrail anomaly": [
+    "cloud-iam-incident"
+  ],
+  "imds metadata abuse": [
+    "cloud-iam-incident"
+  ],
+  "imdsv1 ssrf": [
+    "cloud-iam-incident"
+  ],
+  "scattered spider aws": [
+    "cloud-iam-incident"
+  ],
+  "snowflake aa24": [
+    "cloud-iam-incident"
+  ],
+  "aws sso compromise": [
+    "cloud-iam-incident"
+  ],
+  "iam identity center": [
+    "cloud-iam-incident"
+  ],
+  "crypto mining cloud": [
+    "cloud-iam-incident"
+  ],
+  "access key public repo": [
+    "cloud-iam-incident"
+  ],
+  "idp incident": [
+    "idp-incident-response"
+  ],
+  "identity provider incident": [
+    "idp-incident-response"
+  ],
+  "okta breach": [
+    "idp-incident-response"
+  ],
+  "okta compromise": [
+    "idp-incident-response"
+  ],
+  "entra id compromise": [
+    "idp-incident-response"
+  ],
+  "entra app consent": [
+    "idp-incident-response"
+  ],
+  "auth0 breach": [
+    "idp-incident-response"
+  ],
+  "ping identity breach": [
+    "idp-incident-response"
+  ],
+  "onelogin breach": [
+    "idp-incident-response"
+  ],
+  "midnight blizzard": [
+    "idp-incident-response"
+  ],
+  "cozy bear": [
+    "idp-incident-response"
+  ],
+  "apt29 entra": [
+    "idp-incident-response"
+  ],
+  "scattered spider": [
+    "idp-incident-response"
+  ],
+  "octo tempest": [
+    "idp-incident-response"
+  ],
+  "storm-0875": [
+    "idp-incident-response"
+  ],
+  "oauth consent abuse": [
+    "idp-incident-response"
+  ],
+  "saml token forgery": [
+    "idp-incident-response"
+  ],
+  "cross-tenant abuse": [
+    "idp-incident-response"
+  ],
+  "management api token leak": [
+    "idp-incident-response"
+  ],
+  "service account compromise": [
+    "idp-incident-response"
+  ],
+  "help-desk social engineering": [
+    "idp-incident-response"
+  ],
+  "mfa factor swap": [
+    "idp-incident-response"
+  ],
+  "tenant compromise": [
+    "idp-incident-response"
   ]
 }

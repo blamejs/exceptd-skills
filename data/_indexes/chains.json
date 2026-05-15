@@ -3609,9 +3609,11 @@
       "attack-surface-pentest",
       "identity-assurance",
       "webapp-security",
-      "container-runtime-security"
+      "container-runtime-security",
+      "cloud-iam-incident",
+      "idp-incident-response"
     ],
-    "skill_count": 4,
+    "skill_count": 6,
     "chain": {
       "atlas": [
         {
@@ -3634,15 +3636,58 @@
         "T1059",
         "T1068",
         "T1078",
+        "T1078.004",
+        "T1098.001",
         "T1110",
         "T1133",
         "T1190",
+        "T1199",
         "T1505",
+        "T1538",
+        "T1552.005",
         "T1556",
+        "T1556.007",
+        "T1580",
+        "T1606.002",
         "T1610",
         "T1611"
       ],
       "framework_gaps": [
+        {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
+        },
+        {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
         {
           "id": "ISO-27001-2022-A.8.28",
           "framework": "ISO/IEC 27001:2022",
@@ -3652,6 +3697,16 @@
           "id": "ISO-27001-2022-A.8.30",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Outsourced development"
+        },
+        {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -3674,14 +3729,29 @@
           "control_name": "Account Management"
         },
         {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
           "id": "NIST-800-53-CM-7",
           "framework": "NIST SP 800-53 Rev 5",
           "control_name": "Least Functionality"
         },
         {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
+        },
+        {
           "id": "NIST-800-63B-rev4",
           "framework": "NIST SP 800-63B Rev 4 (Digital Identity Guidelines — Authentication & Lifecycle Mgmt)",
           "control_name": "Authentication and Lifecycle Management (AAL/IAL/FAL)"
+        },
+        {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
         },
         {
           "id": "OWASP-ASVS-v5.0-V14",
@@ -3714,12 +3784,42 @@
           "control_name": "Hardened build platform with non-falsifiable provenance"
         },
         {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
+        },
+        {
           "id": "SOC2-CC6-logical-access",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Logical and Physical Access Controls"
+        },
+        {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
         }
       ],
       "d3fend": [
+        {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
         {
           "id": "D3-CSPP",
           "name": "Client-server Payload Profiling",
@@ -3728,6 +3828,16 @@
         {
           "id": "D3-EAL",
           "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
           "tactic": "Harden"
         },
         {
@@ -3748,6 +3858,11 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8032",
           "title": "Edwards-Curve Digital Signature Algorithm (EdDSA)",
           "status": "Informational"
@@ -3758,13 +3873,28 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
         },
         {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-9114",
           "title": "HTTP/3",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-9421",
+          "title": "HTTP Message Signatures",
           "status": "Proposed Standard"
         },
         {
@@ -3783,14 +3913,105 @@
   "CWE-284": {
     "name": "Improper Access Control",
     "category": "Access Control",
-    "referencing_skills": [],
-    "skill_count": 0,
+    "referencing_skills": [
+      "idp-incident-response"
+    ],
+    "skill_count": 1,
     "chain": {
       "atlas": [],
-      "attack_refs": [],
-      "framework_gaps": [],
-      "d3fend": [],
-      "rfc_refs": []
+      "attack_refs": [
+        "T1078.004",
+        "T1098.001",
+        "T1199",
+        "T1556.007",
+        "T1606.002"
+      ],
+      "framework_gaps": [
+        {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
+        },
+        {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
+        },
+        {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
+        }
+      ],
+      "d3fend": [
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        }
+      ],
+      "rfc_refs": [
+        {
+          "id": "RFC-7519",
+          "title": "JSON Web Token (JWT)",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-8725",
+          "title": "JSON Web Token Best Current Practices",
+          "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9421",
+          "title": "HTTP Message Signatures",
+          "status": "Proposed Standard"
+        }
+      ]
     },
     "related_cves": []
   },
@@ -3807,9 +4028,12 @@
       "sector-telecom",
       "api-security",
       "cloud-security",
-      "age-gates-child-safety"
+      "ransomware-response",
+      "age-gates-child-safety",
+      "cloud-iam-incident",
+      "idp-incident-response"
     ],
-    "skill_count": 10,
+    "skill_count": 13,
     "chain": {
       "atlas": [
         {
@@ -3845,16 +4069,23 @@
         "T1068",
         "T1071",
         "T1078",
+        "T1078.004",
         "T1098",
+        "T1098.001",
         "T1110",
         "T1190",
         "T1199",
         "T1486",
         "T1505",
         "T1530",
+        "T1538",
         "T1552",
+        "T1552.005",
         "T1556",
-        "T1567"
+        "T1556.007",
+        "T1567",
+        "T1580",
+        "T1606.002"
       ],
       "framework_gaps": [
         {
@@ -3863,14 +4094,49 @@
           "control_name": "3GPP Security Assurance Specification (gNB / eNB)"
         },
         {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
           "id": "AU-ISM-1556",
           "framework": "au-ism",
           "control_name": "Multi-factor authentication for privileged users (telecom NMS application)"
         },
         {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
           "id": "DORA-Art-21-Telecom-ICT",
           "framework": "DORA",
           "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)"
+        },
+        {
+          "id": "Decryptor-Availability-Pre-Decision",
+          "framework": "ALL",
+          "control_name": "Decryptor availability lookup as precondition to ransomware pay/restore decision"
+        },
+        {
+          "id": "EU-Sanctions-Reg-2014-833-Cyber",
+          "framework": "EU",
+          "control_name": "EU Council Regulation 2014/833 — Cyber Sanctions screening on ransomware payment posture"
         },
         {
           "id": "FCC-CPNI-4.1",
@@ -3881,6 +4147,11 @@
           "id": "FCC-Cyber-Incident-Notification-2024",
           "framework": "FCC",
           "control_name": "FCC Cyber Incident Notification (4 business days)"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
         },
         {
           "id": "FedRAMP-Rev5-Moderate",
@@ -3908,6 +4179,11 @@
           "control_name": "System security requirements and security levels"
         },
         {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
+        {
           "id": "ISO-27001-2022-A.8.28",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Secure coding"
@@ -3918,9 +4194,24 @@
           "control_name": "Outsourced development"
         },
         {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
+        },
+        {
           "id": "ITU-T-X.805",
           "framework": "ITU-T",
           "control_name": "ITU-T X.805 — 8-dimension security architecture for end-to-end communications"
+        },
+        {
+          "id": "Immutable-Backup-Recovery",
+          "framework": "ALL",
+          "control_name": "Immutable backup as distinct sub-property of backup control (vs replication / write-protect / off-network)"
+        },
+        {
+          "id": "Insurance-Carrier-24h-Notification",
+          "framework": "ALL",
+          "control_name": "Cyber insurance carrier 24h notification with pre-approval workflow"
         },
         {
           "id": "NERC-CIP-007-6-R4",
@@ -3931,6 +4222,11 @@
           "id": "NIS2-Annex-I-Telecom",
           "framework": "NIS2",
           "control_name": "NIS2 Annex I — telecommunications essential entities"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -3948,9 +4244,19 @@
           "control_name": "Account Management"
         },
         {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
           "id": "NIST-800-53-CM-7",
           "framework": "NIST SP 800-53 Rev 5",
           "control_name": "Least Functionality"
+        },
+        {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
         },
         {
           "id": "NIST-800-63B-rev4",
@@ -3963,6 +4269,16 @@
           "control_name": "Guide to Operational Technology (OT) Security"
         },
         {
+          "id": "OFAC-SDN-Payment-Block",
+          "framework": "ALL",
+          "control_name": "OFAC SDN sanctions screening as blocking gate on ransomware payment posture"
+        },
+        {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
+        },
+        {
           "id": "OWASP-ASVS-v5.0-V14",
           "framework": "OWASP ASVS v5.0",
           "control_name": "Configuration verification"
@@ -3973,9 +4289,24 @@
           "control_name": "Prompt Injection"
         },
         {
+          "id": "PHI-Exfil-Before-Encrypt-Breach-Class",
+          "framework": "ALL",
+          "control_name": "PHI / personal-data exfiltration before encryption as distinct breach class from the encryption event"
+        },
+        {
           "id": "PSD2-RTS-SCA",
           "framework": "EU PSD2 Regulatory Technical Standards on Strong Customer Authentication (Commission Delegated Regulation (EU) 2018/389)",
           "control_name": "Strong Customer Authentication and Common and Secure Communication"
+        },
+        {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
         },
         {
           "id": "SOC2-CC6-logical-access",
@@ -3993,6 +4324,16 @@
           "control_name": "SWIFT Environment Protection"
         },
         {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
+        },
+        {
           "id": "UK-CAF-B5",
           "framework": "UK-CAF",
           "control_name": "Resilient networks and systems"
@@ -4000,9 +4341,29 @@
       ],
       "d3fend": [
         {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-CSPP",
+          "name": "Client-server Payload Profiling",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-IOPR",
           "name": "Input/Output Profiling Resource",
           "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
+          "tactic": "Harden"
         },
         {
           "id": "D3-NI",
@@ -4018,6 +4379,11 @@
           "id": "D3-NTPM",
           "name": "Network Traffic Policy Mapping",
           "tactic": "Model"
+        },
+        {
+          "id": "D3-RPA",
+          "name": "Remote Process Analysis",
+          "tactic": "Detect"
         }
       ],
       "rfc_refs": [
@@ -4032,6 +4398,11 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8032",
           "title": "Edwards-Curve Digital Signature Algorithm (EdDSA)",
           "status": "Informational"
@@ -4042,9 +4413,19 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
         },
         {
           "id": "RFC-9114",
@@ -4470,9 +4851,10 @@
     "name": "Insufficient Verification of Data Authenticity",
     "category": "Authenticity / Supply Chain",
     "referencing_skills": [
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "idp-incident-response"
     ],
-    "skill_count": 1,
+    "skill_count": 2,
     "chain": {
       "atlas": [
         {
@@ -4493,8 +4875,13 @@
       ],
       "attack_refs": [
         "T1059",
+        "T1078.004",
+        "T1098.001",
         "T1190",
-        "T1195.001"
+        "T1195.001",
+        "T1199",
+        "T1556.007",
+        "T1606.002"
       ],
       "framework_gaps": [
         {
@@ -4503,9 +4890,29 @@
           "control_name": "MCP/Agent Tool Trust Boundaries"
         },
         {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
+        {
           "id": "ISO-27001-2022-A.8.30",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Outsourced development"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
         },
         {
           "id": "NIST-800-53-CM-7",
@@ -4513,14 +4920,29 @@
           "control_name": "Least Functionality"
         },
         {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
+        },
+        {
           "id": "NIST-800-53-SA-12",
           "framework": "NIST SP 800-53 Rev 5",
           "control_name": "Supply Chain Protection"
         },
         {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
+        },
+        {
           "id": "OWASP-LLM-Top-10-2025-LLM06",
           "framework": "OWASP Top 10 for LLM Applications 2025",
           "control_name": "Excessive Agency"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
         },
         {
           "id": "SOC2-CC9-vendor-management",
@@ -4531,6 +4953,11 @@
           "id": "SWIFT-CSCF-v2026-1.1",
           "framework": "SWIFT Customer Security Controls Framework v2026",
           "control_name": "SWIFT Environment Protection"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
         }
       ],
       "d3fend": [
@@ -4555,9 +4982,19 @@
           "tactic": "Harden"
         },
         {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-MFA",
           "name": "Multi-factor Authentication",
           "tactic": "Harden"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
         }
       ],
       "rfc_refs": [
@@ -4569,6 +5006,11 @@
         {
           "id": "RFC-7519",
           "title": "JSON Web Token (JWT)",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
           "status": "Proposed Standard"
         },
         {
@@ -5683,14 +6125,171 @@
   "CWE-522": {
     "name": "Insufficiently Protected Credentials",
     "category": "Credentials Management",
-    "referencing_skills": [],
-    "skill_count": 0,
+    "referencing_skills": [
+      "cloud-iam-incident",
+      "idp-incident-response"
+    ],
+    "skill_count": 2,
     "chain": {
-      "atlas": [],
-      "attack_refs": [],
-      "framework_gaps": [],
-      "d3fend": [],
-      "rfc_refs": []
+      "atlas": [
+        {
+          "id": "AML.T0051",
+          "name": "LLM Prompt Injection",
+          "tactic": "Execution"
+        }
+      ],
+      "attack_refs": [
+        "T1078",
+        "T1078.004",
+        "T1098.001",
+        "T1199",
+        "T1538",
+        "T1552.005",
+        "T1556.007",
+        "T1580",
+        "T1606.002"
+      ],
+      "framework_gaps": [
+        {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
+        },
+        {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
+        {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
+        },
+        {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
+        },
+        {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
+        },
+        {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
+        },
+        {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
+        }
+      ],
+      "d3fend": [
+        {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        }
+      ],
+      "rfc_refs": [
+        {
+          "id": "RFC-7519",
+          "title": "JSON Web Token (JWT)",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-8725",
+          "title": "JSON Web Token Best Current Practices",
+          "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-9421",
+          "title": "HTTP Message Signatures",
+          "status": "Proposed Standard"
+        }
+      ]
     },
     "related_cves": []
   },
@@ -5807,9 +6406,10 @@
       "identity-assurance",
       "webapp-security",
       "cloud-security",
-      "container-runtime-security"
+      "container-runtime-security",
+      "cloud-iam-incident"
     ],
-    "skill_count": 5,
+    "skill_count": 6,
     "chain": {
       "atlas": [
         {
@@ -5837,17 +6437,42 @@
         "T1059",
         "T1068",
         "T1078",
+        "T1078.004",
+        "T1098.001",
         "T1110",
         "T1133",
         "T1190",
         "T1505",
         "T1530",
+        "T1538",
         "T1552",
+        "T1552.005",
         "T1556",
+        "T1580",
         "T1610",
         "T1611"
       ],
       "framework_gaps": [
+        {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
+        },
         {
           "id": "FedRAMP-Rev5-Moderate",
           "framework": "FedRAMP Rev 5 Moderate",
@@ -5862,6 +6487,11 @@
           "id": "ISO-27001-2022-A.8.30",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Outsourced development"
+        },
+        {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -5881,6 +6511,11 @@
         {
           "id": "NIST-800-53-AC-2",
           "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
           "control_name": "Account Management"
         },
         {
@@ -5924,6 +6559,11 @@
           "control_name": "Hardened build platform with non-falsifiable provenance"
         },
         {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
+        },
+        {
           "id": "SOC2-CC6-logical-access",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Logical and Physical Access Controls"
@@ -5932,9 +6572,24 @@
           "id": "SOC2-CC9-vendor-management",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        },
+        {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
         }
       ],
       "d3fend": [
+        {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
         {
           "id": "D3-CSPP",
           "name": "Client-server Payload Profiling",
@@ -5943,6 +6598,16 @@
         {
           "id": "D3-EAL",
           "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
           "tactic": "Harden"
         },
         {
@@ -5973,9 +6638,19 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
         },
         {
           "id": "RFC-9114",
@@ -6219,9 +6894,11 @@
       "ot-ics-security",
       "sector-financial",
       "sector-energy",
-      "cloud-security"
+      "cloud-security",
+      "ransomware-response",
+      "cloud-iam-incident"
     ],
-    "skill_count": 5,
+    "skill_count": 7,
     "chain": {
       "atlas": [
         {
@@ -6248,17 +6925,53 @@
       "attack_refs": [
         "T0855",
         "T0883",
+        "T1059",
         "T1068",
         "T1078",
+        "T1078.004",
+        "T1098.001",
         "T1110",
         "T1190",
         "T1486",
         "T1530",
+        "T1538",
         "T1552",
+        "T1552.005",
         "T1556",
-        "T1567"
+        "T1567",
+        "T1580"
       ],
       "framework_gaps": [
+        {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "Decryptor-Availability-Pre-Decision",
+          "framework": "ALL",
+          "control_name": "Decryptor availability lookup as precondition to ransomware pay/restore decision"
+        },
+        {
+          "id": "EU-Sanctions-Reg-2014-833-Cyber",
+          "framework": "EU",
+          "control_name": "EU Council Regulation 2014/833 — Cyber Sanctions screening on ransomware payment posture"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
+        },
         {
           "id": "FedRAMP-Rev5-Moderate",
           "framework": "FedRAMP Rev 5 Moderate",
@@ -6275,6 +6988,21 @@
           "control_name": "Outsourced development"
         },
         {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
+        },
+        {
+          "id": "Immutable-Backup-Recovery",
+          "framework": "ALL",
+          "control_name": "Immutable backup as distinct sub-property of backup control (vs replication / write-protect / off-network)"
+        },
+        {
+          "id": "Insurance-Carrier-24h-Notification",
+          "framework": "ALL",
+          "control_name": "Cyber insurance carrier 24h notification with pre-approval workflow"
+        },
+        {
           "id": "NERC-CIP-007-6-R4",
           "framework": "NERC CIP-007-6 (BES Cyber System Security Management)",
           "control_name": "Security event monitoring"
@@ -6287,6 +7015,11 @@
         {
           "id": "NIST-800-53-AC-2",
           "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
           "control_name": "Account Management"
         },
         {
@@ -6305,9 +7038,24 @@
           "control_name": "Guide to Operational Technology (OT) Security"
         },
         {
+          "id": "OFAC-SDN-Payment-Block",
+          "framework": "ALL",
+          "control_name": "OFAC SDN sanctions screening as blocking gate on ransomware payment posture"
+        },
+        {
+          "id": "PHI-Exfil-Before-Encrypt-Breach-Class",
+          "framework": "ALL",
+          "control_name": "PHI / personal-data exfiltration before encryption as distinct breach class from the encryption event"
+        },
+        {
           "id": "PSD2-RTS-SCA",
           "framework": "EU PSD2 Regulatory Technical Standards on Strong Customer Authentication (Commission Delegated Regulation (EU) 2018/389)",
           "control_name": "Strong Customer Authentication and Common and Secure Communication"
+        },
+        {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
         },
         {
           "id": "SOC2-CC6-logical-access",
@@ -6323,9 +7071,50 @@
           "id": "SWIFT-CSCF-v2026-1.1",
           "framework": "SWIFT Customer Security Controls Framework v2026",
           "control_name": "SWIFT Environment Protection"
+        },
+        {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
         }
       ],
-      "d3fend": [],
+      "d3fend": [
+        {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-CSPP",
+          "name": "Client-server Payload Profiling",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-RPA",
+          "name": "Remote Process Analysis",
+          "tactic": "Detect"
+        }
+      ],
       "rfc_refs": [
         {
           "id": "RFC-6749",
@@ -6348,9 +7137,19 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
         },
         {
           "id": "RFC-9180",
@@ -6675,9 +7474,11 @@
       "identity-assurance",
       "webapp-security",
       "sector-financial",
-      "api-security"
+      "api-security",
+      "cloud-iam-incident",
+      "idp-incident-response"
     ],
-    "skill_count": 4,
+    "skill_count": 6,
     "chain": {
       "atlas": [
         {
@@ -6699,14 +7500,57 @@
       "attack_refs": [
         "T1059",
         "T1078",
+        "T1078.004",
+        "T1098.001",
         "T1110",
         "T1190",
+        "T1199",
         "T1486",
         "T1505",
+        "T1538",
+        "T1552.005",
         "T1556",
-        "T1567"
+        "T1556.007",
+        "T1567",
+        "T1580",
+        "T1606.002"
       ],
       "framework_gaps": [
+        {
+          "id": "AU-ISM-1546-Cloud-Service-Account",
+          "framework": "ACSC ISM (Australian Government Information Security Manual)",
+          "control_name": "Multi-factor authentication for privileged users and remote access"
+        },
+        {
+          "id": "AU-ISM-1559-IdP",
+          "framework": "AU ISM",
+          "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension"
+        },
+        {
+          "id": "AWS-Security-Hub-Coverage-Gap",
+          "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+          "control_name": "CSP-native posture-tool baseline (cross-provider gap class)"
+        },
+        {
+          "id": "CISA-Snowflake-AA24-IdP-Cloud",
+          "framework": "CISA (US) - Cross-framework advisory",
+          "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise"
+        },
+        {
+          "id": "DORA-Art-19-IdP-4h",
+          "framework": "EU DORA",
+          "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock"
+        },
+        {
+          "id": "FedRAMP-IL5-IAM-Federated",
+          "framework": "FedRAMP (US)",
+          "control_name": "FedRAMP Impact-Level 5 baseline IAM controls"
+        },
+        {
+          "id": "ISO-27001-2022-A.5.16-Federated",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Identity Management + Authentication Information — federated-state extension"
+        },
         {
           "id": "ISO-27001-2022-A.8.28",
           "framework": "ISO/IEC 27001:2022",
@@ -6716,6 +7560,16 @@
           "id": "ISO-27001-2022-A.8.30",
           "framework": "ISO/IEC 27001:2022",
           "control_name": "Outsourced development"
+        },
+        {
+          "id": "ISO-27017-Cloud-IAM",
+          "framework": "ISO/IEC 27017:2015",
+          "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001"
+        },
+        {
+          "id": "NIS2-Art-21-Federated-Identity",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Cryptography + Access Control — federated-identity extension"
         },
         {
           "id": "NIST-800-218-SSDF",
@@ -6728,9 +7582,24 @@
           "control_name": "Account Management"
         },
         {
+          "id": "NIST-800-53-AC-2-Cross-Account",
+          "framework": "NIST 800-53 Rev 5",
+          "control_name": "Account Management"
+        },
+        {
+          "id": "NIST-800-53-IA-5-Federated",
+          "framework": "NIST 800-53 Rev.5",
+          "control_name": "Authenticator Management — federated-trust extension"
+        },
+        {
           "id": "NIST-800-63B-rev4",
           "framework": "NIST SP 800-63B Rev 4 (Digital Identity Guidelines — Authentication & Lifecycle Mgmt)",
           "control_name": "Authentication and Lifecycle Management (AAL/IAL/FAL)"
+        },
+        {
+          "id": "OFAC-Sanctions-Threat-Actor-Negotiation",
+          "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+          "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation"
         },
         {
           "id": "OWASP-ASVS-v5.0-V14",
@@ -6748,6 +7617,16 @@
           "control_name": "Strong Customer Authentication and Common and Secure Communication"
         },
         {
+          "id": "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "framework": "AICPA SOC 2 Trust Services Criteria",
+          "control_name": "Logical Access Controls"
+        },
+        {
+          "id": "SOC2-CC6-OAuth-Consent",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Logical and Physical Access Controls — OAuth consent extension"
+        },
+        {
           "id": "SOC2-CC6-logical-access",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Logical and Physical Access Controls"
@@ -6756,9 +7635,45 @@
           "id": "SWIFT-CSCF-v2026-1.1",
           "framework": "SWIFT Customer Security Controls Framework v2026",
           "control_name": "SWIFT Environment Protection"
+        },
+        {
+          "id": "UK-CAF-B2-Cloud-IAM",
+          "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+          "control_name": "Identity and Access Control"
+        },
+        {
+          "id": "UK-CAF-B2-IdP-Tenant",
+          "framework": "UK NCSC CAF",
+          "control_name": "Identity and Access Control — IdP-tenant control-plane extension"
         }
       ],
-      "d3fend": [],
+      "d3fend": [
+        {
+          "id": "D3-CAA",
+          "name": "Credential Access Auditing",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-IOPR",
+          "name": "Input/Output Profiling Resource",
+          "tactic": "Detect"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-NTA",
+          "name": "Network Traffic Analysis",
+          "tactic": "Detect"
+        }
+      ],
       "rfc_refs": [
         {
           "id": "RFC-6749",
@@ -6768,6 +7683,11 @@
         {
           "id": "RFC-7519",
           "title": "JSON Web Token (JWT)",
+          "status": "Proposed Standard"
+        },
+        {
+          "id": "RFC-7591",
+          "title": "OAuth 2.0 Dynamic Client Registration Protocol",
           "status": "Proposed Standard"
         },
         {
@@ -6781,9 +7701,19 @@
           "status": "Proposed Standard"
         },
         {
+          "id": "RFC-8693",
+          "title": "OAuth 2.0 Token Exchange",
+          "status": "Proposed Standard"
+        },
+        {
           "id": "RFC-8725",
           "title": "JSON Web Token Best Current Practices",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9068",
+          "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+          "status": "Proposed Standard"
         },
         {
           "id": "RFC-9114",

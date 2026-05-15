@@ -1980,8 +1980,14 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],
-    "atlas_refs": ["AML.T0040"],
-    "attack_refs": ["T1078", "T1098", "T1199"]
+    "atlas_refs": [
+      "AML.T0040"
+    ],
+    "attack_refs": [
+      "T1078",
+      "T1098",
+      "T1199"
+    ]
   },
   "FCC-Cyber-Incident-Notification-2024": {
     "framework": "FCC",
@@ -1999,7 +2005,10 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199", "T1078"]
+    "attack_refs": [
+      "T1199",
+      "T1078"
+    ]
   },
   "NIS2-Annex-I-Telecom": {
     "framework": "NIS2",
@@ -2016,8 +2025,14 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],
-    "atlas_refs": ["AML.T0040"],
-    "attack_refs": ["T1199", "T1078", "T1098"]
+    "atlas_refs": [
+      "AML.T0040"
+    ],
+    "attack_refs": [
+      "T1199",
+      "T1078",
+      "T1098"
+    ]
   },
   "DORA-Art-21-Telecom-ICT": {
     "framework": "DORA",
@@ -2035,7 +2050,9 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199"]
+    "attack_refs": [
+      "T1199"
+    ]
   },
   "UK-CAF-B5": {
     "framework": "UK-CAF",
@@ -2053,7 +2070,10 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199", "T1078"]
+    "attack_refs": [
+      "T1199",
+      "T1078"
+    ]
   },
   "AU-ISM-1556": {
     "framework": "au-ism",
@@ -2071,7 +2091,10 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1078", "T1098"]
+    "attack_refs": [
+      "T1078",
+      "T1098"
+    ]
   },
   "GSMA-NESAS-Deployment": {
     "framework": "GSMA-NESAS",
@@ -2089,7 +2112,9 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199"]
+    "attack_refs": [
+      "T1199"
+    ]
   },
   "3GPP-TR-33.926": {
     "framework": "3GPP",
@@ -2107,7 +2132,9 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199"]
+    "attack_refs": [
+      "T1199"
+    ]
   },
   "ITU-T-X.805": {
     "framework": "ITU-T",
@@ -2125,6 +2152,466 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": ["T1199"]
+    "attack_refs": [
+      "T1199"
+    ]
+  },
+  "NIST-800-53-IA-5-Federated": {
+    "framework": "NIST 800-53 Rev.5",
+    "control_id": "IA-5 (federated)",
+    "control_name": "Authenticator Management — federated-trust extension",
+    "designed_for": "IA-5 governs authenticator issuance, distribution, storage, revocation, and replacement at the system layer.",
+    "misses": [
+      "Federated-trust modification at the IdP control plane (token-signing certificate rotation, claim-transformation rule changes, OIDC discovery-document tampering) is outside the IA-5 evidence path",
+      "IA-5 evidence is satisfied by a quarterly authenticator inventory snapshot; an attacker who modifies the federation in week 5 produces eight weeks of compliant audit trail before the next snapshot",
+      "Management-API tokens that bypass the human-MFA gate (Okta API tokens, Entra app secrets, Auth0 management API tokens) are not enumerated as IA-5 authenticators by most implementations"
+    ],
+    "real_requirement": "Extend IA-5 to the IdP control plane: continuous attestation of token-signing certificate fingerprints + claim-transformation rule baseline + per-modification change-control attestation + management-API-token inventory with TTL + scope + source-IP enforcement.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1556.007",
+      "T1098.001",
+      "T1606.002"
+    ]
+  },
+  "ISO-27001-2022-A.5.16-Federated": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.5.16 + A.5.17",
+    "control_name": "Identity Management + Authentication Information — federated-state extension",
+    "designed_for": "A.5.16 governs identity lifecycle (provisioning, modification, deprovisioning); A.5.17 governs the protection of authentication information.",
+    "misses": [
+      "Both controls cover static identity state — was the account provisioned, was MFA enrolled, was the password rotated",
+      "Federated-state transitions (OAuth consent grants, cross-tenant access settings, federated-trust modification) are not enumerated as a distinct control class",
+      "An ISO 27001:2022 audit can pass with zero evidence on the federated state of the IdP tenant"
+    ],
+    "real_requirement": "Add a control-objective footnote requiring inventory of OAuth consent grants + federated-trust configuration + cross-tenant access settings, with documented change-control for each modification and continuous alerting on high-risk grants.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1098.001",
+      "T1199"
+    ]
+  },
+  "SOC2-CC6-OAuth-Consent": {
+    "framework": "SOC 2 (AICPA Trust Services Criteria)",
+    "control_id": "CC6 (OAuth consent)",
+    "control_name": "Logical and Physical Access Controls — OAuth consent extension",
+    "designed_for": "CC6 covers authentication, authorization, and access controls for human users and service accounts. It treats the authenticated session as the access boundary.",
+    "misses": [
+      "OAuth consent grants federate scope outside the authenticated-session boundary; the consenting user authenticated correctly and the third-party app's onward calls are authorized by the grant",
+      "CC6 audit evidence shows nothing anomalous when a tenant-wide OAuth grant is harvested by an attacker — the Midnight Blizzard January 2024 pattern",
+      "No control for OAuth-app publisher verification, cross-tenant consent inventory, or scope-vs-business-purpose attestation"
+    ],
+    "real_requirement": "Add a CC6 sub-criterion requiring evidence of OAuth consent-grant inventory + continuous alerting on high-risk scope grants + per-grant business-purpose attestation + unverified-publisher gating.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1098.001"
+    ]
+  },
+  "UK-CAF-B2-IdP-Tenant": {
+    "framework": "UK NCSC CAF",
+    "control_id": "B2.b",
+    "control_name": "Identity and Access Control — IdP-tenant control-plane extension",
+    "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.b — effectively managing identity and access for the essential function.",
+    "misses": [
+      "B2.b is outcome-based against the IdP tenant's published authentication outcomes",
+      "The IdP-tenant control plane (who modified the tenant configuration itself) is outside the outcome's typical evidence surface",
+      "A compromised tenant continues to produce compliant B2.b outcomes until the attacker abandons stealth"
+    ],
+    "real_requirement": "Extend B2.b outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory, break-glass authentication alerting.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1098.001",
+      "T1556.007",
+      "T1199"
+    ]
+  },
+  "AU-ISM-1559-IdP": {
+    "framework": "AU ISM",
+    "control_id": "ISM-1559",
+    "control_name": "Privileged Account Credential Management — IdP-tenant control-plane extension",
+    "designed_for": "ISM-1559 covers privileged-account credential management — storage, rotation, monitoring of privileged credentials.",
+    "misses": [
+      "ISM-1559 reaches privileged credentials at the system layer (admin password vault, server-side admin accounts)",
+      "IdP-tenant control-plane operations (modifying federated trust, granting tenant-wide application permissions, rotating the token-signing certificate) are outside the ISM-1559 evidence path",
+      "The IdP tenant is the privileged-credential source-of-truth for every downstream system; ISM-1559 audits the downstream systems and treats the IdP tenant as oracle"
+    ],
+    "real_requirement": "Extend ISM-1559 scope to the IdP tenant's own control plane: management-API-token inventory, consent-grant inventory, federated-trust integrity, with continuous alerting and quarterly attestation.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001"
+    ]
+  },
+  "NIS2-Art-21-Federated-Identity": {
+    "framework": "EU NIS2 Directive",
+    "control_id": "Art.21(2)(j)",
+    "control_name": "Cryptography + Access Control — federated-identity extension",
+    "designed_for": "Art.21(2)(j) names cryptography and access-control measures (including MFA) as required risk-management measures for essential and important entities.",
+    "misses": [
+      "The supporting implementing acts and ENISA reference frameworks do not enumerate federated-identity control-plane operations (consent grants, federated-trust modification, cross-tenant access settings)",
+      "IdP-provider tenants serving essential entities are in scope but the evidence model lags",
+      "Art.23 24-hour clock fires on IdP incidents at essential entities but the tenant-operator-to-essential-entity notification chain is undefined for IdP-class incidents"
+    ],
+    "real_requirement": "Extend implementing-act guidance to enumerate federated-identity control-plane indicators (consent abuse, federation modification, cross-tenant compromise) as Art.23-triggering events with a defined notification chain from IdP provider to essential entity to competent authority.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1098.001",
+      "T1556.007",
+      "T1199"
+    ]
+  },
+  "DORA-Art-19-IdP-4h": {
+    "framework": "EU DORA",
+    "control_id": "Art.19 (4h IdP)",
+    "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock",
+    "designed_for": "DORA Art.19 — initial notification within 4 hours of classification of a major ICT-related incident, intermediate report within 72 hours, final report within one month.",
+    "misses": [
+      "Art.19 does not specify IdP-tenant compromise as a distinct incident class",
+      "Financial entities relying on a CSP-hosted IdP frequently classify IdP incidents under Art.28 ICT-third-party-provider concentration risk and miss the Art.19 4-hour clock entirely",
+      "The IdP is the single highest-blast-radius critical ICT third-party but the framework treats it as fungible"
+    ],
+    "real_requirement": "Add IdP-tenant compromise as a named incident class under Art.19 with the 4-hour clock binding from detect-confirmed timestamp, independent of concentration-risk classification under Art.28.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1098.001",
+      "T1556.007"
+    ]
+  },
+  "OFAC-Sanctions-Threat-Actor-Negotiation": {
+    "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
+    "control_id": "OFAC Sanctions — Cyber-Related Designations",
+    "control_name": "Sanctions screening on ransomware-payment / threat-actor negotiation",
+    "designed_for": "OFAC Cyber-Related Sanctions program (Executive Order 13694 + 13757) prohibits transactions with designated cyber-actors; EU sanctions (Council Regulation 269/2014 + cyber-specific designations) and UK OFSI mirror the regime.",
+    "misses": [
+      "IdP-incident-response that escalates to ransomware deployment (Scattered Spider 2023-2026 pattern) faces immediate ransom-payment-vs-sanctions screening decision under time pressure",
+      "OFAC 2020/2021 advisories warn of secondary sanctions liability for facilitators (IR firms, insurers, negotiators); decision authority is frequently undocumented pre-incident",
+      "Threat-actor-attribution-to-designated-entity is rarely deterministic during an active incident; the sanctions decision must operate under uncertainty"
+    ],
+    "real_requirement": "Pre-incident: document ransom-payment decision authority (legal + board sign-off); pre-stage OFAC + EU + UK sanctions screening procedure with named decision-maker; pre-stage facilitator-liability waiver language for IR firm + insurer + negotiator engagement. During incident: every decision logged with attribution evidence + sanctions screening outcome + named approver.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1486",
+      "T1078.004"
+    ]
+  },
+  "FedRAMP-IL5-IAM-Federated": {
+    "framework": "FedRAMP (US)",
+    "control_id": "IL5 baseline (AC-2 / AC-3 / AC-6 / IA-2 / IA-5)",
+    "control_name": "FedRAMP Impact-Level 5 baseline IAM controls",
+    "designed_for": "US-Government Impact-Level 5 cloud workloads with single-cloud-tenant deployments",
+    "misses": [
+      "Cross-IL trust patterns (IL5 workload assuming role into IL6 sovereign tenant)",
+      "Federated-trust hygiene with non-FedRAMP IdPs (Okta, Azure AD commercial, third-party SAML providers)",
+      "IL6 sovereign-cloud audience-claim constraints not enumerated in baseline",
+      "IL5-to-commercial-cloud cross-account assume-role chain monitoring",
+      "AI-workload managed-identity token-binding requirements in IL5 baseline"
+    ],
+    "real_requirement": "FedRAMP IL5-Federated extension explicitly enumerating cross-IL trust-policy requirements: (1) audience constraints pinned to sovereign-cloud STS endpoints, (2) subject-claim specificity with branch/tag constraints on OIDC federation, (3) cross-account assume-role graph monitoring over rolling 24h windows, (4) managed-identity token TTL ceilings (<= 1h non-CAE, <= 24h with Continuous Access Evaluation), (5) IL6 sovereign-cloud trust patterns enumerated separately.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001"
+    ]
+  },
+  "CISA-Snowflake-AA24-IdP-Cloud": {
+    "framework": "CISA (US) - Cross-framework advisory",
+    "control_id": "AA24-174A",
+    "control_name": "CISA Snowflake breach advisory - IdP-to-cloud chained-compromise",
+    "designed_for": "CISA-published advisory documenting the Snowflake customer-credential compromise class (June 2024)",
+    "misses": [
+      "No framework currently enumerates cross-system credential-reuse as a distinct control class",
+      "Federated IdP downstream-consumer inventory is not a required attestation in any framework",
+      "Compromise via stolen Okta / Azure AD / Google Workspace credentials reaching both SaaS (Snowflake) and cloud-IAM (AWS / Azure / GCP) is invisible to per-system access reviews",
+      "Infostealer-sourced session tokens are not enumerated as a credential class in ISO A.5.18 access-rights review",
+      "No required control for periodic cross-system credential-reuse mapping across federated IdPs and their downstream consumers"
+    ],
+    "real_requirement": "Extension to ISO/IEC 27001:2022 A.5.18, SOC 2 CC6.1, NIST 800-53 AC-2: every federated trust must enumerate downstream-consumer systems with continuous attestation. Cross-system credential-reuse mapping refreshed quarterly. Infostealer-sourced credential detection (commercial threat intel feeds) integrated with IdP audit log. Reference cases: AT&T, Ticketmaster, Santander, Advance Auto Parts, Neiman Marcus, LendingTree, Pure Storage (June 2024).",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1078",
+      "T1078.004"
+    ]
+  },
+  "NIST-800-53-AC-2-Cross-Account": {
+    "framework": "NIST 800-53 Rev 5",
+    "control_id": "AC-2",
+    "control_name": "Account Management",
+    "designed_for": "Establish, activate, modify, review, disable, and remove information-system accounts",
+    "misses": [
+      "Cross-account assume-role chains across cloud-provider account boundaries - each link is a valid AC-2-compliant action; the compromise is the chain",
+      "No concept of chain-of-assumptions monitoring over rolling time windows",
+      "External-id enforcement on cross-account trust policies is not enumerated as a sub-control",
+      "Federated-trust subject-claim specificity not enumerated",
+      "Audit cadence (periodic account review) is mismatched to cloud-compromise timeline (hours-to-days)"
+    ],
+    "real_requirement": "AC-2 extension with chain-of-assumptions sub-control: continuous monitoring of cross-account / cross-project / cross-management-group role-assumption graphs over rolling 24h windows; external-id mandatory on every cross-account trust; federated-trust subject-claim specificity attested per role; alerting on any chain traversing >= 2 account boundaries with a common source principal within 24h. Anticipated in NIST 800-53 Rev 6 (2027).",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001"
+    ]
+  },
+  "ISO-27017-Cloud-IAM": {
+    "framework": "ISO/IEC 27017:2015",
+    "control_id": "A.9.2.1 (cloud extension) / Annex A cloud-services controls",
+    "control_name": "ISO/IEC 27017 cloud-services security extension to ISO/IEC 27001",
+    "designed_for": "Code of practice for information-security controls for cloud-services use, extending ISO/IEC 27001:2013/2022",
+    "misses": [
+      "Managed-identity token replay against the cloud instance-metadata API not enumerated",
+      "IMDS-version hardening (v1 to v2 transition; hop-limit enforcement; token TTL) not in scope",
+      "Cloud-IAM cross-account assume-role chain monitoring not enumerated",
+      "Federated trust (SAML / OIDC / Workload Identity Federation) hygiene controls not specified",
+      "Bearer-token TTL ceilings for non-human cloud principals not required"
+    ],
+    "real_requirement": "ISO/IEC 27017:2027 (anticipated) cloud-IAM hardening: (1) managed-identity token-binding to instance identity where the CSP supports it, (2) IMDS v2-required attestation with hop-limit and token TTL ceilings, (3) cross-account assume-role chain monitoring, (4) federated-trust subject-claim specificity, (5) bearer-token TTL ceilings <= 1h non-CAE / <= 24h with Continuous Access Evaluation.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1552.005",
+      "T1078.004"
+    ]
+  },
+  "SOC2-CC6-Access-Key-Leak-Public-Repo": {
+    "framework": "AICPA SOC 2 Trust Services Criteria",
+    "control_id": "CC6.1",
+    "control_name": "Logical Access Controls",
+    "designed_for": "Restrict logical access to data and system resources via authentication and authorization mechanisms",
+    "misses": [
+      "Access keys leaked to public code repositories produce fully-authenticated sessions that satisfy CC6.1 evidence",
+      "The leak point (public repository) is outside CC6 scope",
+      "Scraper-bot exploitation timeline (~5 minutes from commit to exploitation) is faster than any CC6 detection cadence",
+      "CC6.1 audit evidence is satisfied by IAM policy review; says nothing about credential exposure on public-code-search surfaces",
+      "Post-rotation provider audit-log review for misuse-window is not required by CC6.1"
+    ],
+    "real_requirement": "CC6 sub-criterion requiring continuous monitoring of credential exposure on public-code-search surfaces (GitHub, GitLab, Bitbucket public, npm, PyPI, Docker Hub). Real-time alerting on CreateAccessKey events outside IaC apply windows. Provider audit-log review for misuse-window evidence on every rotation event. Reference: 2024-2025 AWS-key-in-public-repo crypto-mining campaign data (scraper bots monetize within ~5 minutes of public exposure).",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1552.005"
+    ]
+  },
+  "AWS-Security-Hub-Coverage-Gap": {
+    "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
+    "control_id": "Foundational Security Best Practices / equivalent posture-baseline control set",
+    "control_name": "CSP-native posture-tool baseline (cross-provider gap class)",
+    "designed_for": "Configuration-drift detection across CSP-managed resources mapped to baseline standards (CIS / PCI-DSS / NIST 800-53)",
+    "misses": [
+      "Posture tools are coverage-based, not breach-detection - they flag configuration drift, not behavioural compromise",
+      "Cross-account assume-role chain anomalies are not enumerated as findings",
+      "Federated-trust wildcard subject-claim posture not enumerated",
+      "IMDSv1 access events (vs IMDSv1 enablement) not surfaced",
+      "Billing anomalies (crypto-mining signal) outside posture scope entirely",
+      "Audit-log disablement detection is a separate paid feature (GuardDuty / Defender for Cloud), not in baseline posture"
+    ],
+    "real_requirement": "SOC 2 CC7.2 sub-criterion requiring that monitoring coverage be measured against a behavioural-indicator inventory (e.g. the cloud-iam-incident playbook detect.indicators), not against posture-tool deployment. NIST 800-53 SI-4 extension requiring behavioural CloudTrail / audit-log analytics over rolling 24h windows. Combined posture + behavioural-analytics deployment with documented coverage mapping.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001",
+      "T1562.008"
+    ]
+  },
+  "UK-CAF-B2-Cloud-IAM": {
+    "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+    "control_id": "B2",
+    "control_name": "Identity and Access Control",
+    "designed_for": "NCSC CAF outcome that access to networks and information systems supporting the essential function is appropriately controlled",
+    "misses": [
+      "Cloud-IAM-specific trust-policy hygiene not enumerated in B2 contributing outcomes",
+      "Cross-account assume-role chain monitoring is not a required B2 evidence",
+      "Federated trust (SAML / OIDC / Workload Identity Federation) hygiene not specified",
+      "Managed-identity token TTL ceilings not enumerated",
+      "IMDS hardening not in scope of B2"
+    ],
+    "real_requirement": "UK CAF v4 contributing-outcomes refresh enumerating cloud-IAM-specific trust-policy hygiene: (1) non-wildcard federated subject claims, (2) audience-pinned audience constraints, (3) external-id mandatory on cross-account trusts, (4) bearer-token TTL ceilings on non-human principals, (5) cross-account assume-role graph monitoring over rolling 24h windows.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001"
+    ]
+  },
+  "AU-ISM-1546-Cloud-Service-Account": {
+    "framework": "ACSC ISM (Australian Government Information Security Manual)",
+    "control_id": "ISM-1546",
+    "control_name": "Multi-factor authentication for privileged users and remote access",
+    "designed_for": "MFA for AU-government privileged users and remote-access scenarios",
+    "misses": [
+      "Cloud service-account access keys are bearer credentials that bypass human MFA entirely",
+      "IAM-role assume-role chains initiated by service principals never cross the human-MFA gate",
+      "Managed-identity tokens (Azure managed identity, AWS instance profile, GCP service-account default) are scoped to non-human principals",
+      "OIDC federation tokens for CI (GitHub Actions / GitLab / CircleCI) bypass human-MFA - MFA was evaluated at the IdP, not at the cloud",
+      "SAML assertions held by SaaS integrations bypass cloud-IAM MFA"
+    ],
+    "real_requirement": "ISM-1546 extension enumerating cloud non-human-principal credential hygiene: (1) bearer-token TTL ceilings (<= 1h non-CAE, <= 24h with Continuous Access Evaluation), (2) audience binding on every federated trust, (3) per-action audit logging on every non-human principal, (4) periodic rotation cadence with documented owner, (5) detection of token replay across source-IP boundaries.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1552.005"
+    ]
+  },
+  "OFAC-SDN-Payment-Block": {
+    "framework": "ALL",
+    "control_id": "RANSOMWARE-GAP-001",
+    "control_name": "OFAC SDN sanctions screening as blocking gate on ransomware payment posture",
+    "designed_for": "N/A — sanctions compliance lives in Treasury / Finance regulatory tree (31 CFR 501, OFAC Ransomware Advisory 2021), not in NIST/ISO/SOC 2 incident-response controls. No security framework names the OFAC SDN list check as a control on the payment posture.",
+    "misses": [
+      "No security framework requires pre-rehearsed sanctions-screening workflow as a precondition to ransomware payment decision",
+      "Cross-jurisdiction sanctions lists (EU Reg 2014/833, UK OFSI Consolidated List, AU DFAT, JP MOF Foreign Exchange and Foreign Trade Act) are not enumerated as parallel obligations in any IR framework",
+      "Attribution-evidence package format for sanctions lookup (ransom note IoCs, leak-site URL, crypto-wallet, family fingerprint) is not standardized; counsel-signature workflow is not framework-mandated",
+      "Payment to sanctioned threat actor is a federal-law violation in US (31 CFR 501) but auditors do not test the screening-workflow rehearsal record"
+    ],
+    "real_requirement": "Ransomware-specific IR sub-control requiring: (a) pre-rehearsed sanctions-screening workflow with named legal counsel, (b) cross-jurisdiction lookup against US OFAC SDN + EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF, (c) attribution-evidence package format, (d) counsel-signed attestation with timestamp ordered before any negotiator engagement, (e) annual tabletop exercise that includes a sanctions-match inject under time-pressure.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486"]
+  },
+  "Insurance-Carrier-24h-Notification": {
+    "framework": "ALL",
+    "control_id": "RANSOMWARE-GAP-002",
+    "control_name": "Cyber insurance carrier 24h notification with pre-approval workflow",
+    "designed_for": "N/A — cyber-insurance carrier-policy interaction lives in contract law, not in security framework control text. No security framework names the carrier-notification clock or carrier-pre-approval requirements as a control.",
+    "misses": [
+      "Most cyber-insurance policies post-2021 require 24h initial notification; non-compliance is grounds for policy voiding — yet no security framework treats this as a control",
+      "Carrier-pre-approval requirements for ransom payment, IR firm engagement, and restore-vs-pay decision are not enumerated by any framework",
+      "Carrier panel of approved IR firms is not surfaced as a vendor-management control (SOC 2 CC9.2 covers vendor risk but not carrier-panel composition)",
+      "Sanctions exclusion language in policies (exclusion of payment to OFAC-sanctioned actors) is not cross-walked to incident-response procedure",
+      "Carrier denial post-incident is the dominant economic-exposure failure mode and is preventable, but no framework requires the rehearsal that prevents it"
+    ],
+    "real_requirement": "Ransomware-specific IR sub-control + SOC 2 CC9.2 sub-criterion requiring: (a) cyber insurance policy clause-by-clause review with broker, (b) carrier panel of approved IR firms identified and retained IR firm verified on-panel, (c) pre-approval workflow rehearsed with broker not just present in policy text, (d) 24h notification clock workflow exercised end-to-end with loss-notice form + carrier-reachable channel + broker after-hours contact, (e) annual tabletop with carrier-notification as an exercise inject.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486"]
+  },
+  "EU-Sanctions-Reg-2014-833-Cyber": {
+    "framework": "EU",
+    "control_id": "RANSOMWARE-GAP-003",
+    "control_name": "EU Council Regulation 2014/833 — Cyber Sanctions screening on ransomware payment posture",
+    "designed_for": "Council Regulation (EU) 2014/833 — EU consolidated cyber sanctions framework. Establishes cyber-specific listings for autonomous EU sanctions against threat actors attributed to cyber attacks affecting EU member states.",
+    "misses": [
+      "Lives in EU sanctions regulatory tree, not in NIS2 Art.23 or DORA Art.19 control text; the cross-walk is the operator's responsibility",
+      "NIS2 24h significant-incident notification and DORA 4h major-ICT-incident notification do not enumerate EU 2014/833 sanctions screening as a precondition to payment posture",
+      "EU consolidated sanctions list lookup is not pre-integrated into IR playbook tooling at most enterprises",
+      "EU-jurisdiction-specific counsel-signature requirements are not standardized"
+    ],
+    "real_requirement": "NIS2 + DORA + national-level incident-response procedure extension requiring EU Reg 2014/833 cyber sanctions screening as a precondition to ransomware payment posture; counsel-signed attestation with timestamp; integration with parallel OFAC + UK + AU + JP lookups.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486"]
+  },
+  "Immutable-Backup-Recovery": {
+    "framework": "ALL",
+    "control_id": "RANSOMWARE-GAP-004",
+    "control_name": "Immutable backup as distinct sub-property of backup control (vs replication / write-protect / off-network)",
+    "designed_for": "N/A — security frameworks generally require 'backup' as a single control class without distinguishing immutability from replication. NIST CP-9, ISO A.8.13, AU E8 Strategy 8, SOC 2 A1.2 all name backup but treat it as a single property.",
+    "misses": [
+      "'Off-network' (AU E8 ML2 maturity gate) is not immutability — replication targets accessible via the same compromised admin credential as production fail the ransomware blast-radius test without failing E8 Backup compliance",
+      "Storage-side compliance-lock (S3 Object Lock compliance-retention, Azure immutable blob with legal hold, Veeam Hardened Repository) vs governance-retention (admin-overrideable) is not distinguished in framework text",
+      "Versioning and write-protect labels are routinely marketed as 'immutable' but are bypassable with admin credential — frameworks accept marketing-label evidence",
+      "No framework requires a production-admin-credential adversary-simulation test of the immutability property",
+      "Recovery-from-backup tabletop exercises are present (ISO 27031, AU E8 Backup ML3) but the exercises do not test immutability end-to-end"
+    ],
+    "real_requirement": "Backup-control sub-property distinguishing: (a) immutable backup = compliance-lock storage policy with admin-separation and no root override, (b) replicated backup = off-site copy but admin-credential-deletable, (c) write-protected backup = storage-side enforcement but admin-policy-modifiable, (d) off-network backup = air-gapped retrieval but possibly mutable on retrieval. Annual end-to-end test using production-admin-credential adversary simulation to confirm the immutability property holds.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486"]
+  },
+  "Decryptor-Availability-Pre-Decision": {
+    "framework": "ALL",
+    "control_id": "RANSOMWARE-GAP-005",
+    "control_name": "Decryptor availability lookup as precondition to ransomware pay/restore decision",
+    "designed_for": "N/A — no security framework requires decryptor availability lookup against No More Ransom Project or vendor-specific decryptor catalogs before payment decision. NIST IR-4, ISO A.5.26, SOC 2 CC7.4 incident-response controls are method-neutral.",
+    "misses": [
+      "No framework requires the pay/restore decision to be informed by a decryptor-availability lookup result",
+      "No More Ransom Project Crypto Sheriff + Emsisoft + Kaspersky NoMoreCry + Bitdefender + Avast decryptor catalogs are not pre-integrated into IR playbook tooling at most enterprises",
+      "Decryptor known-failure-mode documentation (Conti / LockBit / ALPHV partial-decryption rates from Coveware quarterly reports) is not surfaced as decision input",
+      "Operation Cronos (Feb 2024) LockBit decryptor + similar law-enforcement decryptor drops are not auto-integrated into IR posture",
+      "Decryptor reliability is treated as binary (works / doesn't work) when the operational reality is partial decryption with ~35% failure rate for paid victims (Coveware 2023-2026)"
+    ],
+    "real_requirement": "Ransomware-specific IR sub-control requiring: (a) curated decryptor catalog integrated into IR playbook (No More Ransom + Emsisoft + Kaspersky NoMoreCry + Bitdefender + Avast + law-enforcement releases), (b) decryptor-availability lookup executed and recorded with timestamp before pay/restore decision, (c) decryptor known-failure-mode review as decision input, (d) periodic catalog refresh (quarterly) and integration with threat-intel feed.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486"]
+  },
+  "PHI-Exfil-Before-Encrypt-Breach-Class": {
+    "framework": "ALL",
+    "control_id": "RANSOMWARE-GAP-006",
+    "control_name": "PHI / personal-data exfiltration before encryption as distinct breach class from the encryption event",
+    "designed_for": "HIPAA Breach Notification Rule 45 CFR 164.400-414; GDPR Art.33/34; state breach laws (CCPA Sec.1798.82, NY SHIELD Act, etc.); AU NDB scheme; UK GDPR. These statutes trigger on the breach event regardless of encryption status.",
+    "misses": [
+      "HIPAA 164.308(a)(7) Contingency Plan rule is recovery-shaped; treats the encryption event as the trigger and does not naturally surface exfil-before-encrypt as a parallel obligation under 164.402",
+      "GDPR Art.33/34 trigger on personal-data breach but the 72h clock interaction with ransomware encryption is not enumerated in security framework controls",
+      "Coveware Q1 2026 reports >82% of named-ransomware incidents include exfiltration — the dominant pattern, yet frameworks treat ransomware as a single 'availability' incident class",
+      "State breach laws (CCPA, NY SHIELD, MA 201 CMR 17, IL PIPA, etc.) trigger on exfiltration regardless of encryption recovery — the parallel state-AG notification matrix is not framework-mandated",
+      "HIPAA Security Rule NPRM (late 2024 → final rule expected 2026) may close part of this gap; UK GDPR + AU NDB equivalents are not on similar revision schedule"
+    ],
+    "real_requirement": "Ransomware-specific IR sub-control + HIPAA 164.308(a)(7) extension requiring: (a) exfil-before-encrypt detection (24-72h egress profile preceding encryption event) integrated into IR playbook, (b) exfil-scope determination as parallel obligation independent of encryption-recovery status, (c) HIPAA 164.402 breach risk assessment triggered on exfil event, (d) GDPR Art.33/34 + state breach law + UK GDPR + AU NDB parallel-clock matrix as framework-mandated output, (e) tabletop exercise inject covering exfil-before-encrypt scope determination under time-pressure.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [],
+    "atlas_refs": [],
+    "attack_refs": ["T1486", "T1567"]
   }
 }

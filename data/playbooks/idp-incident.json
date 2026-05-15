@@ -1,0 +1,1259 @@
+{
+  "_meta": {
+    "id": "idp-incident",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-15",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-15",
+        "summary": "Initial seven-phase identity-provider incident-response playbook covering Okta / Entra ID / Auth0 / Ping / OneLogin tenant compromise, federated-trust abuse, OAuth app consent abuse, and the Midnight Blizzard / Scattered Spider TTPs against IdP control-plane. Walks the tenant's audit-log API + consent inventory + federated-trust configuration + privileged-role assignments + service-account state + management-API-token inventory to surface compromise indicators; closes the GRC loop with IdP-specific framework gap mapping (NIST IA-5 federated lag, ISO A.5.16/A.5.17 federated lag, SOC 2 CC6 OAuth-consent lag, UK CAF B2 tenant-plane lag, AU ISM-1559 IdP-plane lag) and jurisdiction-aware notification drafts.",
+        "framework_gaps_updated": [
+          "NIST-800-53-IA-5-Federated",
+          "ISO-27001-2022-A.5.16-Federated",
+          "SOC2-CC6-OAuth-Consent",
+          "UK-CAF-B2-IdP-Tenant",
+          "AU-ISM-1559-IdP",
+          "NIS2-Art-21-Federated-Identity",
+          "DORA-Art-19-IdP-4h"
+        ]
+      }
+    ],
+    "owner": "@blamejs/grc",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "idp-audit-api-reachable",
+        "description": "The IdP tenant's audit-log API must be reachable from the operator's investigation environment (Okta /api/v1/logs, Entra ID /auditLogs/signIns + /auditLogs/directoryAudits via Graph, Auth0 /api/v2/logs, Ping /environments/{id}/auditTrails, OneLogin /api/2/events).",
+        "check": "idp_audit_api_reachable == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "tenant-admin-rbac",
+        "description": "Operator must hold a Super Admin / Global Administrator / Tenant Owner / Read-only Admin role sufficient to enumerate consent grants, federated-trust configuration, and privileged-role assignments without exposing additional attack surface during the IR.",
+        "check": "operator_has_idp_admin == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "tenant-ownership",
+        "description": "The operator must own the tenant under investigation (or hold explicit written authorisation from the tenant owner). IdP-incident response touches authentication state for every downstream service.",
+        "check": "tenant_ownership_attested == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.blast_radius >= 4"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Identity-provider tenant compromise + federated-trust abuse + OAuth consent abuse",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078.004",
+      "T1556.007",
+      "T1098.001",
+      "T1606.002",
+      "T1199"
+    ],
+    "cve_refs": [
+      "CVE-2024-1709",
+      "CVE-2023-3519",
+      "CVE-2026-30615"
+    ],
+    "cwe_refs": [
+      "CWE-287",
+      "CWE-863",
+      "CWE-269",
+      "CWE-284",
+      "CWE-522",
+      "CWE-345"
+    ],
+    "d3fend_refs": [
+      "D3-MFA",
+      "D3-CBAN",
+      "D3-NTA",
+      "D3-IOPR"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "hipaa"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.34",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "data_subject_categories_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "exposure_window_estimate",
+            "rotation_status"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "affected_critical_or_important_functions",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment"
+          ]
+        },
+        {
+          "jurisdiction": "US-NY",
+          "regulation": "NYDFS 23 NYCRR 500.17",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "containment_record",
+            "ciso_certification_status"
+          ]
+        },
+        {
+          "jurisdiction": "US-CA",
+          "regulation": "CCPA / CPRA Sec.1798.82",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 1440,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "california_resident_records_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Privacy Act 1988 — Notifiable Data Breaches scheme (s26WK)",
+          "obligation": "notify_regulator",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "australian_resident_records_affected",
+            "remediation_completed_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "okta-mfa-as-compromise-proof",
+          "claim": "Okta MFA is enforced on every login, so the tenant cannot be compromised.",
+          "fast_detection_test": "Pull the last 90 days of admin-audit events and filter for AuthenticatorEnrollment, FactorReset, FactorBypass, and policy-change events on the MFA policy itself. Help-desk-mediated factor reset (Scattered Spider 2023-2026 TTP) leaves the user-facing MFA policy unchanged while replacing the factor under operator control. If any factor-reset event lacks a paired help-desk ticket or out-of-band identity-verification record, the MFA-enforced claim is paper compliance only.",
+          "implicated_controls": [
+            "nist-800-53-IA-5",
+            "iso-27001-2022-A.5.17",
+            "soc2-cc6.1",
+            "au-essential-8-Strategy-4"
+          ]
+        },
+        {
+          "pattern_id": "sso-as-identity-hygiene-complete",
+          "claim": "We use SSO across every SaaS, so identity hygiene is complete.",
+          "fast_detection_test": "Enumerate every OAuth app consent in the tenant (Entra ID enterprise applications, Okta OAuth grants, Auth0 client applications). Any consent grant from a non-corporate tenant, any grant with /.default or wildcard scope, any grant whose publisher is unverified, any consent that survived a previous SSO migration is a structural finding regardless of SSO posture. SSO authenticates users; consent grants federate scope and frequently survive identity-hygiene programmes invisibly.",
+          "implicated_controls": [
+            "nist-800-53-AC-2",
+            "iso-27001-2022-A.5.16",
+            "soc2-cc6.1"
+          ]
+        },
+        {
+          "pattern_id": "quarterly-consent-review-as-control",
+          "claim": "We review OAuth consent grants quarterly.",
+          "fast_detection_test": "Midnight Blizzard's January 2024 Entra ID campaign used a residential proxy + password spray to compromise a non-MFA test tenant, then escalated via a legacy OAuth application's privileged Graph scope. Time-to-exfil was measured in days; quarterly cadence cannot detect this. The acceptable cadence is continuous (alert on new consent grants with high-risk scope or unverified publisher) plus quarterly review. Pull the consent-grant log for the last 90 days and time the gap between grant timestamp and review timestamp — any gap above 24 hours for a high-privilege scope grant is theater.",
+          "implicated_controls": [
+            "soc2-cc6.1",
+            "iso-27001-2022-A.5.16",
+            "nist-800-53-AC-6"
+          ]
+        },
+        {
+          "pattern_id": "break-glass-never-used-as-secure",
+          "claim": "The break-glass / emergency-access account has never been used, so it is by definition secure.",
+          "fast_detection_test": "An IdP break-glass account that has never authenticated is also an account whose MFA enrolment state, password policy compliance, and audit-log alerting have never been exercised. Pull the break-glass account's last-sign-in timestamp, MFA factors, conditional-access exclusions, and audit-log alert configuration. If conditional access excludes the account from MFA AND no alert fires on break-glass authentication AND password age exceeds rotation policy, the account is a backdoor, not a control.",
+          "implicated_controls": [
+            "nist-800-53-IA-5",
+            "iso-27001-2022-A.5.17",
+            "au-ism-1559"
+          ]
+        },
+        {
+          "pattern_id": "federated-trust-set-once-trusted-forever",
+          "claim": "Our SAML / OIDC federation with partner X was set up by the security team and is reviewed annually.",
+          "fast_detection_test": "Federated-trust configuration is the highest-leverage IdP control-plane object: a malicious SAML IdP or a tampered token-signing certificate allows the attacker to mint authentic tokens for any user in the tenant. Pull every federated-trust configuration (Entra cross-tenant access settings, Okta org-to-org federation, Auth0 enterprise connections, Ping environment federations). For each, check token-signing certificate fingerprint vs the expected partner fingerprint, claim transformation rules vs documented expectation, and last-modification timestamp + actor. Any unexplained modification within the last 90 days is a structural finding."
+        },
+        {
+          "pattern_id": "service-account-mfa-exempt-as-design",
+          "claim": "Service accounts are MFA-exempt by design because automation cannot prompt for MFA.",
+          "fast_detection_test": "Service-account credentials are the dominant IdP pivot in 2024-2026 IR data — Snowflake-via-stolen-Okta-service-account 2024 is the public reference. Pull every service account (Okta API service users, Entra ID workload identities, Auth0 M2M apps, Ping worker apps). Validate that each holds a scoped client-credentials flow OR a workload identity federation (no static secret), that token TTL is bounded, that source-IP allowlist is configured, and that last-rotation date is within policy. Any service account with a static secret older than 90 days, no IP allowlist, and broad scope is theater compliance against the 'MFA enforced' attestation."
+        },
+        {
+          "pattern_id": "ip-allowlist-as-compensating-control",
+          "claim": "Admin access is restricted to corporate IPs via conditional access.",
+          "fast_detection_test": "Residential-proxy + password-spray (Midnight Blizzard 2024) defeats corporate-IP allowlist only when the corporate-IP rule includes split-tunnel VPN exits. Pull the conditional-access policy targeting admin roles and list every IP range it permits. Cross-reference against the current VPN egress range AND any documented bring-your-own-device exception. Any range whose ownership cannot be attested in writing to the corporate network team is an attack-surface gap."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Identity-provider tenant compromise is the dominant 2023-2026 cloud-incident root cause: Okta's October 2023 support-system breach exposed customer HAR files with session tokens; Microsoft's January 2024 Midnight Blizzard incident saw a Russian state actor compromise a legacy non-MFA test tenant and escalate via OAuth-app consent abuse to corporate-mail exfiltration; the Snowflake credential-database compromise 2024 hit AT&T / Ticketmaster / Santander through stolen IdP service-account credentials; Scattered Spider's 2023-2026 campaigns against MGM, Caesars, Twilio, and dozens of others use help-desk social engineering to mint replacement MFA factors. The framework controls that purport to govern this surface — NIST 800-53 IA-5 (Authenticator Management), ISO/IEC 27001:2022 A.5.16 + A.5.17 (Identity Management + Authentication Information), SOC 2 CC6.x (Logical and Physical Access Controls), UK CAF Principle B2 (Identity and Access Control), AU Essential 8 Strategy 4 (MFA), AU ISM-1559 (Privileged Account Credential Management), and NIS2 Art.21(2)(j) (cryptography + access control) — were authored under a model where the IdP tenant itself is a trust anchor: the framework's evidence surface stops at the IdP's published authentication outcomes (was MFA required, was the session authenticated, did the role assignment match policy) and does not extend to the IdP's control plane (who modified the federated-trust configuration, who issued an OAuth consent to which app, who rotated the token-signing certificate). The result is that an attacker with IdP-control-plane access produces audit trails that are fully compliant against every relevant framework, because the framework's evidence model treats the IdP as oracle.",
+        "lag_score": 60,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IA-5 (federated)",
+            "designed_for": "Authenticator management — issuance, distribution, storage, revocation of authenticator material.",
+            "insufficient_because": "IA-5 reaches authenticator material in storage and distribution. It does not reach federated-trust modification (token-signing certificate rotation, claim-transformation rule changes, OIDC discovery-document tampering) at the IdP control plane. Audit evidence that satisfies IA-5 is a quarterly snapshot of authenticator inventory; an attacker who modifies the federation in week 5 produces eight weeks of compliant audit trail before the next snapshot."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.16 + A.5.17",
+            "designed_for": "Identity management + authentication information (static identity lifecycle and credential protection).",
+            "insufficient_because": "A.5.16/A.5.17 cover static identity state (was the account provisioned, was the password rotated, was MFA enrolled). They do not name federated-state transitions (OAuth consent grants, federated-trust configuration changes, cross-tenant access settings) as a distinct control class. An ISO 27001:2022 audit can pass with zero evidence on the federated state."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC6 (OAuth consent)",
+            "designed_for": "Logical and physical access controls — authentication, authorization, and access controls for human users and service accounts.",
+            "insufficient_because": "CC6 treats the authenticated session as the access boundary. OAuth consent grants to a third-party app federate scope outside the authenticated-session boundary; the consenting user authenticated correctly, the third-party app's onward calls are authorized by the consent grant, and CC6 evidence shows nothing anomalous. The dominant 2024-2026 IdP-pivot pattern (Midnight Blizzard's app-consent escalation) is invisible to CC6 audit evidence."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B2.b",
+            "designed_for": "NCSC CAF outcome — identity and access control, including consent management for third-party access.",
+            "insufficient_because": "B2.b is an outcome-based test (does the essential function effectively manage identity and access?). The outcome is assessed against the IdP tenant's published authentication outcomes; the IdP-tenant control-plane (who can modify the tenant configuration itself) is outside the outcome's typical evidence surface. A compromised tenant continues to produce compliant outcomes until the attacker abandons stealth."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1559",
+            "designed_for": "Privileged account credential management — storage, rotation, monitoring of privileged credentials.",
+            "insufficient_because": "ISM-1559 reaches privileged credentials at the system layer (admin password vault, server-side admin accounts). It does not reach IdP-tenant control-plane operations (modifying federated trust, granting tenant-wide application permissions, rotating the token-signing certificate). The IdP tenant is the privileged-credential source-of-truth for every downstream system; ISM-1559 audits the downstream systems and treats the IdP tenant as oracle."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1546",
+            "designed_for": "Multi-factor authentication for privileged users and remote access.",
+            "insufficient_because": "ISM-1546 covers human-initiated authentication. IdP-tenant control-plane operations are frequently performed by management-API tokens (Okta API tokens, Entra ID app secrets, Auth0 management API tokens) that never cross the human-MFA gate. A leaked management API token grants identical blast radius without ever triggering ISM-1546's evidence path."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(j)",
+            "designed_for": "Cryptography and access-control measures — including the use of multi-factor authentication.",
+            "insufficient_because": "Art.21(2)(j) names cryptography and access-control as required risk-management measures; the supporting implementing acts and ENISA reference frameworks specify what evidence regulators accept. Federated-identity control-plane operations (consent grants, federated-trust changes, signing-key rotation) are not enumerated in current implementing-act guidance. IdP-provider tenants serving essential entities are in scope but the evidence model lags."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.19 (4h IdP)",
+            "designed_for": "Major-ICT-related-incident notification — initial notification within 4 hours, intermediate report within 72 hours, final report within one month.",
+            "insufficient_because": "DORA names the 4-hour clock but does not specify IdP-tenant compromise as a distinct incident class; financial entities relying on a CSP-hosted IdP frequently classify IdP incidents under ICT-third-party-provider concentration risk (Art.28) and miss the Art.19 4-hour clock entirely. The IdP is the single highest-blast-radius critical ICT third-party; the framework treats it as fungible."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 4 — Multi-factor authentication (E8 M.4)",
+            "designed_for": "MFA on privileged + internet-facing accounts.",
+            "insufficient_because": "E8 M.4 defends the interactive authentication flow. IdP-tenant control-plane operations performed via management API tokens, OAuth client credentials, or workload identity federation never cross the MFA gate. Compliance-theater test: count admin-action audit events over the last 30 days, partition by service-token vs human-MFA-session origin; if service tokens dominate, M.4 compliance is paper."
+          }
+        ]
+      },
+      "skill_preload": [
+        "idp-incident-response",
+        "identity-assurance",
+        "cred-stores"
+      ]
+    },
+    "direct": {
+      "threat_context": "Identity-provider tenants are the highest-blast-radius single object in a modern cloud estate. 2023-2026 IR data centres on five themes. (1) Okta's October 2023 customer-support breach: a stolen support-engineer credential gave the attacker read access to customer-uploaded HAR files containing valid session tokens for ~134 customer tenants, exploited downstream against 1Password, BeyondTrust, Cloudflare, and others — root cause was a personal-Google-account-stored Okta service-account credential. (2) Microsoft's January 2024 Midnight Blizzard (APT29 / Cozy Bear) Entra ID campaign: residential-proxy password-spray against a legacy non-MFA test tenant, OAuth app-consent abuse via a legacy application holding privileged Graph scope, escalation to corporate-mail exfiltration including senior leadership and the security team itself; tracked across 2024-2025 with continued breaches at HPE, others. (3) Snowflake credential-database compromise mid-2024: ~165 customer tenants hit through stolen IdP-service-account credentials and absent MFA enforcement, including AT&T's ~110M-record exposure, Ticketmaster, Santander. (4) Scattered Spider (UNC3944 / Octo Tempest / Storm-0875) help-desk social engineering: voice-impersonated calls to IT help-desk to mint replacement MFA factors, then SIM-swap fallback, then ransomware deployment — MGM (~USD 100M impact), Caesars (~USD 15M ransom paid), Twilio, Mailchimp, dozens of others 2022-2026; continues evolving in 2026 toward deepfake-voice + AI-augmented social-engineering reconnaissance. (5) 2026 Auth0 management-API token leakage class: management-API tokens with broad scope checked into IaC or CI configuration produce tenant-wide compromise paths bypassing MFA entirely. Across all five themes the IdP control plane is the primary attack surface; the framework controls treat the IdP as oracle.",
+      "rwep_threshold": {
+        "escalate": 90,
+        "monitor": 70,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 IA-5 (Authenticator Management) and IA-2 (Identification and Authentication) do not reach federated-trust modification at the IdP control plane; IA-5 evidence is satisfied by a quarterly authenticator inventory while an attacker who modifies the federation in week 5 produces eight weeks of compliant audit trail. ISO/IEC 27001:2022 A.5.16 (Identity Management) and A.5.17 (Authentication Information) cover static identity state; they do not name federated-state transitions (OAuth consent, federated-trust modification, cross-tenant access settings). SOC 2 CC6 logical-access controls treat the authenticated session as the access boundary and are blind to consent-mediated lateral movement. UK CAF Principle B2.b is an outcome-based test against the IdP's published authentication outcomes; the IdP control plane is outside B2.b's typical evidence surface. AU Essential 8 Strategy 4 (MFA, E8 M.4) defends the interactive authentication flow; IdP-tenant control-plane operations performed by management-API tokens, OAuth client credentials, or workload identity federations never cross M.4's evidence path. AU ISM-1559 (Privileged Account Credential Management) and ISM-1546 (MFA for Privileged Users) reach privileged credentials at the system layer and the human-MFA surface respectively; both treat the IdP tenant as oracle and do not require auditable controls on the IdP tenant's own control plane. NIS2 Art.21(2)(j) names cryptography and access control as required risk-management measures but the supporting implementing-act guidance does not enumerate federated-identity control-plane operations. DORA Art.19's 4-hour major-ICT-incident clock applies — the IdP is a critical ICT third-party — but financial entities frequently classify IdP incidents under Art.28 concentration risk and miss the Art.19 clock. The aggregate gap is ~60 days between IdP control-plane attack and quarterly-cadence framework evidence; real-world adversary dwell time is days, not quarters.",
+      "skill_chain": [
+        {
+          "skill": "idp-incident-response",
+          "purpose": "IdP-specific incident-response depth — Okta / Entra / Auth0 / Ping / OneLogin tenant compromise + federated-trust abuse + OAuth consent abuse.",
+          "required": true
+        },
+        {
+          "skill": "identity-assurance",
+          "purpose": "AAL / IAL / FAL assurance constructs, FIDO2 / WebAuthn / phishing-resistant factor enrolment validation, federated-trust signing-key posture.",
+          "required": true
+        },
+        {
+          "skill": "cred-stores",
+          "purpose": "Downstream containment — rotate management-API tokens, downstream service-account credentials, session tokens; audit Vault / Secrets Manager for IdP-derived credentials.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Per-framework reconciliation of IdP-tenant control-plane coverage gaps.",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for IdP controls that cannot be remediated within obligation windows (e.g. coordinated federation re-keying across 50+ relying parties).",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 22000,
+        "breakdown": {
+          "govern": 3000,
+          "direct": 2000,
+          "look": 3000,
+          "detect": 3500,
+          "analyze": 4500,
+          "validate": 3500,
+          "close": 2500
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "idp-audit-log-90d",
+          "type": "audit_trail",
+          "source": "Pull last 90 days of audit events: Okta /api/v1/logs (filter eventType eq user.session.*, user.authentication.*, application.lifecycle.*, system.org.*); Entra ID Microsoft Graph /auditLogs/directoryAudits + /auditLogs/signIns (filter for high-risk sign-ins, consent-grant events, role-assignment events, federation-config changes); Auth0 /api/v2/logs (filter for type starting with 'fs', 's', 'ss' management events); Ping /environments/{id}/auditTrails; OneLogin /api/2/events.",
+          "description": "Primary evidence base. Audit log carries every control-plane operation and every authentication outcome. 90-day window matches Okta default retention; longer-retention tenants should pull max-available.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV or JSON export of the 90-day audit log from the IdP admin console (Okta Reports > System Log export, Entra Sign-in logs CSV, Auth0 log streaming sink)."
+        },
+        {
+          "id": "oauth-consent-grants",
+          "type": "api_response",
+          "source": "Enumerate active + recently-revoked OAuth app consent grants. Entra ID Microsoft Graph /servicePrincipals + /oauth2PermissionGrants + /appRoleAssignments; Okta /api/v1/apps + /api/v1/users/{id}/grants; Auth0 /api/v2/clients + /api/v2/client-grants; Ping /environments/{id}/applications; OneLogin /api/2/apps. Cross-reference against the consent-history audit-log filter from idp-audit-log-90d.",
+          "description": "Consent grants are the dominant 2024-2026 IdP pivot (Midnight Blizzard pattern). Enumerate publisher verification status, scope (specifically /.default, wildcard, and any scope granting tenant-wide read of mail/files/users), tenant of origin, grant timestamp.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied JSON export of enterprise applications + service principals + OAuth permission grants from the IdP admin portal."
+        },
+        {
+          "id": "federated-trust-config",
+          "type": "config_file",
+          "source": "Pull SAML / OIDC / WS-Fed identity-provider federation configurations. Entra ID /policies/identityProviders + /policies/crossTenantAccessPolicy/partners (cross-tenant access settings); Okta /api/v1/idps + /api/v1/org/security/federation; Auth0 /api/v2/connections (enterprise connections); Ping /environments/{id}/identityProviders; OneLogin /api/2/identity_providers. Capture token-signing certificate fingerprint, claim-transformation rules, issuer URI, last-modification timestamp + actor.",
+          "description": "Federated trust is the highest-leverage IdP control-plane object. A malicious or modified federation lets the attacker mint authentic tokens for any user in the tenant.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied export of identity-provider configuration from the IdP admin portal."
+        },
+        {
+          "id": "privileged-role-assignments",
+          "type": "api_response",
+          "source": "Enumerate every assignment to high-privilege roles: Entra ID Global Administrator, Privileged Role Administrator, Application Administrator, Cloud Application Administrator, Identity Governance Administrator, User Administrator via /roleManagement/directory/roleAssignments + PIM eligible assignments; Okta Super Admin + Organization Admin + Application Admin + Group Admin via /api/v1/iam/assignees; Auth0 tenant Admin + Auth0 management API role assignments; Ping Environment Admin / Identity Admin; OneLogin Account Owner / Super User.",
+          "description": "Recent high-privilege role assignment is one of the strongest single indicators. Cross-reference timestamp + assigner against the audit log.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV export of privileged role assignments from the IdP admin portal."
+        },
+        {
+          "id": "mfa-factor-events",
+          "type": "audit_trail",
+          "source": "Filter idp-audit-log-90d for MFA factor enrolment, modification, reset, and bypass events. Okta event types user.mfa.factor.activate + user.mfa.factor.reset + user.mfa.factor.deactivate; Entra ID category 'AuthenticationMethod' under /auditLogs/directoryAudits; Auth0 mfa.* + management.* event types; Ping similar.",
+          "description": "Scattered Spider's primary TTP is help-desk-mediated factor reset. Each factor-reset event must pair with a documented identity-verification record from the help-desk system.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV export of MFA / authentication method audit events."
+        },
+        {
+          "id": "break-glass-account-state",
+          "type": "api_response",
+          "source": "Enumerate break-glass / emergency-access accounts (Entra ID excluded from conditional access; Okta accounts in an emergency-access group; Auth0 accounts with bypass flags; Ping accounts excluded from MFA policy). Capture last-sign-in timestamp, MFA factor enrolment, conditional-access exclusions, password age, audit-log alert configuration.",
+          "description": "Break-glass accounts are designed to bypass normal controls; theater-pattern is to attest 'never used' without exercising the audit-alert path.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV listing break-glass account inventory + last-sign-in + MFA enrolment from the IdP admin portal."
+        },
+        {
+          "id": "service-account-inventory",
+          "type": "api_response",
+          "source": "Enumerate non-human identities: Okta service users + API service users; Entra ID workload identities + service principals with credentials; Auth0 M2M apps + their client_credentials grants; Ping worker apps; OneLogin API credentials. For each, capture last-rotation timestamp, scope, source-IP allowlist, last-use timestamp, owner.",
+          "description": "Snowflake-via-Okta-service-account 2024 is the public reference for this attack class. Any service account with static secret older than 90 days, broad scope, no IP allowlist is a high-priority finding.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV listing service accounts + last-rotation + scope + IP allowlist."
+        },
+        {
+          "id": "session-token-inventory",
+          "type": "api_response",
+          "source": "Enumerate active sessions: Okta /api/v1/users/{id}/sessions; Entra ID Get-MgUser sign-in activity + sign-in tokens via Graph; Auth0 /api/v2/users/{id}/sessions; Ping similar. Capture session age, source IP, user agent, last-touch timestamp.",
+          "description": "Long-lived sessions surviving credential rotation are a common containment gap. Capture pre-revocation state for the residual-risk statement.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied session inventory from the IdP admin portal."
+        },
+        {
+          "id": "management-api-tokens",
+          "type": "api_response",
+          "source": "Enumerate management-plane API access: Okta API tokens via /api/v1/api-tokens; Entra ID application secrets + certificates via /applications/{id}/passwordCredentials + /applications/{id}/keyCredentials; Auth0 management API client_id + client_secret pairs; Ping application secrets; OneLogin API credentials.",
+          "description": "Management-API tokens bypass the human-MFA gate entirely. Any token with broad scope + age > 90 days + no audit-log alerting is a structural finding.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied inventory of management API tokens + age + scope from the IdP admin portal."
+        },
+        {
+          "id": "cross-tenant-consent-grants",
+          "type": "api_response",
+          "source": "Enumerate cross-tenant access settings: Entra ID /policies/crossTenantAccessPolicy + per-partner inbound/outbound rules; Okta org-to-org federation configurations; Auth0 tenant linking; Ping environment federations.",
+          "description": "Cross-tenant federation is invisible to most identity-hygiene programmes yet grants persistent token-issuance against the home tenant. Any cross-tenant grant from a tenant whose ownership cannot be attested in writing is a finding.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied export of cross-tenant access settings from the IdP admin portal."
+        },
+        {
+          "id": "recent-credential-resets",
+          "type": "audit_trail",
+          "source": "Filter idp-audit-log-90d for password-reset, passkey-enrolment, and recovery-factor-modification events. Okta user.account.update_password + user.account.unlock + user.credential.enroll; Entra ID 'User changed password' + 'Reset user password' + 'Update authentication phone method'; Auth0 management.users.password-changed + management.users.mfa-reset.",
+          "description": "Password / passkey reset paired with subsequent privilege escalation is a high-signal indicator. The reset timestamp + reset-by actor + subsequent role-assignment timestamp build the attack timeline.",
+          "required": true,
+          "air_gap_alternative": "Operator-supplied CSV export of credential-reset events."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "90d",
+        "asset_scope": "single_idp_tenant_under_investigation",
+        "depth": "deep",
+        "sampling": "complete enumeration of consent grants, federated-trust configuration, privileged-role assignments, break-glass accounts, service accounts, session tokens, management-API tokens, and cross-tenant grants. Audit-log collection is bounded by the IdP's retention window (90 days for most tenants without log-export streaming)."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator_has_read_only_admin_in_tenant == true",
+          "if_false": "Without an admin-tier role the consent grants, federated-trust configuration, and management-API token inventory cannot be enumerated. Escalate to a documented tenant-owner break-glass procedure."
+        },
+        {
+          "assumption": "idp_audit_log_retention >= 90d",
+          "if_false": "Reduce time window to retained log span and emit a 'truncated-retention' visibility note in the evidence package. The attacker's dwell time may exceed the available log."
+        },
+        {
+          "assumption": "tenant_uses_one_primary_idp",
+          "if_false": "If multiple IdPs federate (common in M&A landscapes), enumerate each as a distinct tenant under investigation and add federation-trust crosswalk between them."
+        },
+        {
+          "assumption": "no_active_response_actions_in_flight",
+          "if_false": "If containment is already running (token revocations, password resets) the audit log will reflect operator activity that must be filtered from attacker activity. Capture operator activity as a separate evidence band."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "idp-audit-log-90d",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "oauth-consent-grants",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "federated-trust-config",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "privileged-role-assignments",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "mfa-factor-events",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "break-glass-account-state",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "service-account-inventory",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "session-token-inventory",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "management-api-tokens",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "cross-tenant-consent-grants",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "recent-credential-resets",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "unauthorized-consent-grant-from-non-corp-tenant",
+          "type": "log_pattern",
+          "value": "Within the oauth-consent-grants artifact: any consent grant whose tenant-of-origin (Entra) or publisher (Okta/Auth0) is not on the corporate-tenant allowlist AND whose granted scope includes Mail.Read / Mail.ReadWrite / Files.Read.All / User.Read.All / Directory.Read.All / .default / wildcard. Cross-reference idp-audit-log-90d for the grant timestamp and granter identity.",
+          "description": "Midnight Blizzard's January 2024 escalation pattern. Consent from an attacker-controlled tenant or from an unverified publisher with tenant-wide read scope is the dominant 2024-2026 IdP pivot.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Cross-check against a documented corporate-tenant allowlist (sister-org tenants, audited partner tenants). If the tenant-of-origin matches an allowlisted partner with current written attestation, demote.",
+            "Verify whether the granter is a documented cross-tenant collaboration sponsor (e.g. a contracted M&A integration partner). If yes and the scope is bounded, demote.",
+            "Confirm the consent timestamp does not match a known SSO migration window. SSO migrations frequently produce bulk consent re-grants that look anomalous in isolation but are operator-initiated."
+          ]
+        },
+        {
+          "id": "anomalous-federated-trust-addition",
+          "type": "log_pattern",
+          "value": "Within the federated-trust-config artifact: any federation whose last-modification timestamp is within the last 90 days AND whose token-signing certificate fingerprint, issuer URI, or claim-transformation rules differ from the documented expected state. Cross-reference idp-audit-log-90d for the modification actor.",
+          "description": "Federation modification is the highest-leverage IdP control-plane operation. A malicious federation lets the attacker mint authentic tokens for any user.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1556.007",
+          "false_positive_checks_required": [
+            "Verify whether the modification is part of a documented IdP migration project (e.g. ADFS → Entra ID hybrid migration, on-prem AD federation cutover). Pull the change-control ticket for the modification window and confirm the actor matches the project's named operator.",
+            "If the modification is a scheduled certificate rotation, confirm the new fingerprint matches the partner's published rotation announcement.",
+            "Cross-reference the modification actor against the privileged-role-assignments artifact; if the actor's role was newly assigned within 30 days of the modification, the rotation context is suspicious regardless of project-ticket attestation."
+          ]
+        },
+        {
+          "id": "mfa-factor-swap-without-password-reset",
+          "type": "log_pattern",
+          "value": "Within the mfa-factor-events artifact: any factor-reset or factor-deactivate event followed by factor-enrolment within 24h, with no paired password-reset event in recent-credential-resets and no paired help-desk ticket in operator-supplied evidence. Cross-reference idp-audit-log-90d for the reset actor.",
+          "description": "Scattered Spider primary TTP. Help-desk-mediated factor swap leaves the user-facing MFA policy unchanged while replacing the factor under operator control.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1556.007",
+          "false_positive_checks_required": [
+            "Verify whether the swap is a documented user-initiated factor migration (e.g. lost-phone recovery). The help-desk ticket + identity-verification record must match the swap window.",
+            "Confirm whether the user was on a documented self-service factor-rotation programme; some tenants run quarterly factor refreshes for compliance.",
+            "Cross-reference against the user's session inventory (session-token-inventory); a factor swap with no immediately subsequent re-authentication is more suspicious than one followed by normal user activity."
+          ]
+        },
+        {
+          "id": "recent-high-privilege-role-assignment",
+          "type": "log_pattern",
+          "value": "Within the privileged-role-assignments artifact: any assignment to Super Admin / Global Administrator / Tenant Owner / Application Administrator / Privileged Role Administrator within the last 90 days. Cross-reference idp-audit-log-90d for the assigner identity and any paired access-review or change-control record.",
+          "description": "Recent role assignment is a high-signal indicator independent of attacker entry vector. New admins are frequent intermediate-stage compromise outcomes.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Verify whether the assignment matches a documented onboarding or RBAC-review cycle. The assigner identity must match the documented owner.",
+            "If the assignee is a known break-glass account being exercised under an IR drill, confirm the drill is on the operator's calendar and demote.",
+            "Cross-reference against the audit-log actor IP and user agent; an assigner action from an anomalous IP relative to that operator's history holds severity regardless of role-review documentation."
+          ]
+        },
+        {
+          "id": "service-account-unused-then-active",
+          "type": "log_pattern",
+          "value": "Within the service-account-inventory artifact, intersected with idp-audit-log-90d: any service account whose last-use timestamp prior to the investigation window was >180 days old AND that produced authentication events during the investigation window. The dormant-then-active pattern is the Snowflake-via-Okta-service-account signature.",
+          "description": "Dormant service-account reactivation. Attackers prefer dormant credentials because they bypass owner attention and frequently lack rotation hygiene.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Verify whether the reactivation matches a documented scheduled-job restart (annual reconciliation, quarterly data refresh, post-maintenance reboot). Cross-reference the operator's runbook calendar.",
+            "Confirm the source IP of the reactivation matches the documented service-account origin (corporate egress, CI runner range, partner ingress).",
+            "If reactivation is paired with rotation (new client secret immediately after first use), the rotation context suggests operator-initiated activity; otherwise hold."
+          ]
+        },
+        {
+          "id": "cross-tenant-assumption-anomaly",
+          "type": "log_pattern",
+          "value": "Within the cross-tenant-consent-grants artifact: any inbound or outbound cross-tenant rule pointing at a tenant whose ownership cannot be attested in writing, OR any change to cross-tenant access settings within the last 90 days. Cross-reference idp-audit-log-90d for the modification actor.",
+          "description": "Cross-tenant federation grants persistent token-issuance against the home tenant. Invisible to most identity-hygiene programmes.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1199",
+          "false_positive_checks_required": [
+            "Verify the partner tenant is on the corporate cross-tenant allowlist with current written attestation (M&A integration, JV, audited supplier).",
+            "Confirm the cross-tenant rule's permission set does not exceed the documented partnership scope (a JV-grade trust with global Mail.Read access is anomalous regardless of allowlist status).",
+            "If the change is a scope-tightening operation (e.g. removing previously-permitted scopes), the change is defensive — demote to low severity."
+          ]
+        },
+        {
+          "id": "break-glass-account-authentication",
+          "type": "log_pattern",
+          "value": "Within idp-audit-log-90d, intersected with break-glass-account-state: any successful authentication event from a designated break-glass account, OR any modification to break-glass-account conditional-access exclusions, OR any rotation event on break-glass credentials.",
+          "description": "Break-glass authentication is by definition extraordinary. Each event must pair with a documented IR drill or production-incident record.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Verify whether the event matches an operator-confirmed IR drill or documented break-glass exercise. The drill calendar must show the event on its schedule.",
+            "Confirm the authentication source IP, user agent, and authentication factors match the documented break-glass procedure.",
+            "If the event is paired with subsequent privileged-role activity, hold severity regardless of drill attestation — the break-glass account should be exercised but not used for routine work."
+          ]
+        },
+        {
+          "id": "oauth-app-publisher-unverified",
+          "type": "log_pattern",
+          "value": "Within the oauth-consent-grants artifact: any consent grant to an application whose publisher is marked 'unverified' OR whose publisher domain does not match a documented corporate-or-partner registry.",
+          "description": "Unverified-publisher consent is a common Midnight-Blizzard-class staging tactic — register an app under a generic name, request broad scope, harvest tokens.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Verify whether the app is an internal-but-unverified-publisher application (operator-supplied attestation of internal authorship; the publisher-verification gap is a vendor-account configuration, not a malicious app).",
+            "If publisher verification has been requested but not yet completed by the vendor, the gap is administrative; demote pending vendor follow-up but track in the residual-risk statement.",
+            "Cross-reference the granted scope against the app's documented purpose. Even an internal app with unverified-publisher status is a finding if the scope exceeds documented need."
+          ]
+        },
+        {
+          "id": "session-token-forgery-evidence",
+          "type": "log_pattern",
+          "value": "Within idp-audit-log-90d: any session authentication event whose token-issuance metadata is inconsistent with the federation-config artifact (issuer URI mismatch, signing-certificate fingerprint mismatch, claim transformation outcome inconsistent with documented rules).",
+          "description": "Token forgery via web-cookie / session-cookie forgery (T1606.002) leaves trace metadata in the audit log when the IdP's signing-state has been tampered with.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1606.002",
+          "false_positive_checks_required": [
+            "Verify whether a signing-certificate rotation occurred within the inconsistency window; rotation creates legitimate metadata drift.",
+            "Confirm whether the issuing federation is part of a documented multi-region failover; some IdP deployments mint tokens from multiple signing keys legitimately.",
+            "If the inconsistency is sustained across many events from a single source, the attribution is stronger than isolated drift."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "unauthorized-consent-grant-from-non-corp-tenant",
+          "benign_pattern": "Legitimate cross-tenant collaboration consent (M&A integration partner, audited supplier, JV partner).",
+          "distinguishing_test": "The collaboration partner must appear on a documented corporate-tenant allowlist with current written attestation AND the granted scope must be bounded to the documented collaboration purpose. Wildcard or /.default scope to any partner is a finding regardless of allowlist status."
+        },
+        {
+          "indicator_id": "anomalous-federated-trust-addition",
+          "benign_pattern": "Planned IdP migration (ADFS → Entra ID hybrid, on-prem AD federation cutover) or scheduled signing-certificate rotation.",
+          "distinguishing_test": "The migration or rotation must appear on the operator's change-control register with named operator, expected fingerprint, and rollback plan. Any modification by an actor whose role was assigned within 30 days of the modification holds severity regardless of project documentation."
+        },
+        {
+          "indicator_id": "mfa-factor-swap-without-password-reset",
+          "benign_pattern": "User-initiated factor migration (lost phone, device upgrade) with operator-assisted recovery.",
+          "distinguishing_test": "The swap must pair with a help-desk ticket + identity-verification record (knowledge-based + government-ID + recorded callback to a previously-registered number). Phone-only verification or chat-only verification is not sufficient under Scattered Spider TTP."
+        },
+        {
+          "indicator_id": "recent-high-privilege-role-assignment",
+          "benign_pattern": "Documented onboarding, RBAC review-cycle promotion, or break-glass drill.",
+          "distinguishing_test": "The assignment must match a documented onboarding ticket, an RBAC-review record signed off by the assignee's manager, or a calendared break-glass drill. Cross-reference assigner IP and user agent against historical operator activity."
+        },
+        {
+          "indicator_id": "service-account-unused-then-active",
+          "benign_pattern": "Scheduled job restart, post-maintenance reboot, or migration-driven reactivation.",
+          "distinguishing_test": "Match the reactivation against the operator's runbook calendar and confirm the source IP matches documented service-account origin. Pair reactivation with rotation (new client secret) to confirm operator-initiated provenance."
+        },
+        {
+          "indicator_id": "cross-tenant-assumption-anomaly",
+          "benign_pattern": "M&A integration, audited supplier federation, JV partner trust.",
+          "distinguishing_test": "Partner tenant must be on the corporate cross-tenant allowlist with current written attestation AND the permission set must not exceed documented partnership scope. Scope-tightening modifications are defensive and may be demoted."
+        },
+        {
+          "indicator_id": "break-glass-account-authentication",
+          "benign_pattern": "Calendared IR drill, documented production-incident break-glass exercise, or quarterly authentication-path exercise.",
+          "distinguishing_test": "Drill must appear on the operator's calendar with named drill operator, expected source IP, and expected outcome. Subsequent privileged-role activity from the break-glass account holds severity regardless of drill attestation."
+        },
+        {
+          "indicator_id": "oauth-app-publisher-unverified",
+          "benign_pattern": "Internal app under vendor-account anonymization where publisher-verification has been requested but not yet completed.",
+          "distinguishing_test": "Operator-supplied attestation of internal authorship + documented vendor-side verification request must both be present. Granted scope must still match documented purpose; unverified-publisher status does not excuse scope exceeding need."
+        },
+        {
+          "indicator_id": "session-token-forgery-evidence",
+          "benign_pattern": "Signing-certificate rotation, multi-region IdP failover, or planned issuer URI change.",
+          "distinguishing_test": "Rotation must appear on the operator's change-control register with named operator and expected new fingerprint. Sustained inconsistency across many events from a single source holds severity regardless of rotation context."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic indicator (anomalous-federated-trust-addition) fires AND the false-positive distinguishing test does not clear it. OR two or more high-confidence non-deterministic indicators fire on the same actor / asset within a 7-day window.",
+        "inconclusive": "Single high-confidence indicator fires AND the distinguishing test cannot be performed (e.g. operator cannot produce a help-desk ticket within the obligation window). Treat as detected with the caveat noted; do not stand down containment.",
+        "not_detected": "Full enumeration of consent grants + federated-trust + privileged-role assignments + break-glass state + service accounts + management-API tokens + cross-tenant grants complete AND no indicator fires AND all break-glass authentications are matched to drill attestations AND all federation modifications are matched to change-control records."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "anomalous-federated-trust-addition",
+          "rwep_factor": "blast_radius",
+          "weight": 30,
+          "notes": "Federation modification = tenant-wide token-issuance compromise. Treat as highest blast radius."
+        },
+        {
+          "signal_id": "anomalous-federated-trust-addition",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Midnight Blizzard, Scattered Spider, and APT29 continue exploiting federated-trust modification in 2024-2026."
+        },
+        {
+          "signal_id": "unauthorized-consent-grant-from-non-corp-tenant",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Dominant 2024-2026 pivot; Midnight Blizzard's Entra ID campaign is the public reference."
+        },
+        {
+          "signal_id": "unauthorized-consent-grant-from-non-corp-tenant",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Tenant-wide Mail.Read or Files.Read scope = full mail / file exfiltration."
+        },
+        {
+          "signal_id": "mfa-factor-swap-without-password-reset",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Scattered Spider primary TTP; voice-cloning + deepfake-video reconnaissance accelerating in 2026."
+        },
+        {
+          "signal_id": "service-account-unused-then-active",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Snowflake-via-Okta-service-account 2024 reference; ongoing in 2025-2026."
+        },
+        {
+          "signal_id": "service-account-unused-then-active",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Service-account scope frequently exceeds human-account scope; broad downstream blast radius."
+        },
+        {
+          "signal_id": "recent-high-privilege-role-assignment",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "New admin grants tenant-wide control plane access."
+        },
+        {
+          "signal_id": "cross-tenant-assumption-anomaly",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Persistent cross-tenant token issuance grants long-lived access independent of the home tenant's credential rotation."
+        },
+        {
+          "signal_id": "break-glass-account-authentication",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Break-glass accounts are designed to bypass controls; unauthorized use = full tenant compromise."
+        },
+        {
+          "signal_id": "oauth-app-publisher-unverified",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-augmented app registration + consent-grant phishing campaigns are operational in 2025-2026."
+        },
+        {
+          "signal_id": "session-token-forgery-evidence",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Token-signing-state tampering = sustained ability to mint authentic tokens."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the IdP-tenant control-plane indicator(s) that fired, what is the blast radius across (a) tenant subscribers, (b) federated applications, (c) admin actions performable, (d) downstream SaaS apps reachable via session or token reuse?",
+        "scoring_rubric": [
+          {
+            "condition": "Single low-confidence indicator fires AND distinguishing test cleanly demotes (FP)",
+            "blast_radius_score": 1,
+            "description": "No live exposure. Document and close."
+          },
+          {
+            "condition": "Single non-deterministic indicator fires on a single non-admin account with bounded scope",
+            "blast_radius_score": 2,
+            "description": "Account-scope compromise. Targeted rotation + session revoke sufficient."
+          },
+          {
+            "condition": "Single high-confidence indicator on an admin account OR a service account with broad scope, single downstream-app exposure",
+            "blast_radius_score": 3,
+            "description": "Tenant-scope partial compromise. Broad rotation + scoped audit-log review across the credential's reachable downstream apps."
+          },
+          {
+            "condition": "Federation modification OR cross-tenant grant OR multiple admin-tier consent grants — tenant-wide token-issuance compromise OR persistent cross-tenant trust",
+            "blast_radius_score": 4,
+            "description": "Tenant-wide control-plane compromise. Triggers feeds_into → cred-stores for downstream containment. Federation re-keying + cross-tenant trust review + comprehensive admin-action audit-log review for the full exposure window required."
+          },
+          {
+            "condition": "Federation modification AND OAuth consent abuse AND privileged-role escalation AND multiple downstream-app SAML/OIDC consumers — multi-tier identity boundary collapse",
+            "blast_radius_score": 5,
+            "description": "Identity boundary collapse across tenant + federation + downstream SaaS. Treat as a confirmed incident. Full federation re-keying, downstream session-revocation cascade, downstream SaaS audit-log review for the full exposure window, multi-jurisdiction notification clocks fire in parallel."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Tenant runs Okta / Entra ID / Auth0 with MFA enforced + SSO across SaaS + quarterly OAuth consent review + break-glass account that has never been used → tenant identity hygiene is complete.",
+        "audit_evidence": "MFA enforcement policy screenshots; SSO coverage report; quarterly OAuth consent review minutes; break-glass account configuration screenshot.",
+        "reality_test": "Run this playbook against the tenant. Count: (a) consent grants from non-corp tenants OR with /.default / wildcard scope OR with unverified publishers, (b) federated-trust configurations whose last-modification actor cannot be matched to a change-control ticket, (c) service accounts with static secrets older than 90 days, (d) break-glass accounts whose authentication path lacks audit-log alerting, (e) management-API tokens with broad scope and no source-IP allowlist, (f) cross-tenant access settings to tenants without written ownership attestation. Any count > 0 is the gap between paper-compliance attestation and actual IdP control-plane posture. Additionally cross-reference any service account showing dormant-then-active activity against the operator's runbook calendar — unmatched reactivation events are theater regardless of the 'MFA enforced' attestation.",
+        "theater_verdict_if_gap": "MFA-enforced SSO + quarterly consent review is paper compliance against an attacker whose pivot is the IdP control plane. Real coverage requires (a) continuous consent-grant alerting on high-risk scope + unverified publisher, (b) federation-modification audit-log alerting with change-control ticket cross-reference, (c) service-account rotation enforcement with IP allowlist, (d) break-glass authentication alerting with on-call paging, (e) management-API token inventory with TTL + scope + source-IP enforcement, (f) cross-tenant access-settings continuous review. Either deploy the missing controls OR generate auditor-ready policy exception with bounded duration + compensating audit-log monitoring."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "federation-modification-uncovered",
+          "framework": "nist-800-53",
+          "claimed_control": "IA-5 — Authenticator Management",
+          "actual_gap": "IA-5 evidence is satisfied by a quarterly snapshot of authenticator inventory. Federated-trust modifications (token-signing certificate rotation, claim-transformation rule changes, OIDC discovery-document tampering) at the IdP control plane are outside the evidence path.",
+          "required_control": "Extend IA-5 scope to federated-trust configuration with continuous attestation: signing-certificate fingerprint inventory + claim-transformation rule baseline + per-modification change-control attestation required for SOC 2 / ISO 27001:2022 evidence."
+        },
+        {
+          "finding_id": "oauth-consent-abuse-uncovered",
+          "framework": "soc2",
+          "claimed_control": "CC6 — Logical and Physical Access Controls",
+          "actual_gap": "CC6 treats the authenticated session as the access boundary. OAuth consent grants federate scope outside the authenticated-session boundary; the consenting user authenticated correctly, the third-party app's onward calls are authorized by the grant, and CC6 audit evidence shows nothing anomalous.",
+          "required_control": "Add a CC6 sub-criterion requiring evidence of OAuth consent-grant inventory + continuous alerting on high-risk scope grants + per-grant business-purpose attestation."
+        },
+        {
+          "finding_id": "federated-state-uncovered",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.16 + A.5.17 — Identity Management + Authentication Information",
+          "actual_gap": "A.5.16/A.5.17 cover static identity state (was the account provisioned, was MFA enrolled). Federated-state transitions are not enumerated.",
+          "required_control": "Add a control-objective footnote requiring inventory of OAuth consent grants + federated-trust configuration + cross-tenant access settings, with documented change-control for each modification."
+        },
+        {
+          "finding_id": "idp-tenant-plane-uncovered",
+          "framework": "uk-caf",
+          "claimed_control": "B2.b — Identity and Access Control",
+          "actual_gap": "B2.b is outcome-based against the IdP tenant's published authentication outcomes. The IdP-tenant control plane (who modified the tenant configuration itself) is outside the outcome's typical evidence surface.",
+          "required_control": "Extend B2.b outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory."
+        },
+        {
+          "finding_id": "idp-tenant-plane-au-uncovered",
+          "framework": "au-ism",
+          "claimed_control": "ISM-1559 — Privileged Account Credential Management",
+          "actual_gap": "ISM-1559 reaches privileged credentials at the system layer; it does not reach IdP-tenant control-plane operations. The IdP tenant is the privileged-credential source-of-truth for every downstream system but ISM-1559 audits the downstream systems and treats the IdP tenant as oracle.",
+          "required_control": "Extend ISM-1559 scope to the IdP tenant's own control plane: management-API-token inventory, consent-grant inventory, federated-trust integrity, with continuous alerting."
+        },
+        {
+          "finding_id": "idp-incident-nis2-clock",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(j) + Art.23",
+          "actual_gap": "Art.21(2)(j) names cryptography and access-control; the implementing-act guidance does not enumerate federated-identity control-plane operations. Art.23 24-hour clock fires on IdP incidents serving essential entities but tenant operators frequently miss the trigger.",
+          "required_control": "Extend implementing-act guidance to enumerate federated-identity control-plane indicators (consent abuse, federation modification, cross-tenant compromise) as Art.23-triggering events."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "rwep >= 90 AND any deterministic indicator fires",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "any_federation_modification_unmatched_to_change_control == true",
+          "action": "raise_severity"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "rotate-signing-keys-and-revoke-sessions",
+          "description": "(1) Rotate every IdP token-signing certificate and OIDC signing key, coordinating with every federated relying party. (2) Revoke every active session at the IdP. (3) Force re-enrolment of MFA factors for all admin-tier and privileged-role accounts. (4) Rotate every management-API token (Okta API tokens, Entra app secrets, Auth0 management API tokens, Ping application secrets, OneLogin API credentials). (5) Audit IaC repositories + CI configuration + secret stores for drift against the rotated state.",
+          "preconditions": [
+            "tenant_admin_access_intact == true",
+            "downstream_relying_party_inventory_complete == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "session-revocation-attestation",
+            "downstream-saas-audit-log-baseline-captured",
+            "iac-secret-rotation-attestation"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "review-and-revoke-consent-grants",
+          "description": "(1) Review every OAuth consent grant from the last 90 days. (2) Revoke any grant whose tenant-of-origin is unattested, whose scope includes wildcard or /.default, or whose publisher is unverified without documented internal-authorship attestation. (3) Review every federated-trust configuration; close cross-tenant trusts not in current attestation scope. (4) Document the post-remediation state in a signed attestation.",
+          "preconditions": [
+            "consent_grant_inventory_complete == true",
+            "cross_tenant_inventory_complete == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "consent-grant-attestation",
+            "federated-trust-attestation"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "harden-service-accounts-and-break-glass",
+          "description": "(1) Audit every service account; enforce 90-day rotation, source-IP allowlist, scoped client credentials or workload identity federation, audit-log alerting on token use. (2) Audit OEM remote-support tunnels and partner integration tokens. (3) Comprehensive review of break-glass account state: MFA factor enrolment, conditional-access exclusions, password age, audit-log alerting + on-call paging configuration. (4) Quarterly break-glass exercise on the calendar with named drill operator + expected outcome.",
+          "preconditions": [
+            "service_account_inventory_complete == true",
+            "break_glass_inventory_complete == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "service-account-rotation-attestation",
+            "break-glass-drill-calendar"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "policy-exception-coordinated-rekey",
+          "description": "If federated-trust re-keying requires coordinated rollout across 50+ relying parties (large enterprise federation, M&A integration in flight), generate exception with bounded duration + enhanced audit-log monitoring + IR-team standby.",
+          "preconditions": [
+            "coordinated_rekey_required == true",
+            "enhanced_audit_log_alerting_active == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "enhanced-audit-log-alerting-on-federated-trust",
+            "incident-response-team-on-standby",
+            "downstream-rp-notification-tracker"
+          ],
+          "estimated_time_hours": 72
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "consent-grants-clean",
+          "test": "Re-enumerate OAuth consent grants post-remediation. Confirm zero grants from non-corp tenants, zero wildcard / .default scope grants without business-purpose attestation, zero unverified-publisher grants without internal-authorship attestation.",
+          "expected_result": "Consent inventory matches post-remediation attestation state.",
+          "test_type": "negative"
+        },
+        {
+          "id": "federated-trust-baseline",
+          "test": "Re-pull federated-trust configuration; confirm token-signing certificate fingerprint, issuer URI, and claim-transformation rules match the documented post-rotation expected state.",
+          "expected_result": "Federation state matches documented baseline.",
+          "test_type": "functional"
+        },
+        {
+          "id": "session-revocation-verified",
+          "test": "Pull active session inventory; confirm zero sessions surviving the revocation timestamp.",
+          "expected_result": "No sessions older than the revocation timestamp.",
+          "test_type": "negative"
+        },
+        {
+          "id": "service-account-rotation-verified",
+          "test": "Audit every service account's last-rotation timestamp + source-IP allowlist + scope. Expect every account to satisfy the rotation policy.",
+          "expected_result": "Every service account compliant with rotation + IP-allowlist policy.",
+          "test_type": "functional"
+        },
+        {
+          "id": "audit-log-alerting-active",
+          "test": "Trigger a synthetic high-risk OAuth consent grant + a synthetic federated-trust modification (both backed out within minutes). Confirm both fire the documented audit-log alert path within SLA.",
+          "expected_result": "Both synthetic events alert within SLA.",
+          "test_type": "functional"
+        },
+        {
+          "id": "break-glass-alert-fires",
+          "test": "Exercise a break-glass account in a calendared drill. Confirm the authentication fires the documented on-call paging alert.",
+          "expected_result": "On-call paged within SLA.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after rotation + consent revocation + federation re-keying + service-account hardening, any tokens minted during the exposure window may already have been used downstream — particularly for offline-validatable bearer tokens (JWTs against API gateways with no live revocation check) and refresh tokens delivered to attacker-controlled apps prior to consent revocation.",
+        "why_remains": "IdP-tenant compromise is irreversible at the token-issuance level. Revocation prevents future token use against the rotated state but does not undo prior token use. Downstream-SaaS audit-log review establishes upper bound on misuse but cannot prove negative for all classes (long-lived offline-validated tokens, downstream cached state).",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "all-management-api-tokens-rotated",
+          "all-sessions-revoked-and-attested",
+          "all-mfa-factors-re-enrolled-for-admin-tier",
+          "consent-grant-inventory-attested",
+          "federated-trust-rekeyed",
+          "downstream-saas-audit-log-baseline-captured-for-exposure-window",
+          "continuous-consent-grant-alerting-active",
+          "continuous-federated-trust-modification-alerting-active"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Pre-remediation enumeration of consent grants + federated-trust configuration + privileged-role assignments + break-glass state + service accounts + management-API tokens + cross-tenant grants, with per-finding indicator id + RWEP. Plus post-remediation re-enumeration showing the attested clean state.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "soc2-cc6.1",
+            "iso-27001-2022-A.5.16",
+            "iso-27001-2022-A.5.17",
+            "nist-800-53-IA-5"
+          ]
+        },
+        {
+          "evidence_type": "log_excerpt",
+          "description": "IdP audit-log excerpt for the exposure window covering every fired indicator, with paired change-control / help-desk / drill-calendar attestation where applicable.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "gdpr-art-33",
+            "nis2-art21-2c",
+            "dora-art-19",
+            "soc2-cc7.2"
+          ]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Rotation + consent-revocation + federation re-keying tickets with timestamps, approvers, downstream-relying-party notification confirmation.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "soc2-cc8.1",
+            "iso-27001-2022-A.5.36"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: tenant identity (hashed), scan timestamps, finding count by indicator, RWEP at detection, RWEP post-remediation, rotated artifact IDs (hashed), exposure window.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2c"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "24h_post_close",
+          "interval": "on_event"
+        },
+        {
+          "condition": "7d_post_close",
+          "interval": "7d"
+        },
+        {
+          "condition": "30d_post_close",
+          "interval": "30d"
+        },
+        {
+          "condition": "new_idp_advisory_published",
+          "interval": "on_event"
+        },
+        {
+          "condition": "post_federation_modification",
+          "interval": "on_event"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "scan_report",
+          "log_excerpt",
+          "ticket_reference",
+          "attestation",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement",
+          "structured_idp_audit_export",
+          "ir_timeline"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Identity-provider tenant compromise via $entry_vector (residential-proxy password-spray, help-desk social engineering, leaked management-API token, OAuth-app consent abuse, federated-trust modification, cross-tenant trust abuse, dormant-service-account reactivation).",
+          "control_gap": "Framework controls (NIST IA-5, ISO A.5.16/A.5.17, SOC 2 CC6, UK CAF B2.b, AU ISM-1559, AU E8 M.4) treat the IdP tenant as oracle. IdP-tenant control-plane operations (consent grants, federated-trust modification, cross-tenant access, management-API tokens) are outside the framework's evidence surface.",
+          "framework_gap": "Aggregate ~60-day lag between IdP control-plane attack and quarterly-cadence framework evidence cycles. DORA Art.19 4-hour clock applies but tenant operators frequently classify IdP incidents under Art.28 concentration risk and miss the clock.",
+          "new_control_requirement": "Continuous consent-grant alerting on high-risk scope + unverified publisher; federated-trust modification alerting with change-control cross-reference; service-account rotation enforcement with IP allowlist; break-glass authentication alerting with on-call paging; management-API token inventory with TTL + scope + source-IP enforcement; cross-tenant access-settings continuous review. IdP-tenant control plane becomes its own control class with quarterly attestation requirement."
+        },
+        "feeds_back_to_skills": [
+          "idp-incident-response",
+          "identity-assurance",
+          "cred-stores",
+          "framework-gap-analysis"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.33 72-hour notification: Identity-provider tenant control-plane compromise affecting ${affected_principal_count} principals. Vector: ${entry_vector}. Exposure window: ${exposure_window}. Categories of data subjects potentially affected: ${data_subject_categories}. Containment actions completed: signing keys rotated, sessions revoked, consent grants reviewed, federated trust re-keyed, management-API tokens rotated. Risk assessment: ${risk_level}. Notification to data subjects required: ${art34_assessment}. DPO contact: ${dpo_contact}."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.34 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "data_subject_categories_affected",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.34 notification (draft for review): We are writing to notify you of an identity-provider compromise incident affecting systems that process your personal data. Affected systems: ${affected_systems}. Exposure window: ${exposure_window}. Containment actions completed: identity-provider signing keys and tokens rotated, sessions revoked, downstream audit logs reviewed. Recommended steps: ${recommended_actions}. DPO contact: ${dpo_contact}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "exposure_window_estimate",
+            "rotation_status"
+          ],
+          "draft_notification": "NIS2 Art.23 early-warning notification: Identity-provider tenant control-plane compromise on ${affected_system_count} downstream essential-service systems. Suspected exposure window: ${exposure_window}. Initial containment: signing keys rotated, sessions revoked, consent grants reviewed. Full incident assessment within 72h per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "affected_critical_or_important_functions",
+            "containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major-ICT-related incident — identity-provider tenant control-plane compromise affecting ${critical_or_important_function_count} critical or important functions. Initial containment: ${containment_actions}. Intermediate report (72h) and final report (1 month) to follow per Art.19(4)."
+        },
+        {
+          "obligation_ref": "UK/UK GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment"
+          ],
+          "draft_notification": "UK GDPR Art.33 72-hour notification to ICO: Identity-provider tenant control-plane compromise. Mirror of GDPR Art.33 notification body, addressed to ICO casework team."
+        },
+        {
+          "obligation_ref": "US-NY/NYDFS 23 NYCRR 500.17 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "containment_record",
+            "ciso_certification_status"
+          ],
+          "draft_notification": "NYDFS 23 NYCRR 500.17 72-hour cyber-event notification: Identity-provider tenant control-plane compromise affecting ${affected_nyregulated_entities}. Containment actions: ${containment_actions}. Class A designation status: ${class_a_status}. CISO certification cycle: ${ciso_certification_cycle}."
+        },
+        {
+          "obligation_ref": "US-CA/CCPA / CPRA Sec.1798.82 1440h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "california_resident_records_affected",
+            "containment_record"
+          ],
+          "draft_notification": "California breach notification: Identity-provider compromise that may have affected your personal information. ${incident_description}. ${types_of_information_affected}. ${steps_taken}. ${steps_individuals_can_take}. ${contact_information}."
+        },
+        {
+          "obligation_ref": "AU/Privacy Act 1988 — Notifiable Data Breaches scheme (s26WK) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "australian_resident_records_affected",
+            "remediation_completed_evidence"
+          ],
+          "draft_notification": "OAIC NDB notification (draft for review): Identity-provider tenant compromise affecting ${australian_resident_count} Australian residents. Exposure window: ${exposure_window}. Remediation completed: ${remediation_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "coordinated_rekey_required == true OR (federation_modification_remediation_eta > obligation_window)",
+        "exception_template": {
+          "scope": "Federated-trust re-keying across ${relying_party_count} relying parties cannot be completed within ${obligation_window} due to ${blocking_reason}.",
+          "duration": "until_vendor_patch",
+          "compensating_controls": [
+            "enhanced-audit-log-alerting-on-idp-control-plane",
+            "incident-response-team-on-standby",
+            "ip-allowlist-tightened-on-management-api",
+            "session-ttl-reduced-during-exception-window",
+            "downstream-rp-notification-tracker-active"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for un-rotated federated-trust state on ${relying_party_count} relying parties due to ${blocking_reason_narrative}. Rotation ETA: ${rotation_eta}. Compensating controls in place: ${compensating_controls}. Residual exposure: tokens minted prior to rotation remain valid against unrotated relying parties; downstream audit logs are reviewed daily during the exception window. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} or rotation completion, whichever is first. Detection coverage is provided by ${detection_controls}. The exception will be re-evaluated on (a) rotation completion, (b) listed expiry date, (c) any audit-log anomaly on the un-rotated federation — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "okta-tenant-compromise",
+      "title": "Okta tenant compromise — support-system / service-account / help-desk-social-engineering classes",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "entra-id-app-consent-abuse",
+      "title": "Entra ID OAuth-app consent abuse — Midnight Blizzard / Cozy Bear pattern",
+      "applies_to": {
+        "attack_technique": "T1098.001"
+      }
+    },
+    {
+      "id": "auth0-management-api-leak",
+      "title": "Auth0 management-API token leakage — IaC / CI credential exposure class",
+      "applies_to": {
+        "attack_technique": "T1078.004"
+      }
+    },
+    {
+      "id": "federated-trust-modification",
+      "title": "Federated-trust modification — token-signing certificate or claim-transformation rule tampering",
+      "applies_to": {
+        "attack_technique": "T1556.007"
+      }
+    },
+    {
+      "id": "scattered-spider-help-desk-se",
+      "title": "Scattered Spider help-desk social-engineering — MFA factor swap without password reset",
+      "applies_to": {
+        "attack_technique": "T1556.007"
+      }
+    }
+  ]
+}

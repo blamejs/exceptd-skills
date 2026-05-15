@@ -45,6 +45,7 @@
       "webapp-security"
     ],
     "CWE-345": [
+      "idp-incident-response",
       "mcp-agent-trust"
     ],
     "CWE-352": [
@@ -96,12 +97,15 @@
     ],
     "CWE-269": [
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "container-runtime-security",
       "identity-assurance",
+      "idp-incident-response",
       "webapp-security"
     ],
     "CWE-732": [
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "container-runtime-security",
       "identity-assurance",
@@ -149,9 +153,12 @@
     "CWE-287": [
       "age-gates-child-safety",
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
+      "idp-incident-response",
       "ot-ics-security",
+      "ransomware-response",
       "sector-energy",
       "sector-financial",
       "sector-healthcare",
@@ -165,9 +172,11 @@
       "sector-telecom"
     ],
     "CWE-798": [
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
       "ot-ics-security",
+      "ransomware-response",
       "sector-energy",
       "sector-financial"
     ],
@@ -182,13 +191,22 @@
     ],
     "CWE-863": [
       "api-security",
+      "cloud-iam-incident",
       "identity-assurance",
+      "idp-incident-response",
       "sector-financial",
       "webapp-security"
     ],
     "CWE-1037": [
       "ot-ics-security",
       "sector-energy"
+    ],
+    "CWE-522": [
+      "cloud-iam-incident",
+      "idp-incident-response"
+    ],
+    "CWE-284": [
+      "idp-incident-response"
     ]
   },
   "d3fend_refs": {
@@ -217,23 +235,31 @@
     "D3-IOPR": [
       "ai-attack-surface",
       "ai-c2-detection",
+      "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
+      "idp-incident-response",
       "rag-pipeline-security",
+      "ransomware-response",
       "sector-telecom"
     ],
     "D3-NTA": [
       "ai-attack-surface",
       "ai-c2-detection",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "idp-incident-response",
       "rag-pipeline-security",
+      "ransomware-response",
       "sector-telecom"
     ],
     "D3-CBAN": [
+      "cloud-iam-incident",
       "defensive-countermeasure-mapping",
+      "idp-incident-response",
       "mcp-agent-trust",
       "supply-chain-integrity"
     ],
@@ -243,7 +269,8 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "mcp-agent-trust",
-      "rag-pipeline-security"
+      "rag-pipeline-security",
+      "ransomware-response"
     ],
     "D3-EHB": [
       "defensive-countermeasure-mapping",
@@ -251,7 +278,9 @@
       "supply-chain-integrity"
     ],
     "D3-MFA": [
+      "cloud-iam-incident",
       "defensive-countermeasure-mapping",
+      "idp-incident-response",
       "mcp-agent-trust"
     ],
     "D3-CA": [
@@ -288,10 +317,14 @@
       "defensive-countermeasure-mapping"
     ],
     "D3-RPA": [
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "ransomware-response"
     ],
     "D3-SCP": [
       "defensive-countermeasure-mapping"
+    ],
+    "D3-CAA": [
+      "cloud-iam-incident"
     ]
   },
   "framework_gaps": {
@@ -545,6 +578,72 @@
     ],
     "ITU-T-X.805": [
       "sector-telecom"
+    ],
+    "OFAC-SDN-Payment-Block": [
+      "ransomware-response"
+    ],
+    "Insurance-Carrier-24h-Notification": [
+      "ransomware-response"
+    ],
+    "EU-Sanctions-Reg-2014-833-Cyber": [
+      "ransomware-response"
+    ],
+    "Immutable-Backup-Recovery": [
+      "ransomware-response"
+    ],
+    "Decryptor-Availability-Pre-Decision": [
+      "ransomware-response"
+    ],
+    "PHI-Exfil-Before-Encrypt-Breach-Class": [
+      "ransomware-response"
+    ],
+    "FedRAMP-IL5-IAM-Federated": [
+      "cloud-iam-incident"
+    ],
+    "CISA-Snowflake-AA24-IdP-Cloud": [
+      "cloud-iam-incident"
+    ],
+    "NIST-800-53-AC-2-Cross-Account": [
+      "cloud-iam-incident"
+    ],
+    "ISO-27017-Cloud-IAM": [
+      "cloud-iam-incident"
+    ],
+    "SOC2-CC6-Access-Key-Leak-Public-Repo": [
+      "cloud-iam-incident"
+    ],
+    "AWS-Security-Hub-Coverage-Gap": [
+      "cloud-iam-incident"
+    ],
+    "UK-CAF-B2-Cloud-IAM": [
+      "cloud-iam-incident"
+    ],
+    "AU-ISM-1546-Cloud-Service-Account": [
+      "cloud-iam-incident"
+    ],
+    "NIST-800-53-IA-5-Federated": [
+      "idp-incident-response"
+    ],
+    "ISO-27001-2022-A.5.16-Federated": [
+      "idp-incident-response"
+    ],
+    "SOC2-CC6-OAuth-Consent": [
+      "idp-incident-response"
+    ],
+    "UK-CAF-B2-IdP-Tenant": [
+      "idp-incident-response"
+    ],
+    "AU-ISM-1559-IdP": [
+      "idp-incident-response"
+    ],
+    "NIS2-Art-21-Federated-Identity": [
+      "idp-incident-response"
+    ],
+    "DORA-Art-19-IdP-4h": [
+      "idp-incident-response"
+    ],
+    "OFAC-Sanctions-Threat-Actor-Negotiation": [
+      "idp-incident-response"
     ]
   },
   "atlas_refs": {
@@ -559,6 +658,7 @@
       "ai-attack-surface",
       "ai-risk-management",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "dlp-gap-analysis",
       "identity-assurance",
       "incident-response-playbook",
@@ -636,6 +736,7 @@
       "ai-attack-surface",
       "attack-surface-pentest",
       "mcp-agent-trust",
+      "ransomware-response",
       "webapp-security"
     ],
     "T1190": [
@@ -680,10 +781,12 @@
       "age-gates-child-safety",
       "api-security",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "email-security-anti-phishing",
       "identity-assurance",
       "incident-response-playbook",
+      "ransomware-response",
       "sector-energy",
       "sector-financial",
       "sector-healthcare",
@@ -694,6 +797,7 @@
       "api-security",
       "dlp-gap-analysis",
       "incident-response-playbook",
+      "ransomware-response",
       "sector-financial",
       "sector-healthcare"
     ],
@@ -736,12 +840,14 @@
     ],
     "T1486": [
       "incident-response-playbook",
+      "ransomware-response",
       "sector-financial"
     ],
     "T1098": [
       "sector-telecom"
     ],
     "T1199": [
+      "idp-incident-response",
       "sector-telecom"
     ],
     "T1552": [
@@ -761,6 +867,29 @@
     ],
     "T1566.003": [
       "email-security-anti-phishing"
+    ],
+    "T1078.004": [
+      "cloud-iam-incident",
+      "idp-incident-response"
+    ],
+    "T1098.001": [
+      "cloud-iam-incident",
+      "idp-incident-response"
+    ],
+    "T1552.005": [
+      "cloud-iam-incident"
+    ],
+    "T1580": [
+      "cloud-iam-incident"
+    ],
+    "T1538": [
+      "cloud-iam-incident"
+    ],
+    "T1556.007": [
+      "idp-incident-response"
+    ],
+    "T1606.002": [
+      "idp-incident-response"
     ]
   },
   "rfc_refs": {
@@ -780,8 +909,10 @@
     ],
     "RFC-7519": [
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare",
@@ -801,8 +932,10 @@
     ],
     "RFC-8725": [
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "webapp-security"
@@ -816,6 +949,7 @@
     "RFC-9421": [
       "ai-c2-detection",
       "api-security",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare"
@@ -862,6 +996,15 @@
     ],
     "RFC-9622": [
       "sector-telecom"
+    ],
+    "RFC-8693": [
+      "cloud-iam-incident"
+    ],
+    "RFC-9068": [
+      "cloud-iam-incident"
+    ],
+    "RFC-7591": [
+      "idp-incident-response"
     ]
   },
   "dlp_refs": {}

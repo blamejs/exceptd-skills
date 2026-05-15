@@ -152,8 +152,10 @@
     "lag_notes": "RFC 7519 is the spec; RFC 8725 (Best Current Practices) is what implementations should follow. Many MCP servers still hand-roll JWT validation and miss BCP 225 guidance.",
     "skills_referencing": [
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare",
@@ -301,8 +303,10 @@
     "relevance": "BCP 225. Required reading for any MCP / agent / AI-API auth implementation. Covers algorithm-confusion attacks, kid traversal, audience pinning. mcp-agent-trust uses this as the JWT-handling baseline.",
     "skills_referencing": [
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "identity-assurance",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "webapp-security"
@@ -421,6 +425,7 @@
     "skills_referencing": [
       "ai-c2-detection",
       "api-security",
+      "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare"
@@ -557,5 +562,44 @@
       "coordinated-vuln-disclosure"
     ],
     "last_verified": "2026-05-13"
+  },
+  "RFC-7591": {
+    "number": 7591,
+    "title": "OAuth 2.0 Dynamic Client Registration Protocol",
+    "status": "Proposed Standard",
+    "published": "2015-07",
+    "tracker": "https://www.rfc-editor.org/info/rfc7591",
+    "relevance": "Dynamic Client Registration is the legitimate OAuth flow for self-service app onboarding into an IdP. Operator-facing: when DCR is enabled without strong attestation, a compromised tenant or compromised admin can register a malicious app whose redirect_uri exfiltrates auth codes — the 2023-2024 Microsoft Storm-0558 / Midnight Blizzard incidents exercised this surface via consent abuse on tenant-published apps. Pair with RFC 7592 (DCR Management Protocol) for full lifecycle controls.",
+    "skills_referencing": [
+      "idp-incident-response",
+      "identity-assurance"
+    ],
+    "last_verified": "2026-05-15"
+  },
+  "RFC-8693": {
+    "number": 8693,
+    "title": "OAuth 2.0 Token Exchange",
+    "status": "Proposed Standard",
+    "published": "2020-01",
+    "tracker": "https://www.rfc-editor.org/info/rfc8693",
+    "relevance": "Token exchange is the canonical mechanism for cloud IAM impersonation and service-account delegation chains (AWS STS AssumeRoleWithWebIdentity, GCP Workload Identity Federation, Azure Workload Identity). Operator-facing: token-exchange chains are the modern equivalent of pass-the-token — a compromised upstream token mints downstream tokens with widened audience claims. Audit chain depth + audience expansion + lifetime ladder.",
+    "skills_referencing": [
+      "cloud-iam-incident",
+      "identity-assurance"
+    ],
+    "last_verified": "2026-05-15"
+  },
+  "RFC-9068": {
+    "number": 9068,
+    "title": "JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens",
+    "status": "Proposed Standard",
+    "published": "2021-10",
+    "tracker": "https://www.rfc-editor.org/info/rfc9068",
+    "relevance": "Standardises the JWT claim set for OAuth access tokens (typ, scope, client_id, etc.) that cloud IAM and SaaS APIs accept as bearer credentials. Operator-facing: when tokens omit the audience claim or accept loose typ values, replay across services becomes trivial — most cloud-IAM token-forgery incidents (Azure storm-0558 key-leak class) reduce to insufficient claim validation. Pair with RFC 8725 (JWT BCP) for hardening.",
+    "skills_referencing": [
+      "cloud-iam-incident",
+      "identity-assurance"
+    ],
+    "last_verified": "2026-05-15"
   }
 }

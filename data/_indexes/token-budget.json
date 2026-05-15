@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1450921,
-    "total_approx_tokens": 362735,
-    "skill_count": 39
+    "total_chars": 1589324,
+    "total_approx_tokens": 397336,
+    "skill_count": 42
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -2173,6 +2173,61 @@
         }
       }
     },
+    "ransomware-response": {
+      "path": "skills/ransomware-response/skill.md",
+      "bytes": 48211,
+      "chars": 48033,
+      "lines": 375,
+      "approx_tokens": 12008,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 5359,
+          "chars": 5353,
+          "approx_tokens": 1338
+        },
+        "framework-lag-declaration": {
+          "bytes": 6795,
+          "chars": 6769,
+          "approx_tokens": 1692
+        },
+        "ttp-mapping": {
+          "bytes": 2219,
+          "chars": 2219,
+          "approx_tokens": 555
+        },
+        "exploit-availability-matrix": {
+          "bytes": 2592,
+          "chars": 2584,
+          "approx_tokens": 646
+        },
+        "analysis-procedure": {
+          "bytes": 11508,
+          "chars": 11460,
+          "approx_tokens": 2865
+        },
+        "output-format": {
+          "bytes": 3811,
+          "chars": 3799,
+          "approx_tokens": 950
+        },
+        "compliance-theater-check": {
+          "bytes": 3787,
+          "chars": 3769,
+          "approx_tokens": 942
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 3786,
+          "chars": 3778,
+          "approx_tokens": 945
+        },
+        "hand-off": {
+          "bytes": 3486,
+          "chars": 3460,
+          "approx_tokens": 865
+        }
+      }
+    },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
       "bytes": 26531,
@@ -2280,6 +2335,116 @@
           "bytes": 4333,
           "chars": 4305,
           "approx_tokens": 1076
+        }
+      }
+    },
+    "cloud-iam-incident": {
+      "path": "skills/cloud-iam-incident/skill.md",
+      "bytes": 44433,
+      "chars": 44275,
+      "lines": 420,
+      "approx_tokens": 11069,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 5786,
+          "chars": 5772,
+          "approx_tokens": 1443
+        },
+        "framework-lag-declaration": {
+          "bytes": 6316,
+          "chars": 6282,
+          "approx_tokens": 1571
+        },
+        "ttp-mapping": {
+          "bytes": 4540,
+          "chars": 4516,
+          "approx_tokens": 1129
+        },
+        "exploit-availability-matrix": {
+          "bytes": 3379,
+          "chars": 3375,
+          "approx_tokens": 844
+        },
+        "analysis-procedure": {
+          "bytes": 7625,
+          "chars": 7601,
+          "approx_tokens": 1900
+        },
+        "output-format": {
+          "bytes": 2198,
+          "chars": 2194,
+          "approx_tokens": 549
+        },
+        "compliance-theater-check": {
+          "bytes": 4599,
+          "chars": 4583,
+          "approx_tokens": 1146
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 4076,
+          "chars": 4068,
+          "approx_tokens": 1017
+        },
+        "hand-off": {
+          "bytes": 3037,
+          "chars": 3009,
+          "approx_tokens": 752
+        }
+      }
+    },
+    "idp-incident-response": {
+      "path": "skills/idp-incident-response/skill.md",
+      "bytes": 46225,
+      "chars": 46095,
+      "lines": 353,
+      "approx_tokens": 11524,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 5837,
+          "chars": 5817,
+          "approx_tokens": 1454
+        },
+        "framework-lag-declaration": {
+          "bytes": 6634,
+          "chars": 6632,
+          "approx_tokens": 1658
+        },
+        "ttp-mapping": {
+          "bytes": 4081,
+          "chars": 4069,
+          "approx_tokens": 1017
+        },
+        "exploit-availability-matrix": {
+          "bytes": 3715,
+          "chars": 3697,
+          "approx_tokens": 924
+        },
+        "analysis-procedure": {
+          "bytes": 7086,
+          "chars": 7064,
+          "approx_tokens": 1766
+        },
+        "output-format": {
+          "bytes": 3183,
+          "chars": 3179,
+          "approx_tokens": 795
+        },
+        "compliance-theater-check": {
+          "bytes": 4461,
+          "chars": 4447,
+          "approx_tokens": 1112
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 4522,
+          "chars": 4518,
+          "approx_tokens": 1130
+        },
+        "hand-off": {
+          "bytes": 3841,
+          "chars": 3817,
+          "approx_tokens": 954
         }
       }
     }

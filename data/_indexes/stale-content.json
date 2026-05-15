@@ -15,7 +15,7 @@
       "severity": "medium",
       "category": "badge_drift",
       "artifact": "README.md",
-      "detail": "skills badge shows 38, manifest has 39"
+      "detail": "skills badge shows 38, manifest has 42"
     },
     {
       "severity": "medium",
@@ -27,7 +27,7 @@
       "severity": "medium",
       "category": "researcher_claim_drift",
       "artifact": "skills/researcher/skill.md",
-      "detail": "claims 37 specialized skills downstream; live count is 38"
+      "detail": "claims 37 specialized skills downstream; live count is 41"
     }
   ]
 }
