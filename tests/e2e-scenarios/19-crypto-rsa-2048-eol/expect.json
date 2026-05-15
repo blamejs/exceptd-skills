@@ -4,10 +4,12 @@
     "phases.detect.classification": "detected"
   },
   "json_path_min": {
-    "phases.analyze.rwep.adjusted": 15
+    "phases.analyze.rwep.adjusted": 15,
+    "phases.close.jurisdiction_notifications.length": 1
   },
   "json_path_present": [
     "phases.analyze.rwep.adjusted",
-    "phases.close.notification_actions"
+    "phases.close.notification_actions",
+    "phases.close.jurisdiction_notifications.0.jurisdiction"
   ]
 }

@@ -291,8 +291,12 @@ try {
   // Warn when absent, fail when present-but-mismatched (unless KEYS_ROTATED).
   const expectedFpPath = path.join(pkgRoot, "keys", "EXPECTED_FINGERPRINT");
   if (fs.existsSync(expectedFpPath)) {
-    const raw = fs.readFileSync(expectedFpPath, "utf8").trim();
-    const firstLine = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length > 0) || "";
+    // KK P1-5: route through the shared lib/verify loader so a BOM-prefixed
+    // pin file (Notepad with files.encoding=utf8bom in the source tree) is
+    // tolerated identically across every verify site. The helper strips
+    // leading U+FEFF + ignores comment lines (`#`).
+    const { loadExpectedFingerprintFirstLine } = require(path.join(ROOT, "lib", "verify.js"));
+    const firstLine = loadExpectedFingerprintFirstLine(expectedFpPath) || "";
     const liveFpLine = `SHA256:${pubFp}`;
     if (firstLine !== liveFpLine) {
       if (process.env.KEYS_ROTATED === "1") {

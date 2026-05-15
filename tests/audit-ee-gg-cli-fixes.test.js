@@ -116,7 +116,7 @@ test('EE P1-1 negative: --vex still refuses non-CycloneDX shapes without the mar
     }), 'utf8');
     const sub = JSON.stringify({ observations: {}, verdict: {} });
     const r = cli(['run', 'library-author', '--evidence', '-', '--vex', vexPath], { input: sub });
-    assert.notEqual(r.status, 0, 'garbage shape must still be refused');
+    assert.equal(r.status, 1, 'garbage shape must be refused with exit 1 (arg-validation)');
     const err = tryJson(r.stderr.trim()) || {};
     assert.equal(err.ok, false);
     assert.match(err.error || '', /doesn't look like CycloneDX or OpenVEX|unrecognized/,
@@ -313,7 +313,7 @@ test('EE P1-4: --vex oversize error message says "32 MiB limit" with formatted b
     } finally { fs.closeSync(fh); }
     const r = cli(['run', 'library-author', '--evidence', '-', '--vex', vexPath],
       { input: JSON.stringify({ observations: {}, verdict: {} }) });
-    assert.notEqual(r.status, 0, 'oversize --vex must exit non-zero');
+    assert.equal(r.status, 1, 'oversize --vex must exit 1 (arg-validation refusal)');
     const err = tryJson(r.stderr.trim()) || {};
     assert.equal(err.ok, false);
     // The new message must name the MiB convention explicitly.
@@ -347,8 +347,8 @@ test('EE P1-5: --evidence-dir refuses POSIX symbolic links',
         throw e;
       }
       const r = cli(['run', '--all', '--evidence-dir', tmp]);
-      assert.notEqual(r.status, 0,
-        '--evidence-dir with a symlink entry must exit non-zero; got ' + r.status);
+      assert.equal(r.status, 1,
+        '--evidence-dir with a symlink entry must exit 1 (arg-validation refusal); got ' + r.status);
       const err = tryJson(r.stderr.trim()) || {};
       assert.equal(err.ok, false);
       assert.match(err.error || '',

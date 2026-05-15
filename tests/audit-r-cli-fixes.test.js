@@ -95,19 +95,31 @@ test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', { sk
 // shape mirrors how AGENTS.md Hard Rule #15 enforces test coverage for
 // per-flag / per-call-site behavior: the literal check is the contract.
 
-test('R-F3: cmdRun + cmdIngest use !process.stdin.isTTY (truthy check), not === false', () => {
+test('R-F3: cmdRun + cmdIngest + cmdAiRun route stdin detection through hasReadableStdin (no inline strict checks at dispatcher sites)', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // The post-fix sites are the only two stdin auto-detect sites in cmdRun
-  // and cmdIngest. The pre-fix strict-equality check must not appear at
-  // those sites — search for it and ensure it's absent.
-  const strictHits = src.match(/process\.stdin\.isTTY === false/g) || [];
+  // The dispatcher sites (cmdRun, cmdIngest, cmdAiRun --no-stream) must
+  // route stdin detection through the hasReadableStdin() helper, NOT call
+  // `process.stdin.isTTY === false` inline. The helper itself is allowed
+  // to use the strict check internally as its Windows fallback (where a
+  // piped stream legitimately reports isTTY === false and size === 0 on
+  // fstat); the regression class this test exists to prevent is the
+  // dispatcher sites returning false for the wrapped-MSYS-bash case where
+  // isTTY === undefined.
+  //
+  // Scope the strict-check ban to outside the hasReadableStdin function
+  // body. Extract the function, then assert the strict literal doesn't
+  // appear in the rest of the source.
+  const helperMatch = src.match(/function hasReadableStdin\(\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(helperMatch, 'bin/exceptd.js must define a top-level hasReadableStdin function');
+  const srcOutsideHelper = src.replace(helperMatch[0], '');
+  const strictHits = srcOutsideHelper.match(/process\.stdin\.isTTY === false/g) || [];
   assert.equal(strictHits.length, 0,
-    `process.stdin.isTTY === false must not appear in bin/exceptd.js — Windows MSYS bash exposes isTTY=undefined for piped streams, so the strict check fails. Found ${strictHits.length} occurrences.`);
-  // Confirm the truthy form is present at AT LEAST two sites (cmdRun +
-  // cmdIngest). cmdAiRun already used it; we don't double-count.
-  const truthyHits = src.match(/!process\.stdin\.isTTY\b/g) || [];
-  assert.ok(truthyHits.length >= 3,
-    `!process.stdin.isTTY must appear in cmdRun, cmdIngest, and cmdAiRun (≥ 3 sites). Found ${truthyHits.length}.`);
+    `process.stdin.isTTY === false must not appear in dispatcher sites of bin/exceptd.js — wrapped MSYS-bash streams expose isTTY=undefined and would silently skip stdin. The check is permitted only inside hasReadableStdin's Windows fallback. Found ${strictHits.length} dispatcher-side occurrences.`);
+  // Confirm the dispatcher sites route through hasReadableStdin (≥ 3
+  // call sites: cmdRun, cmdIngest, cmdAiRun --no-stream).
+  const helperCalls = src.match(/\bhasReadableStdin\s*\(\s*\)/g) || [];
+  assert.ok(helperCalls.length >= 3,
+    `hasReadableStdin() must be called at cmdRun, cmdIngest, and cmdAiRun stdin-detection sites (≥ 3). Found ${helperCalls.length}.`);
 });
 
 // ---------------------------------------------------------------------------
