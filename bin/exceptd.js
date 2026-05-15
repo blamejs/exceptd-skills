@@ -722,15 +722,17 @@ function loadRunner() {
  * Strategy:
  *
  *   1. If isTTY is truthy → operator is at a terminal, never read stdin.
- *   2. Probe `fs.fstatSync(0)`:
- *      - On POSIX pipes / regular files, `stat.size` is reliable.
- *      - On Windows, fstat on a pipe returns size === 0 even when data
- *        is queued — so size === 0 alone cannot decide.
- *   3. When size > 0 → real data is queued; safe to read.
- *   4. When size === 0 AND isTTY is falsy:
- *      - On POSIX, treat as empty (wrapped duplexer / closed stdin).
- *      - On Windows, fall back to the legacy truthy check so we don't
- *        regress the MSYS-bash auto-detect (R-F3 in v0.12.16).
+ *   2. POSIX: trust isFIFO / isSocket / isCharacterDevice. Regular file
+ *      requires size > 0 (empty file redirection should not be treated
+ *      as piped input).
+ *   3. Windows: `isTTY === false` strict (filters out wrapped test
+ *      duplexers which leave isTTY === undefined). DO NOT gate on size
+ *      because Windows pipes report as regular files with size 0 even
+ *      when bytes are queued — gating would silently skip every
+ *      `echo {...} | exceptd run` invocation.
+ *   4. If a wrapped test harness on Windows does want stdin auto-read
+ *      to skip, the harness must set `process.stdin.isTTY = undefined`
+ *      explicitly (Mocha/Jest do this by default).
  *
  * Returns `true` if the caller may safely fs.readFileSync(0) without
  * risking an indefinite block on a wrapped empty stream.
@@ -765,18 +767,13 @@ function hasReadableStdin() {
   if (typeof st.size === "number" && st.size > 0) return true;
   // Windows fallback: pipes don't surface as FIFOs via fstat on win32
   // (they appear as regular files with size 0 even when bytes queued).
-  // KK P1-4: tighten — require `isTTY === false` STRICTLY (was the truthy
-  // `!process.stdin.isTTY` check which returned true on isTTY===undefined,
-  // dropping the caller into a blocking readFileSync(0) on wrapped test
-  // duplexers). Pair with the regular-file + size===0 guard so a wrapped
-  // empty stream cannot pass. Real MSYS-bash piping sets isTTY === false
-  // on win32, so this preserves the v0.12.16 R-F3 working case.
-  if (process.platform === "win32"
-      && process.stdin.isTTY === false
-      && typeof st.isFile === "function" && st.isFile()
-      && typeof st.size === "number" && st.size > 0) {
-    return true;
-  }
+  // Trust isTTY === false strictly — that filters out wrapped test
+  // duplexers (which leave isTTY === undefined) while keeping cmd.exe /
+  // PowerShell / MSYS pipes working (isTTY === false when piped). Do NOT
+  // gate on size > 0 here: a Windows pipe with bytes queued reports as
+  // a regular file with size 0, and gating would silently skip every
+  // `echo {...} | exceptd run|ingest|ai-run` invocation.
+  if (process.platform === "win32" && process.stdin.isTTY === false) return true;
   return false;
 }
 
@@ -1068,7 +1065,7 @@ function dispatchPlaybook(cmd, argv) {
   // use the in-scope `cmd` verb so a brief invocation says "brief:" rather
   // than misattributing the flag to run.
   const BUNDLE_FLAG_RELEVANT_VERBS = new Set([
-    "run", "ci", "run-all", "ai-run",
+    "run", "ci", "run-all", "ai-run", "ingest",
   ]);
 
   // --publisher-namespace <url> threads into the CSAF

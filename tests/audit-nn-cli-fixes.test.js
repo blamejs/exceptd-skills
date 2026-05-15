@@ -49,7 +49,7 @@ test('NN P1-1: brief --csaf-status final → exit 1 with irrelevant-flag error p
     'error body must record the invoking verb; got: ' + JSON.stringify(err.verb));
   assert.ok(Array.isArray(err.accepted_verbs),
     'accepted_verbs must be an array; got: ' + JSON.stringify(err.accepted_verbs));
-  assert.deepEqual([...err.accepted_verbs].sort(), ['ai-run', 'ci', 'run', 'run-all'],
+  assert.deepEqual([...err.accepted_verbs].sort(), ['ai-run', 'ci', 'ingest', 'run', 'run-all'],
     'accepted_verbs must be exactly the bundle-relevant set; got: ' + JSON.stringify(err.accepted_verbs));
   assert.match(err.error || '',
     /--csaf-status is irrelevant on this verb/,
@@ -68,7 +68,7 @@ test('NN P1-1: brief --publisher-namespace https://acme.example → exit 1 with 
   assert.equal(err.error_class, 'irrelevant-flag');
   assert.equal(err.flag, 'publisher-namespace');
   assert.equal(err.verb, 'brief');
-  assert.deepEqual([...err.accepted_verbs].sort(), ['ai-run', 'ci', 'run', 'run-all']);
+  assert.deepEqual([...err.accepted_verbs].sort(), ['ai-run', 'ci', 'ingest', 'run', 'run-all']);
   assert.match(err.error || '',
     /--publisher-namespace is irrelevant on this verb/,
     'error message must use the "irrelevant on this verb" phrasing; got: ' + (err.error || ''));
