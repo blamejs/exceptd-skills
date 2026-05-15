@@ -93,9 +93,9 @@ Phase contract:
 
 | Phase | Purpose | CLI surface |
 |---|---|---|
-| 1 govern | Operator consent + jurisdiction clocks (NIS2 24h, DORA 4h, GDPR 72h, etc.) | `exceptd govern <playbook>` |
-| 2 direct | Threat-context briefing + skill chain + RWEP threshold | `exceptd direct <playbook>` |
-| 3 look | Artifacts and indicators to gather; air-gap alternates | `exceptd look <playbook>` |
+| 1 govern | Operator consent + jurisdiction clocks (NIS2 24h, DORA 4h, GDPR 72h, etc.) | `exceptd brief <playbook> --phase govern` |
+| 2 direct | Threat-context briefing + skill chain + RWEP threshold | `exceptd brief <playbook> --phase direct` |
+| 3 look | Artifacts and indicators to gather; air-gap alternates | `exceptd brief <playbook> --phase look` |
 | 4 detect | AI applies indicators to captured evidence; runs every required false-positive check | walked inline by the assistant |
 | 5 analyze | Correlate hits → findings | `exceptd run <playbook> --evidence -` |
 | 6 validate | Priority-sorted remediation paths + validation tests + residual-risk statement | (part of `run`) |
@@ -103,7 +103,7 @@ Phase contract:
 
 Preconditions encode hard refuse-to-run conditions: `threat_currency_score < 50` hard-blocks unless `--force-stale`; `_meta.mutex` refuses concurrent conflicting playbooks; `--air-gap` substitutes `air_gap_alternative` source paths.
 
-Attestations persist at `.exceptd/attestations/<session_id>/attestation.json` and can be re-checked with `exceptd reattest <session-id>`.
+Attestations persist at `.exceptd/attestations/<session_id>/attestation.json` and can be replayed against the stored evidence with `exceptd reattest <session-id>` (drift verdict) or inspected with `exceptd attest verify|show|list|diff`.
 
 ---
 
@@ -213,11 +213,11 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 
 ### How to Walk a Playbook
 
-1. `exceptd plan --pretty` to list available playbooks
-2. `exceptd govern <id>` — surface Phase-1 jurisdiction obligations to the operator and wait for ack
-3. `exceptd direct <id>` and `exceptd look <id>` — pull the threat context and indicator set
+1. `exceptd brief` (no args) lists available playbooks; `exceptd brief <id>` returns the full Phase 1+2+3 briefing in one document
+2. Surface the Phase-1 jurisdiction obligations to the operator and wait for ack (use `exceptd brief <id> --phase govern` for just that slice)
+3. `exceptd brief <id> --phase direct` and `--phase look` pull the threat context and indicator set
 4. Walk Phase 4 (detect) inline using local tools; run every required false-positive check
-5. Pipe evidence to `exceptd run <id> --evidence -` for Phases 5–7
+5. Pipe evidence to `exceptd run <id> --evidence -` for Phases 5–7 (use `exceptd ci` for the gate-only variant in CI pipelines)
 6. Offer to persist the attestation and draft any notification messages
 
 ### Context Budget Guidance
