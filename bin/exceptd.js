@@ -2321,10 +2321,17 @@ function cmdRun(runner, args, runOpts, pretty) {
       filename: "attestation.json",
     });
     if (!persistResult.ok) {
-      // Session-id collision without --force-overwrite. Refuse, surface the
-      // existing path so the operator can decide, and emit JSON to stderr
-      // matching the unified error shape. Exit non-zero — a silent overwrite
-      // is a tamper-evidence violation.
+      // Session-id collision without --force-overwrite, OR --force-overwrite
+      // lost the lockfile race. Refuse, surface the existing path so the
+      // operator can decide, emit JSON to stderr matching the unified error
+      // shape. Exit non-zero — a silent overwrite is a tamper-evidence
+      // violation. v0.12.14: exitCode + return instead of process.exit so
+      // the stderr line drains under piped CI consumers.
+      //
+      // When persistAttestation lost the lockfile race it pinned
+      // process.exitCode = 8 (LOCK_CONTENTION) before returning. Don't
+      // overwrite that with 3 — preserve the exit-8 contract callers depend
+      // on to distinguish lock-busy from collision.
       const err = {
         ok: false,
         error: persistResult.error,
@@ -2332,10 +2339,14 @@ function cmdRun(runner, args, runOpts, pretty) {
         hint: "Pass --force-overwrite to replace, or supply a fresh --session-id (omit the flag for an auto-generated hex).",
         verb: "run",
       };
-      // v0.12.14: exitCode + return instead of process.exit
-      // so the stderr line drains under piped CI consumers.
+      if (persistResult.lock_contention) {
+        err.lock_contention = true;
+        err.exit_code = 8;
+      }
       process.stderr.write(JSON.stringify(err) + "\n");
-      process.exitCode = 3;
+      if (!persistResult.lock_contention) {
+        process.exitCode = 3;
+      }
       return;
     }
     if (persistResult.prior_session_id) {
@@ -2948,21 +2959,42 @@ function cmdIngest(runner, args, runOpts, pretty) {
   // calls with the same session-id silently clobbered the audit trail and no
   // .sig sidecar was written.
   if (result && result.ok && result.session_id) {
+    // Mirror cmdRun / cmdRunMulti: gate operator_consent persistence on
+    // classification === 'detected'. --ack is meaningful only when a
+    // jurisdiction clock is at stake; persisting consent on a
+    // not-detected ingest forges audit-trail consent for a clock that
+    // never started.
+    const ingestClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+    const ingestConsentApplies = ingestClassification === "detected";
+    if (runOpts.operator_consent && !ingestConsentApplies) {
+      result.ack = true;
+      result.ack_applied = false;
+      result.ack_skipped_reason = `classification=${ingestClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
+    }
     const persisted = persistAttestation({
       sessionId: result.session_id,
       playbookId: result.playbook_id,
       directiveId: result.directive_id,
       evidenceHash: result.evidence_hash,
       operator: runOpts.operator,
-      operatorConsent: runOpts.operator_consent,
+      operatorConsent: ingestConsentApplies ? runOpts.operator_consent : null,
       submission: cleanedSubmission,
       runOpts,
       forceOverwrite: !!args["force-overwrite"],
       filename: "attestation.json",
     });
     if (!persisted.ok) {
-      // Surface the collision; do not silently clobber.
-      return emitError(persisted.error, { session_id: result.session_id, existing_path: persisted.existingPath }, pretty);
+      // Surface the collision; do not silently clobber. Preserve
+      // LOCK_CONTENTION exit 8 set by persistAttestation when
+      // --force-overwrite hit the lockfile race.
+      const ctx = { session_id: result.session_id, existing_path: persisted.existingPath };
+      if (persisted.lock_contention) {
+        ctx.lock_contention = true;
+        ctx.exit_code = 8;
+        process.stderr.write(JSON.stringify({ ok: false, error: persisted.error, ...ctx }) + "\n");
+        return;
+      }
+      return emitError(persisted.error, ctx, pretty);
     }
     if (persisted.prior_session_id) {
       result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
@@ -5001,13 +5033,21 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // or `reattest` with the returned id. Now: same persistAttestation
     // shape as cmdRun, so AI-facing flow round-trips cleanly.
     if (result.session_id) {
+      // Mirror cmdRun: gate operator_consent on classification === 'detected'.
+      const aiClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+      const aiConsentApplies = aiClassification === "detected";
+      if (runOpts.operator_consent && !aiConsentApplies) {
+        result.ack = true;
+        result.ack_applied = false;
+        result.ack_skipped_reason = `classification=${aiClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
+      }
       const persistResult = persistAttestation({
         sessionId: result.session_id,
         playbookId: result.playbook_id || playbookId,
         directiveId: result.directive_id || directiveId,
         evidenceHash: result.evidence_hash,
         operator: runOpts.operator,
-        operatorConsent: runOpts.operator_consent,
+        operatorConsent: aiConsentApplies ? runOpts.operator_consent : null,
         submission,
         runOpts,
         forceOverwrite: !!args["force-overwrite"],
@@ -5016,12 +5056,21 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       if (!persistResult.ok && !args["force-overwrite"]) {
         // Collision without --force-overwrite. AI agents typically pass
         // unique session ids each run, so this path is rare but surface
-        // it cleanly via the same JSONL contract.
-        process.stdout.write(JSON.stringify({
+        // it cleanly via the same JSONL contract. Preserve LOCK_CONTENTION
+        // exit 8 set by persistAttestation when --force-overwrite hit the
+        // lockfile race — don't clobber with exit 3.
+        const eventBody = {
           event: "error", reason: persistResult.error,
           existing_attestation: persistResult.existingPath,
-        }) + "\n");
-        process.exitCode = 3;
+        };
+        if (persistResult.lock_contention) {
+          eventBody.lock_contention = true;
+          eventBody.exit_code = 8;
+        }
+        process.stdout.write(JSON.stringify(eventBody) + "\n");
+        if (!persistResult.lock_contention) {
+          process.exitCode = 3;
+        }
         return;
       }
     }
@@ -5105,21 +5154,31 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // too. Without this, the session_id emitted in the `done` frame
     // can't be resolved by `attest show / verify / diff` or `reattest`.
     if (result.session_id) {
+      // Mirror cmdRun: gate operator_consent on classification === 'detected'.
+      const aiClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
+      const aiConsentApplies = aiClassification === "detected";
       const persistResult = persistAttestation({
         sessionId: result.session_id,
         playbookId: result.playbook_id || playbookId,
         directiveId: result.directive_id || directiveId,
         evidenceHash: result.evidence_hash,
         operator: runOpts.operator,
-        operatorConsent: runOpts.operator_consent,
+        operatorConsent: aiConsentApplies ? runOpts.operator_consent : null,
         submission,
         runOpts,
         forceOverwrite: !!args["force-overwrite"],
         filename: "attestation.json",
       });
       if (!persistResult.ok && !args["force-overwrite"]) {
-        writeLine({ event: "error", reason: persistResult.error,
-                    existing_attestation: persistResult.existingPath });
+        const eventBody = { event: "error", reason: persistResult.error,
+                            existing_attestation: persistResult.existingPath };
+        if (persistResult.lock_contention) {
+          eventBody.lock_contention = true;
+          eventBody.exit_code = 8;
+          writeLine(eventBody);
+          return finish(8);
+        }
+        writeLine(eventBody);
         return finish(3);
       }
     }

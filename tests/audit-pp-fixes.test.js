@@ -255,3 +255,62 @@ test('PP P1-2: emit() preserves an already-set non-zero exitCode (load-bearing f
   void bin; // touch require'd module so it isn't dead-code-eliminated
   process.exitCode = priorExitCode;
 });
+
+// ---------------------------------------------------------------------------
+// VV2 P1-1 — cmdRun / cmdAiRun / cmdIngest must NOT clobber LOCK_CONTENTION
+// exit 8 with exit 3 in the persistResult.ok === false branch
+// ---------------------------------------------------------------------------
+test('VV2 P1-1: cmdRun persistResult-false branch preserves LOCK_CONTENTION exit code (no overwrite to 3)', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  // The four persist-result-false sites (cmdRun, cmdIngest, cmdAiRun no-stream,
+  // cmdAiRun streaming) must guard the exitCode assignment / finish() call on
+  // !persistResult.lock_contention. Source-text invariant: no bare
+  // `process.exitCode = 3;` (or `finish(3)`) line should follow a
+  // `persistResult.ok` failure check without a lock-contention guard.
+  //
+  // Approach: locate every `if (!persistResult.ok` block, ensure the body
+  // contains either `lock_contention` (the guard) or no exitCode/finish(3)
+  // call at all.
+  const blockRe = /if\s*\(!persistResult\.ok[\s\S]{0,1500}?\}\s*\n/g;
+  const blocks = src.match(blockRe) || [];
+  assert.ok(blocks.length >= 3,
+    `expected at least 3 persistResult-false branches (cmdRun, cmdAiRun no-stream, cmdAiRun streaming); found ${blocks.length}`);
+  for (const block of blocks) {
+    const hasExit3 = /process\.exitCode\s*=\s*3|finish\(\s*3\s*\)/.test(block);
+    if (hasExit3) {
+      assert.match(block, /lock_contention/,
+        `persistResult-false branch sets exit 3 without checking lock_contention first — would clobber LOCK_CONTENTION exit 8.\nBlock excerpt:\n${block.slice(0, 400)}`);
+    }
+  }
+});
+
+test('VV2 P2-1: cmdIngest persistAttestation gates operatorConsent on classification === detected', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  // Find the cmdIngest persistAttestation call. The operatorConsent argument
+  // must be conditional on a per-classification gate (ingestConsentApplies
+  // ternary), NOT bare runOpts.operator_consent.
+  const ingestStart = src.indexOf('function cmdIngest');
+  assert.ok(ingestStart > 0, 'cmdIngest function must exist');
+  const ingestEnd = src.indexOf('\nfunction ', ingestStart + 1);
+  const ingestBody = src.slice(ingestStart, ingestEnd > 0 ? ingestEnd : ingestStart + 5000);
+  const persistMatch = ingestBody.match(/persistAttestation\s*\(\{[\s\S]*?\}\s*\)/);
+  assert.ok(persistMatch, 'cmdIngest must call persistAttestation');
+  assert.match(persistMatch[0], /operatorConsent:\s*\w*[Cc]onsentApplies\s*\?/,
+    'cmdIngest persistAttestation must gate operatorConsent on a *ConsentApplies ternary (mirrors cmdRun EE P1-6)');
+});
+
+test('VV2 P2-1: cmdAiRun persistAttestation gates operatorConsent on classification === detected', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  // cmdAiRun has both --no-stream and streaming persistAttestation sites.
+  // Both must gate.
+  const aiStart = src.indexOf('function cmdAiRun');
+  const aiEnd = src.indexOf('\nfunction ', aiStart + 1);
+  const aiBody = src.slice(aiStart, aiEnd > 0 ? aiEnd : aiStart + 30000);
+  const persistMatches = [...aiBody.matchAll(/persistAttestation\s*\(\{[\s\S]*?\}\s*\)/g)];
+  assert.ok(persistMatches.length >= 2,
+    `cmdAiRun must call persistAttestation at both no-stream and streaming sites; found ${persistMatches.length}`);
+  for (const m of persistMatches) {
+    assert.match(m[0], /operatorConsent:\s*\w*[Cc]onsentApplies\s*\?/,
+      `cmdAiRun persistAttestation must gate operatorConsent on a *ConsentApplies ternary.\nExcerpt: ${m[0].slice(0, 300)}`);
+  }
+});
