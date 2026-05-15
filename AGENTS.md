@@ -44,7 +44,7 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
     | New `phases.detect.indicators[].id` in a playbook     | Quoted indicator id literal in `tests/e2e-scenarios/*/expect.json` or `tests/*.test.js` |
     | New / changed `iocs` field on a CVE entry             | CVE id and the word `iocs` in the same test file                                 |
 
-    Mechanical enforcement lives in `scripts/check-test-coverage.js` and runs as the 15th gate of `npm run predeploy` (also the `Diff coverage` job in `ci.yml`). Docs (`*.md`), workflow YAML, and skill body changes are allowlisted — skill bodies are covered by the Ed25519 signature gate (Hard Rule #13), workflows surface a manual-review flag rather than a hard finding. Whitespace-only diffs are ignored.
+    Mechanical enforcement lives in `scripts/check-test-coverage.js` and runs as the 14th gate of `npm run predeploy` (also the `Diff coverage` job in `ci.yml`). Docs (`*.md`), workflow YAML, and skill body changes are allowlisted — skill bodies are covered by the Ed25519 signature gate (Hard Rule #13), workflows surface a manual-review flag rather than a hard finding. Whitespace-only diffs are ignored.
 
     The gate is blocking: a covered surface change without a covering test reference fails the predeploy run and the `Diff coverage` CI job. Never bypass with `--no-verify` or `--warn-only` — add the covering test first. This rule is additive to Hard Rule #11 (no-MVP ban): a new playbook indicator or CLI surface that ships without a regression test is the same shape of incomplete-feature ship that #11 forbids, applied to the test layer.
 
@@ -88,8 +88,8 @@ Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/play
 
 ### CLI invocation
 
-- **Today:** `node lib/playbook-runner.js <path-to-playbook.json>` — current Node module entry point.
-- **Coming:** `exceptd plan`, `exceptd govern`, `exceptd direct`, `exceptd run` — direct CLI verbs land in a follow-up task and will wrap the same runner. AI assistants should prefer the named verbs once they ship; the Node module entry point remains stable as the underlying implementation.
+- **CLI verb:** `exceptd run <playbook> --evidence <file>` walks the full seven phases against operator-supplied evidence. `exceptd brief <playbook>` returns Phase 2 threat context for prep; `exceptd ai-run` is the streaming variant for AI agents. `exceptd ci` is the gate-only variant for CI pipelines (exit 8 on lock contention, 6 on tampered attestations).
+- **Library entry point:** `require('@blamejs/exceptd-skills/lib/playbook-runner.js')` exposes the same engine for in-process callers — schema reference at `lib/schemas/playbook.schema.json`.
 
 Schema reference: `lib/schemas/playbook.schema.json`. Reference playbook (read this before authoring a new one): `data/playbooks/kernel.json`.
 
@@ -134,13 +134,19 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 | Verb | What it does |
 |---|---|
 | `exceptd plan` | Default: grouped-by-scope summary of all 13 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. |
-| `exceptd govern <pb>` | Phase 1 — jurisdiction obligations, theater fingerprints, framework gaps, skills to preload. |
-| `exceptd direct <pb>` | Phase 2 — threat context, RWEP thresholds, skill chain, token budget. |
-| `exceptd look <pb>` | Phase 3 — typed artifact-collection spec + `preconditions` array + submission-shape hint. |
-| `exceptd run <pb>` | Phases 4-7 from agent evidence. Auto-detect cwd when no playbook positional. `--scope <type>` or `--all` for multi-playbook. `--vex <file>` to drop CycloneDX/OpenVEX `not_affected` CVEs. `--ci` for exit-code gating. `--diff-from-latest` for drift mode. `--force-stale` to override currency hard-block. |
-| `exceptd ingest` | Alias for `run`; submission JSON may carry `playbook_id` + `directive_id`. |
-| `exceptd reattest [<sid> \| --latest]` | Replay prior session, diff evidence_hash. `--latest [--playbook <id>] [--since <ISO>]` finds the most recent attestation automatically. |
-| `exceptd list-attestations` | Inventory `.exceptd/attestations/<sid>/` — every prior session, newest first. `--playbook <id>` filters. |
+| `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
+| `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
+| `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
+| `exceptd run-all` | Multi-playbook batch run. `--scope <type>` filters. |
+| `exceptd ci` | Top-level CI gate for a single playbook with exit-code semantics. Preferred over `run --ci`. |
+| `exceptd discover` | Repo discovery — scans cwd and surfaces matching playbooks + collection hints. |
+| `exceptd ask <pb> <question>` | Read-only Q&A against a playbook's directives, indicators, and threat context. |
+| `exceptd reattest <sid>` | Replay analyze against a stored evidence bundle for drift detection. `--playbook <id>` + `--since <ISO>` accepted with `--latest`. |
+| `exceptd attest verify <sid>` | Verify a persisted attestation's signature + evidence hash. |
+| `exceptd attest list` | Inventory `.exceptd/attestations/` — newest first. `--playbook <id>` filters. |
+| `exceptd attest show <sid>` | Print the attestation body. |
+| `exceptd doctor` | Health checks. `--signatures` verifies Ed25519 chains; `--cves` / `--rfcs` check catalog currency; `--fix` repairs recoverable state. |
+| `exceptd lint` | Skill format lint — frontmatter completeness, required body sections, signature presence. |
 
 All verbs support `--help` for per-verb usage. JSON output by default; `--pretty` for indented.
 

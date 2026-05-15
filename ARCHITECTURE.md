@@ -234,7 +234,7 @@ Framework lag scoring and gap report generation.
 
 ### `scripts/check-test-coverage.js`
 
-Diff-coverage analyzer. Walks the staged/working-tree diff for the changed-surface shapes Hard Rule #15 enforces (CLI verbs, CLI flags, `module.exports` identifiers, new playbook indicator IDs, CVE `iocs` fields) and asserts that each change has a covering test reference somewhere under `tests/`. Skill bodies, docs, and workflow YAML are allowlisted. Runs as the 15th gate of `npm run predeploy` (and the `Diff coverage` job in `ci.yml`). Direct invocation: `npm run diff-coverage`.
+Diff-coverage analyzer. Walks the staged/working-tree diff for the changed-surface shapes Hard Rule #15 enforces (CLI verbs, CLI flags, `module.exports` identifiers, new playbook indicator IDs, CVE `iocs` fields) and asserts that each change has a covering test reference somewhere under `tests/`. Skill bodies, docs, and workflow YAML are allowlisted. Runs as the 14th gate of `npm run predeploy` (and the `Diff coverage` job in `ci.yml`). Direct invocation: `npm run diff-coverage`.
 
 ### `scripts/check-sbom-currency.js`
 

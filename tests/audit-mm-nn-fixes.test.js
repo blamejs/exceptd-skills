@@ -255,7 +255,7 @@ describe('audit NN P1-3 — UTF-16BE odd-length payload refused; even-length par
       // 0xFE 0xFF (BOM) + 5 single bytes => 7 total, 5-byte payload (odd).
       writeUtf16BeRaw(evPath, [0xFE, 0xFF, 0x00, 0x7B, 0x00, 0x7D, 0x41]);
       const r = cli(['run', 'library-author', '--evidence', evPath]);
-      assert.notEqual(r.status, 0, 'odd-length UTF-16BE input must exit non-zero');
+      assert.equal(r.status, 1, 'odd-length UTF-16BE input must exit 1 (readJsonFile refusal → dispatcher catch → emitError)');
       const errBody = tryJson(r.stderr.trim()) || {};
       const msg = String(errBody.error || r.stderr);
       assert.match(msg, /UTF-16BE payload must have an even byte count/i,

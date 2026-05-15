@@ -57,12 +57,12 @@ function normalizeSkillBytes(buf) {
   return Buffer.from(s.replace(/\r\n/g, "\n"), "utf8");
 }
 
-// C: in-line manifest-signature verifier for the extracted
-// tarball. Kept here (rather than imported) for the same defense-in-depth
-// reasoning as normalizeSkillBytes: a bug in lib/verify.js's verifier
-// should not also disable this gate (we want at least one independent
-// check). The canonical-bytes computation MUST stay in lockstep with
-// lib/sign.js + lib/verify.js + lib/refresh-network.js — enforced by
+// In-line manifest-signature verifier for the extracted tarball. Kept
+// here (rather than imported) for the same defense-in-depth reasoning as
+// normalizeSkillBytes: a bug in lib/verify.js's verifier should not also
+// disable this gate — at least one independent check must remain. The
+// canonical-bytes computation MUST stay in lockstep with lib/sign.js +
+// lib/verify.js + lib/refresh-network.js — enforced by
 // tests/normalize-contract.test.js.
 function canonicalizeForTarball(value) {
   if (Array.isArray(value)) return value.map(canonicalizeForTarball);
@@ -108,8 +108,8 @@ function verifyExtractedManifestSignature(manifest, publicKeyPem) {
   return ok ? { status: "valid" } : { status: "invalid", reason: "Ed25519 manifest signature did not verify against extracted public.pem" };
 }
 
-// A: exported so tests/normalize-contract.test.js can assert
-// byte-identical normalize() behavior across all four implementations.
+// Exported so tests/normalize-contract.test.js can assert byte-identical
+// normalize() behavior across all four implementations.
 module.exports = {
   normalizeSkillBytes,
   verifyExtractedManifestSignature,
@@ -124,8 +124,8 @@ function fail(msg, code = 1) {
   process.exit(code);
 }
 
-// A: gate the script body behind require.main === module so
-// tests can `require()` this file to load the exported helpers (notably
+// Gate the script body behind require.main === module so tests can
+// `require()` this file to load the exported helpers (notably
 // normalizeSkillBytes for the byte-stability contract test) without
 // invoking npm pack as a side effect of import.
 if (require.main !== module) {
@@ -247,16 +247,16 @@ try {
   const pubPem = fs.readFileSync(pubKeyPath, "utf8");
   const pubKey = crypto.createPublicKey(pubPem);
 
-  // C: verify the top-level manifest_signature on the
-  // EXTRACTED manifest.json. Per-skill signatures only sign the skill body
-  // bytes — they do not sign skill.name / skill.path / skill.atlas_refs or
-  // any other manifest envelope metadata. A tarball whose body bytes are
+  // Verify the top-level manifest_signature on the EXTRACTED
+  // manifest.json. Per-skill signatures only sign the skill body bytes —
+  // they do not sign skill.name / skill.path / skill.atlas_refs or any
+  // other manifest envelope metadata. A tarball whose body bytes are
   // signed but whose manifest envelope was rewritten (re-routing a skill
   // path, renaming a skill, changing atlas refs) would pass per-skill
   // verification but fail this gate. v0.12.17+ shipped tarballs always
   // include manifest_signature, so a missing signature here is also a
-  // refusal (the audit's stricter posture vs. the post-install warn-and-
-  // continue path, which tolerates legacy v0.12.16-and-earlier installs).
+  // refusal — stricter than the post-install warn-and-continue path,
+  // which tolerates legacy v0.12.16-and-earlier installs.
   const manifestSigStatus = verifyExtractedManifestSignature(manifest, pubPem);
   if (manifestSigStatus.status !== "valid") {
     fail(
@@ -291,8 +291,8 @@ try {
   // Warn when absent, fail when present-but-mismatched (unless KEYS_ROTATED).
   const expectedFpPath = path.join(pkgRoot, "keys", "EXPECTED_FINGERPRINT");
   if (fs.existsSync(expectedFpPath)) {
-    // KK P1-5: route through the shared lib/verify loader so a BOM-prefixed
-    // pin file (Notepad with files.encoding=utf8bom in the source tree) is
+    // Route through the shared lib/verify loader so a BOM-prefixed pin
+    // file (Notepad with files.encoding=utf8bom in the source tree) is
     // tolerated identically across every verify site. The helper strips
     // leading U+FEFF + ignores comment lines (`#`).
     const { loadExpectedFingerprintFirstLine } = require(path.join(ROOT, "lib", "verify.js"));
