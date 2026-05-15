@@ -238,7 +238,7 @@ test('ACTIVE_EXPLOITATION_LADDER matches the playbook-runner ladder (audit J F4)
   assert.equal(ACTIVE_EXPLOITATION_LADDER.none, 0);
 });
 
-// audit J F3 + audit M P1-C: deriveRwepFromFactors detects shape correctly.
+// deriveRwepFromFactors detects shape correctly.
 test('deriveRwepFromFactors handles Shape A (boolean inputs) via scoreCustom', () => {
   const factors = {
     cisa_kev: true, poc_available: true, ai_discovered: false,

@@ -75,11 +75,11 @@ test('buildKevDraftEntry produces a complete schema entry from minimal KEV input
   assert.ok(Array.isArray(entry.atlas_refs));
   assert.ok(Array.isArray(entry.attack_refs));
 
-  // v0.12.15 (audit M P1-D): _auto_imported must be the literal boolean
-  // `true` so lib/validate-cve-catalog.js's strict draft check
+  // _auto_imported must be the literal boolean `true` so
+  // lib/validate-cve-catalog.js's strict draft check
   // (`entry._auto_imported === true`) recognises it as a draft and
   // applies WARNING severity instead of hard-error for missing fields.
-  // Provenance (source + imported_at + curation_needed) moved to a
+  // Provenance (source + imported_at + curation_needed) lives in the
   // sibling `_auto_imported_meta` object.
   assert.equal(entry._auto_imported, true, '_auto_imported must be boolean true for strict-validator draft recognition');
   assert.ok(entry._auto_imported_meta, '_auto_imported_meta provenance block required');

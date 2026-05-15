@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.12.23 — 2026-05-15
+
+**Patch: doc-vs-code reconciliation, trust-chain pin loader hardening, attest list/show replay isolation, global-first framework coverage backfill.**
+
+### Trust chain
+
+- **`loadExpectedFingerprintFirstLine` refuses UTF-16LE / UTF-16BE pin files.** Saving `keys/EXPECTED_FINGERPRINT` via PowerShell `Set-Content -Encoding UTF16LE` (or any tool emitting a UTF-16 BOM) previously caused every consumer (verify, refresh-network, verify-shipped-tarball, attest pin) to decode the file as UTF-8 mojibake; the first line never matched a live fingerprint and operators saw no signal that the encoding was wrong. The loader now detects the FF FE / FE FF byte signatures, returns null, and routes through the existing "no-pin" warn-and-continue path so the error is surfaced without bricking the gate. UTF-8 and UTF-8-with-BOM remain supported.
+- **`KEYS_ROTATED=1` override now emits a `process.emitWarning('EXCEPTD_KEYS_ROTATED_OVERRIDE', ...)`** at every site that accepts the bypass (`bin/exceptd.js` attestation pin, `lib/refresh-network.js` refresh-network swap gate). Previously the env var was a silent skip; operators who set it once for a legitimate rotation and forgot to commit the new pin had no surface signal on subsequent runs. The mismatch values are echoed in the warning so log scrapers can confirm intended rotation. `lib/verify.js` and `scripts/verify-shipped-tarball.js` already emitted warnings at this gate and are unchanged.
+
+### Engine + CLI
+
+- **`attest list` and `attest show` filter `kind: 'replay'` records out of the session attestations array.** v0.12.22 added signed `replay-<iso>.json` audit records under `.exceptd/attestations/<sid>/`, which the listing/show loops were treating as additional sessions (or duplicate attestation entries) with `evidence_hash: null` and `captured_at: null`. Records are now partitioned by parsed `kind` field — replay records appear under a new `attestation_replays[]` array on `attest show` output and are omitted entirely from `attest list`. Gating on the parsed `kind` field (not filename prefix) closes the rename-smuggle vector.
+- **`--session-id .` / `..` / all-dots refused after regex pass.** The `/^[A-Za-z0-9._-]{1,64}$/` validator accepted any string of dots, which resolved into or above the attestation root. The CLI now explicitly refuses all-dots session ids with a structured error.
+
+### Help text and exit-code surface
+
+- **`ingest`, `ai-run`, and `run-all` help blocks document `--csaf-status` and `--publisher-namespace`.** v0.12.22's `BUNDLE_FLAG_RELEVANT_VERBS` set wired the flags into all five bundle-emitting verbs but only the `run` and `ci` help blocks listed them; operators on the other three verbs had to read the source to find them.
+- **Exit-code tables completed across the help surface.** Top-level `exceptd help` for `ci` now lists 0/1/2/3/4/5/6/8 instead of 0/2/3/4/5/1. Per-verb tables for `ci`, `attest verify`, and `reattest` now document `6 — TAMPERED` and `8 — LOCK_CONTENTION` where applicable. `run --help` adds a `6-7 — reserved` line so the gap doesn't read as accidental.
+
+### Hard Rule #5 — global-first coverage
+
+- **Eleven playbooks backfilled with UK CAF + AU Essential 8 / ACSC / ISM clauses** in `phases.direct.framework_lag_declaration` (`secrets`, `ai-api`, `containers`, `cred-stores`, `crypto`, `kernel`, `mcp`, `runtime`, `sbom` — both CAF and E8 added; `crypto-codebase` — E8 added on top of existing CAF; `hardening` — CAF added on top of existing E8). The v0.12.21 entry claimed this coverage was already in place; only `framework.json` and `library-author.json` actually had it. All 13 playbooks now declare CAF + E8 framework-lag posture alongside NIST and ISO.
+
+### Operator-facing docs
+
+- **README, AGENTS.md, ARCHITECTURE.md, and CONTEXT.md reconciled with the v0.11+ canonical CLI surface.** The deprecation banner heading on legacy v0.10.x verbs now states "scheduled for removal in v0.13" (not "removed in v0.12" — the verbs remain registered with deprecation warnings). README body examples replace `exceptd verify` / `exceptd scan` / `validate-cves` / `validate-rfcs` with `exceptd doctor --signatures` / `exceptd discover` / `doctor --cves` / `doctor --rfcs`. AGENTS.md CLI reference table replaces the stale v0.10.x verb set (`plan`/`govern`/`direct`/`look`/`ingest`/`reattest`/`list-attestations`) with the v0.11+ canonical surface (`brief`/`run`/`ai-run`/`run-all`/`ci`/`discover`/`ask`/`reattest <sid>`/`attest verify|list|show`/`doctor`/`lint`). CONTEXT.md catalog inventory aligned with actual catalog state (10 CVE, 62 framework-control-gap, 35 jurisdictions, 55 CWE, 28 D3FEND, 31 RFC, 22 DLP entries) and a new "Playbooks and the Seven-Phase Contract" section enumerates the 13 playbooks and the govern → direct → look → detect → analyze → validate → close contract.
+- **Predeploy gate count corrected from "15" to "14"** across AGENTS.md, ARCHITECTURE.md, and README. The predeploy gate set ships 14 gates per `scripts/predeploy.js`; the "15th" framing was an off-by-one carryover from an earlier draft of the diff-coverage gate that landed as the 13th rather than appended. The diff-coverage gate position is also corrected from "14th" to "13th" in AGENTS.md Hard Rule #15 and ARCHITECTURE.md (the validate-playbooks gate sits at position 14).
+- **AGENTS.md CLI reference table now lists `brief --all` and `attest diff <sid>`** as canonical, with `plan` and `reattest` marked as deprecated aliases scheduled for removal in v0.13 (consistent with how the v0.10.x `govern`/`direct`/`look` verbs are surfaced).
+- **AGENTS.md "Seven-phase playbook contract" intro** drops the "direct CLI verbs are landing in a follow-up task" prose — the verbs landed in v0.11.0. Points readers at `exceptd brief` / `exceptd run` / `exceptd ai-run` plus the library entry point at `lib/playbook-runner.js`.
+- **CONTEXT.md phase-contract table** now references `exceptd brief <playbook> --phase {govern,direct,look}` for phases 1-3 (was `exceptd govern|direct|look`); the "How to Walk a Playbook" onboarding section is rewritten against the same canonical surface.
+- **ARCHITECTURE.md CWE entry count** corrected from 51 to 55 (matches `data/cwe-catalog.json` and CONTEXT.md).
+- **Jurisdiction count corrected from "37" / "34" to "35"** in the README badge, status copy, and catalog footnote. `data/global-frameworks.json` has 38 top-level keys but three are `_meta` / `_notification_summary` / `_patch_sla_summary` aggregates; the actual jurisdiction count is 35.
+
+### Operations
+
+- **`.github/workflows/atlas-currency.yml` declares `permissions:` at the job level** instead of the workflow root. Matches the project's OpenSSF Scorecard `TokenPermissionsID` posture (job-scoped least-privilege); top-level permission grants were the only remaining outlier across the repo's workflow set.
+
+### Internal
+
+- **Source-comment slot-token scrub broadened** to cover bare audit slot-tokens (`KK P1-N`, `R-F8`, `S P1-A`, etc.) without the leading `audit` prefix. Previous scrubs only matched `(audit|Audit)\s+[A-Z]+`; the new sweep covers comment-only references across `bin/`, `lib/`, `scripts/`, and `tests/`. Test logic and code logic untouched.
+- **`tests/audit-mm-nn-fixes.test.js` tightened** — the UTF-16BE odd-length-payload refusal test was asserting `notEqual(r.status, 0)`, the exact coincidence-passing-tests anti-pattern the project rule explicitly forbids. Changed to `assert.equal(r.status, 1)`.
+
+Test count and predeploy gates land alongside this entry; see the predeploy log on the release commit.
+
+## 0.12.22 — 2026-05-15
+
 ## 0.12.22 — 2026-05-15
 
 **Patch: trust-chain attestation sidecar redesign, CSAF spec-compliance fixes, CLI flag scoping, concurrency exit-code surface.**
@@ -42,7 +88,7 @@
 - **`data/playbooks/runtime.json domain.cve_refs[]`** completes the Dirty-Frag family by adding `CVE-2026-43284` and `CVE-2026-43500` (already referenced by `kernel.json` and `hardening.json`).
 - **`skills/threat-model-currency/skill.md`** inline `last_threat_review` date aligned to frontmatter (`2026-05-14`).
 
-Test count: 941 → 992 (989 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
+Test count: 941 → 995 (992 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
 
 ## 0.12.21 — 2026-05-14
 

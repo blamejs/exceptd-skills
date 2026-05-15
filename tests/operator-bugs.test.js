@@ -396,9 +396,9 @@ test('#82 SARIF bundle via CLI includes indicator results when one fires', () =>
   // the runner to "operator submission drove this result," not "the runner
   // emits indicator_hit unconditionally."
   const results = data.runs?.[0]?.results || [];
-  // audit CC P2-6: SARIF ruleIds are playbook-prefixed
-  // (`<playbook-slug>/<rule>`) so cross-playbook merges don't dedupe by
-  // ruleId. Match on the suffix instead of an exact equality.
+  // SARIF ruleIds are playbook-prefixed (`<playbook-slug>/<rule>`) so
+  // cross-playbook merges don't dedupe by ruleId. Match on the suffix
+  // instead of an exact equality.
   const matching = results.filter(res =>
     /(?:^|\/)publish-workflow-uses-static-token$/.test(String(res.ruleId)) &&
     res.properties?.kind === 'indicator_hit'
@@ -535,16 +535,14 @@ test('#85 from_observation populated when observation drove the indicator', () =
 });
 
 // ===================================================================
-// audit W P2-D (v0.12.20): framework gaps were previously emitted as
-// CSAF vulnerabilities[] entries with `ids: [{system_name:
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
 // 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
 // recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
-// custom string was rejected by NVD / ENISA / Red Hat dashboards and
-// rendered as false-positive advisories at the framework_gap_mapping
-// length on every run. The correct emission is `document.notes[]` with
-// `category: details` — advisory context, not pseudo-CVEs. The test
-// below was updated to verify the new shape; the previous assertion
-// (gaps appearing in vulnerabilities[]) is now an anti-assertion.
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
 test('#91 CSAF emits framework_gap_mapping as document.notes (not pseudo-vulnerabilities)', () => {
   const sub = JSON.stringify({
     observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
@@ -559,8 +557,8 @@ test('#91 CSAF emits framework_gap_mapping as document.notes (not pseudo-vulnera
   assert.equal(fwGapVulns.length, 0,
     'framework gaps must NOT appear as vulnerabilities[] entries — they pollute downstream CSAF consumers');
   // Positive assertion: gaps land in document.notes[].
-  // audit CC P1-3: a separate `category: general` note may also appear when
-  // no --publisher-namespace was supplied. Filter to category=details
+  // A separate `category: general` note may also appear when no
+  // --publisher-namespace was supplied. Filter to category=details
   // before counting + asserting the framework-gap content shape.
   const notes = data?.document?.notes || [];
   assert.ok(Array.isArray(notes), 'document.notes must be an array');
@@ -1256,14 +1254,11 @@ test('v0.12 refresh --advisory <CVE> dry-run emits draft + exits 3', () => {
 
 test('v0.12 refresh --advisory --apply writes draft to a copy of the catalog', () => {
   const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
-  // SS P2-2: never write to ROOT/data/cve-catalog.json from a test. The
-  // earlier shape copied the real catalog to a tempdir, mutated the REAL
-  // catalog in-place, then restored from a saved buffer in `finally{}`.
-  // A Ctrl-C / OOM / power-loss between mutation and restore left a
-  // synthetic CVE-9999-* draft in the live catalog (same anti-pattern
-  // class as the v0.12.4 sign-during-test regression). Refresh-external
-  // supports `--catalog <path>`; point it at the tempdir copy and never
-  // touch the real catalog.
+  // Never write to ROOT/data/cve-catalog.json from a test. A mutate-and-
+  // restore-in-`finally{}` pattern would leak a synthetic CVE-9999-*
+  // draft into the live catalog if a Ctrl-C / OOM / power-loss landed
+  // between mutation and restore. refresh-external supports
+  // `--catalog <path>`; point it at the tempdir copy.
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'cve-cat-'));
   const tmpCatalog = path.join(tmpDir, 'cve-catalog.json');
   fs.copyFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), tmpCatalog);
@@ -1285,9 +1280,9 @@ test('v0.12 refresh --advisory --apply writes draft to a copy of the catalog', (
 });
 
 test('v0.12 refresh --curate <CVE> surfaces editorial questions for a draft', () => {
-  // SS P2-2: write the synthetic draft into a TEMPDIR catalog copy, not
-  // the live one. cve-curation.js supports `--catalog <path>`; passing it
-  // means a Ctrl-C between mutation and restore can't leak the synthetic
+  // Write the synthetic draft into a TEMPDIR catalog copy, not the live
+  // one. cve-curation.js supports `--catalog <path>`; passing it means
+  // a Ctrl-C between mutation and restore can't leak the synthetic
   // entry into the shipped catalog.
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'cve-cur-'));
   const tmpCatalog = path.join(tmpDir, 'cve-catalog.json');
@@ -1343,14 +1338,12 @@ test('v0.12 refresh --curate refuses to curate a human-curated entry', () => {
 });
 
 test('v0.12 validate-cve-catalog treats _auto_imported drafts as warnings, not errors', () => {
-  // SS P2-2: previous shape wrote the synthetic draft into the LIVE
-  // ROOT/data/cve-catalog.json and restored from a saved buffer in
-  // `finally{}`. Ctrl-C between mutation and restore leaked CVE-9999-*
-  // into the shipped catalog — same anti-pattern class as the v0.12.4
-  // sign-during-test incident. validate-cve-catalog.js has no `--catalog`
-  // override flag, so we exercise the same semantic (drafts are warnings,
-  // not errors) by calling the exported `validate` + `additionalChecks`
-  // functions against an in-memory catalog object. No disk mutation.
+  // validate-cve-catalog.js has no `--catalog` override flag, so we
+  // exercise the "drafts are warnings, not errors" semantic by calling
+  // the exported `validate` + `additionalChecks` functions against an
+  // in-memory catalog object. A mutate-the-live-file-and-restore-in-
+  // `finally{}` pattern would leak CVE-9999-* into the shipped catalog
+  // on Ctrl-C between mutation and restore.
   const validator = require(path.join(ROOT, 'lib', 'validate-cve-catalog.js'));
   const schemaPath = path.join(ROOT, 'lib', 'schemas', 'cve-catalog.schema.json');
   const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
