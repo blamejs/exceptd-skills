@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-05-14"
+last_threat_review: "2026-05-15"
 ---
 
 # Threat Model Currency Assessment

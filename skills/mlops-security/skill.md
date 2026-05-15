@@ -62,7 +62,7 @@ forward_watch:
   - SLSA v1.1 ML profile (draft) — model-provenance extension for training-run attestation chains; track ID and section changes
   - EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing
   - MITRE ATLAS v5.2 — track AML.T0010 sub-technique expansion and any new MLOps-pipeline-specific TTPs
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-15"
 ---
 
 # MLOps Pipeline Security Assessment

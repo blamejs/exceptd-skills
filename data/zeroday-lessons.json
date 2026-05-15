@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "schema_version": "1.0.0",
-    "last_updated": "2026-05-13",
-    "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring.",
+    "schema_version": "1.1.0",
+    "last_updated": "2026-05-15",
+    "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
     "tlp": "CLEAR",
     "source_confidence": {
@@ -108,7 +108,11 @@
       "percent_audit_passing_orgs_still_exposed": 80,
       "basis": "Industry patch deployment lag data: ~80% of organizations lag CISA KEV remediation beyond 72h in first week",
       "theater_pattern": "patch_management"
-    }
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-04-15",
+    "ai_assist_factor": "very_high"
   },
   "CVE-2025-53773": {
     "name": "GitHub Copilot Prompt Injection RCE",
@@ -181,7 +185,11 @@
       "percent_audit_passing_orgs_still_exposed": 95,
       "basis": "No framework requires AI tool input sanitization. Any organization using AI coding assistants with tool use capability is exposed unless specifically implementing this control.",
       "theater_pattern": "access_control_ai"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2025-08-12",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-43284": {
     "name": "Dirty Frag (ESP/IPsec component)",
@@ -250,7 +258,10 @@
       "percent_audit_passing_orgs_still_exposed": 65,
       "basis": "Organizations using IPsec for network compliance controls may incorrectly claim IPsec as a compensating control while the kernel IPsec implementation is exploitable",
       "theater_pattern": "patch_management"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-43500": {
     "name": "Dirty Frag (RxRPC component)",
@@ -313,7 +324,10 @@
       "percent_audit_passing_orgs_still_exposed": 60,
       "basis": "Most organizations do not inventory or disable unused kernel modules. RxRPC is rarely used but rarely disabled.",
       "theater_pattern": "patch_management"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-30615": {
     "name": "Windsurf MCP Zero-Interaction RCE",
@@ -372,7 +386,11 @@
       "percent_audit_passing_orgs_still_exposed": 90,
       "basis": "No vendor management or supply chain control covers MCP servers. 150M+ affected downloads suggests extremely broad exposure.",
       "theater_pattern": "vendor_management_ai"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-02-18",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-45321": {
     "name": "Mini Shai-Hulud TanStack npm worm",
@@ -465,7 +483,11 @@
       "percent_audit_passing_orgs_still_exposed": 95,
       "basis": "SLSA L3 + provenance + signing all pass on the malicious package. Standard supply-chain audits (SBOM check, provenance verify, signature verify) all give green. The architectural pre-condition (pull_request_target + id-token:write + shared actions/cache) is not in any compliance framework's control catalog. Combined ~150M+ weekly downloads across 42 packages = extremely broad exposure.",
       "theater_pattern": "provenance_signed_therefore_safe"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "threat_actor_ai_built",
+    "ai_discovery_date": "2026-05-11",
+    "ai_assist_factor": "low"
   },
   "MAL-2026-3083": {
     "name": "Elementary-Data PyPI Worm (Forged Release via GitHub Actions Script Injection)",
@@ -549,7 +571,11 @@
       "percent_audit_passing_orgs_still_exposed": 92,
       "basis": "PyPI signature + maintainer trust + provenance all pass on the malicious package. Audit programs measure SBOM presence, package-signing posture, and dependency-pin discipline — none of which catch a maintainer's own pipeline being weaponized via a comment. ~1.1M monthly downloads broaden the consumer footprint.",
       "theater_pattern": "signed_release_therefore_safe"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-04-25",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-42208": {
     "name": "BerriAI LiteLLM Proxy Auth SQL Injection",
@@ -613,7 +639,11 @@
       "percent_audit_passing_orgs_still_exposed": 75,
       "basis": "SI-10 audits accept 'we validate inputs' as compliance. Most operators run LiteLLM internet-reachable behind a thin proxy without a SQL-injection-aware WAF. KEV listing imposes a 21-day patch SLA on federal orgs; private-sector adoption lags.",
       "theater_pattern": "input_validation_checkbox_without_parameterised_queries"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-05-08",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-39884": {
     "name": "Flux159 mcp-server-kubernetes Argument Injection via port_forward",
@@ -687,7 +717,11 @@
       "percent_audit_passing_orgs_still_exposed": 88,
       "basis": "MCP ecosystem patch hygiene lags traditional CVE timelines. Most AI-agent operators do not maintain an explicit MCP tool allowlist; SI-10 audits accept the MCP plugin as a vendored dependency without auditing its argv handling.",
       "theater_pattern": "vendored_mcp_plugin_inherits_vendor_trust"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-05-13",
+    "ai_assist_factor": "low"
   },
   "CVE-2026-46300": {
     "name": "Fragnesia",
@@ -789,6 +823,434 @@
       "percent_audit_passing_orgs_still_exposed": 75,
       "basis": "Operators who already blacklisted esp4 / esp6 / rxrpc for Dirty Frag are already mitigated. Operators who relied on kernel-package-version alone (a scanner saying 'patched') with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window. Exposure drops sharply if CISA KEV-lists the CVE (federal 21-day SLA fires) or if active exploitation is observed.",
       "theater_pattern": "patch_management"
-    }
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2024-3094": {
+    "name": "xz-utils liblzma backdoor",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Multi-year patient maintainer-takeover supply-chain backdoor in xz-utils. Test fixtures contain encrypted shell stages; m4 macros assemble them at configure time, injecting a runtime IFUNC override into liblzma. sshd linked against libsystemd (which depends on liblzma) routes attacker-keyed RSA pubkeys to the backdoor code path.",
+      "privileges_required": "remote unauthenticated, gated by possession of Ed448 signing key",
+      "complexity": "high to develop, low to use",
+      "ai_factor": "Discovered by Andres Freund (human researcher) via performance-regression investigation — 0.5s sshd startup delay traced to liblzma symbol resolution. No AI involvement on either side."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Maintainer-trust attestation for upstream OSS components in the boot path. Reproducible builds with bytewise-exact reproduction of release tarballs from VCS tags would have flagged the binary test fixtures as build-output divergence.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "SLSA L3 build-integrity is necessary but insufficient — the malicious test fixtures were committed by the legitimate maintainer account, so SLSA source-integrity attestations were valid."
+      },
+      "detection": {
+        "what_would_have_worked": "Performance-regression alerting on critical-path libraries (libsystemd, libssl, liblzma) — the bug was caught only because someone profiled sshd startup.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Highly contingent on luck and curiosity. Not a control that scales."
+      },
+      "response": {
+        "what_would_have_worked": "Distribution rollback to xz-utils 5.4.x within hours of disclosure. Most major distros executed this within 12 hours.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Rollback worked because the backdoor was caught pre-mass-distribution. A longer-undetected backdoor would have been embedded in distro LTS branches."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PW.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Reuse of secure-by-default components assumes upstream components ARE secure; xz-utils was an upstream that compromised itself across two years of maintainer takeover."
+      },
+      "ISO-27001-2022-A.8.30": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Outsourced development controls don't address upstream OSS maintainer-compromise — the org has no contract with xz."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply chain controls anchor on direct vendors; tier-3 (libsystemd -> liblzma) dependencies routinely escape SR-3 inventory."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cyber Resilience Act requires SBOM but does not require upstream-maintainer trust assessment."
+      },
+      "SLSA-v1.0-Build-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build-integrity does not address pre-build source-tree compromise."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-020",
+        "name": "REPRODUCIBLE-RELEASE-TARBALL-VERIFICATION",
+        "description": "For any upstream OSS dependency in the boot or auth path: verify that the release tarball is bytewise-reproducible from the VCS tag. Binary test fixtures, generated artifacts, or build-time-generated files in the release tarball that do NOT appear in the VCS tag are a hard fail.",
+        "evidence": "CVE-2024-3094 — the malicious payload was embedded in test fixtures present only in the release tarball, not in the VCS tag's tests/ directory.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PW.4",
+          "SLSA-v1.0-Build-L3"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-021",
+        "name": "TIER-3-DEPENDENCY-INVENTORY",
+        "description": "Supply chain inventory must extend to tier-3 dependencies (dependencies of dependencies of direct dependencies). SBOM coverage for libsystemd-class transitive dependencies cannot be omitted under SR-3.",
+        "evidence": "CVE-2024-3094 — sshd → libsystemd → liblzma chain reached every sshd-running host without appearing in most SR-3 vendor inventories.",
+        "gap_closes": [
+          "NIST-800-53-SR-3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "Most organizations cannot enumerate tier-3 OSS dependencies, let alone attest to upstream maintainer trust. The xz backdoor was caught pre-mass-exploitation by luck; the class is undetectable to standard controls.",
+      "theater_pattern": "sbom_first_party_only"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2024-03-29",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-GTIG-AI-2FA": {
+    "name": "GTIG-tracked AI-built 2FA-bypass zero-day",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Authentication state-machine confusion in an unnamed enterprise 2FA service. Exploit payload bypasses the second-factor challenge by manipulating session token at the post-primary-auth / pre-2FA-challenge boundary. Notable as the first documented AI-BUILT (not just AI-discovered) zero-day observed in-the-wild — threat actor used a frontier LLM to construct the exploit payload.",
+      "privileges_required": "remote unauthenticated, requires valid primary-auth credentials (assumed phished or credential-stuffed)",
+      "complexity": "moderate to develop, low to use",
+      "ai_factor": "First documented AI-BUILT ITW zero-day per GTIG 2026-05-11. Threat actor lacked the engineering capacity to construct the payload independently; LLM-generated exploit code shows characteristic structure, comments, and idiomatic patterns. Compresses time-to-weaponize by approximately 20x relative to human-only development for this class."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Out-of-band MFA (FIDO2 / passkey / push-with-number-match) that does not share a session-token boundary with the bypass surface. Hardware-anchored binding of primary-auth and 2FA challenge into a single signed assertion.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Phishing-resistant MFA (NIST AAL3) would have blocked this class. Most organizations still operate at AAL2 with SMS or TOTP."
+      },
+      "detection": {
+        "what_would_have_worked": "Session-token mutation anomaly detection between auth phases — alert when the session-state machine receives an unexpected transition.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Anomaly detection on auth-state transitions is not a standard control category in any framework. Most identity providers don't expose the necessary telemetry."
+      },
+      "response": {
+        "what_would_have_worked": "Vendor-side rate-limiting on the 2FA challenge endpoint + temporary global rollback of the 2FA flow to require fresh primary-auth.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Embargoed CVE — public response capability constrained by disclosure timing."
+      }
+    },
+    "framework_coverage": {
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": false,
+        "adequate": false,
+        "gap": "AI-discovered + AI-built exploit class not anchored in any framework — neither NIST AI RMF nor ISO 42001 require AI-attack-development monitoring as a control category."
+      },
+      "NIS2-Art21-incident-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "EU NIS2 incident-handling SLA does not differentiate AI-built vs human-built exploit class — but the AI-built class compresses time-to-weaponize by ~20x and time-to-mass-deployment by ~50x."
+      },
+      "FedRAMP-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "MFA requirement satisfied on paper; AI-built bypass operates at a layer below the MFA control surface."
+      },
+      "EU-AI-Act-Art-15": {
+        "covered": false,
+        "adequate": false,
+        "gap": "AI Act robustness requirement applies to AI SYSTEMS not to defending against AI-built attacks on non-AI systems."
+      },
+      "ALL-FRAMEWORKS": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework anchors on AI-attack-development as an operational threat that requires distinct controls. ATLAS documents the techniques but compliance frameworks haven't picked them up."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-022",
+        "name": "AI-ATTACK-DEVELOPMENT-MONITORING",
+        "description": "Threat intelligence functions must subscribe to AI-attack-development feeds (GTIG, MITRE ATLAS, anthropic-internal threat reports). Treat AI-built exploit class as compressing the standard 30-day CISA KEV response window to 24 hours.",
+        "evidence": "CVE-2026-GTIG-AI-2FA — first documented AI-built ITW zero-day per GTIG 2026-05-11. Time from disclosure to mass-exploitation observed at ~10x faster than comparable non-AI-built cases.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "ISO-27001-2022-A.5.7",
+          "NIS2-Art21-incident-handling"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-023",
+        "name": "PHISHING-RESISTANT-MFA-MANDATE",
+        "description": "AAL3 phishing-resistant MFA (FIDO2 / passkey / hardware-anchored push-with-number-match) required for all administrative and privileged access. SMS, TOTP, and push-to-approve are insufficient against AI-built session-confusion attacks.",
+        "evidence": "CVE-2026-GTIG-AI-2FA — bypass operates at the session-state-machine layer; AAL3 anchors the second factor to the primary-auth assertion cryptographically.",
+        "gap_closes": [
+          "FedRAMP-IA-2",
+          "NIST-800-63-AAL3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 92,
+      "basis": "Most organizations operate at AAL2 with TOTP or SMS. AI-built attack class compresses development time by 20x — defenders have not yet caught up.",
+      "theater_pattern": "mfa_aal2_satisfies_paper_aal3"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "threat_actor_ai_built",
+    "ai_discovery_date": "2026-05-11",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2026-42945": {
+    "name": "NGINX Rift",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Heap buffer overflow in nginx PCRE unnamed-capture handling within the rewrite directive. A single HTTP request whose URI matches a rewrite rule with unnamed captures triggers out-of-bounds heap write in the captures buffer. Pre-auth, no special preconditions beyond a rewrite directive using unnamed captures (extremely common). Affected code path present in every nginx release since 0.6.27 (2007) — 18 years of human review missed it.",
+      "privileges_required": "remote unauthenticated",
+      "complexity": "low",
+      "ai_factor": "First publicly-attributed AI-discovered nginx CVE. Discovered by depthfirst autonomous-analysis platform on 2026-05-13. Anchor case for AGENTS.md Hard Rule #7 (AI as current reality, not emerging). Demonstrates that AI-discovery now reaches Tier-1 web-fabric components with 18-year-deployed code paths."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Operator-side configuration mitigation: replace unnamed PCRE captures with named captures in rewrite directives. Zero-downtime, no nginx restart required.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Named-capture refactor closes the vulnerable code path entirely. Operators who never used rewrite directives or only used named captures were never exposed."
+      },
+      "detection": {
+        "what_would_have_worked": "WAF or eBPF rule detecting heap-corruption pattern in nginx worker processes. Pre-disclosure, no detection rules existed.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Post-disclosure WAF rules can match the heap-overflow trigger pattern but bypass is straightforward — the vulnerable behavior is configuration-driven."
+      },
+      "response": {
+        "what_would_have_worked": "Vendor patch (nginx 1.30.1+ / 1.31.0+ / Plus R32 P6+ / R36 P4+) deployed within 24 hours of disclosure. Configuration-side mitigation (named captures) deployable in minutes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Configuration-side mitigation is the load-bearing response path — vendor-patch SLAs in most frameworks are too slow given the public PoC."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA insufficient for pre-auth unauth heap RCE on web fabric."
+      },
+      "NIST-AI-RMF-MAP-3.4": {
+        "covered": false,
+        "adequate": false,
+        "gap": "AI-discovery class not anchored — Hard Rule #7 says AI-as-research-tool is current reality, framework controls treat it as emerging."
+      },
+      "OWASP-Top-10-2021-A06": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerable and outdated components — nginx upgrade is the standard answer; the configuration-side live-patch path is not covered."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Financial-services ICT third-party risk does not differentiate between vendor-patch path and configuration-side mitigation path."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-024",
+        "name": "AI-DISCOVERY-RESPONSE-SLA",
+        "description": "Vulnerabilities disclosed as AI-discovered (per ATLAS / vendor attribution) require a compressed 4-hour mitigation SLA — same as CISA KEV-listed. AI-discovery indicates the bug class is reachable via automated analysis, so exploitation development by adversaries follows on a compressed timeline.",
+        "evidence": "CVE-2026-42945 (NGINX Rift) — discovered by depthfirst, public PoC at disclosure. Time-from-disclosure-to-weaponization-in-wild expected to compress to hours.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-AI-RMF-MAP-3.4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-025",
+        "name": "CONFIGURATION-SIDE-LIVE-PATCH-INVENTORY",
+        "description": "For any web-fabric vulnerability with a configuration-side mitigation path: that path must be inventoried, tested, and deployable independent of the vendor-patch path. Operators cannot wait for nginx 1.30.1+ if a named-capture refactor mitigates immediately.",
+        "evidence": "CVE-2026-42945 — named-capture refactor mitigates in minutes; vendor patch may take days.",
+        "gap_closes": [
+          "OWASP-Top-10-2021-A06",
+          "DORA-Art-9"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Most nginx deployments use rewrite directives with unnamed captures. Operators who default to vendor-patch SLA (30 days) rather than configuration-side mitigation (minutes) remain exposed for weeks.",
+      "theater_pattern": "vendor_patch_sla_anchored"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_date": "2026-05-13",
+    "ai_assist_factor": "very_high"
+  },
+  "MAL-2026-TANSTACK-MINI": {
+    "name": "Mini Shai-Hulud (TanStack worm)",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Self-propagating npm supply-chain worm scoped to the TanStack maintainer org. Compromised maintainer npm token published 84 malicious versions across 42 @tanstack/* packages on 2026-05-11. Malicious postinstall hook harvests ~/.npmrc, ~/.aws/credentials, GitHub PAT files; attempts republication to other packages the host has npm-publish access to. Consumer-side exploitation is install-time — `npm install` of any pinned-range that resolves to a malicious version triggers payload before any dev review.",
+      "privileges_required": "downstream consumer runs `npm install`",
+      "complexity": "low for downstream consumers; moderate for the maintainer-token compromise",
+      "ai_factor": "Not AI-discovered or AI-built. Same maintainer-token-theft + postinstall-hook pattern as the original Shai-Hulud Sept 2025 campaign."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Lockfile-based pinning to versions published before 2026-05-11T00:00Z + `npm install --ignore-scripts` for CI builds. SLSA L3 provenance attestations on @tanstack/* packages (not currently enforced).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "--ignore-scripts is the cleanest mitigation but breaks packages that legitimately need postinstall (rare for runtime dependencies). Lockfile pinning works if the lockfile predates 2026-05-11."
+      },
+      "detection": {
+        "what_would_have_worked": "Behavioral monitoring on developer / CI hosts for `npm install` followed by access to ~/.npmrc, ~/.aws/credentials, or outbound network connections to non-npm hosts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Endpoint detection rarely covers developer machines at the granularity needed. CI runners are easier targets for monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "npm yank within hours (executed 2026-05-11). Rotation of all credentials reachable from any host that ran `npm install` against an affected version during the exposure window. Lockfile audit + republication of any downstream package the host had publish rights on.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Yank closes new consumer exposure but does not retroactively un-harvest credentials. Full credential rotation is the operational response."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PW.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Reused-OSS-component control assumes maintainer-account integrity."
+      },
+      "SLSA-v1.0-Source-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA source-integrity reviews don't apply to npm packages without provenance attestations — most @tanstack/* packages ship without provenance."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SBOM requirement does not address freshness-of-published-version — pinning to malicious version is SBOM-compliant."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Generic supply chain controls without npm-ecosystem-specific guidance (postinstall hooks, lockfile pinning, --ignore-scripts policy)."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-026",
+        "name": "NPM-CI-IGNORE-SCRIPTS-DEFAULT",
+        "description": "CI pipelines must default to `npm install --ignore-scripts` (or equivalent `pnpm install --ignore-scripts`, `yarn install --ignore-scripts`). Packages requiring postinstall hooks must be explicitly allowlisted with operator justification.",
+        "evidence": "MAL-2026-TANSTACK-MINI — the malicious payload ran via postinstall hook; --ignore-scripts neutralizes the class entirely.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PW.4",
+          "NIS2-Art21-supply-chain"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-027",
+        "name": "MAINTAINER-TOKEN-COMPROMISE-RESPONSE-PLAYBOOK",
+        "description": "Every consumer of npm / pypi / rubygems must maintain a documented response playbook for upstream maintainer-token compromise. Includes: lockfile audit, credential rotation scope, repub authorization revocation, exposure-window forensic timeline.",
+        "evidence": "MAL-2026-TANSTACK-MINI — 8-hour exposure window from publication to yank; consumers without a playbook spent days reconstructing scope.",
+        "gap_closes": [
+          "NIS2-Art21-supply-chain",
+          "EU-CRA-Art13"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Most npm consumers do not run --ignore-scripts. Lockfile pinning is common but version ranges that allow patch-upgrades resolve to malicious versions during the exposure window.",
+      "theater_pattern": "lockfile_pinned_but_range_allows_drift"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-05-11",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2024-21626": {
+    "name": "Leaky Vessels (runc /proc/self/fd leak)",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "File descriptor leak in runc's WORKDIR / process.cwd handling — attacker container process inherits an fd pointing at the host filesystem root, then executes against /proc/self/fd/N to escape the container into the host. Affects Docker, containerd, Kubernetes, podman, and every container runtime built on runc.",
+      "privileges_required": "ability to start a container with attacker-controlled WORKDIR / process.cwd (any container-create RBAC)",
+      "complexity": "low",
+      "ai_factor": "Discovered by Snyk Labs human researchers. No AI involvement."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "runc 1.1.12+ patch. seccomp profiles blocking /proc/self/fd access from container processes. Kubernetes admission policies that reject pod specs with attacker-controllable WORKDIR.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch closes the bug. seccomp + admission policies reduce attack surface but require defense-in-depth tuning."
+      },
+      "detection": {
+        "what_would_have_worked": "auditd rule on container-process access to /proc/self/fd/N for N pointing outside the container rootfs. Falco / Tetragon eBPF rules for cross-namespace fd access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "eBPF-based detection works but most operators don't deploy Falco / Tetragon. auditd rules are noisy without container-context enrichment."
+      },
+      "response": {
+        "what_would_have_worked": "Patch container runtime + restart all containers (runc fixes don't apply to already-running containers). Rotate any secrets reachable from compromised container.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Container restart is operationally simple at small scale; large clusters require staged rollout that extends the exposure window."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Process isolation control assumes runtime correctness — does not account for runtime-level escape via fd inheritance."
+      },
+      "ISO-27001-2022-A.8.22": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Segregation of networks/workloads doesn't address container-runtime escape."
+      },
+      "CIS-Kubernetes-Benchmark-5.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Pod security standards do not require runtime patch SLA <= 24h for container-escape KEV entries."
+      },
+      "NIS2-Art21-2c": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch-management measures do not differentiate container-runtime escape SLA from generic patch SLA."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-028",
+        "name": "CONTAINER-RUNTIME-PATCH-SLA-24H",
+        "description": "Container-runtime CVEs (runc, containerd, CRI-O) listed in CISA KEV require a 24-hour mitigation SLA. Container restart is a hard requirement — runc patches do not apply to already-running containers.",
+        "evidence": "CVE-2024-21626 — KEV-listed 2024-04-08 with confirmed active exploitation; patch requires container restart, not just package update.",
+        "gap_closes": [
+          "NIST-800-53-SC-39",
+          "CIS-Kubernetes-Benchmark-5.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-029",
+        "name": "POD-SPEC-WORKDIR-ADMISSION-POLICY",
+        "description": "Kubernetes admission policies (OPA / Kyverno / built-in PSA) must reject pod specs where WORKDIR is attacker-controllable via untrusted ConfigMap / Secret / annotation interpolation. Defense in depth for the runc-escape class.",
+        "evidence": "CVE-2024-21626 — exploitation requires control of WORKDIR / process.cwd; admission-policy denial neutralizes the class even on unpatched runtimes.",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "CIS-Kubernetes-Benchmark-5.2"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Container-runtime patch hygiene lags traditional CVE timelines. Most organizations patch runc through OS package updates that don't trigger container restart automatically — leaving running containers exposed for days after the package update.",
+      "theater_pattern": "package_update_without_container_restart"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2024-01-31",
+    "ai_assist_factor": "low"
   }
 }

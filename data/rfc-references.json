@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-11",
+    "last_updated": "2026-05-15",
     "note": "IETF RFCs and Internet-Drafts that exceptd skills depend on. RFCs are the layer beneath compliance frameworks: a control like 'TLS 1.3 required' implicitly references RFC 8446; a 'use strong KEM' control depends on whatever draft-ietf-tls-ecdhe-mlkem settles into. Frameworks lag RFCs; RFCs lag attacker innovation. This catalog tracks both kinds of lag.",
     "status_values": [
       "Internet Standard",
@@ -161,6 +161,19 @@
     ],
     "last_verified": "2026-05-11"
   },
+  "RFC-7644": {
+    "number": 7644,
+    "title": "System for Cross-domain Identity Management (SCIM) 2.0: Protocol",
+    "status": "Proposed Standard",
+    "published": "2015-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc7644",
+    "relevance": "SCIM 2.0 is the dominant standard for federated identity-store synchronisation between IdPs and downstream applications (Okta, Entra ID, Workday → SaaS). Operator-facing: SCIM endpoints are a recurring credential-store soft target — bearer-token misconfigurations expose full directory enumeration + write access. AI-agent contexts add a new class: agent-identity provisioning at scale via SCIM, where over-broad attribute filters expose human identity data to agent-tenants. Pair with RFC 7643 (SCIM Schema) when implementing.",
+    "skills_referencing": [
+      "identity-assurance",
+      "cred-stores"
+    ],
+    "last_verified": "2026-05-15"
+  },
   "RFC-7970": {
     "number": 7970,
     "title": "The Incident Object Description Exchange Format Version 2",
@@ -217,6 +230,18 @@
     ],
     "last_verified": "2026-05-11"
   },
+  "RFC-8460": {
+    "number": 8460,
+    "title": "SMTP TLS Reporting (TLSRPT)",
+    "status": "Proposed Standard",
+    "published": "2018-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc8460",
+    "relevance": "Defines a DNS-published TLSRPT policy and an aggregate-reporting mechanism (RUA endpoint) where receiving MTAs report success / failure of inbound TLS negotiation. Operator-facing: TLSRPT is the monitoring half of the MTA-STS pair (RFC 8461) — without it, an MTA-STS `enforce` policy silently degrades when downgrade attempts occur or receiver-side TLS configurations break. Phishing-defense relevance is indirect but load-bearing: visibility into STARTTLS-stripping attempts is otherwise absent.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-05-15"
+  },
   "RFC-8461": {
     "number": 8461,
     "title": "SMTP MTA Strict Transport Security (MTA-STS)",
@@ -240,6 +265,31 @@
       "email-security-anti-phishing"
     ],
     "last_verified": "2026-05-13"
+  },
+  "RFC-8617": {
+    "number": 8617,
+    "title": "The Authenticated Received Chain (ARC) Protocol",
+    "status": "Experimental",
+    "published": "2019-07",
+    "tracker": "https://www.rfc-editor.org/info/rfc8617",
+    "relevance": "ARC preserves authentication results across legitimate forwarding paths (mailing lists, alias services) where SPF + DKIM alignment would otherwise break, producing false DMARC failures. Operator-facing: ARC is the load-bearing complement to DMARC for organisations that receive mail via forwarders — anti-phishing programs that publish `p=reject` without an ARC strategy face increased false-positive bounce rates that pressure operators to relax DMARC. The skill-update-loop tracks ARC adoption signals as a forward-watch indicator for email-authentication posture changes.",
+    "skills_referencing": [
+      "email-security-anti-phishing",
+      "skill-update-loop"
+    ],
+    "last_verified": "2026-05-15"
+  },
+  "RFC-8705": {
+    "number": 8705,
+    "title": "OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens",
+    "status": "Proposed Standard",
+    "published": "2020-02",
+    "tracker": "https://www.rfc-editor.org/info/rfc8705",
+    "relevance": "Defines two mechanisms: mTLS client authentication to OAuth authorisation servers, and certificate-bound access tokens that prevent token theft from being exploitable without the original mTLS client certificate. Operator-facing: mTLS-bound tokens are the canonical mitigation for bearer-token theft in high-assurance contexts (open-banking under PSD2 / UK FCA SCA-RTS, FAPI 2.0, government SSO). DPoP (RFC 9449) is the lighter-weight alternative for browser / mobile contexts where client TLS certificates are impractical.",
+    "skills_referencing": [
+      "identity-assurance"
+    ],
+    "last_verified": "2026-05-15"
   },
   "RFC-8725": {
     "number": 8725,
@@ -284,6 +334,22 @@
       "pqc-first"
     ],
     "last_verified": "2026-05-11"
+  },
+  "RFC-9112": {
+    "number": 9112,
+    "title": "HTTP/1.1",
+    "status": "Internet Standard",
+    "published": "2022-06",
+    "std_number": 99,
+    "tracker": "https://www.rfc-editor.org/info/rfc9112",
+    "relevance": "The current authoritative HTTP/1.1 specification, supersedes RFC 7230. Operator-facing: every HTTP/1.1 deployment — including MCP server transports, AI-API client libraries, and legacy webapp middle-tiers — should reference RFC 9112 rather than the older RFC 7230. Re-specification clarified request/response framing in ways that affect smuggling-class attack surfaces (CL.TE / TE.CL / CL.CL desync) which remain the dominant HTTP/1.1 vulnerability class.",
+    "lag_notes": "Supersedes RFC 7230. Many security-tool rulesets still cite the obsolete number; check any control mapping that references 'RFC 7230' as the HTTP/1.1 authority and update to 9112.",
+    "skills_referencing": [
+      "api-security",
+      "webapp-security",
+      "mcp-agent-trust"
+    ],
+    "last_verified": "2026-05-15"
   },
   "RFC-9114": {
     "number": 9114,
@@ -361,6 +427,19 @@
     ],
     "last_verified": "2026-05-11"
   },
+  "RFC-9449": {
+    "number": 9449,
+    "title": "OAuth 2.0 Demonstrating Proof of Possession (DPoP)",
+    "status": "Proposed Standard",
+    "published": "2023-09",
+    "tracker": "https://www.rfc-editor.org/info/rfc9449",
+    "relevance": "DPoP binds OAuth access + refresh tokens to a client-held key pair via per-request JWTs, defending against bearer-token theft in contexts where mTLS (RFC 8705) is impractical (single-page apps, mobile apps, AI-agent runtimes lacking client-certificate infrastructure). Operator-facing: DPoP is the recommended sender-constraint for FAPI 2.0 + MCP server-to-client OAuth flows where the client cannot present a TLS client certificate. Pairs with RFC 9700 (OAuth 2.0 Security BCP) recommendations.",
+    "skills_referencing": [
+      "identity-assurance",
+      "api-security"
+    ],
+    "last_verified": "2026-05-15"
+  },
   "RFC-9458": {
     "number": 9458,
     "title": "Oblivious HTTP",
@@ -374,6 +453,19 @@
       "dlp-gap-analysis"
     ],
     "last_verified": "2026-05-11"
+  },
+  "RFC-9622": {
+    "number": 9622,
+    "title": "An Architecture for Transport Services",
+    "status": "Proposed Standard",
+    "published": "2024-08",
+    "tracker": "https://www.rfc-editor.org/info/rfc9622",
+    "relevance": "Transport Services (TAPS) architecture — abstracts the choice of underlying transport (TCP, QUIC, SCTP) behind a unified API that selects the protocol at runtime based on path conditions. Forward-watch relevance: webapp / AI-API client libraries that adopt TAPS may transparently shift between TCP-HTTP/2 and QUIC-HTTP/3 mid-session, complicating boundary inspection assumptions that pin to a single transport. Currently tracked as a deployment-watch item rather than an operational control point.",
+    "lag_notes": "Architecture document; companion documents (TAPS implementation, TAPS programming interface) are still in progress at IETF TAPS WG. Enterprise tooling impact is forward-looking.",
+    "skills_referencing": [
+      "webapp-security"
+    ],
+    "last_verified": "2026-05-15"
   },
   "RFC-9700": {
     "number": 9700,

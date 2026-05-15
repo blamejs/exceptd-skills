@@ -52,7 +52,16 @@ d3fend_refs:
   - D3-EAL
   - D3-FAPA
   - D3-CSPP
-last_threat_review: "2026-05-13"
+forward_watch:
+  - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; expect coordinated CVE assignments and upstream patch; track KEV add post-embargo
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local AI runtime trust; track patch and MCP integration advisories
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — OpenAI Codex CWE-150 improper neutralization by Compass Security; AI coding-agent surface; forward-watch only (no coding-agent-security skill yet)
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory
+last_threat_review: "2026-05-15"
 ---
 
 # AI Attack Surface Assessment
@@ -85,7 +94,7 @@ This is a supply chain attack surface. Every MCP server a user installs is a pot
 
 ### 3. AI-Assisted Exploit Development
 
-41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering. Copy Fail (CVE-2026-31431) was discovered by an AI system in approximately one hour.
+41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering (GTIG 2025 annual). Copy Fail (CVE-2026-31431) was discovered by an AI system in approximately one hour. The first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case), and Fragnesia (CVE-2026-46300, Linux LPE) was disclosed 2026-05-13 by William Bowling / Zellic with explicit credit to Zellic's AI-agentic code-auditing tool — the anchor case for autonomous AI vulnerability discovery in load-bearing OSS (18-year-old kernel code path). The Dirty Frag pair (CVE-2026-43284 / CVE-2026-43500) was disclosed 2026-05-08 and industry analysis (Sysdig, Help Net Security) assesses AI-assisted discovery as likely given the 9-year exposure window. The exceptd catalog's 2026 AI-discovery rate is now 40%, tracking the GTIG 41% reference. Defensive posture is calibrated to CTID Secure AI v2 (released 2026-05-06) — Secure AI v1 is superseded.
 
 The implication: the time between a vulnerability's introduction into a codebase and its reliable exploitation has compressed from months or years to hours or days for AI-capable threat actors. Patch management SLAs designed for human-speed exploit development are structurally inadequate.
 

@@ -57,7 +57,9 @@ d3fend_refs:
   - D3-NI
   - D3-NTPM
   - D3-IOPR
-last_threat_review: "2026-05-11"
+forward_watch:
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Container Toolkit container escape ($50K award) by chompie / IBM X-Force XOR; high-severity container/hypervisor boundary break; track patch and KEV add post-embargo
+last_threat_review: "2026-05-15"
 ---
 
 # Container + Kubernetes Runtime Security (mid-2026)

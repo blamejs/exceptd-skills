@@ -59,7 +59,7 @@ forward_watch:
   - AU SOCI Act expanded sector coverage (data-storage and processing entities added 2024; further mandatory-reporting tiers under review)
   - IL INCD Incident Response Process v4 (slated for 2026-2027) consolidating AI-incident sub-class
   - NYDFS 23 NYCRR 500.17 amendments tightening ransom-payment 24h disclosure operationalization
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-15"
 ---
 
 # Incident Response Playbook

@@ -42,7 +42,7 @@ cwe_refs:
   - CWE-1039
 d3fend_refs:
   - D3-IOPR
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-15"
 ---
 
 # AI Risk Management (Governance Layer)
@@ -78,6 +78,8 @@ AI red-team activity has likewise shifted from voluntary research practice to go
 - OWASP LLM Top 10 2025 (LLM01: Prompt Injection — `data/framework-control-gaps.json` → `OWASP-LLM-Top-10-2025-LLM01`) is treated by auditors as the working operational checklist where ISO/IEC 42001 is silent on technical specifics.
 
 The 2024–2026 disclosure record is unforgiving: vendor advisories from OpenAI, Anthropic, Google DeepMind, and Microsoft have published AI vulnerability disclosures spanning prompt-injection-driven RCE (CVE-2025-53773, CVSS 7.8 / AV:L), local-vector MCP supply-chain RCE (CVE-2026-30615, CVSS 8.0 / AV:L), agentic-pipeline compromise patterns, and indirect-injection via retrieved content. An organisation with no governance artefact mapping these classes to internal use cases is not in a position to act on any of them.
+
+AI as adversary is now operational reality, not forecast: 41% of 2025 zero-days were AI-discovered (GTIG 2025 annual), the first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case), and Fragnesia (CVE-2026-46300, 2026-05-13) is the anchor case for autonomous agentic-AI discovery in load-bearing OSS — Zellic's agentic auditor surfaced an 18-year-old Linux kernel page-cache primitive. Risk registers, vendor questionnaires, and incident playbooks that omit AI-as-discovery-actor are out of currency. Align the AIMS to **CTID Secure AI v2 (2026-05-06)** — Secure AI v1 is superseded; Annex SL clause-by-clause mapping in `data/framework-control-gaps.json`.
 
 ---
 

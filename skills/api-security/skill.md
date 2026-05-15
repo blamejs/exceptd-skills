@@ -63,6 +63,10 @@ d3fend_refs:
   - D3-CSPP
   - D3-MFA
   - D3-CBAN
+forward_watch:
+  - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; track for active-exploitation confirmation and patch advisory affecting API gateway / reverse-proxy deployments
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; LLM-proxy API surface; track upstream patch and CVE assignments
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
 last_threat_review: "2026-05-11"
 ---
 

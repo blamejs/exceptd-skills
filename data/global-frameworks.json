@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.3.0",
     "version": "1.3.0",
-    "last_updated": "2026-05-11",
+    "last_updated": "2026-05-15",
     "note": "Multi-jurisdiction framework registry. patch_sla in hours. notification_sla in hours. source field must be primary regulatory source. v1.3.0 expansion: NO, MX, AR, TR, TH, PH, US_CALIFORNIA top-level jurisdictions added; EU member-state sub-regulator blocks added for Germany (BSI), France (ANSSI), Spain (AEPD + AESIA), Italy (ACN + AgID); EU-level technical body ENISA added as cross-cutting reference. v1.2.0 expansion: IL, CH, HK, TW, ID, VN, US_NYDFS added; JP expanded with APPI/PPC, FISC, NISC, METI, Economic Security Promotion Act, AI Strategy Council guidance. v1.1.0 expansion: BR, CN, ZA, AE, SA, NZ, KR, CL added; IN and CA enriched with data-protection law entries (DPDPA, Quebec Law 25, PIPEDA).",
     "tlp": "CLEAR",
     "source_confidence": {
@@ -79,7 +79,7 @@
       },
       "DORA": {
         "full_name": "Digital Operational Resilience Act",
-        "authority": "ESAs (EBA, EIOPA, ESMA)",
+        "authority": "ESAs (EBA, EIOPA, ESMA) + Lead Overseers (CTPP regime from H2 2026)",
         "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554",
         "effective_date": "2025-01-17",
         "version": "2022/2554",
@@ -92,33 +92,55 @@
           "Art. 9 — ICT risk management framework",
           "Art. 10 — identification of ICT assets and dependencies",
           "Art. 11 — ICT business continuity",
-          "Art. 19 — major incident classification and reporting (4h initial, 24h intermediate, 30d final)",
-          "Art. 28-30 — ICT third-party risk (DORA extends to all ICT providers including cloud)"
+          "Art. 19 — major incident classification and reporting (4h initial, 24h intermediate, 30d final; classification per Commission Delegated Regulation (EU) 2024/1772)",
+          "Art. 26 — threat-led penetration testing (ITS active 2026-Q3)",
+          "Art. 28-30 — ICT third-party risk register (RTS on subcontracting active 2026-01-17)",
+          "Art. 31-44 — Critical Third-Party Provider oversight regime (first designations H2 2026)"
+        ],
+        "implementing_measures_2026": [
+          "RTS on subcontracting of ICT services supporting critical or important functions (Commission Delegated Regulation (EU) 2025/420) — active 2026-01-17",
+          "RTS on classification of major ICT-related incidents (Commission Delegated Regulation (EU) 2024/1772) — in force",
+          "ITS on threat-led penetration testing under Art. 26 — active 2026-Q3",
+          "Implementing acts designating critical ICT third-party service providers — first wave H2 2026"
         ],
         "framework_gaps": [
           "Patch SLA not specified — risk-based interpretation required",
-          "AI/ML systems in scope but no AI-specific controls",
-          "MCP servers: 'ICT third-party service providers' may apply but no specific guidance",
-          "PQC: not addressed; 'appropriate level of security' standard"
+          "AI/ML systems in scope as ICT third-party service providers; no AI-specific obligations beyond generic ICT-risk language",
+          "Frontier-AI providers not on initial CTPP designation candidate list despite material concentration risk",
+          "MCP servers + agent runtimes: classifiable as ICT third-party but no specific oversight guidance",
+          "PQC: not addressed; 'appropriate level of security' standard",
+          "Incident-classification RTS does not enumerate AI-specific incident classes"
         ],
-        "ai_coverage": "AI systems providing ICT services to financial entities are in scope as ICT third-party service providers",
+        "ai_coverage": "AI systems providing ICT services to financial entities are in scope as ICT third-party service providers; frontier-AI provider designation under the CTPP regime remains open as of 2026-05",
         "pqc_coverage": "Implicit in Art. 9 risk management; no explicit requirement",
-        "theater_risk": "low-medium — DORA has strong third-party oversight; patching gap remains"
+        "theater_risk": "low-medium — DORA has strong third-party oversight; AI-specific obligations still maturing through 2026 implementing measures"
       },
       "EU_AI_ACT": {
         "full_name": "EU Artificial Intelligence Act",
-        "authority": "EU AI Office + National Market Surveillance Authorities",
+        "authority": "EU AI Office + National Market Surveillance Authorities + Notified Bodies (Annex IX conformity)",
         "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689",
         "effective_date": "2024-08-01",
-        "full_application_date": "2026-08-01",
+        "full_application_date": "2026-08-02",
+        "gpai_obligations_date": "2026-08-02",
+        "high_risk_obligations_date": "2026-08-02",
+        "prohibited_practices_date": "2025-02-02",
         "version": "2024/1689",
-        "security_article": "Article 9 — Risk Management System (High-Risk AI)",
+        "security_article": "Article 9 — Risk Management System (High-Risk AI); Article 15 — Cybersecurity; Article 55 — GPAI Systemic Risk",
         "critical_controls": [
+          "Art. 5 — prohibited AI practices (in force 2025-02-02)",
           "Art. 9 — mandatory risk management system for high-risk AI (ongoing, not one-time)",
           "Art. 10 — data governance requirements for training/validation/testing data",
           "Art. 12 — technical documentation and logging requirements",
           "Art. 15 — accuracy, robustness, and cybersecurity requirements for high-risk AI",
-          "Art. 72 — GPAI model adversarial testing requirements"
+          "Art. 43 + Annex IX — conformity assessment route (internal control vs. notified body) for high-risk AI",
+          "Art. 53 — GPAI provider obligations: technical documentation, downstream-provider info package, copyright policy, training-content summary (active 2026-08-02)",
+          "Art. 55 — GPAI with systemic risk: adversarial evaluation, systemic-risk assessment, serious-incident reporting, cybersecurity of model layer (active 2026-08-02)"
+        ],
+        "implementing_measures_2026": [
+          "GPAI Code of Practice signed 2026-02 — presumed-compliance route for Art. 53 + 55 until harmonised standards published",
+          "GPAI obligations full application 2026-08-02",
+          "High-risk obligations full application 2026-08-02",
+          "Harmonised standards under Art. 40 — CEN-CENELEC JTC 21 deliverables tracked through 2026-2027"
         ],
         "high_risk_categories": [
           "Biometric identification",
@@ -131,13 +153,16 @@
         ],
         "framework_gaps": [
           "Art. 15 'cybersecurity' is undefined — no technical specification",
-          "Prompt injection not addressed in Art. 15 or implementing measures",
-          "Supply chain security for GPAI models: Art. 72 adversarial testing but no signing requirements",
-          "MCP servers/agent tools: not contemplated in implementing regulations"
+          "Prompt injection not addressed in Art. 15 or current implementing measures",
+          "Supply chain security for GPAI models: Art. 55 adversarial evaluation but no signing / SLSA-equivalent requirement",
+          "MCP servers/agent tools: not contemplated in implementing regulations",
+          "Annex IX internal-control conformity is self-attestation for most high-risk AI; notified-body capacity is constrained",
+          "Art. 53 training-content summary granularity is operationally undefined",
+          "Art. 55 incident-reporting clock (15-day) misaligned with DORA Art. 19 (4h) and NIS2 Art. 23 (24h)"
         ],
-        "ai_coverage": "Specific AI security requirements for high-risk AI and GPAI models — most complete AI security framework globally",
+        "ai_coverage": "Specific AI security requirements for high-risk AI and GPAI models — most complete AI security framework globally; GPAI + high-risk obligations active 2026-08-02",
         "pqc_coverage": "Not addressed",
-        "theater_risk": "unknown — implementing measures still developing as of 2026-05"
+        "theater_risk": "medium — Code of Practice provides presumed-compliance route but adversarial-evaluation methodology + energy-reporting cadence remain provider-defined as of 2026-05"
       },
       "EU_CRA": {
         "full_name": "EU Cyber Resilience Act",

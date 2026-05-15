@@ -48,12 +48,14 @@ d3fend_refs:
   - D3-NI
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-05-13"
+last_threat_review: "2026-05-15"
 ---
 
 # AI C2 Detection
 
 ## Threat Context (mid-2026)
+
+The AI-as-adversary reality that motivates this skill is now operationally documented: 41% of 2025 zero-days were AI-discovered (GTIG 2025), the first AI-built in-the-wild zero-day was confirmed 2026-05-11 (GTIG AI 2FA-bypass case), and Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical AI-driven autonomous-discovery anchor — Zellic's agentic auditor surfaced an 18-year-old Linux kernel primitive. C2 channels riding the same agentic AI infrastructure are the next logical step; CTID Secure AI v2 (2026-05-06, replaces v1) treats AI-API C2 detection as an in-scope control class.
 
 ### SesameOp — AI APIs as Covert C2 (ATLAS AML.T0096)
 

@@ -32,7 +32,7 @@ forward_watch:
   - AI/MCP platform CVEs (GitHub Security Advisories, OSV database)
   - Framework publication updates (NIST SP updates, ISO amendments, NIS2 implementing acts)
   - IETF RFC publications and draft status changes (datatracker.ietf.org, rfc-editor.org); run `npm run validate-rfcs` quarterly
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-15"
 ---
 
 # Skill Update Loop

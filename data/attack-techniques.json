@@ -1,10 +1,13 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-13",
-    "attack_version": "17",
-    "attack_version_date": "2025-06-25",
-    "source": "https://attack.mitre.org — MITRE ATT&CK Enterprise + ICS. Only techniques currently referenced by shipped exceptd skills and playbooks. The full ATT&CK matrix (~700 techniques) is intentionally not duplicated here; this is a resolution catalog for cross-reference validation, not a substitute for attack.mitre.org. See `npm run refresh-attack-techniques` (v0.13.0+) for the full corpus.",
+    "last_updated": "2026-05-15",
+    "last_threat_review": "2026-05-15",
+    "attack_version": "19.0",
+    "attack_version_date": "2026-04-28",
+    "tactic_split_note": "ATT&CK v19 split Defense Evasion (TA0005) into Stealth (TA0005) and Defense Impairment (TA0112). Entries here record their post-split tactic; entries whose tactic moved carry `tactic_moved_from: \"Defense Evasion\"` for traceability.",
+    "detection_strategies_note": "ATT&CK v18 introduced Detection Strategies as first-class objects (691 strategies, 1739 analytics at v18 release). Entries reference applicable strategy IDs (DSxxxx) where the technique has canonical strategy coverage; absence does not imply lack of detection.",
+    "source": "https://attack.mitre.org — MITRE ATT&CK Enterprise + ICS, v19.0 (April 2026). Only techniques currently referenced by shipped exceptd skills and playbooks. The full ATT&CK matrix is intentionally not duplicated here; this is a resolution catalog for cross-reference validation, not a substitute for attack.mitre.org. See `npm run refresh-attack-techniques` (v0.13.0+) for the full corpus.",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
@@ -15,325 +18,436 @@
       "default_review_cadence_days": 90,
       "stale_after_days": 180,
       "rebuild_after_days": 365,
-      "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md hard rule #8 requires the bump to be intentional, not silent."
+      "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
     }
   },
   "T0001": {
     "name": "Authority Spoof",
-    "version": "v17"
+    "version": "v19"
   },
   "T0017": {
     "name": "Spearphishing Attachment (ICS)",
-    "version": "v17"
+    "version": "v19"
   },
   "T0051": {
     "name": "Position Tampering",
-    "version": "v17"
+    "version": "v19"
   },
   "T0096": {
     "name": "Remote System Discovery (ICS)",
-    "version": "v17"
+    "version": "v19"
   },
   "T0853": {
     "name": "Scripting",
-    "version": "v17"
+    "version": "v19"
   },
   "T0855": {
     "name": "Unauthorized Command Message",
-    "version": "v17"
+    "version": "v19"
   },
   "T0867": {
     "name": "Lateral Tool Transfer",
-    "version": "v17",
+    "version": "v19",
     "domain": "ICS"
   },
   "T0883": {
     "name": "Internet Accessible Device",
-    "version": "v17"
+    "version": "v19"
   },
   "T1021": {
     "name": "Remote Services",
-    "version": "v17"
+    "version": "v19"
   },
   "T1027": {
     "name": "Obfuscated Files or Information",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Stealth",
+    "tactic_moved_from": "Defense Evasion",
+    "tactic_id": "TA0005",
+    "detection_strategies": ["DS0009"]
   },
   "T1040": {
     "name": "Network Sniffing",
-    "version": "v17"
+    "version": "v19"
   },
   "T1041": {
     "name": "Exfiltration Over C2 Channel",
-    "version": "v17"
+    "version": "v19"
   },
   "T1053.003": {
     "name": "Scheduled Task/Job: Cron",
-    "version": "v17"
+    "version": "v19"
   },
   "T1055": {
     "name": "Process Injection",
-    "version": "v17"
+    "version": "v19"
   },
   "T1059": {
     "name": "Command and Scripting Interpreter",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Execution",
+    "detection_strategies": ["DS0009", "DS0017"]
   },
   "T1059.001": {
     "name": "Command and Scripting Interpreter: PowerShell",
-    "version": "v17"
+    "version": "v19"
   },
   "T1059.006": {
     "name": "Command and Scripting Interpreter: Python",
-    "version": "v17"
+    "version": "v19"
   },
   "T1059.007": {
     "name": "Command and Scripting Interpreter: JavaScript",
-    "version": "v17"
+    "version": "v19"
   },
   "T1068": {
     "name": "Exploitation for Privilege Escalation",
-    "version": "v17"
+    "version": "v19"
   },
   "T1071": {
     "name": "Application Layer Protocol",
-    "version": "v17"
+    "version": "v19"
   },
   "T1078": {
     "name": "Valid Accounts",
-    "version": "v17"
+    "version": "v19"
   },
   "T1078.001": {
     "name": "Valid Accounts: Default Accounts",
-    "version": "v17"
+    "version": "v19"
   },
   "T1078.002": {
     "name": "Valid Accounts: Domain Accounts",
-    "version": "v17"
+    "version": "v19"
   },
   "T1078.003": {
     "name": "Valid Accounts: Local Accounts",
-    "version": "v17"
+    "version": "v19"
   },
   "T1078.004": {
     "name": "Valid Accounts: Cloud Accounts",
-    "version": "v17"
+    "version": "v19"
   },
   "T1098": {
     "name": "Account Manipulation",
-    "version": "v17"
+    "version": "v19"
   },
   "T1102": {
     "name": "Web Service",
-    "version": "v17"
+    "version": "v19"
   },
   "T1110": {
     "name": "Brute Force",
-    "version": "v17"
+    "version": "v19"
   },
   "T1110.001": {
     "name": "Brute Force: Password Guessing",
-    "version": "v17"
+    "version": "v19"
   },
   "T1133": {
     "name": "External Remote Services",
-    "version": "v17"
+    "version": "v19"
   },
   "T1136.001": {
     "name": "Create Account: Local Account",
-    "version": "v17"
+    "version": "v19"
   },
   "T1190": {
     "name": "Exploit Public-Facing Application",
-    "version": "v17"
+    "version": "v19"
   },
   "T1195": {
     "name": "Supply Chain Compromise",
-    "version": "v17"
+    "version": "v19"
   },
   "T1195.001": {
     "name": "Supply Chain Compromise: Software Dependencies and Development Tools",
-    "version": "v17"
+    "version": "v19"
   },
   "T1195.002": {
     "name": "Supply Chain Compromise: Software Supply Chain",
-    "version": "v17"
+    "version": "v19"
   },
   "T1199": {
     "name": "Trusted Relationship",
-    "version": "v17"
+    "version": "v19"
   },
   "T1203": {
     "name": "Exploitation for Client Execution",
-    "version": "v17"
+    "version": "v19"
   },
   "T1212": {
     "name": "Exploitation for Credential Access",
-    "version": "v17"
+    "version": "v19"
   },
   "T1213": {
     "name": "Data from Information Repositories",
-    "version": "v17"
+    "version": "v19"
   },
   "T1485": {
     "name": "Data Destruction",
-    "version": "v17"
+    "version": "v19"
   },
   "T1486": {
     "name": "Data Encrypted for Impact",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Impact",
+    "detection_strategies": ["DS0007", "DS0011"]
   },
   "T1505": {
     "name": "Server Software Component",
-    "version": "v17"
+    "version": "v19"
   },
   "T1518": {
     "name": "Software Discovery",
-    "version": "v17"
+    "version": "v19"
   },
   "T1525": {
     "name": "Implant Internal Image",
-    "version": "v17"
+    "version": "v19"
   },
   "T1528": {
     "name": "Steal Application Access Token",
-    "version": "v17"
+    "version": "v19"
   },
   "T1530": {
     "name": "Data from Cloud Storage",
-    "version": "v17"
+    "version": "v19"
   },
   "T1543": {
     "name": "Create or Modify System Process",
-    "version": "v17"
+    "version": "v19"
   },
   "T1546": {
     "name": "Event Triggered Execution",
-    "version": "v17"
+    "version": "v19"
   },
   "T1547": {
     "name": "Boot or Logon Autostart Execution",
-    "version": "v17"
+    "version": "v19"
   },
   "T1548.001": {
     "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
-    "version": "v17"
+    "version": "v19"
   },
   "T1548.003": {
     "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
-    "version": "v17"
+    "version": "v19"
   },
   "T1552": {
     "name": "Unsecured Credentials",
-    "version": "v17"
+    "version": "v19"
   },
   "T1552.001": {
     "name": "Unsecured Credentials: Credentials In Files",
-    "version": "v17"
+    "version": "v19"
   },
   "T1552.004": {
     "name": "Unsecured Credentials: Private Keys",
-    "version": "v17"
+    "version": "v19"
   },
   "T1552.005": {
     "name": "Unsecured Credentials: Cloud Instance Metadata API",
-    "version": "v17"
+    "version": "v19"
   },
   "T1552.007": {
     "name": "Unsecured Credentials: Container API",
-    "version": "v17"
+    "version": "v19"
   },
   "T1554": {
     "name": "Compromise Host Software Binary",
-    "version": "v17"
+    "version": "v19"
   },
   "T1555": {
     "name": "Credentials from Password Stores",
-    "version": "v17"
+    "version": "v19"
   },
   "T1556": {
     "name": "Modify Authentication Process",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Credential Access",
+    "detection_strategies": ["DS0002"]
   },
   "T1557": {
     "name": "Adversary-in-the-Middle",
-    "version": "v17"
+    "version": "v19"
   },
   "T1562.001": {
     "name": "Impair Defenses: Disable or Modify Tools",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_moved_from": "Defense Evasion",
+    "tactic_id": "TA0112",
+    "detection_strategies": ["DS0017", "DS0022"]
   },
   "T1562.006": {
     "name": "Impair Defenses: Indicator Blocking",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_moved_from": "Defense Evasion",
+    "tactic_id": "TA0112",
+    "detection_strategies": ["DS0017"]
   },
   "T1565": {
     "name": "Data Manipulation",
-    "version": "v17"
+    "version": "v19"
   },
   "T1566": {
     "name": "Phishing",
-    "version": "v17"
+    "version": "v19"
   },
   "T1566.001": {
     "name": "Phishing: Spearphishing Attachment",
-    "version": "v17"
+    "version": "v19"
   },
   "T1566.002": {
     "name": "Phishing: Spearphishing Link",
-    "version": "v17"
+    "version": "v19"
   },
   "T1566.003": {
     "name": "Phishing: Spearphishing via Service",
-    "version": "v17"
+    "version": "v19"
   },
   "T1567": {
     "name": "Exfiltration Over Web Service",
-    "version": "v17"
+    "version": "v19"
   },
   "T1568": {
     "name": "Dynamic Resolution",
-    "version": "v17"
+    "version": "v19"
   },
   "T1570": {
     "name": "Lateral Tool Transfer",
-    "version": "v17",
+    "version": "v19",
     "domain": "Enterprise"
   },
   "T1573": {
     "name": "Encrypted Channel",
-    "version": "v17"
+    "version": "v19"
   },
   "T1574": {
     "name": "Hijack Execution Flow",
-    "version": "v17"
+    "version": "v19"
   },
   "T1574.005": {
     "name": "Hijack Execution Flow: Executable Installer File Permissions Weakness",
-    "version": "v17"
+    "version": "v19"
   },
   "T1595": {
     "name": "Active Scanning",
-    "version": "v17"
+    "version": "v19"
   },
   "T1600": {
     "name": "Weaken Encryption",
-    "version": "v17"
+    "version": "v19"
   },
   "T1606.001": {
     "name": "Forge Web Credentials: Web Cookies",
-    "version": "v17"
+    "version": "v19"
   },
   "T1610": {
     "name": "Deploy Container",
-    "version": "v17"
+    "version": "v19"
   },
   "T1611": {
     "name": "Escape to Host",
-    "version": "v17"
+    "version": "v19",
+    "tactic": "Privilege Escalation",
+    "detection_strategies": ["DS0009", "DS0029"]
   },
   "T1613": {
     "name": "Container and Resource Discovery",
-    "version": "v17"
+    "version": "v19"
+  },
+  "T1480.002": {
+    "name": "Execution Guardrails: Mutual Exclusion",
+    "version": "v19",
+    "tactic": "Stealth",
+    "tactic_id": "TA0005",
+    "added_in": "v19",
+    "detection_strategies": ["DS0009"]
+  },
+  "T1480.003": {
+    "name": "Execution Guardrails: Mutex Lock",
+    "version": "v19",
+    "tactic": "Stealth",
+    "tactic_id": "TA0005",
+    "added_in": "v19",
+    "detection_strategies": ["DS0009"]
+  },
+  "T1059.013": {
+    "name": "Command and Scripting Interpreter: Cloud API",
+    "version": "v19",
+    "tactic": "Execution",
+    "added_in": "v18",
+    "detection_strategies": ["DS0017", "DS0025"]
+  },
+  "T1556.007": {
+    "name": "Modify Authentication Process: Hybrid Identity",
+    "version": "v19",
+    "tactic": "Credential Access",
+    "added_in": "v18",
+    "detection_strategies": ["DS0002", "DS0028"]
+  },
+  "T1486.004": {
+    "name": "Data Encrypted for Impact: Data Theft Before Encryption",
+    "version": "v19",
+    "tactic": "Impact",
+    "added_in": "v19",
+    "detection_strategies": ["DS0007", "DS0011", "DS0029"]
+  },
+  "T1682": {
+    "name": "Query Public AI Services",
+    "version": "v19",
+    "tactic": "Reconnaissance",
+    "added_in": "v19",
+    "detection_strategies": ["DS0029"]
+  },
+  "T1683": {
+    "name": "Generate Content",
+    "version": "v19",
+    "tactic": "Resource Development",
+    "added_in": "v19",
+    "detection_strategies": ["DS0029"]
+  },
+  "T1685": {
+    "name": "Disable or Modify Tools",
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_id": "TA0112",
+    "added_in": "v19",
+    "detection_strategies": ["DS0017", "DS0022"]
+  },
+  "T1686": {
+    "name": "Disable or Modify System Firewall",
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_id": "TA0112",
+    "added_in": "v19",
+    "detection_strategies": ["DS0017"]
+  },
+  "T1687": {
+    "name": "Exploitation for Defense Impairment",
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_id": "TA0112",
+    "added_in": "v19",
+    "detection_strategies": ["DS0009"]
+  },
+  "T1689": {
+    "name": "Downgrade Attack",
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_id": "TA0112",
+    "added_in": "v19",
+    "detection_strategies": ["DS0029"]
+  },
+  "T1690": {
+    "name": "Prevent Command History Logging",
+    "version": "v19",
+    "tactic": "Defense Impairment",
+    "tactic_id": "TA0112",
+    "added_in": "v19",
+    "detection_strategies": ["DS0017"]
   }
 }

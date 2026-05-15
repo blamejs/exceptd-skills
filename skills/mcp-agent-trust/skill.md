@@ -60,14 +60,19 @@ d3fend_refs:
   - D3-EAL
   - D3-EHB
   - D3-MFA
-last_threat_review: "2026-05-13"
+forward_watch:
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; MCP-adjacent LLM proxy surface; track upstream patch and MCP trust advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local MCP/agent runtime trust; track patch and integration advisories
+  - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Claude Code MCP collision-scored entry by Viettel Cyber Security; CVE in flight; track MCP trust and tool-collision advisory
+last_threat_review: "2026-05-15"
 ---
 
 # MCP Agent Trust Assessment
 
 ## Threat Context (mid-2026)
 
-The Model Context Protocol (MCP) is an open protocol for connecting AI assistants to external tools and data sources. It is now the standard integration layer for AI coding assistants: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, and Gemini CLI all support MCP servers.
+The Model Context Protocol (MCP) is an open protocol for connecting AI assistants to external tools and data sources. It is now the standard integration layer for AI coding assistants: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, and Gemini CLI all support MCP servers. Background reality: 41% of 2025 zero-days were AI-discovered (GTIG 2025); Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical AI-driven autonomous-discovery anchor — Zellic's agentic auditor surfaced an 18-year-old kernel primitive that load-bearing MCP-server hosts depend on. The first documented AI-built in-the-wild zero-day landed 2026-05-11 (GTIG AI 2FA-bypass). MCP trust posture should align to CTID Secure AI v2 (2026-05-06, replaces v1).
 
 MCP creates an architectural trust problem that no existing security framework addresses.
 
