@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.12.35 — 2026-05-16
+
+Cycle 15 audit pass — security hardening + ATLAS pin sweep across skills + forward-watch backfill. Three angles audited in parallel (performance, exceptd's own input-handling security, forward-watch staleness); two surfaced P1 fixes that ship here.
+
+### Security
+
+**`--evidence -` (stdin) now enforces the 32 MiB cap.** Pre-fix the stdin branch did `fs.readFileSync(0, "utf8")` with no length limit while the file-path branch enforced `MAX_EVIDENCE_BYTES`. An attacker piping multi-GB JSON would OOM the runner. Stdin now reads in 1 MB chunks and bails at the cap with a structured `ok:false` error + exit 1. New `tests/evidence-input-hardening.test.js` pins both the cap and the small-payload happy path.
+
+**Prototype-pollution defense on operator-submitted `precondition_checks`.** Pre-fix `Object.assign(out.precondition_checks, submission.precondition_checks)` re-invoked the `__proto__` setter when the operator's JSON contained a `__proto__` key. JSON.parse keeps `__proto__` as an own data property (CreateDataProperty), but Object.assign reads via `[[Get]]` and writes via `[[Set]]`, which triggers the prototype-rebinding setter. Global `Object.prototype` stayed clean (Node confines the rebind to the assignment target), but the polluted local prototype was a defense-in-depth gap — any future code path calling `.hasOwnProperty()` directly on the bag would observe pollution. Switched to own-key iteration that explicitly skips `__proto__` / `constructor` / `prototype` keys.
+
+### Bugs
+
+**ATLAS v5.1.0 → v5.4.0 sweep across operator-facing surface.** v0.12.34 fixed README + ARCHITECTURE but cycle 15 found 27 skill bodies, 2 builder scripts, the skill-frontmatter schema, and 17 derived indexes all still citing the stale pin. 30 files modified; canonical pin string `ATLAS v5.4.0 (February 2026)` used uniformly. NYDFS rollout reference "phased in through November 2025" in sector-financial intentionally preserved (different context). The extended docs-pin test now scans `skills/` + `data/_indexes/` + `scripts/` for ATLAS-context mismatches in addition to README + ARCHITECTURE.
+
+**5 past-due forward_watch entries re-dated with realized backfill.**
+- *mlops-security* — predicted "ATLAS v5.2 — track AML.T0010 sub-technique expansion." ATLAS shipped v5.4.0 on 2026-02-06; the expansion landed plus "Publish Poisoned AI Agent Tool" and "Escape to Host" techniques. Backfilled with the realized state + re-anchored to ATLAS v5.5 / v6.0 horizon.
+- *age-gates-child-safety AU under-16 ban* — predicted "implementation deferred to late 2025." AU Online Safety Amendment (Social Media Minimum Age) Act 2024 entered force 2025-12-10; 4.7M+ accounts deactivated by mid-Jan 2026; 31 March 2026 formal investigations of Facebook / Instagram / Snapchat / TikTok / YouTube. Backfilled + re-anchored to first civil-penalty proceedings (H2 2026).
+- *age-gates-child-safety UK OSA enforcement* — predicted "first enforcement decisions expected late 2025 / 2026." Ofcom has 80+ investigations open; first £1M OSA fine issued for age-assurance failure. Backfilled + re-anchored to the April / July / November 2026 OSA milestones.
+- *age-gates-child-safety eSafety actions* — same shape; backfilled to the 31 March 2026 formal investigations.
+- *sector-energy TSA Pipeline SD* — predicted "next reissue cycle anticipated mid-2026." Current cadence: SD-Pipeline-2021-02F expires 2 May 2026; expected 02G now overdue as of cycle 15. Updated to reflect current series + re-anchored to H2 2026.
+
+### Features
+
+**Extended `tests/docs-catalog-counts-pinned.test.js`** to scan `skills/**/*.md`, `data/_indexes/*.json`, and `scripts/**/*.js` for ATLAS version mentions in addition to README + ARCHITECTURE. A future stale-pin in any of those operator-facing files now fails the gate at CI time. Closes the cycle 15 P2 F6 finding which revealed v0.12.34's docs-pin gate was scoped too narrowly.
+
+### Internal
+
+- Cycle 15 audit: 3 read-only agents dispatched (performance, security, forward-watch). Performance audit confirmed no regression — every CLI op within budget; `cross-ref-api.js` mtime-keyed catalog cache + per-run playbook cache prevent N+1 patterns. Watchlist verb at 99ms has a 30-40ms caching opportunity (deferred to v0.13 backlog).
+- 16/16 playbooks now validate clean (no warnings) — same green state as v0.12.33's cred-stores cleanup.
+- Test count 1125 → 1131 (4 new evidence-input-hardening tests + 1 extended docs-pin test + 1 sanity sweep).
+- 14/14 predeploy gates green.
+
+
 ## 0.12.34 — 2026-05-15
 
 Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLAS v5.1.0 and ATT&CK v17 — outdated for nine releases. v0.12.29 fixed the manifest.json pin (cycle 9 Hard Rule #8 audit) but the operator-facing docs weren't updated. Plus catalog count drift (38 skills → 42; 28 D3FEND entries → 29).

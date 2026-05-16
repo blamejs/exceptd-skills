@@ -87,7 +87,7 @@ By mid-2026 the asymmetry between offensive and defensive fuzzing has flipped. T
 
 ---
 
-## TTP Mapping (MITRE ATLAS v5.1.0 + MITRE ATT&CK Enterprise)
+## TTP Mapping (MITRE ATLAS v5.4.0 + MITRE ATT&CK Enterprise)
 
 Fuzz is a pre-exploit control: it surfaces weaknesses before they leave the build pipeline. Mapping is via the weakness root cause (CWE) rather than the post-exploit technique.
 

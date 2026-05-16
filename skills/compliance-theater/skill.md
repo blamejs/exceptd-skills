@@ -70,7 +70,7 @@ The pre-analyzed gaps for these controls live in the framework-gap-analysis skil
 
 ---
 
-## TTP Mapping (MITRE ATLAS v5.1.0 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)
 
 Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps.json` and MITRE ATT&CK Enterprise. The mapping is what distinguishes theater from genuine compliance: a control claimed as compensating must map to a TTP it actually disrupts.
 
@@ -84,7 +84,7 @@ Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps
 | Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (ML Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
 | Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs for payload crafting) | AI-generated content evades grammar/style heuristics and template-matching detectors |
 
-Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.1.0, November 2025). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
+Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.4.0, February 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
 
 ---
 

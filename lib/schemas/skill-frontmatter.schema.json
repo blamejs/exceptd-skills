@@ -52,7 +52,7 @@
         "type": "string",
         "pattern": "^AML\\.T[0-9]{4}(\\.[0-9]{3})?$"
       },
-      "description": "MITRE ATLAS TTP IDs at the pinned version (currently v5.1.0)."
+      "description": "MITRE ATLAS TTP IDs at the pinned version (currently v5.4.0)."
     },
     "attack_refs": {
       "type": "array",

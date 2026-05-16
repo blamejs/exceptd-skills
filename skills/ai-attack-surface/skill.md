@@ -1,7 +1,7 @@
 ---
 name: ai-attack-surface
 version: "1.0.0"
-description: Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with explicit framework gap flags
+description: Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.4.0 with explicit framework gap flags
 triggers:
   - ai attack surface
   - prompt injection
@@ -158,12 +158,12 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 | SOC 2 | CC6 (Logical and Physical Access) | Access control via IAM, authentication, authorization. Prompt injection is an access control failure that routes around CC6 entirely — the authorized model account takes the action, not the attacker. Audit trails show the model's service account performed the action. |
 | SOC 2 | CC7 (System Operations) | Anomaly detection for system operations. No guidance for AI API baseline, AI C2 detection, or PROMPTFLUX behavioral patterns. |
 | PCI DSS 4.0 | 6.4.1 | Web application protection (WAF). WAFs operate on HTTP request/response patterns. They have no semantic understanding of prompt injection embedded in JSON `message` fields. |
-| MITRE ATT&CK | Enterprise | Does not include prompt injection as a technique. AI-as-C2 (SesameOp) is not in ATT&CK as of mid-2026. ATLAS v5.1.0 covers these but is not part of SOC detection engineering programs that are ATT&CK-mapped. |
+| MITRE ATT&CK | Enterprise | Does not include prompt injection as a technique. AI-as-C2 (SesameOp) is not in ATT&CK as of mid-2026. ATLAS v5.4.0 covers these but is not part of SOC detection engineering programs that are ATT&CK-mapped. |
 | NIST AI RMF | MEASURE 2.5 | Measure AI risks during operation. Provides a framework for thinking about AI risk but no specific controls for prompt injection, MCP supply chain, or AI-as-C2. |
 
 ---
 
-## TTP Mapping (MITRE ATLAS v5.1.0)
+## TTP Mapping (MITRE ATLAS v5.4.0)
 
 | ATLAS ID | Technique | Framework Coverage | Gap Description | Exploitation Example |
 |---|---|---|---|---|

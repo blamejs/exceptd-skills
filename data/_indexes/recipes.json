@@ -19,7 +19,7 @@
       "steps": [
         {
           "skill": "ai-attack-surface",
-          "why": "Comprehensive attack-surface inventory mapped to ATLAS v5.1.0 with gap flags."
+          "why": "Comprehensive attack-surface inventory mapped to ATLAS v5.4.0 with gap flags."
         },
         {
           "skill": "ai-c2-detection",

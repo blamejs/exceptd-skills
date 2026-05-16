@@ -7,7 +7,7 @@
   "catalogs": {
     "atlas-ttps.json": {
       "path": "data/atlas-ttps.json",
-      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.1.0 (November 2025).",
+      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.4.0 (February 2026).",
       "schema_version": "1.0.0",
       "last_updated": "2026-05-15",
       "tlp": "CLEAR",

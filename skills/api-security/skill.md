@@ -121,7 +121,7 @@ APIs are now the integration substrate of every non-trivial system. The mid-2026
 
 ---
 
-## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.1.0)
+## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.4.0)
 
 | TTP ID | Technique | API Manifestation | CWE Root-Causes | Framework Coverage |
 |---|---|---|---|---|

@@ -732,16 +732,34 @@ function readJsonFile(filePath) {
 
 function readEvidence(evidenceFlag) {
   if (!evidenceFlag) return {};
-  if (evidenceFlag === "-") {
-    const buf = fs.readFileSync(0, "utf8"); // stdin
-    if (!buf.trim()) return {};
-    return JSON.parse(buf);
-  }
-  // v0.12.12: read enforces a max size to defend against an operator
-  // accidentally passing a multi-gigabyte file (binary, log, or
+  // v0.12.12: file-path branch enforces a max size to defend against an
+  // operator accidentally passing a multi-gigabyte file (binary, log, or
   // adversarial JSON bomb). 32 MB is well beyond any legitimate
   // submission and still drains in a single read on modern hardware.
+  // v0.12.35 (cycle 15 security F1): apply the SAME cap to the stdin
+  // branch. Pre-fix `--evidence -` was uncapped — an attacker piping
+  // multi-GB JSON would OOM the runner. Read in 1 MB chunks and bail
+  // at the limit rather than letting Node grow the heap unbounded.
   const MAX_EVIDENCE_BYTES = 32 * 1024 * 1024;
+  if (evidenceFlag === "-") {
+    // fs.readFileSync(0) does NOT respect a maxBuffer option, so we read
+    // incrementally to enforce the cap. Stdin is a pipe / fifo on every
+    // platform; reading until EOF in chunks is correct.
+    const chunks = [];
+    let total = 0;
+    const buf = Buffer.alloc(1024 * 1024);
+    let n;
+    while ((n = fs.readSync(0, buf, 0, buf.length, null)) > 0) {
+      total += n;
+      if (total > MAX_EVIDENCE_BYTES) {
+        throw new Error(`evidence on stdin exceeds size limit: ${total}+ bytes > ${MAX_EVIDENCE_BYTES} byte limit. Pipe a smaller submission, or split into multiple playbook runs.`);
+      }
+      chunks.push(Buffer.from(buf.subarray(0, n)));
+    }
+    const text = Buffer.concat(chunks).toString("utf8");
+    if (!text.trim()) return {};
+    return JSON.parse(text);
+  }
   let stat;
   try { stat = fs.statSync(evidenceFlag); }
   catch (e) { throw new Error(`evidence path not readable: ${e.message}`); }

@@ -80,7 +80,7 @@ This skill's exceptions exist precisely because the framework language has not c
 
 ---
 
-## TTP Mapping (MITRE ATLAS v5.1.0 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)
 
 A granted exception does not remove the threat — it shifts the burden onto compensating controls. For each exception in this skill, the residual TTPs the compensating controls MUST still disrupt:
 
@@ -91,7 +91,7 @@ A granted exception does not remove the threat — it shifts the burden onto com
 | Exception 3 — Zero Trust Architecture Network Segmentation | T1021 (Remote Services), T1570 (Lateral Tool Transfer), T1078 (Valid Accounts), T1199 (Trusted Relationship) | Workload identity (SPIFFE/SPIRE), per-request mTLS, device-posture verification, east-west behavioral analytics |
 | Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, network-layer isolation if no live patch available, scheduled reboot window |
 
-The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v5.1.0, November 2025) supplemented by ATT&CK Enterprise. Per Hard Rule #4, no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
+The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v5.4.0, February 2026) supplemented by ATT&CK Enterprise. Per Hard Rule #4, no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
 
 ---
 
