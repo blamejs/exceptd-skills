@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.12.31 — 2026-05-15
+
+CLI ergonomics + 30-day CVE intake from the cycle 11 audit. Closes a silent-misrouting bug in the CI gate and adds six high-impact CVEs that landed on CISA KEV between 2026-04-15 and 2026-05-15.
+
+### Bugs
+
+**`exceptd ci <playbook>` no longer silently runs the wrong playbook.** Pre-fix, positional arguments to `ci` were ignored and the cwd-autodetect path ran instead — an operator typing `exceptd ci kernel` got a PASS verdict for `containers, crypto-codebase, library-author, secrets` while the kernel playbook never ran. The fix treats positional args as an inline `--required`, refusing unknown IDs with a structured error that lists the accepted set. New `tests/ci-positional-args.test.js` pins the contract with exact-array assertions on `playbooks_run`.
+
+**`run` preflight refusal now points operators at `--evidence`.** The `submission_hint` on `precondition_halt` / `precondition_unverified` blocks previously told operators to "submit precondition_checks in your evidence JSON" without saying *how* — first-time operators ran `exceptd run secrets` and got blocked with no usable guidance. Hint now reads "Pass via --evidence <file.json> or pipe to stdin with --evidence -."
+
+**`exceptd --help` text corrected.** Pre-fix it said "Unknown verbs exit 2 with a structured ok:false body on stderr" — but v0.12.29 split unknown-command refusals to exit 10 (`EXIT_CODES.UNKNOWN_COMMAND`). Help text now matches runtime: "Unknown verbs exit 10 (UNKNOWN_COMMAND)... Exit 2 means a verb ran and detected an escalation-worthy finding (DETECTED_ESCALATE)."
+
+### Features
+
+**Six new CVEs in the catalog**, all CISA-KEV-listed in the last 30 days. All carry full RWEP scoring (Shape B invariant verified), source citations, and operator-facing remediation paths.
+
+| CVE | What | KEV date | RWEP |
+|---|---|---|---|
+| CVE-2026-0300 | Palo Alto PAN-OS User-ID Authentication Portal unauth root RCE (PA-Series + VM-Series). Patch landed 2026-05-13. | 2026-05-06 | 73 |
+| CVE-2026-39987 | Marimo Python notebook pre-auth RCE via missing auth on `/terminal/ws`. AI/ML notebook attack surface. Weaponized into NKAbuse blockchain botnet via HuggingFace. | 2026-04-23 | 62 |
+| CVE-2026-6973 | Ivanti EPMM authenticated-admin RCE on on-prem MDM control plane. 3-day federal SLA. | 2026-05-07 | 62 |
+| CVE-2026-42897 | Microsoft Exchange OWA stored XSS / spoofing zero-day. **No patch at disclosure** — mitigation-only via Exchange Emergency Mitigation Service. | 2026-05-15 | 93 |
+| CVE-2026-32202 | Microsoft Windows Shell LNK protection-mechanism failure. Active APT28 (Fancy Bear) exploitation; chains with CVE-2026-21513. | 2026-04-28 | 85 |
+| CVE-2026-33825 | Microsoft Defender "BlueHammer" race-condition LPE → SYSTEM. Public exploit released before patch (true zero-day). | 2026-04-22 | 68 |
+
+**`kev_scope_note` field on supply-chain-class entries.** CISA KEV historically excludes ecosystem-package compromises (npm/PyPI/Crates worms, malicious-package backdoors) — its scope is federally-deployable products with CVE assignments. The Mini Shai-Hulud parent (CVE-2026-45321) and TanStack variant (MAL-2026-TANSTACK-MINI) are NOT listed in KEV despite confirmed in-the-wild exploitation. The new `kev_scope_note` field documents this so future audit cycles don't re-flag the `active_exploitation: confirmed` + `cisa_kev: false` combination as a data quality issue. Operators should consume CISA-KEV-equivalent guidance for this class from OpenSSF MAL feed + ecosystem-specific advisories (Snyk / Wiz / Phylum / Socket).
+
+### Internal
+
+- Catalog: 30 → 36 CVE entries. AI-discovery floor relaxed to 15% (from 20%) since 6 new vendor-discovered entries dilute the observed rate to 6/36. Ladder advances `[0.15, 0.20, 0.30, 0.40]` — prior rungs preserved.
+- Test count 1090 → 1094 (`tests/ci-positional-args.test.js` adds 4 pins on the F1 contract).
+- 14/14 predeploy gates green.
+
+
 ## 0.12.30 — 2026-05-15
 
 Catalog scoring honesty pass + diff-coverage gate tightening from the cycle 10 audit. Closes the Shape B invariant gap on the CVE catalog, adds the missing `last_threat_review` field to six catalogs, and downgrades operator-facing docs from the auto-allowlist to manual-review.

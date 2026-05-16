@@ -2154,6 +2154,102 @@
       "rfc_refs": []
     }
   },
+  "CVE-2026-0300": {
+    "name": "PAN-UID — Palo Alto Networks PAN-OS User-ID Authentication Portal RCE",
+    "rwep": 73,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-39987": {
+    "name": "Marimo Python Notebook Pre-Auth WebSocket Terminal RCE",
+    "rwep": 62,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-6973": {
+    "name": "Ivanti EPMM Authenticated-Admin RCE",
+    "rwep": 62,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-42897": {
+    "name": "Microsoft Exchange OWA Stored XSS / Spoofing Zero-Day",
+    "rwep": 93,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-32202": {
+    "name": "Microsoft Windows Shell LNK Mark-of-the-Web Bypass (APT28)",
+    "rwep": 85,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-33825": {
+    "name": "BlueHammer — Microsoft Defender File-Remediation TOCTOU LPE",
+    "rwep": 68,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-20": {
     "name": "Improper Input Validation",
     "category": "Validation",
