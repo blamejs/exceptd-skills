@@ -1832,5 +1832,113 @@
     "ai_discovery_source": "vendor_research",
     "ai_discovery_date": "2026-04-22",
     "ai_assist_factor": "low"
+  },
+  "MAL-2026-NODE-IPC-STEALER": {
+    "name": "node-ipc credential-stealer (expired-domain account-recovery compromise)",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Novel supply-chain account-recovery abuse via expired maintainer email domain. The `atlantis-software.net` domain — registered as the contact email for the legitimate node-ipc maintainer npm account — lapsed and was re-registered by an attacker on 2026-05-07 via Namecheap PrivateEmail. The attacker then invoked the npm password-reset flow; the reset link was delivered to the now-attacker-controlled mailbox; the attacker took over the publish-enabled account without ever holding a leaked credential. Three malicious versions (node-ipc 9.1.6, 9.2.3, 12.0.1) were published 2026-05-14 with an 80 KB obfuscated IIFE appended to `node-ipc.cjs`. The payload fires on every `require('node-ipc')` — NOT via a postinstall hook — so consumer-side `npm install --ignore-scripts` does NOT mitigate. Exfiltration covers AWS / GCP / Azure credentials, SSH private keys, Kubernetes kubeconfig, HashiCorp Vault tokens, Claude AI configs, and Kiro IDE configs via DNS TXT queries to an Azure-lookalike spoofed domain. Class: registry-side account-recovery abuse mediated by DNS lifecycle, distinct from token-compromise (Shai-Hulud) and typosquat-orphan-commit (elementary-data) precedents.",
+      "privileges_required": "downstream consumer runs `npm install` resolving to one of the three malicious versions; payload fires automatically on `require('node-ipc')`",
+      "complexity": "low for downstream consumers (automatic on require); low for the maintainer-account takeover itself (any attacker monitoring maintainer-email-domain expirations can reproduce)",
+      "ai_factor": "Not AI-discovered, not AI-built. The novelty is structural — expired-domain → npm password-reset → publish — not algorithmic."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "(1) Continuous WHOIS-expiry monitoring on the email domains of every critical-path package maintainer. (2) Registry-side mandatory MFA on publish-enabled maintainer accounts (npm policy gap as of 2026-05-15). (3) Lockfile pinning to versions published before 2026-05-14T00:00Z, combined with `npm ci` (which refuses lockfile drift) rather than `npm install`. (4) Registry-side hold-period on first-publish-from-recently-recovered-account (npm has no such control today).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "WHOIS-expiry monitoring is novel — no current standard treats expired-domain → account-recovery as a distinct supply-chain attack class. `--ignore-scripts` (the canonical npm-supply-chain mitigation since Shai-Hulud) does NOT mitigate this payload because it ships in the main module, not in a postinstall hook. Lockfile pinning works only if the lockfile predates 2026-05-14 AND `npm ci` is used."
+      },
+      "detection": {
+        "what_would_have_worked": "DNS-resolver telemetry on developer / CI hosts — the payload's DNS TXT exfiltration channel is invisible to HTTP egress filtering but recordable at any DNS resolver (Resolved, Cloudflare DNS, internal Unbound). File-read telemetry on credential-store paths (~/.aws/credentials, ~/.ssh/id_*, ~/.kube/config, ~/.vault-token, ~/.config/Claude/, ~/.kiro/) within the lifetime of a Node process is a near-deterministic IoC for any credential-stealer in the Node ecosystem.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "DNS-layer telemetry is the only channel that proves successful exfiltration; HTTP-egress monitoring will miss this class entirely. Most developer endpoints and CI runners do not retain DNS logs."
+      },
+      "response": {
+        "what_would_have_worked": "npm yanked the three malicious versions on 2026-05-14. Full credential rotation for every account whose material was reachable from any host that resolved a malicious version during the exposure window — AWS access keys, GCP service-account keys, Azure tokens, SSH private keys, kubeconfig, Vault tokens. Lockfile audit + republication of any downstream package the affected host had npm-publish rights on.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Yank closes new consumer exposure but does not retroactively un-harvest credentials already exfiltrated via DNS. The DNS exfil channel is one-shot; rotation is the only operational response."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Reused-OSS-component control assumes maintainer-account integrity; does not address maintainer-email-domain expiry as a supply-chain risk class."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SBOM requirement does not address freshness-of-published-version OR maintainer-account-recovery integrity — pinning to a malicious version is SBOM-compliant."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Generic supply chain controls without npm-ecosystem-specific guidance (maintainer-domain-expiry monitoring, registry-account MFA enforcement, main-module-vs-postinstall payload distinction)."
+      },
+      "SLSA-v1.0-Build-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Build provenance attestations assert who built the artifact, not whether `who` is still the legitimate maintainer post-account-recovery."
+      },
+      "NIST-800-53-IA-5-Federated": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authenticator-management control covers operator-side credentials only; does not extend to upstream-maintainer-account recovery flow on third-party package registries."
+      },
+      "ANY-FRAMEWORK": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No current standard treats `expired maintainer email domain → registry-side account recovery → malicious publish` as a distinct supply-chain attack class. NEW-CTRL-047 is the headline novel control this lesson generates."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-047",
+        "name": "PACKAGE-MAINTAINER-DOMAIN-EXPIRY-MONITORING",
+        "description": "Every organization that depends on a critical-path open-source package must continuously monitor the WHOIS expiry date of the email domain associated with each upstream maintainer account on npm / PyPI / Crates / RubyGems. Alert on any maintainer-domain WHOIS expiry within 90 days. Concurrently, require dual-factor account recovery on the consuming organization's own registry accounts (no email-only password reset) — and treat the absence of registry-enforced MFA on upstream maintainers as a supply-chain risk to be tracked in the SBOM / VEX surface.",
+        "evidence": "MAL-2026-NODE-IPC-STEALER — the `atlantis-software.net` domain lapsed on or before 2026-05-07 and was re-registered by the attacker via Namecheap PrivateEmail; npm's email-based password-reset flow then delivered publish rights to the attacker without any credential leak. No current framework treats expired-domain → account-recovery as a distinct supply-chain attack class.",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "NIS2-Art21-supply-chain",
+          "EU-CRA-Art13",
+          "NIST-800-53-IA-5-Federated",
+          "ANY-FRAMEWORK"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-048",
+        "name": "NPM-MAINTAINER-MFA-ENFORCEMENT",
+        "description": "npm (and equivalent registries) must enforce mandatory MFA on publish-enabled maintainer accounts for any package above a download-volume threshold (e.g. >= 100K weekly downloads). Pending registry-side enforcement, consuming organizations should require — via SLA or contractual surface — that critical-path maintainers attest to MFA-on-publish, and refuse to upgrade packages where attestation is absent.",
+        "evidence": "MAL-2026-NODE-IPC-STEALER — node-ipc carries approximately 3.35M monthly downloads; npm did not require MFA on the publish-enabled maintainer account at compromise time, so the password-reset-via-recovered-email flow succeeded without a second factor.",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "NIST-800-53-IA-5-Federated",
+          "NIS2-Art21-supply-chain"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-049",
+        "name": "LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT",
+        "description": "CI pipelines must use `npm ci` (or `pnpm install --frozen-lockfile`, `yarn install --immutable`) rather than `npm install`. The strict-lockfile command refuses to resolve any version not already pinned in the lockfile, catching a maintainer-swap-induced version drift before the malicious tarball is fetched. Additionally, verify tarball integrity hashes against a known-good cache snapshot at CI boot for every dependency in critical-path packages.",
+        "evidence": "MAL-2026-NODE-IPC-STEALER — consumers whose lockfile predated 2026-05-14 were safe only if they used a strict-lockfile install command; `npm install` would have happily upgraded within the declared semver range and pulled the malicious version. The strict-lockfile gate catches the swap even after a successful registry-side publish.",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "EU-CRA-Art13",
+          "SLSA-v1.0-Build-L3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 95,
+      "basis": "Maintainer-domain-expiry monitoring is not a recognized control in any major framework; near-100% of audit-passing organizations have zero coverage of this risk class. Even organizations with strong npm hygiene (lockfile pinning, `npm ci`, `--ignore-scripts` defaults) are exposed because the payload ships in the main module — `--ignore-scripts` does not mitigate, and lockfile pinning only helps if the lockfile predates the malicious publish AND the consumer uses a strict-lockfile install command.",
+      "theater_pattern": "maintainer_account_integrity_assumed_without_evidence"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-14",
+    "ai_assist_factor": "low"
   }
 }

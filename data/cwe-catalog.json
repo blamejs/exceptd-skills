@@ -1127,7 +1127,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "MAL-2026-3083"
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -1413,7 +1414,9 @@
       "sector-federal-government",
       "supply-chain-integrity"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-NODE-IPC-STEALER"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
       "ISO-27001-2022-A.8.30"
@@ -1652,7 +1655,9 @@
       "sector-federal-government",
       "supply-chain-integrity"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-NODE-IPC-STEALER"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
       "ISO-27001-2022-A.5.21",

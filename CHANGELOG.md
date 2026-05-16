@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.12.33 — 2026-05-15
+
+Same-day CVE intake (node-ipc supply-chain compromise) + cycle 13 audit fixes. Closes the long-standing `cred-stores` skill-vs-playbook semantic confusion that's surfaced in every audit since cycle 9.
+
+### Features
+
+**`MAL-2026-NODE-IPC-STEALER` — npm node-ipc supply-chain compromise (2026-05-14).** Three malicious versions (`9.1.6`, `9.2.3`, `12.0.1`) published by `atiertant`. Novel attack class: not credential theft, not typosquat, not lifecycle-hook worm — the attacker re-registered the maintainer's expired email domain (`atlantis-software.net`, expired and grabbed via Namecheap PrivateEmail on 2026-05-07) and abused npm's email-based password-reset flow to gain publish rights. 80 KB obfuscated IIFE in `node-ipc.cjs` fires on every `require()` (no hooks needed) and exfiltrates AWS / GCP / Azure / SSH / Kubernetes / Vault / Claude AI / Kiro IDE credentials via DNS TXT queries to an Azure-lookalike spoofed domain. 3.35M monthly downloads. Carries `kev_scope_note` per the cycle 11 ecosystem-package CISA-KEV-scope precedent. RWEP 43.
+
+**Three new control requirements in `zeroday-lessons`** capture the structural lesson: **NEW-CTRL-047 PACKAGE-MAINTAINER-DOMAIN-EXPIRY-MONITORING** (continuous WHOIS expiry monitoring on every critical-path maintainer email domain + dual-factor account recovery); **NEW-CTRL-048 NPM-MAINTAINER-MFA-ENFORCEMENT** (registry-side mandatory MFA on publish-enabled accounts); **NEW-CTRL-049 LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT** (`npm ci` / `--frozen-lockfile` / `--immutable` catches the swap even after a successful publish — `--ignore-scripts` does NOT mitigate because the payload ships in the main module, not a postinstall hook).
+
+**`D3-EFA` (Executable File Analysis) added to D3FEND catalog.** `sector-telecom` skill cited it but the entry didn't exist — cycle 13 finding. Distinct from `D3-EAL` (Executable Allowlisting): EAL blocks at execute-time; EFA inspects bytes at file-write / image-pull / artifact-fetch time and gates the allowlist decision itself.
+
+**CLI envelope-shape contract tests.** `tests/cli-output-envelope-shape.test.js` pins the EXACT top-level key set on `attest list --json`, `attest verify --json` (error path), and `version`. A contributor adding a new top-level field to these verbs now gets a forcing-function test failure that requires updating the contract. Expanded coverage to `run` / `ci` / `discover` / `brief` / `doctor` / `watchlist` deferred to future cycles as their shapes stabilize.
+
+### Bugs
+
+**`cred-stores` skill-vs-playbook semantic finally cleaned up.** Cycles 9, 12, and 13 all flagged that the 3 IR playbooks and 3 IR skills referenced `cred-stores` in `skill_preload` / `skill_chain` / Hand-Off sections as if it were a skill — but it's actually a playbook. Operators (and any tooling resolving these refs against `manifest.json.skills`) failed. Fixes: removed `cred-stores` from `data/playbooks/{idp-incident,cloud-iam-incident}.json` `skill_preload` + `skill_chain` (hand-off is via `_meta.feeds_into`, which was already present); annotated `cred-stores` / `framework` references in `skills/{idp-incident-response,cloud-iam-incident,ransomware-response}/skill.md` Hand-Off sections as *(playbook chain, not a skill)* with the explicit note that hand-off is via the playbook chain, not a skill load. Predeploy playbook validator now warning-free (was 6 warnings every release).
+
+### Internal
+
+- CVE catalog 36 → 37 entries; zeroday-lessons 21 → 22 entries.
+- AI-discovery rate stays at 16.2% (one more vendor/ecosystem-discovered entry dilutes the observed rate; floor remains 0.15).
+- D3FEND catalog 28 → 29 entries.
+- `tests/v0_12_33-node-ipc-coverage.test.js` pins MAL-2026-NODE-IPC-STEALER entry shape (iocs object with ≥1 category, kev_scope_note presence, NEW-CTRL-047 in lessons).
+- Reverse-ref regen: 3 CWE entries updated with the new MAL-* CVE evidence; 1 D3FEND skill_referencing prune (sector-telecom now correctly anchored against D3-EFA).
+- Test count 1109 → 1119.
+- 14/14 predeploy gates green.
+
+
 ## 0.12.32 — 2026-05-15
 
 Cycle 11 CLI polish + cycle 12 catalog hardening. The headline closes a silent regression where the 6 CVEs advertised by v0.12.31 were shipped as `_draft: true` and therefore invisible to default `cross-ref-api` queries — operators running `exceptd` against Exchange would have gotten a clean bill on CVE-2026-42897.

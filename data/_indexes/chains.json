@@ -3041,6 +3041,22 @@
       ]
     }
   },
+  "MAL-2026-NODE-IPC-STEALER": {
+    "name": "node-ipc credential-stealer (expired-domain account-recovery compromise)",
+    "rwep": 43,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-20": {
     "name": "Improper Input Validation",
     "category": "Validation",

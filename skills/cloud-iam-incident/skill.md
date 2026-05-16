@@ -402,7 +402,7 @@ Per AGENTS.md optional 8th section. Maps cloud-IAM offensive findings to MITRE D
 After producing the cloud-IAM incident assessment, chain into the following skills.
 
 - **`cloud-security`** — for CSP-specific IAM construct inventory, posture-tool integration, and shared-responsibility framing. This skill scopes the IAM-incident-response workflow; `cloud-security` covers the broader cloud-posture surface.
-- **`cred-stores`** — for KMS / Cloud KMS / Key Vault posture, access-key rotation hygiene, and any compromised principal whose blast radius >= 4.
+- **`cred-stores`** *(playbook chain, not a skill)* — `_meta.feeds_into` on this playbook routes blast-radius >= 4 findings into the `cred-stores` playbook for KMS / Cloud KMS / Key Vault posture and access-key rotation hygiene. Hand-off is via the playbook chain, not a skill load.
 - **`identity-assurance`** — for AAL / IAL / FAL framing on human-principal MFA posture, federated-identity assurance levels, and step-up authentication coverage on cloud admin actions.
 - **`framework-gap-analysis`** — for the per-jurisdiction reconciliation called for in Output Format "Cross-Jurisdiction Framework Gap Summary."
 - **`compliance-theater`** — to extend the five theater tests above with general-purpose theater detection across the wider GRC posture.

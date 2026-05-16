@@ -347,7 +347,6 @@
       },
       "skill_preload": [
         "cloud-security",
-        "cred-stores",
         "incident-response-playbook",
         "identity-assurance",
         "framework-gap-analysis",
@@ -366,11 +365,6 @@
         {
           "skill": "cloud-security",
           "purpose": "Cloud-provider-specific IAM construct inventory and trust-policy hygiene assessment (AWS IAM + STS, GCP IAM + Workload Identity Federation, Azure AD + managed identities).",
-          "required": true
-        },
-        {
-          "skill": "cred-stores",
-          "purpose": "Cloud-provider key-store posture (KMS / Cloud KMS / Key Vault) and access-key rotation hygiene; cross-walk with credential-store playbook for any compromised principal whose blast radius >= 4.",
           "required": true
         },
         {
