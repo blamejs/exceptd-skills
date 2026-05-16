@@ -160,6 +160,49 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
   "framework-gap", "framework-gap-analysis",
 ]);
 
+// Cycle 17 P2 S13 (v0.12.37): Levenshtein-1 did-you-mean for unknown verbs.
+// Catches common single-char / transposition typos against the COMMANDS
+// table without false-positive flood: only suggests verbs within distance
+// 1 (one insert / delete / substitute / transpose). For typed-distance 2+
+// the operator probably mistyped intent and `exceptd help` is the right
+// route. The function is exported via the closure into the dispatch
+// site; no module.exports — bin/exceptd.js is the CLI entry, not a library.
+function levenshtein1(a, b) {
+  if (a === b) return 0;
+  const la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > 1) return 2; // short-circuit: can't be ≤ 1
+  // single-edit distance check, early-out at first 2nd mismatch
+  let i = 0, j = 0, edits = 0;
+  while (i < la && j < lb) {
+    if (a.charCodeAt(i) !== b.charCodeAt(j)) {
+      if (++edits > 1) return 2;
+      // adjacent-swap transposition (e.g. "discoer" ↔ "discover") counts
+      // as a single edit operationally, even though pure-Levenshtein
+      // distance would be 2. Detect + treat as 1.
+      if (la === lb && i + 1 < la && j + 1 < lb
+          && a.charCodeAt(i) === b.charCodeAt(j + 1)
+          && a.charCodeAt(i + 1) === b.charCodeAt(j)) {
+        i += 2; j += 2;
+        continue;
+      }
+      if (la > lb) i++;
+      else if (la < lb) j++;
+      else { i++; j++; }
+    } else { i++; j++; }
+  }
+  edits += (la - i) + (lb - j);
+  return edits <= 1 ? edits : 2;
+}
+
+function suggestVerb(cmd, known) {
+  if (!cmd || typeof cmd !== 'string') return [];
+  const matches = [];
+  for (const v of known) {
+    if (levenshtein1(cmd, v) <= 1) matches.push(v);
+  }
+  return matches.sort();
+}
+
 // Seven-phase playbook verbs handled in-process (no subprocess dispatch).
 // v0.11.0 introduces: brief (collapses plan/govern/direct/look), discover (scan + dispatch),
 // doctor (currency + verify + validate-cves + validate-rfcs), ci (CI gate),
@@ -549,7 +592,26 @@ function main() {
     // so the stderr JSON drains before teardown; promote the exit code to
     // UNKNOWN_COMMAND (10) afterwards. Cycle 9 split this away from
     // DETECTED_ESCALATE (2) — the two semantics had collided since v0.12.24.
-    emitError(`unknown command "${cmd}"`, { hint: "Run `exceptd help` for the list of verbs.", verb: cmd });
+    //
+    // Cycle 17 P2 S13 (v0.12.37): add a did-you-mean suggestion when the
+    // unknown verb is within Levenshtein-1 of a real verb (catches the
+    // common single-char typos: `discoer` → `discover`, `attst` → `attest`,
+    // `valdiate-cves` → `validate-cves`).
+    // Union of every verb the dispatcher knows: standalone COMMANDS (scan,
+    // currency, build-indexes, etc.), in-process PLAYBOOK_VERBS (run, ci,
+    // discover, attest, ...), and ORCHESTRATOR_PASSTHROUGH. Strip the
+    // flag-aliases (--version/-v/--help/-h) which already get caught above
+    // the dispatch path.
+    const known = [
+      ...Object.keys(COMMANDS),
+      ...PLAYBOOK_VERBS,
+      ...ORCHESTRATOR_PASSTHROUGH,
+    ].filter((v) => v && !v.startsWith('-'));
+    const dym = suggestVerb(cmd, known);
+    const hint = dym.length > 0
+      ? `Did you mean \`${dym.join("` or `")}\`? Run \`exceptd help\` for the full verb list.`
+      : "Run `exceptd help` for the list of verbs.";
+    emitError(`unknown command "${cmd}"`, { hint, verb: cmd, did_you_mean: dym });
     process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
     return;
   }
@@ -757,7 +819,22 @@ function readEvidence(evidenceFlag) {
       chunks.push(Buffer.from(buf.subarray(0, n)));
     }
     const text = Buffer.concat(chunks).toString("utf8");
-    if (!text.trim()) return {};
+    if (!text.trim()) {
+      // Cycle 17 P1 S4 (v0.12.37): pre-fix empty stdin silently became {}
+      // — operator got a "successful" run on no evidence with no warning,
+      // and the evidence_hash for `{}` is deterministic so subsequent
+      // runs didn't even reveal the mistake. Emit a stderr nudge so the
+      // operator at least sees that stdin was empty when they almost
+      // certainly meant to pipe something. Don't change exit semantics;
+      // the empty-payload path is still legitimately useful for posture-
+      // only playbooks (govern + direct + look-only walks).
+      process.stderr.write(
+        `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
+        `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
+        `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
+      );
+      return {};
+    }
     return JSON.parse(text);
   }
   let stat;

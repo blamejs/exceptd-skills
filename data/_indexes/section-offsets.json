@@ -2039,7 +2039,7 @@
     },
     "supply-chain-integrity": {
       "path": "skills/supply-chain-integrity/skill.md",
-      "total_bytes": 40261,
+      "total_bytes": 40250,
       "total_lines": 325,
       "frontmatter": {
         "line_start": 1,
@@ -2080,16 +2080,16 @@
           "normalized_name": "exploit-availability-matrix",
           "line": 161,
           "byte_start": 21416,
-          "byte_end": 25997,
-          "bytes": 4581,
+          "byte_end": 25986,
+          "bytes": 4570,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 178,
-          "byte_start": 25997,
-          "byte_end": 33454,
+          "byte_start": 25986,
+          "byte_end": 33443,
           "bytes": 7457,
           "h3_count": 4
         },
@@ -2097,8 +2097,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 252,
-          "byte_start": 33454,
-          "byte_end": 35556,
+          "byte_start": 33443,
+          "byte_end": 35545,
           "bytes": 2102,
           "h3_count": 9
         },
@@ -2106,8 +2106,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 292,
-          "byte_start": 35556,
-          "byte_end": 37844,
+          "byte_start": 35545,
+          "byte_end": 37833,
           "bytes": 2288,
           "h3_count": 0
         },
@@ -2115,8 +2115,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 308,
-          "byte_start": 37844,
-          "byte_end": 40261,
+          "byte_start": 37833,
+          "byte_end": 40250,
           "bytes": 2417,
           "h3_count": 0
         }
@@ -2979,7 +2979,7 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "total_bytes": 44168,
+      "total_bytes": 44157,
       "total_lines": 306,
       "frontmatter": {
         "line_start": 1,
@@ -3020,16 +3020,16 @@
           "normalized_name": "exploit-availability-matrix",
           "line": 137,
           "byte_start": 20115,
-          "byte_end": 26311,
-          "bytes": 6196,
+          "byte_end": 26300,
+          "bytes": 6185,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 156,
-          "byte_start": 26311,
-          "byte_end": 34351,
+          "byte_start": 26300,
+          "byte_end": 34340,
           "bytes": 8040,
           "h3_count": 4
         },
@@ -3037,8 +3037,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 213,
-          "byte_start": 34351,
-          "byte_end": 36839,
+          "byte_start": 34340,
+          "byte_end": 36828,
           "bytes": 2488,
           "h3_count": 10
         },
@@ -3046,8 +3046,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 267,
-          "byte_start": 36839,
-          "byte_end": 39707,
+          "byte_start": 36828,
+          "byte_end": 39696,
           "bytes": 2868,
           "h3_count": 0
         },
@@ -3055,8 +3055,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 281,
-          "byte_start": 39707,
-          "byte_end": 42707,
+          "byte_start": 39696,
+          "byte_end": 42696,
           "bytes": 3000,
           "h3_count": 0
         },
@@ -3064,8 +3064,8 @@
           "name": "Hand-Off",
           "normalized_name": "hand-off",
           "line": 295,
-          "byte_start": 42707,
-          "byte_end": 44168,
+          "byte_start": 42696,
+          "byte_end": 44157,
           "bytes": 1461,
           "h3_count": 0
         }
@@ -4013,7 +4013,7 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "total_bytes": 44569,
+      "total_bytes": 44562,
       "total_lines": 420,
       "frontmatter": {
         "line_start": 1,
@@ -4054,16 +4054,16 @@
           "normalized_name": "exploit-availability-matrix",
           "line": 167,
           "byte_start": 19519,
-          "byte_end": 22898,
-          "bytes": 3379,
+          "byte_end": 22891,
+          "bytes": 3372,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 189,
-          "byte_start": 22898,
-          "byte_end": 30523,
+          "byte_start": 22891,
+          "byte_end": 30516,
           "bytes": 7625,
           "h3_count": 12
         },
@@ -4071,8 +4071,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 279,
-          "byte_start": 30523,
-          "byte_end": 32721,
+          "byte_start": 30516,
+          "byte_end": 32714,
           "bytes": 2198,
           "h3_count": 15
         },
@@ -4080,8 +4080,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 342,
-          "byte_start": 32721,
-          "byte_end": 37320,
+          "byte_start": 32714,
+          "byte_end": 37313,
           "bytes": 4599,
           "h3_count": 0
         },
@@ -4089,8 +4089,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 378,
-          "byte_start": 37320,
-          "byte_end": 41396,
+          "byte_start": 37313,
+          "byte_end": 41389,
           "bytes": 4076,
           "h3_count": 0
         },
@@ -4098,8 +4098,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 400,
-          "byte_start": 41396,
-          "byte_end": 44569,
+          "byte_start": 41389,
+          "byte_end": 44562,
           "bytes": 3173,
           "h3_count": 0
         }

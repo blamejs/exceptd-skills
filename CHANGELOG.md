@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.12.37 — 2026-05-16
+
+Cycle 17 UX + cross-skill consistency pass. Two CLI UX gaps closed (empty-stdin nudge, did-you-mean for typos), one operator-misleading factual error fixed in 3 skills (CVE-2024-3094 claim drift), and one cosmetic naming inconsistency cleaned up.
+
+### Bugs
+
+**`--evidence -` empty-stdin nudge.** Cycle 15 + cycle 17 audits both flagged this: when an operator pipes nothing to `--evidence -`, the runner silently treated it as `{}` and proceeded with a "successful" run on no evidence. Pre-fix the only signal was a deterministic `evidence_hash: 572a0e...` that meant nothing to a first-time operator. Now stderr emits an informational note pointing at `exceptd brief <playbook>` for the expected evidence shape; the run still proceeds (legitimate posture-only-walk use case preserved) but the operator at least sees the empty-stdin signal.
+
+**Did-you-mean for unknown verbs.** Pre-fix `exceptd discoer` exited 10 with the generic "Run `exceptd help`" hint. Now the dispatcher runs a Levenshtein-1 check against the union of `COMMANDS` + `PLAYBOOK_VERBS` + `ORCHESTRATOR_PASSTHROUGH` (includes transposition detection so `disocver` → `discover`). Suggestion surfaces in both the human hint string and a new `did_you_mean[]` JSON field for tooling consumers. Distance >1 still returns the generic hint with `did_you_mean: []` — no false-positive flood.
+
+**CVE-2024-3094 (xz-utils) operator-misleading claims.** Cycle 17 audit A surfaced 3 skill bodies that contradicted each other and the catalog:
+- `supply-chain-integrity` skill said "not in current `data/cve-catalog.json` — pre-scope incident" — false, the entry has been in the catalog with RWEP 70.
+- `sector-federal-government` skill same wording — false.
+- `cloud-iam-incident` skill table row quoted RWEP 95 / `ai_discovered: Partially` / `active_exploitation: Confirmed` — catalog says RWEP 70 / `ai_discovered: false` / `active_exploitation: suspected`.
+All 3 corrected to match catalog ground truth (RWEP 70, KEV 2024-04-03, `active_exploitation: suspected`, `ai_discovered: false`). Operator running `exceptd dispatch` against an xz-affected estate now gets one consistent story across all 3 skills.
+
+**Volt Typhoon hyphenation drift.** `ot-ics-security` and `sector-energy` used `Volt-Typhoon-aligned` / `Volt-Typhoon-style`; the rest of the catalog uses unhyphenated `Volt Typhoon`. Standardized to the unhyphenated form. New regression test refuses any future re-introduction of the hyphenated form in any skill body.
+
+### Internal
+
+- 3 cycle 17 audit agents dispatched (cross-skill consistency, data_deps integrity, error-path UX). All 3 returned successfully — first cycle since 14 without rate-limit issues.
+- Cycle 17 B (data_deps integrity) surfaced 35 skills declaring incomplete `data_deps` arrays vs body content references. Investigation found `data_deps` is only consumed by `lib/lint-skills.js` for file-existence validation, not by the runner for preload gating (all catalogs load on-demand via `lib/cross-ref-api.js` mtime-keyed cache). Cosmetic correctness issue; deferred to v0.13 bulk-fix when the schema's purpose can be clarified.
+- 8 new tests in `tests/cycle17-ux-fixes.test.js`. Test count 1136 → 1144. 14/14 predeploy gates green.
+
+
 ## 0.12.36 — 2026-05-16
 
 Hard Rule forcing-function coverage pass. Three of the eight AGENTS.md Hard Rules had no binding test — they were policy-only and easy to violate in future PRs without CI catching it. v0.12.36 closes those gaps and adds a cross-format bundle consistency contract.

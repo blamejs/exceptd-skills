@@ -170,7 +170,7 @@ The playbook `cloud-iam-incident` operationalises this skill into a seven-phase 
 |---|---|---|---|---|---|---|---|---|
 | CVE-2024-1709 ScreenConnect auth bypass (cloud-runtime adjacent) | 10.0 | 95 | Yes | Yes | n/a | Confirmed mass exploitation | Vendor patch | EDR + identity-protection |
 | CVE-2024-21626 runc container escape | 8.6 | 88 | Yes | Yes | n/a | Confirmed | Vendor patch | Container-runtime telemetry |
-| CVE-2024-3094 xz-utils supply-chain backdoor | 10.0 | 95 | Yes | Yes | Partially | Confirmed | Vendor patch | SBOM-driven detection |
+| CVE-2024-3094 xz-utils supply-chain backdoor | 10.0 | 70 | Yes | Yes | No | Suspected | Vendor patch | SBOM-driven detection |
 | CVE-2026-20182 Cisco SD-WAN cloud-edge | 9.1 | 90 | Yes | Yes | Yes | Confirmed | Vendor patch | Network telemetry |
 | CVE-2026-30623 Anthropic MCP STDIO (cloud-hosted MCP servers) | 8.4 | 87 | Pending | Yes | Yes | Suspected | Vendor patch + config hardening | MCP-aware telemetry |
 | Leaked access key in public repo (Snowflake-AA24-class) | n/a (config) | high (exploited within minutes) | n/a | Documented at scale | n/a | Confirmed mass exploitation | Configuration hardening + key rotation + scraper-bot countermeasures | GitGuardian / Trufflehog firehose; behavioural detection on CreateAccessKey + key-use anomaly |
