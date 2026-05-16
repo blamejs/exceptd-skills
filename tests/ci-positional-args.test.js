@@ -63,6 +63,27 @@ test('ci <unknown-playbook> refuses with structured error + exit 1, listing know
   assert.equal(err.accepted.length > 10, true, 'accepted list should include the full playbook catalog');
 });
 
+test('ci <playbook> + --scope/--all/--required refuses as ambiguous (codex P1 v0.12.31 follow-up)', () => {
+  // Pre-fix: `exceptd ci kernel --scope code` silently dropped `kernel`
+  // and ran code-scope. The guard `!args.all && !args.scope` allowed
+  // the positional to be ignored entirely. Now any selector combination
+  // is refused with a structured error listing the conflict.
+  const cases = [
+    ['ci', 'kernel', '--scope', 'code'],
+    ['ci', 'kernel', '--all'],
+    ['ci', 'kernel', '--required', 'cred-stores'],
+  ];
+  for (const args of cases) {
+    const r = cli(args);
+    assert.equal(r.status, 1, `${args.join(' ')} must exit 1; got ${r.status}`);
+    const err = tryJson(r.stderr);
+    assert.ok(err, `stderr must be parseable JSON for ${args.join(' ')}`);
+    assert.equal(err.ok, false);
+    assert.equal(Array.isArray(err.conflicting_flags), true);
+    assert.equal(err.conflicting_flags.length >= 1, true);
+  }
+});
+
 test('ci --required <list> still works (existing contract preserved)', () => {
   const r = cli(['ci', '--required', 'kernel,cred-stores']);
   const body = tryJson(r.stdout);
