@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.12.30 — 2026-05-15
+
+Catalog scoring honesty pass + diff-coverage gate tightening from the cycle 10 audit. Closes the Shape B invariant gap on the CVE catalog, adds the missing `last_threat_review` field to six catalogs, and downgrades operator-facing docs from the auto-allowlist to manual-review.
+
+### Features
+
+**Shape B invariant enforced on every CVE.** `lib/scoring.js` documents that `Σ Object.values(rwep_factors) === rwep_score` is an invariant on every catalog entry, but the existing `validate()` function never enforced it — it computed via `scoreCustom()` (clamps `blast_radius` to 30, uses canonical weights) which masked dishonest factor blocks as long as the stored score happened to match the clamped formula. Fourteen entries had non-canonical factor values that summed to a different number than the stored score (CVE-2026-GTIG-AI-2FA, CVE-2026-42945, CVE-2024-3094, CVE-2024-21626, CVE-2023-3519, CVE-2026-20182, CVE-2024-40635, CVE-2025-12686, CVE-2025-62847, CVE-2025-62848, CVE-2025-62849, CVE-2025-59389, MAL-2026-TANSTACK-MINI, MAL-2026-ANTHROPIC-MCP-STDIO). All canonicalized — factor weights now derived from the operational fields (`cisa_kev`, `poc_available`, `ai_discovered`, `active_exploitation`, `blast_radius`, `patch_available`, `live_patch_available`, `patch_required_reboot`) via `lib/scoring.js` `RWEP_WEIGHTS` + `ACTIVE_EXPLOITATION_LADDER`. Where `blast_radius` exceeded the 30 cap (4 entries had values of 40), the value was clamped, which adjusted seven stored `rwep_score` values by ±5; each carries a `rwep_correction_note` documenting the delta. New `tests/cve-rwep-shape-b-invariant.test.js` blocks future drift with an exact-delta assertion.
+
+**Operator-facing docs downgraded from auto-allowlist to manual-review.** Cycle 9 P3 finding: `CHANGELOG.md`, `README.md`, `SECURITY.md`, `MIGRATING.md`, and `AGENTS.md` were in the diff-coverage gate's `DOCS_ALWAYS_GREEN` set — a PR could land arbitrary edits to release notes, install instructions, security disclosure policy, or AI-assistant ground truth without triggering any reviewer signal. New `DOCS_MANUAL_REVIEW` set routes them to "manual-review" instead, surfacing the diff in the gate output. Contributor-only / mechanical files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `NOTICE`, `SUPPORT.md`, `.gitignore`, `.npmrc`, `.editorconfig`, `CLAUDE.md`) stay always-green.
+
+**`last_threat_review` mandatory on every catalog _meta.** Cycle 10 finding: `cve-catalog.json`, `cwe-catalog.json`, `d3fend-catalog.json`, `dlp-controls.json`, `rfc-references.json`, and `framework-control-gaps.json` carried only `last_updated` without the more specific `last_threat_review`. Hard Rule #8 makes per-catalog threat-review currency a release-blocker after a stated window; all six catalogs now carry the field. New `tests/threat-review-staleness.test.js` enforces presence + a 30-day staleness window between `manifest.threat_review_date` and every skill's `last_threat_review`.
+
+### Bugs
+
+- `CVE-2026-42208` `discovery_attribution_note` misattributed discovery to Sysdig Threat Research Team. The actual credited discoverer is Tencent YunDing Security Lab per the LiteLLM GHSA-r75f-5x8p-qvmc advisory; Sysdig published only post-disclosure exploitation telemetry. Attribution corrected; sources updated.
+
+### Internal
+
+- AI-discovery rate stays at 20% after cycle 10 deep-research pass (24 currently-false CVEs WebSearch'd; zero credible flips found). Methodology block updated: the 40% target reflects the broader 2025 zero-day population (Google Threat Intelligence Group), but the curated exceptd catalog is weighted toward Pwn2Own Ireland 2025 entries, historical anchors (CVE-2020-10148, CVE-2024-3094, etc.), and supply-chain incidents — none of which carry public AI-tool credit. Advancing the ladder from 20% → 30% → 40% will happen as the catalog rotates toward 2026 Big Sleep / AIxCC / GTIG-attributed entries; forcing flips on the current population would violate Hard Rule #1 (no speculation).
+
+
 ## 0.12.29 — 2026-05-15
 
 Catalog hygiene + pipeline integrity pass. Closes Hard Rule #1, #6, #7, and #8 gaps that had accumulated across the 2025-2026 catalog growth; tightens the SBOM + OpenVEX + exit-code surfaces.

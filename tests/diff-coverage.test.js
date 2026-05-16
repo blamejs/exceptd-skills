@@ -215,8 +215,11 @@ test("--json output shape matches contract", () => {
   assert.ok(Array.isArray(j.findings));
   assert.ok(Array.isArray(j.allowlisted));
   assert.ok(Array.isArray(j.manual_review));
-  // README.md must be allowlisted as docs.
-  assert.equal(j.allowlisted.some(a => a.file === "README.md" && a.reason === "docs"), true);
+  // Cycle 9 P3 F7 (v0.12.30): README.md downgraded from auto-allowlist
+  // ("docs") to "manual-review" so PR edits to operator-facing copy
+  // surface in the gate output. CONTRIBUTING.md and friends still
+  // categorize as "docs"; README/CHANGELOG/SECURITY/MIGRATING/AGENTS do not.
+  assert.equal(j.manual_review.some(a => a.file === "README.md" && a.reason === "manual-review"), true);
 });
 
 test("whitespace-only change is allowlisted", () => {

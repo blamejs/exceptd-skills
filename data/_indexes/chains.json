@@ -1836,7 +1836,7 @@
   },
   "CVE-2024-21626": {
     "name": "runc /proc/self/fd leak (Leaky Vessels)",
-    "rwep": 75,
+    "rwep": 80,
     "cvss": 8.6,
     "cisa_kev": true,
     "epss_score": 0.65,
@@ -1916,7 +1916,7 @@
   },
   "CVE-2023-3519": {
     "name": "Citrix NetScaler ADC/Gateway unauth RCE (CitrixBleed precursor)",
-    "rwep": 75,
+    "rwep": 80,
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.967,
@@ -2044,7 +2044,7 @@
   },
   "CVE-2025-12686": {
     "name": "Synology BeeStation unauth RCE (Pwn2Own Ireland 2025)",
-    "rwep": 50,
+    "rwep": 45,
     "cvss": 9.8,
     "cisa_kev": false,
     "epss_score": 0.04,
@@ -2060,7 +2060,7 @@
   },
   "CVE-2025-62847": {
     "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 1/3)",
-    "rwep": 45,
+    "rwep": 40,
     "cvss": 9.8,
     "cisa_kev": false,
     "epss_score": 0.03,
@@ -2076,7 +2076,7 @@
   },
   "CVE-2025-62848": {
     "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 2/3)",
-    "rwep": 45,
+    "rwep": 40,
     "cvss": 9.8,
     "cisa_kev": false,
     "epss_score": 0.03,
@@ -2092,7 +2092,7 @@
   },
   "CVE-2025-62849": {
     "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 3/3)",
-    "rwep": 40,
+    "rwep": 35,
     "cvss": 8.8,
     "cisa_kev": false,
     "epss_score": 0.02,
