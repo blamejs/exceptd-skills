@@ -1252,5 +1252,585 @@
     "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2024-01-31",
     "ai_assist_factor": "low"
+  },
+  "CVE-2026-0300": {
+    "name": "PAN-UID — Palo Alto PAN-OS User-ID Authentication Portal Pre-Auth RCE",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Pre-auth out-of-bounds write in the PAN-OS User-ID Authentication Portal request-parsing path on the firewall control plane. Any host that can reach the portal's HTTPS endpoint achieves unauth root RCE on the perimeter device — i.e. on the system whose entire job is to enforce trust boundaries.",
+      "privileges_required": "none — pre-authentication, network-reachable",
+      "complexity": "low — single crafted HTTPS request to the portal endpoint",
+      "ai_factor": "Not AI-discovered. Internal Palo Alto PSIRT proactive audit; no AI-tool credit in the vendor advisory."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Restrict User-ID Authentication Portal exposure to management-network ranges only; disable the portal on perimeter interfaces where SSO is not in use; deploy threat-prevention signature push the moment vendor signatures land (Palo Alto pushed Threat Prevention IPS coverage same-day).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Network-segmentation hygiene reduces blast radius but does not eliminate it for organizations whose architecture intentionally exposes the portal to user populations."
+      },
+      "detection": {
+        "what_would_have_worked": "Outbound-from-firewall connection monitoring (the firewall control plane should NEVER initiate outbound TCP except to the management plane and update servers); auth-portal request-rate anomaly detection; PAN-OS log-forwarding to an external SIEM with separate-trust-zone storage.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection-on-the-firewall is contraindicated when the firewall IS the compromise — telemetry must egress to a separate-trust-zone collector."
+      },
+      "response": {
+        "what_would_have_worked": "Pre-rehearsed perimeter-device compromise IR runbook including out-of-band management access, full-config exfil-and-rebuild (not patch-in-place), and post-incident credential rotation for any account whose traffic transited the device during the exposure window.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch-in-place is unsafe for perimeter compromise — operators routinely treat firewall patching as a maintenance window, missing that a pre-auth root RCE means the device may already be implanted."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Standard 30-day patch SLA is exploitation-acceptance for a perimeter pre-auth RCE on CISA KEV with vendor-confirmed in-wild use; no SI-2 carve-out for perimeter-device zero-days exists."
+      },
+      "NIS2-Article-21-2-c": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NIS2 'business continuity, including backup management and disaster recovery' does not define a perimeter-firewall-zero-day SLA tier; operators meet NIS2 obligations on paper while leaving pre-auth RCE on perimeter devices for the full 30-day patch window."
+      },
+      "DORA-Article-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "DORA ICT-risk-management requires 'state-of-the-art' protective measures but does not enumerate perimeter-device-zero-day SLAs distinct from generic patch management; financial-entity audits accept 30-day patch evidence as compliant."
+      },
+      "ISO-27001-2022-A.8.22": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-segmentation control assumes the segmentation device is trustworthy; offers no guidance for the case where the segmentation device itself is the pre-auth RCE target."
+      },
+      "ASD-Essential-8-Patch-Internet-Facing": {
+        "covered": true,
+        "adequate": "closest",
+        "gap": "Essential 8 ML3 requires 48-hour patching of internet-facing services with working exploits; closest framework match but still longer than the KEV exploitation window for vendor-confirmed in-wild attacks."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "CVE-2026-0300 — vendor-confirmed in-wild exploitation of Palo Alto perimeter firewalls; no NIS2/DORA/ISO control enumerates a perimeter-zero-day tier separate from generic patch management.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Article-21-2-c",
+          "DORA-Article-9",
+          "ISO-27001-2022-A.8.22"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "Firewall and other perimeter-trust-boundary devices must forward syslog, threat logs, and authentication logs to a SIEM hosted in a separate trust zone (different management plane, different credentials, different authentication path). Telemetry stored on the compromised device is destroyed by the attacker; telemetry on a separate-trust-zone collector survives.",
+        "evidence": "CVE-2026-0300 — pre-auth root RCE on the firewall makes on-device log retention an attacker-controlled artifact.",
+        "gap_closes": [
+          "NIST-800-53-AU-9",
+          "ISO-27001-2022-A.8.15"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "CVE-2026-0300 — vendor-confirmed in-wild exploitation prior to KEV listing; affected devices may already be implanted at patch time.",
+        "gap_closes": [
+          "NIST-800-53-IR-4",
+          "NIS2-Article-21-2-b"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "Most NIS2/DORA/ISO/PCI audits accept 30-day patch evidence as compliant for perimeter devices; only ASD Essential 8 ML3 enforces sub-48h. Approximately 90% of audit-passing organizations still have unpatched PAN-OS portals at any moment in the standard patch window.",
+      "theater_pattern": "vendor_patch_sla_anchored"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-06",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-39987": {
+    "name": "Marimo Notebook Pre-Auth WebSocket Terminal RCE",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Marimo's notebook server exposed `/terminal/ws` — a WebSocket endpoint that spawned a PTY shell on connect WITHOUT an authentication check. Any HTTP client reaching the notebook port received an interactive shell as the notebook-server user. Exploited within 10 hours of disclosure by NKAbuse blockchain-botnet payloads via Hugging Face-hosted Marimo Spaces.",
+      "privileges_required": "none — pre-authentication, network-reachable WebSocket",
+      "complexity": "trivial — single WebSocket connect to /terminal/ws",
+      "ai_factor": "Not AI-discovered. Marimo's internal security review after Sysdig honeypot scanning; no AI-tool credit. The vulnerable surface IS AI/ML developer infrastructure but the bug was not found by an AI tool."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Pre-deployment pen-test scoping that explicitly enumerates WebSocket endpoints, AI/ML notebook surfaces, and developer-tooling control planes — not just HTTP/REST API routes; default-deny WebSocket framework configuration that requires explicit auth-decorator opt-in per endpoint; Hugging Face Spaces auto-update for notebook server frameworks.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "OWASP LLM Top 10 covers LLM input/output, NOT the AI/ML developer-tooling control plane (notebook servers, MLflow, Weights & Biases, Jupyter, Marimo). Pen-test scopes routinely exclude developer infrastructure."
+      },
+      "detection": {
+        "what_would_have_worked": "Outbound-from-notebook-server connection monitoring (notebook servers should rarely initiate outbound TCP to non-package-mirror destinations); WebSocket-endpoint inventory feed into the org's API-security tool; alert on PTY spawn from notebook-server process tree.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Most organizations do not feed notebook-server telemetry into their SIEM; AI/ML platforms are operated by data-science teams outside the security team's monitoring scope."
+      },
+      "response": {
+        "what_would_have_worked": "AI/ML developer-tooling inventory with classified blast-radius (model artifacts, training data, downstream production paths); pre-rehearsed runbook for revoking model-registry credentials and quarantining trained-model artifacts when notebook compromise is suspected.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "AI/ML-pipeline IR runbooks are not standard; most security teams have no inventory of which model artifacts a compromised notebook server can reach."
+      }
+    },
+    "framework_coverage": {
+      "OWASP-LLM-Top-10-2025": {
+        "covered": false,
+        "adequate": false,
+        "gap": "OWASP LLM Top 10 covers LLM input/output (prompt injection, data poisoning, supply chain) but does NOT cover the AI/ML developer-tooling control plane — notebook servers, experiment trackers, model registries are entirely out of scope."
+      },
+      "MITRE-ATLAS-v5.1.0": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "ATLAS documents AML.T0010 (ML supply chain compromise) and AML.T0011 (ML model access) but no framework has implemented the developer-tooling-perimeter control class derived from these techniques."
+      },
+      "NIST-AI-RMF-MAP-3.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NIST AI RMF Map function requires inventorying AI system components but does not require security-control coverage of AI/ML developer infrastructure as a distinct attack surface."
+      },
+      "ISO-27001-2022-A.5.30": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT readiness for business continuity does not enumerate AI/ML developer tooling as a critical service requiring specific availability and integrity controls."
+      },
+      "ISO-IEC-42001-2023": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI management system standard requires AI lifecycle controls but is silent on the developer-tooling perimeter — the WebSocket/HTTP control plane operators use to BUILD AI systems is not enumerated as in-scope."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-033",
+        "name": "AI-ML-DEVELOPER-TOOLING-INVENTORY",
+        "description": "Organizations using AI/ML systems must maintain a separate inventory of developer-tooling control planes (notebook servers, experiment trackers, model registries, vector-DB admin UIs, agent frameworks) with: exposed network endpoints (HTTP, WebSocket, gRPC), authentication mechanism per endpoint, blast-radius mapping (which model artifacts/training data/production deployments are reachable from each tool), and patch SLA tier separate from generic application patching.",
+        "evidence": "CVE-2026-39987 — Marimo notebook servers were not in standard application inventories; WebSocket endpoints were not enumerated by pen tests; Hugging Face Spaces autodeployed without operator awareness of the surface.",
+        "gap_closes": [
+          "NIST-AI-RMF-MAP-3.4",
+          "ISO-IEC-42001-2023",
+          "OWASP-LLM-Top-10-2025"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-034",
+        "name": "WEBSOCKET-ENDPOINT-PEN-TEST-SCOPE",
+        "description": "Penetration test scopes must explicitly enumerate WebSocket endpoints (ws://, wss://) as in-scope, including framework-default endpoints automatically registered by notebook frameworks (Jupyter, Marimo, VS Code Server). Default-deny frameworks where every WebSocket route requires explicit auth-decorator opt-in are preferred over default-allow.",
+        "evidence": "CVE-2026-39987 — `/terminal/ws` was not in any pre-disclosure pen-test report despite being a default Marimo endpoint; WebSocket endpoints are routinely scoped out as 'real-time channels' rather than authenticated APIs.",
+        "gap_closes": [
+          "NIST-800-53-CA-8",
+          "PCI-DSS-4.0-11.4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-035",
+        "name": "AI-ML-PIPELINE-IR-RUNBOOK",
+        "description": "Pre-rehearsed IR runbook for AI/ML developer-tooling compromise covering: model-registry credential rotation, trained-model artifact quarantine, training-data integrity verification, and downstream production-deployment review for any model artifact touched during the compromise window.",
+        "evidence": "CVE-2026-39987 — no standard IR runbook exists for 'notebook server was compromised, what artifacts are now suspect'.",
+        "gap_closes": [
+          "NIST-800-53-IR-4",
+          "ISO-27001-2022-A.5.30"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 95,
+      "basis": "Marimo and similar AI/ML notebook servers are not in standard CMDBs, not in pen-test scopes, and not covered by application-security frameworks. Audit-passing organizations using AI/ML tooling are exposed by default unless they have implemented the developer-tooling-inventory control class — which no major framework requires.",
+      "theater_pattern": "ai_pipeline_developer_surface_excluded"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-04-23",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-6973": {
+    "name": "Ivanti EPMM Authenticated-Admin RCE",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Authenticated EPMM administrator with access to a specific management endpoint supplies crafted parameter values that bypass server-side input validation, reaching a code-execution sink. Result: arbitrary OS-level code execution as the EPMM service account, which holds elevated privilege over both the MDM application tenant AND the underlying host OS — and indirectly over every enrolled mobile device under the EPMM tenant's management policy.",
+      "privileges_required": "authenticated EPMM administrator",
+      "complexity": "moderate — requires admin credentials and parameter-shape knowledge; CISA assigned a 3-day KEV due date (the tightest standard tier) reflecting urgency.",
+      "ai_factor": "Not AI-discovered. Vendor-side discovery by Ivanti's product-security team."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Treat MDM-control-plane administrators as a distinct privilege class with privileged-access-management (PAM) workstation enforcement, FIDO2 step-up authentication for management actions, and just-in-time admin elevation; restrict EPMM admin console exposure to PAM-jumphost ranges only; never expose EPMM admin endpoints to the public internet.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Standard frameworks treat application admins and infrastructure admins as the same privilege class; MDM admins are functionally infrastructure-tier (control over endpoint OS configuration) but rarely classified as such."
+      },
+      "detection": {
+        "what_would_have_worked": "Anomaly detection on EPMM admin actions (unusual parameter shapes, requests outside normal admin work hours, requests from non-jumphost source IPs); correlation between EPMM admin events and downstream mobile-device policy changes; alert on EPMM service-account spawning unexpected child processes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "MDM telemetry is typically operated by the mobility team, not the security team; SIEM coverage is uneven."
+      },
+      "response": {
+        "what_would_have_worked": "Pre-rehearsed runbook treating EPMM compromise as fleet-wide mobile-device compromise: revoke MDM-pushed certificates, invalidate device-trust state across the fleet, force-rotate device-management credentials, audit pushed configuration profiles since the suspected compromise window.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "MDM-fleet-compromise IR runbooks are uncommon; most organizations have no plan for 'EPMM was rooted, what does that mean for our 50,000 enrolled devices'."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege control does not enumerate MDM admins as a distinct privilege class with blast-radius spanning app-tenant + host-OS + managed-fleet; treated as standard application admin."
+      },
+      "NIST-800-53-AC-2-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Privileged-account management requires monitoring privileged accounts but does not require role-class differentiation between control-plane admins and ordinary application admins."
+      },
+      "NIS2-Article-21-2-i": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NIS2 'human resources security, access control policies and asset management' requires access-control policies but does not enumerate device-management-platform admins as a distinct privilege tier; auditors accept generic admin RBAC as compliant."
+      },
+      "ISO-27001-2022-A.8.2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Privileged access rights control treats MDM admin as one of many application admin roles; no requirement to model the cross-tenancy/cross-fleet blast radius distinct from other app admins."
+      },
+      "CIS-Critical-Security-Controls-v8-IG3-6.8": {
+        "covered": true,
+        "adequate": "closest",
+        "gap": "Account-management role-based access requires defined roles but does not force differentiation of fleet-management roles from application roles; closest match but does not enforce the privilege-tier separation."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-036",
+        "name": "FLEET-CONTROL-PLANE-ADMIN-PRIVILEGE-TIER",
+        "description": "Administrators of fleet-control-plane systems (MDM/UEM, EDR consoles, identity providers, container orchestrators, configuration management) must be classified as a distinct privilege tier above application admins, with: PAM-jumphost-only access, FIDO2 step-up per session, just-in-time elevation with approval workflow, separate identity from any other admin role, and dedicated PAW (privileged access workstation) hardware. Compliance frameworks must enumerate this tier explicitly rather than collapsing it into 'admin'.",
+        "evidence": "CVE-2026-6973 — EPMM admin RCE means fleet-wide mobile-device compromise; no framework currently treats MDM admins as a distinct tier from application admins.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "NIS2-Article-21-2-i",
+          "ISO-27001-2022-A.8.2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-037",
+        "name": "FLEET-COMPROMISE-IR-PLAYBOOK",
+        "description": "Pre-rehearsed IR playbook for fleet-control-plane compromise including: MDM-pushed certificate revocation, device-trust-state invalidation, configuration-profile audit since the suspected compromise window, downstream device-quarantine criteria, and credential rotation for any account that authenticated through a compromised fleet device during the exposure period.",
+        "evidence": "CVE-2026-6973 — EPMM root RCE compromises every enrolled mobile device under the EPMM tenant; standard IR runbooks do not address fleet-wide downstream impact.",
+        "gap_closes": [
+          "NIST-800-53-IR-8",
+          "ISO-27001-2022-A.5.30"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Most NIS2/ISO/NIST audits accept generic admin RBAC for MDM/UEM administration; few organizations enforce PAW + FIDO2 + JIT for EPMM admins specifically. Organizations meeting paper privileged-access controls are exposed if their MDM admins do not have the fleet-control-plane tier separation.",
+      "theater_pattern": "admin_role_undifferentiated_from_fleet_control_plane"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-07",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-42897": {
+    "name": "Microsoft Exchange OWA Stored XSS / Spoofing Zero-Day (No-Patch)",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Stored XSS triggered during OWA's web-page generation when rendering attacker-crafted email content. The payload executes in the victim's authenticated OWA session, enabling token theft, mailbox-wide access, and OWA-mediated spoofing of further internal mail. Exploited in-the-wild prior to disclosure; NO BINARY PATCH available at disclosure — Microsoft directed operators to enable the Exchange Emergency Mitigation Service (EEMS) for vendor-pushed mitigation rules.",
+      "privileges_required": "none — pre-auth (attacker sends email; victim opens in OWA)",
+      "complexity": "low — craft email payload that survives Exchange's content rendering pipeline",
+      "ai_factor": "Not AI-discovered. MSRC discovery from in-wild attack telemetry."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Exchange Emergency Mitigation Service (EEMS) enabled BEFORE the disclosure (it can only ship mitigation rules to operators who have already enabled the service); strict OWA Content Security Policy that breaks XSS payload execution regardless of input-sanitization bugs; OWA usage restricted to managed devices behind a reverse proxy that strips inline script execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "EEMS opt-in is required before disclosure; organizations that opted in late received the mitigation rule late or not at all."
+      },
+      "detection": {
+        "what_would_have_worked": "OWA session anomaly detection (token usage from new geographies, mass mailbox-search activity, OAuth token export); Exchange transport-rule audit for new spoofing rules created via OWA session; SIEM ingestion of OWA per-request logs (not just authentication logs).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "OWA per-request logging is not enabled by default; most operators only ingest auth events into SIEM."
+      },
+      "response": {
+        "what_would_have_worked": "Pre-rehearsed OWA-compromise runbook including: OAuth-token-wide revocation for the affected tenant, mailbox-search-result audit for the suspected window, transport-rule diff against last-known-good, and re-enrollment of MFA for any account with an authenticated OWA session in the exposure window.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Mailbox-compromise runbooks exist but rarely cover the 'OWA itself was the attack vector' case where standard credential-reset is insufficient."
+      }
+    },
+    "framework_coverage": {
+      "ISO-27001-2022-A.5.30": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT readiness for business continuity has no concept of a 'mitigation-rule-active, binary-patch-pending' state — operators with EEMS mitigation deployed are auditor-classed as 'fully patched' even though no binary patch exists, hiding residual risk."
+      },
+      "NIS2-Article-21-2-b": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NIS2 'incident handling' obligation does not differentiate between binary-patch-deployed and vendor-mitigation-rule-deployed states; verdict surfaces 'patched per SLA' for both even though only the former eliminates the underlying vulnerability."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation control assumes a binary patch exists; the no-patch + vendor-mitigation-rule state is not enumerated as a distinct flaw-remediation outcome."
+      },
+      "DORA-Article-9-4-c": {
+        "covered": true,
+        "adequate": false,
+        "gap": "DORA prevention-detection-response obligation does not separately track residual-risk-with-mitigation-only states; financial entities can satisfy the obligation with EEMS active even if the underlying XSS still exists."
+      },
+      "PCI-DSS-4.0-6.2.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Bespoke-software vulnerability management does not address the case where the vendor has not released a patch and the operator is dependent on vendor-pushed mitigation rules with no operator-side validation."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Compliance verdicts must distinguish three states: (a) binary patch deployed (vulnerability eliminated), (b) vendor-mitigation rule active, no binary patch (residual risk: any defect in the mitigation rule reopens the vulnerability), (c) no mitigation, no patch (full exposure). Audit reports must surface (b) as a distinct compensating-control state with an associated time-bound action item, not as a 'patched per SLA' outcome.",
+        "evidence": "CVE-2026-42897 — MSRC shipped EEMS mitigation but no binary patch; operators using EEMS verdict as 'compliant' obscure the residual risk that any future EEMS rule defect re-exposes the vulnerability.",
+        "gap_closes": [
+          "ISO-27001-2022-A.5.30",
+          "NIS2-Article-21-2-b",
+          "NIST-800-53-SI-2",
+          "DORA-Article-9-4-c"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-039",
+        "name": "VENDOR-PUSH-MITIGATION-OPT-IN-PRE-DISCLOSURE",
+        "description": "For vendors offering push-mitigation services (Microsoft EEMS, Palo Alto Threat Prevention auto-update, etc.), opt-in must be enabled BEFORE the next disclosure event, not in response to it. Compliance frameworks must require operators to enable available vendor-push-mitigation services as a baseline control — opt-in late means the mitigation rule arrives after exploitation, not before.",
+        "evidence": "CVE-2026-42897 — operators who had not pre-enabled EEMS could not receive the same-day mitigation rule.",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "ISO-27001-2022-A.8.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-040",
+        "name": "OWA-PER-REQUEST-SIEM-INGESTION",
+        "description": "Exchange OWA per-request access logs (not just authentication events) must be forwarded to an external SIEM with at least 90-day retention. Authentication-only logging misses XSS-stage telemetry — the malicious request flows over an already-authenticated session.",
+        "evidence": "CVE-2026-42897 — token-theft and mailbox-search activity occurs over an authenticated session and is invisible to auth-event-only SIEM ingestion.",
+        "gap_closes": [
+          "NIST-800-53-AU-2",
+          "ISO-27001-2022-A.8.15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Most on-prem Exchange deployments do not have EEMS pre-enabled, do not ingest OWA per-request logs into a SIEM, and have no IR runbook for 'OWA itself was the attack vector'. Audit-passing organizations satisfying NIS2/ISO/NIST patch-management obligations remain materially exposed during the no-patch window.",
+      "theater_pattern": "vendor_mitigation_treated_as_patch"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-15",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-32202": {
+    "name": "Windows Shell LNK Mark-of-the-Web Bypass (APT28, Incomplete Patch)",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Crafted LNK files bypass Windows Mark-of-the-Web (MOTW) protection. Chained with CVE-2026-21513, the exploitation converts a downloaded LNK into a SmartScreen-suppressed execution path. CVE-2026-32202 is the third bug in a sequence: CVE-2026-21510 attempted to close the same MOTW-bypass surface but did so incompletely; CVE-2026-32202 is the resulting re-exploit primitive — i.e. the patch itself was the new vulnerability source.",
+      "privileges_required": "user opens a downloaded LNK file (UI:R)",
+      "complexity": "low for APT28's existing LNK-weaponization toolkit; the primitive is an extension of established LNK tradecraft.",
+      "ai_factor": "Not AI-discovered. APT28 (nation-state) tradecraft predates AI-assisted exploit-development tooling by years."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Detonation-chamber pre-execution analysis (NIST SC-44) of every downloaded executable surface including LNK / ISO / VHD / IMG, with a test battery that explicitly covers MOTW-bypass classes — not just behavioral detonation but format-parser confidence; ASR (Attack Surface Reduction) rule blocking LNK execution from email/web download paths regardless of MOTW state; AppLocker / WDAC policy denying LNK execution from user-writable paths.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detonation chambers are deployed but most operators do not have explicit MOTW-bypass class regression testing in their detonation pipelines — they treat each MOTW-bypass CVE as a one-off rather than a class."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR rules detecting LNK-spawned process trees with outbound network activity within 60s of execution; MOTW-attribute auditing on every newly-created file under user profile directories; SmartScreen telemetry ingestion to detect SmartScreen-suppression patterns.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "EDR LNK-execution telemetry exists but MOTW-bypass detection requires operator-side rule authoring; vendors do not ship out-of-box MOTW-bypass class detections that survive incremental patch cycles."
+      },
+      "response": {
+        "what_would_have_worked": "Pre-rehearsed APT28-class IR runbook treating LNK execution from email/web as initial-access-confirmed until proven otherwise; aggressive endpoint quarantine; nation-state IR escalation path with appropriate intelligence-sharing channels (CISA, NCSC, BSI, ANSSI).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Standard IR runbooks treat MOTW bypass as malware infection rather than nation-state initial access; under-escalates the response."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-44": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Detonation chambers control does not require explicit regression test coverage for protection-mechanism-failure classes (MOTW bypass, SmartScreen bypass, AMSI bypass); incomplete patches re-introduce risk that detonation chambers tested-once-against-the-fix do not catch."
+      },
+      "NIST-800-53-SI-2-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation 'removal of previous versions' enhancement does not address the case where the FIX is the new flaw; framework treats each CVE in an incomplete-patch sequence as a discrete finding rather than as evidence of a structurally-defective patch series."
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-malware control treats incomplete patches as new findings rather than as a sequence; no requirement to track 'CVE-X is the third incomplete patch on the same primitive' as a higher-severity signal."
+      },
+      "MITRE-ATTACK-T1566.002": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "Spearphishing Link technique is documented but framework-side controls do not enforce LNK-class detonation regression as a result."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-041",
+        "name": "PROTECTION-MECHANISM-FAILURE-CLASS-REGRESSION",
+        "description": "Detonation chambers, EDR rules, and AppLocker/WDAC policies covering protection-mechanism classes (MOTW, SmartScreen, AMSI, ASR, WDAC, Driver Block Rules) must include class-level regression testing executed on every patch deployment, not just one-off bypass-CVE remediation. The test battery for class-X must include all historic class-X bypass primitives — incomplete patches re-introduce risk that one-off testing does not detect.",
+        "evidence": "CVE-2026-32202 — third bug in the same MOTW-bypass primitive class (sequence with CVE-2026-21510 and CVE-2026-21513); operators treating each as a discrete patch missed the structural defect.",
+        "gap_closes": [
+          "NIST-800-53-SC-44",
+          "ISO-27001-2022-A.8.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-042",
+        "name": "INCOMPLETE-PATCH-SEQUENCE-SEVERITY-MULTIPLIER",
+        "description": "Vulnerability-management programs must apply a severity multiplier when a CVE is the Nth in an incomplete-patch sequence on the same primitive (third MOTW bypass, second AMSI bypass, etc.). Framework controls treating each CVE as discrete obscure the structural defect; the Nth CVE in a sequence implies that future bypasses on the same primitive are likely.",
+        "evidence": "CVE-2026-32202 — third MOTW-bypass CVE in 18 months; structural pattern not surfaced by per-CVE severity scoring.",
+        "gap_closes": [
+          "NIST-800-53-SI-2-6",
+          "RWEP-scoring-model"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-043",
+        "name": "NATION-STATE-INITIAL-ACCESS-IR-ESCALATION",
+        "description": "IR runbooks must include an explicit nation-state-initial-access escalation path triggered by APT28/APT29/Lazarus/Volt-Typhoon/etc. attribution on a confirmed exploit chain. Standard malware-infection IR under-escalates nation-state activity by treating it as commodity threat.",
+        "evidence": "CVE-2026-32202 — confirmed APT28 weaponization; standard IR runbooks do not include nation-state-class escalation criteria.",
+        "gap_closes": [
+          "NIST-800-53-IR-4",
+          "NIS2-Article-23"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Detonation-chamber regression coverage of protection-mechanism-failure classes is rare; most operators patch MOTW-bypass CVEs individually without class-level test extension. Audit-passing organizations remain exposed to the next bypass in the sequence — and APT28's tempo suggests a next bypass is the expected outcome.",
+      "theater_pattern": "incomplete_patch_treated_as_discrete_finding"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-04-28",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-33825": {
+    "name": "BlueHammer — Microsoft Defender File-Remediation TOCTOU LPE",
+    "lesson_date": "2026-05-15",
+    "attack_vector": {
+      "description": "Race window in Defender's file-remediation logic: after Defender flags a malicious file, the path-to-quarantine sequence opens non-atomically. An attacker-controlled junction / symlink swap during the TOCTOU window redirects the remediation operation against a SYSTEM-owned file, producing arbitrary-file-overwrite escalating to SYSTEM. Picus 'BlueHammer' / RedSun published a working PoC BEFORE Microsoft released a patch — true zero-day disclosure where the EDR is the vulnerability.",
+      "privileges_required": "low — local user with ability to drop a file Defender will scan",
+      "complexity": "high — requires winning the TOCTOU race window via symlink swap",
+      "ai_factor": "Not AI-discovered. Conventional Windows-Defender internals research by Picus Security."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Defender platform-update channel separated from Windows OS-update channel and treated as a distinct patch SLA; ASR (Attack Surface Reduction) rules limiting symlink/junction creation by low-privilege processes in user-writable paths; second-EDR overlay or Defender ASR Block-Persistence-Through-WMI configured to detect post-LPE persistence even when Defender itself is the initial-access vector.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Most operators treat Defender as 'always patched via Windows Update' without recognizing the platform-update channel is a distinct surface; ASR rules require explicit operator opt-in."
+      },
+      "detection": {
+        "what_would_have_worked": "Independent EDR overlay (a second-vendor EDR or non-Defender behavioral monitor) capable of detecting Defender-process anomalous file-overwrite patterns; SYSTEM-process spawn monitoring with parentage cross-check; NTFS reparse-point creation auditing in user-writable paths.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Single-vendor EDR cannot reliably detect itself as the vulnerability source — by design, Defender is allow-listed in its own telemetry."
+      },
+      "response": {
+        "what_would_have_worked": "Pre-rehearsed runbook for EDR-platform-compromise (Defender, CrowdStrike, SentinelOne, Carbon Black) treating compromise of the security control plane as a tier-1 incident; out-of-band telemetry source (network-side EDR-bypass telemetry) for the response window; documented Defender platform-update rollout SLA distinct from Windows OS update.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "EDR-as-vulnerability runbooks are rare; most security teams have no documented response when 'the security control IS the attack vector'."
+      }
+    },
+    "framework_coverage": {
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-malware control assumes the AV/EDR is a defense, not a vulnerability source; offers no model for 'EDR is the attack vector' and provides no compensating-control guidance for the case."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code-protection control treats AV/EDR as a defense layer; no enhancement addresses the case where the malicious-code-protection mechanism itself is the LPE primitive."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation does not separately enumerate EDR/AV platform-update channels — operators meeting OS-patch SLA may still lag the Defender platform update."
+      },
+      "PCI-DSS-4.0-5.2.1": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-malware solution requirement does not address EDR-as-vulnerability nor require an independent overlay capable of detecting EDR-platform compromise."
+      },
+      "NIS2-Article-21-2-h": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cybersecurity hygiene + training obligation does not address the case where the AV/EDR product is itself the LPE source; pen-test scopes routinely exclude 'security defense' products from in-scope attack surface."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-044",
+        "name": "EDR-AS-VULNERABILITY-SECONDARY-OVERLAY",
+        "description": "Organizations whose primary EDR is also a high-value attack target (Defender, CrowdStrike, SentinelOne) must deploy an independent secondary overlay capable of detecting anomalous behavior by the primary EDR's own processes. The overlay can be a second-vendor behavioral EDR, network-side EDR-bypass telemetry, or out-of-band SYSTEM-process spawn monitoring — but must NOT share trust roots with the primary EDR.",
+        "evidence": "CVE-2026-33825 — Defender's file-remediation pipeline was the LPE primitive; Defender's own telemetry cannot reliably surface Defender-as-attacker.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.7",
+          "NIST-800-53-SI-3",
+          "PCI-DSS-4.0-5.2.1"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-045",
+        "name": "EDR-PLATFORM-UPDATE-DISTINCT-SLA",
+        "description": "EDR / AV platform-update channels must be tracked as distinct patch surfaces with their own SLA, separate from OS-update SLA. Defender platform updates, CrowdStrike Falcon-sensor updates, SentinelOne agent updates, etc. ship outside the OS-patching cadence and require dedicated monitoring and SLA tracking.",
+        "evidence": "CVE-2026-33825 — Defender platform update fixed the TOCTOU; operators tracking only Windows Update missed the patch surface.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-046",
+        "name": "PEN-TEST-SCOPE-INCLUDES-SECURITY-PRODUCTS",
+        "description": "Penetration test and red-team scopes must explicitly include security-defense products (EDR, AV, DLP, identity-providers, secret-managers) as in-scope attack surface, not as defenses to evade. Scope language must call out that these products' admin interfaces, agent processes, and update channels are testable surfaces.",
+        "evidence": "CVE-2026-33825 — Defender was the LPE primitive; pen tests scoping Defender as 'defense to evade' rather than 'product to test' miss this class.",
+        "gap_closes": [
+          "NIST-800-53-CA-8",
+          "NIS2-Article-21-2-h"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 92,
+      "basis": "Almost no organizations operate a secondary EDR overlay against their primary EDR; pen-test scopes routinely exclude security products. Audit-passing organizations meeting ISO/NIST/PCI anti-malware controls remain materially exposed because the controls assume the AV/EDR is a defense, not a vulnerability source.",
+      "theater_pattern": "edr_assumed_defense_never_vulnerability"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-04-22",
+    "ai_assist_factor": "low"
   }
 }

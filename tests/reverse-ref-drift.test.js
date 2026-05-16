@@ -31,10 +31,13 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'u
 // the assertion — the require() here is a smoke-coverage hook.
 const refreshScript = require(path.join(ROOT, 'scripts', 'refresh-reverse-refs.js'));
 
-test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, rebuildCatalog (smoke)', () => {
+test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, buildCveReverseIndex, rebuildCatalog (smoke)', () => {
   assert.equal(Array.isArray(refreshScript.CATALOGS), true);
-  assert.equal(refreshScript.CATALOGS.length, 4);
+  // Cycle 12 F3 (v0.12.32): added cwe-catalog entry from CVE direction
+  // (`cve.entries → evidence_cves`). Catalog count grew 4 → 5.
+  assert.equal(refreshScript.CATALOGS.length, 5);
   assert.equal(typeof refreshScript.buildReverseIndex, 'function');
+  assert.equal(typeof refreshScript.buildCveReverseIndex, 'function');
   assert.equal(typeof refreshScript.rebuildCatalog, 'function');
 
   // Exercise buildReverseIndex against a synthetic skills array so the
@@ -51,7 +54,9 @@ test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, rebuildCatalo
 });
 
 // Mirror the script's CATALOGS — keep in sync. The script is the source
-// of truth for the field-name pairing per catalog.
+// of truth for the field-name pairing per catalog. Skill-side only here;
+// the CVE-side reverse (cwe.evidence_cves from cve.cwe_refs) has its own
+// drift test below.
 const CATALOGS = [
   { file: 'atlas-ttps.json', forwardField: 'atlas_refs', reverseField: 'exceptd_skills' },
   { file: 'cwe-catalog.json', forwardField: 'cwe_refs', reverseField: 'skills_referencing' },
@@ -99,3 +104,45 @@ for (const cfg of CATALOGS) {
     }
   });
 }
+
+// Cycle 12 F3 (v0.12.32): pin the CVE-side reverse direction. cwe-catalog
+// entries declare `evidence_cves` — the operator-facing "which CVEs map
+// to this CWE" index. Pre-fix it was hand-maintained and drifted with
+// every CVE intake. Now mirrors cve.cwe_refs automatically; this test
+// blocks merges that re-introduce drift.
+test('cwe-catalog.json evidence_cves matches cve-catalog.json cwe_refs exactly (drafts excluded)', () => {
+  const cveCatalog = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'),
+  );
+  const cweCatalog = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'data', 'cwe-catalog.json'), 'utf8'),
+  );
+  // Build the expected reverse index: cwe-id -> Set<cve-id>. Drafts skipped
+  // (matches script's buildCveReverseIndex contract).
+  const expectedIndex = new Map();
+  for (const [cveId, entry] of Object.entries(cveCatalog)) {
+    if (cveId === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    if (entry._draft === true) continue;
+    const refs = Array.isArray(entry.cwe_refs) ? entry.cwe_refs : [];
+    for (const cweId of refs) {
+      if (!expectedIndex.has(cweId)) expectedIndex.set(cweId, new Set());
+      expectedIndex.get(cweId).add(cveId);
+    }
+  }
+
+  for (const [cweId, entry] of Object.entries(cweCatalog)) {
+    if (cweId === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    const stored = Array.isArray(entry.evidence_cves)
+      ? [...entry.evidence_cves].sort()
+      : [];
+    const expected = expectedIndex.has(cweId)
+      ? Array.from(expectedIndex.get(cweId)).sort()
+      : [];
+    assert.deepEqual(stored, expected,
+      `cwe-catalog.json entry ${cweId} evidence_cves drift: ` +
+      `stored=[${stored.join(',')}] expected=[${expected.join(',')}]. ` +
+      `Run \`npm run refresh-reverse-refs\` to regenerate.`);
+  }
+});

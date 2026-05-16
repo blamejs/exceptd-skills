@@ -400,6 +400,20 @@ function main() {
   const rest = argv.slice(1);
 
   if (cmd === "help" || cmd === "--help" || cmd === "-h") {
+    // Cycle 11 F4 (v0.12.32): `exceptd help <verb>` previously dropped the
+    // verb argument and printed the top-level help. Route through the same
+    // printPlaybookVerbHelp() that `exceptd <verb> --help` already uses so
+    // operators get a consistent verb-specific help surface regardless of
+    // which way they reached it.
+    if (rest.length > 0 && typeof rest[0] === 'string' && rest[0].length > 0) {
+      const verb = rest[0];
+      if (printPlaybookVerbHelp(verb)) {
+        process.exit(0);
+      }
+      // Verb not found — emit a one-line note pointing at the top-level
+      // help so operators don't silently see the wrong content.
+      process.stderr.write(`[exceptd help] no verb-specific help for "${verb}" — falling through to top-level help. Run \`exceptd help\` for the full verb list.\n`);
+    }
     printHelp();
     process.exit(0);
   }
@@ -449,15 +463,31 @@ function main() {
   // (plan, govern, direct, look, ingest, reattest, list-attestations).
   if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
     const ver = readPkgVersion();
-    const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
-    process.stderr.write(
-      `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
-      (haveBrief
-        ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
-        : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
-      `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
-      `Suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
-    );
+    // Cycle 11 F7 (v0.12.32): persist the suppression across invocations via
+    // an OS-tempdir marker keyed by exceptd version. Pre-fix the env-var
+    // guard reset every fresh node process so operators saw the same banner
+    // on every `exceptd plan` invocation, even after they'd already read it.
+    // Per-version key means a new version (legitimate new content) shows the
+    // banner once; subsequent runs within the same version stay quiet. The
+    // explicit EXCEPTD_DEPRECATION_SHOWN=1 env-var opt-out still suppresses
+    // even the first display, matching the documented contract.
+    const markerDir = require("os").tmpdir();
+    const markerFile = path.join(markerDir, `exceptd-deprecation-shown-v${ver}`);
+    let alreadyShown = false;
+    try { alreadyShown = fs.existsSync(markerFile); } catch { /* tmpdir unwritable; degrade to per-process */ }
+    if (!alreadyShown) {
+      const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
+      process.stderr.write(
+        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
+        (haveBrief
+          ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
+          : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
+        `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
+        `This banner shows once per exceptd version per host (re-shown on upgrade). Permanent suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
+      );
+      try { fs.writeFileSync(markerFile, `shown_at=${new Date().toISOString()}\nversion=${ver}\n`); }
+      catch { /* tmpdir unwritable; the env-var guard below keeps the per-process suppression intact */ }
+    }
     process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
   }
 
@@ -1949,7 +1979,15 @@ Flags (selected — see \`exceptd run --help\` for the full list):
   --bundle-deterministic  Emit byte-stable bundles across the multi-run set.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.`,
   };
-  process.stdout.write((cmds[verb] || `${verb} — no per-verb help available; see \`exceptd help\` for the full list.`) + "\n");
+  // Cycle 11 F4 (v0.12.32): return whether a verb-specific help block was
+  // found so the `exceptd help <verb>` caller can decide whether to fall
+  // through to the top-level help (verb unknown) or stop here (verb known).
+  if (cmds[verb]) {
+    process.stdout.write(cmds[verb] + "\n");
+    return true;
+  }
+  process.stdout.write(`${verb} — no per-verb help available; see \`exceptd help\` for the full list.\n`);
+  return false;
 }
 
 /**
@@ -5399,9 +5437,14 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
   }
   // Enumerate sessions across both v0.11.0 default root and legacy cwd-
   // relative root, so operators with prior attestations still see them.
-  const roots = [resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")];
+  // Cycle 11 F5 (v0.12.32): also track candidate roots that didn't exist
+  // so operators can tell whether the directory was scanned-and-empty or
+  // simply never created. Pre-fix the human output said "(no attestations
+  // under )" with no path — operators couldn't see where the verb looked.
+  const roots = [...new Set([resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")])];
   const entries = [];
   const seenRoots = new Set();
+  const rootsEvaluated = roots.map(r => ({ root: r, exists: fs.existsSync(r) }));
   for (const root of roots) {
     if (seenRoots.has(root) || !fs.existsSync(root)) continue;
     seenRoots.add(root);
@@ -5442,11 +5485,24 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     count: entries.length,
     filter: { playbook: playbookFilter ? [...playbookFilter] : null, since: args.since || null },
     roots_searched: [...seenRoots],
+    // Cycle 11 F5 (v0.12.32): every candidate root + whether it existed,
+    // so JSON consumers can distinguish scanned-and-empty from never-created.
+    // The human renderer below also surfaces this rather than printing
+    // "(no attestations under )" with an empty path list.
+    roots_evaluated: rootsEvaluated,
   }, pretty, (obj) => {
     // v0.11.6 (#95) human renderer for attest list: one row per session.
     const lines = [`attest list — ${obj.count} attestation(s)`];
     if (obj.count === 0) {
-      lines.push(`  (no attestations under ${obj.roots_searched.join(' or ')})`);
+      const evald = obj.roots_evaluated || [];
+      if (evald.length === 0) {
+        lines.push(`  (no attestation root resolved; set EXCEPTD_HOME or run from a project with .exceptd/)`);
+      } else {
+        lines.push(`  candidate roots evaluated:`);
+        for (const r of evald) {
+          lines.push(`    ${r.exists ? '[scanned-empty]' : '[not-present]'} ${r.root}`);
+        }
+      }
       return lines.join("\n");
     }
     lines.push(`  ${"session-id".padEnd(20)}  ${"playbook".padEnd(16)}  ${"captured-at".padEnd(20)}  evidence-hash`);

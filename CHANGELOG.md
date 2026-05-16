@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.12.32 — 2026-05-15
+
+Cycle 11 CLI polish + cycle 12 catalog hardening. The headline closes a silent regression where the 6 CVEs advertised by v0.12.31 were shipped as `_draft: true` and therefore invisible to default `cross-ref-api` queries — operators running `exceptd` against Exchange would have gotten a clean bill on CVE-2026-42897.
+
+### Bugs
+
+**6 CVEs from v0.12.31 promoted from draft to non-draft.** Cycle 12 audit caught the regression: every CVE in cycle 11's intake shipped as `_draft: true`, which `lib/cross-ref-api.js` skips by default. v0.12.31 CHANGELOG advertised "6 new CISA-KEV CVEs" but operators couldn't actually query them. All 6 promoted with `_editorial_promoted: 2026-05-15` provenance; full required fields validated (iocs, vendor_advisories, verification_sources, complexity, affected_versions, RWEP Shape B invariant).
+
+**9 unmatched `framework_control_gaps` keys on the new CVEs now resolve.** `NIS2-Art21-vulnerability-management`, `DORA-Art-9`, `NIST-800-53-AC-3`, `OWASP-LLM-Top-10-2025-LLM05`, `NIST-800-53-AC-6`, `NIS2-Art21-identity-management`, `ISO-27001-2022-A.8.7`, `NIST-800-53-SC-44`, `CIS-Controls-v8-10.1` — referenced by the new CVEs but absent from the framework-gap catalog. All 9 now present with `theater_test` blocks (catalog 109 → 118 entries). Reverse `evidence_cves` links also added on the 6 existing entries (NIST-800-53-SI-2 / SI-3 / etc.) that the new CVEs reference.
+
+**CVE → CWE reverse-references auto-regenerated.** Cycle 9 introduced `npm run refresh-reverse-refs` for the skill direction (manifest → atlas/cwe/d3fend/rfc), but the CWE catalog's `evidence_cves` field — the operator-facing "which CVEs map to this CWE" index — was still hand-maintained and drifted with every CVE intake. The script now also walks `cve.cwe_refs` → `cwe.evidence_cves`. Drafts excluded (they're invisible to default consumers; the reverse direction tracks operator-queryable truth). 14 CWE entries updated on first run. New `tests/reverse-ref-drift.test.js` test pins the contract.
+
+### Features
+
+**`exceptd help <verb>`** now routes to the per-verb help text (`exceptd help run` returns the run-verb help, not the top-level banner). Pre-fix the verb arg was silently dropped. Unknown verbs fall through to top-level help with a stderr note. New `tests/help-verb-attest-list-deprecation.test.js` pins the contract.
+
+**`exceptd attest list` empty-state now names every candidate root.** Pre-fix the human output said "(no attestations under )" with an empty path list when no `.exceptd/` directory existed. New `roots_evaluated[]` field on the JSON output + `[scanned-empty]` / `[not-present]` markers in the human renderer.
+
+**Legacy-verb deprecation banner auto-suppresses across invocations.** Pre-fix the per-process env-var guard reset on every fresh node process, so operators saw the banner on every `exceptd plan` invocation. Now persists suppression via an OS-tempdir marker keyed by exceptd version — banner shows once per version per host, re-shows on upgrade. Explicit `EXCEPTD_DEPRECATION_SHOWN=1` still suppresses even the first display.
+
+### Internal
+
+- 6 matching `data/zeroday-lessons.json` entries authored for the promoted CVEs (rule #6 enforcement: zero-day learning is live for every non-draft catalog entry).
+- Test count 1099 → 1109 (10 new tests across F4/F5/F7 + reverse-ref drift extension + Shape B canonicalization staying green).
+- 14/14 predeploy gates green.
+
+
 ## 0.12.31 — 2026-05-15
 
 CLI ergonomics + 30-day CVE intake from the cycle 11 audit. Closes a silent-misrouting bug in the CI gate and adds six high-impact CVEs that landed on CISA KEV between 2026-04-15 and 2026-05-15.
