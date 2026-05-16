@@ -301,7 +301,7 @@
       "type": "skill_review",
       "artifact": "ai-attack-surface",
       "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with gap flags"
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.4.0 with gap flags"
     },
     {
       "date": "2026-05-01",

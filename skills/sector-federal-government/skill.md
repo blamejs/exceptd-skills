@@ -297,7 +297,7 @@ Forward-watch: CMMC Level 3 (NIST 800-172 enhanced practices) addresses APT-rele
 - **`supply-chain-integrity`** — SSDF practice evidence, SLSA L3 attestation, in-toto chain, Sigstore / cosign keyless signing, SBOM (CycloneDX 1.6 / SPDX 3.0), VEX via CSAF 2.0 for federal procurement.
 - **`attack-surface-pentest`** — Federal red-team and High-Value Asset assessment scoping; CISA penetration testing program alignment; allied-government red-team baselines.
 - **`identity-assurance`** — NIST 800-63 IAL / AAL / FAL; PIV / CAC issuance; FIDO2 / WebAuthn for federal external users; M-22-09 identity pillar evidence.
-- **`ai-attack-surface`** — Federal AI use cases under OMB M-24-04; NIST AI RMF Generative AI Profile (NIST AI 600-1); MITRE ATLAS v5.1.0 TTP coverage for federal AI threat modeling.
+- **`ai-attack-surface`** — Federal AI use cases under OMB M-24-04; NIST AI RMF Generative AI Profile (NIST AI 600-1); MITRE ATLAS v5.4.0 TTP coverage for federal AI threat modeling.
 - **`ai-c2-detection`** — Detection of agentic-AI command-and-control inside federal networks.
 - **`compliance-theater`** — Distinguishing FedRAMP / CMMC paper compliance from operational federal security; ConMon substance audit; SPRS-score-vs-evidence reconciliation.
 - **`framework-gap-analysis`** — Per-control gap analysis when an explicit framework-vs-threat reconciliation is requested by an auditor or AO.

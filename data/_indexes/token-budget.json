@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1589917,
-    "total_approx_tokens": 397485,
+    "total_chars": 1591081,
+    "total_approx_tokens": 397777,
     "skill_count": 42
   },
   "skills": {
@@ -1790,10 +1790,10 @@
     },
     "sector-energy": {
       "path": "skills/sector-energy/skill.md",
-      "bytes": 53837,
-      "chars": 53631,
+      "bytes": 54006,
+      "chars": 53798,
       "lines": 413,
-      "approx_tokens": 13408,
+      "approx_tokens": 13450,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2065,10 +2065,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 45173,
-      "chars": 44881,
+      "bytes": 45439,
+      "chars": 45147,
       "lines": 330,
-      "approx_tokens": 11220,
+      "approx_tokens": 11287,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2285,10 +2285,10 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "bytes": 68916,
-      "chars": 68631,
+      "bytes": 69650,
+      "chars": 69362,
       "lines": 460,
-      "approx_tokens": 17158,
+      "approx_tokens": 17341,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2307,9 +2307,9 @@
           "approx_tokens": 827
         },
         "exploit-availability-matrix": {
-          "bytes": 7332,
-          "chars": 7304,
-          "approx_tokens": 1826
+          "bytes": 8066,
+          "chars": 8035,
+          "approx_tokens": 2009
         },
         "analysis-procedure": {
           "bytes": 14133,

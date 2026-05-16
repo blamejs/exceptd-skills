@@ -62,14 +62,14 @@ AGENTS.md hard rule #5 (global-first) now binds against the full expanded catalo
 - **China (CN):** PIPL, DSL, CSL, Cybersecurity Review Measures (2022).
 - **Brazil (BR):** LGPD + ANPD guidance.
 - **Saudi Arabia (KSA):** PDPL + SDAIA Implementing Regulation 2023.
-- **Global standards:** ISO 27001:2022 / 27002:2022, ISO/IEC 42001:2023, CSA CCM v4, CIS Controls v8, MITRE ATLAS v5.1.0.
+- **Global standards:** ISO 27001:2022 / 27002:2022, ISO/IEC 42001:2023, CSA CCM v4, CIS Controls v8, MITRE ATLAS v5.4.0.
 - **US sub-national:** NYDFS 23 NYCRR 500 (amended Nov 2023, phased through Nov 2025); state privacy laws (CA CCPA/CPRA, CO CPA, CT CTDPA, IL BIPA, NY SHIELD, TX DPSA, VA CDPA).
 
 A gap declaration that closes section 6 (Global coverage check) without referencing at least the EU, UK, AU, ISO, and a representative selection from {IL, CH, HK, TW, ID, VN, JP-expanded, KR, CN, BR, NYDFS} for any org operating in those jurisdictions fails hard rule #5. The exact set required depends on the org's footprint — but the analyst must consult `data/global-frameworks.json` to enumerate it rather than defaulting to the legacy four-jurisdiction shorthand.
 
-## TTP Mapping (MITRE ATLAS v5.1.0 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)
 
-This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.1.0, November 2025) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
+This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.4.0, February 2026) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
 
 | Built-in gap | Primary TTP(s) | Gap flag |
 |---|---|---|

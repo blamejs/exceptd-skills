@@ -21,7 +21,7 @@ const RECIPES = [
     when_to_use: "Before scoping or executing a red-team engagement against a model, agentic system, or AI feature.",
     typical_jurisdictions: ["US", "EU", "UK", "GLOBAL"],
     steps: [
-      { skill: "ai-attack-surface", why: "Comprehensive attack-surface inventory mapped to ATLAS v5.1.0 with gap flags." },
+      { skill: "ai-attack-surface", why: "Comprehensive attack-surface inventory mapped to ATLAS v5.4.0 with gap flags." },
       { skill: "ai-c2-detection", why: "Detection coverage for AI-as-C2 (PROMPTFLUX / SesameOp / AI-API egress) before testing." },
       { skill: "mcp-agent-trust", why: "MCP server trust boundary for the engineering toolchain side of the surface." },
       { skill: "rag-pipeline-security", why: "RAG ingestion provenance + prompt-injection chain coverage." },

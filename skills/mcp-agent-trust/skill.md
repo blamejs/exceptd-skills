@@ -155,7 +155,7 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 |---|---|---|---|
 | AML.T0010 | ML Supply Chain Compromise | Direct: malicious MCP server in public registry compromises AI assistant's tool execution | ATLAS covers this conceptually; no framework has a technical control |
 | AML.T0054 | LLM Jailbreak | Indirect: adversarial prompt in tool response bypasses guardrails and triggers AI to call next malicious action | No framework control |
-| AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v5.1.0 |
+| AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v5.4.0 |
 | T1195.001 | Supply Chain Compromise: Compromise Software Dependencies | MCP server package as supply chain attack target | ATT&CK covers but enterprise controls don't reach developer MCP configs |
 | T1059 | Command and Script Interpreter | MCP server causes shell command execution via model-mediated tool call | Standard SI-3/EDR doesn't attribute this to the MCP server as origin |
 | T1190 | Exploit Public-Facing Application | CVE-2026-30615: MCP client vulnerability driven by a locally-installed malicious server (AV:L) | Standard vuln management covers client; MCP server trust is unaddressed |

@@ -133,7 +133,7 @@ Cross-cutting gap: **no security framework treats the four ransomware-specific d
 
 Shadow Copy deletion and exfil-staging via Web Service align to the parent IR playbook's `T1486` and `T1567` entries; the parent's `AML.T0096 / T0017 / T0051` entries do not apply to ransomware-as-a-class but may apply if AI-system data is exfiltrated within the ransomware operation.
 
-ATLAS pinned to v5.1.0 (November 2025) per AGENTS.md rule #8. ATT&CK pinned to v17 (2025-06-25) per the same rule.
+ATLAS pinned to v5.4.0 (February 2026) per AGENTS.md rule #8. ATT&CK pinned to v17 (2025-06-25) per the same rule.
 
 ---
 

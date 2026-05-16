@@ -60,7 +60,7 @@
       ]
     },
     "ai-attack-surface": {
-      "description": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.1.0 with gap flags",
+      "description": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.4.0 with gap flags",
       "threat_context_excerpt": "The AI attack surface is not speculative. It is actively exploited. The following are confirmed, documented threats as of mid-2026.",
       "produces": "```\n## AI Attack Surface Assessment\n\n**Assessment Date:** YYYY-MM-DD\n**Scope:** [systems/applications assessed]\n\n### Surface Inventory\n| Component | Type | External Input | Tool Use | Risk Level |\n|-----------|------|---------------|----------|------------|\n| [name] | [LLM app / MCP server / coding assistant] | [Yes/No] | [Yes/No] | [Critical/High/Medium/Low] |\n\n### Prompt Injection Exposure\n[Per component: injection surface score, current defenses, estimated bypass rate, recommended controls]\n\n### MCP Trust Assessment\n[Per installed MCP server: signed/unsigned, allowlist status, auth status,  ...",
       "key_xrefs": {

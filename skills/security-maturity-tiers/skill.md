@@ -451,7 +451,7 @@ Per AGENTS.md hard rule #5, the divergences above are surfaced against US, EU, U
 
 ## TTP Mapping
 
-Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v5.1.0) and ATT&CK references in `data/cve-catalog.json`.
+Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v5.4.0) and ATT&CK references in `data/cve-catalog.json`.
 
 | Tier | Must cover | TTP | Source | Tier-specific control element |
 |---|---|---|---|---|
