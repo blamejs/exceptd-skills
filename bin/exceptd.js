@@ -364,7 +364,7 @@ Examples:
   exceptd ci --scope code --max-rwep 70             # gate every code playbook
   exceptd ask "I think someone replaced npm packages"   # natural-language route
 
-Unknown verbs exit 2 with a structured ok:false body on stderr.
+Unknown verbs exit 10 (UNKNOWN_COMMAND) with a structured ok:false body on stderr. Exit 2 means a verb ran and detected an escalation-worthy finding (DETECTED_ESCALATE).
 
 Full documentation: ${PKG_ROOT}/README.md
 Project rules:      ${PKG_ROOT}/AGENTS.md
@@ -5994,7 +5994,42 @@ function cmdCi(runner, args, runOpts, pretty) {
   // --scope and --all. Operators specifying an explicit set get exactly that
   // set, no more, no less. Pre-0.11.9 the flag was silently ignored.
   let ids;
-  if (args.required) {
+  // Cycle 11 F1 (v0.12.31): positional args (`exceptd ci kernel cred-stores`)
+  // were silently ignored and the cwd-autodetect path ran instead. Operators
+  // got a green PASS for playbooks that were never actually executed. Treat
+  // positional args as an inline --required, with the same unknown-id refusal.
+  // Bare `exceptd ci` (no positional, no flags) still falls through to scope
+  // autodetect for backward compatibility.
+  //
+  // codex P1 (v0.12.31 follow-up): explicitly refuse `positional + --scope/--all/
+  // --required` as ambiguous. Pre-fix the guard `!args.all && !args.scope`
+  // would silently ignore the positional when a scope flag was also passed
+  // (`exceptd ci kernel --scope code` ran code-scope, dropping `kernel`).
+  // Combining selectors is operator error; surface it loudly.
+  const positional = Array.isArray(args._) ? args._.filter(s => typeof s === 'string' && s.length > 0) : [];
+  if (positional.length > 0) {
+    const conflicting = [];
+    if (args.required) conflicting.push('--required');
+    if (args.all) conflicting.push('--all');
+    if (args.scope) conflicting.push('--scope');
+    if (conflicting.length > 0) {
+      return emitError(
+        `ci: positional playbook arg(s) ${JSON.stringify(positional)} cannot be combined with ${conflicting.join(' / ')}. Pick one selector: either positional playbook IDs, OR --required <list>, OR --all, OR --scope <type>.`,
+        { positional, conflicting_flags: conflicting },
+        pretty,
+      );
+    }
+    const all = runner.listPlaybooks();
+    const unknown = positional.filter(r => !all.includes(r));
+    if (unknown.length > 0) {
+      return emitError(
+        `ci: unknown playbook ID(s) ${JSON.stringify(unknown)} on positional args. Known: ${all.join(", ")}. Pass --all for every playbook, --scope <type> for a class, or omit positional args to auto-detect from cwd.`,
+        { unknown, accepted: all },
+        pretty,
+      );
+    }
+    ids = positional;
+  } else if (args.required) {
     const requestedRaw = Array.isArray(args.required) ? args.required.join(",") : args.required;
     const requested = requestedRaw.split(",").map(s => s.trim()).filter(Boolean);
     const all = runner.listPlaybooks();
