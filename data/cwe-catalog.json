@@ -22,7 +22,8 @@
       "stale_after_days": 180,
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
-    }
+    },
+    "last_threat_review": "2026-05-15"
   },
   "CWE-20": {
     "id": "CWE-20",

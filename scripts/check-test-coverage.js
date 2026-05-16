@@ -184,15 +184,29 @@ function readMaybe(p) {
 
 // --- Categorization ---------------------------------------------------------
 
+// Mechanical / contributor-only docs the gate auto-allows: their content
+// has no operator-facing semantic surface (CONTRIBUTING is for PRs;
+// LICENSE / NOTICE / CODE_OF_CONDUCT are boilerplate; .gitignore / .npmrc
+// / .editorconfig are tooling). Edits here never need a regression test.
 const DOCS_ALWAYS_GREEN = new Set([
-  "CHANGELOG.md", "README.md", "CONTRIBUTING.md", "SECURITY.md",
-  "LICENSE", "NOTICE", "CODE_OF_CONDUCT.md", "AGENTS.md", "CLAUDE.md",
-  "SUPPORT.md", "MIGRATING.md", ".gitignore", ".npmrc", ".editorconfig",
+  "CONTRIBUTING.md", "LICENSE", "NOTICE", "CODE_OF_CONDUCT.md",
+  "CLAUDE.md", "SUPPORT.md", ".gitignore", ".npmrc", ".editorconfig",
+]);
+
+// Cycle 9 finding: operator-facing docs (release notes, install instructions,
+// security disclosure policy, migration guides, AI-assistant ground truth)
+// previously auto-greened. A PR could land deceptive copy here without any
+// reviewer signal. Downgrade to manual-review so the diff surfaces in the
+// gate output — a human (or the maintainer reviewing the bot summary) at
+// least sees the change exists.
+const DOCS_MANUAL_REVIEW = new Set([
+  "CHANGELOG.md", "README.md", "SECURITY.md", "MIGRATING.md", "AGENTS.md",
 ]);
 
 function categorize(file) {
   const norm = file.replace(/\\/g, "/");
   if (DOCS_ALWAYS_GREEN.has(norm)) return "docs";
+  if (DOCS_MANUAL_REVIEW.has(norm)) return "manual-review";
   if (norm.startsWith("tests/")) return "test"; // no recursion
   if (norm.startsWith("docs/")) return "docs";
   if (norm.endsWith(".md") && !norm.startsWith("data/")) return "docs";
@@ -662,5 +676,5 @@ module.exports = {
   extractCliSurface, extractLibExports, extractPlaybookIds, extractCveIocChanges,
   coversCliVerb, coversCliFlag, coversLibExport, coversPlaybookId, coversCveIoc,
   scanForCoincidenceAsserts,
-  DOCS_ALWAYS_GREEN,
+  DOCS_ALWAYS_GREEN, DOCS_MANUAL_REVIEW,
 };
