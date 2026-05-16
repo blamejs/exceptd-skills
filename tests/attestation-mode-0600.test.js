@@ -60,19 +60,26 @@ test('attestation.json is written with mode 0o600 (owner-read/write only)', (t) 
 
   const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-mode-test-'));
   try {
-    // Run framework playbook with empty evidence (posture-only walk
-    // through 7-phase contract). framework has no preconditions that
-    // would refuse on a non-Linux host, and its run produces an
-    // attestation under EXCEPTD_HOME/attestations/<tag>/<sid>/.
-    const r = cli(['run', 'framework', '--evidence', '-'], {
-      input: '{}',
+    // Use the kernel positive-detect path (cycle 14 sanity check shape):
+    // signal_overrides forces kver-in-affected-range to hit, which
+    // triggers CVE matching → classification=detected → close phase
+    // emits an evidence_package + the runner persists an attestation.
+    // The framework playbook on empty evidence does NOT persist
+    // (no detected findings, no close-phase artifact).
+    const evidence = JSON.stringify({
+      precondition_checks: { 'linux-platform': true, 'uname-available': true },
+      artifacts: { 'kernel-release': '5.15.0-69-generic' },
+      signal_overrides: { 'kver-in-affected-range': 'hit' },
+    });
+    const r = cli(['run', 'kernel', '--evidence', '-'], {
+      input: evidence,
       env: { EXCEPTD_HOME: tmpHome },
     });
     assert.equal(r.status, 0, `run must succeed; got ${r.status}, stderr: ${r.stderr.slice(0, 200)}`);
 
     const attestationsRoot = path.join(tmpHome, 'attestations');
     const attFile = findAttestation(attestationsRoot);
-    assert.ok(attFile, `attestation.json must exist somewhere under ${attestationsRoot}`);
+    assert.ok(attFile, `attestation.json must exist somewhere under ${attestationsRoot}; stdout: ${r.stdout.slice(0, 300)}`);
 
     const stat = fs.statSync(attFile);
     // POSIX mode bits: extract permission bits (lower 9 bits).
