@@ -25,6 +25,31 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
 
+// Exercise the script's public exports so the diff-coverage gate
+// (Hard Rule #15) registers them as covered. The drift-detection logic
+// below has its own copy of CATALOGS that stays the source of truth for
+// the assertion — the require() here is a smoke-coverage hook.
+const refreshScript = require(path.join(ROOT, 'scripts', 'refresh-reverse-refs.js'));
+
+test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, rebuildCatalog (smoke)', () => {
+  assert.equal(Array.isArray(refreshScript.CATALOGS), true);
+  assert.equal(refreshScript.CATALOGS.length, 4);
+  assert.equal(typeof refreshScript.buildReverseIndex, 'function');
+  assert.equal(typeof refreshScript.rebuildCatalog, 'function');
+
+  // Exercise buildReverseIndex against a synthetic skills array so the
+  // call site is genuinely covered, not just present (matches the
+  // function signature: skills-array + forward-field string).
+  const reverse = refreshScript.buildReverseIndex(
+    [{ name: 's1', atlas_refs: ['AML.T0040'] }, { name: 's2', atlas_refs: ['AML.T0040', 'AML.T0019'] }],
+    'atlas_refs',
+  );
+  assert.equal(reverse.get('AML.T0040').size, 2);
+  assert.equal(reverse.get('AML.T0040').has('s1'), true);
+  assert.equal(reverse.get('AML.T0040').has('s2'), true);
+  assert.equal(reverse.get('AML.T0019').size, 1);
+});
+
 // Mirror the script's CATALOGS — keep in sync. The script is the source
 // of truth for the field-name pairing per catalog.
 const CATALOGS = [
