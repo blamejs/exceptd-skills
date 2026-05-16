@@ -36,7 +36,7 @@ data_deps:
   - cve-catalog.json          # files in data/ this skill reads
   - atlas-ttps.json
 atlas_refs:
-  - AML.T0043                 # MITRE ATLAS v5.1.0 TTP IDs
+  - AML.T0043                 # MITRE ATLAS v5.4.0 TTP IDs
   - AML.T0054
 attack_refs:
   - T1068                     # MITRE ATT&CK TTP IDs
@@ -121,7 +121,7 @@ Schema per entry:
   "AML.T0043": {
     "name": "Craft Adversarial Data",
     "tactic": "ML Attack Staging",
-    "atlas_version": "5.1.0",
+    "atlas_version": "5.4.0",
     "description": "...",
     "framework_coverage": {
       "NIST-800-53": {"covered": false, "nearest_control": null, "gap_description": "..."},
@@ -179,7 +179,7 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/d3fend-catalog.json`
 
-28 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.0.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
+29 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.0.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
 
 `_meta.d3fend_version` pins the version; D3FEND ontology additions are tracked in skill `forward_watch` fields.
 
@@ -201,7 +201,7 @@ RWEP (Real-World Exploit Priority) scoring engine.
 
 - `score(cveId)` — Return RWEP score for a CVE in the catalog
 - `scoreCustom(factors)` — Score a custom factor set (for CVEs not yet in catalog)
-- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v5.1.0 IDs
+- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v5.4.0 IDs
 - `compare(cveId)` — Return CVSS vs. RWEP comparison with explanation of the delta
 
 RWEP factor weights:
