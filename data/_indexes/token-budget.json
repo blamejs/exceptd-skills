@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1591081,
-    "total_approx_tokens": 397777,
+    "total_chars": 1591052,
+    "total_approx_tokens": 397769,
     "skill_count": 42
   },
   "skills": {
@@ -1185,10 +1185,10 @@
     },
     "supply-chain-integrity": {
       "path": "skills/supply-chain-integrity/skill.md",
-      "bytes": 40261,
-      "chars": 40123,
+      "bytes": 40250,
+      "chars": 40112,
       "lines": 325,
-      "approx_tokens": 10031,
+      "approx_tokens": 10028,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1207,9 +1207,9 @@
           "approx_tokens": 779
         },
         "exploit-availability-matrix": {
-          "bytes": 4581,
-          "chars": 4521,
-          "approx_tokens": 1130
+          "bytes": 4570,
+          "chars": 4510,
+          "approx_tokens": 1128
         },
         "analysis-procedure": {
           "bytes": 7457,
@@ -1735,10 +1735,10 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "bytes": 44168,
-      "chars": 43995,
+      "bytes": 44157,
+      "chars": 43984,
       "lines": 306,
-      "approx_tokens": 10999,
+      "approx_tokens": 10996,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1757,9 +1757,9 @@
           "approx_tokens": 603
         },
         "exploit-availability-matrix": {
-          "bytes": 6196,
-          "chars": 6114,
-          "approx_tokens": 1529
+          "bytes": 6185,
+          "chars": 6103,
+          "approx_tokens": 1526
         },
         "analysis-procedure": {
           "bytes": 8040,
@@ -2340,10 +2340,10 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "bytes": 44569,
-      "chars": 44411,
+      "bytes": 44562,
+      "chars": 44404,
       "lines": 420,
-      "approx_tokens": 11103,
+      "approx_tokens": 11101,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2362,9 +2362,9 @@
           "approx_tokens": 1129
         },
         "exploit-availability-matrix": {
-          "bytes": 3379,
-          "chars": 3375,
-          "approx_tokens": 844
+          "bytes": 3372,
+          "chars": 3368,
+          "approx_tokens": 842
         },
         "analysis-procedure": {
           "bytes": 7625,
