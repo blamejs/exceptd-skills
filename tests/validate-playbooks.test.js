@@ -52,8 +52,8 @@ test("every shipped playbook validates without errors", () => {
 
   assert.equal(
     playbooks.length,
-    13,
-    `expected 13 shipped playbooks, found ${playbooks.length}`,
+    16,
+    `expected 16 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

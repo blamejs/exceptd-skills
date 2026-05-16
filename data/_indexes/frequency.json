@@ -86,8 +86,9 @@
         ]
       },
       "CWE-345": {
-        "count": 1,
+        "count": 2,
         "skills": [
+          "idp-incident-response",
           "mcp-agent-trust"
         ]
       },
@@ -163,18 +164,21 @@
         ]
       },
       "CWE-269": {
-        "count": 4,
+        "count": 6,
         "skills": [
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "container-runtime-security",
           "identity-assurance",
+          "idp-incident-response",
           "webapp-security"
         ]
       },
       "CWE-732": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "cloud-security",
           "container-runtime-security",
           "identity-assurance",
@@ -245,13 +249,16 @@
         ]
       },
       "CWE-287": {
-        "count": 10,
+        "count": 13,
         "skills": [
           "age-gates-child-safety",
           "api-security",
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
+          "idp-incident-response",
           "ot-ics-security",
+          "ransomware-response",
           "sector-energy",
           "sector-financial",
           "sector-healthcare",
@@ -269,11 +276,13 @@
         ]
       },
       "CWE-798": {
-        "count": 5,
+        "count": 7,
         "skills": [
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
           "ot-ics-security",
+          "ransomware-response",
           "sector-energy",
           "sector-financial"
         ]
@@ -291,10 +300,12 @@
         ]
       },
       "CWE-863": {
-        "count": 4,
+        "count": 6,
         "skills": [
           "api-security",
+          "cloud-iam-incident",
           "identity-assurance",
+          "idp-incident-response",
           "sector-financial",
           "webapp-security"
         ]
@@ -304,6 +315,19 @@
         "skills": [
           "ot-ics-security",
           "sector-energy"
+        ]
+      },
+      "CWE-522": {
+        "count": 2,
+        "skills": [
+          "cloud-iam-incident",
+          "idp-incident-response"
+        ]
+      },
+      "CWE-284": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
         ]
       }
     },
@@ -343,46 +367,55 @@
         ]
       },
       "D3-IOPR": {
-        "count": 7,
+        "count": 10,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
+          "cloud-iam-incident",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
+          "idp-incident-response",
           "rag-pipeline-security",
+          "ransomware-response",
           "sector-telecom"
         ]
       },
       "D3-NTA": {
-        "count": 7,
+        "count": 10,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
+          "idp-incident-response",
           "rag-pipeline-security",
+          "ransomware-response",
           "sector-telecom"
         ]
       },
       "D3-CBAN": {
-        "count": 3,
+        "count": 5,
         "skills": [
+          "cloud-iam-incident",
           "defensive-countermeasure-mapping",
+          "idp-incident-response",
           "mcp-agent-trust",
           "supply-chain-integrity"
         ]
       },
       "D3-CSPP": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "ai-c2-detection",
           "attack-surface-pentest",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "mcp-agent-trust",
-          "rag-pipeline-security"
+          "rag-pipeline-security",
+          "ransomware-response"
         ]
       },
       "D3-EHB": {
@@ -394,9 +427,11 @@
         ]
       },
       "D3-MFA": {
-        "count": 2,
+        "count": 4,
         "skills": [
+          "cloud-iam-incident",
           "defensive-countermeasure-mapping",
+          "idp-incident-response",
           "mcp-agent-trust"
         ]
       },
@@ -458,15 +493,22 @@
         ]
       },
       "D3-RPA": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "defensive-countermeasure-mapping"
+          "defensive-countermeasure-mapping",
+          "ransomware-response"
         ]
       },
       "D3-SCP": {
         "count": 1,
         "skills": [
           "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-CAA": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
         ]
       }
     },
@@ -895,6 +937,138 @@
         "skills": [
           "sector-telecom"
         ]
+      },
+      "OFAC-SDN-Payment-Block": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "Insurance-Carrier-24h-Notification": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "EU-Sanctions-Reg-2014-833-Cyber": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "Immutable-Backup-Recovery": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "Decryptor-Availability-Pre-Decision": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "PHI-Exfil-Before-Encrypt-Breach-Class": {
+        "count": 1,
+        "skills": [
+          "ransomware-response"
+        ]
+      },
+      "FedRAMP-IL5-IAM-Federated": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "CISA-Snowflake-AA24-IdP-Cloud": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "NIST-800-53-AC-2-Cross-Account": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "ISO-27017-Cloud-IAM": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "SOC2-CC6-Access-Key-Leak-Public-Repo": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "AWS-Security-Hub-Coverage-Gap": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "UK-CAF-B2-Cloud-IAM": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "AU-ISM-1546-Cloud-Service-Account": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "NIST-800-53-IA-5-Federated": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "ISO-27001-2022-A.5.16-Federated": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "SOC2-CC6-OAuth-Consent": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "UK-CAF-B2-IdP-Tenant": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "AU-ISM-1559-IdP": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "NIS2-Art-21-Federated-Identity": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "DORA-Art-19-IdP-4h": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "OFAC-Sanctions-Threat-Actor-Negotiation": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
       }
     },
     "atlas_refs": {
@@ -909,11 +1083,12 @@
         ]
       },
       "AML.T0051": {
-        "count": 9,
+        "count": 10,
         "skills": [
           "ai-attack-surface",
           "ai-risk-management",
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "dlp-gap-analysis",
           "identity-assurance",
           "incident-response-playbook",
@@ -1022,11 +1197,12 @@
         ]
       },
       "T1059": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
           "mcp-agent-trust",
+          "ransomware-response",
           "webapp-security"
         ]
       },
@@ -1090,15 +1266,17 @@
         ]
       },
       "T1078": {
-        "count": 11,
+        "count": 13,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "cloud-security",
           "email-security-anti-phishing",
           "identity-assurance",
           "incident-response-playbook",
+          "ransomware-response",
           "sector-energy",
           "sector-financial",
           "sector-healthcare",
@@ -1106,12 +1284,13 @@
         ]
       },
       "T1567": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "dlp-gap-analysis",
           "incident-response-playbook",
+          "ransomware-response",
           "sector-financial",
           "sector-healthcare"
         ]
@@ -1184,9 +1363,10 @@
         ]
       },
       "T1486": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "incident-response-playbook",
+          "ransomware-response",
           "sector-financial"
         ]
       },
@@ -1197,8 +1377,9 @@
         ]
       },
       "T1199": {
-        "count": 1,
+        "count": 2,
         "skills": [
+          "idp-incident-response",
           "sector-telecom"
         ]
       },
@@ -1237,6 +1418,50 @@
         "skills": [
           "email-security-anti-phishing"
         ]
+      },
+      "T1078.004": {
+        "count": 2,
+        "skills": [
+          "cloud-iam-incident",
+          "idp-incident-response"
+        ]
+      },
+      "T1098.001": {
+        "count": 2,
+        "skills": [
+          "cloud-iam-incident",
+          "idp-incident-response"
+        ]
+      },
+      "T1552.005": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "T1580": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "T1538": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "T1556.007": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
+      },
+      "T1606.002": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
       }
     },
     "rfc_refs": {
@@ -1267,11 +1492,13 @@
         ]
       },
       "RFC-7519": {
-        "count": 7,
+        "count": 9,
         "skills": [
           "api-security",
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
+          "idp-incident-response",
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare",
@@ -1294,11 +1521,13 @@
         ]
       },
       "RFC-8725": {
-        "count": 6,
+        "count": 8,
         "skills": [
           "api-security",
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
+          "idp-incident-response",
           "mcp-agent-trust",
           "sector-financial",
           "webapp-security"
@@ -1314,10 +1543,11 @@
         ]
       },
       "RFC-9421": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "ai-c2-detection",
           "api-security",
+          "idp-incident-response",
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare"
@@ -1398,6 +1628,24 @@
         "skills": [
           "sector-telecom"
         ]
+      },
+      "RFC-8693": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "RFC-9068": {
+        "count": 1,
+        "skills": [
+          "cloud-iam-incident"
+        ]
+      },
+      "RFC-7591": {
+        "count": 1,
+        "skills": [
+          "idp-incident-response"
+        ]
       }
     },
     "dlp_refs": {}
@@ -1406,18 +1654,34 @@
     "cwe_refs": [
       {
         "id": "CWE-287",
-        "count": 10,
+        "count": 13,
         "skills": [
           "age-gates-child-safety",
           "api-security",
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
+          "idp-incident-response",
           "ot-ics-security",
+          "ransomware-response",
           "sector-energy",
           "sector-financial",
           "sector-healthcare",
           "sector-telecom",
           "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-798",
+        "count": 7,
+        "skills": [
+          "cloud-iam-incident",
+          "cloud-security",
+          "identity-assurance",
+          "ot-ics-security",
+          "ransomware-response",
+          "sector-energy",
+          "sector-financial"
         ]
       },
       {
@@ -1482,21 +1746,23 @@
         ]
       },
       {
-        "id": "CWE-352",
-        "count": 5,
+        "id": "CWE-269",
+        "count": 6,
         "skills": [
-          "api-security",
           "attack-surface-pentest",
-          "mcp-agent-trust",
-          "sector-financial",
+          "cloud-iam-incident",
+          "container-runtime-security",
+          "identity-assurance",
+          "idp-incident-response",
           "webapp-security"
         ]
       },
       {
         "id": "CWE-732",
-        "count": 5,
+        "count": 6,
         "skills": [
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "cloud-security",
           "container-runtime-security",
           "identity-assurance",
@@ -1504,29 +1770,64 @@
         ]
       },
       {
-        "id": "CWE-798",
-        "count": 5,
-        "skills": [
-          "cloud-security",
-          "identity-assurance",
-          "ot-ics-security",
-          "sector-energy",
-          "sector-financial"
-        ]
-      },
-      {
-        "id": "CWE-918",
-        "count": 5,
+        "id": "CWE-863",
+        "count": 6,
         "skills": [
           "api-security",
-          "attack-surface-pentest",
-          "mcp-agent-trust",
-          "sector-telecom",
+          "cloud-iam-incident",
+          "identity-assurance",
+          "idp-incident-response",
+          "sector-financial",
           "webapp-security"
         ]
       }
     ],
     "d3fend_refs": [
+      {
+        "id": "D3-IOPR",
+        "count": 10,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "cloud-iam-incident",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "fuzz-testing-strategy",
+          "idp-incident-response",
+          "rag-pipeline-security",
+          "ransomware-response",
+          "sector-telecom"
+        ]
+      },
+      {
+        "id": "D3-NTA",
+        "count": 10,
+        "skills": [
+          "ai-attack-surface",
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "cloud-iam-incident",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "idp-incident-response",
+          "rag-pipeline-security",
+          "ransomware-response",
+          "sector-telecom"
+        ]
+      },
+      {
+        "id": "D3-CSPP",
+        "count": 7,
+        "skills": [
+          "ai-c2-detection",
+          "attack-surface-pentest",
+          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "rag-pipeline-security",
+          "ransomware-response"
+        ]
+      },
       {
         "id": "D3-EAL",
         "count": 7,
@@ -1541,41 +1842,24 @@
         ]
       },
       {
-        "id": "D3-IOPR",
-        "count": 7,
+        "id": "D3-CBAN",
+        "count": 5,
         "skills": [
-          "ai-attack-surface",
-          "ai-c2-detection",
+          "cloud-iam-incident",
           "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
-          "fuzz-testing-strategy",
-          "rag-pipeline-security",
-          "sector-telecom"
-        ]
-      },
-      {
-        "id": "D3-NTA",
-        "count": 7,
-        "skills": [
-          "ai-attack-surface",
-          "ai-c2-detection",
-          "attack-surface-pentest",
-          "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
-          "rag-pipeline-security",
-          "sector-telecom"
-        ]
-      },
-      {
-        "id": "D3-CSPP",
-        "count": 6,
-        "skills": [
-          "ai-c2-detection",
-          "attack-surface-pentest",
-          "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
+          "idp-incident-response",
           "mcp-agent-trust",
-          "rag-pipeline-security"
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "D3-MFA",
+        "count": 4,
+        "skills": [
+          "cloud-iam-incident",
+          "defensive-countermeasure-mapping",
+          "idp-incident-response",
+          "mcp-agent-trust"
         ]
       },
       {
@@ -1586,15 +1870,6 @@
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "sector-telecom"
-        ]
-      },
-      {
-        "id": "D3-CBAN",
-        "count": 3,
-        "skills": [
-          "defensive-countermeasure-mapping",
-          "mcp-agent-trust",
-          "supply-chain-integrity"
         ]
       },
       {
@@ -1621,14 +1896,6 @@
         "skills": [
           "defensive-countermeasure-mapping",
           "fuzz-testing-strategy",
-          "kernel-lpe-triage"
-        ]
-      },
-      {
-        "id": "D3-ASLR",
-        "count": 2,
-        "skills": [
-          "defensive-countermeasure-mapping",
           "kernel-lpe-triage"
         ]
       }
@@ -1764,11 +2031,12 @@
       },
       {
         "id": "AML.T0051",
-        "count": 9,
+        "count": 10,
         "skills": [
           "ai-attack-surface",
           "ai-risk-management",
           "attack-surface-pentest",
+          "cloud-iam-incident",
           "dlp-gap-analysis",
           "identity-assurance",
           "incident-response-playbook",
@@ -1859,6 +2127,25 @@
     ],
     "attack_refs": [
       {
+        "id": "T1078",
+        "count": 13,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-iam-incident",
+          "cloud-security",
+          "email-security-anti-phishing",
+          "identity-assurance",
+          "incident-response-playbook",
+          "ransomware-response",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare",
+          "sector-telecom"
+        ]
+      },
+      {
         "id": "T1190",
         "count": 13,
         "skills": [
@@ -1878,41 +2165,26 @@
         ]
       },
       {
-        "id": "T1078",
-        "count": 11,
-        "skills": [
-          "age-gates-child-safety",
-          "api-security",
-          "attack-surface-pentest",
-          "cloud-security",
-          "email-security-anti-phishing",
-          "identity-assurance",
-          "incident-response-playbook",
-          "sector-energy",
-          "sector-financial",
-          "sector-healthcare",
-          "sector-telecom"
-        ]
-      },
-      {
         "id": "T1567",
-        "count": 6,
+        "count": 7,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "dlp-gap-analysis",
           "incident-response-playbook",
+          "ransomware-response",
           "sector-financial",
           "sector-healthcare"
         ]
       },
       {
         "id": "T1059",
-        "count": 4,
+        "count": 5,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
           "mcp-agent-trust",
+          "ransomware-response",
           "webapp-security"
         ]
       },
@@ -1933,6 +2205,15 @@
           "container-runtime-security",
           "kernel-lpe-triage",
           "ot-ics-security"
+        ]
+      },
+      {
+        "id": "T1486",
+        "count": 3,
+        "skills": [
+          "incident-response-playbook",
+          "ransomware-response",
+          "sector-financial"
         ]
       },
       {
@@ -1959,14 +2240,6 @@
           "ot-ics-security",
           "sector-energy"
         ]
-      },
-      {
-        "id": "T1041",
-        "count": 2,
-        "skills": [
-          "dlp-gap-analysis",
-          "incident-response-playbook"
-        ]
       }
     ],
     "rfc_refs": [
@@ -1988,14 +2261,30 @@
       },
       {
         "id": "RFC-7519",
-        "count": 7,
+        "count": 9,
         "skills": [
           "api-security",
+          "cloud-iam-incident",
           "cloud-security",
           "identity-assurance",
+          "idp-incident-response",
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-8725",
+        "count": 8,
+        "skills": [
+          "api-security",
+          "cloud-iam-incident",
+          "cloud-security",
+          "identity-assurance",
+          "idp-incident-response",
+          "mcp-agent-trust",
+          "sector-financial",
           "webapp-security"
         ]
       },
@@ -2012,23 +2301,12 @@
         ]
       },
       {
-        "id": "RFC-8725",
-        "count": 6,
-        "skills": [
-          "api-security",
-          "cloud-security",
-          "identity-assurance",
-          "mcp-agent-trust",
-          "sector-financial",
-          "webapp-security"
-        ]
-      },
-      {
         "id": "RFC-9421",
-        "count": 5,
+        "count": 6,
         "skills": [
           "ai-c2-detection",
           "api-security",
+          "idp-incident-response",
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare"
@@ -2085,37 +2363,59 @@
   "orphan_adjacent": {
     "cwe_refs": [
       "CWE-20",
+      "CWE-284",
       "CWE-327",
-      "CWE-345",
       "CWE-672"
     ],
     "d3fend_refs": [
+      "D3-CAA",
       "D3-FAPA",
       "D3-PA",
-      "D3-RPA",
       "D3-SCP"
     ],
     "framework_gaps": [
       "3GPP-TR-33.926",
       "ALL-MCP-TOOL-TRUST",
+      "AU-ISM-1546-Cloud-Service-Account",
       "AU-ISM-1556",
+      "AU-ISM-1559-IdP",
+      "AWS-Security-Hub-Coverage-Gap",
+      "CISA-Snowflake-AA24-IdP-Cloud",
       "CWE-Top-25-2024-meta",
       "CycloneDX-v1.6-SBOM",
+      "DORA-Art-19-IdP-4h",
       "DORA-Art-21-Telecom-ICT",
+      "Decryptor-Availability-Pre-Decision",
+      "EU-Sanctions-Reg-2014-833-Cyber",
       "FCC-CPNI-4.1",
       "FCC-Cyber-Incident-Notification-2024",
+      "FedRAMP-IL5-IAM-Federated",
       "GSMA-NESAS-Deployment",
+      "ISO-27001-2022-A.5.16-Federated",
+      "ISO-27017-Cloud-IAM",
       "ITU-T-X.805",
+      "Immutable-Backup-Recovery",
+      "Insurance-Carrier-24h-Notification",
       "NIS2-Annex-I-Telecom",
+      "NIS2-Art-21-Federated-Identity",
+      "NIST-800-53-AC-2-Cross-Account",
+      "NIST-800-53-IA-5-Federated",
       "NIST-800-53-SI-12",
       "NIST-800-53-SI-2",
       "NIST-800-63B-rev4",
+      "OFAC-SDN-Payment-Block",
+      "OFAC-Sanctions-Threat-Actor-Negotiation",
       "OWASP-LLM-Top-10-2025-LLM02",
       "OWASP-LLM-Top-10-2025-LLM06",
       "OWASP-Pen-Testing-Guide-v5",
       "PCI-DSS-4.0-6.3.3",
+      "PHI-Exfil-Before-Encrypt-Breach-Class",
       "PTES-Pre-engagement",
+      "SOC2-CC6-Access-Key-Leak-Public-Repo",
+      "SOC2-CC6-OAuth-Consent",
       "SPDX-v3.0-SBOM",
+      "UK-CAF-B2-Cloud-IAM",
+      "UK-CAF-B2-IdP-Tenant",
       "UK-CAF-B5",
       "VEX-CSAF-v2.1"
     ],
@@ -2128,15 +2428,19 @@
       "T1110",
       "T1133",
       "T1195.002",
-      "T1199",
       "T1213",
       "T1505",
+      "T1538",
       "T1548.001",
       "T1552",
+      "T1552.005",
+      "T1556.007",
       "T1566.001",
       "T1566.002",
       "T1566.003",
       "T1568",
+      "T1580",
+      "T1606.002",
       "T1610",
       "T1611"
     ],
@@ -2146,7 +2450,10 @@
       "RFC-4301",
       "RFC-4303",
       "RFC-7296",
+      "RFC-7591",
+      "RFC-8693",
       "RFC-9000",
+      "RFC-9068",
       "RFC-9106",
       "RFC-9420",
       "RFC-9622",
@@ -2159,7 +2466,6 @@
       "CWE-123",
       "CWE-250",
       "CWE-256",
-      "CWE-284",
       "CWE-310",
       "CWE-312",
       "CWE-326",
@@ -2171,7 +2477,6 @@
       "CWE-353",
       "CWE-426",
       "CWE-506",
-      "CWE-522",
       "CWE-669",
       "CWE-759",
       "CWE-760",
@@ -2202,7 +2507,6 @@
     ],
     "d3fend_refs": [
       "D3-ANCI",
-      "D3-CAA",
       "D3-CH",
       "D3-EI",
       "D3-FCR",

@@ -1,0 +1,1351 @@
+{
+  "_meta": {
+    "id": "cloud-iam-incident",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-15",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-15",
+        "summary": "Initial seven-phase cloud-IAM incident-response playbook covering AWS / GCP / Azure account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks (IAM Identity Center / AWS SSO, Azure managed identity, GCP Workload Identity Federation), and IMDS v1 metadata abuse. Walks cloud audit logs (CloudTrail / Cloud Audit Logs / Activity Logs), IAM principal inventory, recently-issued access keys, cross-account assume-role events, federated identity provider configuration, IMDS access patterns, SCP / Org Policy / Management Group state, KMS / S3 / bucket-policy modifications, and billing anomalies (crypto-mining signal). Closes the GRC loop with cloud-IAM-specific framework-gap mapping + multi-jurisdiction notification drafts.",
+        "framework_gaps_updated": [
+          "FedRAMP-IL5-IAM-Federated",
+          "CISA-Snowflake-AA24-IdP-Cloud",
+          "NIST-800-53-AC-2-Cross-Account",
+          "ISO-27017-Cloud-IAM",
+          "SOC2-CC6-Access-Key-Leak-Public-Repo",
+          "AWS-Security-Hub-Coverage-Gap",
+          "UK-CAF-B2-Cloud-IAM",
+          "AU-ISM-1546-Cloud-Service-Account"
+        ]
+      }
+    ],
+    "owner": "@blamejs/grc",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "csp-audit-log-api-reachable",
+        "description": "Cloud provider audit-log API (AWS CloudTrail Lookup / GCP Cloud Audit Logs API / Azure Activity Log API) must be reachable from the host AI's execution environment. The runner reads these APIs to materialise the look phase artifacts.",
+        "check": "csp_audit_log_api_reachable == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "iam-read-only-access",
+        "description": "Investigator must hold IAM read-only equivalent (AWS IAMReadOnlyAccess / GCP roles/iam.securityReviewer / Azure Reader + User Access Administrator-read) on every account in scope. Write access is explicitly NOT required and not desired during the look/detect phases.",
+        "check": "iam_read_only_access == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "account-ownership",
+        "description": "Operator owns the cloud account(s) being investigated or holds explicit written authorisation from the account owner. Querying audit logs on a third-party tenant without authorisation is a CFAA / Computer Misuse Act / equivalent violation regardless of intent.",
+        "check": "operator_owns_account == true OR written_authorisation_on_file == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cred-stores",
+        "condition": "analyze.blast_radius_score >= 4"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "compromised_account_has_published_assets == true"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Cloud IAM account takeover, key compromise, and federated-trust abuse",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1078.004",
+      "T1098.001",
+      "T1552.005",
+      "T1580",
+      "T1538",
+      "T1078"
+    ],
+    "cve_refs": [
+      "CVE-2024-1709",
+      "CVE-2024-21626",
+      "CVE-2024-3094",
+      "CVE-2026-20182",
+      "CVE-2026-30623"
+    ],
+    "cwe_refs": [
+      "CWE-287",
+      "CWE-522",
+      "CWE-798",
+      "CWE-863",
+      "CWE-732",
+      "CWE-269"
+    ],
+    "d3fend_refs": [
+      "D3-MFA",
+      "D3-CBAN",
+      "D3-NTA",
+      "D3-IOPR",
+      "D3-CAA"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "hipaa",
+      "pci-dss-4"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "compromised_principal_inventory",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.34",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "data_subject_categories_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "compromised_principal_inventory",
+            "exposure_window_estimate",
+            "rotation_status"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "major_ict_incident_classification",
+            "affected_critical_or_important_function",
+            "initial_containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "compromised_principal_inventory",
+            "data_subject_impact_assessment"
+          ]
+        },
+        {
+          "jurisdiction": "US-CA",
+          "regulation": "CCPA / CPRA Sec.1798.82",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 1440,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "california_resident_records_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "US-NY",
+          "regulation": "23 NYCRR 500.17 cyber event notification",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "cyber_event_classification",
+            "ciso_acknowledgement"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Privacy Act 1988 — Notifiable Data Breaches scheme (s26WK)",
+          "obligation": "notify_regulator",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "compromised_principal_inventory",
+            "australian_resident_records_affected",
+            "remediation_completed_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "JP",
+          "regulation": "APPI Art.26",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "compromised_principal_inventory",
+            "japanese_resident_records_affected"
+          ]
+        },
+        {
+          "jurisdiction": "SG",
+          "regulation": "PDPA Notification Obligation s26D",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "singapore_resident_records_affected",
+            "containment_record"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "scp-as-prevention",
+          "claim": "We have Service Control Policies / Org Policies / Management Group policies — account compromise has bounded blast radius.",
+          "fast_detection_test": "List the most recent 90 days of `AssumeRole` / `AssumeRoleWithSAML` / `AssumeRoleWithWebIdentity` events that succeeded against SCP-restricted accounts. SCPs constrain principals within the account but do not block cross-account assume-role chains initiated from a compromised principal in an account where the SCP allows broad role assumption. Count assume-role chains that crossed >= 2 account boundaries within 24h of a single source principal — SCPs do not see this pattern.",
+          "implicated_controls": [
+            "nist-800-53-AC-2",
+            "iso-27001-2022-A.5.18",
+            "soc2-cc6.1"
+          ]
+        },
+        {
+          "pattern_id": "root-mfa-as-identity-hygiene",
+          "claim": "Root accounts have MFA enabled — identity hygiene is complete.",
+          "fast_detection_test": "Inventory every IAM user, service account, managed identity, and federated principal in the tenant. Count those with active long-lived access keys (last_used <= 90 days) AND no MFA on the underlying principal. Root MFA is a 1-of-N control; the dominant 2024-2026 compromise vector is long-lived access keys on non-root IAM users (Snowflake-class AA24 advisory) and stolen federated SAML assertions, neither of which root MFA touches.",
+          "implicated_controls": [
+            "nist-800-53-AC-2",
+            "iso-27001-2022-A.5.15",
+            "au-ism-1546"
+          ]
+        },
+        {
+          "pattern_id": "security-hub-green-as-secure",
+          "claim": "AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud is all-green — the account is secure.",
+          "fast_detection_test": "Each CSP-native posture tool is coverage-based, not breach-detection. Diff the Security Hub findings inventory against (a) GuardDuty / Cloud IDS / Defender findings, (b) CloudTrail anomaly indicators (root login from new ASN, mass IAM user creation outside IaC, unused-region resource creation), (c) billing anomalies. Any divergence between 'green posture score' and 'open behavioural anomaly' means the green score is a coverage attestation, not a security attestation.",
+          "implicated_controls": [
+            "soc2-cc7.2",
+            "iso-27001-2022-A.8.16",
+            "nist-800-53-SI-4"
+          ]
+        },
+        {
+          "pattern_id": "access-analyzer-as-detective",
+          "claim": "IAM Access Analyzer / GCP Policy Analyzer / Azure Access Reviews catches anomalous IAM grants.",
+          "fast_detection_test": "Access Analyzer is a static-analysis tool that flags resource-policy reachability from external principals; it does not detect the IAM principal-side actions that precede a public grant (the attacker creating their own access key on a compromised user; the attacker assuming a role into a target account via legitimate SAML). Show 90 days of Access Analyzer findings AND 90 days of CloudTrail `CreateAccessKey` events outside the org's IaC apply window. Any CreateAccessKey event that Access Analyzer does not surface is a detection gap, not a tool failure.",
+          "implicated_controls": [
+            "nist-800-53-AC-6",
+            "soc2-cc6.3",
+            "iso-27001-2022-A.5.18"
+          ]
+        },
+        {
+          "pattern_id": "oidc-ci-as-no-static-keys",
+          "claim": "We use OIDC federation for CI (GitHub Actions / GitLab / CircleCI) — there are no static cloud credentials in the org.",
+          "fast_detection_test": "OIDC federation eliminates static keys on the CI side but creates a federated-trust attack surface (audience claim manipulation, branch-condition bypass, repo:* wildcard trust). Inventory every IAM role with a trust policy referencing token.actions.githubusercontent.com (or GitLab / CircleCI equivalent). Count those with (a) wildcard `repo:*` subject claim, (b) no `:ref:refs/heads/main` constraint, (c) audience set to `sts.amazonaws.com` (default). Each is a fork-PR-to-takeover primitive that the 'no static keys' attestation does not cover.",
+          "implicated_controls": [
+            "nist-800-53-AC-2",
+            "soc2-cc6.1",
+            "uk-caf-b2"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Cloud-IAM frameworks (NIST 800-53 AC-2 Account Management, ISO/IEC 27017 cloud-services controls, SOC 2 CC6 logical-access criteria, FedRAMP IL5 baseline, AWS Security Hub control library, GCP CIS, Azure Security Benchmark) target conventional account lifecycle and resource-policy posture. They were authored against single-account, single-principal models. The dominant 2024-2026 cloud-account-compromise vectors — cross-account assume-role chains initiated from a compromised principal, federated SAML / OIDC trust abuse, long-lived access-key exfiltration from public repositories, managed-identity token replay against the metadata API — are session-based and cross-boundary. Account-lifecycle controls cannot see them. CISA's Snowflake AA24 advisory (June 2024) documented the third-party-IdP-to-cloud-IAM credential reuse chain as a class of compromise; no framework names this chain as a distinct control class. FedRAMP IL5 baseline assumes single-cloud-tenant deployments and does not contemplate federated IL6 sovereign-cloud trust patterns. UK CAF Principle B2 (Identity and Access Control) is outcome-based on credential lifecycle and treats cloud-IAM as a sub-case of conventional IAM. AU ISM-1546 covers MFA on privileged human users; cloud service-account access keys (which now hold the actual operational privileges) are out of scope. SCOPE: this playbook investigates a specific cloud account (or account-set) for IAM-compromise indicators in CloudTrail / Cloud Audit Logs / Activity Logs over the last 90 days, plus current IAM-principal posture (long-lived keys, federated trust configuration, SCP/Org-Policy state, recently-modified resource policies).",
+        "lag_score": 60,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "AC-2",
+            "designed_for": "Account Management — establish, activate, modify, review, disable, and remove accounts.",
+            "insufficient_because": "AC-2 lifecycle controls assume the principal lives within a single security boundary. Cross-account assume-role abuse uses legitimate principals in legitimate states — every assume-role event in the chain is a valid AC-2-compliant action by an AC-2-compliant principal. The compromise is the chain, not any individual link. AC-2 has no concept of chain-of-assumptions monitoring."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.15",
+            "designed_for": "Access control — rules for physical and logical access established and reviewed.",
+            "insufficient_because": "A.5.15 governs the access-rules baseline. Federated trust configurations (SAML / OIDC / Workload Identity Federation) are technically access rules but their security depends on claim-validation and trust-policy condition specificity that A.5.15 does not enumerate. Audit evidence is a documented access policy + periodic review; neither catches a wildcard `repo:*` OIDC trust policy."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.23",
+            "designed_for": "Information security for use of cloud services — processes for acquisition, use, management, and exit.",
+            "insufficient_because": "Generic cloud-services control. Does not enumerate provider-specific IAM constructs (cross-account role assumption, managed-identity tokens, IMDS access patterns). Evidence is typically a cloud-provider risk assessment, not behavioural telemetry."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC6.1",
+            "designed_for": "Logical access controls — restrict logical access to data and system resources.",
+            "insufficient_because": "Authentication-shaped. Treats the authenticated session as the access boundary. Access keys leaked to public repositories produce fully-authenticated sessions; CC6.1 evidence is satisfied regardless. Captured in `data/framework-control-gaps.json#SOC2-CC6-Access-Key-Leak-Public-Repo`."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC6.3",
+            "designed_for": "Logical and physical access — managing access throughout the entire access lifecycle.",
+            "insufficient_because": "Lifecycle-focused. Audit evidence is the access-review cadence (typically quarterly). The dominant cloud-IAM compromise window is hours-to-days; quarterly review cannot close it."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B2 — Identity and Access Control",
+            "designed_for": "NCSC CAF outcome that access to networks and information systems is controlled in line with the essential function's risk.",
+            "insufficient_because": "Outcome-based on credential-lifecycle hygiene. Cloud-IAM specifics (federated trust, cross-account assume-role chains, managed-identity tokens) are not enumerated against B2 evidence. Captured in `data/framework-control-gaps.json#UK-CAF-B2-Cloud-IAM`."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1546",
+            "designed_for": "Multi-factor authentication for privileged users and remote access.",
+            "insufficient_because": "ISM-1546 covers human-principal authentication. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens never cross the human-MFA gate. Captured in `data/framework-control-gaps.json#AU-ISM-1546-Cloud-Service-Account`."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 4 — Multi-factor authentication (E8 M.4)",
+            "designed_for": "MFA on privileged + internet-facing accounts.",
+            "insufficient_because": "MFA defends interactive auth. Cloud access keys, OIDC federation tokens, and SAML assertions are bearer credentials that bypass MFA entirely once issued. Compliance-theater test: count the last 90 days of admin-equivalent cloud actions executed by service-principal tokens vs human-MFA sessions — if service tokens dominate (typical for IaC-managed accounts), Strategy 4 compliance is paper for cloud-IAM scope."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(d) — supply chain security",
+            "designed_for": "Risk management measures including supply-chain security and the relationships between entities and direct suppliers / service providers.",
+            "insufficient_because": "NIS2 names cloud-service providers as supply-chain dependencies and requires risk-management measures, but does not enumerate cloud-IAM trust-policy hygiene as a sub-control. Federated trust between an entity's IdP and its cloud provider is in scope conceptually; the specific gap (wildcard subject claims, audience-only validation) is not enumerated."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.6-9 ICT risk-management framework",
+            "designed_for": "ICT risk-management framework for financial entities including identification, protection, detection, response, and recovery.",
+            "insufficient_because": "Principle-based. Cloud-IAM specifics are not enumerated in the binding articles; ESAs may publish Level-2/3 guidance over time. Audit evidence is the ICT risk-management framework documentation; behavioural telemetry on cloud-IAM is not a binding sub-requirement."
+          }
+        ]
+      },
+      "skill_preload": [
+        "cloud-security",
+        "cred-stores",
+        "incident-response-playbook",
+        "identity-assurance",
+        "framework-gap-analysis",
+        "compliance-theater"
+      ]
+    },
+    "direct": {
+      "threat_context": "Cloud-IAM compromise is the dominant 2024-2026 cloud-breach root cause across all three major hyperscalers. Reference cases driving this playbook: (1) Snowflake customer-credential compromises (CISA advisory AA24-174A, June 2024) hit AT&T, Ticketmaster, Santander, Advance Auto Parts, Neiman Marcus, LendingTree, Pure Storage — pattern was stolen Okta/SSO credentials reused against the customer's Snowflake tenant, lateral movement into the AWS/Azure/GCP estate where the same federated IdP held cloud trust. (2) 2024-2025 AWS-key-in-public-repo crypto-mining campaigns: scraper bots monetize within ~5 minutes of public exposure, typical spend is 50-500 USD/hour of GPU instances in unused regions. (3) 2026 Azure managed-identity token-replay against the IMDS endpoint (CVE-2026-21370 advisory-adjacent class) — attackers with limited code execution on an Azure VM steal the managed-identity token from 169.254.169.254 and use it from an attacker-controlled endpoint within the token's TTL. (4) Scattered Spider AWS-MFA-bypass via help-desk social engineering (continuous 2023-2026): voice-clone or SE'd help-desk agent resets MFA, attacker logs in, escalates by creating their own IAM user with AdministratorAccess. (5) IMDS v1 to v2 transition incidents — instances still on IMDSv1 are queried by SSRF / metadata-exfil primitives, the cloud-provider warnings to migrate are 18 months old and migration is incomplete in most large estates. (6) Federated-trust attacks: GitHub Actions OIDC trust policies with wildcard `repo:*` subject claims allow any fork PR's workflow to assume the role; AWS SSO / IAM Identity Center misconfigured permission sets granting Org-Admin via SAML assertion replay; Azure AD application impersonation via expired-cert reuse. Mid-2026 reality: any cloud-IAM compromise must assume cross-account assume-role chains by default, federated-trust as the dominant lateral-movement primitive, and managed-identity tokens as the dominant first-stage credential.",
+      "rwep_threshold": {
+        "escalate": 90,
+        "monitor": 70,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 AC-2 (Account Management) does not model cross-account assume-role chains — each link is a valid AC-2-compliant action; the compromise is the chain. ISO/IEC 27001:2022 A.5.15-A.5.18 cover account lifecycle, not session-based IAM observability. ISO/IEC 27017 cloud-specific controls (A.5.23 equivalent) lag on managed-identity token replay — A.9.2.1 'Managing user registration and de-registration' and Annex A cloud controls do not enumerate token-binding to instance identity. SOC 2 CC6 logical-access criteria treat the authenticated session as the access boundary; access-key-leak-to-public-repo produces a fully-authenticated session whose CC6 evidence is satisfied. CISA's Snowflake AA24 advisory documented the third-party-IdP-to-cloud-IAM credential-reuse chain as a class; no framework names this chain as a distinct control class — captured in `data/framework-control-gaps.json#CISA-Snowflake-AA24-IdP-Cloud`. AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud are coverage-based posture tools, not breach detection; 'all green' attestations have ~0 correlation with absence of behavioural anomalies (captured in `data/framework-control-gaps.json#AWS-Security-Hub-Coverage-Gap`). UK CAF Principle B2 is outcome-based on credential-lifecycle hygiene and lacks cloud-IAM specificity (captured in `UK-CAF-B2-Cloud-IAM`). AU Essential 8 ML2 Strategy 4 (MFA) covers human MFA; cloud service-account access keys, OIDC federation tokens, SAML assertions are bearer credentials that bypass MFA entirely (captured in `AU-ISM-1546-Cloud-Service-Account`). FedRAMP IL5 baseline is insufficient for federated cloud / IL6 sovereign-trust patterns (captured in `FedRAMP-IL5-IAM-Federated`). CIS Controls v8 align conceptually but lack a cloud-specific maturity ladder. PCI DSS 4.0 Req.7-8 cover access-control objectives generically; cloud-IAM-specific requirements are not enumerated. Practical gap = ~90 days between audit-cycle evidence (quarterly access review) and adversary timeline (hours-to-days). Every framework in scope assumes the audit cadence; the threat model assumes continuous behavioural monitoring.",
+      "skill_chain": [
+        {
+          "skill": "cloud-security",
+          "purpose": "Cloud-provider-specific IAM construct inventory and trust-policy hygiene assessment (AWS IAM + STS, GCP IAM + Workload Identity Federation, Azure AD + managed identities).",
+          "required": true
+        },
+        {
+          "skill": "cred-stores",
+          "purpose": "Cloud-provider key-store posture (KMS / Cloud KMS / Key Vault) and access-key rotation hygiene; cross-walk with credential-store playbook for any compromised principal whose blast radius >= 4.",
+          "required": true
+        },
+        {
+          "skill": "identity-assurance",
+          "purpose": "AAL/IAL/FAL assessment of human-principal MFA posture, federated-identity assurance levels, and step-up authentication coverage on cloud admin actions.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map findings to which framework controls claim to address cloud-IAM hygiene and where the gap is (NIST AC-2 cross-account, ISO 27017, SOC 2 CC6, FedRAMP IL5, UK CAF B2, AU ISM-1546).",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the theater tests on SCPs / root MFA / Security Hub green / Access Analyzer / OIDC-CI attestations.",
+          "required": true
+        },
+        {
+          "skill": "incident-response-playbook",
+          "purpose": "Multi-jurisdiction notification orchestration (GDPR Art.33 72h, NIS2 24h, DORA 4h, NYDFS 72h, APRA / MAS / PDPA / APPI windows) plus CSP-specific support-ticket drafting (AWS Health Dashboard, GCP support case, Azure Service Health).",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for any cloud-IAM remediation that cannot complete within the obligation window (e.g. coordinated rotation across 100+ federated principals).",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 22000,
+        "breakdown": {
+          "govern": 3000,
+          "direct": 2000,
+          "look": 3000,
+          "detect": 3500,
+          "analyze": 4500,
+          "validate": 3500,
+          "close": 2500
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "cloudtrail-audit-log-90d",
+          "type": "audit_trail",
+          "source": "AWS: aws cloudtrail lookup-events --start-time <now-90d> ; GCP: gcloud logging read 'resource.type=audited_resource' --freshness=90d ; Azure: az monitor activity-log list --start-time <now-90d>",
+          "description": "Cloud audit log over the last 90 days. Primary behavioural-evidence source for all subsequent indicators. The 90-day window is the longest commonly-available default retention; if the operator has longer retention configured (CloudTrail Lake, GCP _Default bucket extended, Azure Diagnostic Settings to Log Analytics), extend accordingly.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the audit log to a local JSON/JSONL file and supplies the file path via signal_overrides. The runner reads the local file instead of calling the CSP API."
+        },
+        {
+          "id": "iam-principal-inventory",
+          "type": "api_response",
+          "source": "AWS: aws iam list-users + list-roles + list-groups + iam get-account-authorization-details ; GCP: gcloud iam service-accounts list + gcloud projects get-iam-policy ; Azure: az ad user list + az ad sp list + az role assignment list",
+          "description": "Current inventory of all IAM principals (human users, service accounts, managed identities, federated principals) with last-used timestamps, attached policies, and group/role memberships.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the IAM inventory to a local JSON file."
+        },
+        {
+          "id": "recently-created-access-keys",
+          "type": "api_response",
+          "source": "AWS: aws iam list-access-keys per-user filtered to CreateDate >= now-90d ; GCP: gcloud iam service-accounts keys list per-SA filtered to validAfterTime >= now-90d ; Azure: az ad sp credential list per-SP filtered to startDate >= now-90d",
+          "description": "Access keys / service-account keys / client secrets created in the last 90 days. Cross-referenced against the IaC apply window (Terraform/Pulumi/CloudFormation/Bicep apply events) to surface out-of-band creation.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the access-key inventory to a local JSON file."
+        },
+        {
+          "id": "cross-account-assume-role-events",
+          "type": "audit_trail",
+          "source": "AWS: cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=AssumeRole AttributeKey=EventName,AttributeValue=AssumeRoleWithSAML AttributeKey=EventName,AttributeValue=AssumeRoleWithWebIdentity ; GCP: gcloud logging read 'protoPayload.methodName=GenerateAccessToken OR protoPayload.methodName=SignBlob' ; Azure: az monitor activity-log list filtered to operationName matching role-assumption equivalents",
+          "description": "All cross-account / cross-project role-assumption events in the last 90 days. Each event carries the source principal, target role, session-policy, and external-id (where applicable). Chains of >= 2 assume-role events with a common source principal within a 24h window are the primary cross-account-compromise signal.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the assume-role events from the audit log to a local JSON file."
+        },
+        {
+          "id": "console-login-events",
+          "type": "audit_trail",
+          "source": "AWS: cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=ConsoleLogin ; GCP: gcloud logging read 'protoPayload.methodName=google.login.LoginService.login' ; Azure: az monitor activity-log list filtered to category=SignIn (or Sign-In Logs via Microsoft Graph)",
+          "description": "Interactive console / portal logins. ASN, region, and User-Agent fields drive the anomaly indicators (root login from new ASN, console login from impossible-travel geography).",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the console-login events to a local JSON file."
+        },
+        {
+          "id": "service-account-managed-identity-inventory",
+          "type": "api_response",
+          "source": "AWS: aws iam list-roles + list-instance-profiles ; GCP: gcloud iam service-accounts list (with `disabled` flag) ; Azure: az identity list (user-assigned managed identities) + system-assigned managed identities via az vm identity show / az functionapp identity show / az aks show",
+          "description": "Full inventory of non-human principals with token lifetimes, attached policies, last-used timestamps, and the resource(s) the principal is bound to.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the service-account / managed-identity inventory to a local JSON file."
+        },
+        {
+          "id": "imds-access-patterns",
+          "type": "audit_trail",
+          "source": "AWS: VPC Flow Logs filtered to dstaddr=169.254.169.254 + EC2 instance-metadata access events from CloudTrail Insights ; GCP: VPC Flow Logs filtered to dstaddr=metadata.google.internal (169.254.169.254) ; Azure: NSG Flow Logs filtered to dstaddr=169.254.169.254",
+          "description": "Pattern of access to the instance-metadata service. Bursts of access from unexpected processes, IMDSv1 access on instances that have IMDSv2 available, and metadata access from non-localhost sources (SSRF indicator) are the signals here.",
+          "required": false,
+          "air_gap_alternative": "Operator pre-extracts the relevant VPC / NSG Flow Logs to a local JSONL file."
+        },
+        {
+          "id": "federated-idp-configuration",
+          "type": "config_file",
+          "source": "AWS: aws iam list-saml-providers + list-open-id-connect-providers + per-role get-role trust-policy ; GCP: gcloud iam workload-identity-pools list + per-pool get-iam-policy ; Azure: az ad app list + per-app az ad app credential list + Conditional Access policies via Graph",
+          "description": "Federated identity-provider configuration (SAML, OIDC, Workload Identity Federation) including trust policies, subject-claim conditions, audience constraints, and signing-key thumbprints.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the federated IdP configuration to a local JSON file."
+        },
+        {
+          "id": "scp-org-policy-state",
+          "type": "config_file",
+          "source": "AWS: aws organizations list-policies --filter SERVICE_CONTROL_POLICY + describe-policy ; GCP: gcloud org-policies list --organization=<id> + describe ; Azure: az policy assignment list --scope <management-group>",
+          "description": "Current Service Control Policy / Org Policy / Management Group policy state and recent change history. Detects loosening of guardrails preceding or during a compromise.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the SCP / Org Policy state to a local JSON file."
+        },
+        {
+          "id": "access-analyzer-findings",
+          "type": "api_response",
+          "source": "AWS: aws accessanalyzer list-findings ; GCP: gcloud policy-intelligence query-activity (Policy Analyzer) ; Azure: az graph query for Microsoft.Security/assessments resource-type",
+          "description": "External-exposure findings from the CSP's resource-policy analyser over the last 90 days. Surfaces resource policies (S3 buckets, KMS keys, Lambda functions) granting access to external principals.",
+          "required": false,
+          "air_gap_alternative": "Operator pre-extracts the Access Analyzer findings to a local JSON file."
+        },
+        {
+          "id": "recently-modified-resource-policies",
+          "type": "audit_trail",
+          "source": "AWS: cloudtrail filter by EventName in {PutBucketPolicy, PutKeyPolicy, PutFunctionPolicy, PutResourcePolicy} ; GCP: cloud audit logs filter by methodName matching setIamPolicy on storage / kms / cloudfunctions ; Azure: activity-log filter by operationName matching Microsoft.Storage/storageAccounts/blobServices/containers/write, Microsoft.KeyVault/vaults/accessPolicies/write",
+          "description": "Resource-policy modifications over the last 90 days. Cross-referenced against the IaC apply window to surface out-of-band policy changes.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the resource-policy modification events to a local JSON file."
+        },
+        {
+          "id": "billing-anomalies",
+          "type": "api_response",
+          "source": "AWS: aws ce get-cost-and-usage --granularity DAILY --time-period Start=<now-30d>,End=<now> --group-by Type=DIMENSION,Key=REGION + Key=USAGE_TYPE ; GCP: gcloud billing accounts get-iam-policy + Cloud Billing BigQuery export ; Azure: az consumption usage list --start-date <now-30d>",
+          "description": "30-day cost-and-usage signal grouped by region + instance-family + service. Detects crypto-mining workloads (sudden spike in GPU / accelerated-compute instance hours in an unused region), data-egress spikes, and unexpected service-enablement events.",
+          "required": true,
+          "air_gap_alternative": "Operator pre-extracts the billing data to a local JSON / CSV file."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "90d",
+        "asset_scope": "cloud_accounts_in_scope",
+        "depth": "deep",
+        "sampling": "full enumeration of all in-scope accounts; no sampling within the 90-day window; cross-referenced against the operator-supplied IaC apply window to suppress IaC-originated noise"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "Cloud audit logging is enabled and configured to log all management-plane events for the full 90-day window",
+          "if_false": "If CloudTrail / Cloud Audit Logs / Activity Log is disabled, partially enabled, or short-retention, the look phase is structurally incomplete. Mark `audit-log-coverage-gap` and emit a `cloudtrail_logging_disabled_event` indicator regardless of whether a specific disable event was found — absence is the finding."
+      },
+        {
+          "assumption": "The investigator's IAM read-only access covers every account in the org / project / management group",
+          "if_false": "Some accounts unreadable. Mark per-account inconclusive; emit a coverage note in the close phase rather than treating absence of evidence as evidence of absence."
+        },
+        {
+          "assumption": "Each account in scope has been operated for at least 90 days (so the time window is meaningful)",
+          "if_false": "For accounts younger than 90 days, narrow the window to account age + 7 days of pre-account-creation org-level events. Emit a `short-history` visibility note."
+        },
+        {
+          "assumption": "IaC apply windows are documented or recoverable from CI history (Terraform / Pulumi / CloudFormation / Bicep state)",
+          "if_false": "Without an IaC apply baseline, every IAM mutation event becomes a high-noise indicator. Demote `mass_iam_user_creation_outside_iac` to inconclusive and emit a `iac-baseline-missing` visibility note in close."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "cloudtrail-audit-log-90d",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "iam-principal-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "recently-created-access-keys",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "cross-account-assume-role-events",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "console-login-events",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "service-account-managed-identity-inventory",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "imds-access-patterns",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "federated-idp-configuration",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "scp-org-policy-state",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "access-analyzer-findings",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "recently-modified-resource-policies",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "billing-anomalies",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "root_login_from_new_asn",
+          "type": "log_pattern",
+          "value": "Within the console-login-events artifact, filter to principal == root (AWS) / org-admin (GCP) / Global Administrator (Azure). For each, derive the historical-ASN baseline from the prior 365 days (or full account history if shorter). Flag any login whose source-IP ASN is not in the baseline.",
+          "description": "Root / global-admin login from a previously-unseen ASN. Highest-severity behavioural signal across all three CSPs.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Rule out documented operator travel: cross-reference the login timestamp + source-IP geolocation against operator travel calendar / VPN exit-node inventory.",
+            "Rule out a legitimate ASN change (operator's ISP changed; corporate VPN aggregator routed via new transit provider) by checking whether the new ASN appears in subsequent days for the same principal without other anomalies.",
+            "Demote to medium if the login was followed within 30 minutes by a documented incident-response action (the operator logged in to investigate)."
+          ]
+        },
+        {
+          "id": "mass_iam_user_creation_outside_iac",
+          "type": "log_pattern",
+          "value": "Within the cloudtrail-audit-log-90d artifact, filter to EventName in {CreateUser, CreateServiceAccount, CreateManagedIdentity, CreateApplication}. Group by source principal + 1-hour window. Flag any window containing >= 3 creation events where the source principal is not in the IaC-runner allowlist (Terraform/Pulumi/CloudFormation/Bicep service principals).",
+          "description": "Burst of IAM-principal creation events outside the documented IaC apply window. Common post-compromise persistence pattern.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Rule out an IaC apply window that was not in the documented baseline (new pipeline, manual `terraform apply` from operator workstation) by cross-referencing CI run history.",
+            "Rule out a documented bulk-onboarding event (new team / acquired-company onboarding) by checking for a corresponding ticket / change request.",
+            "Demote to medium if the creating principal is a known operator (human, not service) and the created principals are tagged with a project label matching an active project."
+          ]
+        },
+        {
+          "id": "unused_region_resource_creation",
+          "type": "log_pattern",
+          "value": "Within the cloudtrail-audit-log-90d artifact, filter to resource-creation events (RunInstances, CreateInstance, az vm create equivalents). Derive the historical region-set used by the account over the prior 365 days. Flag any creation event in a region not in the baseline set.",
+          "description": "Resource creation in a region the account has never used. Strong crypto-mining-campaign signal when combined with GPU-instance-family selection.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1580",
+          "false_positive_checks_required": [
+            "Rule out a documented new-region rollout (operator announced expansion into the region; corresponding governance ticket exists).",
+            "Rule out a legitimate cross-region replication setup (KMS key replica, S3 cross-region replication target) where the destination region was newly authorised.",
+            "Demote to medium if the created resource is tagged with a project label and the project has documented expansion plans."
+          ]
+        },
+        {
+          "id": "gpu_instance_creation_spike",
+          "type": "log_pattern",
+          "value": "Within the billing-anomalies artifact, filter to GPU / accelerated-compute instance families (AWS: p* / g* / inf* / trn* / dl1.* ; GCP: a2-* / a3-* / g2-* ; Azure: NC* / ND* / NV* / NG*). Flag any 24h window where instance-hours exceed the 30-day rolling average by >= 5x AND the account is not tagged as ml-workload / training-workload.",
+          "description": "Sudden spike in GPU instance hours. Almost always crypto-mining when uncorrelated with a documented ML training run.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1580",
+          "false_positive_checks_required": [
+            "Rule out a documented ML training run: cross-reference with the ML platform's training-job inventory (SageMaker training jobs, Vertex AI training jobs, Azure ML jobs) AND with the corresponding project tag.",
+            "Rule out a documented capacity-reservation purchase (Savings Plan / committed-use / reserved-capacity event preceding the spike).",
+            "Demote to medium if the creating principal is a documented ML-platform service principal AND the destination region is in the account's baseline region set."
+          ]
+        },
+        {
+          "id": "iam_access_key_created_no_iac_ticket",
+          "type": "log_pattern",
+          "value": "Within the recently-created-access-keys artifact, filter to keys whose creating principal is not in the IaC-runner allowlist AND no corresponding break-glass / access-key-request ticket is referenced in the create event's request-context.",
+          "description": "Long-lived access key created outside both IaC and break-glass workflows. Snowflake-AA24-class post-compromise persistence.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Rule out a break-glass / emergency-access event: cross-reference with the break-glass log and confirm a corresponding incident ticket exists.",
+            "Rule out a documented developer-onboarding event where access-key issuance is part of the workflow.",
+            "Demote to medium if the created key is tagged with an expiration date <= 30 days and a documented rotation owner."
+          ]
+        },
+        {
+          "id": "cross_account_assume_role_anomaly",
+          "type": "log_pattern",
+          "value": "Within the cross-account-assume-role-events artifact, build a graph of (source_principal, target_account, target_role). Flag any chain of >= 2 assume-role events with a common source principal traversing >= 2 account boundaries within a 24h window where the chain does not match a documented integration pattern.",
+          "description": "Cross-account assume-role chain that does not match a documented integration. Primary cross-account-compromise indicator; not visible to AC-2 / CC6 lifecycle controls.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Rule out a documented partner integration (3rd-party SaaS connecting to multiple accounts via assume-role — Datadog, Wiz, Lacework, Snowflake, BigQuery cross-project) by cross-referencing the integration inventory.",
+            "Rule out a documented multi-account deployment pipeline (e.g. a release pipeline that assumes-role into each environment account sequentially).",
+            "Demote to medium if every hop carries a non-wildcard external-id AND the source principal is a documented integration service-principal."
+          ]
+        },
+        {
+          "id": "imds_v1_legacy_access",
+          "type": "log_pattern",
+          "value": "Within the imds-access-patterns artifact, filter to events where the IMDS request used the unauthenticated v1 endpoint (no `X-aws-ec2-metadata-token` header on AWS; no `Metadata-Flavor: Google` enforcement on GCP; equivalent on Azure). Flag any instance that has IMDSv2 available but where v1 access occurred.",
+          "description": "IMDSv1 access on instances where IMDSv2 is available. SSRF / token-exfil primitive — IMDSv1 has no defence against server-side request forgery from the instance's exposed services.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1552.005",
+          "false_positive_checks_required": [
+            "Rule out a documented IMDSv1-to-v2 migration phase where a defined inventory of instances is intentionally on v1 with a documented migration ETA.",
+            "Rule out a legacy-application allowlist where the v1 caller is a documented system-process that cannot be upgraded.",
+            "Demote to low if the v1 access source-IP is localhost (127.0.0.1) and the instance has IMDSv2 hop-limit configured to 1."
+          ]
+        },
+        {
+          "id": "kms_key_policy_self_grant",
+          "type": "log_pattern",
+          "value": "Within the recently-modified-resource-policies artifact, filter to KMS key-policy / Cloud KMS IAM-policy / Key Vault access-policy modifications. Flag any change where the principal granted access is the same principal that made the change (self-grant) AND the modification is not part of a documented IaC apply.",
+          "description": "KMS key-policy self-grant. Common post-compromise persistence — attacker grants their assumed-role access to a previously-restricted key.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Rule out a documented CMK migration where ownership was transferred to a new principal as part of an approved change.",
+            "Rule out a documented developer self-service workflow where service-account self-grants are part of an approved pattern.",
+            "Demote to medium if the granting principal is a documented platform-admin role AND the granted access is non-decryption (Describe / GetPublicKey only)."
+          ]
+        },
+        {
+          "id": "s3_bucket_policy_public_grant",
+          "type": "log_pattern",
+          "value": "Within the recently-modified-resource-policies artifact, filter to S3 PutBucketPolicy / GCS setIamPolicy / Azure Blob access-policy modifications where the new policy grants Principal = `*` or `allUsers` / `allAuthenticatedUsers`.",
+          "description": "Public-grant on object-storage resource. May be intentional (CDN backing bucket) or accidental data-exposure post-compromise.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Rule out a documented CDN-backing bucket (CloudFront / Cloud CDN / Azure CDN origin) where public-read is the intended posture.",
+            "Rule out a documented static-website-hosting bucket where public-read is the intended posture.",
+            "Demote to low if the bucket carries a `Public: true` tag AND the granted action set is `s3:GetObject` only (no list / write)."
+          ]
+        },
+        {
+          "id": "cloudtrail_logging_disabled_event",
+          "type": "log_pattern",
+          "value": "Within the cloudtrail-audit-log-90d artifact, filter to EventName in {StopLogging, DeleteTrail, PutEventSelectors with empty selectors, DisableLogging, UpdateSink with disabled state, DiagnosticSettingsDelete}. Also flag any account where audit logging is currently disabled regardless of an explicit disable event (absence-is-evidence).",
+          "description": "Cloud audit logging disabled. Adversary defence-evasion primitive; almost never legitimate post-deployment.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1098.001",
+          "false_positive_checks_required": [
+            "Rule out a documented logging-service-update window (CloudTrail trail-recreation, Log Sink migration) by cross-referencing the change-management log.",
+            "Rule out an account-decommissioning workflow where logging was intentionally disabled as part of the decommission.",
+            "Demote to medium if the disable event was followed within 1 hour by a re-enable event AND no other anomalous activity occurred in the gap."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "root_login_from_new_asn",
+          "benign_pattern": "Operator travel; corporate VPN re-routing; ISP topology change.",
+          "distinguishing_test": "Cross-reference the login timestamp against documented operator travel; check whether the new ASN persists in benign-looking sessions over subsequent days. Persistent new ASN with operator-shaped action pattern is benign; one-off new ASN followed by IAM-mutation actions stays high."
+        },
+        {
+          "indicator_id": "mass_iam_user_creation_outside_iac",
+          "benign_pattern": "Manual `terraform apply` from operator workstation outside the documented CI pipeline; bulk-onboarding event for a new team.",
+          "distinguishing_test": "Check the creating principal's session context: workstation IAM Identity Center session with documented operator identity is benign-shaped; assumed-role from an unexpected source is not."
+        },
+        {
+          "indicator_id": "cross_account_assume_role_anomaly",
+          "benign_pattern": "Documented multi-account deployment pipelines; 3rd-party SaaS integrations (Datadog, Wiz, Lacework) that assume-role into multiple accounts.",
+          "distinguishing_test": "Check the external-id on each hop: documented integrations use a per-integration external-id; attacker chains typically inherit a single external-id or no external-id. Wildcard external-id on a cross-account chain is the cleanest distinguishing test."
+        },
+        {
+          "indicator_id": "imds_v1_legacy_access",
+          "benign_pattern": "Documented legacy-application allowlist; in-progress IMDSv1-to-v2 migration.",
+          "distinguishing_test": "Check whether the source process making the v1 call is in the operator's documented v1-allowlist. Off-allowlist v1 callers stay medium; SSRF-shaped patterns (multiple distinct user-agents within seconds) raise to high."
+        },
+        {
+          "indicator_id": "s3_bucket_policy_public_grant",
+          "benign_pattern": "CDN-backing bucket; documented static-website-hosting bucket.",
+          "distinguishing_test": "Check the bucket's tag set and the action-set granted. `s3:GetObject`-only on a `Public: true`-tagged bucket is benign; `s3:*` on an untagged bucket is not."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one high-confidence indicator fires AND the false-positive distinguishing test does not clear it AND the indicator's RWEP exceeds direct.rwep_threshold.escalate.",
+        "inconclusive": "An indicator fired but the audit-log retention or IAM read-only-access coverage gap prevents distinguishing-test completion. Mark detected-with-caveat and escalate.",
+        "not_detected": "Full 90-day audit-log walk completed AND zero high-confidence indicators fired AND IAM-principal posture is hygienic (no long-lived access keys without owner+expiration, no wildcard OIDC trust policies, IMDSv2 enforced on >= 95% of instances)."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "root_login_from_new_asn",
+          "rwep_factor": "active_exploitation",
+          "weight": 30,
+          "notes": "Root / global-admin from new ASN is post-compromise-shaped. Treat as exploitation-imminent regardless of subsequent action observed within the audit-log window."
+        },
+        {
+          "signal_id": "root_login_from_new_asn",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Root-equivalent principal blast radius is account-wide minimum, org-wide on multi-account orgs without segmentation."
+        },
+        {
+          "signal_id": "cross_account_assume_role_anomaly",
+          "rwep_factor": "active_exploitation",
+          "weight": 30,
+          "notes": "Cross-account chains are post-compromise lateral movement; 2024-2026 IR data shows this as the dominant lateral-movement vector in cloud-IAM compromise."
+        },
+        {
+          "signal_id": "cross_account_assume_role_anomaly",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Chain length and account-boundary count scale blast radius. >= 2 boundaries crossed = blast_radius >= 4."
+        },
+        {
+          "signal_id": "iam_access_key_created_no_iac_ticket",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Snowflake-AA24-class persistence. Long-lived keys outside IaC are post-compromise-shaped."
+        },
+        {
+          "signal_id": "mass_iam_user_creation_outside_iac",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Burst-creation outside IaC is the textbook persistence-establishment pattern."
+        },
+        {
+          "signal_id": "gpu_instance_creation_spike",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Crypto-mining campaigns monetize within hours; spike + unused-region + no ML-tag is high-confidence."
+        },
+        {
+          "signal_id": "imds_v1_legacy_access",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Token-exfil primitive; blast radius is the assumed-role scope of the instance profile / managed identity."
+        },
+        {
+          "signal_id": "kms_key_policy_self_grant",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "Self-grant on KMS = data-exfil capability + decryption persistence."
+        },
+        {
+          "signal_id": "cloudtrail_logging_disabled_event",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Defence-evasion primitive; almost never legitimate post-deployment."
+        },
+        {
+          "signal_id": "s3_bucket_policy_public_grant",
+          "rwep_factor": "active_exploitation",
+          "weight": 15,
+          "notes": "Public-grant is medium-baseline because of CDN false-positive rate; raise when combined with other indicators."
+        },
+        {
+          "signal_id": "unused_region_resource_creation",
+          "rwep_factor": "active_exploitation",
+          "weight": 15,
+          "notes": "Unused-region creation is medium-baseline; combine with GPU spike for high."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the compromised principal(s) and the cross-account / federated trust posture, what is the blast radius if the attacker fully exploits every chain reachable from the compromised principal within 24h?",
+        "scoring_rubric": [
+          {
+            "condition": "Single non-production principal (sandbox account, ephemeral CI account) confirmed compromised; no cross-account reach",
+            "blast_radius_score": 1,
+            "description": "Sandbox-scope compromise."
+          },
+          {
+            "condition": "Single production principal compromised within a single account; no cross-account reach",
+            "blast_radius_score": 2,
+            "description": "Single-account compromise; spend + data-exfil within that account's IAM scope."
+          },
+          {
+            "condition": "Single production principal compromised AND the principal has broad IAM scope (admin / wildcard) within the account",
+            "blast_radius_score": 3,
+            "description": "Account-wide compromise; full data exfil + resource creation within the account."
+          },
+          {
+            "condition": "Compromised principal has cross-account assume-role reach into >= 1 other account in the org AND/OR has admin scope in a federated-trust target",
+            "blast_radius_score": 4,
+            "description": "Multi-account compromise; org-boundary risk; chain into cred-stores playbook required."
+          },
+          {
+            "condition": "Compromised principal reaches >= 3 accounts OR reaches the org root OR has published assets (npm / PyPI / Docker Hub / container registry write) AND the chain includes at least one identity-layer outside the cloud (federated IdP, third-party SaaS holding cloud credentials)",
+            "blast_radius_score": 5,
+            "description": "Org-wide identity-boundary collapse. Treat as confirmed incident; chain into sbom playbook for supply-chain blast assessment."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org has SCPs / Org Policies / Management Group policies + root MFA + AWS Security Hub (or equivalent) all-green + IAM Access Analyzer findings closed -> cloud-IAM is secure.",
+        "audit_evidence": "SCP / Org Policy state showing guardrails; root MFA enabled on every account; Security Hub posture score; Access Analyzer findings inventory.",
+        "reality_test": "Run the working-tree look phase against the 90-day audit log AND the IAM principal inventory. Count: (a) long-lived access keys on non-root principals with no documented expiration, (b) federated trust policies with wildcard subject claims, (c) cross-account assume-role chains traversing >= 2 boundaries without an external-id, (d) instances on IMDSv1 with IMDSv2 available, (e) IAM mutation events outside the IaC apply window in the last 90 days, (f) unused-region resource creation events, (g) periods of audit-log disablement. Any count > 0 is gap between the paper-attested 'secure' state and the actual behavioural surface.",
+        "theater_verdict_if_gap": "SCPs constrain principals within an account but do not see cross-account chains. Root MFA covers 1 principal class. Security Hub is coverage-based, not breach-detection. Access Analyzer is reachability-based, not principal-action-based. The 'paper-secure' attestation captures none of the dominant 2024-2026 compromise vectors. Either (a) extend monitoring to behavioural CloudTrail / audit-log analytics with the indicator set in this playbook, (b) tighten federated-trust policies to non-wildcard subject claims with audience constraints, (c) enforce IMDSv2 globally, OR (d) generate policy exception documenting the scope gap + compensating controls + remediation timeline."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "cross-account-chain",
+          "framework": "nist-800-53",
+          "claimed_control": "AC-2 — Account Management",
+          "actual_gap": "AC-2 lifecycle treats principals individually. Cross-account assume-role chains are valid AC-2-compliant actions individually; the compromise is the chain across boundaries, which AC-2 cannot see.",
+          "required_control": "Extend AC-2 with a chain-of-assumptions sub-control requiring continuous monitoring of cross-account / cross-project / cross-management-group role-assumption graphs over rolling 24h windows. Captured in `data/framework-control-gaps.json#NIST-800-53-AC-2-Cross-Account`."
+        },
+        {
+          "finding_id": "access-key-leak-public-repo",
+          "framework": "soc2",
+          "claimed_control": "CC6.1 — Logical Access Controls",
+          "actual_gap": "Authentication-shaped. A leaked access key produces a fully-authenticated session whose CC6 evidence is satisfied. The leak point (public repository) is outside CC6 scope.",
+          "required_control": "Add CC6 sub-criterion requiring continuous monitoring of credential exposure on public-code-search surfaces (GitHub, GitLab, Bitbucket public). Captured in `data/framework-control-gaps.json#SOC2-CC6-Access-Key-Leak-Public-Repo`."
+        },
+        {
+          "finding_id": "snowflake-aa24-class",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.18 — Access rights",
+          "actual_gap": "Access-rights review treats credentials as fungible — federated IdP credentials and cloud-IAM credentials are reviewed independently. Compromise via cross-system credential reuse (Okta-to-cloud, GitHub-to-cloud, Snowflake-to-cloud) is invisible.",
+          "required_control": "Extend A.5.18 with explicit cross-system credential-reuse mapping: every federated trust must enumerate which downstream systems honour the IdP, with continuous attestation. Captured in `data/framework-control-gaps.json#CISA-Snowflake-AA24-IdP-Cloud`."
+        },
+        {
+          "finding_id": "imds-v1-legacy",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.23 — Information security for use of cloud services",
+          "actual_gap": "Generic cloud-services control. Instance-metadata-service hardening is not enumerated; the v1-to-v2 transition is provider-specific guidance that has no A.5.23 evidence equivalent.",
+          "required_control": "ISO/IEC 27017-extension: cloud-instance-metadata-service hardening with provider-specific enforcement attestations (IMDSv2 hop-limit, token TTL, deny-by-default). Captured in `data/framework-control-gaps.json#ISO-27017-Cloud-IAM`."
+        },
+        {
+          "finding_id": "federated-il5-il6-gap",
+          "framework": "fedramp",
+          "claimed_control": "FedRAMP IL5 baseline — IA-2, AC-2, AC-3, IA-5",
+          "actual_gap": "IL5 baseline assumes single-cloud-tenant deployment. IL6 sovereign-cloud federated-trust patterns are not contemplated; cross-IL trust policies are out of scope.",
+          "required_control": "FedRAMP IL5-Federated extension explicitly enumerating cross-IL trust-policy requirements with sovereign-cloud audience-claim constraints. Captured in `data/framework-control-gaps.json#FedRAMP-IL5-IAM-Federated`."
+        },
+        {
+          "finding_id": "security-hub-coverage",
+          "framework": "soc2",
+          "claimed_control": "CC7.2 — System monitoring",
+          "actual_gap": "AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud findings are coverage-based posture scores, not breach-detection. CC7.2 evidence is satisfied by 'monitoring system deployed' without verifying that the monitoring system can see the relevant behavioural signals.",
+          "required_control": "CC7.2 sub-criterion requiring that monitoring coverage be measured against a behavioural-indicator inventory (e.g. this playbook's detect.indicators), not against posture-tool deployment. Captured in `data/framework-control-gaps.json#AWS-Security-Hub-Coverage-Gap`."
+        },
+        {
+          "finding_id": "cloud-service-account-mfa-gap",
+          "framework": "au-ism",
+          "claimed_control": "ISM-1546 — Multi-factor authentication for privileged users",
+          "actual_gap": "ISM-1546 covers human-principal MFA. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens bypass MFA entirely.",
+          "required_control": "ISM-1546 extension enumerating cloud non-human-principal credential hygiene with explicit bearer-token TTL ceilings + audience binding + per-action audit logging. Captured in `data/framework-control-gaps.json#AU-ISM-1546-Cloud-Service-Account`."
+        },
+        {
+          "finding_id": "uk-caf-b2-cloud-iam",
+          "framework": "uk-caf",
+          "claimed_control": "B2 — Identity and Access Control",
+          "actual_gap": "Outcome-based on credential-lifecycle hygiene. Cloud-IAM specifics (federated trust, cross-account assume-role chains, managed-identity tokens) are not enumerated against B2 evidence.",
+          "required_control": "B2 contributing-outcomes refresh enumerating cloud-IAM-specific trust-policy hygiene + cross-account chain monitoring. Captured in `data/framework-control-gaps.json#UK-CAF-B2-Cloud-IAM`."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "rwep >= 90 AND credential_appears_live == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "compromised_account_has_published_assets == true",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "analyze.compliance_theater_check.verdict == 'theater'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "cloudtrail_logging_disabled_event == true AND cloudtrail_re_enabled_within_1h == false",
+          "action": "raise_severity"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "rotate-root-and-revoke-sessions",
+          "description": "(1) Rotate root credentials on every compromised account; (2) revoke all active sessions via aws iam get-credential-report + aws iam delete-access-key + global sign-out (GCP: gcloud iam service-accounts disable + revoke OAuth grants; Azure: revoke all refresh tokens via az ad user revoke-sign-in-sessions + Conditional Access disable-token-issuance); (3) rotate every IAM access key on the compromised principal AND every principal reachable via the cross-account chain; (4) audit IaC drift via terraform plan / pulumi preview / az deployment what-if against the current state and quarantine any out-of-band resources; (5) quarantine compromised resources by attaching deny-all SCP / Org Policy / Management Group deny-assignment.",
+          "preconditions": [
+            "provider_supports_session_revocation == true",
+            "rotation_ownership_identified == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "session-revocation",
+            "audit-log-review-for-misuse-window",
+            "deny-all-scp-attached-to-quarantine-ou"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "review-90d-iam-events",
+          "description": "Review the last 90 days of IAM events on every account in the org reachable from the compromised principal. Revoke unrecognised cross-account trusts, tighten SCPs / Org Policies / Management Group policies, rotate KMS keys with policy changes in the window, review billing anomalies for crypto-mining footprint, decommission any out-of-band-created resources.",
+          "preconditions": [
+            "audit_log_coverage_days >= 90",
+            "iam_read_only_across_org == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "iam-event-review-completed",
+            "scp-tightened",
+            "kms-keys-rotated"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "enforce-imds-v2-globally",
+          "description": "Enforce IMDSv2 on every EC2 instance / equivalent on GCE and Azure VM (hop-limit 1, tokens required); audit instance launch templates / instance groups / VMSS to ensure new instances default to v2; deprecate IMDSv1 via SCP / Org Policy denying RunInstances with HttpTokens=optional.",
+          "preconditions": [
+            "imdsv2_migration_blocker_inventory_complete == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "imdsv2-enforced-org-wide",
+            "scp-deny-imdsv1-launch"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "tighten-federated-trust",
+          "description": "Audit every IAM role with a SAML / OIDC / Workload Identity Federation trust policy. Replace wildcard subject claims (`repo:*`, `*` audience) with explicit subject constraints (`repo:owner/repo:ref:refs/heads/main`, audience pinned to per-integration value). Add MFA-required Conditional Access on federated admin sessions. Rotate any federated signing keys older than the documented rotation cadence.",
+          "preconditions": [
+            "federated_trust_inventory_complete == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "federated-trust-tightened",
+            "conditional-access-mfa-required-on-admin"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "policy-exception",
+          "description": "If rotation requires coordinated multi-system rollout (federated IdP touches 50+ downstream consumers, or the compromised principal is consumed by a critical-or-important function whose rotation requires change-board approval), generate exception with bounded duration + enhanced audit-log alerting on the unrotated credential.",
+          "preconditions": [
+            "coordinated_rotation_required == true",
+            "credential_misuse_monitoring_in_place == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "enhanced-audit-log-alerting-on-principal",
+            "incident-response-team-on-standby",
+            "ip-allowlist-tightened-on-principal"
+          ],
+          "estimated_time_hours": 48
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "indicator-rescan-clean",
+          "test": "Re-run the detect-phase indicator set against the post-remediation audit log + IAM inventory. Expect zero high-confidence indicators firing in the post-remediation window.",
+          "expected_result": "No high-confidence indicators fire; any remaining medium / low indicators pass false-positive distinguishing tests.",
+          "test_type": "negative"
+        },
+        {
+          "id": "principal-revoked-at-provider",
+          "test": "On every rotated principal, confirm via the CSP API that (a) old access keys are deleted / disabled, (b) old sessions are revoked, (c) new credentials are active. AWS: aws iam list-access-keys per-user, expect zero Active keys older than rotation timestamp. GCP: gcloud iam service-accounts keys list, expect zero non-system keys older than rotation timestamp. Azure: az ad sp credential list, expect zero credentials older than rotation timestamp.",
+          "expected_result": "Old credentials inactive; new credentials active; session-revocation confirmed.",
+          "test_type": "functional"
+        },
+        {
+          "id": "audit-log-shows-no-misuse-post-rotation",
+          "test": "Review the post-rotation audit log for the rotated principals. Confirm no anomalous activity (no logins from the prior compromise-window source IPs, no IAM mutations outside the IaC apply window, no cross-account assume-role chains).",
+          "expected_result": "No anomalous activity in the post-rotation window.",
+          "test_type": "functional"
+        },
+        {
+          "id": "imds-v2-enforcement-coverage",
+          "test": "Inventory all instances; compute percentage on IMDSv2-required posture. Expect >= 99% in production, 100% in critical-or-important-function-supporting accounts.",
+          "expected_result": "IMDSv2-required posture coverage >= 99%.",
+          "test_type": "negative"
+        },
+        {
+          "id": "federated-trust-no-wildcards",
+          "test": "Re-audit every IAM role with a federated trust policy. Expect zero policies with wildcard subject claims (`repo:*`, `*` audience).",
+          "expected_result": "Zero wildcard subject-claim trust policies.",
+          "test_type": "negative"
+        },
+        {
+          "id": "scp-quarantine-effective",
+          "test": "Attempt a deny-able action from a principal in the quarantine OU. Expect the SCP / Org Policy / Management Group deny to fire.",
+          "expected_result": "Deny-all SCP / Org Policy / deny-assignment blocks the test action.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after rotation + revocation + SCP tightening + IMDSv2 enforcement + federated-trust hardening, the attacker may have exfiltrated data during the compromise window OR established persistence in artefacts not reachable from the IAM principal inventory (compromised package published to npm / PyPI / Docker Hub, compromised SaaS-integration credential held outside the cloud, compromised CI pipeline that re-introduces a backdoor on next apply).",
+        "why_remains": "Cloud-IAM compromise is irreversible at the data-exfil level. Revocation prevents future misuse but does not undo prior misuse. Audit log review establishes upper bound on misuse but cannot prove a negative for all classes (e.g. covert exfil within normal-looking egress patterns, supply-chain backdoors that activate later).",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "credentials-rotated",
+          "sessions-revoked",
+          "imds-v2-enforced",
+          "federated-trust-tightened",
+          "scp-quarantine-attached",
+          "audit-log-baseline-captured",
+          "egress-dlp-monitoring-extended"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Pre-remediation 90-day audit-log scan output with indicator firings + RWEP per finding + blast-radius computation. Plus post-remediation rescan showing clean state.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-AC-2",
+            "iso-27001-2022-A.5.15",
+            "soc2-cc6.1",
+            "fedramp-il5-ac-2"
+          ]
+        },
+        {
+          "evidence_type": "log_excerpt",
+          "description": "Cloud audit-log excerpt for the compromise window for each rotated principal.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "gdpr-art-33",
+            "soc2-cc7.2",
+            "nis2-art21-2c",
+            "dora-art-19"
+          ]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Rotation ticket(s) with timestamps, approvers, CSP rotation-confirmation IDs (AWS IAM new key-id, GCP new key fingerprint, Azure new credential object-id).",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "soc2-cc8.1",
+            "iso-27001-2022-A.8.32"
+          ]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after diff of SCP / Org Policy / Management Group state; federated-trust-policy diff; IMDS enforcement state diff.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "iso-27001-2022-A.5.23",
+            "nist-800-53-CM-3",
+            "soc2-cc8.1"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: account identity, scan timestamp, indicator firings, RWEP at detection, RWEP post-remediation, rotated principal IDs (hashed).",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2c"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "post_iam_change",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly_audit_log_review",
+          "interval": "7d"
+        },
+        {
+          "condition": "post_federated_idp_change",
+          "interval": "on_event"
+        },
+        {
+          "condition": "monthly_full_rescan",
+          "interval": "30d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "scan_report",
+          "log_excerpt",
+          "config_diff",
+          "ticket_reference",
+          "attestation",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement",
+          "incident_response_timeline"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Cloud-IAM compromise via $vector ($csp): root-login-from-new-ASN / cross-account-assume-role-chain / leaked-access-key-from-public-repo / managed-identity-token-replay / federated-trust-wildcard-subject / IMDSv1-SSRF / mass-IAM-creation-outside-IaC.",
+          "control_gap": "Account-lifecycle controls (NIST AC-2, ISO A.5.15, SOC 2 CC6) treat principals individually and miss cross-boundary chains. Posture tools (Security Hub / SCC / Defender for Cloud) are coverage-based and miss behavioural anomalies. Federated-trust hygiene is not enumerated in any framework's evidence surface.",
+          "framework_gap": "NIST 800-53 AC-2 + ISO/IEC 27001:2022 A.5.15-A.5.18 + SOC 2 CC6 + FedRAMP IL5 baseline + UK CAF B2 + AU ISM-1546 + AU Essential 8 Strategy 4 collectively cover account lifecycle + human MFA + posture-tool deployment. None name cross-account assume-role chains, federated-trust wildcard-subject claims, managed-identity token replay, or IMDS-version-hardening as distinct control classes.",
+          "new_control_requirement": "Continuous behavioural CloudTrail / audit-log analytics keyed off the detect.indicators in this playbook; federated-trust hygiene attestation (non-wildcard subject claims, audience-pinned); IMDSv2-required SCP / Org Policy enforced org-wide; cross-account assume-role graph monitoring over rolling 24h windows; managed-identity / service-account credential TTL ceilings with audience binding; cross-system credential-reuse mapping for every federated IdP."
+        },
+        "feeds_back_to_skills": [
+          "cloud-security",
+          "cred-stores",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "incident-response-playbook"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "compromised_principal_inventory",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.33 72-hour notification: Cloud-IAM compromise event affecting ${principal_count} principal(s) across ${account_count} ${csp_name} account(s). Compromise window: ${exposure_window}. Affected processing operations: ${processing_operations}. Categories of data subjects potentially affected: ${data_subject_categories}. Containment actions: credentials rotated, sessions revoked, SCP quarantine attached, IMDSv2 enforced, federated trust tightened. Risk assessment: ${risk_level}. No notification to data subjects required because ${art34_reasoning} OR notification to data subjects required and being prepared. Contact: ${dpo_contact}."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.34 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "data_subject_categories_affected",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.34 notification to data subjects (draft for review): We are writing to inform you of a cloud-account compromise incident affecting systems that process your personal data. Affected systems: ${affected_systems}. Compromise window: ${exposure_window}. Containment actions completed: credentials rotated and revoked, sessions revoked, account quarantine attached, audit logs reviewed. Steps you can take: ${recommended_actions}. Our DPO can be reached at ${dpo_contact}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "compromised_principal_inventory",
+            "exposure_window_estimate",
+            "rotation_status"
+          ],
+          "draft_notification": "NIS2 Art.23 early-warning notification: Cloud-IAM compromise on ${account_count} ${csp_name} account(s); ${principal_count} principal(s) involved. Suspected window of exposure: ${exposure_window}. Initial containment: credentials rotated, sessions revoked, SCP quarantine attached. Full incident assessment within 72h per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "major_ict_incident_classification",
+            "affected_critical_or_important_function",
+            "initial_containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification (4h): Major ICT incident classification — cloud-IAM compromise. Affected critical-or-important function(s): ${affected_ciofs}. CSP: ${csp_name}. Initial containment: credentials rotated, sessions revoked, account quarantine attached. Further reports per Art.19(4) at 72h and 1 month."
+        },
+        {
+          "obligation_ref": "UK/UK GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "compromised_principal_inventory",
+            "data_subject_impact_assessment"
+          ],
+          "draft_notification": "UK GDPR Art.33 72-hour notification to ICO: Cloud-IAM compromise event. Mirror of GDPR Art.33 notification body, addressed to ICO casework team."
+        },
+        {
+          "obligation_ref": "US-NY/23 NYCRR 500.17 cyber event notification 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "cyber_event_classification",
+            "ciso_acknowledgement"
+          ],
+          "draft_notification": "23 NYCRR 500.17 cyber event notification: Cloud-IAM compromise on ${account_count} ${csp_name} account(s). CISO acknowledgement: ${ciso_name}. Initial containment: credentials rotated, sessions revoked, account quarantine attached. Written explanation within 30 days per 500.17(c)."
+        },
+        {
+          "obligation_ref": "US-CA/CCPA / CPRA Sec.1798.82 1440h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "california_resident_records_affected",
+            "containment_record"
+          ],
+          "draft_notification": "California breach notification: We are writing to notify you of a security incident that may have affected your personal information. ${incident_description}. ${types_of_information_affected}. ${steps_taken}. ${steps_individuals_can_take}. ${contact_information}."
+        },
+        {
+          "obligation_ref": "JP/APPI Art.26 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "compromised_principal_inventory",
+            "japanese_resident_records_affected"
+          ],
+          "draft_notification": "APPI Art.26 notification to PPC: Cloud-IAM compromise affecting ${japanese_record_count} Japanese resident records. Containment actions: ${containment_actions}. Reporter: ${ppc_contact}."
+        },
+        {
+          "obligation_ref": "SG/PDPA Notification Obligation s26D 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "singapore_resident_records_affected",
+            "containment_record"
+          ],
+          "draft_notification": "PDPA s26D notification to PDPC: Cloud-IAM compromise affecting ${singapore_record_count} Singapore resident records. Containment actions: ${containment_actions}. Reporter: ${dpo_contact}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "coordinated_rotation_required == true OR (compromised_principal_class == 'federated_idp_root' AND rotation_eta > obligation_window)",
+        "exception_template": {
+          "scope": "Cloud-IAM principal of class ${principal_class} (${principal_id_hash}) cannot be rotated within ${obligation_window} due to ${blocking_reason}.",
+          "duration": "until_vendor_patch",
+          "compensating_controls": [
+            "enhanced-audit-log-alerting-on-principal-use",
+            "incident-response-team-on-standby",
+            "ip-allowlist-tightened-on-principal",
+            "rate-limit-on-principal-tightened",
+            "scp-deny-non-essential-actions-on-principal"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organization documents a time-bound risk acceptance for unrotated cloud-IAM principal ${principal_class} (${principal_id_hash}) across ${affected_account_count} account(s). Blocking reason: ${blocking_reason_narrative}. Rotation ETA: ${rotation_eta}. Compensating controls in place: ${compensating_controls}. Residual exposure: principal remains valid; CSP audit logs are reviewed daily during the exception window for misuse indicators. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} OR rotation completion, whichever is first. Detection coverage is provided by ${detection_controls}. The exception will be re-evaluated on (a) rotation completion, (b) listed expiry date, (c) any audit-log anomaly on the principal — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "aws-root-account-compromise",
+      "title": "AWS root-account compromise — root-login-from-new-ASN response",
+      "applies_to": {
+        "attack_technique": "T1078.004"
+      }
+    },
+    {
+      "id": "gcp-service-account-key-leak",
+      "title": "GCP service-account key leak — JSON key found on public-code-search surface",
+      "applies_to": {
+        "attack_technique": "T1552.005"
+      }
+    },
+    {
+      "id": "azure-managed-identity-replay",
+      "title": "Azure managed-identity token replay — IMDS-exfilled token used from non-instance source",
+      "applies_to": {
+        "attack_technique": "T1552.005"
+      }
+    },
+    {
+      "id": "cross-account-assume-role-chain",
+      "title": "Cross-account assume-role chain anomaly — chains >= 2 boundaries with common source principal",
+      "applies_to": {
+        "attack_technique": "T1078.004"
+      }
+    }
+  ]
+}

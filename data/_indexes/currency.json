@@ -6,7 +6,7 @@
     "decay_formula": "100 base; -30/-20/-10/-5 at 180/90/60/30-day thresholds. forward_watch count does NOT affect the score (it's a maintenance signal, not a staleness one). Label thresholds: ≥90 current, ≥70 acceptable, ≥50 stale, <50 critical_stale."
   },
   "summary": {
-    "current": 39,
+    "current": 42,
     "acceptable": 0,
     "stale": 0,
     "critical_stale": 0,
@@ -65,6 +65,15 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 5,
+      "action_required": false
+    },
+    {
+      "skill": "cloud-iam-incident",
+      "last_threat_review": "2026-05-15",
+      "days_since_review": -14,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 11,
       "action_required": false
     },
     {
@@ -176,6 +185,15 @@
       "action_required": false
     },
     {
+      "skill": "idp-incident-response",
+      "last_threat_review": "2026-05-15",
+      "days_since_review": -14,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 11,
+      "action_required": false
+    },
+    {
       "skill": "incident-response-playbook",
       "last_threat_review": "2026-05-11",
       "days_since_review": -10,
@@ -245,6 +263,15 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 1,
+      "action_required": false
+    },
+    {
+      "skill": "ransomware-response",
+      "last_threat_review": "2026-05-15",
+      "days_since_review": -14,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 10,
       "action_required": false
     },
     {

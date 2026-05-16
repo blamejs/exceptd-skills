@@ -7,6 +7,7 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
@@ -19,6 +20,7 @@
       "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -27,6 +29,7 @@
       "policy-exception-gen",
       "pqc-first",
       "rag-pipeline-security",
+      "ransomware-response",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -42,7 +45,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 39
+    "skill_count": 42
   },
   "UK": {
     "skills": [
@@ -52,6 +55,7 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
@@ -63,6 +67,7 @@
       "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -70,6 +75,7 @@
       "ot-ics-security",
       "pqc-first",
       "rag-pipeline-security",
+      "ransomware-response",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -85,7 +91,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 37
+    "skill_count": 40
   },
   "AU": {
     "skills": [
@@ -95,6 +101,7 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
@@ -107,6 +114,7 @@
       "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -114,6 +122,7 @@
       "ot-ics-security",
       "pqc-first",
       "rag-pipeline-security",
+      "ransomware-response",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -129,13 +138,14 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 38
+    "skill_count": 41
   },
   "SG": {
     "skills": [
       "age-gates-child-safety",
       "ai-attack-surface",
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
@@ -155,13 +165,14 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 20
+    "skill_count": 21
   },
   "JP": {
     "skills": [
       "age-gates-child-safety",
       "ai-risk-management",
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
@@ -174,6 +185,7 @@
       "mlops-security",
       "ot-ics-security",
       "pqc-first",
+      "ransomware-response",
       "sector-energy",
       "sector-federal-government",
       "sector-financial",
@@ -184,7 +196,7 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 23
+    "skill_count": 25
   },
   "IN": {
     "skills": [
@@ -212,12 +224,14 @@
     "skills": [
       "age-gates-child-safety",
       "ai-c2-detection",
+      "cloud-iam-incident",
       "cloud-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "framework-gap-analysis",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "sector-energy",
       "sector-federal-government",
       "sector-financial",
@@ -227,7 +241,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 15
+    "skill_count": 17
   },
   "BR": {
     "skills": [
@@ -332,6 +346,7 @@
     "skills": [
       "ai-risk-management",
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
@@ -353,7 +368,7 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 21
+    "skill_count": 22
   },
   "CH": {
     "skills": [
@@ -372,12 +387,13 @@
       "dlp-gap-analysis",
       "framework-gap-analysis",
       "global-grc",
+      "idp-incident-response",
       "pqc-first",
       "sector-financial",
       "supply-chain-integrity"
     ],
     "example_excerpts": {},
-    "skill_count": 6
+    "skill_count": 7
   },
   "TW": {
     "skills": [
@@ -401,6 +417,7 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
@@ -413,6 +430,7 @@
       "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -421,6 +439,7 @@
       "policy-exception-gen",
       "pqc-first",
       "rag-pipeline-security",
+      "ransomware-response",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -435,7 +454,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 38
+    "skill_count": 41
   },
   "VN": {
     "skills": [
@@ -451,6 +470,7 @@
     "skills": [
       "ai-risk-management",
       "api-security",
+      "cloud-iam-incident",
       "cloud-security",
       "coordinated-vuln-disclosure",
       "dlp-gap-analysis",
@@ -458,9 +478,11 @@
       "framework-gap-analysis",
       "global-grc",
       "identity-assurance",
+      "idp-incident-response",
       "incident-response-playbook",
       "mlops-security",
       "pqc-first",
+      "ransomware-response",
       "researcher",
       "sector-financial",
       "skill-update-loop",
@@ -468,7 +490,7 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 17
+    "skill_count": 20
   },
   "NO": {
     "skills": [
@@ -512,13 +534,16 @@
   "US_CALIFORNIA": {
     "skills": [
       "age-gates-child-safety",
+      "cloud-iam-incident",
       "compliance-theater",
       "dlp-gap-analysis",
       "framework-gap-analysis",
-      "global-grc"
+      "global-grc",
+      "idp-incident-response",
+      "ransomware-response"
     ],
     "example_excerpts": {},
-    "skill_count": 5
+    "skill_count": 8
   },
   "EU_DE_BSI": {
     "skills": [

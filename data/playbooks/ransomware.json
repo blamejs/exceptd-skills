@@ -1,0 +1,1407 @@
+{
+  "_meta": {
+    "id": "ransomware",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-15",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-15",
+        "summary": "Initial ransomware incident-response playbook. Extends incident-response-playbook with ransomware-specific phases: OFAC SDN sanctions screening as blocking gate on payment posture, EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF cross-jurisdiction sanctions lookups, cyber-insurance carrier 24h notification, decryptor availability lookup (No More Ransom + vendor-specific), negotiator engagement decision under legal sanctions posture, immutable-backup viability test, PHI-exfil-before-encrypt as distinct breach class, healthcare/financial sector clock parallelization (NIS2 24h / DORA 4h / GDPR 72h / SEC 8-K 4 business days / HIPAA 60d / CIRCIA 72h / NYDFS 500.17 24h ransom-payment).",
+        "framework_gaps_updated": [
+          "OFAC-SDN-Payment-Block",
+          "Insurance-Carrier-24h-Notification",
+          "EU-Sanctions-Reg-2014-833-Cyber",
+          "Immutable-Backup-Recovery",
+          "Decryptor-Availability-Pre-Decision",
+          "PHI-Exfil-Before-Encrypt-Breach-Class"
+        ]
+      }
+    ],
+    "owner": "@blamejs/ir",
+    "air_gap_mode": false,
+    "scope": "system",
+    "preconditions": [
+      {
+        "id": "filesystem-read",
+        "description": "Investigator has read access to at least one host with confirmed encryption signal (mass file rename, ransom note present, EDR encryption alert).",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "backup-snapshot-available",
+        "description": "A recent backup snapshot (within the org's documented RPO) is identifiable and reachable, even if its restorability has not yet been validated.",
+        "check": "backup_snapshot_identifiable == true",
+        "on_fail": "warn"
+      },
+      {
+        "id": "operator-confirmed-encryption",
+        "description": "Operator has confirmed an encryption event (not merely suspected). Distinguishes ransomware-response from generic IR triage.",
+        "check": "encryption_event_confirmed == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "cred-stores",
+        "condition": "lateral_movement_via_credentials == true"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Ransomware incident response — sanctions-screened, insurance-aware, decryptor-checked",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1486",
+      "T1567",
+      "T1078",
+      "T1059"
+    ],
+    "cve_refs": [
+      "CVE-2024-1709",
+      "CVE-2023-3519",
+      "CVE-2024-3094",
+      "CVE-2024-21626"
+    ],
+    "cwe_refs": [
+      "CWE-287",
+      "CWE-798"
+    ],
+    "d3fend_refs": [
+      "D3-RPA",
+      "D3-NTA",
+      "D3-IOPR",
+      "D3-CSPP"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "hipaa",
+      "nerc-cip"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "US",
+          "regulation": "OFAC SDN — 31 CFR 501 + OFAC Ransomware Advisory (2021, updated)",
+          "obligation": "sanctions_screen_before_payment",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "threat_actor_attribution_evidence",
+            "ofac_sdn_search_result",
+            "secondary_sanctions_list_check"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU Reg 2014/833 — Cyber Sanctions",
+          "obligation": "sanctions_screen_before_payment",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "threat_actor_attribution_evidence",
+            "eu_consolidated_sanctions_list_check"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK OFSI Consolidated List + Sanctions and Anti-Money Laundering Act 2018",
+          "obligation": "sanctions_screen_before_payment",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "threat_actor_attribution_evidence",
+            "ofsi_consolidated_list_check"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "DFAT Autonomous Sanctions — Cyber",
+          "obligation": "sanctions_screen_before_payment",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "threat_actor_attribution_evidence",
+            "dfat_consolidated_list_check"
+          ]
+        },
+        {
+          "jurisdiction": "JP",
+          "regulation": "MOF Foreign Exchange and Foreign Trade Act sanctions",
+          "obligation": "sanctions_screen_before_payment",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "threat_actor_attribution_evidence",
+            "mof_sanctions_list_check"
+          ]
+        },
+        {
+          "jurisdiction": "GLOBAL",
+          "regulation": "Cyber insurance carrier policy — typical 24h notice clause",
+          "obligation": "notify_insurance_carrier",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "policy_number",
+            "loss_notice_form",
+            "preliminary_scope_estimate"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23 — Significant Incident",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "encrypted_host_count",
+            "service_impact_scope",
+            "preliminary_attribution"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19 — Major ICT-related Incident (financial entities)",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "encrypted_host_count",
+            "service_impact_scope",
+            "financial_impact_preliminary"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33 / Art.34 — Personal Data Breach",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "phi_or_personal_data_exfil_evidence",
+            "data_subject_categories_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "US-SEC",
+          "regulation": "SEC 17 CFR 229.106(b) Form 8-K Item 1.05 — Material Cybersecurity Incident",
+          "obligation": "notify_regulator",
+          "window_hours": 96,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "materiality_determination",
+            "incident_scope_summary",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "US-HIPAA",
+          "regulation": "HHS Breach Notification Rule — 45 CFR 164.400-414",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 1440,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "phi_records_affected_count",
+            "containment_record",
+            "risk_assessment_per_164_402"
+          ]
+        },
+        {
+          "jurisdiction": "US-CA",
+          "regulation": "CCPA / CPRA Sec.1798.82",
+          "obligation": "notify_affected_individuals",
+          "window_hours": 1440,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "california_resident_records_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK GDPR Art.33 — ICO Notification",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "personal_data_breach_summary",
+            "affected_individuals_count"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Privacy Act 1988 — Notifiable Data Breaches scheme",
+          "obligation": "notify_regulator",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "eligible_data_breach_assessment",
+            "australian_resident_records_affected"
+          ]
+        },
+        {
+          "jurisdiction": "US-NY",
+          "regulation": "NYDFS 23 NYCRR 500.17 — Ransom Payment",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "validate_complete",
+          "evidence_required": [
+            "ransom_payment_record",
+            "ofac_screening_attestation",
+            "incident_summary"
+          ]
+        },
+        {
+          "jurisdiction": "US-FEDERAL",
+          "regulation": "CIRCIA — Cyber Incident Reporting for Critical Infrastructure Act",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "covered_cyber_incident_assessment",
+            "encrypted_host_count",
+            "containment_record"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "immutable-backup-claim",
+          "claim": "We have immutable backups — restore is guaranteed.",
+          "fast_detection_test": "Test the actual immutability property end-to-end: (1) pick the most recent backup snapshot, (2) attempt to delete or modify it from a system that holds the same admin credentials used in production (not from the dedicated backup-admin identity), (3) confirm the delete/modify is refused at the storage layer. Replication and versioning are NOT immutability. S3 Object Lock with governance-retention is bypassable by admin; only compliance-retention with no root override is immutable. Restic / Borg / Veeam 'immutable' modes vary — confirm the cryptographic + storage-policy layer, not the marketing label.",
+          "implicated_controls": [
+            "nist-800-53-CP-9",
+            "iso-27001-2022-A.8.13",
+            "au-essential-8-backup"
+          ]
+        },
+        {
+          "pattern_id": "decryptor-will-work",
+          "claim": "We will pay; the threat actor's decryptor will restore everything.",
+          "fast_detection_test": "Historical evidence: ransomware-victim decryptor reliability across 2023-2026 (Coveware quarterly reports) shows ~65% of paid victims recovered all data; ~35% experienced partial decryption, corrupt files, or no working decryptor. For specific families: Conti / LockBit / ALPHV decryptors have public failure-mode documentation. The decryptor-as-recovery posture is not a backup substitute and the framework treats it as such only by absence of guidance.",
+          "implicated_controls": [
+            "nist-800-53-CP-10",
+            "iso-27001-2022-A.5.30"
+          ]
+        },
+        {
+          "pattern_id": "cyber-insurance-covers-ransom",
+          "claim": "Our cyber insurance policy covers ransom payment — economic exposure is bounded.",
+          "fast_detection_test": "Read the policy: (1) does it exclude payments to OFAC-sanctioned threat actors (most policies post-2021 do), (2) does it require pre-payment carrier approval, (3) does it cap ransom payouts separately from total policy limit, (4) does it require named IR firms from a panel, (5) does it require 24h notification with non-compliance voiding cover. Most policies fail (1) for any sanctioned-actor scenario AND require (2)-(5) procedurally; carrier denial post-incident is the dominant failure mode rather than insufficient limits.",
+          "implicated_controls": [
+            "iso-27001-2022-A.5.7",
+            "soc2-cc9.2"
+          ]
+        },
+        {
+          "pattern_id": "read-only-volumes-cannot-be-encrypted",
+          "claim": "Production data lives on read-only-by-design volumes — ransomware cannot encrypt it.",
+          "fast_detection_test": "Enumerate the privileged identity surface that can flip read-only to read-write or that can manage the snapshot lifecycle. If any production account or service identity can do either, the read-only property is operationally defeated by credential compromise (the typical ransomware kill chain). Test: with a compromised privileged credential, can a single API call (storage account key rotation, snapshot policy modification, replication-target change) make the volume writable? If yes, the control is paper.",
+          "implicated_controls": [
+            "nist-800-53-AC-3",
+            "iso-27001-2022-A.5.15"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Ransomware incident response touches four control families that no single framework operationalizes coherently: (1) backup integrity (NIST CP-9, ISO A.8.13, AU E8 Backup all require backups but treat 'backup' as a single class — immutability is a sub-property absent from the control text); (2) incident response (NIST IR-4, ISO A.5.26, SOC 2 CC7 specify capability without naming the sanctions-screening gate or decryptor-availability decision); (3) sanctions compliance (OFAC, EU Reg 2014/833, UK OFSI, AU DFAT, JP MOF live in their own regulatory tree — no security framework cross-walks them as a payment-block prerequisite); (4) insurance-policy interaction (no security framework treats carrier-notification timing or pre-approval requirements as a control). Ransomware also expands the breach-notification surface in jurisdictions where PII exfiltration before encryption is a distinct event from the encryption itself (GDPR Art.33/34, HIPAA Breach Notification Rule, state breach laws); frameworks generally treat the encryption event as the trigger and miss the exfil-before-encrypt class which is now the dominant 2024-2026 attack pattern (Coveware reports >80% of named-ransomware attacks include exfiltration).",
+        "lag_score": 45,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IR-4 (Incident Handling)",
+            "designed_for": "Method-neutral incident response capability with preparation, detection and analysis, containment, eradication, recovery, and post-incident activity.",
+            "insufficient_because": "Does not enumerate ransomware-specific decision points: OFAC sanctions screening as a blocker on payment posture, decryptor availability lookup as a precondition to the pay/restore decision, insurance-carrier engagement timing, negotiator-engagement legal posture under sanctions, immutable-backup vs replication distinction."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.26 (Response to information security incidents)",
+            "designed_for": "Process-shaped requirement for incident response.",
+            "insufficient_because": "Process-level only; auditor accepts an incident-response procedure document without testing whether ransomware-specific sub-flows (sanctions screening, decryptor lookup, insurance-policy compliance, negotiator engagement) are present and exercised."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC7.4 (Security incident response)",
+            "designed_for": "Trust services criterion for the entity to respond to identified security incidents.",
+            "insufficient_because": "Names the response capability without requiring evidence that ransomware-specific decisions (sanctions, decryptor, negotiator) are made under documented criteria. Auditors test for an incident log entry, not for the decision-tree the entity followed."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "D1 (Response and Recovery Planning)",
+            "designed_for": "NCSC CAF outcome that the organisation has plans for responding to and recovering from cyber incidents.",
+            "insufficient_because": "Outcome-shaped; D1 evidence at IGP/IGP+ level is plan existence and tabletop exercise. Does not test whether plans address ransomware sub-class with immutable-backup viability check, sanctions screening, or decryptor-availability decision."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-1554 (Incident response plan is exercised)",
+            "designed_for": "Tabletop / live exercise of the incident response plan.",
+            "insufficient_because": "Exercise frequency is named; exercise content is not. A generic IR tabletop satisfies ISM-1554 without ever rehearsing the sanctions-screening blocker on a ransom decision."
+          },
+          {
+            "framework": "hipaa",
+            "control_id": "164.308(a)(7) (Contingency Plan)",
+            "designed_for": "Establishment of policies and procedures for responding to an emergency that damages systems containing ePHI.",
+            "insufficient_because": "Contingency planning is recovery-shaped; treats the encryption event as the trigger. The dominant 2024-2026 ransomware pattern includes PHI exfiltration before encryption, which is a separate Breach Notification Rule trigger 45 CFR 164.402 — the contingency plan does not naturally surface this as a parallel obligation."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 8 — Regular Backups",
+            "designed_for": "Daily backups of important data, software, and configuration settings with off-network retention.",
+            "insufficient_because": "'Off-network' is the maturity gate; immutability is not. ASD ML2 evidence is backup existence and retention; auditors accept tape-vault offsite as compliant. Replication targets accessible via the same compromised admin credential as production fail the ransomware blast-radius test without failing E8 Backup compliance."
+          }
+        ]
+      },
+      "skill_preload": [
+        "ransomware-response",
+        "incident-response-playbook",
+        "sector-healthcare",
+        "sector-financial",
+        "framework-gap-analysis",
+        "compliance-theater"
+      ]
+    },
+    "direct": {
+      "threat_context": "Ransomware in mid-2026 is dominated by exfiltration-before-encryption: Coveware Q1 2026 reports >82% of named-ransomware incidents include a data-theft component, making the encryption event a secondary leverage rather than the primary blast radius. Active families and clusters mid-2026: Akira (healthcare cluster, 2026 sustained), Hunters International (post-Hive successor, broad-sector), RansomHub (2025-2026 affiliate growth post-ALPHV exit-scam), LockBit splinter brands (post-Operation Cronos February 2024 takedown), Cuba (FSB-adjacent, sanctions-flagged), BlackSuit/Royal continuation. Operational exemplars: Change Healthcare (UnitedHealth Group, ALPHV/BlackCat, February 2024, ~$1.5B financial impact, 6-week pre-encryption dwell, PHI exfiltration affecting ~190M individuals); MGM Resorts (Scattered Spider initial access → ALPHV affiliate ransomware, September 2023, vishing-driven IT helpdesk credential reset); Synnovis / NHS (Qilin, June 2024, pathology service disruption); Ascension Health (Black Basta, May 2024). Initial-access vector distribution 2024-2026: ~45% phishing-derived (including vishing/MFA-fatigue chains a la Scattered Spider), ~25% exposed-VPN-appliance exploitation (Citrix CVE-2023-3519 class, Fortinet CVE-2024-21762 class, ScreenConnect CVE-2024-1709), ~20% credential reuse from infostealer markets, ~10% supply-chain/vendor compromise. Living-off-the-land via legitimate admin tools (PsExec, WMI, PowerShell, AnyDesk, ScreenConnect, Cobalt Strike Beacon, Sliver, Brute Ratel) is universal across families. Shadow Copy deletion (T1490 not in catalog but documented widely) precedes encryption in ~95% of Windows attacks.",
+      "rwep_threshold": {
+        "escalate": 90,
+        "monitor": 75,
+        "close": 45
+      },
+      "framework_lag_declaration": "No security framework operationalizes the four ransomware-specific decision points as controls: (1) OFAC SDN screening as a payment-posture blocker — sanctions compliance lives in Treasury / Finance regulatory tree, not in NIST/ISO/SOC 2 incident-response controls, and the cross-walk is the operator's responsibility; (2) decryptor availability lookup (No More Ransom Project + vendor-specific decryptors) — frameworks do not require this lookup before payment decision and most policies make the pay/restore decision without it; (3) insurance-carrier 24h notification with carrier-pre-approval requirements — no security framework names carrier-policy interaction, yet carrier denial post-incident is the dominant economic-exposure failure mode; (4) PHI / personal-data exfil-before-encrypt as a distinct breach class — HIPAA Breach Notification Rule (45 CFR 164.402) and GDPR Art.33/34 trigger on the exfiltration event independently of the encryption event, but frameworks treat ransomware as a single 'availability' incident and miss the parallel-clock obligation. NIS2 Art.23 (24h) and DORA Art.19 (4h) clocks run from awareness regardless of which sub-event drove awareness, so even a pure-encryption-without-exfil incident triggers the same notification clock as a confirmed-exfil event — but the breach-notification scope differs materially, and the IR team must classify both within hours.",
+      "skill_chain": [
+        {
+          "skill": "ransomware-response",
+          "purpose": "Ransomware-specific decision tree: encryption-confirmation, sanctions-screening gate, decryptor availability lookup, immutable-backup viability test, negotiator-engagement legal posture.",
+          "required": true
+        },
+        {
+          "skill": "incident-response-playbook",
+          "purpose": "Parent IR playbook for PICERL phases, jurisdiction matrix, evidence preservation, post-incident review template.",
+          "required": true
+        },
+        {
+          "skill": "sector-healthcare",
+          "purpose": "When PHI is in scope, HIPAA Breach Notification Rule sequencing, state AG notification, business-associate cascade.",
+          "skip_if": "phi_in_scope == false",
+          "required": false
+        },
+        {
+          "skill": "sector-financial",
+          "purpose": "When the entity is a financial entity in DORA scope, 4h initial notification chain to competent authority + ECB/EIOPA/ESMA; also NYDFS 500.17 24h ransom-payment notification for NY-licensed entities.",
+          "skip_if": "financial_entity_in_scope == false",
+          "required": false
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map findings to the four ransomware-specific framework gaps (sanctions screening, decryptor availability, insurance-policy interaction, exfil-before-encrypt breach class).",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the four theater tests (immutable-backup claim, decryptor-will-work claim, insurance-covers-ransom claim, read-only-volumes claim) against the org's pre-incident posture.",
+          "required": true
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 22000,
+        "breakdown": {
+          "govern": 3200,
+          "direct": 2200,
+          "look": 3000,
+          "detect": 3400,
+          "analyze": 4400,
+          "validate": 3200,
+          "close": 2600
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "encrypted-file-extension-inventory",
+          "type": "file",
+          "source": "Walk affected hosts for files with ransomware-family-fingerprinted extensions (.akira, .lockbit, .cuba, .royal, .blacksuit, .hunters, .ransomhub, plus randomized extensions matching family-specific patterns)",
+          "description": "Encrypted-file extension distribution. Family fingerprinting drives sanctions-screening and decryptor-availability lookup.",
+          "required": true,
+          "air_gap_alternative": "Local filesystem walk only; no network. Pair extension list against an air-gapped copy of the No More Ransom family-extension index shipped with the playbook context."
+        },
+        {
+          "id": "ransom-note-content",
+          "type": "file",
+          "source": "Walk affected hosts for filenames matching readme*.txt, decrypt*.txt, how_to_recover*, restore_files*, !README*, recover_*.html; capture text content + Tor URL + contact email/Tox/Session IDs",
+          "description": "Ransom note IoCs. Attribution evidence for OFAC screening and No More Ransom lookup.",
+          "required": true,
+          "air_gap_alternative": "Local read of files; transcribe Tor/email/Tox/Session identifiers to a sealed evidence record."
+        },
+        {
+          "id": "active-directory-privilege-chain",
+          "type": "audit_trail",
+          "source": "AD audit logs + BloodHound-style attack-path enumeration: Domain Admin / Enterprise Admin / built-in administrator session locations, recent kerberos ticket activity, service-account password-age + delegation flags",
+          "description": "AD privilege-escalation chain at incident time. Drives lateral-movement scope determination and credential-rotation priority.",
+          "required": true,
+          "air_gap_alternative": "Read AD audit log dumps from a controller backup if live AD is suspect-compromised."
+        },
+        {
+          "id": "backup-snapshot-immutability-state",
+          "type": "config_file",
+          "source": "Backup-system config: snapshot retention policy, object-lock mode (governance vs compliance for S3, immutability flag for Azure, write-protect for Veeam/Rubrik/Cohesity), replication topology, admin-identity separation between production and backup",
+          "description": "Backup immutability posture. Distinguishes immutable (compliance-lock, no root override) from replicated (deletable with admin credential) from write-protected (storage-side enforced).",
+          "required": true,
+          "air_gap_alternative": "Read backup-system config from local copy + verify storage-side policy via console or API call from a known-clean admin workstation."
+        },
+        {
+          "id": "shadow-copy-deletion-events",
+          "type": "log",
+          "source": "Windows event log channels Microsoft-Windows-VolumeShadowCopyService + Security 4663 + Application 8224, syscall trace for vssadmin.exe / wmic.exe / wbadmin.exe delete invocations, kernel-level VSS-API call traces from EDR",
+          "description": "Shadow Copy deletion events. Precedes encryption in ~95% of Windows ransomware incidents; absence + encrypted-files-present indicates non-Windows or atypical kill chain.",
+          "required": true,
+          "air_gap_alternative": "Read locally-cached Windows event logs from affected hosts."
+        },
+        {
+          "id": "c2-beacon-traffic",
+          "type": "network_capture",
+          "source": "Egress NetFlow / firewall logs / EDR network telemetry filtered to known C2 framework signatures: Cobalt Strike Beacon JA3, Sliver implant traffic, Brute Ratel C4 staging URLs, AnyDesk + ScreenConnect anomalous-context sessions, Tor exit-node connections",
+          "description": "Active or historical C2 beacons. Identifies still-resident adversary infrastructure for containment scope.",
+          "required": true,
+          "air_gap_alternative": "Use pre-incident network-flow capture from immutable telemetry store; do not attempt new captures while containment is incomplete."
+        },
+        {
+          "id": "lateral-movement-iocs",
+          "type": "log",
+          "source": "PsExec / WMI / WinRM / SMB authentication events, Pass-the-Hash signatures (event 4624 type 9 with NTLM), RDP brute-force patterns, scheduled-task and service-installation events across affected hosts",
+          "description": "Lateral movement evidence. Bounds the blast radius and credential-rotation scope.",
+          "required": true,
+          "air_gap_alternative": "Read locally-cached event logs from each affected host."
+        },
+        {
+          "id": "initial-access-vector",
+          "type": "audit_trail",
+          "source": "Phishing email retrieval (mail-server quarantine + inbox forensics), VPN appliance authentication logs (Citrix Gateway, FortiGate SSL VPN, Pulse Connect Secure), exposed-management-plane authentication logs (RDP, SSH, ScreenConnect, AnyDesk), supply-chain compromise indicators (vendor-managed software push events)",
+          "description": "Initial access vector identification. Required for root-cause remediation and CVE matching.",
+          "required": true,
+          "air_gap_alternative": "Read mail and VPN logs from local immutable copies."
+        },
+        {
+          "id": "exfil-before-encrypt-evidence",
+          "type": "network_capture",
+          "source": "Outbound bandwidth profile 24-72h before the encryption event from NetFlow / firewall data: large transfers (> 1 GB cumulative per destination) to consumer cloud-storage domains (MEGA, anonfiles, transfer.sh, file.io, rclone-target endpoints), Tor exit-node bytes-out, custom protocol egress to non-CDN IPs",
+          "description": "Exfiltration-before-encryption evidence. Drives PHI-exfil breach classification independent of the encryption event.",
+          "required": true,
+          "air_gap_alternative": "Use pre-incident NetFlow capture from immutable telemetry store; live egress capture during incident is contamination risk."
+        },
+        {
+          "id": "cyber-insurance-policy-state",
+          "type": "config_file",
+          "source": "Cyber insurance policy document + carrier panel of approved IR firms + carrier-pre-approval requirements + ransom-payment carve-outs + sanctions exclusions + 24h notification clause text",
+          "description": "Insurance posture at incident time. Drives 24h carrier-notification clock and pay/no-pay decision constraints.",
+          "required": true,
+          "air_gap_alternative": "Read locally-stored policy document; defer carrier-portal interaction to a known-clean workstation."
+        },
+        {
+          "id": "ofac-sdn-attribution-evidence",
+          "type": "api_response",
+          "source": "Threat-actor attribution package: ransom note IoCs + leak-site URL + crypto-wallet addresses + JA3 / JA4 fingerprints + reused-tooling signatures + family-fingerprint match; cross-checked against OFAC SDN list, EU Reg 2014/833 consolidated list, UK OFSI Consolidated List, AU DFAT Consolidated List, JP MOF sanctions list",
+          "description": "Attribution-and-sanctions-screen package. BLOCKING evidence for payment posture.",
+          "required": true,
+          "air_gap_alternative": "Use the air-gapped sanctions-list snapshot shipped with the playbook context; flag the snapshot date and require operator confirmation that live-list lookup is performed before payment decision is finalized."
+        },
+        {
+          "id": "negotiator-engagement-state",
+          "type": "audit_trail",
+          "source": "Communication log with retained IR-firm negotiator if any; engagement-letter scope; carrier-approved-firm verification; communications-channel hash (Signal / Wickr / carrier-channel) capture",
+          "description": "Negotiator engagement state. Records whether negotiator is engaged, when, and under whose authority.",
+          "required": false,
+          "air_gap_alternative": "Read locally-stored engagement letter; document state in sealed evidence record."
+        },
+        {
+          "id": "decryptor-availability",
+          "type": "api_response",
+          "source": "No More Ransom Project Crypto Sheriff family-match query + vendor-specific decryptor inventories (Emsisoft, Kaspersky NoMoreCry, Bitdefender, Avast); match against the encrypted-file-extension-inventory and ransom-note fingerprint",
+          "description": "Decryptor availability lookup result. Affirmative match changes pay/restore posture materially.",
+          "required": true,
+          "air_gap_alternative": "Use the air-gapped No More Ransom family-decryptor index shipped with the playbook context; live lookup deferred to a known-clean workstation; absence in snapshot does not equal absence live."
+        },
+        {
+          "id": "recovery-rto-estimate",
+          "type": "config_file",
+          "source": "Restore-from-backup time estimate based on backup size + restore-network throughput + sequencing dependencies (AD restored before application servers, DB restored before app tier); RTO target vs estimated actual",
+          "description": "Recovery time estimate. Drives business-decision input on pay/restore tradeoff.",
+          "required": true,
+          "air_gap_alternative": "Compute from backup catalog size + documented restore-throughput benchmark."
+        },
+        {
+          "id": "forensic-preservation-state",
+          "type": "memory_dump",
+          "source": "Memory dumps from at least one affected host preserved BEFORE remediation, disk images from primary affected hosts, audit-log copies shipped to immutable store, AD ntds.dit copy if AD is compromise scope, hypervisor-level VM snapshot of one affected guest",
+          "description": "Forensic preservation state. Required for post-incident root-cause + insurance-claim + law-enforcement engagement.",
+          "required": true,
+          "air_gap_alternative": "Local acquisition only; chain-of-custody log maintained on offline media."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "since_encryption_event - 30d",
+        "asset_scope": "all_affected_hosts_plus_lateral_movement_scope",
+        "depth": "deep",
+        "sampling": "complete on confirmed-affected hosts; spot-sample on adjacent hosts to bound lateral-movement scope"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "At least one affected host's filesystem is readable (not fully encrypted or destroyed)",
+          "if_false": "All affected hosts fully unreadable post-encryption — pivot to backup-side and network-flow evidence; mark forensic-preservation-state inconclusive."
+        },
+        {
+          "assumption": "Backup snapshots exist within the documented RPO",
+          "if_false": "No restorable backup — pay/no-pay decision is forced; sanctions-screening + decryptor-availability becomes the only path. Document the backup-control failure as a Section 10 action item."
+        },
+        {
+          "assumption": "AD or equivalent identity store is queryable (not fully compromised)",
+          "if_false": "AD fully compromised — assume domain-admin-level adversary persistence; rebuild posture rather than rotate-in-place; engage AD recovery specialists."
+        },
+        {
+          "assumption": "EDR / XDR telemetry was live before the encryption event",
+          "if_false": "No pre-incident EDR telemetry — exfil-before-encrypt scope cannot be confirmed by host-side evidence; rely on network-flow and external-DLP signals; widen the breach-notification scope to all PII held on affected hosts."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "encrypted-file-extension-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "ransom-note-content",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "active-directory-privilege-chain",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "backup-snapshot-immutability-state",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "shadow-copy-deletion-events",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "c2-beacon-traffic",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "lateral-movement-iocs",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "initial-access-vector",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "exfil-before-encrypt-evidence",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "cyber-insurance-policy-state",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "ofac-sdn-attribution-evidence",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "negotiator-engagement-state",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "decryptor-availability",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "recovery-rto-estimate",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "forensic-preservation-state",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "mass-file-extension-change-event",
+          "type": "behavioral_signal",
+          "value": "Within the encrypted-file-extension-inventory artifact: > 500 files on a single host renamed within < 60 minutes to a single non-original extension matching a ransomware-family fingerprint OR a randomized 5-10 char extension pattern repeated across hosts",
+          "description": "Mass file-extension change event consistent with ransomware encryption.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1486",
+          "false_positive_checks_required": [
+            "Rule out documented media-conversion batch job: check change-management ticket queue for any approved batch operation in the same window touching the same file set.",
+            "Rule out archive-creation operation: confirm the new extension is not a documented archive format (.zip, .7z, .tar.gz) AND the original files are not preserved beside the new ones.",
+            "Rule out documented backup-software encryption (Veeam/Commvault encrypt-on-write modes): verify the affected paths are not under documented backup-staging directories."
+          ]
+        },
+        {
+          "id": "shadow-copy-deletion-no-iac-ticket",
+          "type": "log_pattern",
+          "value": "Within the shadow-copy-deletion-events artifact: vssadmin delete shadows /all OR wmic shadowcopy delete OR wbadmin delete catalog event observed within 4h preceding the mass-file-extension-change-event AND no change-management ticket authorizes the operation",
+          "description": "Shadow Copy deletion without operational authorization. Near-deterministic ransomware kill-chain step on Windows.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1486",
+          "false_positive_checks_required": [
+            "Confirm no documented maintenance window covering the time of the vssadmin/wmic/wbadmin invocation.",
+            "Verify the invoking process identity is not a documented backup-administration scheduled task; if it is, confirm the schedule entry was not recently modified by an unauthorized account."
+          ]
+        },
+        {
+          "id": "encrypted-file-extension-growth-rate",
+          "type": "behavioral_signal",
+          "value": "Within the encrypted-file-extension-inventory artifact: encrypted-extension count grows > 100 files per minute sustained for > 5 minutes on at least one host",
+          "description": "Sustained high-rate encryption pattern. Distinguishes active encryption-in-progress from post-encryption discovery.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1486",
+          "false_positive_checks_required": [
+            "Rule out backup-software full-backup encryption operation: confirm the writing process is not a documented backup agent (Veeam VBR, Commvault Simpana, Rubrik agent) AND the destination is not the documented backup staging volume.",
+            "Rule out user-initiated bulk-encryption (BitLocker volume conversion, Boxcryptor migration, large rsync to encrypted remote): confirm no documented user-driven operation matches the window."
+          ]
+        },
+        {
+          "id": "bloodhound-class-ad-recon",
+          "type": "log_pattern",
+          "value": "Within the active-directory-privilege-chain + lateral-movement-iocs artifacts: high-volume LDAP queries from a non-administrator endpoint matching BloodHound / SharpHound / Adalanche query patterns (Domain Admins membership, AdminSDHolder, GPO links, ACL enumeration) within 30d preceding the encryption event",
+          "description": "BloodHound-class AD reconnaissance. Pre-encryption privilege mapping is a standard ransomware staging step.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Rule out documented penetration test: check authorized-testing register for any engagement with AD enumeration in scope during the observed window.",
+            "Rule out documented internal AD audit (Purple Knight, PingCastle, BloodHound-CE used by internal blue team): confirm the source endpoint is not a documented audit workstation."
+          ]
+        },
+        {
+          "id": "cobaltstrike-beacon-signature",
+          "type": "network_pattern",
+          "value": "Within the c2-beacon-traffic artifact: JA3 fingerprint match to known Cobalt Strike Beacon TLS profile OR Sliver implant signature OR Brute Ratel staging URL pattern OR named-pipe pattern matching default Cobalt Strike pipe naming scheme",
+          "description": "C2 framework beacon signature.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1059",
+          "false_positive_checks_required": [
+            "Rule out vendor security-tool legitimate C2 traffic: confirm the destination is not a documented vendor SaaS endpoint (some EDR products use C2-like patterns); verify against vendor IOC list.",
+            "Rule out documented red-team engagement: check authorized-testing register for any C2-framework deployment in the observed window."
+          ]
+        },
+        {
+          "id": "large-outbound-transfer-pre-encryption",
+          "type": "network_pattern",
+          "value": "Within the exfil-before-encrypt-evidence artifact: cumulative outbound transfer > 1 GB to a single non-corporate destination in the 24-72h window preceding the mass-file-extension-change-event, destination not on the documented egress allowlist, transfer pattern consistent with rclone / MEGAcmd / anon-upload tooling",
+          "description": "Pre-encryption exfiltration pattern. Triggers PHI / personal-data exfil-breach classification independent of the encryption event.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1567",
+          "false_positive_checks_required": [
+            "Rule out documented backup-to-cloud operation: confirm the destination is not a documented backup-target endpoint (S3 backup bucket, Azure backup vault, Wasabi/Backblaze backup destination).",
+            "Rule out documented analytics or ML training data export: confirm the destination is not a documented data-pipeline endpoint with a current export schedule.",
+            "Rule out documented vendor-data-sync: confirm the destination is not on the vendor-integration allowlist with an approved transfer profile."
+          ]
+        },
+        {
+          "id": "ad-admin-count-modification-event",
+          "type": "log_pattern",
+          "value": "Within the active-directory-privilege-chain artifact: Domain Admins / Enterprise Admins / Schema Admins / built-in Administrators group membership added within 30d preceding the encryption event, source account is not on the documented privileged-account-management workflow",
+          "description": "AD admin group expansion. Standard ransomware operator persistence step.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Rule out documented RBAC review or named-admin onboarding: confirm the addition is not in the PAM workflow ticket queue with a current approval record.",
+            "Rule out documented break-glass account use: confirm the added account is not a documented break-glass identity with logged retrieval and post-use rotation."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "mass-file-extension-change-event",
+          "benign_pattern": "Scheduled media-conversion batch job, archive-creation operation, backup-software encrypt-on-write mode.",
+          "distinguishing_test": "Cross-reference the writing-process identity against documented batch / archive / backup-agent processes. If the writing process is unrecognized OR the new extension does not match any documented operational extension OR the original files are deleted (not preserved beside the new files), hold deterministic."
+        },
+        {
+          "indicator_id": "encrypted-file-extension-growth-rate",
+          "benign_pattern": "Backup-software full-backup encryption, user-initiated BitLocker conversion.",
+          "distinguishing_test": "Backup agents write to staging volumes with documented destinations; BitLocker conversion targets the OS volume only. Ransomware encryption targets user-data volumes broadly. If the affected path set spans multiple user-data shares AND no backup-agent process is the writer, hold high confidence."
+        },
+        {
+          "indicator_id": "bloodhound-class-ad-recon",
+          "benign_pattern": "Authorized internal blue-team audit using SharpHound / Purple Knight / PingCastle.",
+          "distinguishing_test": "Authorized audits run from documented workstations with named operator accounts. Adversary-driven enumeration runs from compromised user endpoints with non-audit identities. If the source identity is not on the documented audit-operator list, hold high."
+        },
+        {
+          "indicator_id": "cobaltstrike-beacon-signature",
+          "benign_pattern": "Authorized red-team Cobalt Strike deployment, vendor EDR product using C2-like traffic patterns.",
+          "distinguishing_test": "Authorized red-team engagements have a documented entry in the testing register; vendor EDR endpoints are on the vendor-allowlist. If neither matches, hold deterministic."
+        },
+        {
+          "indicator_id": "large-outbound-transfer-pre-encryption",
+          "benign_pattern": "Documented backup-to-cloud, analytics export, vendor-integration data sync.",
+          "distinguishing_test": "Documented transfers go to allowlisted destinations on an approved schedule. Adversary exfiltration goes to non-allowlisted destinations and the volume profile is atypical for the documented schedule. Hold high when destination is unrecognized AND volume exceeds the largest documented daily transfer."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Either (a) mass-file-extension-change-event OR encrypted-file-extension-growth-rate fires deterministic AND ransom-note-content is present AND at least one false-positive distinguishing test does not clear the indicator, OR (b) operator-confirmed encryption signal (precondition encryption_event_confirmed) regardless of indicator state.",
+        "inconclusive": "Some indicators fire but the encryption-event precondition is not confirmed AND ransom-note-content is absent — this is suspected encryption-in-progress; preserve evidence, do not declare ransomware until precondition is met.",
+        "not_detected": "Mass-file-extension-change-event does not fire AND encrypted-file-extension-growth-rate does not fire AND ransom-note-content is absent AND operator does not confirm encryption."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "mass-file-extension-change-event",
+          "rwep_factor": "active_exploitation",
+          "weight": 30,
+          "notes": "Encryption event is realized harm — active exploitation is definitionally present."
+        },
+        {
+          "signal_id": "mass-file-extension-change-event",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Each additional affected host increases blast radius. >100 hosts is org-wide."
+        },
+        {
+          "signal_id": "large-outbound-transfer-pre-encryption",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Exfil-before-encrypt extends blast radius from availability to confidentiality. PHI / financial / IP exfiltration changes the breach-notification scope materially."
+        },
+        {
+          "signal_id": "shadow-copy-deletion-no-iac-ticket",
+          "rwep_factor": "active_exploitation",
+          "weight": 15,
+          "notes": "Recovery-inhibition step. Increases recovery cost and pay-pressure."
+        },
+        {
+          "signal_id": "bloodhound-class-ad-recon",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Indicates AD-wide compromise potential. Drives rebuild-vs-rotate decision."
+        },
+        {
+          "signal_id": "cobaltstrike-beacon-signature",
+          "rwep_factor": "active_exploitation",
+          "weight": 15,
+          "notes": "Established C2 means persistence may survive containment of encrypted hosts."
+        },
+        {
+          "signal_id": "ad-admin-count-modification-event",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "Adversary persistence at admin layer. AD rebuild may be required."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Given the encryption event + exfil evidence + lateral-movement scope + AD compromise state, what is the blast radius if the playbook does not contain the incident within the next 24-72h?",
+        "scoring_rubric": [
+          {
+            "condition": "Single host encrypted, no lateral movement evidence, no exfil evidence, immutable backup viable, decryptor or restore path clear",
+            "blast_radius_score": 1,
+            "description": "Bounded single-host incident. Restore from immutable backup; full recovery within hours."
+          },
+          {
+            "condition": "Multiple hosts within a single network segment encrypted, no exfil evidence, immutable backup viable, AD not compromised",
+            "blast_radius_score": 2,
+            "description": "Segment-bounded incident. Restore from immutable backup; recovery within 24-48h; no breach-notification trigger."
+          },
+          {
+            "condition": "Multi-segment encryption OR confirmed exfil < 1GB OR partial AD recon evidence",
+            "blast_radius_score": 3,
+            "description": "Cross-segment incident. Breach-notification clocks engaged if exfil includes personal data. Multi-day recovery."
+          },
+          {
+            "condition": "Domain-wide encryption OR confirmed exfil > 1GB OR AD admin-group modifications OR PHI exfil-before-encrypt confirmed",
+            "blast_radius_score": 4,
+            "description": "Domain-wide incident with breach-notification scope. PHI / financial / personal-data notification clocks engaged in parallel with availability clocks. Recovery > 1 week."
+          },
+          {
+            "condition": "Sanctioned threat actor attributed AND large-scale exfil-before-encrypt AND backup viability compromised — forced payment-or-rebuild decision under sanctions block",
+            "blast_radius_score": 5,
+            "description": "Worst-case ransomware blast radius. Payment forbidden under sanctions law; rebuild required; multi-week to multi-month recovery; full regulatory + customer notification scope. Treat as confirmed business-continuity incident."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Org has tested ransomware recovery via immutable backups + cyber insurance + documented incident response — economic and operational exposure is bounded.",
+        "audit_evidence": "Backup procedure document; cyber insurance policy on file; incident response procedure document; annual tabletop exercise record.",
+        "reality_test": "Test the four ransomware-specific control properties on the live posture at incident time: (1) backup immutability — can the production-admin identity (the one the adversary controls) delete or modify the most recent backup snapshot? If yes, the backup property is replication, not immutability. (2) insurance-pre-approval — does the policy require pre-payment carrier approval AND is the carrier reachable within the 24h notice window AND is the IR firm in use on the carrier panel? If any answer is no, carrier denial is the dominant economic-exposure failure mode. (3) decryptor availability — was a decryptor lookup performed against No More Ransom + vendor-specific decryptors for the identified family before the payment decision? If no, the pay/restore decision lacked a key input. (4) sanctions screening — was the threat-actor attribution evidence cross-checked against OFAC SDN + EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF before the payment decision? If no, the payment posture risks federal-law violation in at least one applicable jurisdiction.",
+        "theater_verdict_if_gap": "Ransomware-recovery posture treated as a single control class without operationalizing the four ransomware-specific decision properties. Recommendation: (a) test the backup-immutability property end-to-end pre-incident, (b) drill the carrier-notification + pre-approval workflow with the insurance broker, (c) integrate No More Ransom lookup into the IR playbook as a precondition to payment decision, (d) integrate sanctions-list screening into the IR playbook as a blocking gate on payment posture, with named legal-counsel sign-off required before any negotiator engagement."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "nist-800-53",
+          "claimed_control": "IR-4 (Incident Handling)",
+          "actual_gap": "Method-neutral incident response. Does not name sanctions screening, decryptor availability, insurance-policy interaction, or negotiator engagement as required sub-flows.",
+          "required_control": "Ransomware-specific extension of IR-4 with named decision gates: pre-payment sanctions screening (OFAC + EU + UK + AU + JP), decryptor availability lookup, carrier-pre-approval, negotiator legal posture, immutable-backup viability test as a Layer-1 control."
+        },
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.26 (Response to information security incidents) + A.8.13 (Information backup)",
+          "actual_gap": "Process-shaped response and outcome-shaped backup. Treats 'backup' as a single class; does not distinguish immutability from replication.",
+          "required_control": "Sub-control distinguishing immutable backup (compliance-lock, no root override) from replicated / write-protected / off-network classes; ransomware-recovery sub-flow integrated with A.5.26."
+        },
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "soc2",
+          "claimed_control": "CC7.4 (Security incident response) + CC9.2 (Vendor / business partner risk)",
+          "actual_gap": "Incident response criterion is response-capability-shaped. Vendor criterion does not surface cyber insurance carrier-policy interaction as a control.",
+          "required_control": "CC7 sub-criterion requiring documented ransomware-specific decision tree including sanctions, decryptor, insurance, negotiator. CC9 sub-criterion requiring carrier-pre-approval workflow tested annually."
+        },
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "hipaa",
+          "claimed_control": "164.308(a)(7) (Contingency Plan) + 164.402 (Breach Notification Rule)",
+          "actual_gap": "Contingency plan is recovery-shaped, treats encryption event as trigger; misses exfil-before-encrypt as a distinct breach trigger that engages independent of the encryption event.",
+          "required_control": "Contingency plan extended to enumerate PHI exfil-before-encrypt as a parallel breach trigger; 164.402 risk assessment scoped to determine whether exfiltration constitutes a breach when encryption renders evidence ambiguous."
+        },
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "au-essential-8",
+          "claimed_control": "Strategy 8 — Regular Backups",
+          "actual_gap": "Off-network is the maturity gate; immutability is not addressed.",
+          "required_control": "Maturity-level criterion distinguishing immutable backup from replicated / off-network classes; ML3 requires end-to-end immutability test using a production-admin-credential adversary simulation."
+        },
+        {
+          "finding_id": "ransomware-incident",
+          "framework": "uk-caf",
+          "claimed_control": "D1 (Response and Recovery Planning)",
+          "actual_gap": "Outcome-shaped at IGP/IGP+; tabletop exercise is plan-existence proof.",
+          "required_control": "D1 sub-outcome requiring ransomware-specific tabletop exercise that exercises sanctions screening + decryptor lookup + carrier notification within scenario time-pressure."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "ofac_sanctions_match == true",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "rwep >= 90 AND backup_immutability_compromised == true",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "phi_exfil_before_encrypt == true",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "lateral_movement_via_credentials == true",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater'",
+          "action": "trigger_playbook",
+          "target_playbook": "framework"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "priority-1-immediate-containment",
+          "description": "(1) Isolate confirmed-affected hosts from the network at the EDR or network-segment layer; (2) preserve forensic state (memory, disk, audit logs) BEFORE any further remediation per NIST 800-86; (3) execute OFAC SDN + EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF screening against threat-actor attribution evidence; (4) notify cyber insurance carrier within the 24h policy window; (5) engage retained IR firm from carrier panel; (6) test immutable-backup viability by attempting a restore on an isolated network with a known-clean admin identity.",
+          "preconditions": [
+            "edr_network_isolation_capability == true",
+            "forensic_acquisition_tooling_available == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "out-of-band-comms-on-signal-or-wickr",
+            "incident-commander-named",
+            "executive-briefing-cadence-2h"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "priority-2-decision-tree",
+          "description": "(1) Execute decryptor availability lookup against No More Ransom Project + vendor-specific decryptors for the identified family; (2) make the negotiator-engagement decision under documented legal criteria — if sanctions match, negotiator engagement is FORBIDDEN and any communication that could be construed as payment-facilitation is legally prohibited; if no sanctions match, evaluate risk-benefit under counsel guidance; (3) draft regulator notifications per jurisdiction matrix; (4) execute restore-from-backup test on isolated network to confirm backup viability; (5) determine PHI / personal-data exfil scope for breach-notification scope.",
+          "preconditions": [
+            "ofac_sanctions_screen_complete == true",
+            "decryptor_lookup_complete == true",
+            "legal_counsel_engaged == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "named-legal-counsel-on-call",
+            "regulator-notification-drafts-pre-prepared",
+            "backup-restore-test-in-isolated-network"
+          ],
+          "estimated_time_hours": 24
+        },
+        {
+          "id": "priority-3-recovery",
+          "description": "(1) Execute full restore from validated immutable backup; (2) confirm lateral-movement scope and rotate all credentials in the determined blast-radius; (3) remediate the initial-access vector (patch the exploited CVE, revoke the compromised credentials, harden the VPN appliance / management plane); (4) determine PHI exfil-before-encrypt scope and execute breach-notification per applicable jurisdiction obligations; (5) schedule tabletop debrief within 14 days.",
+          "preconditions": [
+            "immutable_backup_validated == true",
+            "initial_access_vector_identified == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "phased-service-restoration",
+            "enhanced-monitoring-post-restore",
+            "credential-rotation-at-blast-radius"
+          ],
+          "estimated_time_hours": 72
+        },
+        {
+          "id": "policy-exception-pay-blocked",
+          "description": "If sanctions match blocks payment AND backup viability is compromised AND decryptor is unavailable AND business continuity requires service restoration faster than rebuild allows: generate a policy-exception documenting the residual-risk acceptance for a partial-recovery posture (rebuild from clean media + accept data loss back to last clean backup) with executive + board acceptance recorded.",
+          "preconditions": [
+            "sanctions_match == true",
+            "backup_viability_compromised == true",
+            "decryptor_unavailable == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "executive-residual-risk-acceptance",
+            "board-notification-of-data-loss-scope",
+            "customer-notification-of-service-impact"
+          ],
+          "estimated_time_hours": 168
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "backup-restore-clean-isolated-network",
+          "test": "Restore one critical workload from the most recent immutable backup snapshot onto an isolated network; verify integrity hash matches a pre-incident reference hash; verify service behavior matches pre-incident baseline.",
+          "expected_result": "Integrity hash matches; service behavior matches baseline; no encrypted-extension files present.",
+          "test_type": "functional"
+        },
+        {
+          "id": "ofac-sanctions-attestation-recorded",
+          "test": "Confirm OFAC SDN + EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF screening was executed against the documented threat-actor attribution evidence AND result is signed by named legal counsel AND timestamp precedes any negotiator engagement.",
+          "expected_result": "Attestation present, signed, time-ordered before negotiator engagement.",
+          "test_type": "negative"
+        },
+        {
+          "id": "decryptor-lookup-attestation",
+          "test": "Confirm No More Ransom Crypto Sheriff + Emsisoft + Kaspersky + Bitdefender + Avast decryptor lookups were executed for the identified family AND result is recorded with timestamp.",
+          "expected_result": "Decryptor-availability attestation present with timestamp before pay/restore decision.",
+          "test_type": "negative"
+        },
+        {
+          "id": "insurance-carrier-24h-notification",
+          "test": "Confirm cyber insurance carrier received loss notice within 24h of detect_confirmed AND carrier acknowledgment is recorded AND retained IR firm is on the carrier-approved panel.",
+          "expected_result": "Carrier acknowledgment timestamped within 24h; IR firm on panel; pre-approval status documented.",
+          "test_type": "functional"
+        },
+        {
+          "id": "credential-rotation-at-blast-radius",
+          "test": "All identities in the determined blast radius (domain admin, enterprise admin, privileged service accounts, VPN-appliance admin, ScreenConnect/AnyDesk admin, SSO break-glass, AD krbtgt twice) are rotated AND old credentials are revoked at the IdP.",
+          "expected_result": "All identities show new credential timestamps post-incident; old credentials are revoked or disabled.",
+          "test_type": "functional"
+        },
+        {
+          "id": "initial-access-vector-remediated",
+          "test": "The identified initial-access vector (e.g. exposed Citrix CVE-2023-3519, ScreenConnect CVE-2024-1709) is patched or removed; supply-chain compromise vectors (CVE-2024-3094 xz-utils class, CVE-2024-21626 runc class) are mitigated; the credential reuse path (if infostealer-derived) has had affected accounts rotated and infostealer-marketplace monitoring engaged.",
+          "expected_result": "Vector closed; patch version verified; equivalent compensating control in place if patch is not yet available.",
+          "test_type": "functional"
+        },
+        {
+          "id": "phi-exfil-scope-determined",
+          "test": "Determine whether PHI / personal-data exfil-before-encrypt occurred; if yes, scope the affected records and trigger HIPAA Breach Notification Rule 164.402 risk assessment + GDPR Art.33/34 + applicable state breach laws.",
+          "expected_result": "Scope determination recorded with evidence; notification clocks running per matrix.",
+          "test_type": "functional"
+        },
+        {
+          "id": "regression-tabletop-scheduled",
+          "test": "Confirm a ransomware-specific tabletop exercise is scheduled within 90 days of recovery, with sanctions-screening + decryptor-lookup + carrier-notification + immutable-backup viability as exercise injects.",
+          "expected_result": "Tabletop scheduled; injects documented.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Even after full recovery, the data exfiltrated in the pre-encryption window cannot be recovered or recalled. The adversary retains a copy of any data exfiltrated before encryption. Where PHI / personal data / IP was exfiltrated, downstream harm (identity theft, regulator action, customer churn, IP exploitation) persists beyond the IR cycle and may surface months or years later.",
+        "why_remains": "Exfiltrated data is, by definition, outside the org's control after the incident. Decryption / payment does not recall exfiltrated copies. Sanctions-blocked payment does not change exfiltration scope. The only mitigations are forward-looking: enhanced monitoring of dark-web leak sites, credit monitoring for affected individuals (where applicable), regulatory engagement.",
+        "acceptance_level": "board",
+        "compensating_controls_in_place": [
+          "credentials-rotated-at-blast-radius",
+          "initial-access-vector-remediated",
+          "immutable-backup-validated-and-restored",
+          "regulator-notifications-filed-per-jurisdiction",
+          "dark-web-leak-site-monitoring-engaged",
+          "post-incident-tabletop-scheduled-90d"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Encrypted-file-extension inventory + ransom-note content + AD privilege-chain snapshot + shadow-copy-deletion event records + C2 beacon traffic + lateral-movement IoCs + exfil-before-encrypt network-flow record.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-5",
+            "iso-27001-2022-A.5.26",
+            "soc2-cc7.4",
+            "hipaa-164-308-a-7"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed OFAC SDN + EU + UK + AU + JP sanctions-screening attestation, with named legal-counsel signature and timestamp ordered before any negotiator engagement.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "ofac-31-cfr-501",
+            "eu-reg-2014-833",
+            "uk-ofsi"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Decryptor-availability lookup attestation against No More Ransom Project + vendor-specific decryptors, with timestamp ordered before pay/restore decision.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-4"
+          ]
+        },
+        {
+          "evidence_type": "ticket_reference",
+          "description": "Cyber insurance carrier loss-notice with timestamped acknowledgment, IR-firm panel verification, and any carrier-pre-approval correspondence.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "soc2-cc9.2"
+          ]
+        },
+        {
+          "evidence_type": "patch_record",
+          "description": "Patch records or compensating-control records for the identified initial-access vector (Citrix / Fortinet / ScreenConnect / xz-utils / runc class as applicable).",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-SI-2",
+            "iso-27001-2022-A.8.8"
+          ]
+        },
+        {
+          "evidence_type": "log_excerpt",
+          "description": "Audit log excerpts establishing the exfil-before-encrypt window, the lateral-movement scope, and the credential-rotation completion timestamps.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "gdpr-art-33",
+            "nis2-art-23",
+            "hipaa-164-402"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation: encrypted-host count, exfil-scope determination, sanctions-screening verdict, decryptor-lookup verdict, immutable-backup viability verdict, restore-completion timestamp, residual-risk acceptance signature.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_ransomware_family_in_threat_intel",
+          "interval": "on_event"
+        },
+        {
+          "condition": "post_recovery_30d",
+          "interval": "30d"
+        },
+        {
+          "condition": "post_recovery_90d_tabletop",
+          "interval": "90d"
+        },
+        {
+          "condition": "carrier_policy_renewal",
+          "interval": "on_event"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "scan_report",
+          "attestation",
+          "ticket_reference",
+          "patch_record",
+          "log_excerpt",
+          "ofac_sanctions_attestation",
+          "decryptor_lookup_attestation",
+          "immutable_backup_viability_record",
+          "exfil_scope_determination",
+          "regulator_notification_drafts",
+          "residual_risk_statement",
+          "post_incident_tabletop_schedule"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Ransomware via $initial_access_vector (phishing / VPN-appliance CVE / infostealer credential / supply-chain) → $lateral_movement → exfiltration ($exfil_volume to $exfil_destination) → Shadow Copy deletion → mass encryption with $family fingerprint. Threat actor: $attribution; sanctions match: $sanctions_match.",
+          "control_gap": "$control_gap — typically: backup immutability was replication not compliance-lock; sanctions screening was not pre-rehearsed; insurance carrier notification was not in the 24h-clock IR playbook; decryptor lookup was not part of the decision tree; PHI exfil-before-encrypt was not separately classified.",
+          "framework_gap": "No security framework operationalizes the four ransomware-specific decision properties (sanctions / decryptor / insurance / exfil-before-encrypt) as controls. NIST IR-4, ISO A.5.26, SOC 2 CC7.4, HIPAA 164.308(a)(7), AU E8 Backup, UK CAF D1 are all method-neutral or single-class.",
+          "new_control_requirement": "Ransomware-specific sub-control set: (a) immutable-backup viability test using production-admin-credential adversary simulation, (b) pre-rehearsed sanctions-screening workflow with named legal counsel, (c) insurance carrier pre-approval workflow tested annually, (d) decryptor-availability lookup integrated as a decision-tree precondition, (e) PHI / personal-data exfil-before-encrypt classified as a distinct breach trigger."
+        },
+        "feeds_back_to_skills": [
+          "ransomware-response",
+          "incident-response-playbook",
+          "sector-healthcare",
+          "sector-financial",
+          "framework-gap-analysis"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "US/OFAC SDN — 31 CFR 501 + OFAC Ransomware Advisory (2021, updated) 0h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "threat_actor_attribution_evidence",
+            "ofac_sdn_search_result",
+            "secondary_sanctions_list_check"
+          ],
+          "draft_notification": "OFAC sanctions screening: Threat actor attribution evidence (ransom note IoCs, leak-site URL, crypto-wallet addresses, family fingerprint: ${family}) cross-checked against OFAC SDN list on ${screen_timestamp}. Match status: ${match_status}. If match: payment posture is FORBIDDEN under 31 CFR 501; any negotiator engagement that could be construed as payment-facilitation is legally prohibited. Legal counsel sign-off: ${counsel_name}."
+        },
+        {
+          "obligation_ref": "EU/EU Reg 2014/833 — Cyber Sanctions 0h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "threat_actor_attribution_evidence",
+            "eu_consolidated_sanctions_list_check"
+          ],
+          "draft_notification": "EU Reg 2014/833 cyber sanctions screening: Threat actor attribution cross-checked against EU consolidated sanctions list on ${screen_timestamp}. Match status: ${match_status}. EU-jurisdiction payment posture: ${posture}."
+        },
+        {
+          "obligation_ref": "GLOBAL/Cyber insurance carrier policy — typical 24h notice clause 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "policy_number",
+            "loss_notice_form",
+            "preliminary_scope_estimate"
+          ],
+          "draft_notification": "Cyber insurance loss notice: Policy ${policy_number}, incident detected ${detect_timestamp}, encrypted-host count ${host_count}, suspected exfil scope ${exfil_scope}, preliminary attribution ${attribution}. Retained IR firm: ${ir_firm}. Confirm carrier-pre-approval status for ${proposed_remediation_path}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 — Significant Incident 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "encrypted_host_count",
+            "service_impact_scope",
+            "preliminary_attribution"
+          ],
+          "draft_notification": "NIS2 Art.23 early warning: Significant incident detected ${detect_timestamp}; encrypted hosts ${host_count}; service impact ${service_impact}; preliminary attribution ${attribution}. Full incident assessment within 72h per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 — Major ICT-related Incident (financial entities) 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "encrypted_host_count",
+            "service_impact_scope",
+            "financial_impact_preliminary"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident detected ${detect_timestamp}; financial-service impact ${service_impact}; preliminary financial impact ${financial_impact}; classification per RTS: ${classification}."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.33 / Art.34 — Personal Data Breach 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "phi_or_personal_data_exfil_evidence",
+            "data_subject_categories_affected",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.33 72-hour notification: Personal data breach via ransomware exfil-before-encrypt. Categories of data subjects affected: ${data_subject_categories}. Number affected: ${affected_count}. Containment: credentials rotated, immutable backup restored, initial-access vector remediated. Risk to data subjects: ${risk_level}."
+        },
+        {
+          "obligation_ref": "US-SEC/SEC 17 CFR 229.106(b) Form 8-K Item 1.05 — Material Cybersecurity Incident 96h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "materiality_determination",
+            "incident_scope_summary",
+            "containment_record"
+          ],
+          "draft_notification": "Form 8-K Item 1.05 disclosure (draft for legal review): Material cybersecurity incident determined material on ${materiality_timestamp}. Nature: ransomware with exfil-before-encrypt. Scope: ${scope}. Material impact: ${material_impact}. Status: ${status}."
+        },
+        {
+          "obligation_ref": "US-HIPAA/HHS Breach Notification Rule — 45 CFR 164.400-414 1440h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "phi_records_affected_count",
+            "containment_record",
+            "risk_assessment_per_164_402"
+          ],
+          "draft_notification": "HIPAA Breach Notification: We are writing to inform you of a security incident that may have affected your protected health information. ${incident_description}. PHI categories: ${phi_categories}. Affected individuals: ${affected_count}. Steps taken: ${steps_taken}. Steps you can take: ${steps_individuals_can_take}."
+        },
+        {
+          "obligation_ref": "US-NY/NYDFS 23 NYCRR 500.17 — Ransom Payment 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "ransom_payment_record",
+            "ofac_screening_attestation",
+            "incident_summary"
+          ],
+          "draft_notification": "NYDFS 500.17 ransom-payment notification (only if payment is made and sanctions screening is clear): Payment of ${amount} made on ${payment_timestamp}. OFAC screening cleared on ${screen_timestamp}. Reasoning: ${reasoning}. Compensating controls: ${controls}."
+        },
+        {
+          "obligation_ref": "US-FEDERAL/CIRCIA — Cyber Incident Reporting for Critical Infrastructure Act 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "covered_cyber_incident_assessment",
+            "encrypted_host_count",
+            "containment_record"
+          ],
+          "draft_notification": "CIRCIA covered cyber incident report: Incident detected ${detect_timestamp}; covered-entity status ${entity_status}; nature ransomware with exfil-before-encrypt; encrypted hosts ${host_count}; containment status ${containment_status}."
+        },
+        {
+          "obligation_ref": "UK/UK GDPR Art.33 — ICO Notification 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "personal_data_breach_summary",
+            "affected_individuals_count"
+          ],
+          "draft_notification": "UK GDPR Art.33 notification to ICO: Mirror of GDPR Art.33 body addressed to ICO casework."
+        },
+        {
+          "obligation_ref": "AU/Privacy Act 1988 — Notifiable Data Breaches scheme 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "eligible_data_breach_assessment",
+            "australian_resident_records_affected"
+          ],
+          "draft_notification": "Australian NDB scheme notification: Eligible data breach assessment confirmed on ${assessment_timestamp}; affected Australian residents: ${affected_count}; remediation completed: ${remediation_summary}."
+        },
+        {
+          "obligation_ref": "US-CA/CCPA / CPRA Sec.1798.82 1440h",
+          "deadline": "computed_at_runtime",
+          "recipient": "data_subjects",
+          "evidence_attached": [
+            "california_resident_records_affected",
+            "containment_record"
+          ],
+          "draft_notification": "California breach notification: ${incident_description}; ${types_of_information_affected}; ${steps_taken}; ${steps_individuals_can_take}; ${contact_information}."
+        },
+        {
+          "obligation_ref": "UK/UK OFSI Consolidated List + Sanctions and Anti-Money Laundering Act 2018 0h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "threat_actor_attribution_evidence",
+            "ofsi_consolidated_list_check"
+          ],
+          "draft_notification": "UK OFSI Consolidated List screening: Threat actor attribution cross-checked on ${screen_timestamp}. Match status: ${match_status}. UK-jurisdiction payment posture: ${posture}."
+        },
+        {
+          "obligation_ref": "AU/DFAT Autonomous Sanctions — Cyber 0h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "threat_actor_attribution_evidence",
+            "dfat_consolidated_list_check"
+          ],
+          "draft_notification": "AU DFAT Autonomous Sanctions screening: Threat actor attribution cross-checked on ${screen_timestamp}. Match status: ${match_status}."
+        },
+        {
+          "obligation_ref": "JP/MOF Foreign Exchange and Foreign Trade Act sanctions 0h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "threat_actor_attribution_evidence",
+            "mof_sanctions_list_check"
+          ],
+          "draft_notification": "JP MOF Foreign Exchange and Foreign Trade Act sanctions screening: Threat actor attribution cross-checked on ${screen_timestamp}. Match status: ${match_status}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "sanctions_match == true AND backup_viability_compromised == true AND decryptor_unavailable == true",
+        "exception_template": {
+          "scope": "Ransomware incident ${incident_id} — payment blocked by sanctions match against ${sanctions_list}, backup viability compromised because ${backup_failure_reason}, decryptor unavailable per No More Ransom + vendor-specific decryptor lookup on ${decryptor_lookup_timestamp}. Recovery posture is rebuild-from-clean-media with data loss back to last clean backup at ${last_clean_backup_timestamp}.",
+          "duration": "until_recovery_complete",
+          "compensating_controls": [
+            "executive-residual-risk-acceptance",
+            "board-notification-of-data-loss-scope",
+            "customer-notification-of-service-impact",
+            "regulator-notification-per-jurisdiction-matrix",
+            "dark-web-leak-site-monitoring-engaged"
+          ],
+          "risk_acceptance_owner": "board",
+          "auditor_ready_language": "Pursuant to NIST 800-53 IR-4 + ISO 27001 A.5.26 + SOC 2 CC7.4 + HIPAA 164.308(a)(7), the organization documents a time-bound risk acceptance for partial-recovery posture in ransomware incident ${incident_id}. Payment is forbidden under OFAC SDN (31 CFR 501) / EU Reg 2014/833 / UK OFSI / AU DFAT / JP MOF (whichever applies; see attached screening attestation). Backup-immutability failure mode: ${backup_failure_reason}. Decryptor unavailable per cross-vendor lookup on ${decryptor_lookup_timestamp}. Recovery posture: rebuild from clean media with data loss back to ${last_clean_backup_timestamp}. Compensating controls: ${compensating_controls}. Residual risk: data exfiltrated in the pre-encryption window remains in the adversary's possession; downstream harm (identity theft, regulator action, customer churn) may surface in the months following. Risk accepted by board on ${acceptance_date}. The exception will be re-evaluated on (a) recovery completion, (b) any sanctions-list update affecting the attributed threat actor, (c) any newly published decryptor for the identified family — whichever is first. Detection coverage post-recovery is provided by ${detection_controls} including enhanced-monitoring-post-restore, dark-web-leak-site-monitoring, and credential-rotation regression testing."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "bitlocker-class-encryption-active",
+      "title": "Active ransomware encryption in progress on one or more hosts — immediate containment + forensic preservation",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "phi-exfil-before-encrypt",
+      "title": "PHI / personal-data exfiltration confirmed in the 24-72h window before encryption — parallel breach-notification scope",
+      "applies_to": {
+        "attack_technique": "T1567"
+      }
+    },
+    {
+      "id": "ad-domain-compromise-via-credential-dump",
+      "title": "Active Directory domain compromise via credential-dump-and-replay — rebuild posture decision",
+      "applies_to": {
+        "attack_technique": "T1078"
+      }
+    }
+  ]
+}

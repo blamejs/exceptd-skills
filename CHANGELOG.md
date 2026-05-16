@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.12.28 — 2026-05-15
+
+Incident-response cluster — three new playbooks and skills covering identity-provider tenant compromise, cloud-IAM account takeover, and ransomware response. The existing `incident-response-playbook` skill stays as the generic PICERL backbone; the new surface adds attack-class-specific depth for the three IR scenarios that dominate 2025-2026 breach reporting.
+
+### Features
+
+**`idp-incident` playbook + `idp-incident-response` skill.** Tenant-compromise response for Okta / Entra ID / Auth0 / Ping / OneLogin. Covers federated-trust modification, OAuth consent abuse, SAML token forgery, cross-tenant relationship abuse, dormant service-account reactivation, and help-desk social engineering. Maps T1078.004, T1098.001, T1556.007, T1606.002, T1199. Eight jurisdiction clocks (GDPR Art.33/34, NIS2 Art.23, DORA Art.19, NYDFS 500.17, CCPA/CPRA, AU NDB, UK GDPR). Detects on unauthorized consent grants from non-corp tenants, anomalous federated-trust additions, MFA factor swaps without password reset, recent high-privilege role assignments, and cross-tenant assumption anomalies — each indicator carries explicit false-positive checks.
+
+**`cloud-iam-incident` playbook + `cloud-iam-incident` skill.** Account-takeover response for AWS / GCP / Azure. Covers cross-account assume-role abuse, IMDS exposure, managed-identity token replay, access-key leakage to public repositories, federated-trust attacks against IAM Identity Center, and crypto-mining detection via GPU-instance creation. Maps T1078.004, T1098.001, T1098.003, T1136.003, T1538, T1552.005, T1562.008, T1580. Ten jurisdiction clocks including SG PDPA, JP APPI, and US-CA. Detects on root-login ASN anomalies, mass IAM-user creation outside IaC, unused-region resource creation, cross-account assume-role anomalies, IMDSv1 legacy access, KMS key-policy self-grants, and S3-bucket public-grant events.
+
+**`ransomware` playbook + `ransomware-response` skill.** Ransomware-specific incident response — extends the generic `incident-response-playbook` with the four decision properties that don't appear in standard IR frameworks: OFAC SDN sanctions check (BLOCKING for payment posture; payment to a sanctioned threat actor is a federal-law violation in the US), decryptor availability (No More Ransom + vendor-specific decryptors), cyber-insurance carrier notification posture (most policies require 24-hour notification), and immutable-backup viability versus replication-only "backups." Sixteen jurisdiction obligations spanning OFAC (0-hour BLOCKING), insurance carrier (24h), NIS2 (24h), DORA (4h), GDPR (72h), SEC 8-K (4 business days), HIPAA, CCPA, NYDFS ransom-event notification, and CIRCIA. Detects on mass file-extension change events, shadow-copy deletion outside maintenance windows, encrypted-file-extension growth rate anomalies, BloodHound-class AD reconnaissance, and large outbound transfers 24-72 hours before encryption (exfil-before-encrypt as distinct breach class).
+
+### Internal
+
+- Skill count 39 → 42 (Ed25519 manifest re-signed).
+- Playbook count 13 → 16 (validator `tests/validate-playbooks.test.js` updated).
+- RFC catalog: added RFC-7591 (OAuth 2.0 Dynamic Client Registration), RFC-8693 (OAuth 2.0 Token Exchange), RFC-9068 (JWT Profile for OAuth 2.0 Access Tokens).
+- ATT&CK techniques added to resolution catalog: T1098.001, T1098.003, T1136.003, T1538, T1562.008, T1580, T1606.002.
+- Framework-control-gaps catalog: 22 new entries covering federated-identity gaps (NIST 800-53 IA-5, ISO 27001 A.5.16-17, SOC 2 CC6, UK CAF B2, AU ISM-1559), cloud-IAM gaps (FedRAMP IL5, NIST AC-2 cross-account, ISO 27017, AWS Security Hub coverage, AU ISM-1546), and ransomware-specific gaps (OFAC SDN payment block, cyber-insurance 24h notification, EU Reg 2014/833 cyber sanctions, immutable-backup recovery, decryptor availability pre-decision, PHI-exfil-before-encrypt breach class).
+- AGENTS.md Quick Skill Reference table extended with the three new skills.
+
+
 ## 0.12.27 — 2026-05-15
 
 **Patch: opt-in `--bundle-deterministic` mode for reproducible CSAF + OpenVEX + close-envelope bytes. Closes cycle 6 III P2-E + cycle 7 CCC bundle-non-determinism finding.**

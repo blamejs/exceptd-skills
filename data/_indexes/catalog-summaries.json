@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
       },
-      "entry_count": 91,
+      "entry_count": 98,
       "sample_keys": [
         "T0001",
         "T0017",
@@ -172,7 +172,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 87,
+      "entry_count": 109,
       "sample_keys": [
         "ALL-AI-PIPELINE-INTEGRITY",
         "ALL-MCP-TOOL-TRUST",
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 38,
+      "entry_count": 41,
       "sample_keys": [
         "RFC-4301",
         "RFC-4303",

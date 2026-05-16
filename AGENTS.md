@@ -353,6 +353,9 @@ Maintainers convert approved requests into skill files. The contributor is credi
 | container security, kubernetes, cis k8s, pod security standards, kyverno, gatekeeper, falco, tetragon, admission policy | container-runtime-security |
 | mlops security, model registry, training data integrity, mlflow, kubeflow, vertex ai, sagemaker, hugging face, model signing, drift detection | mlops-security |
 | incident response, ir playbook, csirt, picerl, nist 800-61, iso 27035, breach notification, bec incident, ai incident | incident-response-playbook |
+| ransomware response, decryptor, no more ransom, ofac sdn, cyber insurance, immutable backup, double extortion, phi exfil before encrypt, lockbit, alphv, akira | ransomware-response |
+| idp incident, okta tenant compromise, entra id, auth0, saml token forgery, oauth consent abuse, federated trust modification, midnight blizzard, scattered spider | idp-incident-response |
+| cloud iam incident, aws account takeover, gcp account takeover, azure account takeover, cross-account assume-role, imds, access key leak, snowflake breach, scim, workload identity | cloud-iam-incident |
 | email security, anti-phishing, dmarc, dkim, spf, bimi, arc, mta-sts, bec, vishing, deepfake phishing | email-security-anti-phishing |
 | age gate, age verification, coppa, cipa, california aadc, uk children's code, kosa, gdpr article 8, dsa article 28, parental consent, csam, child safety, children's online safety | age-gates-child-safety |
 | forward watch, watchlist, upcoming standards, horizon scan | `node orchestrator/index.js watchlist` (add `--by-skill` to invert) |
