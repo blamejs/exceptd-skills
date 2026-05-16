@@ -75,9 +75,29 @@ jobs:
 
       - name: Verify tag matches package.json version
         id: version_check
+        # Cycle 19 P1 F1 (v0.12.39): pre-fix `${{ inputs.tag }}` was
+        # interpolated directly into the run: block. A workflow_dispatch
+        # caller could pass `tag` containing shell metacharacters and
+        # achieve script injection on the runner — same CWE-94 / CWE-78
+        # class as the `refresh.yml` `inputs.source` sink the project
+        # already hardened against. Route through env: indirection +
+        # regex allowlist on the canonical tag shape v<semver>.
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
           PKG_VERSION="$(node -p "require('./package.json').version")"
-          TAG="${GITHUB_REF_NAME:-${{ inputs.tag }}}"
+          # Validate inputs.tag against canonical v<semver>(-<prerelease>)? shape
+          # BEFORE using it. Reject anything else. GITHUB_REF_NAME on a tag-push
+          # trigger is already shaped by the v* tag ruleset (server-side
+          # enforced), so this validation only matters when INPUT_TAG is the
+          # source — i.e. workflow_dispatch.
+          if [ -n "$INPUT_TAG" ]; then
+            if ! echo "$INPUT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$'; then
+              echo "::error::inputs.tag '$INPUT_TAG' does not match ^v[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.]+)?$"
+              exit 1
+            fi
+          fi
+          TAG="${GITHUB_REF_NAME:-$INPUT_TAG}"
           # Strip leading 'v' from the tag for comparison.
           TAG_VERSION="${TAG#v}"
           echo "package.json version: $PKG_VERSION"
