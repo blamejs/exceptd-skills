@@ -33,3 +33,17 @@ updates:
     labels:
       - "deps"
       - "npm"
+
+  # Docker — docker/test.Dockerfile (referenced by `npm run test:docker` +
+  # `npm run test:docker:fresh`). Cycle 19 P3 F8: this was outside
+  # Dependabot scope so the base image could float without surfacing.
+  # Test-only image (no production exposure), but Scorecard's
+  # PinnedDependenciesID covers it once a digest pin is present.
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "deps"
+      - "docker"

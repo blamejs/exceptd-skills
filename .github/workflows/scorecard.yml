@@ -7,7 +7,15 @@ on:
     - cron: "27 5 * * 1"
   workflow_dispatch:
 
-permissions: read-all
+# Cycle 19 P3 F6 (v0.12.39): replace `read-all` with explicit per-scope
+# reads. Scorecard's own rule set may flag `read-all` on a future bump,
+# and the explicit form documents which API surfaces the workflow
+# actually consumes. The analysis job below already declares the four
+# scopes it needs; the workflow-level fallback covers the implicit
+# pre-job steps (checkout). Match what we actually use, no more.
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   analysis:
