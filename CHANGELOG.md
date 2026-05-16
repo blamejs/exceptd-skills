@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.12.36 — 2026-05-16
+
+Hard Rule forcing-function coverage pass. Three of the eight AGENTS.md Hard Rules had no binding test — they were policy-only and easy to violate in future PRs without CI catching it. v0.12.36 closes those gaps and adds a cross-format bundle consistency contract.
+
+### Features
+
+**Rule #3 forcing function (no CVSS-only risk scoring).** Every non-draft CVE entry must declare `rwep_score` (numeric) and `rwep_factors` (object). CVSS-without-RWEP is refused. Pre-fix the Shape B invariant test verified `Σ factors === score` for entries that HAD an RWEP, but a CVE could theoretically ship with `cvss_score: 9.8, rwep_score: null` and slip through. Now blocked at CI.
+
+**Rule #5 forcing function (global-first, not US-centric).** The framework-control-gaps catalog must carry entries for EU + UK + AU + INTL (ISO/3GPP/OWASP/SLSA/CycloneDX) alongside US (NIST/FedRAMP/PCI/SOC/HIPAA/etc.). No single region may exceed 70% of the catalog. Pre-fix a future PR could land a 50-entry NIST-only batch and tilt the catalog US-domestic with no signal. Current catalog distribution: US 50 (42%), EU 22 (19%), UK 7 (6%), AU 6 (5%), INTL 15 (13%), OTHER 18 (15%) — within bounds.
+
+**Rule #8 forcing function (no silent ATLAS/ATT&CK upgrade).** `manifest.json.atlas_version` must equal `data/atlas-ttps.json._meta.atlas_version` exactly; same for `attack_version`. Pre-cycle-9 these drifted silently (manifest stuck at v5.1.0 while catalog moved to v5.4.0; v0.12.29 corrected the lie but didn't add a forcing function — a future drift could repeat).
+
+**Cross-format CVE consistency contract.** When the same evidence runs through the CSAF / OpenVEX / SARIF emitters in sequence, the underlying CVE set in each bundle must agree exactly. Per-format auxiliary identifiers (OpenVEX indicator URNs, SARIF framework-gap rules) are allowed. Pre-fix nothing pinned the contract — a future emitter regression could silently emit different CVE sets across formats.
+
+### Internal
+
+- Cycle 16 audit dispatched 3 read-only agents (cross-skill consistency, hard-rule coverage, 24h CVE intake). All three rate-limited; main-thread completed the hard-rule audit + cross-format consistency check directly.
+- Cycle 16 main-thread cross-format probe confirmed all 3 emitters agree on the 4 catalogued CVEs for the kernel playbook positive-detect scenario (CVE-2026-31431 Copy Fail + the 3 v0.12.29 AI-discovery flips).
+- 5 new tests in `tests/hard-rule-forcing-functions.test.js`.
+- Test count 1131 → 1136. 14/14 predeploy gates green.
+
+
 ## 0.12.35 — 2026-05-16
 
 Cycle 15 audit pass — security hardening + ATLAS pin sweep across skills + forward-watch backfill. Three angles audited in parallel (performance, exceptd's own input-handling security, forward-watch staleness); two surfaced P1 fixes that ship here.
