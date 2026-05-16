@@ -35,7 +35,8 @@ test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, buildCveRever
   assert.equal(Array.isArray(refreshScript.CATALOGS), true);
   // Cycle 12 F3 (v0.12.32): added cwe-catalog entry from CVE direction
   // (`cve.entries → evidence_cves`). Catalog count grew 4 → 5.
-  assert.equal(refreshScript.CATALOGS.length, 5);
+  // Cycle 20 B F4 (v0.12.40): added CVE→framework-gap entry. 5 → 6.
+  assert.equal(refreshScript.CATALOGS.length, 6);
   assert.equal(typeof refreshScript.buildReverseIndex, 'function');
   assert.equal(typeof refreshScript.buildCveReverseIndex, 'function');
   assert.equal(typeof refreshScript.rebuildCatalog, 'function');
@@ -142,6 +143,49 @@ test('cwe-catalog.json evidence_cves matches cve-catalog.json cwe_refs exactly (
       : [];
     assert.deepEqual(stored, expected,
       `cwe-catalog.json entry ${cweId} evidence_cves drift: ` +
+      `stored=[${stored.join(',')}] expected=[${expected.join(',')}]. ` +
+      `Run \`npm run refresh-reverse-refs\` to regenerate.`);
+  }
+});
+
+// Cycle 20 B F4 (v0.12.40): pin the CVE-to-framework-gap reverse
+// direction. Pre-fix 137 directional mismatches (24 CVE→gap missing
+// reverse + 79 gap→CVE missing reverse) sat between
+// cve.framework_control_gaps (dict keyed by gap id) and
+// gap.evidence_cves (array of CVE ids). v0.12.40 extended
+// refresh-reverse-refs.js to walk this direction; this test pins
+// the contract going forward.
+test('framework-control-gaps.json evidence_cves matches cve-catalog.json framework_control_gaps (drafts excluded)', () => {
+  const cveCatalog = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'),
+  );
+  const gapCatalog = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'data', 'framework-control-gaps.json'), 'utf8'),
+  );
+  // CVE.framework_control_gaps is a dict (keys = gap ids).
+  const expectedIndex = new Map();
+  for (const [cveId, entry] of Object.entries(cveCatalog)) {
+    if (cveId === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    if (entry._draft === true) continue;
+    const fcg = entry.framework_control_gaps;
+    if (!fcg || typeof fcg !== 'object' || Array.isArray(fcg)) continue;
+    for (const gapId of Object.keys(fcg)) {
+      if (!expectedIndex.has(gapId)) expectedIndex.set(gapId, new Set());
+      expectedIndex.get(gapId).add(cveId);
+    }
+  }
+  for (const [gapId, entry] of Object.entries(gapCatalog)) {
+    if (gapId === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    const stored = Array.isArray(entry.evidence_cves)
+      ? [...entry.evidence_cves].sort()
+      : [];
+    const expected = expectedIndex.has(gapId)
+      ? Array.from(expectedIndex.get(gapId)).sort()
+      : [];
+    assert.deepEqual(stored, expected,
+      `framework-control-gaps.json entry ${gapId} evidence_cves drift: ` +
       `stored=[${stored.join(',')}] expected=[${expected.join(',')}]. ` +
       `Run \`npm run refresh-reverse-refs\` to regenerate.`);
   }

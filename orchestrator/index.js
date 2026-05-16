@@ -292,7 +292,12 @@ async function runDispatch() {
 
 function runSkillContext(skillName) {
   if (!skillName) {
-    console.error('Usage: node orchestrator/index.js skill <skill-name>');
+    // Cycle 20 A P2 (v0.12.40): operator-facing surface must reference
+    // the canonical `exceptd skill <name>` form, not the orchestrator
+    // path that's an implementation detail. CLAUDE.md global rule:
+    // "no internal narrative in operator-facing artifacts."
+    console.error('Usage: exceptd skill <skill-name>');
+    console.error('       (Lists available skills: exceptd brief --all)');
     process.exit(1);
   }
 

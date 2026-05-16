@@ -3864,10 +3864,15 @@ function maybeSignAttestation(filePath) {
   // operators without the keypair get a single nudge per session telling them
   // exactly how to enable signing.
   if (!fs.existsSync(privKeyPath) && !process.env.EXCEPTD_UNSIGNED_WARNED) {
+    // Cycle 20 A P2 (v0.12.40): operator-facing verb `exceptd doctor --fix`
+    // calls sign.js generate-keypair under the hood. Pre-fix the message
+    // hinted at a node-internal script path that's not on PATH after
+    // `npm install -g`. Surface the doctor route first; cite the lib
+    // script only as the contributor / non-npm-installed fallback.
     process.stderr.write(
       "[attest] attestation will be written UNSIGNED (no private key at .keys/private.pem). " +
       "Operators reading the attestation later can verify the SHA-256 hash but not authenticity. " +
-      "Enable Ed25519 signing: `node lib/sign.js generate-keypair`. " +
+      "Enable Ed25519 signing: `exceptd doctor --fix` (or for contributor checkouts: `node $(exceptd path)/lib/sign.js generate-keypair`). " +
       "Suppress this notice: export EXCEPTD_UNSIGNED_WARNED=1.\n"
     );
     process.env.EXCEPTD_UNSIGNED_WARNED = "1";
