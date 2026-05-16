@@ -87,6 +87,22 @@ test('S13: unknown verb within Levenshtein-1 of a real verb returns did_you_mean
   }
 });
 
+test('S13: did_you_mean[] deduplicates across overlapping verb sources (codex P2 v0.12.37 follow-up)', () => {
+  // `scan` lives in both COMMANDS and ORCHESTRATOR_PASSTHROUGH; pre-fix
+  // the union produced ["scan", "scan"] and the human hint read
+  // "Did you mean `scan` or `scan`?". Now deduped via Set.
+  const r = cli(['scn']);
+  assert.equal(r.status, 10);
+  const err = tryJson(r.stderr);
+  assert.ok(err, 'stderr must be JSON');
+  assert.equal(Array.isArray(err.did_you_mean), true);
+  // Set semantics: same verb appears at most once.
+  const seen = new Set(err.did_you_mean);
+  assert.equal(seen.size, err.did_you_mean.length,
+    `did_you_mean must contain unique verbs; got duplicates: ${JSON.stringify(err.did_you_mean)}`);
+  assert.equal(err.did_you_mean.includes('scan'), true);
+});
+
 test('S13: unknown verb beyond Levenshtein-1 returns empty did_you_mean[] (no false suggestions)', () => {
   const r = cli(['xyzzyzzz']);
   assert.equal(r.status, 10);

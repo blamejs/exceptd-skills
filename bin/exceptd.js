@@ -601,12 +601,16 @@ function main() {
     // currency, build-indexes, etc.), in-process PLAYBOOK_VERBS (run, ci,
     // discover, attest, ...), and ORCHESTRATOR_PASSTHROUGH. Strip the
     // flag-aliases (--version/-v/--help/-h) which already get caught above
-    // the dispatch path.
-    const known = [
+    // the dispatch path. De-dup via Set — these collections deliberately
+    // overlap (scan/dispatch/etc appear in both COMMANDS and
+    // ORCHESTRATOR_PASSTHROUGH) and a naive union would surface duplicate
+    // suggestions like `did_you_mean: ["scan", "scan"]`. (codex P2,
+    // v0.12.37 follow-up.)
+    const known = [...new Set([
       ...Object.keys(COMMANDS),
       ...PLAYBOOK_VERBS,
       ...ORCHESTRATOR_PASSTHROUGH,
-    ].filter((v) => v && !v.startsWith('-'));
+    ])].filter((v) => v && !v.startsWith('-'));
     const dym = suggestVerb(cmd, known);
     const hint = dym.length > 0
       ? `Did you mean \`${dym.join("` or `")}\`? Run \`exceptd help\` for the full verb list.`
