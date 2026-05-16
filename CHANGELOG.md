@@ -1,6 +1,28 @@
 # Changelog
 
-## 0.12.33 — 2026-05-15
+## 0.12.34 — 2026-05-15
+
+Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLAS v5.1.0 and ATT&CK v17 — outdated for nine releases. v0.12.29 fixed the manifest.json pin (cycle 9 Hard Rule #8 audit) but the operator-facing docs weren't updated. Plus catalog count drift (38 skills → 42; 28 D3FEND entries → 29).
+
+### Bugs
+
+**README ATLAS pin lie.** Five sites in `README.md` referenced ATLAS v5.1.0 + "(November 2025)" while the actual catalog pin is v5.4.0 (2026-02-06). Operators reading the README to understand which ATLAS version this catalog tracks saw a stale 6-month-old answer. Corrected: badge URL, narrative paragraphs, framework-lag table footer, `atlas-ttps.json` description.
+
+**ARCHITECTURE.md ATLAS + D3FEND pin lies.** Three sites referenced ATLAS v5.1.0 (matched the manifest pre-cycle-9, stale post-fix). One site stated "28 D3FEND defensive technique entries" — was correct until v0.12.33 added D3-EFA bringing the count to 29.
+
+**README skill count stale.** Said "38 skills" — actual was 42 since v0.12.28's IR-cluster (idp-incident-response, cloud-iam-incident, ransomware-response added 3 skills) plus sector-telecom added v0.12.26.
+
+### Features
+
+**`tests/docs-catalog-counts-pinned.test.js`** — new contract test asserts that README.md and ARCHITECTURE.md text matches the live catalog state for: ATLAS version (`data/atlas-ttps.json._meta.atlas_version`), ATT&CK version (`data/attack-techniques.json._meta.attack_version`), skill count (`manifest.json.skills.length`), D3FEND entry count, CVE catalog count, framework-gap entry count. Any future PR that bumps a catalog without updating the operator-facing docs fails the gate at CI time — eliminates the silent-drift class that v0.12.34 cleaned up.
+
+### Internal
+
+- Cycle 14 audit dispatched 3 read-only agents (playbook execution semantics, air-gap end-to-end, docs accuracy). Two were rate-limited and returned no findings; the docs-accuracy work was completed on the main thread.
+- Cycle 14 main-thread playbook-execution sanity check confirmed: kernel playbook correctly classifies as `detected` with 4 matched CVEs + RWEP 100 when signal_overrides shape is correct (`{indicator_id: 'hit'}`, NOT `{indicator_id: {verdict: 'hit'}}`). The runner is sound; the operator API surface is occasionally subtle.
+- Cycle 14 main-thread air-gap verification confirmed: `--air-gap` flag and `EXCEPTD_AIR_GAP=1` env-var both thread into `runOpts.airGap`; `lib/playbook-runner.js:576` correctly substitutes `air_gap_alternative` for `source` on look artifacts; original source preserved as `_original_source` for audit.
+
+
 
 Same-day CVE intake (node-ipc supply-chain compromise) + cycle 13 audit fixes. Closes the long-standing `cred-stores` skill-vs-playbook semantic confusion that's surfaced in every audit since cycle 9.
 

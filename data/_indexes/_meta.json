@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-16T04:40:25.150Z",
+  "generated_at": "2026-05-16T05:57:55.851Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "e7956bcec2b7aee7f469013be4aff46698c0cb269786775ad54a5096fd348920",
+    "manifest.json": "50090cebd148a129469ac8d38995d93882f16b2c3bad8a0f8bb27c0104bb3377",
     "data/atlas-ttps.json": "259e76e4252c7a56c17bbe96982a5e37ac89131c2d37a547fe38d64dcacfd763",
     "data/attack-techniques.json": "51f60819aef36e960fd768e44dcc725e137781534fbbb028e5ef6baa21defa1d",
     "data/cve-catalog.json": "55aa571423fd254e6581b22a189a1c0eeb76d467b0ef645d1dfa39f74b28c569",
@@ -87,7 +87,7 @@
     "frequency_fields": 7,
     "activity_feed_events": 54,
     "catalog_summaries": 11,
-    "stale_content_findings": 3
+    "stale_content_findings": 2
   },
   "invalidation_note": "If any source file in source_hashes has a different SHA-256 than recorded here, the indexes are stale. Re-run `npm run build-indexes`."
 }
