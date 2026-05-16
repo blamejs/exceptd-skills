@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:ad2f6ecf-eaec-4cba-9cc1-870c580fb3d0",
+  "serialNumber": "urn:uuid:67c93155-3759-4ca7-b3af-b9361b2e33b1",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-16T13:29:29.892Z",
+    "timestamp": "2026-05-16T13:37:02.911Z",
     "tools": [
       {
         "vendor": "blamejs",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "da7b3d17f146ec22311dea21827e6178dea93d95f932bacec38cabd53066b60e"
+          "content": "015f35d068ed585ed415f464c0b86c2ce69adb812a6fe12988793974af33e562"
         }
       ],
       "externalReferences": [
@@ -108,7 +108,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c1a09f8180ed10671111425ddbc138c1dcc46cb418c795b91fa55b1cbc260e2d"
+          "content": "3ca8b19996bfe2cef47cc61790086ed24a98d5802caf41f4d890714febb090a5"
         }
       ]
     },
@@ -229,7 +229,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0c54b1b0d3504dd0f367b3882c055ca89e198befabac865eda451dcaaf79534a"
+          "content": "10d83de3d4752f8cc8f07410d58266f2fc53622d589f6fa0db12af6a85861078"
         }
       ]
     },
@@ -911,7 +911,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "db6ce6fe5d8c872558cdddef782779bfb0b9e02643ddab3996e0dad9da994d23"
+          "content": "87d47602e36bd5975d3d68f981a95696e900017e2b0390f7cb71ca9f953b1ca0"
         }
       ]
     },
@@ -922,7 +922,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "cd53ba54d4be9d08827688b47666a8d62210936232c078399b132be962b85fd9"
+          "content": "c42599fb596745bfac7238450dc92aba6335b7a8fede613111904fef11c4d58d"
         }
       ]
     },
@@ -933,7 +933,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0d85780a5303a5a5ce0522c25984885eeec268deb93dc646e4be469550a797d5"
+          "content": "f987677daf3fbd65716fbe172545b03d5b90086351cb17dd3d75bd102cbe6a15"
         }
       ]
     },
