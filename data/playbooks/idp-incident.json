@@ -314,8 +314,7 @@
       },
       "skill_preload": [
         "idp-incident-response",
-        "identity-assurance",
-        "cred-stores"
+        "identity-assurance"
       ]
     },
     "direct": {
@@ -335,11 +334,6 @@
         {
           "skill": "identity-assurance",
           "purpose": "AAL / IAL / FAL assurance constructs, FIDO2 / WebAuthn / phishing-resistant factor enrolment validation, federated-trust signing-key posture.",
-          "required": true
-        },
-        {
-          "skill": "cred-stores",
-          "purpose": "Downstream containment — rotate management-API tokens, downstream service-account credentials, session tokens; audit Vault / Secrets Manager for IdP-derived credentials.",
           "required": true
         },
         {

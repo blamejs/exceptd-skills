@@ -3731,7 +3731,7 @@
     },
     "ransomware-response": {
       "path": "skills/ransomware-response/skill.md",
-      "total_bytes": 48211,
+      "total_bytes": 48543,
       "total_lines": 375,
       "frontmatter": {
         "line_start": 1,
@@ -3817,8 +3817,8 @@
           "normalized_name": "hand-off",
           "line": 360,
           "byte_start": 44725,
-          "byte_end": 48211,
-          "bytes": 3486,
+          "byte_end": 48543,
+          "bytes": 3818,
           "h3_count": 0
         }
       ]
@@ -4013,7 +4013,7 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "total_bytes": 44433,
+      "total_bytes": 44569,
       "total_lines": 420,
       "frontmatter": {
         "line_start": 1,
@@ -4099,15 +4099,15 @@
           "normalized_name": "hand-off",
           "line": 400,
           "byte_start": 41396,
-          "byte_end": 44433,
-          "bytes": 3037,
+          "byte_end": 44569,
+          "bytes": 3173,
           "h3_count": 0
         }
       ]
     },
     "idp-incident-response": {
       "path": "skills/idp-incident-response/skill.md",
-      "total_bytes": 46225,
+      "total_bytes": 46352,
       "total_lines": 353,
       "frontmatter": {
         "line_start": 1,
@@ -4193,8 +4193,8 @@
           "normalized_name": "hand-off",
           "line": 335,
           "byte_start": 42384,
-          "byte_end": 46225,
-          "bytes": 3841,
+          "byte_end": 46352,
+          "bytes": 3968,
           "h3_count": 0
         }
       ]

@@ -1043,5 +1043,51 @@
     "ai_pipeline_applicability": "Self-managed AI hosts: standard FIM applies to MCP server configs, ~/.claude, ~/.cursor settings. Serverless: equivalent is image-immutability + read-only rootfs (modifications outside writable tmpfs are structurally impossible).",
     "lag_notes": "SI-7 covers software/firmware integrity; user-space configuration FIM is implicit not explicit. Framework audits accept 'FIM is deployed' without sampling whether the rule set covers AI-assistant config paths that have become high-value targets.",
     "last_verified": "2026-05-13"
+  },
+  "D3-EFA": {
+    "id": "D3-EFA",
+    "name": "Executable File Analysis",
+    "tactic": "Detect",
+    "subtactic": "File Analysis",
+    "description": "Analyzing the format, contents, or static characteristics of an executable file to determine whether it warrants further investigation. Covers PE/ELF/Mach-O header inspection, embedded-string + import-table review, entropy + packer detection, and YARA-rule matching against known malicious patterns. Distinct from D3-DA (Dynamic Analysis): no execution occurs.",
+    "counters_attack_techniques": [
+      "T1027",
+      "T1027.002",
+      "T1059",
+      "T1078",
+      "T1195.002",
+      "T1204",
+      "T1505.003",
+      "T1546.014",
+      "AML.T0010",
+      "AML.T0019"
+    ],
+    "digital_artifacts_addressed": [
+      "Executable Binary",
+      "Executable Script",
+      "Firmware",
+      "OS Image"
+    ],
+    "skills_referencing": [],
+    "implementation_examples": [
+      "YARA",
+      "PEStudio / PEiD",
+      "radare2 / Cutter / Ghidra (static-only mode)",
+      "ssdeep + sdhash fuzzy-hash matching",
+      "Mandiant CAPA capability detection",
+      "Sigstore cosign verify on container image manifests",
+      "OEM firmware-image signature verification at provisioning time"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SI-3",
+      "NIST-800-53-SI-7",
+      "NIST-800-53-SI-7(6)",
+      "ISO-27001-2022-A.8.7",
+      "PCI-DSS-v4-5.2.3",
+      "CIS-Controls-v8-10.5"
+    ],
+    "ai_pipeline_applicability": "Directly applicable to model-artifact ingestion paths (pickle/safetensors/ONNX): static analysis of serialized weights can surface malicious __reduce__ payloads (D3-EFA on the pickle stream) before any deserialization occurs. For MCP-server binaries shipped via npm/PyPI, D3-EFA pairs with D3-EAL — analyze first to gate the allowlist decision rather than allow-by-publisher.",
+    "lag_notes": "NIST SI-3 prescribes \"malicious code protection\" without binding the control to static-file-analysis specifically; auditors routinely accept signature-AV deployment as the entire SI-3 implementation, missing the analyze-before-load posture that catches packed / encoder-obfuscated payloads. Distinct from D3-EAL: allowlisting blocks a binary at execute-time; D3-EFA inspects the bytes at file-write / image-pull / artifact-fetch time and gates the allowlist itself.",
+    "last_verified": "2026-05-15"
   }
 }
