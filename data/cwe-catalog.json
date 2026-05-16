@@ -46,7 +46,9 @@
     "skills_referencing": [
       "fuzz-testing-strategy"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-6973"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "ISO-27001-2022-A.8.28",
@@ -112,8 +114,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
-      "MAL-2026-3083",
-      "CVE-2025-53773"
+      "CVE-2025-53773",
+      "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -145,7 +147,9 @@
       "fuzz-testing-strategy",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-39987"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "ISO-27001-2022-A.8.28"
@@ -177,7 +181,9 @@
       "attack-surface-pentest",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-42897"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "NIST-800-53-SC-18",
@@ -271,8 +277,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615",
+      "CVE-2026-6973",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -559,7 +564,10 @@
       "sector-energy",
       "sector-telecom"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-0300",
+      "CVE-2026-39987"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
       "ISO-27001-2022-A.5.17"
@@ -846,7 +854,7 @@
       "mcp-agent-trust"
     ],
     "evidence_cves": [
-      "CVE-2026-30615"
+      "CVE-2026-32202"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -905,7 +913,9 @@
       "CAPEC-39"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-32202"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-7",
       "NIST-800-53-SC-8(1)",
@@ -938,7 +948,9 @@
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-33825"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
       "ISO-27001-2022-A.8.28"
@@ -967,10 +979,7 @@
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
-    "evidence_cves": [
-      "CVE-2026-43284",
-      "CVE-2026-43500"
-    ],
+    "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
       "NIST-800-53-SI-2",
@@ -1058,9 +1067,7 @@
       "mcp-agent-trust",
       "supply-chain-integrity"
     ],
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-7",
       "NIST-800-53-SA-12",
@@ -1120,7 +1127,6 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2026-45321",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -1214,7 +1220,9 @@
     "skills_referencing": [
       "kernel-lpe-triage"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-46300"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
       "ISO-27001-2022-A.8.28"
@@ -1339,8 +1347,9 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
-      "CVE-2026-31431",
-      "CVE-2026-43500"
+      "CVE-2026-0300",
+      "CVE-2026-43500",
+      "CVE-2026-46300"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",

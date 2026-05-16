@@ -63,7 +63,7 @@
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 109
+      "entry_count": 118
     },
     {
       "date": "2026-05-15",
@@ -87,7 +87,7 @@
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 15
+      "entry_count": 21
     },
     {
       "date": "2026-05-15",

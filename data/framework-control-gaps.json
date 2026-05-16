@@ -587,7 +587,8 @@
     "opened_date": "2026-05-13",
     "evidence_cves": [
       "CVE-2025-53773",
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "CVE-2026-39987"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -756,7 +757,8 @@
     "opened_date": "2026-05-13",
     "evidence_cves": [
       "MAL-2026-3083",
-      "CVE-2025-53773"
+      "CVE-2025-53773",
+      "CVE-2026-42897"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -1184,7 +1186,8 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
-      "CVE-2026-31431"
+      "CVE-2026-31431",
+      "CVE-2026-0300"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1330,7 +1333,9 @@
     "evidence_cves": [
       "CVE-2025-53773",
       "CVE-2026-30615",
-      "CVE-2026-45321"
+      "CVE-2026-45321",
+      "CVE-2026-39987",
+      "CVE-2026-42897"
     ],
     "atlas_refs": [
       "AML.T0051",
@@ -1748,7 +1753,12 @@
     "opened_date": "2026-03-15",
     "evidence_cves": [
       "CVE-2026-31431",
-      "CVE-2026-43284"
+      "CVE-2026-43284",
+      "CVE-2026-0300",
+      "CVE-2026-6973",
+      "CVE-2026-42897",
+      "CVE-2026-32202",
+      "CVE-2026-33825"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1778,7 +1788,10 @@
     "real_requirement": "Malware protection must include: detection of AI API queries from unexpected processes (PROMPTFLUX indicator), behavioral analysis that doesn't rely solely on static signatures, LLM query monitoring as a security telemetry source.",
     "status": "open",
     "opened_date": "2026-02-01",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-32202",
+      "CVE-2026-33825"
+    ],
     "atlas_refs": [
       "AML.T0017"
     ],
@@ -3714,6 +3727,318 @@
         "IR playbook with exfil-before-encrypt sub-procedure",
         "parallel-clock matrix document",
         "tabletop execution log within past 12 months"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-vulnerability-management": {
+    "framework": "EU NIS2 Directive (2022/2555)",
+    "control_id": "Art. 21(2)(c)",
+    "control_name": "Vulnerability handling",
+    "designed_for": "Vulnerability handling and disclosure for essential and important entities — generic risk-management framing aligned with the directive's all-hazards posture and incident-handling tempo.",
+    "misses": [
+      "No KEV-aware prioritisation — Art. 21(2)(c) treats vulnerability handling as a steady-state process, not as an incident-tempo response when CISA KEV or ENISA equivalent confirms in-wild exploitation",
+      "Perimeter-firewall control-plane RCE (PAN-OS class) and on-prem mailflow XSS (Exchange OWA class) are not enumerated as distinct vulnerability classes deserving accelerated handling",
+      "Mitigation-rule-without-binary-patch state (Exchange EEMS, Defender platform-rule push) sits in an unnamed gap between 'vulnerability open' and 'vulnerability remediated' — the directive's vocabulary doesn't admit a tertiary state",
+      "Vendor-disclosure-to-essential-entity-action timelines are unspecified — Art. 21(2)(c) tells operators to handle vulnerabilities but does not connect the handling clock to ENISA-EU-CVD or CISA-KEV signals"
+    ],
+    "real_requirement": "Vulnerability-handling procedure operationalised with a KEV-aware tier: KEV + public PoC = 4h to mitigation (binary patch, vendor mitigation rule, or operator-side isolation); KEV-without-PoC = 24h; non-KEV critical = 72h. Mitigation-rule-without-binary-patch state explicitly modelled as a tracked open finding with an SLA on conversion to binary remediation. ENISA-EU-CVD and CISA-KEV feeds are required inputs to the handling process, not optional reference material.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-0300",
+      "CVE-2026-42897"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1133",
+      "T1566"
+    ],
+    "theater_test": {
+      "claim": "Our NIS2 Art. 21(2)(c) vulnerability handling covers KEV-listed and zero-day-mitigation-only conditions.",
+      "test": "Pull the vulnerability-handling procedure. Confirm an explicit KEV-aware response tier (4h for KEV + public PoC). Confirm a documented state for 'vendor mitigation rule only, no binary patch' (e.g. Exchange EEMS rule active without CU). Sample 3 KEV-listed CVEs from the past 12 months affecting in-scope assets; measure time from KEV listing to verified mitigation. Theater verdict if the procedure collapses to a generic 'critical = 30 days' SLA, if the mitigation-rule-only state has no tracked SLA, or if any sampled KEV+PoC entry exceeded the documented tier.",
+      "evidence_required": [
+        "Art. 21(2)(c) vulnerability-handling procedure document",
+        "KEV listing → mitigation timeline for sampled CVEs",
+        "register of open findings in the 'mitigation-rule-only' state"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "DORA-Art-9": {
+    "framework": "EU DORA (Regulation 2022/2554)",
+    "control_id": "Art-9",
+    "control_name": "ICT risk management framework",
+    "designed_for": "Sound, comprehensive and well-documented ICT risk management framework for financial entities — high-level governance posture covering ICT systems, protocols and tools used to support critical or important functions.",
+    "misses": [
+      "Operational vendor-patch tempo for ICT-third-party-services is not differentiated — Art. 9 treats the risk-management framework as a governance artifact, not as a tempo-bearing operational process tied to vendor-side disclosure clocks",
+      "No differentiation between vendor-supplied binary patch path and vendor-supplied mitigation-rule path during a true zero-day (Exchange EEMS class) — the framework presumes 'patch' is the unit of remediation",
+      "Perimeter-firewall vendor patch path (PAN-OS reboot-required) versus operator-side feature-disable mitigation path is undifferentiated — both compress into 'vendor management' without operational-tempo distinction",
+      "ICT-third-party-services concentration on a single vendor's emergency-mitigation channel (e.g. Microsoft EEMS, Palo Alto dynamic-updates) is not flagged as a concentration risk under Art. 28's lens because Art. 9 doesn't connect to it"
+    ],
+    "real_requirement": "ICT risk-management framework operationalised with: (a) vendor-disclosure-to-action SLA per ICT-third-party-service category (perimeter network, mailflow, identity, MDM), (b) explicit state machine for 'mitigation rule active, binary patch pending' with conversion-SLA, (c) concentration-risk overlay where reliance on a single vendor's emergency mitigation channel is enumerated under Art. 28 visibility, (d) board-level reporting of open mitigation-rule-only findings affecting CIF flows.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-0300",
+      "CVE-2026-42897"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1133",
+      "T1566"
+    ],
+    "theater_test": {
+      "claim": "Our DORA Art. 9 ICT risk-management framework covers vendor-patch-tempo for ICT-third-party-services supporting critical or important functions.",
+      "test": "Pull the ICT risk-management framework document and the vendor-management register. Confirm a vendor-disclosure-to-action SLA tier per ICT-service category. Confirm an explicit state for 'mitigation rule active, binary patch pending' with a conversion-SLA. Sample 3 perimeter / mailflow / identity vendors; verify each appears in the Art. 28 concentration analysis when the operator relies on their emergency-mitigation channel. Theater verdict if the framework reads as governance-only without operational tempo, or if mitigation-rule-only state is absent from the register.",
+      "evidence_required": [
+        "Art. 9 ICT risk-management framework document",
+        "vendor-management register with disclosure-to-action SLA fields",
+        "Art. 28 concentration analysis for sampled vendors"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-AC-3": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "AC-3",
+    "control_name": "Access Enforcement",
+    "designed_for": "Enforcement of approved authorizations for logical access to information and system resources — control mediates between AC-2 (account management) and the application surface. Presumes the access-enforcement mediator is invoked on every protected operation.",
+    "misses": [
+      "Missing-auth-on-WebSocket class (Marimo /terminal/ws): when the endpoint never calls the AC-3 mediator, the control is silently bypassed and audit evidence of the bypass is absent",
+      "AI/ML developer-surface infrastructure (notebook servers, model hubs, dataset registries) is not enumerated as a class with heightened AC-3 scrutiny despite hosting code-execution primitives",
+      "Endpoint-inventory completeness — AC-3 implementations focus on enumerated REST routes; WebSocket upgrade paths and long-lived bidirectional channels routinely escape route-coverage scans",
+      "No requirement that AC-3 coverage be proven by an authenticated-route inventory diffed against a runtime-observed route set"
+    ],
+    "real_requirement": "AC-3 must require a per-endpoint authentication-mediator coverage inventory generated by static + runtime analysis, with explicit enumeration of WebSocket upgrade paths and bidirectional channels. AI/ML developer-surface infrastructure must be classified as 'high-risk web surface' with mandatory pre-deployment route-coverage audit. Findings of any route reaching code-execution sinks without invoking the access-enforcement mediator are recorded as AC-3 control failures.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-39987"
+    ],
+    "atlas_refs": [
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1190",
+      "T1133"
+    ],
+    "theater_test": {
+      "claim": "Our AC-3 access enforcement covers every authenticated route on AI/ML developer surfaces.",
+      "test": "For each AI/ML developer-surface deployment (Marimo, Jupyter, ML model hub, dataset registry), produce a route-coverage inventory diffing the application's declared route list against runtime-observed routes (including WebSocket upgrade paths). Confirm every route reaching a code-execution sink invokes the access-enforcement mediator. Theater verdict if any deployed AI/ML developer-surface has a code-execution-reachable route absent from the coverage inventory, or if WebSocket upgrade paths are missing from the inventory entirely.",
+      "evidence_required": [
+        "per-deployment route-coverage inventory (static + runtime)",
+        "access-enforcement mediator invocation log for one sampled route over 7 days",
+        "AI/ML developer-surface asset inventory"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-2025-LLM05": {
+    "framework": "OWASP Top 10 for LLM Applications 2025",
+    "control_id": "LLM05",
+    "control_name": "Improper Output Handling",
+    "designed_for": "Mitigating risks where LLM-generated output is consumed by downstream systems (browsers, shells, databases, tool dispatchers) without adequate validation or sanitisation. Targets the LLM-output-to-sink boundary.",
+    "misses": [
+      "AI/ML developer-surface infrastructure (Marimo, Jupyter, model-hub admin consoles) is not the LLM-output sink but is part of the broader AI/ML stack — LLM05 doesn't cover the notebook-server admin-surface attack class",
+      "Pre-auth code-execution surfaces on AI/ML developer infrastructure (CVE-2026-39987 Marimo /terminal/ws) sit outside the LLM-output framing entirely; the OWASP LLM Top-10 scope does not extend to the developer tooling that hosts the LLM workflow",
+      "Notebook-server admin surfaces routinely expose code-execution primitives (terminal, exec endpoint, kernel-restart) without authentication — class is structurally similar to LLM05 (dangerous output reaching a code-execution sink) but is the developer-tooling analogue",
+      "No cross-reference to the broader AI/ML supply-chain stack: notebooks, dataset registries, model hubs, fine-tuning UIs"
+    ],
+    "real_requirement": "Extend LLM05 (or add a sibling control LLM05-DEV) to cover the AI/ML developer-tooling stack: notebook servers, model-hub admin consoles, dataset registry UIs, fine-tuning interfaces. Treat code-execution-reachable endpoints on these surfaces as 'output handling' analogues — any code-execution sink reachable without authentication is an LLM05-DEV control failure. Inventory mandatory for any AI/ML deployment with public network exposure.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-39987"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1190",
+      "T1059"
+    ],
+    "theater_test": {
+      "claim": "Our LLM05 controls cover the AI/ML developer-tooling stack adjacent to the LLM itself.",
+      "test": "Inventory every AI/ML developer-tooling deployment (Marimo, Jupyter, ML-flow UI, fine-tuning consoles, model-hub admin). For each, enumerate code-execution-reachable endpoints (terminal, exec, kernel-restart, REST-to-shell) and confirm authentication is required on every one. Confirm an LLM05-DEV (or equivalent) policy exists naming developer-tooling code-execution surfaces as in-scope. Theater verdict if any developer-tooling deployment has a pre-auth code-execution endpoint, or if the policy treats developer tooling as 'IT infrastructure' outside LLM-security scope.",
+      "evidence_required": [
+        "AI/ML developer-tooling asset inventory",
+        "per-deployment code-execution-endpoint authentication audit",
+        "LLM05-DEV (or equivalent) policy document"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-AC-6": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "AC-6",
+    "control_name": "Least Privilege",
+    "designed_for": "Limiting privileges of users and processes to the minimum required for assigned functions. Targets steady-state privilege assignment; relies on the assumption that correctly-assigned admin privileges remain bounded by application semantics.",
+    "misses": [
+      "Admin-credential abuse + LPE escalation patterns (Ivanti EPMM CVE-2026-6973): admin privilege is correctly assigned to a fleet-management role, but the admin-surface RCE trades that bounded-admin position for unbounded host-level code execution — AC-6's least-privilege model does not anticipate the application-admin-to-host-OS escalation path",
+      "AV / EDR remediation context (Defender BlueHammer CVE-2026-33825): the AV agent's SYSTEM-context remediation privileges are correctly assigned to the AV service account, but the TOCTOU primitive allows unprivileged users to coerce that elevated context — AC-6 treats the AV process as a privilege boundary, not as a privilege-escalation oracle",
+      "No requirement to inventory cross-application privilege escalation paths where bounded application admin reaches the host OS via vendor-shipped code-execution sinks",
+      "Operational over-broadness — AC-6's annual privilege review focuses on user-to-role assignment, not on application-to-host privilege bridges"
+    ],
+    "real_requirement": "AC-6 must require periodic inventory of cross-application privilege escalation paths: for each application admin role, enumerate the application's code-execution sinks reachable to that role and the host-OS privilege those sinks invoke. AV / EDR remediation contexts must be modelled as privilege boundaries with explicit TOCTOU and coercion-resistance testing. Findings of bounded-admin-to-host-OS bridges are recorded as AC-6 control failures requiring compensating controls (host-segmentation, sandboxing, or removal of the code-execution sink).",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-6973",
+      "CVE-2026-33825"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068",
+      "T1078"
+    ],
+    "theater_test": {
+      "claim": "Our AC-6 least-privilege posture bounds application-admin authority at the host-OS boundary.",
+      "test": "For each fleet-management / endpoint-management platform (MDM, EDR, AV, RMM), enumerate application admin roles and the code-execution sinks reachable to each role. For AV / EDR remediation paths, confirm TOCTOU and symlink-coercion-resistance testing in the past 12 months. Confirm a cross-application privilege-bridge register exists. Theater verdict if any application-admin role can trigger host-OS code execution without that path being enumerated in the register, or if AV / EDR remediation paths lack documented coercion-resistance testing.",
+      "evidence_required": [
+        "application-admin role inventory per platform",
+        "cross-application privilege-bridge register",
+        "AV / EDR remediation-path coercion-resistance test results"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-identity-management": {
+    "framework": "EU NIS2 Directive (2022/2555)",
+    "control_id": "Art. 21(2)(d)",
+    "control_name": "Identity and access management",
+    "designed_for": "Identity-management measures for essential and important entities — access policies, MFA, privileged-access management, joiner-mover-leaver flows. Targets ID-management posture at the application boundary.",
+    "misses": [
+      "Admin-control-plane compromise where the operator's MDM identity is the asset (Ivanti EPMM admin → fleet-wide device control + tenant data) is not enumerated as a distinct identity-management class",
+      "Privileged-account controls assume admin-account compromise is the breach event; the EPMM-class admin-surface RCE trades that admin position for host-level compromise, expanding blast radius beyond the application boundary the ID-management framework covers",
+      "Tenant-management admin identities (MDM, EDR, RMM, IdP) are not differentiated from application admin identities — the framework treats both as 'privileged account' without distinguishing the operational blast radius",
+      "No requirement for tenant-admin-identity-to-application-host-escalation testing as part of the privileged-access-management lifecycle"
+    ],
+    "real_requirement": "Identity-management measures must enumerate tenant-management admin identities (MDM admin, EDR admin, RMM admin, IdP admin) as a distinct privileged class with: (a) per-identity blast-radius analysis covering both application-tenant scope AND host-OS escalation paths via vendor code-execution sinks, (b) quarterly tenant-admin-to-host-OS escalation testing, (c) compensating controls (host-segmentation, jump-host enforcement, hardware-token MFA) where escalation paths cannot be removed.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-6973"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078",
+      "T1068"
+    ],
+    "theater_test": {
+      "claim": "Our NIS2 Art. 21(2)(d) identity-management covers tenant-management admin identities with blast-radius differentiation.",
+      "test": "Pull the privileged-access register. Confirm tenant-management admin identities (MDM, EDR, RMM, IdP) are enumerated as a distinct class. For each, confirm per-identity blast-radius analysis covering application-tenant scope AND host-OS escalation paths. Confirm tenant-admin-to-host-OS escalation testing in the past quarter. Theater verdict if tenant-management identities are collapsed under generic 'privileged account', or if blast-radius analysis stops at the application boundary.",
+      "evidence_required": [
+        "privileged-access register with tenant-management subset",
+        "per-identity blast-radius analysis document",
+        "tenant-admin-to-host-OS escalation test results"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.7": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.7",
+    "control_name": "Protection against malware",
+    "designed_for": "Endpoint AV / EDR posture — deployment coverage, signature currency, behavioural detection, quarantine workflows. Presumes the malware-protection agent is the defence, not an attack surface.",
+    "misses": [
+      "EDR-is-the-vulnerability pattern (CVE-2026-33825 Defender BlueHammer): the AV agent's elevated remediation context is itself the exploit primitive — A.8.7 does not anticipate the AV being the vulnerability",
+      "Incomplete-patch re-exploit class (CVE-2026-32202 as the re-exploit of CVE-2026-21510's incomplete fix): A.8.7 treats 'AV signatures current + AV platform updated' as adequacy, with no model for vendor-side incomplete-patch sequences",
+      "Application-admin-surface-to-host-OS escalation paths via vendor code-execution sinks (Ivanti EPMM admin RCE) are not in A.8.7's vocabulary — the control set focuses on file-based malware, not on application-admin RCE as a malware-equivalent vector",
+      "No requirement for AV / EDR agent itself to be subject to coercion-resistance testing as part of A.8.7 effectiveness evaluation"
+    ],
+    "real_requirement": "A.8.7 must require: (a) AV / EDR agent inclusion in the in-scope-for-pentest asset list with TOCTOU and symlink-coercion-resistance testing, (b) tracking of incomplete-patch sequences (CVE-2026-21510 → CVE-2026-32202 → ...) as a distinct finding class with explicit re-test obligation on each follow-up CVE, (c) application-admin-surface RCE explicitly named as a malware-equivalent vector with the same response tempo as classical malware detection, (d) quarterly AV / EDR coercion-resistance testing as part of A.8.7 effectiveness evaluation.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-6973",
+      "CVE-2026-32202",
+      "CVE-2026-33825"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068",
+      "T1027"
+    ],
+    "theater_test": {
+      "claim": "Our ISO 27001:2022 A.8.7 protection-against-malware controls cover the AV / EDR agent itself as an attack surface.",
+      "test": "Pull the A.8.7 effectiveness-evaluation document. Confirm the AV / EDR agent is in the in-scope-for-pentest asset list. Confirm TOCTOU and symlink-coercion-resistance testing of the AV / EDR remediation path within the past 12 months. Confirm incomplete-patch sequences are tracked as a distinct finding class. Theater verdict if the AV / EDR agent appears only as 'defence', if coercion-resistance testing is absent, or if incomplete-patch sequences are handled as one-off CVEs without sequence-level tracking.",
+      "evidence_required": [
+        "A.8.7 effectiveness-evaluation document",
+        "AV / EDR coercion-resistance test results within past 12 months",
+        "incomplete-patch sequence register"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-SC-44": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-44",
+    "control_name": "Detonation Chambers",
+    "designed_for": "Sandboxed pre-execution analysis of files, URLs, and email attachments to detect malicious behaviour before delivery to the user endpoint. Presumes the sandbox layer observes a meaningful execution context that mirrors the eventual user environment.",
+    "misses": [
+      "MOTW-bypass class (CVE-2026-32202 LNK + APT28 weaponization): the sandbox layer is bypassed by the LNK file's protection-mechanism failure at the user-endpoint Shell-resolve stage, not at the sandbox detonation stage — SC-44 verdicts can be 'clean' while the endpoint-side resolution produces execution",
+      "AV-as-sandbox-substitute fallacy: organisations rely on Defender's real-time-protection scanning as a sandbox-equivalent, but Defender's remediation pipeline itself can be coerced (CVE-2026-33825) — the sandbox layer is the attack surface",
+      "LNK-shortcut detonation is structurally weak — sandbox typically detonates the LNK target, not the LNK's MOTW-handling code path; the bypass primitive is in the MOTW handling, invisible to target-detonation telemetry",
+      "No requirement that SC-44 sandboxes test for protection-mechanism-bypass classes (MOTW, AMSI, SmartScreen) explicitly, not just observed behaviour of the detonated artifact"
+    ],
+    "real_requirement": "SC-44 must require: (a) explicit detonation of LNK files with verification that the sandbox observes the MOTW-enforcement code path, not only the LNK target's behaviour, (b) sandbox-quality auditing that distinguishes protection-mechanism-bypass classes from execution-behaviour anomalies, (c) compensating controls (ASR rules, WDAC policies, attachment-quarantine path enforcement) where the sandbox cannot model the user-endpoint protection-mechanism state, (d) explicit non-reliance on AV real-time-protection as a sandbox substitute when the AV itself has been a recent exploit primitive.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-32202",
+      "CVE-2026-33825"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1027",
+      "T1059",
+      "T1566"
+    ],
+    "theater_test": {
+      "claim": "Our SC-44 detonation chambers cover the LNK-MOTW protection-mechanism path, not only the LNK target's behaviour.",
+      "test": "Sample 10 LNK-bearing inbound messages or downloads from the past 90 days. For each, confirm the sandbox verdict includes MOTW-enforcement code-path observation (not just target detonation telemetry). Confirm compensating ASR / WDAC / SmartScreen policies are active on the user-endpoint protection-mechanism path. Confirm AV real-time-protection is not the sole sandbox substitute. Theater verdict if MOTW-enforcement code-path observation is absent from the sandbox verdicts, or if compensating controls on the endpoint protection-mechanism path are missing.",
+      "evidence_required": [
+        "sandbox verdict export for sampled LNK detonations",
+        "endpoint ASR / WDAC / SmartScreen policy snapshot",
+        "documented non-reliance on AV real-time-protection as sandbox substitute"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "CIS-Controls-v8-10.1": {
+    "framework": "CIS Controls v8",
+    "control_id": "10.1",
+    "control_name": "Deploy and Maintain Anti-Malware Software",
+    "designed_for": "Deployment coverage + signature currency of anti-malware software on enterprise endpoints. Targets the deployment-and-update lifecycle; presumes a deployed-and-current AV is a functional defence.",
+    "misses": [
+      "MOTW / AMSI / Defender-engine bypass surface (CVE-2026-32202 LNK + APT28 weaponization): AV is deployed and current, but the protection-mechanism path is functionally evaded — deployment-coverage metrics report 'compliant' while detection is voided",
+      "AV-as-exploit-primitive (CVE-2026-33825 Defender BlueHammer): the deployed AV's elevated remediation context is itself the exploit primitive — Control 10.1's deployment-coverage focus does not model the AV as an attack surface",
+      "Platform-update-channel reliance: Defender platform updates close BlueHammer-class bugs without a Windows reboot; Control 10.1 doesn't differentiate between signature updates (passive) and platform updates (carry vulnerability fixes)",
+      "Incomplete-patch re-exploit class (CVE-2026-32202 as the re-exploit of CVE-2026-21510's incomplete fix) is invisible to deployment-coverage metrics"
+    ],
+    "real_requirement": "Control 10.1 must require: (a) AV protection-mechanism path testing (MOTW enforcement, AMSI hook integrity, SmartScreen prompt enforcement) in addition to deployment-coverage and signature-currency metrics, (b) explicit tracking of AV platform-update currency as distinct from signature currency (platform updates carry vulnerability fixes), (c) AV / EDR coercion-resistance testing as part of the deployment-effectiveness evaluation, (d) incomplete-patch sequence tracking with re-test obligation on each follow-up CVE in the sequence.",
+    "status": "open",
+    "opened_date": "2026-05-15",
+    "evidence_cves": [
+      "CVE-2026-32202",
+      "CVE-2026-33825"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1027",
+      "T1068"
+    ],
+    "theater_test": {
+      "claim": "Our CIS Control 10.1 anti-malware deployment includes protection-mechanism-path testing and platform-update currency tracking.",
+      "test": "Pull the anti-malware deployment report. Confirm protection-mechanism path testing (MOTW enforcement, AMSI hook integrity, SmartScreen prompt enforcement) is included alongside deployment-coverage and signature-currency metrics. Confirm AV platform-update currency is tracked as a distinct metric from signature currency. Sample 5 endpoints and verify AV / EDR coercion-resistance testing in the past 12 months. Theater verdict if deployment-coverage and signature-currency are the only reported metrics, or if platform-update currency is conflated with signature currency.",
+      "evidence_required": [
+        "anti-malware deployment report with protection-mechanism-path test fields",
+        "AV platform-update currency metric (distinct from signature currency)",
+        "AV / EDR coercion-resistance test results for sampled endpoints"
       ],
       "verdict_when_failed": "compliance-theater"
     }

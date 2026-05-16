@@ -38,33 +38,63 @@ const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const MANIFEST_PATH = path.join(REPO_ROOT, 'manifest.json');
+const CVE_CATALOG_PATH = path.join(REPO_ROOT, 'data', 'cve-catalog.json');
 const DATA_DIR = path.join(REPO_ROOT, 'data');
 
 /* Per-catalog config:
  *   file              relative path under data/
- *   forwardField      manifest.skills[].* array name
+ *   forwardField      source-collection[].* array name
  *   reverseField      per-entry reverse field name in the catalog
+ *   source            'manifest.skills' (default) — walk every skill's forward ref
+ *                     'cve.entries'   — walk every CVE's forward ref (cycle 12 F3
+ *                     extension); contributes CVE-IDs (skipping `_draft: true`
+ *                     entries so the reverse direction tracks operator-queryable
+ *                     truth, not in-progress curation state)
+ *   entryKey          field on the source object used as the reverse-list value
+ *                     ('name' for skills; '<self-id>' for CVE entries via the
+ *                     map key, so the helper substitutes the iterating key)
  */
 const CATALOGS = [
   {
     file: 'atlas-ttps.json',
     forwardField: 'atlas_refs',
     reverseField: 'exceptd_skills',
+    source: 'manifest.skills',
+    entryKey: 'name',
   },
   {
     file: 'cwe-catalog.json',
     forwardField: 'cwe_refs',
     reverseField: 'skills_referencing',
+    source: 'manifest.skills',
+    entryKey: 'name',
   },
   {
     file: 'd3fend-catalog.json',
     forwardField: 'd3fend_refs',
     reverseField: 'skills_referencing',
+    source: 'manifest.skills',
+    entryKey: 'name',
   },
   {
     file: 'rfc-references.json',
     forwardField: 'rfc_refs',
     reverseField: 'skills_referencing',
+    source: 'manifest.skills',
+    entryKey: 'name',
+  },
+  // Cycle 12 F3 (v0.12.32): CVE → CWE reverse direction. CWE entries
+  // declare `evidence_cves` as the operator-facing "which CVEs land here"
+  // index; pre-fix this was hand-maintained and drifted whenever a new
+  // CVE landed without the matching CWE's evidence_cves being updated.
+  // Now mirrors `cve.cwe_refs` → `cwe.evidence_cves` automatically.
+  // Drafts excluded (they're invisible to default consumers anyway).
+  {
+    file: 'cwe-catalog.json',
+    forwardField: 'cwe_refs',
+    reverseField: 'evidence_cves',
+    source: 'cve.entries',
+    entryKey: null, // value is the iterating CVE id
   },
 ];
 
@@ -85,10 +115,33 @@ function buildReverseIndex(skills, forwardField) {
   return index;
 }
 
-function rebuildCatalog(cfg, manifest) {
+// Cycle 12 F3 (v0.12.32): build a reverse index keyed by catalog ID from the
+// CVE catalog's forward refs. Each CVE entry has cwe_refs / attack_refs
+// arrays; the reverse side is the CVE ID, indexed by the catalog entry.
+// Draft entries are skipped — drafts are invisible to default consumers
+// via cross-ref-api, so the reverse direction should track operator-
+// queryable truth, not in-progress curation state.
+function buildCveReverseIndex(cveCatalog, forwardField) {
+  const index = new Map();
+  for (const [cveId, entry] of Object.entries(cveCatalog)) {
+    if (cveId === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    if (entry._draft === true) continue;
+    const refs = Array.isArray(entry[forwardField]) ? entry[forwardField] : [];
+    for (const targetId of refs) {
+      if (!index.has(targetId)) index.set(targetId, new Set());
+      index.get(targetId).add(cveId);
+    }
+  }
+  return index;
+}
+
+function rebuildCatalog(cfg, manifest, cveCatalog) {
   const filePath = path.join(DATA_DIR, cfg.file);
   const catalog = readJson(filePath);
-  const index = buildReverseIndex(manifest.skills, cfg.forwardField);
+  const index = cfg.source === 'cve.entries'
+    ? buildCveReverseIndex(cveCatalog, cfg.forwardField)
+    : buildReverseIndex(manifest.skills, cfg.forwardField);
   let changed = 0;
   let added = 0;
   let removed = 0;
@@ -133,6 +186,8 @@ function rebuildCatalog(cfg, manifest) {
 
   return {
     file: cfg.file,
+    source: cfg.source,
+    reverseField: cfg.reverseField,
     changed,
     added,
     removed,
@@ -143,14 +198,15 @@ function rebuildCatalog(cfg, manifest) {
 
 function main() {
   const manifest = readJson(MANIFEST_PATH);
+  const cveCatalog = readJson(CVE_CATALOG_PATH);
   const results = [];
   for (const cfg of CATALOGS) {
-    results.push(rebuildCatalog(cfg, manifest));
+    results.push(rebuildCatalog(cfg, manifest, cveCatalog));
   }
   for (const r of results) {
     process.stdout.write(
-      `${r.file}: ${r.changed} entries changed ` +
-        `(+${r.added} / -${r.removed} skill refs), ` +
+      `${r.file} (${r.source || 'skills'} → ${r.reverseField}): ${r.changed} entries changed ` +
+        `(+${r.added} / -${r.removed} refs), ` +
         `${r.unchanged} unchanged` +
         (r.orphans.length
           ? `, ${r.orphans.length} orphan forward ref(s) [${r.orphans.join(', ')}]`
@@ -163,6 +219,7 @@ function main() {
 module.exports = {
   CATALOGS,
   buildReverseIndex,
+  buildCveReverseIndex,
   rebuildCatalog,
 };
 
