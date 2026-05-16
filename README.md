@@ -233,6 +233,13 @@ exceptd run [playbook]                Phases 4-7. Auto-detects cwd context when
   --force-overwrite                   Override session collision refusal.
   --session-key <hex>                 HMAC sign evidence_package (≥ 16 hex chars).
   --attestation-root <path>           Override ~/.exceptd/attestations/ root.
+                                      Alternative: set EXCEPTD_HOME=<dir>
+                                      env var (attestations land in
+                                      $EXCEPTD_HOME/attestations/). Useful for
+                                      multi-tenant shared hosts where each
+                                      operator wants a private attestation
+                                      root, or for CI runners that should
+                                      scope attestations to the job workspace.
   --explain                           Dry-run: preconditions + artifacts +
                                       signal keys + submission skeleton.
   --signal-list                       Lighter than --explain; enumerate signal

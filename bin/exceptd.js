@@ -3655,7 +3655,18 @@ function persistAttestation(args) {
       // between existsSync and writeFileSync. Two concurrent run-with-same-
       // session-id invocations now produce one winner + one EEXIST loser,
       // not silent last-write-wins.
-      fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2), { flag });
+      //
+      // v0.12.38 (cycle 18 P1 F2): mode 0o600 + Windows ACL hardening.
+      // Pre-fix attestations were written world-readable (umask-derived
+      // 0o644). On multi-tenant shared hosts a different user could read
+      // the operator's evidence submission, jurisdiction obligations,
+      // and consent records. Mirrors the existing private-key handling
+      // in lib/sign.js (mode 0o600 + restrictWindowsAcl).
+      fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2), { flag, mode: 0o600 });
+      try {
+        const { restrictWindowsAcl } = require(path.join(PKG_ROOT, "lib", "sign.js"));
+        restrictWindowsAcl(filePath);
+      } catch { /* sign.js not loadable in some test paths — best-effort */ }
       maybeSignAttestation(filePath);
     };
 
@@ -4348,7 +4359,13 @@ function cmdReattest(runner, args, runOpts, pretty) {
       const suffix = i === 0 ? "" : "-" + crypto.randomBytes(3).toString("hex");
       const candidate = path.join(dir, replayBaseName + suffix + ".json");
       try {
-        fs.writeFileSync(candidate, JSON.stringify(replayBody, null, 2), { flag: "wx" });
+        // v0.12.38 cycle 18 P1 F2: mode 0o600 + Windows ACL hardening
+        // (matches the primary attestation write site).
+        fs.writeFileSync(candidate, JSON.stringify(replayBody, null, 2), { flag: "wx", mode: 0o600 });
+        try {
+          const { restrictWindowsAcl } = require(path.join(PKG_ROOT, "lib", "sign.js"));
+          restrictWindowsAcl(candidate);
+        } catch { /* best-effort */ }
         replayPath = candidate;
         written = true;
         break;

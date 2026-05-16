@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.12.38 — 2026-05-16
+
+Cycle 18 security fix + state refresh. The P1 closes a multi-tenant attestation-file-mode gap; cycle 18 A inventoried the full v0.13.0 readiness list (60 items, 11-15 days) for the next minor bump.
+
+### Security
+
+**Attestation files now write at mode 0o600 (owner-read/write only).** Pre-fix `~/.exceptd/attestations/<tag>/<sid>/attestation.json` was written with the umask-derived mode — typically 0o644 (group/world-readable) on Linux/macOS. On multi-tenant shared hosts a different user account could read the operator's evidence submission, jurisdiction obligations, and consent records. Both the primary `persistAttestation` write site and the `reattest` replay-record write site now use `fs.writeFileSync(..., { mode: 0o600 })` plus the existing `restrictWindowsAcl` helper from `lib/sign.js` for Windows ACL inheritance stripping. New `tests/attestation-mode-0600.test.js` pins the contract on POSIX hosts (skipped on Windows where ACLs are the surface, not mode bits).
+
+### Bugs
+
+**`EXCEPTD_HOME` now documented in README.** Cycle 18 B finding: the env-var override was only mentioned in an inline `attest list` help string. Multi-tenant operators had no way to discover it without grepping the binary. README's flag-reference section now cross-references the env-var path.
+
+**MAL-2026-NODE-IPC-STEALER `remediation_status: removed_from_registry`.** Cycle 18 C verified npm removed the 3 malicious versions (9.1.6, 9.2.3, 12.0.1) within ~2 hours of publication on 2026-05-14. Catalog now surfaces the registry-cleanup state so operators upgrading to a clean version know they're not racing the active-in-registry phase. The expired-domain TTP class (per `NEW-CTRL-047` in zeroday-lessons) still applies — domain-expiry monitoring is the durable control, not the npm-side cleanup.
+
+**CVE-2026-42897 (Exchange OWA) `patch_available: false` regression-tested.** Verified Microsoft has not shipped a binary security update; Exchange Emergency Mitigation Service Mitigation M2 is still the only remediation. Catalog truth aligned with current vendor state.
+
+### Internal
+
+- Cycle 18 audit dispatched 3 read-only agents (v0.13.0 readiness, attestation persistence, 24h CVE intake). All 3 returned.
+- Cycle 18 A v0.13.0 readiness inventory: 60 items total — 5 `will hard-fail in v0.13.0` markers + 17 legacy verbs to remove + 20 draft CVEs + 13 unresolved xrefs + 3 informational→required gate flips + 2 schema deprecations. Total effort 11-15 days for a single-maintainer minor bump. Detailed list in audit transcript.
+- Cycle 18 B P1 F1 (submission redaction) and F3 (git remote URL in attestation root path) deferred to v0.13 — both are larger schema-or-behavior changes that need design before implementation.
+- 4 new tests in `tests/attestation-mode-0600.test.js` (1 skipped on Windows). Test count 1145 → 1149. 14/14 predeploy gates green.
+
+
 ## 0.12.37 — 2026-05-16
 
 Cycle 17 UX + cross-skill consistency pass. Two CLI UX gaps closed (empty-stdin nudge, did-you-mean for typos), one operator-misleading factual error fixed in 3 skills (CVE-2024-3094 claim drift), and one cosmetic naming inconsistency cleaned up.
