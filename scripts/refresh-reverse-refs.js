@@ -96,6 +96,22 @@ const CATALOGS = [
     source: 'cve.entries',
     entryKey: null, // value is the iterating CVE id
   },
+  // Cycle 20 B F4 (v0.12.40): CVE → framework-gap reverse direction.
+  // Pre-fix 137 directional mismatches between cve.framework_control_gaps
+  // (dict-keyed by gap-id) and gap.evidence_cves (array of CVE ids).
+  // The forward shape on the CVE side is an OBJECT not an array — keys
+  // are the gap ids, values are per-CVE narrative. The reverse direction
+  // (which CVEs cite this gap) is a simple set of CVE ids on the gap
+  // entry. The helper handles the dict-keyed forward field via the
+  // `forwardFieldShape: 'object-keys'` flag.
+  {
+    file: 'framework-control-gaps.json',
+    forwardField: 'framework_control_gaps',
+    forwardFieldShape: 'object-keys', // dict; iterate keys
+    reverseField: 'evidence_cves',
+    source: 'cve.entries',
+    entryKey: null, // value is the iterating CVE id
+  },
 ];
 
 function readJson(p) {
@@ -121,13 +137,23 @@ function buildReverseIndex(skills, forwardField) {
 // Draft entries are skipped — drafts are invisible to default consumers
 // via cross-ref-api, so the reverse direction should track operator-
 // queryable truth, not in-progress curation state.
-function buildCveReverseIndex(cveCatalog, forwardField) {
+//
+// Cycle 20 B F4 (v0.12.40): forwardFieldShape parameter handles the
+// CVE.framework_control_gaps case where the forward field is a dict
+// (gap-id → narrative) rather than an array.
+function buildCveReverseIndex(cveCatalog, forwardField, forwardFieldShape) {
   const index = new Map();
   for (const [cveId, entry] of Object.entries(cveCatalog)) {
     if (cveId === '_meta') continue;
     if (!entry || typeof entry !== 'object') continue;
     if (entry._draft === true) continue;
-    const refs = Array.isArray(entry[forwardField]) ? entry[forwardField] : [];
+    let refs;
+    if (forwardFieldShape === 'object-keys') {
+      const fv = entry[forwardField];
+      refs = (fv && typeof fv === 'object' && !Array.isArray(fv)) ? Object.keys(fv) : [];
+    } else {
+      refs = Array.isArray(entry[forwardField]) ? entry[forwardField] : [];
+    }
     for (const targetId of refs) {
       if (!index.has(targetId)) index.set(targetId, new Set());
       index.get(targetId).add(cveId);
@@ -140,7 +166,7 @@ function rebuildCatalog(cfg, manifest, cveCatalog) {
   const filePath = path.join(DATA_DIR, cfg.file);
   const catalog = readJson(filePath);
   const index = cfg.source === 'cve.entries'
-    ? buildCveReverseIndex(cveCatalog, cfg.forwardField)
+    ? buildCveReverseIndex(cveCatalog, cfg.forwardField, cfg.forwardFieldShape)
     : buildReverseIndex(manifest.skills, cfg.forwardField);
   let changed = 0;
   let added = 0;

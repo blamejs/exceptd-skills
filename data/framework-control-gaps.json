@@ -63,9 +63,7 @@
     "real_requirement": "MCP trust controls: signed server manifests, explicit tool allowlists, bearer authentication, sandboxed server processes, organizational approved-registry for MCP servers.",
     "status": "open",
     "opened_date": "2026-04-01",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010"
     ],
@@ -96,9 +94,7 @@
     "real_requirement": "Prompt-level access control: each model invocation is constrained to an authorized action scope. Actions outside that scope require explicit user re-authorization. System prompt establishes authority hierarchy.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -130,10 +126,7 @@
     "real_requirement": "User-application hardening enumerates AI assistants and MCP servers in scope; sets default-deny on tool grants with explicit per-tool acknowledgement; pins MCP server versions with signature verification; treats AI-tool config files (.claude/settings.json, .cursor/mcp.json, .vscode/settings.json's chat.tools.autoApprove) as integrity-monitored configuration with the same protection profile as security-sensitive files.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051"
@@ -166,9 +159,7 @@
     "real_requirement": "Backups cover AI-system artefacts (model weights, RAG corpora, plugin registries, AI-tool configuration files) with off-network retention; backup-integrity verification includes per-document hash comparison for RAG corpora to detect corpus poisoning; documented 'AI-system restore to last-known-good' workflow that maps to detected AI-incident classes.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2026-45321"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0020",
@@ -231,11 +222,7 @@
     "real_requirement": "Patch operating systems with KEV-anchored SLA (≤48h for critical with public PoC, live-patching mandatory on hosts that can't accept a reboot within window); kernel patching pipeline distinct from userspace patch pipeline; third-party kernel module patches tracked alongside vendor patches; SLA metric is 'time from KEV listing to deployed', not 'time from advisory publication'.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2026-31431",
-      "CVE-2026-43284",
-      "CVE-2026-43500"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [],
     "attack_refs": [
       "T1068"
@@ -298,10 +285,7 @@
     "real_requirement": "CMMC 2.0 Level 2 must require: (1) inventory of AI assistants and MCP servers with CUI-adjacent access (3.4.1 extension), (2) AI-API egress monitoring as a CUI protection control (3.13 extension), (3) prompt-injection RCE in developer tooling as a 3.14 threat class with patching SLA, (4) explicit cross-walk to UK DEF STAN 05-138 and AU DISP for joint-programme AI policy parity.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051",
@@ -337,9 +321,7 @@
     "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v5.1.0 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0043",
       "AML.T0051",
@@ -373,9 +355,7 @@
     "real_requirement": "CycloneDX 1.6 deployment must require: (1) ML-BOM completeness checks (model + adapters + tokenizer + training data manifest where licensable), (2) MCP server inventory as part of the application SBOM, (3) populated provenance fields (signature, training data source, supplier) — empty fields treated as a defect, (4) SPDX 3.0 AI cross-walk evidence to satisfy EU CRA Annex I parity.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0018",
@@ -443,9 +423,7 @@
     "real_requirement": "RTS subcontracting register must add: (1) AI sub-processor enumeration (model provider, embedding provider, vector store, RAG corpus host) per ICT service line, (2) MCP server inventory treated as a subcontractor class, (3) foundation-model concentration analysis alongside cloud-provider concentration, (4) per-call inference-routing residency for AI services, (5) explicit cross-walk to UK PRA SS2/21 + AU CPS 230 for cross-border AI sub-processor disclosure.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010"
     ],
@@ -478,10 +456,7 @@
     "real_requirement": "ITS-TLPT must add: (1) AI/MCP asset enumeration in the scoping template, (2) AI-augmented threat intelligence inputs (ATLAS TTPs, AI-discovered CVE classes), (3) standard authorisation clauses for adversarial testing against third-party AI providers, (4) AI/MCP competency requirements for TLPT-tester certifications, (5) cross-walk to TIBER-EU + UK CBEST + AU CORIE updated scope language.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051",
@@ -516,9 +491,7 @@
     "real_requirement": "RTS classification must add: (1) AI-incident class enumeration in the qualitative criteria, (2) AI-specific quantitative measures (model invocations affected, agent actions taken on injected intent, RAG corpus integrity loss), (3) ATLAS-class adversary indicators as significant-cyber-threat triggers, (4) cross-walk to NIS2 Art. 23 + UK FCA SUP 15.3 + AU CPS 234 with AI-class fields.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -586,9 +559,8 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615",
-      "CVE-2026-39987"
+      "CVE-2026-39987",
+      "CVE-2026-42208"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -654,10 +626,7 @@
     "real_requirement": "Art. 55 operationalisation must add: (1) prescribed adversarial-evaluation methodology covering OWASP LLM Top 10 + ATLAS TTPs + MCP-trust scenarios, (2) standardised energy reporting (kWh per million tokens, training compute under ISO/IEC TR 24028), (3) reconciled incident-reporting clocks with DORA Art. 19 + NIS2 Art. 23, (4) explicit control catalogue for model-layer cybersecurity (weights provenance, system-prompt integrity, fine-tune access control).",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0018",
@@ -756,9 +725,10 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
+      "CVE-2026-42897",
+      "CVE-2026-45321",
       "MAL-2026-3083",
-      "CVE-2025-53773",
-      "CVE-2026-42897"
+      "MAL-2026-NODE-IPC-STEALER"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -793,10 +763,7 @@
     "real_requirement": "FedRAMP Rev 5 Moderate must publish: (1) an AI provider attestation path (StateRAMP-equivalent or FedRAMP Tailored for AI services), (2) explicit shared-responsibility matrix for AI APIs covering prompt data, output data, training opt-out, and retention, (3) SSP template language for documenting AI API usage in authorised systems, (4) cross-walk to EU EUCS Substantial and AU IRAP PROTECTED for joint operations.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0096"
@@ -830,9 +797,7 @@
     "real_requirement": "164.312(a)(1) implementation must add: (1) BAA-level coverage for AI providers including prompt retention, training opt-out, and breach notification within HIPAA timelines, (2) per-prompt PHI minimisation (DLP), (3) AI agent session controls treated separately from human user controls, (4) cross-walk with GDPR Art. 35 / UK NHS DSPT / AU APP 11 for cross-border health data in AI workflows.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0054",
       "AML.T0096"
@@ -866,9 +831,7 @@
     "real_requirement": "164.308 NPRM implementation must add: (1) AI assistants + model-API providers as enumerated technology-asset categories, (2) network-map requirement extended to AI-API egress including BAA / training-opt-out attestation per route, (3) tabletop-exercise catalogue covering AI-specific PHI loss scenarios, (4) workforce training module specific to AI handling of PHI. Note: final rule still pending — track HHS-OCR publication date Q3 2026.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0054",
       "AML.T0096"
@@ -902,9 +865,7 @@
     "real_requirement": "164.310 NPRM implementation must add: (1) AI-API session logging treated as in-scope under the network-access-logging mandate, (2) developer-endpoint workstation security extended to AI assistants with PHI exposure, (3) media-disposal verification extended to AI training-data opt-out attestation, (4) MCP-server enumeration in the deployed-asset inventory. Final rule pending.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0054"
@@ -937,11 +898,7 @@
     "real_requirement": "164.312 NPRM implementation must add: (1) per-action MFA-equivalent for AI-agent PHI access (delegated-authority attestation), (2) encryption-at-rest extended to AI-provider artifacts (conversation history, embeddings, fine-tune sets), (3) prompt-injection + RAG-poisoning detection as anti-malware-equivalent for AI-augmented systems, (4) CISA-KEV-class patch tier (< 72h) layered over the 6-month scan cadence. Final rule pending.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615",
-      "CVE-2026-31431"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051",
@@ -977,9 +934,7 @@
     "real_requirement": "164.314 NPRM implementation must add: (1) AI-sub-processor explicit flow-down template, (2) AI-specific BAA clauses (prompt retention, training opt-out, model version pinning, AI-incident reporting timeline), (3) AI-handling training requirement for business-associate workforce, (4) accelerated notification clock for AI-mediated PHI loss class. Final rule pending.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0054"
@@ -1012,10 +967,7 @@
     "real_requirement": "09.l must require: (1) AI vendor inventory separate from general SaaS inventory, (2) AI-specific contractual clauses (prompt retention, training opt-out, residency, version pinning, prompt-breach notification timeline), (3) self-signup AI usage prohibited for in-scope data, (4) cross-walk to EU AI Act Art. 25, UK ICO AI guidance, AU Privacy Act third-party obligations.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0054"
@@ -1048,9 +1000,7 @@
     "real_requirement": "62443-3-3 must add AI-in-OT requirements: SL2+ environments must prohibit or strictly gate LLM HMI overlays; FR1 must distinguish 'human operator action' from 'AI-mediated action initiated by operator' as separate identity claims; conduits-and-zones diagrams must enumerate AI-API egress as a named conduit subject to FR5 (Restricted Data Flow) and monitored under FR6.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -1118,9 +1068,7 @@
     "real_requirement": "Separate AI system security controls are needed: prompt injection testing, model integrity verification, training pipeline security, RAG pipeline security. A.8.28 is not the right control family for AI system security.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -1186,8 +1134,9 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
+      "CVE-2026-0300",
       "CVE-2026-31431",
-      "CVE-2026-0300"
+      "CVE-2026-46300"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1218,9 +1167,7 @@
     "real_requirement": "Clause 7 implementations must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0043",
       "AML.T0051",
@@ -1254,10 +1201,7 @@
     "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v5.1.0 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -1292,9 +1236,7 @@
     "real_requirement": "CIP-007-6 R4 must enumerate: (1) AI operator assistants as monitored event sources with explicit alerting on assistant-initiated operator commands, (2) AI-API egress events at the corporate-to-OT boundary, (3) prompt-injection indicators as a distinct event class, (4) alignment of R4 monitoring outputs with NIS2 24h/72h reporting obligations for multinational operators.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -1331,10 +1273,8 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615",
-      "CVE-2026-45321",
       "CVE-2026-39987",
+      "CVE-2026-42208",
       "CVE-2026-42897"
     ],
     "atlas_refs": [
@@ -1371,7 +1311,11 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
-      "CVE-2026-31431"
+      "CVE-2026-31431",
+      "CVE-2026-39884",
+      "CVE-2026-45321",
+      "CVE-2026-46300",
+      "MAL-2026-3083"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1402,10 +1346,7 @@
     "real_requirement": "800-115 must add: (1) AI-API testing chapter with techniques for prompt injection, jailbreak, model-DoS, embedding inversion, AI-API-as-C2, (2) prompt-fuzzing methodology with evidence retention guidance, (3) MCP server test class, (4) explicit compliance cross-walk: under what regimes (PCI 11.4, DORA Art. 24, EU AI Act Art. 15, UK CHECK, AU IRAP) is which test class required.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0043",
@@ -1444,8 +1385,9 @@
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
+      "CVE-2026-45321",
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -1516,6 +1458,7 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
+      "CVE-2025-53773",
       "CVE-2026-30615"
     ],
     "atlas_refs": [
@@ -1550,7 +1493,9 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "CVE-2026-45321",
+      "MAL-2026-3083"
     ],
     "atlas_refs": [
       "AML.T0010"
@@ -1583,8 +1528,7 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
-      "CVE-2026-43284",
-      "CVE-2026-43500"
+      "CVE-2026-43284"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1615,7 +1559,9 @@
     "real_requirement": "SC-7 implementations that operate in environments using AI APIs MUST add an AI-egress-layer control: SDK-level prompt logging with identity binding, anomaly detection on prompt-shape / token-volume / off-business-hours patterns, and an allowlist of AI provider domains that explicitly enumerates the sanctioned business reason for each. Boundary-only SC-7 evidence is incomplete for any org with AI API access in production.",
     "status": "open",
     "opened_date": "2026-05-01",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-42897"
+    ],
     "atlas_refs": [
       "AML.T0096",
       "AML.T0017"
@@ -1649,8 +1595,7 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
-      "CVE-2026-43284",
-      "CVE-2026-43500"
+      "CVE-2026-43284"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1682,8 +1627,8 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
-      "CVE-2026-42208",
-      "CVE-2026-39884"
+      "CVE-2026-39884",
+      "CVE-2026-42208"
     ],
     "atlas_refs": [
       "AML.T0053"
@@ -1717,9 +1662,7 @@
     "real_requirement": "SI-12 must be extended to include AI system data: prompt logs (security-relevant AI actions must be retained for incident investigation), model version history, inference output logs for security-sensitive decisions, training data provenance records.",
     "status": "open",
     "opened_date": "2026-03-01",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0054"
     ],
@@ -1752,13 +1695,15 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
-      "CVE-2026-31431",
-      "CVE-2026-43284",
       "CVE-2026-0300",
-      "CVE-2026-6973",
-      "CVE-2026-42897",
+      "CVE-2026-31431",
       "CVE-2026-32202",
-      "CVE-2026-33825"
+      "CVE-2026-33825",
+      "CVE-2026-42897",
+      "CVE-2026-43284",
+      "CVE-2026-43500",
+      "CVE-2026-46300",
+      "CVE-2026-6973"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1823,9 +1768,7 @@
     "real_requirement": "800-63B Rev 4 must add an AAL-A (agent assurance level) construct: per-invocation authenticator binding, capability-scoped tokens (what this agent is permitted to do this run), agent-to-agent delegation chains with non-repudiation, and explicit cross-walk to eIDAS 2.0 attestations, UK GPG 45, AU TDIF, and ISO 29115 for cross-border agent identity.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -1859,9 +1802,7 @@
     "real_requirement": "800-82r3 must add an AI-in-OT control class: (1) explicit prohibition or strict gating of LLM operator assistants in safety-critical zones, (2) prompt-injection threat-model entries for any natural-language operator interface, (3) treat AI-API egress from OT as a conduit requiring named approval and monitoring (NIS2 essential-entity reportable), (4) cross-walk to IEC 62443-3-3 SR 5.1 (network segmentation) for AI-API traffic.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -1897,9 +1838,7 @@
     "real_requirement": "MEASURE 2.5 must include adversarial evaluation: red-team testing for prompt injection, measurement of action boundary compliance (does the AI stay within authorized scope?), and behavioral regression testing after model updates.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -1932,9 +1871,7 @@
     "real_requirement": "V14 must add an AI configuration class: model + provider + system prompt + safety setting + data-retention setting under version control and review; MCP server registry source and signature policy verified; AI client tool allowlist treated as a security-relevant configuration object subject to change control and audit.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0016"
@@ -1968,7 +1905,8 @@
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [
-      "CVE-2025-53773"
+      "CVE-2026-39884",
+      "CVE-2026-42208"
     ],
     "atlas_refs": [
       "AML.T0051",
@@ -2004,9 +1942,7 @@
     "real_requirement": "LLM02 must require: prompt-level data minimisation (DLP before send), DPIA-equivalent assessment when sensitive categories enter prompts (GDPR / UK ICO / AU Privacy Act / HIPAA), explicit provider data-retention contractual terms, and chained-scenario testing combining LLM01 + LLM02 (injection-driven exfiltration).",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0054"
     ],
@@ -2039,10 +1975,7 @@
     "real_requirement": "LLM06 must require: signed MCP server manifests, organisational tool allowlists enforced at the AI client, per-invocation authorisation scopes (not per-account), and supply-chain governance for AI tool plugins equivalent to critical third-party software (ISO A.8.30 / SOC 2 CC9 / NIST SA-12 extended).",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2026-30615",
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0016",
@@ -2113,10 +2046,7 @@
     "real_requirement": "WSTG v5 must add: (1) AI-API test class (prompt injection, jailbreak, model-DoS, embedding inversion, AI-API-as-C2 indicators), (2) MCP server test class (supply chain, tool-response injection, signature verification, allowlist bypass), (3) indirect prompt injection test methodology with named corpora (PR descriptions, web pages, ingest pipelines), (4) cross-walk to PTES, NIST 800-115, EU DORA TLPT, UK CHECK/CREST, AU IRAP.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0043",
@@ -2186,9 +2116,7 @@
     "real_requirement": "6.4.3 operationalisation must add: (1) dynamic-content integrity (CSP report-uri + runtime DOM-equivalent hashes for AI-generated payment widgets), (2) agent-mediated checkout treated as in-scope with delegated-authority attestation, (3) MCP-server allowlisting on developer endpoints that touch payment-page test environments, (4) integrated reporting with PSD2 SCA-RTS Art. 18 + UK FCA SCA-RTS.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051"
@@ -2282,9 +2210,7 @@
     "real_requirement": "12.10.7 implementation must add: (1) AI-mediated PAN-exposure scenarios in the response-procedure template, (2) notification-clock harmonisation table covering card-brand + PSD2 + NIS2 + DORA + UK FCA + AU CPS 234, (3) AI-incident sub-classification in escalation routing, (4) customer-notification language addressing third-party-AI-provider exposure distinct from adversary exfiltration.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0054",
       "AML.T0096"
@@ -2318,9 +2244,7 @@
     "real_requirement": "RTS-SCA (and UK FCA SCA-RTS, AU CDR) must define an agent-initiation construct: explicit delegated-authority attestation per agent transaction class, scope-limited authority tokens (amount, counterparty, frequency), and a distinct audit indicator for AI-mediated transactions so injected intent can be detected post-hoc. Aligns with eIDAS 2.0 electronic attestations.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -2354,10 +2278,7 @@
     "real_requirement": "PTES Pre-engagement must add: (1) named AI/MCP asset classes in the standard scoping checklist, (2) provider-side authorisation guidance and contractual carve-outs for prompt-injection testing, (3) rules-of-engagement language addressing AI-API egress as a potential exfiltration channel during the test, (4) cross-walk to TIBER-EU / DORA Art. 24 / UK CBEST / AU CORIE scoping for AI-augmented financial services TLPT.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051",
@@ -2393,8 +2314,9 @@
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
+      "CVE-2026-45321",
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -2529,9 +2451,7 @@
     "real_requirement": "SPDX 3.0 deployment must require: (1) AI Profile + Dataset Profile completeness checks, (2) explicit declaration when training dataset provenance is unavailable (opacity flag), (3) MCP server inventory as a named SPDX element type, (4) CycloneDX ML-BOM cross-walk evidence — maintained as a cross-walk peer rather than a substitute. Aligns with EU CRA Annex I and ISO/IEC 5962.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0018",
@@ -2565,9 +2485,7 @@
     "real_requirement": "CSCF v2026 1.1 must add: (1) explicit prohibition or strict gating of LLM assistants inside the SWIFT secure zone, (2) named-conduit treatment for AI-API egress from administrative jump zones with monitoring, (3) AI-generated message drafts flagged as a distinct review class before release, (4) alignment with DORA Art. 28 register of AI ICT third-party providers supporting critical functions, plus UK PRA SS1/21 and AU APRA CPS 234.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
@@ -2601,9 +2519,7 @@
     "real_requirement": "Board-level governance includes an AI-systems-in-use inventory, an MCP/plugin trust register with provenance attestation, and a documented assignment of accountability for AI security outcomes that maps to the NIS2/CCRA scope.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010"
     ],
@@ -2632,10 +2548,7 @@
     "real_requirement": "Identity controls treat AI agents as distinct principals where they execute tools; MCP plugin invocations log model decision + tool name + arguments + user identity; AI-provider service credentials are short-lived, rotated, and excluded from cleartext storage policy exceptions; passkeys/WebAuthn for human-operator-to-AI authentication where supported.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051"
@@ -2667,10 +2580,7 @@
     "real_requirement": "Security monitoring includes prompt/response content classification on egress to AI providers, MCP tool-call audit trail (model decision + tool name + arguments + result), AI-API traffic baselines per service identity with anomaly alerts, and unified retention covering AI events alongside classical telemetry.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0096",
       "AML.T0024",
@@ -2703,11 +2613,7 @@
     "real_requirement": "Response plans include live kernel patching as a documented capability with operator drill cadence; AI-incident playbooks cover model rollback, prompt classifier updates, MCP allowlist tightening; backups validate AI-system artefacts; recovery clocks align to NIS2 24h + DORA 4h + GDPR 72h notification matrix.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [
-      "CVE-2026-31431",
-      "CVE-2026-43284",
-      "CVE-2026-43500"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [],
     "attack_refs": [
       "T1068"
@@ -2737,10 +2643,7 @@
     "real_requirement": "CSAF 2.1 (or a successor profile) must add: (1) an AI-component identifier scheme (model + version + adapters + tokenizer), (2) AI-specific vulnerability classes (jailbreak class, prompt-injection vector, embedding inversion class) with VEX statements, (3) explicit chaining of base-model to derived-model VEX statements, (4) alignment with EU AI Act Art. 15 disclosure obligations, UK NCSC AI vulnerability disclosure, AU ISM AI annex.",
     "status": "open",
     "opened_date": "2026-05-11",
-    "evidence_cves": [
-      "CVE-2025-53773",
-      "CVE-2026-30615"
-    ],
+    "evidence_cves": [],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0018"
@@ -3053,7 +2956,9 @@
     "real_requirement": "Extend IA-5 to the IdP control plane: continuous attestation of token-signing certificate fingerprints + claim-transformation rule baseline + per-modification change-control attestation + management-API-token inventory with TTL + scope + source-IP enforcement.",
     "status": "open",
     "opened_date": "2026-05-15",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-NODE-IPC-STEALER"
+    ],
     "atlas_refs": [],
     "attack_refs": [
       "T1556.007",
@@ -3746,8 +3651,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
-      "CVE-2026-0300",
-      "CVE-2026-42897"
+      "CVE-2026-0300"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -3887,8 +3791,8 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
-      "CVE-2026-6973",
-      "CVE-2026-33825"
+      "CVE-2026-33825",
+      "CVE-2026-6973"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -3954,9 +3858,9 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
-      "CVE-2026-6973",
       "CVE-2026-32202",
-      "CVE-2026-33825"
+      "CVE-2026-33825",
+      "CVE-2026-6973"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -3989,8 +3893,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
-      "CVE-2026-32202",
-      "CVE-2026-33825"
+      "CVE-2026-32202"
     ],
     "atlas_refs": [],
     "attack_refs": [

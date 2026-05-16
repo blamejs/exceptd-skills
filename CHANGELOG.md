@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.12.40 — 2026-05-16
+
+Cycle 20 catalog symmetry + operator UX. The headline closes 137 framework-gap ↔ CVE asymmetries (cycle 20 B F4) with a single reverse-ref script extension. Plus three operator-facing UX fixes from the cycle 20 A workflow trace.
+
+### Bugs
+
+**137 framework-gap ↔ CVE asymmetries auto-regenerated.** Cycle 20 B F4: `cve.framework_control_gaps` (dict keyed by gap-id) and `gap.evidence_cves` (array of CVE ids) had drifted apart — 24 CVE-side references missing reverse + 79 gap-side references missing reverse. Worst-case: `CVE-2025-53773` cited in 42 gap.evidence_cves but only declared 3 in its own framework_control_gaps. Fix: `scripts/refresh-reverse-refs.js` extended with the CVE→framework-gap direction (handles the dict-keyed forward field via new `forwardFieldShape: 'object-keys'` parameter). Drafts excluded per existing convention. 64 framework-gap entries regenerated on first run; new `tests/reverse-ref-drift.test.js` test blocks future drift. Surface side-effect: 5 forward-orphan gap references on `CVE-2026-46300` and `MAL-2026-NODE-IPC-STEALER` (gaps that don't exist in the catalog: `DORA-Art9`, `UK-CAF-B4`, `AU-ISM-1546`, `ISO-27001-2022-A.5.7`, `NIS2-Art21-supply-chain`) surfaced via the orphans report — deferred to v0.13 for either gap-catalog addition or CVE-side cleanup.
+
+**`exceptd framework-gap` "0 theater-risk controls" footer fixed.** Cycle 20 A P1: pre-fix the summary footer reported `0 theater-risk controls` while every per-entry display showed the `⚠ THEATER RISK` badge. Root cause: the counter filtered on the legacy `theater_pattern` field while the v0.12.29 backfill had added a structured `theater_test` block on all 118 entries without populating `theater_pattern`. Fix: counter now matches entries with EITHER `theater_test` OR `theater_pattern`. Each theater-risk entry gains a `theater_test_present` boolean for tooling consumers.
+
+**`exceptd skill` (no arg) no longer leaks orchestrator path.** Cycle 20 A P2: pre-fix the usage hint read `Usage: node orchestrator/index.js skill <skill-name>` — an internal narrative leak (CLAUDE.md global rule: no orchestrator references in operator-facing surfaces). Now: `Usage: exceptd skill <skill-name>` + a pointer to `exceptd brief --all` for skill discovery.
+
+**Unsigned-attestation warning leads with operator-facing verb.** Cycle 20 A P2: pre-fix the warning told operators to run `node lib/sign.js generate-keypair` — a node-internal script path that isn't on PATH after `npm install -g`. Now leads with `exceptd doctor --fix`, with the lib path retained as `node $(exceptd path)/lib/sign.js generate-keypair` for contributor checkouts.
+
+### Internal
+
+- Cycle 20 audit dispatched 3 agents (workflow trace, catalog symmetry, 24h intake / Pwn2Own Day 3). All 3 returned.
+- Cycle 20 C: no new CVE intake. The agent's recommended additions (CVE-2026-20182 PAN-OS, CVE-2026-0300 SD-WAN, node-ipc) were already in the catalog from cycles 11 and 13. Pwn2Own Berlin Day 3 ZDI results still not posted; AI-category outcomes (Claude Code, Ollama, etc.) embargoed for 90 days.
+- Cycle 20 A deferred to v0.13 (design-level): classification under synthetic evidence (analyze.classification stays undefined despite 6 firing indicators); `ask` natural-language routing (keyword-frequency-only gives wrong answer on "Microsoft Exchange OWA remote code execution" because "remote" boosts AI scoring); `framework-gap` accepts control-id silently (zero matches with no hint); new `researcher` verb that composes framework-gap + brief + RWEP in one screen.
+- Cycle 20 B deferred to v0.13 (schema-level): ATLAS / D3FEND / ATT&CK have no CVE-back field at all (one-way today); playbook `fed_by` reverse field doesn't exist.
+- 6 new tests across `tests/cycle20-ux-fixes.test.js` (3) and `tests/reverse-ref-drift.test.js` (1 new test, +1 count adjustment). Test count 1157 → 1163. 14/14 predeploy gates green.
+
+
 ## 0.12.39 — 2026-05-16
 
 Cycle 19 CI workflow hardening + CLI envelope shape contracts. One P1 script-injection sink in `release.yml` closed; three P3 housekeeping fixes; envelope shape pinned on the 6 verbs the cycle 13 audit deferred.
