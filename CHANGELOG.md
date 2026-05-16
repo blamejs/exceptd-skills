@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.12.29 — 2026-05-15
+
+Catalog hygiene + pipeline integrity pass. Closes Hard Rule #1, #6, #7, and #8 gaps that had accumulated across the 2025-2026 catalog growth; tightens the SBOM + OpenVEX + exit-code surfaces.
+
+### Features
+
+**Compliance-theater test on every framework gap.** Every entry in the framework-control-gaps catalog (109 entries spanning NIST 800-53, ISO/IEC 27001/27017/27035/42001, SOC 2, UK CAF, AU ISM/Essential 8, EU DORA, EU NIS2, EU AI Act, HIPAA, PCI DSS, FedRAMP, CMMC, HITRUST, IEC 62443, OWASP, telecom standards, ransomware-class gaps, and OFAC sanctions screening) now carries a `theater_test` field with a falsifiable test that distinguishes paper compliance from actual security. Closes Hard Rule #6. Sample shape: `{claim, test, evidence_required[], verdict_when_failed: "compliance-theater"}`. The test must reference a concrete artifact (audit log, config dump, tabletop exercise stopwatch) whose result is binary.
+
+**SBOM per-file SHA-256 + bundle digest.** `sbom.cdx.json` now includes `metadata.component.hashes[]` (bundle digest, SHA-256) and one `components[type=file]` entry per shipped file with its own SHA-256. Downstream supply-chain consumers can verify any individual file against the bundle. Excludes the regenerable `data/_indexes/` cache from per-file inventory (covered by the `Pre-computed indexes freshness` gate instead). Also corrects `metadata.tools` from the placeholder `name: "hand-written"` to the real generator script and bound package version.
+
+**OpenVEX `author` threads operator attribution.** Previously hard-pinned to `"exceptd"`, which falsely attributed every disposition statement to the tooling vendor. Now mirrors the CSAF publisher.namespace fallback ladder: `runOpts.publisherNamespace` → `runOpts.operator` → `urn:exceptd:operator:unknown` with a `bundle_publisher_unclaimed` runtime warning. Operators running scans correctly own their dispositions.
+
+**Exit code 10: UNKNOWN_COMMAND.** The dispatcher's unknown-command / missing-script / spawn-error paths previously exited 2, colliding with `EXIT_CODES.DETECTED_ESCALATE` semantics. Split into `EXIT_CODES.UNKNOWN_COMMAND = 10`. CI gates wiring `case 2)` for escalation triage no longer false-alarm on operator typos. Same regression class v0.12.24 closed for the SESSION_ID_COLLISION / RAN_NO_EVIDENCE code-3 collision.
+
+**Reverse-reference auto-regeneration.** New `npm run refresh-reverse-refs` rebuilds the `skills_referencing` / `exceptd_skills` arrays on `data/atlas-ttps.json`, `data/cwe-catalog.json`, `data/d3fend-catalog.json`, and `data/rfc-references.json` from the manifest forward direction. Idempotent. A new `tests/reverse-ref-drift.test.js` blocks merges that leave the reverse direction out of sync with the manifest — eliminates the one-sided-reference drift class that audits have flagged repeatedly.
+
+### Bugs
+
+- `crypto-codebase` `feeds_into` condition used the unsupported `contains` operator; the chain to the `secrets` playbook never fired. Replaced with `analyze.classification == 'detected'`. Same class of bug v0.12.28 corrected on the IR-cluster playbooks.
+- Manifest `atlas_version` / `attack_version` had drifted to v5.1.0 / v17 while the data catalogs already pinned v5.4.0 / v19.0. Manifest now matches the catalogs and AGENTS.md ground truth.
+- 14 sites in `bin/exceptd.js` used bare numeric `process.exitCode = 1` / `finish(1)` / `finish(0)` instead of `EXIT_CODES.*` constants. All migrated to the constant.
+- `cmdCi` per-id loop called `runner.loadPlaybook(id)` without first running `validateIdComponent('playbook')` — a defense-in-depth gap relative to `cmdRunMulti`. Now validates before load.
+
+### Internal
+
+- AI-discovery rate on `data/cve-catalog.json` moves 10% → 20% with three new flag flips backed by citations: CVE-2026-43284 + CVE-2026-43500 (Dirty Frag pair, Hyunwoo Kim with AI-assisted methodology per Sysdig); CVE-2026-46300 (Fragnesia, William Bowling using Zellic.io's AI agentic auditor). All other CVEs gain a `discovery_attribution_note` field citing the human researcher or vendor team. New `_meta.ai_discovery_methodology` block documents the 20%/30%/40% advancement ladder against the AGENTS.md Hard Rule #7 target. Gap to 40% explicitly tracked.
+- AGENTS.md Quick Skill Reference: playbook count "all 13 playbooks" → "all 16 playbooks".
+- `package.json.description`: "38 skills" → "42 skills".
+- 22 reverse-reference entries across 4 catalogs cleaned up by the new regen script (atlas: 30 entries changed, cwe: 46, d3fend: 28, rfc: 22).
+- Test suite 1064 → 1082 (six new test files: framework-gaps-theater-test-coverage, cve-ai-discovery-attribution, sbom-per-file-hash, reverse-ref-drift, plus updates to bin-dispatcher, cli-exit-codes, lib-exit-codes, cve-additions-v0-12-21 for the new contract).
+
+
 ## 0.12.28 — 2026-05-15
 
 Incident-response cluster — three new playbooks and skills covering identity-provider tenant compromise, cloud-IAM account takeover, and ransomware response. The existing `incident-response-playbook` skill stays as the generic PICERL backbone; the new surface adds attack-class-specific depth for the three IR scenarios that dominate 2025-2026 breach reporting.

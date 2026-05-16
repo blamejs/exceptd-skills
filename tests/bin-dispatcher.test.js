@@ -54,9 +54,12 @@ test('bin/exceptd.js: --version and -v aliases work', () => {
   }
 });
 
-test('bin/exceptd.js: unknown command exits with code 2 + helpful stderr', () => {
+test('bin/exceptd.js: unknown command exits with EXIT_CODES.UNKNOWN_COMMAND (10) + helpful stderr', () => {
+  // Cycle 9 B1 (v0.12.29): unknown-command was previously code 2 which
+  // collided with EXIT_CODES.DETECTED_ESCALATE. The split moves dispatcher
+  // refusals to code 10 so operators wiring `case 2)` only see escalations.
   const r = run(['totally-not-real']);
-  assert.equal(r.status, 2);
+  assert.equal(r.status, 10);
   assert.match(r.stderr, /unknown command/);
   assert.match(r.stderr, /exceptd help/);
 });

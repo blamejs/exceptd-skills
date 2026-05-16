@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "reference_date": "2026-05-01",
+    "reference_date": "2026-05-15",
     "note": "Pre-computed skill currency snapshot. Reference date is manifest.threat_review_date (deterministic). Re-runs of build-indexes against the same inputs produce byte-identical output. The orchestrator `currency` command produces a real-time view against today's date.",
     "decay_formula": "100 base; -30/-20/-10/-5 at 180/90/60/30-day thresholds. forward_watch count does NOT affect the score (it's a maintenance signal, not a staleness one). Label thresholds: ≥90 current, ≥70 acceptable, ≥50 stale, <50 critical_stale."
   },
@@ -16,7 +16,7 @@
     {
       "skill": "age-gates-child-safety",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 10,
@@ -25,7 +25,7 @@
     {
       "skill": "ai-attack-surface",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 8,
@@ -34,7 +34,7 @@
     {
       "skill": "ai-c2-detection",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -43,7 +43,7 @@
     {
       "skill": "ai-risk-management",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -52,7 +52,7 @@
     {
       "skill": "api-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 3,
@@ -61,7 +61,7 @@
     {
       "skill": "attack-surface-pentest",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 5,
@@ -70,7 +70,7 @@
     {
       "skill": "cloud-iam-incident",
       "last_threat_review": "2026-05-15",
-      "days_since_review": -14,
+      "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 11,
@@ -79,7 +79,7 @@
     {
       "skill": "cloud-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 14,
@@ -88,7 +88,7 @@
     {
       "skill": "compliance-theater",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -97,7 +97,7 @@
     {
       "skill": "container-runtime-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 1,
@@ -106,7 +106,7 @@
     {
       "skill": "coordinated-vuln-disclosure",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
@@ -115,7 +115,7 @@
     {
       "skill": "defensive-countermeasure-mapping",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -124,7 +124,7 @@
     {
       "skill": "dlp-gap-analysis",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 5,
@@ -133,7 +133,7 @@
     {
       "skill": "email-security-anti-phishing",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -142,7 +142,7 @@
     {
       "skill": "exploit-scoring",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -151,7 +151,7 @@
     {
       "skill": "framework-gap-analysis",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -160,7 +160,7 @@
     {
       "skill": "fuzz-testing-strategy",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -169,7 +169,7 @@
     {
       "skill": "global-grc",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -178,7 +178,7 @@
     {
       "skill": "identity-assurance",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -187,7 +187,7 @@
     {
       "skill": "idp-incident-response",
       "last_threat_review": "2026-05-15",
-      "days_since_review": -14,
+      "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 11,
@@ -196,7 +196,7 @@
     {
       "skill": "incident-response-playbook",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 8,
@@ -205,7 +205,7 @@
     {
       "skill": "kernel-lpe-triage",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -214,7 +214,7 @@
     {
       "skill": "mcp-agent-trust",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -223,7 +223,7 @@
     {
       "skill": "mlops-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
@@ -232,7 +232,7 @@
     {
       "skill": "ot-ics-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -241,7 +241,7 @@
     {
       "skill": "policy-exception-gen",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -250,7 +250,7 @@
     {
       "skill": "pqc-first",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 11,
@@ -259,7 +259,7 @@
     {
       "skill": "rag-pipeline-security",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 1,
@@ -268,7 +268,7 @@
     {
       "skill": "ransomware-response",
       "last_threat_review": "2026-05-15",
-      "days_since_review": -14,
+      "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 10,
@@ -277,7 +277,7 @@
     {
       "skill": "researcher",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -286,7 +286,7 @@
     {
       "skill": "sector-energy",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 8,
@@ -295,7 +295,7 @@
     {
       "skill": "sector-federal-government",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 10,
@@ -304,7 +304,7 @@
     {
       "skill": "sector-financial",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 12,
@@ -313,7 +313,7 @@
     {
       "skill": "sector-healthcare",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -322,7 +322,7 @@
     {
       "skill": "sector-telecom",
       "last_threat_review": "2026-05-15",
-      "days_since_review": -14,
+      "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 7,
@@ -331,7 +331,7 @@
     {
       "skill": "security-maturity-tiers",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -340,7 +340,7 @@
     {
       "skill": "skill-update-loop",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 7,
@@ -349,7 +349,7 @@
     {
       "skill": "supply-chain-integrity",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 8,
@@ -358,7 +358,7 @@
     {
       "skill": "threat-model-currency",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 5,
@@ -367,7 +367,7 @@
     {
       "skill": "threat-modeling-methodology",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
@@ -376,7 +376,7 @@
     {
       "skill": "webapp-security",
       "last_threat_review": "2026-05-11",
-      "days_since_review": -10,
+      "days_since_review": 4,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 1,
@@ -385,7 +385,7 @@
     {
       "skill": "zeroday-gap-learn",
       "last_threat_review": "2026-05-01",
-      "days_since_review": 0,
+      "days_since_review": 14,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,

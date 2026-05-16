@@ -1,23 +1,23 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:20da9e75-f361-4da1-8ded-d148f0e125f5",
+  "serialNumber": "urn:uuid:0e60e9bd-5657-4629-ab3a-8235c39a6868",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-05-15T23:11:31.244Z",
+    "timestamp": "2026-05-16T01:18:25.445Z",
     "tools": [
       {
-        "name": "hand-written",
-        "version": "0.1.0",
-        "description": "SBOM generated from package.json + manual review (scripts/refresh-sbom.js)."
+        "vendor": "blamejs",
+        "name": "scripts/refresh-sbom.js",
+        "version": "0.12.29"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.12.28",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.12.29",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.12.28",
-      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
+      "version": "0.12.29",
+      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
       "licenses": [
         {
           "license": {
@@ -25,11 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.12.28",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.12.29",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d4cc401770faf40a8584db666685b2eb05dc4966346116423eb3843dea7e7136"
+        }
+      ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.12.28"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.12.29"
         },
         {
           "type": "vcs",
@@ -73,6 +79,1843 @@
     ]
   },
   "components": [
+    {
+      "bom-ref": "file:AGENTS.md",
+      "type": "file",
+      "name": "AGENTS.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "90f9f12c572b5c55a86aa67940f247751ab346e20d7b14be86b9104aa7f3b6e3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:ARCHITECTURE.md",
+      "type": "file",
+      "name": "ARCHITECTURE.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e364f0f24bb708883206dab641c8ed9bb8a6489ae7f857a3622fe90fcdc41967"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:CHANGELOG.md",
+      "type": "file",
+      "name": "CHANGELOG.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9ce54562c066124a51341200915991a63126235bd3187cca80d89a41d0cbdf6d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:CONTEXT.md",
+      "type": "file",
+      "name": "CONTEXT.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8bec99f10923681050ee07e510cc1c966137f03c880ef8f9b373cba4a4214053"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:LICENSE",
+      "type": "file",
+      "name": "LICENSE",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "273d6cd61d2056689f15bfd16342388c6e640a95d67c0f3701f0d1b0412d7028"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:NOTICE",
+      "type": "file",
+      "name": "NOTICE",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "68a43ab8f9495c0af7a10b4f1c7f8fc729aeee2ab5fe523f932bdd62eb971d83"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:README.md",
+      "type": "file",
+      "name": "README.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6b88025a31812893b4c9f3d1ca8c0cbc44b71c670beb5d3d04867a6b5cc0bb9e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:SECURITY.md",
+      "type": "file",
+      "name": "SECURITY.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "33ca5a914e7f0fd5357d4382a1f5a6ef615a7c399cad5bbaa5b54da70364f1b5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:agents/README.md",
+      "type": "file",
+      "name": "agents/README.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "354625ebd493dc899ea8f30f14ef07802407733ae01a6c6955ec883df800b47c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:agents/report-generator.md",
+      "type": "file",
+      "name": "agents/report-generator.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "56ea761b84f7b33290c4771b8acd9a8e3bc2844d9d37c2ac2b6ca4ebd3374fe1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:agents/skill-updater.md",
+      "type": "file",
+      "name": "agents/skill-updater.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f7c2a09130db6d60904d3a730389a64acab59c46ce5720906831931a5a3be4ed"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:agents/source-validator.md",
+      "type": "file",
+      "name": "agents/source-validator.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e311ded9db93a7ced1dd1e01b2917fca6553af5cf0948d368c1aa2629e768089"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:agents/threat-researcher.md",
+      "type": "file",
+      "name": "agents/threat-researcher.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "af27f2a05842b96dbb77a4887131ef3c61015193c0affdbcdd5f0548e31854c4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:bin/exceptd.js",
+      "type": "file",
+      "name": "bin/exceptd.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7f1da0597795c366b23343802bc6ef836a1c04bb23ae8dd99d13920080eb412b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/atlas-ttps.json",
+      "type": "file",
+      "name": "data/atlas-ttps.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "259e76e4252c7a56c17bbe96982a5e37ac89131c2d37a547fe38d64dcacfd763"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/attack-techniques.json",
+      "type": "file",
+      "name": "data/attack-techniques.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "51f60819aef36e960fd768e44dcc725e137781534fbbb028e5ef6baa21defa1d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/cve-catalog.json",
+      "type": "file",
+      "name": "data/cve-catalog.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "72164f10238b4ba26a6c2fcacd0dfa3e745cd83b7c7c525ca26d8069511a4f24"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/cwe-catalog.json",
+      "type": "file",
+      "name": "data/cwe-catalog.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b6d1a950e9dec8b313f65a546dcff724bf27d3717deca74decc04a6ba15d4538"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/d3fend-catalog.json",
+      "type": "file",
+      "name": "data/d3fend-catalog.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ac7c1b0ba5cc84754264846b8173011ca4328773dd981c7b42599e112e54b3c4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/dlp-controls.json",
+      "type": "file",
+      "name": "data/dlp-controls.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8ea8d907aea0a2cfd772b048a62122a322ba3284a5c36a272ad5e9d392564cb5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/exploit-availability.json",
+      "type": "file",
+      "name": "data/exploit-availability.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a9eeda95d24b56c28a0d0178fc601b531653e2ba7dc857160b35ad23ad6c7471"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/framework-control-gaps.json",
+      "type": "file",
+      "name": "data/framework-control-gaps.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0c4aa0d3c48da3b3a88d0b9faa078003af76a809b63d00f1da1c504738872a06"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/global-frameworks.json",
+      "type": "file",
+      "name": "data/global-frameworks.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0168825497e03f079274c9da2e5529310a2ba5bd7c7da7c93acd0b66ed845b8a"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/ai-api.json",
+      "type": "file",
+      "name": "data/playbooks/ai-api.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "00bd01fe0b4c0bfc5d8f111dbc6ad4bb43b037bf80b4e511817ed130c90ad0aa"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/cloud-iam-incident.json",
+      "type": "file",
+      "name": "data/playbooks/cloud-iam-incident.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "666fe57d26eeb339414920ba9d2f9f5a3879b29b9f4c84ab57424ece9f57d7b5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/containers.json",
+      "type": "file",
+      "name": "data/playbooks/containers.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "23d83e1bf2f1ade02ddd49e35c8c8661f2e91d421d3facba37a33d184ae09f75"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/cred-stores.json",
+      "type": "file",
+      "name": "data/playbooks/cred-stores.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "48becd2887e7b3637151b101b4422bc0cbf0ba5cde18bec1db45c9cf18ccc9cc"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/crypto-codebase.json",
+      "type": "file",
+      "name": "data/playbooks/crypto-codebase.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9c1367218daa3d54dcae0a510639521093e5a2c588c7742816e5dd075bec1ee9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/crypto.json",
+      "type": "file",
+      "name": "data/playbooks/crypto.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1e5eae0f36d5300e0a24422b840902fdd6aac002eea65882bfe467150a8e755d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/framework.json",
+      "type": "file",
+      "name": "data/playbooks/framework.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c226f3460df0181b95bff54f5d8e0570315a5be841c016a1387f66434ae35874"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/hardening.json",
+      "type": "file",
+      "name": "data/playbooks/hardening.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8bea43d95820774903e6c4ef3292830c2119993ce03cf968703929adbd6b698c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/idp-incident.json",
+      "type": "file",
+      "name": "data/playbooks/idp-incident.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "928a2bc1e9d4a45f79ac30707cb785b03c6f60bb45118b9a4777840b1c898b66"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/kernel.json",
+      "type": "file",
+      "name": "data/playbooks/kernel.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0244083b754133264ce793abf0fc2a0c0784489a5571a5bac15f352f0af31059"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/library-author.json",
+      "type": "file",
+      "name": "data/playbooks/library-author.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d0101f082922ea7063937815630aeff236fa35f7af6db13ba6b72a3080671820"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/mcp.json",
+      "type": "file",
+      "name": "data/playbooks/mcp.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "27c59cb1b1a524da2e35b6122ce8140dbcf7628c2c39e54f52d9b58fc68a6d49"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/ransomware.json",
+      "type": "file",
+      "name": "data/playbooks/ransomware.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3e78d4d92a204fe379ed3b0a80239a51db1afb584d98d751db3469625624e599"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/runtime.json",
+      "type": "file",
+      "name": "data/playbooks/runtime.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "01c7e872d3432c7628737d307639af83a080e617efd23869a4f06ff62a503fbc"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/sbom.json",
+      "type": "file",
+      "name": "data/playbooks/sbom.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fbab566cae9341629a4e954f98c9d9ae44c3683da3cccfad46e34dc6845230a"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/secrets.json",
+      "type": "file",
+      "name": "data/playbooks/secrets.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4216712c1ae59a8480a453ec1e1e0d587d8252c97e5e35a99241ef7989792703"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/rfc-references.json",
+      "type": "file",
+      "name": "data/rfc-references.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e90ec6755f6a670fdb589bbdc61b3010c90531da46065ada377272f34d282fcb"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/zeroday-lessons.json",
+      "type": "file",
+      "name": "data/zeroday-lessons.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d960e5f8ca7a83c10194cd60207e13046a7eee1b8793e2f3de79475db283f800"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:keys/EXPECTED_FINGERPRINT",
+      "type": "file",
+      "name": "keys/EXPECTED_FINGERPRINT",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "31ccb5151e87ce0f9cdd3bf9190938535d47b1b8321eb4ab8a7e5a2db276f7e7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:keys/public.pem",
+      "type": "file",
+      "name": "keys/public.pem",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "dab440476d2f8a96863628c8ed100a0201c896025af9532a78217367c8362bef"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/auto-discovery.js",
+      "type": "file",
+      "name": "lib/auto-discovery.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "99df5dda100a035e2cfd6e11f6c6e18c33d750fac2d14dcabbb46af8fba6b7f9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/cross-ref-api.js",
+      "type": "file",
+      "name": "lib/cross-ref-api.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d470a54e7ae433ddaa28e737bcb8387e085494b0a04075604e6a1daaec8b57b1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/cve-curation.js",
+      "type": "file",
+      "name": "lib/cve-curation.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e9dfce763b62a1fb99e4cacf3a7266fcb5a6260778f01a23a8956d640c26b6ba"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/exit-codes.js",
+      "type": "file",
+      "name": "lib/exit-codes.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "447358ab2752e727974479ab2256ecce6ae7b1961101d5f3220c27aed015e9c9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/flag-suggest.js",
+      "type": "file",
+      "name": "lib/flag-suggest.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6dd7b22cf74937569e9f3286738889a1988f681d8bcf499217f2dc9c2ea5ad6b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/framework-gap.js",
+      "type": "file",
+      "name": "lib/framework-gap.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ac1e0bc44b92a11799164b1388c1040a2d3f40a21294ac2c37f8ce6e11949258"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/id-validation.js",
+      "type": "file",
+      "name": "lib/id-validation.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "27b1a54b238cdd4ca261a75dfcf8fb06864a0feacdcad03435cf8d2b3b56e245"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/job-queue.js",
+      "type": "file",
+      "name": "lib/job-queue.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b65ffe841ecabceeb0917b944f44658b406b6a04c2f6f6191e2bb8698682163"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/lint-skills.js",
+      "type": "file",
+      "name": "lib/lint-skills.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8e56ee29977db9287e213b515e05c9bb76babc403a66c77a7bd353b170b473c7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/playbook-runner.js",
+      "type": "file",
+      "name": "lib/playbook-runner.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "51ebef3692abcd8321a5071b1e37a052e5c663a11ce99a8ad200737c401b3a54"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/prefetch.js",
+      "type": "file",
+      "name": "lib/prefetch.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b86a3b1e3bade9042bb5e7543eaa46adae4f62a65b81bbd5566f2d117938c522"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/refresh-external.js",
+      "type": "file",
+      "name": "lib/refresh-external.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "02e5244989c3e56a1a0a8fc795d518e2dc8db7aa69e9551883b4828e8e36056e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/refresh-network.js",
+      "type": "file",
+      "name": "lib/refresh-network.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9383e999bcb35d9cf4ab9bd3a4f43831e8f5f95bf5ed3f368797b7a78da636de"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/schemas/cve-catalog.schema.json",
+      "type": "file",
+      "name": "lib/schemas/cve-catalog.schema.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cf346e2cdce845c9c3cc5d6f3ee793e07c95edb0dc5a5ca407f1a22e1dcab94d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/schemas/manifest.schema.json",
+      "type": "file",
+      "name": "lib/schemas/manifest.schema.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b2f70a64eba527b53d69e06bda4e41c7f456cbcef55a6a6739d343544db0003"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/schemas/playbook.schema.json",
+      "type": "file",
+      "name": "lib/schemas/playbook.schema.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4a40da0c0f1aff593f8318af89167bfec5842d012f2b0b502e987099873efdce"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/schemas/skill-frontmatter.schema.json",
+      "type": "file",
+      "name": "lib/schemas/skill-frontmatter.schema.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ff4f5fc4a08804c4dc2509614b5ffcd0ddb1d32bb003dfa6b4e219bf7eb1564f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/scoring.js",
+      "type": "file",
+      "name": "lib/scoring.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4ecf41dee39945536de0246d16a27a5889cc1b76087b22886ad8188506c95fad"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/sign.js",
+      "type": "file",
+      "name": "lib/sign.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c93aaaa4253b0f836543fcec8baeff30e8624f7aef99518de8f55f6c6576e4eb"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/source-ghsa.js",
+      "type": "file",
+      "name": "lib/source-ghsa.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b2d732410344770094eaa11d0918d434e6123caafa468099fff025940ee91531"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/source-osv.js",
+      "type": "file",
+      "name": "lib/source-osv.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1e26aaae86262153a0ffca56cde65a8ddab6cb1c9061ca318fe542855c1dc0d8"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/ttp-mapper.js",
+      "type": "file",
+      "name": "lib/ttp-mapper.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fe04f5aa71d69e1060f56a23ae2040f02d15f3bfd19ecb3f9605dce05da9badc"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/upstream-check-cli.js",
+      "type": "file",
+      "name": "lib/upstream-check-cli.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4333a4f48fdce7c38feec69c0208d0cf39f521b0aa571ac66267b2a13497f1ba"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/upstream-check.js",
+      "type": "file",
+      "name": "lib/upstream-check.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "61948c0daa46c50839cfc7ad744363066e568386d67d4e74e419889ce4effa39"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-catalog-meta.js",
+      "type": "file",
+      "name": "lib/validate-catalog-meta.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "74a507efcd2805b98ebd2fe22fcccaf25756200684b62d1f75a33b0336f7f813"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-cve-catalog.js",
+      "type": "file",
+      "name": "lib/validate-cve-catalog.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2254b4cf3cacb6dee684d5ab8feed6fdcd07c36c3e7861d98effe6dcf7f8fe36"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-indexes.js",
+      "type": "file",
+      "name": "lib/validate-indexes.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "41a71d0bf1cff279a5b501a9a40a1874ab5a7c6a5e66ded23f8761899f24fc50"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-package.js",
+      "type": "file",
+      "name": "lib/validate-package.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5de9a1f65caca9bbc38fb669bc571de4f9d0855b6cd316044792411d1f30399c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-playbooks.js",
+      "type": "file",
+      "name": "lib/validate-playbooks.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "38b2e79b228ff696298fb0df4f081ed99c3683d1dd5b52bbc43249d51bfa813c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/validate-vendor.js",
+      "type": "file",
+      "name": "lib/validate-vendor.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7bd7891050f36855c72c389ad4d4d6bf5c99a7111dc3ec2cc274b203a4279899"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/verify.js",
+      "type": "file",
+      "name": "lib/verify.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fef6f6954bcb9f141938c3b4dc8962e92358d30a4bb71c123140d7dfcb2936c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:lib/worker-pool.js",
+      "type": "file",
+      "name": "lib/worker-pool.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c13868b935b390ee9f2a80a2e0a6992f3e1860ae9bbdf723f1014ce2c7b93fbb"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:manifest-snapshot.json",
+      "type": "file",
+      "name": "manifest-snapshot.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b2fe8086b9dd8ff974651b9ee0a00df002209856fd3e6cbacd4cd9b0029b530"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:manifest-snapshot.sha256",
+      "type": "file",
+      "name": "manifest-snapshot.sha256",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "900d1f4f0d5b8cec3f0340115b95f6720e57ab2a8d87adf07f8584a47282320b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:manifest.json",
+      "type": "file",
+      "name": "manifest.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5b9c21d9c2d885b439990b7b499429bf8a59e69cc737abfb386aa0255f2e8228"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/README.md",
+      "type": "file",
+      "name": "orchestrator/README.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "dd90c25c9729357d6c943344eaf40eb4868f15fd4483f8305c45fbc91d4eb5cf"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/dispatcher.js",
+      "type": "file",
+      "name": "orchestrator/dispatcher.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "64efb012ab72fd26d9fa335b2c9f125be12618280d48133f98532790398c62f7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/event-bus.js",
+      "type": "file",
+      "name": "orchestrator/event-bus.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c8aa56acc8a758349a7faff3571ca8b6ee4fa4324edaf65d62ea728d7f7e49f4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/index.js",
+      "type": "file",
+      "name": "orchestrator/index.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "633004eba0f8f11698927308a25672158981b5cda2c822d62f7b88cd5c94d523"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/pipeline.js",
+      "type": "file",
+      "name": "orchestrator/pipeline.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5f403396c73e40ca6963fe3fe71d4a2dd5637710d2d72d616d3f2b76aa46a21a"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/scanner.js",
+      "type": "file",
+      "name": "orchestrator/scanner.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "13b2d81178dc18c38f9defd74ad4cfaa01f78fa14c3d2bc8eaed5375e94048e2"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:orchestrator/scheduler.js",
+      "type": "file",
+      "name": "orchestrator/scheduler.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a3ae7cd6a7908d4404140cb69e74ebf598aa371d9b7eb919e80704f11b33b81d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/audit-cross-skill.js",
+      "type": "file",
+      "name": "scripts/audit-cross-skill.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9b92e14442f93b57ce7cd3cc4ac6f8eec8fca33670397fde07ddaf0ec7200428"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/audit-perf.js",
+      "type": "file",
+      "name": "scripts/audit-perf.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bc74c40479fc3289b19abd3311aca5c8905b46f0e01c611e0904c4f721c693e7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/backfill-theater-test.js",
+      "type": "file",
+      "name": "scripts/backfill-theater-test.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d1554d94d4e50deb4947014ebcb5b09fcc62d26145259912b7df3fd824d5b375"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/bootstrap.js",
+      "type": "file",
+      "name": "scripts/bootstrap.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b0e40fd7844dc81c53abcfeffb1d329294d649f59964ccf307082ab0d6eae0b2"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/build-indexes.js",
+      "type": "file",
+      "name": "scripts/build-indexes.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "266ff15f7df12f7eac6c322a8fec41ce4e14d389df5b7380d7f138e6e122c080"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/activity-feed.js",
+      "type": "file",
+      "name": "scripts/builders/activity-feed.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "29055c96bc81379ce492cb254edbd39ec366f2fecb528bb89c4a7c8d76fc277f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/catalog-summaries.js",
+      "type": "file",
+      "name": "scripts/builders/catalog-summaries.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4d7459896f91b7019792db0d9bb79c8a3e3fe652d1c2dc7b7c44431b0da5833b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/currency.js",
+      "type": "file",
+      "name": "scripts/builders/currency.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e5fb0d060a0d6f5b4736007f6955f8909b67bf32cecba8496dfb50093e4c4d4d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/cwe-chains.js",
+      "type": "file",
+      "name": "scripts/builders/cwe-chains.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "13bb9b0f6afcae148b19909d1255b991eeacb7a29e16ad52b47cb1b3956cbe73"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/did-ladders.js",
+      "type": "file",
+      "name": "scripts/builders/did-ladders.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e4d3d04071caf6005be32b679dccf88c32e91024da80fb03896680127a3267a1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/frequency.js",
+      "type": "file",
+      "name": "scripts/builders/frequency.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "89c35c4149f487958c01565b172693a8e9b07def0ecba0fc19024ab71c873eb8"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/jurisdiction-clocks.js",
+      "type": "file",
+      "name": "scripts/builders/jurisdiction-clocks.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0a06e7d36634041a7cbead664d609bf1fcbf8e29fc08334609c8c71a3a8f38b3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/recipes.js",
+      "type": "file",
+      "name": "scripts/builders/recipes.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a845c23d0ee17635492c22f4d9d352f6f72d98503b557e46235bdb5a78ed829d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/section-offsets.js",
+      "type": "file",
+      "name": "scripts/builders/section-offsets.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7664c811eff3daee169794e7991fa3ad7a7b354e758235075ee29569ed343d40"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/stale-content.js",
+      "type": "file",
+      "name": "scripts/builders/stale-content.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0ada7118356a557105ca726f4525fd6eae488d25346bd435dc0ccd5f312ab87"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/summary-cards.js",
+      "type": "file",
+      "name": "scripts/builders/summary-cards.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4980206044777812f2aec8bc141e87204420ed898ddcc8f0cfffc63df9b4a694"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/theater-fingerprints.js",
+      "type": "file",
+      "name": "scripts/builders/theater-fingerprints.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "523c727ffc8fccaa8783f61870cf1f9ac3c298aa0bdea7f72811a91cf5e2d361"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/builders/token-budget.js",
+      "type": "file",
+      "name": "scripts/builders/token-budget.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "67bb8837056d277fe6e2a403b49fd12d03f3516190b64cd7e28412fa22da3e31"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/check-manifest-snapshot.js",
+      "type": "file",
+      "name": "scripts/check-manifest-snapshot.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "10eb802ea284df15feb273d7884a9af10f019e28d154b0205322cb2c2df3971a"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/check-sbom-currency.js",
+      "type": "file",
+      "name": "scripts/check-sbom-currency.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "36b5ee7bd4543fcf90ee900709c41ef2f1aaeba6fc6adb41b72289d3b8c35712"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/check-test-coverage.README.md",
+      "type": "file",
+      "name": "scripts/check-test-coverage.README.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "467d2ae2c73a803edc61ee31f04a7a584da6aaa729940de799a482a37b2be6c3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/check-test-coverage.js",
+      "type": "file",
+      "name": "scripts/check-test-coverage.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a5f091b056107977c6804e888084a06552fd55f82b31d80617cd0184028c3e54"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/hooks/pre-commit.sh",
+      "type": "file",
+      "name": "scripts/hooks/pre-commit.sh",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "01991530aa0c021a118421cc0647f80b5b73b5d7993f14f70afb0e66f239ad23"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/predeploy.js",
+      "type": "file",
+      "name": "scripts/predeploy.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cc3a255c1d41309a6cb208056c9f1cd5555ec6c00faeb7e11c2ac83eb12d21d7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/refresh-manifest-snapshot.js",
+      "type": "file",
+      "name": "scripts/refresh-manifest-snapshot.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "687f1e29edbbcd525573b9f0ab4a55d5b499dad5b53e19e51a6c46e633c68a88"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/refresh-reverse-refs.js",
+      "type": "file",
+      "name": "scripts/refresh-reverse-refs.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a9c58186cdcd33c1bb893ce51bc558e0365422b0c8b9a899e5e3933a121a5523"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/refresh-sbom.js",
+      "type": "file",
+      "name": "scripts/refresh-sbom.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "36ddf9c8977a0627eb67f27eb11ae0f2c952eba0e044e26bbae7fa5b97e7f13e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/run-e2e-scenarios.js",
+      "type": "file",
+      "name": "scripts/run-e2e-scenarios.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "dee81e017ed9b7399cf4d04bc5bc1a2de974c35ed3e545a560d2ffc318fc27b6"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/validate-vendor-online.js",
+      "type": "file",
+      "name": "scripts/validate-vendor-online.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b9989451474ba2debdd3bdd5e862d19e338f632c7386f393ec40f4b7ed5d2be"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/verify-shipped-tarball.js",
+      "type": "file",
+      "name": "scripts/verify-shipped-tarball.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59a341868f7f362d4138d61cbbf480fa5e293e06399b58b57ea6ff27e4e66d03"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/age-gates-child-safety/skill.md",
+      "type": "file",
+      "name": "skills/age-gates-child-safety/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c741d7dca9da0abb09bdebb8a02e803ce4ae9fb9a6904fb8df3ec19cae83917d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/ai-attack-surface/skill.md",
+      "type": "file",
+      "name": "skills/ai-attack-surface/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "13e543fc92b9b27cdb647dce96a9eeb44919e0fa92ec41e8265a9981a23e7b79"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/ai-c2-detection/skill.md",
+      "type": "file",
+      "name": "skills/ai-c2-detection/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cdfbc086ed2b755a9d3170d66d0c33519478b693fb59944ac95a1749beb5c810"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/ai-risk-management/skill.md",
+      "type": "file",
+      "name": "skills/ai-risk-management/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "10d31ca594449e1fef4c34ea45448ab30a6ffdc2fe1faf4ccaf0a1dd05d67774"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/api-security/skill.md",
+      "type": "file",
+      "name": "skills/api-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "302f7f6a071b856cc55a4cb5f0bc3f8566e31b5ebca58ca3bd78a91d4b6665ca"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/attack-surface-pentest/skill.md",
+      "type": "file",
+      "name": "skills/attack-surface-pentest/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3c42af04a5db79ce10c952f4bc7c9216116e77d38e6d57feb1f1c13678c94e53"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/cloud-iam-incident/skill.md",
+      "type": "file",
+      "name": "skills/cloud-iam-incident/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "35a9dd108679103c0eca54ea0c5b8f3db0a199975f87e20660b2c3a11440f40b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/cloud-security/skill.md",
+      "type": "file",
+      "name": "skills/cloud-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0574c153aefbb0fc4581c78bc2d708ab7c49d6b5a45a985e51967b8ea740eb9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/compliance-theater/skill.md",
+      "type": "file",
+      "name": "skills/compliance-theater/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "367cde42553dfb59b0cb6e8afb6e88be28ec0ab73682ea3a9d397ca0068753bc"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/container-runtime-security/skill.md",
+      "type": "file",
+      "name": "skills/container-runtime-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f06260f0c468d6a4f0409294899017edab45c98d71db1fedd7a630fe6a7bf53a"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/coordinated-vuln-disclosure/skill.md",
+      "type": "file",
+      "name": "skills/coordinated-vuln-disclosure/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c96fd2254abf8a29819f8175da85094bea1afe589fecc92abcf1289b30895030"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/defensive-countermeasure-mapping/skill.md",
+      "type": "file",
+      "name": "skills/defensive-countermeasure-mapping/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e62c71ba3be2b4d0f7dfa529fec007cba6bee3013f76b93756e3e6310f2d22ab"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/dlp-gap-analysis/skill.md",
+      "type": "file",
+      "name": "skills/dlp-gap-analysis/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eed1a5de55a9200e6f5c8ac49b0240b54d30b895ce40ccce9d286f5d9b40f664"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/email-security-anti-phishing/skill.md",
+      "type": "file",
+      "name": "skills/email-security-anti-phishing/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b5a7693b3ddbd6cd83303d092bc5e324db431245d25c4945d9f65fcffa1995e7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/exploit-scoring/skill.md",
+      "type": "file",
+      "name": "skills/exploit-scoring/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4213724d59d33d8fe768b3ce58edc3aed25c0f06031183542937a14d538ea94d"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/framework-gap-analysis/skill.md",
+      "type": "file",
+      "name": "skills/framework-gap-analysis/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "573a097ceb4c952fe7ab3db765c942d06cc8e90f7cda3c42928db35cdcd7cf7b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/fuzz-testing-strategy/skill.md",
+      "type": "file",
+      "name": "skills/fuzz-testing-strategy/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "83b1929a0d1e09a58908b91125ebc91ff14323ab9acc9bab6c4b04903b69b837"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/global-grc/skill.md",
+      "type": "file",
+      "name": "skills/global-grc/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0487de49679172347653d8c191d1f269193de6f444f6b0c6396d326e45bd72e"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/identity-assurance/skill.md",
+      "type": "file",
+      "name": "skills/identity-assurance/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6fd734d5cf8eed031537c9ccb1ad11c09ec4e88d31c45d86046a2154a6770990"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/idp-incident-response/skill.md",
+      "type": "file",
+      "name": "skills/idp-incident-response/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "39b5b492914e9092fe1c0b2be5af83d4ed869939996b6a201f2d0cd8142ab8f3"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/incident-response-playbook/skill.md",
+      "type": "file",
+      "name": "skills/incident-response-playbook/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8ef7ce1246dc1329b6df3cc9de8d79d35e2c02c703dcef20f35b312b1c24fd52"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/kernel-lpe-triage/skill.md",
+      "type": "file",
+      "name": "skills/kernel-lpe-triage/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8e94bfd38d6db47342fbbe95a0c8df8f7c38743982c13e9de6a1c59cd3783d33"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/mcp-agent-trust/skill.md",
+      "type": "file",
+      "name": "skills/mcp-agent-trust/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3cec1dce668deec44cb7330e165e89cee8379dd90833519004d566baf72c038c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/mlops-security/skill.md",
+      "type": "file",
+      "name": "skills/mlops-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e6a296fc67724aa3b026c0039f44867b44cf0926eade4fe616bfd0a4c77310bf"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/ot-ics-security/skill.md",
+      "type": "file",
+      "name": "skills/ot-ics-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d239ed497816e00ad14568e9fcca68ffdc7cb0c2a2cbd4960b35fab2065cce31"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/policy-exception-gen/skill.md",
+      "type": "file",
+      "name": "skills/policy-exception-gen/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "79db45ba722a6dd9bba25bf84e0b52cf659b56b662193cef80a8273337e41df9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/pqc-first/skill.md",
+      "type": "file",
+      "name": "skills/pqc-first/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a5eb776e1ea3bb422a4c18a3bdf39ad2ec1651b3c25e65c89428ba319141b275"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/rag-pipeline-security/skill.md",
+      "type": "file",
+      "name": "skills/rag-pipeline-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fc027d5e101a9934b402ed4086b9cbb8b2ee6b86f00e1feb54fe15a2018d89fc"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/ransomware-response/skill.md",
+      "type": "file",
+      "name": "skills/ransomware-response/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ffe07ba8c196aabceb69b07dafa7a9c3ca2ec8e5ce079107f4eec82512a01be1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/researcher/skill.md",
+      "type": "file",
+      "name": "skills/researcher/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "51d03d9eaea52d2bbbdd67709035db494d44819ce58931ca025cab3025c9fad7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/sector-energy/skill.md",
+      "type": "file",
+      "name": "skills/sector-energy/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "875799aa2ad88744b646583fef0a3399abd42a979541dc99bf39825a5ef48ce9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/sector-federal-government/skill.md",
+      "type": "file",
+      "name": "skills/sector-federal-government/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "48c3c019502c8b758598331dbad8a9b121f8dd3dc6fc68bfaf506eba7e3843e5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/sector-financial/skill.md",
+      "type": "file",
+      "name": "skills/sector-financial/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eec3ce95f36a0f70532aac2f658ad6fb350233dd49c7d95da91144e6c4c4d16c"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/sector-healthcare/skill.md",
+      "type": "file",
+      "name": "skills/sector-healthcare/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "97b4486419ab4480266bf2e938564d52bb1cdd70faae09697f695772adf02029"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/sector-telecom/skill.md",
+      "type": "file",
+      "name": "skills/sector-telecom/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3489410b0905cbf6b392ea7f7cde35ccd4b03de0d22d2d1b0c671e46d70962c9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/security-maturity-tiers/skill.md",
+      "type": "file",
+      "name": "skills/security-maturity-tiers/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "817f0bca44297d03fb206c446fbf3f93aa3a64c309d6ef5efd046e6e47874030"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/skill-update-loop/skill.md",
+      "type": "file",
+      "name": "skills/skill-update-loop/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "48617511ee8efdb257e9caee543009150f0638380ad92882b62021c7eb2f9d16"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/supply-chain-integrity/skill.md",
+      "type": "file",
+      "name": "skills/supply-chain-integrity/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2f9bc5d5f0b70bf468d02a71ced718b50196e6139dfb1424d31cbe017d422027"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/threat-model-currency/skill.md",
+      "type": "file",
+      "name": "skills/threat-model-currency/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d1cf822c1e8a81466dc49e81b19f42d863c82bd8f8c878215a738e6ae9112fc5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/threat-modeling-methodology/skill.md",
+      "type": "file",
+      "name": "skills/threat-modeling-methodology/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d57d1acc46851d4f1580858c60a90cc20732ca8a5a46da2c50e71c9bdf4cc0b4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/webapp-security/skill.md",
+      "type": "file",
+      "name": "skills/webapp-security/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "69b16f51ce79cbebd15120d6a0de1c116439bc4739c7dcaa0ecd451614038ad5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:skills/zeroday-gap-learn/skill.md",
+      "type": "file",
+      "name": "skills/zeroday-gap-learn/skill.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5caa007d8c95f49ded22db581fd447f735c713b60866d18f5371457b0a60778b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:sources/validators/atlas-validator.js",
+      "type": "file",
+      "name": "sources/validators/atlas-validator.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0c71e841761d907b0d6f0baa3f9fd903b568c22c326acd68fe0a625b6d5601b9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:sources/validators/cve-validator.js",
+      "type": "file",
+      "name": "sources/validators/cve-validator.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "85543a2f2305c95d4d881769885b12c45107ea61e60f6bd2fd26c6a5bd068bf7"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:sources/validators/index.js",
+      "type": "file",
+      "name": "sources/validators/index.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "56e8843d2e90ab729ed3e0a7529d1b529c5f8cb7a6e39a73b16aea27065de1ef"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:sources/validators/rfc-validator.js",
+      "type": "file",
+      "name": "sources/validators/rfc-validator.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "63b0b9ef7bf91b2199b6b421edfb68e31727488428a315322a382b684898c75f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:sources/validators/version-pin-validator.js",
+      "type": "file",
+      "name": "sources/validators/version-pin-validator.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a0a2b9595f1e7589578649107e0414074d25b07a06112a62ae88fcceb558ed0b"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:vendor/blamejs/LICENSE",
+      "type": "file",
+      "name": "vendor/blamejs/LICENSE",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "812075be5abe785284e823a97d09b5d1515b0221e3128059e1f5065de3c907d5"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:vendor/blamejs/README.md",
+      "type": "file",
+      "name": "vendor/blamejs/README.md",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "dc9e8a14d5ec7268c45b4c02d5489515c6f571f120aec56847a89eb69c912f17"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:vendor/blamejs/_PROVENANCE.json",
+      "type": "file",
+      "name": "vendor/blamejs/_PROVENANCE.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a44aa473f7ea7f8353ad921cf198ac4bf1ff4ac9cde43aee8c79b52160436cf1"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:vendor/blamejs/retry.js",
+      "type": "file",
+      "name": "vendor/blamejs/retry.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b9a7d99a8477740dade4e4490e436817c250a3d63e9d91898a9cdaaeff82ac4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:vendor/blamejs/worker-pool.js",
+      "type": "file",
+      "name": "vendor/blamejs/worker-pool.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fa9814c2d18db221a2dc552cf2a5047467d87a2590cbc9d64b8a0a340e545b55"
+        }
+      ]
+    },
     {
       "bom-ref": "vendor:blamejs:retry.js",
       "type": "library",

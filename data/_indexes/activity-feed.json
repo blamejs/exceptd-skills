@@ -90,6 +90,13 @@
       "entry_count": 15
     },
     {
+      "date": "2026-05-15",
+      "type": "manifest_review",
+      "artifact": "manifest.json",
+      "path": "manifest.json",
+      "note": "manifest threat_review_date — 42 skills, 11 catalogs"
+    },
+    {
       "date": "2026-05-13",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
@@ -386,13 +393,6 @@
       "artifact": "security-maturity-tiers",
       "path": "skills/security-maturity-tiers/skill.md",
       "note": "Three-tier implementation roadmap — MVP (ship this week), Practical (scalable today), Overkill (defense-in-depth)"
-    },
-    {
-      "date": "2026-05-01",
-      "type": "manifest_review",
-      "artifact": "manifest.json",
-      "path": "manifest.json",
-      "note": "manifest threat_review_date — 42 skills, 11 catalogs"
     }
   ]
 }
