@@ -1,7 +1,7 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.12.28",
-  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 38 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
+  "version": "0.12.29",
+  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
   "keywords": [
     "ai-security",
     "ai-skills",
@@ -91,6 +91,7 @@
     "validate-catalog-meta": "node lib/validate-catalog-meta.js",
     "validate-package": "node lib/validate-package.js",
     "refresh-sbom": "node scripts/refresh-sbom.js",
+    "refresh-reverse-refs": "node scripts/refresh-reverse-refs.js",
     "predeploy": "node scripts/predeploy.js",
     "diff-coverage": "node scripts/check-test-coverage.js",
     "prepublishOnly": "node -e \"if(process.env.EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY!=='1'){const r=require('child_process').spawnSync(process.execPath,['scripts/predeploy.js'],{stdio:'inherit'});if(r.status){process.exit(r.status)}}\" && node lib/validate-package.js",

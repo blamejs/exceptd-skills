@@ -55,7 +55,7 @@
       },
       {
         "playbook_id": "secrets",
-        "condition": "detect.indicators contains 'hardcoded-key-material'"
+        "condition": "analyze.classification == 'detected'"
       }
     ]
   },

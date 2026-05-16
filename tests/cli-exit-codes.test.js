@@ -238,10 +238,13 @@ test('R-F7: attest show with a valid-shape but missing session id still emits th
 // R-F8 — main dispatcher exits don't truncate stderr JSON
 // ---------------------------------------------------------------------------
 
-test('R-F8: unknown-command stderr JSON is parseable AND exit code is 2', () => {
+test('R-F8: unknown-command stderr JSON is parseable AND exit code is EXIT_CODES.UNKNOWN_COMMAND (10)', () => {
+  // Cycle 9 B1 (v0.12.29): split unknown-command from DETECTED_ESCALATE (2).
+  // Operators wiring `case 2)` for escalation triage no longer false-alarm
+  // on dispatcher refusals (typos, missing scripts, spawn errors).
   const r = cli(['definitely-not-a-real-verb-xyz']);
-  assert.equal(r.status, 2,
-    'unknown-command must exit 2 (the dispatcher reserves this code). status=' + r.status);
+  assert.equal(r.status, 10,
+    'unknown-command must exit 10 (UNKNOWN_COMMAND). status=' + r.status);
   const err = tryJson(r.stderr.trim());
   assert.ok(err, 'stderr must be parseable JSON post-fix (process.exitCode + return drains buffered writes).');
   assert.equal(err.ok, false);

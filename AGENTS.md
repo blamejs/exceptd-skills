@@ -139,7 +139,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 13 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. Legacy alias: `exceptd plan` (deprecated, scheduled for removal in v0.13). |
+| `exceptd brief --all` | Grouped-by-scope summary of all 16 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. Legacy alias: `exceptd plan` (deprecated, scheduled for removal in v0.13). |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |

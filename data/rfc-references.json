@@ -59,9 +59,7 @@
     "published": "2011-09",
     "tracker": "https://www.rfc-editor.org/info/rfc6376",
     "relevance": "Cryptographic signing of email by the originating domain. DMARC verification relies on either SPF or DKIM aligning with the From-header domain. Operationally, DKIM is the load-bearing half of DMARC — SPF breaks on legitimate forwarding paths; DKIM survives them. Key-length lag is the recurring framework gap: many deployments still use 1024-bit RSA keys despite IETF guidance to rotate to ≥2048-bit.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-6545": {
@@ -71,9 +69,7 @@
     "published": "2012-04",
     "tracker": "https://www.rfc-editor.org/info/rfc6545",
     "relevance": "Defines the RID schema for exchanging incident-response data between organizations and CSIRTs. Operator-facing relevance is via the IODEF (RFC 7970) payload that RID transports — the pair is the IETF-standardized cross-organizational incident-coordination protocol. Adoption lags; in practice many SOCs use ad-hoc CSV/JSON exchanges instead, leaving compliance with 'documented coordination channel' requirements weakly evidenced.",
-    "skills_referencing": [
-      "incident-response-playbook"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-6546": {
@@ -83,9 +79,7 @@
     "published": "2012-04",
     "tracker": "https://www.rfc-editor.org/info/rfc6546",
     "relevance": "Specifies the HTTP-over-TLS transport for RID (RFC 6545) messages. Operator-facing: provides the wire-level protocol for IODEF/RID message exchange when an organization commits to standardized incident-data coordination. Pair this with RFC 6545 (schema) and RFC 7970 (IODEF v2 payload).",
-    "skills_referencing": [
-      "incident-response-playbook"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-6749": {
@@ -110,9 +104,7 @@
     "published": "2014-04",
     "tracker": "https://www.rfc-editor.org/info/rfc7208",
     "relevance": "Authorizes which IPs may send mail on behalf of a domain. DMARC's path-based authentication half. Limits: a strict 10-DNS-lookup ceiling that operators routinely blow past through nested includes, leading to permerror DMARC outcomes; SPF breaks across legitimate forwarders, which is why DKIM (RFC 6376) is the load-bearing half operationally.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-7296": {
@@ -136,9 +128,7 @@
     "published": "2015-03",
     "tracker": "https://www.rfc-editor.org/info/rfc7489",
     "relevance": "Defines DMARC — the email-authentication policy framework that binds SPF + DKIM results to a published domain-owner policy. Operator-facing email security depends on a published DMARC record with `p=reject` or `p=quarantine`; relaxed policies (`p=none`) are equivalent to no DMARC for spoofing-defense purposes. Cited alongside DKIM (RFC 6376) and SPF (RFC 7208) as the authoritative tri-RFC for anti-spoofing posture.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-7519": {
@@ -170,10 +160,7 @@
     "published": "2015-09",
     "tracker": "https://www.rfc-editor.org/info/rfc7644",
     "relevance": "SCIM 2.0 is the dominant standard for federated identity-store synchronisation between IdPs and downstream applications (Okta, Entra ID, Workday → SaaS). Operator-facing: SCIM endpoints are a recurring credential-store soft target — bearer-token misconfigurations expose full directory enumeration + write access. AI-agent contexts add a new class: agent-identity provisioning at scale via SCIM, where over-broad attribute filters expose human identity data to agent-tenants. Pair with RFC 7643 (SCIM Schema) when implementing.",
-    "skills_referencing": [
-      "identity-assurance",
-      "cred-stores"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-7970": {
@@ -183,9 +170,7 @@
     "published": "2016-11",
     "tracker": "https://www.rfc-editor.org/info/rfc7970",
     "relevance": "IODEF v2 — the structured-incident payload format carried by RID. Operator-facing: IODEF v2 is the canonical machine-readable incident record. Use cases include cross-CSIRT coordination, regulator submissions where structured data is requested, and SIEM-to-SIEM federation. Adoption is sector-uneven; healthcare and financial sectors have stronger uptake than general industry.",
-    "skills_referencing": [
-      "incident-response-playbook"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-8032": {
@@ -239,9 +224,7 @@
     "published": "2018-09",
     "tracker": "https://www.rfc-editor.org/info/rfc8460",
     "relevance": "Defines a DNS-published TLSRPT policy and an aggregate-reporting mechanism (RUA endpoint) where receiving MTAs report success / failure of inbound TLS negotiation. Operator-facing: TLSRPT is the monitoring half of the MTA-STS pair (RFC 8461) — without it, an MTA-STS `enforce` policy silently degrades when downgrade attempts occur or receiver-side TLS configurations break. Phishing-defense relevance is indirect but load-bearing: visibility into STARTTLS-stripping attempts is otherwise absent.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-8461": {
@@ -251,9 +234,7 @@
     "published": "2018-09",
     "tracker": "https://www.rfc-editor.org/info/rfc8461",
     "relevance": "Forces TLS on inbound SMTP between MTAs that publish a `_mta-sts` policy. Closes the historical 'opportunistic-TLS-downgrade' attack window where a network-positioned attacker stripped the STARTTLS handshake. Operator-facing: an MTA-STS policy in `enforce` mode plus monitoring via TLSRPT (RFC 8460) is the baseline for inbound email confidentiality. Phishing-defense relevance is indirect — STARTTLS stripping enables session-layer manipulation that downstream defenses (DMARC, content classifiers) cannot recover from.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-8616": {
@@ -263,9 +244,7 @@
     "published": "2019-06",
     "tracker": "https://www.rfc-editor.org/info/rfc8616",
     "relevance": "Updates DKIM / SPF / DMARC handling for internationalized domain names (IDN) and internationalized email-address local parts. Operator-facing: phishing campaigns increasingly leverage IDN homoglyphs (e.g. Cyrillic `а` for Latin `a`), and a DMARC implementation that doesn't honor RFC 8616 normalization rules can fail to align IDN-bearing From-headers correctly. Treat as a compatibility prerequisite for any anti-spoofing posture covering global mail flows.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-8617": {
@@ -275,10 +254,7 @@
     "published": "2019-07",
     "tracker": "https://www.rfc-editor.org/info/rfc8617",
     "relevance": "ARC preserves authentication results across legitimate forwarding paths (mailing lists, alias services) where SPF + DKIM alignment would otherwise break, producing false DMARC failures. Operator-facing: ARC is the load-bearing complement to DMARC for organisations that receive mail via forwarders — anti-phishing programs that publish `p=reject` without an ARC strategy face increased false-positive bounce rates that pressure operators to relax DMARC. The skill-update-loop tracks ARC adoption signals as a forward-watch indicator for email-authentication posture changes.",
-    "skills_referencing": [
-      "email-security-anti-phishing",
-      "skill-update-loop"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-8705": {
@@ -288,9 +264,7 @@
     "published": "2020-02",
     "tracker": "https://www.rfc-editor.org/info/rfc8705",
     "relevance": "Defines two mechanisms: mTLS client authentication to OAuth authorisation servers, and certificate-bound access tokens that prevent token theft from being exploitable without the original mTLS client certificate. Operator-facing: mTLS-bound tokens are the canonical mitigation for bearer-token theft in high-assurance contexts (open-banking under PSD2 / UK FCA SCA-RTS, FAPI 2.0, government SSO). DPoP (RFC 9449) is the lighter-weight alternative for browser / mobile contexts where client TLS certificates are impractical.",
-    "skills_referencing": [
-      "identity-assurance"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-8725": {
@@ -348,11 +322,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9112",
     "relevance": "The current authoritative HTTP/1.1 specification, supersedes RFC 7230. Operator-facing: every HTTP/1.1 deployment — including MCP server transports, AI-API client libraries, and legacy webapp middle-tiers — should reference RFC 9112 rather than the older RFC 7230. Re-specification clarified request/response framing in ways that affect smuggling-class attack surfaces (CL.TE / TE.CL / CL.CL desync) which remain the dominant HTTP/1.1 vulnerability class.",
     "lag_notes": "Supersedes RFC 7230. Many security-tool rulesets still cite the obsolete number; check any control mapping that references 'RFC 7230' as the HTTP/1.1 authority and update to 9112.",
-    "skills_referencing": [
-      "api-security",
-      "webapp-security",
-      "mcp-agent-trust"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-9114": {
@@ -379,9 +349,7 @@
     "published": "2022-04",
     "tracker": "https://www.rfc-editor.org/info/rfc9116",
     "relevance": "Defines the `/.well-known/security.txt` file format. Operator-facing CVD entry point: researchers reaching a domain consult `/.well-known/security.txt` for the disclosure contact + policy URL + preferred encryption + acknowledgments page. Absence is a recurring CVD-friction finding; presence with a stale `Expires` header is equivalent to absence. Pair with ISO 29147 receipt requirements.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-9180": {
@@ -439,10 +407,7 @@
     "published": "2023-09",
     "tracker": "https://www.rfc-editor.org/info/rfc9449",
     "relevance": "DPoP binds OAuth access + refresh tokens to a client-held key pair via per-request JWTs, defending against bearer-token theft in contexts where mTLS (RFC 8705) is impractical (single-page apps, mobile apps, AI-agent runtimes lacking client-certificate infrastructure). Operator-facing: DPoP is the recommended sender-constraint for FAPI 2.0 + MCP server-to-client OAuth flows where the client cannot present a TLS client certificate. Pairs with RFC 9700 (OAuth 2.0 Security BCP) recommendations.",
-    "skills_referencing": [
-      "identity-assurance",
-      "api-security"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-15"
   },
   "RFC-9458": {
@@ -468,7 +433,6 @@
     "relevance": "Transport Services (TAPS) architecture — abstracts the choice of underlying transport (TCP, QUIC, SCTP) behind a unified API that selects the protocol at runtime based on path conditions. Forward-watch relevance: webapp / AI-API client libraries that adopt TAPS may transparently shift between TCP-HTTP/2 and QUIC-HTTP/3 mid-session, complicating boundary inspection assumptions that pin to a single transport. Currently tracked as a deployment-watch item rather than an operational control point.",
     "lag_notes": "Architecture document; companion documents (TAPS implementation, TAPS programming interface) are still in progress at IETF TAPS WG. Enterprise tooling impact is forward-looking.",
     "skills_referencing": [
-      "webapp-security",
       "sector-telecom"
     ],
     "last_verified": "2026-05-15"
@@ -507,9 +471,7 @@
     "published": "2022-11",
     "tracker": "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html",
     "relevance": "Machine-readable security advisory format adopted by EU CRA, CISA, and major vendor PSIRTs. Replaces the CVRF-1.2 format. Operator-facing: CSAF 2.0 documents carry the same advisory content traditionally found in vendor PDFs but in a parseable JSON form that consumers can ingest for fleet-wide impact assessment. exceptd emits CSAF-2.0 close.evidence_package bundles from `exceptd run --format csaf-2.0` for downstream auditor consumption.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "DRAFT-IETF-TLS-ECDHE-MLKEM": {
@@ -546,9 +508,7 @@
     "published": "2018-10",
     "tracker": "https://www.iso.org/standard/72311.html",
     "relevance": "Internationally-recognized vulnerability-disclosure procedure standard. Operator-facing: an org claiming a CVD program must demonstrate the documented procedures cover receipt, triage, advisory drafting, notification, and post-disclosure review. Twin to ISO 30111 (handling); together they form the disclosure ↔ handling pair. The RFC 9116 (security.txt) artifact is the operator-facing surface that operationalizes ISO 29147 receipt requirements.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "ISO-30111": {
@@ -558,9 +518,7 @@
     "published": "2019-10",
     "tracker": "https://www.iso.org/standard/69725.html",
     "relevance": "Internal handling counterpart to ISO 29147. Defines the internal processes (investigation, resolution, release) that follow a disclosed vulnerability through to fix. Operator-facing: paired with ISO 29147 it supplies the end-to-end CVD lifecycle. Many compliance frameworks (NIS2, EU CRA) reference 'a documented vulnerability handling process'; ISO 30111 is the canonical artifact that satisfies the wording.",
-    "skills_referencing": [
-      "coordinated-vuln-disclosure"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-13"
   },
   "RFC-7591": {
@@ -571,8 +529,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc7591",
     "relevance": "Dynamic Client Registration is the legitimate OAuth flow for self-service app onboarding into an IdP. Operator-facing: when DCR is enabled without strong attestation, a compromised tenant or compromised admin can register a malicious app whose redirect_uri exfiltrates auth codes — the 2023-2024 Microsoft Storm-0558 / Midnight Blizzard incidents exercised this surface via consent abuse on tenant-published apps. Pair with RFC 7592 (DCR Management Protocol) for full lifecycle controls.",
     "skills_referencing": [
-      "idp-incident-response",
-      "identity-assurance"
+      "idp-incident-response"
     ],
     "last_verified": "2026-05-15"
   },
@@ -584,8 +541,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc8693",
     "relevance": "Token exchange is the canonical mechanism for cloud IAM impersonation and service-account delegation chains (AWS STS AssumeRoleWithWebIdentity, GCP Workload Identity Federation, Azure Workload Identity). Operator-facing: token-exchange chains are the modern equivalent of pass-the-token — a compromised upstream token mints downstream tokens with widened audience claims. Audit chain depth + audience expansion + lifetime ladder.",
     "skills_referencing": [
-      "cloud-iam-incident",
-      "identity-assurance"
+      "cloud-iam-incident"
     ],
     "last_verified": "2026-05-15"
   },
@@ -597,8 +553,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9068",
     "relevance": "Standardises the JWT claim set for OAuth access tokens (typ, scope, client_id, etc.) that cloud IAM and SaaS APIs accept as bearer credentials. Operator-facing: when tokens omit the audience claim or accept loose typ values, replay across services becomes trivial — most cloud-IAM token-forgery incidents (Azure storm-0558 key-leak class) reduce to insufficient claim validation. Pair with RFC 8725 (JWT BCP) for hardening.",
     "skills_referencing": [
-      "cloud-iam-incident",
-      "identity-assurance"
+      "cloud-iam-incident"
     ],
     "last_verified": "2026-05-15"
   }

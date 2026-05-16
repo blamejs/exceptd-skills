@@ -43,9 +43,7 @@
       "CAPEC-22"
     ],
     "skills_referencing": [
-      "ai-attack-surface",
-      "rag-pipeline-security",
-      "exploit-scoring"
+      "fuzz-testing-strategy"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -75,7 +73,10 @@
       "CAPEC-76"
     ],
     "skills_referencing": [
-      "mcp-agent-trust"
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -105,8 +106,9 @@
       "CAPEC-15"
     ],
     "skills_referencing": [
+      "api-security",
       "mcp-agent-trust",
-      "ai-attack-surface"
+      "webapp-security"
     ],
     "evidence_cves": [
       "MAL-2026-3083",
@@ -138,9 +140,9 @@
       "CAPEC-6"
     ],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface",
-      "exploit-scoring"
+      "attack-surface-pentest",
+      "fuzz-testing-strategy",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -171,7 +173,8 @@
       "CAPEC-592"
     ],
     "skills_referencing": [
-      "exploit-scoring"
+      "attack-surface-pentest",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -199,10 +202,7 @@
     "related_attack_patterns_capec": [
       "CAPEC-460"
     ],
-    "skills_referencing": [
-      "mcp-agent-trust",
-      "container-runtime-security"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [
       "CVE-2026-39884"
     ],
@@ -232,7 +232,8 @@
       "CAPEC-470"
     ],
     "skills_referencing": [
-      "exploit-scoring"
+      "attack-surface-pentest",
+      "webapp-security"
     ],
     "evidence_cves": [
       "CVE-2026-42208"
@@ -266,8 +267,7 @@
     "skills_referencing": [
       "ai-attack-surface",
       "mcp-agent-trust",
-      "rag-pipeline-security",
-      "ai-c2-detection"
+      "webapp-security"
     ],
     "evidence_cves": [
       "CVE-2025-53773",
@@ -295,10 +295,7 @@
       "CWE-1000"
     ],
     "related_attack_patterns_capec": [],
-    "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring"
-    ],
+    "skills_referencing": [],
     "playbooks_referencing": [
       "kernel",
       "hardening"
@@ -331,8 +328,8 @@
       "CAPEC-540"
     ],
     "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring"
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -362,8 +359,12 @@
       "CAPEC-118"
     ],
     "skills_referencing": [
-      "rag-pipeline-security",
-      "ai-attack-surface"
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "dlp-gap-analysis",
+      "sector-healthcare",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -390,11 +391,7 @@
       "CAPEC-104",
       "CAPEC-470"
     ],
-    "skills_referencing": [
-      "container-runtime-security",
-      "kernel-lpe-triage",
-      "ot-ics-security"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -420,9 +417,7 @@
     "related_attack_patterns_capec": [
       "CAPEC-37"
     ],
-    "skills_referencing": [
-      "dlp-gap-analysis"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-5(1)",
@@ -455,8 +450,12 @@
       "CAPEC-233"
     ],
     "skills_referencing": [
-      "kernel-lpe-triage",
-      "mcp-agent-trust"
+      "attack-surface-pentest",
+      "cloud-iam-incident",
+      "container-runtime-security",
+      "identity-assurance",
+      "idp-incident-response",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -483,9 +482,7 @@
       "CAPEC-19"
     ],
     "skills_referencing": [
-      "container-runtime-security",
-      "identity-assurance",
-      "webapp-security"
+      "idp-incident-response"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -514,7 +511,21 @@
       "CAPEC-115",
       "CAPEC-22"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-iam-incident",
+      "cloud-security",
+      "identity-assurance",
+      "idp-incident-response",
+      "ot-ics-security",
+      "ransomware-response",
+      "sector-energy",
+      "sector-financial",
+      "sector-healthcare",
+      "sector-telecom",
+      "webapp-security"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
@@ -542,7 +553,10 @@
       "CAPEC-115"
     ],
     "skills_referencing": [
-      "mcp-agent-trust"
+      "identity-assurance",
+      "ot-ics-security",
+      "sector-energy",
+      "sector-telecom"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -567,9 +581,7 @@
     "related_attack_patterns_capec": [
       "CAPEC-97"
     ],
-    "skills_referencing": [
-      "pqc-first"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13",
@@ -598,9 +610,7 @@
     "related_attack_patterns_capec": [
       "CAPEC-37"
     ],
-    "skills_referencing": [
-      "dlp-gap-analysis"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-28",
@@ -631,9 +641,7 @@
       "CAPEC-20",
       "CAPEC-97"
     ],
-    "skills_referencing": [
-      "pqc-first"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13",
@@ -690,9 +698,7 @@
     "related_attack_patterns_capec": [
       "CAPEC-97"
     ],
-    "skills_referencing": [
-      "pqc-first"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13",
@@ -835,8 +841,8 @@
       "CAPEC-148"
     ],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface"
+      "idp-incident-response",
+      "mcp-agent-trust"
     ],
     "evidence_cves": [
       "CVE-2026-30615"
@@ -866,7 +872,13 @@
     "related_attack_patterns_capec": [
       "CAPEC-62"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "sector-financial",
+      "webapp-security"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-23",
@@ -891,9 +903,7 @@
       "CAPEC-75",
       "CAPEC-39"
     ],
-    "skills_referencing": [
-      "supply-chain-integrity"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-7",
@@ -924,6 +934,7 @@
       "CAPEC-29"
     ],
     "skills_referencing": [
+      "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
     "evidence_cves": [],
@@ -952,8 +963,8 @@
       "CAPEC-129"
     ],
     "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring"
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
     ],
     "evidence_cves": [
       "CVE-2026-43284",
@@ -983,9 +994,7 @@
       "CAPEC-38",
       "CAPEC-471"
     ],
-    "skills_referencing": [
-      "kernel-lpe-triage"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -1015,7 +1024,11 @@
       "CAPEC-1",
       "CAPEC-650"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "webapp-security"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-3",
@@ -1042,7 +1055,7 @@
     ],
     "skills_referencing": [
       "mcp-agent-trust",
-      "ai-attack-surface"
+      "supply-chain-integrity"
     ],
     "evidence_cves": [
       "CVE-2026-30615"
@@ -1074,8 +1087,9 @@
       "CAPEC-586"
     ],
     "skills_referencing": [
-      "ai-attack-surface",
-      "mcp-agent-trust"
+      "mlops-security",
+      "supply-chain-integrity",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1103,9 +1117,7 @@
       "CAPEC-446",
       "CAPEC-538"
     ],
-    "skills_referencing": [
-      "supply-chain-integrity"
-    ],
+    "skills_referencing": [],
     "evidence_cves": [
       "CVE-2026-45321",
       "MAL-2026-3083"
@@ -1140,7 +1152,8 @@
       "CAPEC-555"
     ],
     "skills_referencing": [
-      "identity-assurance"
+      "cloud-iam-incident",
+      "idp-incident-response"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1168,10 +1181,7 @@
       "CWE-1000"
     ],
     "related_attack_patterns_capec": [],
-    "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring"
-    ],
+    "skills_referencing": [],
     "playbooks_referencing": [
       "kernel",
       "hardening",
@@ -1228,7 +1238,14 @@
     "related_attack_patterns_capec": [
       "CAPEC-1"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "attack-surface-pentest",
+      "cloud-iam-incident",
+      "cloud-security",
+      "container-runtime-security",
+      "identity-assurance",
+      "webapp-security"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -1315,9 +1332,10 @@
       "CAPEC-540"
     ],
     "skills_referencing": [
-      "kernel-lpe-triage",
-      "exploit-scoring",
-      "zeroday-gap-learn"
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
     ],
     "evidence_cves": [
       "CVE-2026-31431",
@@ -1350,7 +1368,13 @@
       "CAPEC-191"
     ],
     "skills_referencing": [
-      "ai-attack-surface"
+      "cloud-iam-incident",
+      "cloud-security",
+      "identity-assurance",
+      "ot-ics-security",
+      "ransomware-response",
+      "sector-energy",
+      "sector-financial"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1376,8 +1400,8 @@
       "CAPEC-538"
     ],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "rag-pipeline-security"
+      "sector-federal-government",
+      "supply-chain-integrity"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1405,7 +1429,15 @@
       "CAPEC-1",
       "CAPEC-115"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "identity-assurance",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -1434,7 +1466,12 @@
       "CAPEC-1"
     ],
     "skills_referencing": [
-      "mcp-agent-trust"
+      "api-security",
+      "cloud-iam-incident",
+      "identity-assurance",
+      "idp-incident-response",
+      "sector-financial",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1492,8 +1529,11 @@
       "CAPEC-664"
     ],
     "skills_referencing": [
-      "rag-pipeline-security",
-      "ai-attack-surface"
+      "api-security",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "sector-telecom",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1517,7 +1557,8 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "pqc-first"
+      "ot-ics-security",
+      "sector-energy"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1542,7 +1583,8 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "ai-attack-surface"
+      "ai-attack-surface",
+      "ai-risk-management"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1566,8 +1608,12 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "security-maturity-tiers"
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "policy-exception-gen",
+      "security-maturity-tiers",
+      "webapp-security"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1591,7 +1637,10 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "mcp-agent-trust"
+      "coordinated-vuln-disclosure",
+      "mlops-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1617,8 +1666,12 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "mcp-agent-trust",
-      "ai-attack-surface"
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "mlops-security",
+      "rag-pipeline-security",
+      "sector-federal-government",
+      "supply-chain-integrity"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [
@@ -1646,9 +1699,11 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [
       "ai-attack-surface",
+      "ai-risk-management",
+      "dlp-gap-analysis",
+      "mlops-security",
       "rag-pipeline-security",
-      "ai-c2-detection",
-      "mcp-agent-trust"
+      "sector-healthcare"
     ],
     "evidence_cves": [],
     "framework_controls_partially_addressing": [

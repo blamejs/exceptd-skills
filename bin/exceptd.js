@@ -516,10 +516,11 @@ function main() {
     // Emit a structured JSON error matching the seven-phase verbs so operators
     // piping through `jq` get one consistent shape across the CLI surface.
     // emitError() sets exitCode + returns rather than calling process.exit()
-    // so the stderr JSON drains before teardown; promote the exit code to 2
-    // afterwards (unknown-command remains a distinct exit class).
+    // so the stderr JSON drains before teardown; promote the exit code to
+    // UNKNOWN_COMMAND (10) afterwards. Cycle 9 split this away from
+    // DETECTED_ESCALATE (2) — the two semantics had collided since v0.12.24.
     emitError(`unknown command "${cmd}"`, { hint: "Run `exceptd help` for the list of verbs.", verb: cmd });
-    process.exitCode = 2;
+    process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
     return;
   }
 
@@ -530,7 +531,7 @@ function main() {
       `command "${cmd}" not available — expected ${path.relative(PKG_ROOT, script)} in the installed package.`,
       { verb: cmd }
     );
-    process.exitCode = 2;
+    process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
     return;
   }
 
@@ -541,7 +542,7 @@ function main() {
   if (res.error) {
     // emitError + exitCode rather than stderr + exit() so the JSON drains.
     emitError(`failed to run ${cmd}: ${res.error.message}`, { verb: cmd });
-    process.exitCode = 2;
+    process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
     return;
   }
   // Propagate the child's exit status via exitCode so any buffered output
@@ -615,7 +616,7 @@ function emit(obj, pretty, humanRenderer) {
   // and CI gates. The previous fix was per-verb; this is a universal catch
   // so new verbs / new ok:false paths can't regress the contract.
   if (obj && obj.ok === false && !process.exitCode) {
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
   }
   const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
   if (humanRenderer && !wantJson && !pretty) {
@@ -638,7 +639,7 @@ function emitError(msg, extra, pretty) {
   const body = Object.assign({ ok: false, error: msg }, extra || {});
   const s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
   process.stderr.write(s + "\n");
-  process.exitCode = 1;
+  process.exitCode = EXIT_CODES.GENERIC_FAILURE;
 }
 
 /**
@@ -2107,7 +2108,7 @@ function cmdLint(runner, args, runOpts, pretty) {
     }
     return lines.join("\n");
   });
-  if (!ok) process.exitCode = 1;
+  if (!ok) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
 }
 
 function cmdBrief(runner, args, runOpts, pretty) {
@@ -3398,7 +3399,7 @@ function cmdIngest(runner, args, runOpts, pretty) {
 
   if (result && result.ok === false) {
     process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
   emit(result, pretty);
@@ -5276,7 +5277,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   if (wantJson) {
     emit(out, indent);
-    if (!allGreen) process.exitCode = 1;
+    if (!allGreen) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
 
@@ -5367,10 +5368,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     process.stdout.write(`\n[doctor --fix] ${out.summary.fix_applied} — re-run \`exceptd doctor\` to confirm.\n`);
   } else if (out.summary.fix_attempted) {
     process.stdout.write(`\n[doctor --fix] ${out.summary.fix_attempted} (exit=${out.summary.fix_exit_code}); run \`node lib/sign.js generate-keypair\` manually.\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
-  if (errorList.length > 0) process.exitCode = 1;
+  if (errorList.length > 0) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
   // Warnings alone do NOT force exit 1 — CI gates use exit 0 to mean "ran
   // successfully" even with informational warnings. Operators reading the
   // visible "[!! warn]" line still see the issue.
@@ -5502,7 +5503,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // the framed error event so the stdout-only JSONL contract holds — host
     // AIs reading this stream must see structured frames, never bare text.
     process.stdout.write(JSON.stringify({ event: "error", reason: e.message, phase: "info", playbook_id: playbookId, directive_id: directiveId }) + "\n");
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
 
@@ -5589,7 +5590,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       // v0.12.12: same exit-after-write anti-pattern as the pre-stream
       // load path. Use exitCode + return so stderr drains.
       process.stderr.write((pretty ? JSON.stringify(result || {}, null, 2) : JSON.stringify(result || {})) + "\n");
-      process.exitCode = 1;
+      process.exitCode = EXIT_CODES.GENERIC_FAILURE;
       return;
     }
     // v0.12.14: ai-run --no-stream previously emitted a
@@ -5696,7 +5697,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     catch (e) {
       handled = true;
       writeLine({ event: "error", reason: `invalid JSON on stdin: ${e.message}`, line_preview: line.slice(0, 120) });
-      return finish(1);
+      return finish(EXIT_CODES.GENERIC_FAILURE);
     }
     if (!parsed || parsed.event !== "evidence" || !parsed.payload) {
       // Ignore non-evidence chatter so the host AI can interleave its own
@@ -5710,11 +5711,11 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       result = runner.run(playbookId, directiveId, submission, runOpts);
     } catch (e) {
       writeLine({ event: "error", reason: `runner threw: ${e.message}` });
-      return finish(1);
+      return finish(EXIT_CODES.GENERIC_FAILURE);
     }
     if (!result || result.ok === false) {
       writeLine({ event: "error", reason: result?.reason || "runner returned ok:false", result });
-      return finish(1);
+      return finish(EXIT_CODES.GENERIC_FAILURE);
     }
     writeLine({ phase: "detect", ...result.phases?.detect });
     writeLine({ phase: "analyze", ...result.phases?.analyze });
@@ -5759,7 +5760,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       }
     }
     writeLine({ event: "done", ok: true, session_id: result.session_id, evidence_hash: result.evidence_hash });
-    return finish(0);
+    return finish(EXIT_CODES.SUCCESS);
   };
 
   // Handle empty/closed stdin: emit a hint then exit cleanly so AI agents
@@ -5767,7 +5768,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
   // a hung process.
   if (process.stdin.isTTY) {
     writeLine({ event: "error", reason: "ai-run streaming mode requires evidence on stdin; pipe {\"event\":\"evidence\",\"payload\":{...}} or use --no-stream." });
-    process.exitCode = 1;
+    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
 
@@ -5803,7 +5804,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
         } catch { /* fall through to error */ }
       }
       writeLine({ event: "error", reason: "stdin closed without an evidence event. Pipe `{\"event\":\"evidence\",\"payload\":{...}}` for streaming mode, or pass --no-stream + --evidence <file> for single-shot." });
-      process.exitCode = 1;
+      process.exitCode = EXIT_CODES.GENERIC_FAILURE;
       return;
     }
   });
@@ -6061,6 +6062,15 @@ function cmdCi(runner, args, runOpts, pretty) {
   let clockStartedReasons = [];
 
   for (const id of ids) {
+    // Cycle 9 B4: defense-in-depth — validate id even though the catalog-iter
+    // upstream is trusted. A corrupt catalog returning a malformed id would
+    // otherwise reach loadPlaybook unchecked. Matches the cmdRunMulti pattern.
+    const idCheck = validateIdComponent(id, "playbook");
+    if (!idCheck.ok) {
+      results.push({ playbook_id: id, ok: false, error: idCheck.reason });
+      fail = true;
+      continue;
+    }
     let pb;
     try { pb = runner.loadPlaybook(id); }
     catch (e) { results.push({ playbook_id: id, ok: false, error: e.message }); fail = true; continue; }

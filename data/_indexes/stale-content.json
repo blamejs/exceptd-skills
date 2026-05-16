@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "reference_date": "2026-05-01",
+    "reference_date": "2026-05-15",
     "note": "Stale-content snapshot derived from audit-cross-skill checks. Re-runs of build-indexes against the same inputs produce byte-identical output (reference_date is manifest.threat_review_date, not 'now'). audit-cross-skill.js remains the canonical interactive audit.",
     "finding_count": 3,
     "by_severity": {
