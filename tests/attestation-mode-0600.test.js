@@ -35,15 +35,22 @@ function cli(args, opts = {}) {
 }
 
 function findAttestation(rootDir) {
-  // ~/.exceptd/attestations/<run-tag>/<session-id>/attestation.json
+  // resolveAttestationRoot returns $EXCEPTD_HOME/attestations/. The
+  // persist layer writes to <root>/<session-id>/attestation.json (one
+  // level deep). Some CI shapes wrap with an extra run-tag dir; walk
+  // both 1-level and 2-level structures to be robust across platforms.
   if (!fs.existsSync(rootDir)) return null;
-  for (const runTag of fs.readdirSync(rootDir, { withFileTypes: true })) {
-    if (!runTag.isDirectory()) continue;
-    const runTagPath = path.join(rootDir, runTag.name);
-    for (const session of fs.readdirSync(runTagPath, { withFileTypes: true })) {
-      if (!session.isDirectory()) continue;
-      const attFile = path.join(runTagPath, session.name, 'attestation.json');
-      if (fs.existsSync(attFile)) return attFile;
+  for (const ent of fs.readdirSync(rootDir, { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    const level1 = path.join(rootDir, ent.name);
+    // Try 1-level (session at this depth).
+    const direct = path.join(level1, 'attestation.json');
+    if (fs.existsSync(direct)) return direct;
+    // Try 2-level (run-tag wrapper).
+    for (const inner of fs.readdirSync(level1, { withFileTypes: true })) {
+      if (!inner.isDirectory()) continue;
+      const att = path.join(level1, inner.name, 'attestation.json');
+      if (fs.existsSync(att)) return att;
     }
   }
   return null;
@@ -64,25 +71,25 @@ test('attestation.json is written with mode 0o600 (owner-read/write only)', (t) 
     // signal_overrides forces kver-in-affected-range to hit, which
     // triggers CVE matching → classification=detected → close phase
     // emits an evidence_package + the runner persists an attestation.
-    // The framework playbook on empty evidence does NOT persist
-    // (no detected findings, no close-phase artifact).
     const evidence = JSON.stringify({
       precondition_checks: { 'linux-platform': true, 'uname-available': true },
       artifacts: { 'kernel-release': '5.15.0-69-generic' },
       signal_overrides: { 'kver-in-affected-range': 'hit' },
     });
-    const r = cli(['run', 'kernel', '--evidence', '-'], {
+    // `--attestation-root` flag is more explicit than EXCEPTD_HOME for
+    // test harnesses: it bypasses any env-var inheritance subtlety. CI
+    // shapes (Linux/macOS) needed this to consistently route the
+    // persist to the tmpdir.
+    const attestationsRoot = path.join(tmpHome, 'attestations');
+    const r = cli(['run', 'kernel', '--evidence', '-', '--attestation-root', attestationsRoot], {
       input: evidence,
-      env: { EXCEPTD_HOME: tmpHome },
     });
     assert.equal(r.status, 0, `run must succeed; got ${r.status}, stderr: ${r.stderr.slice(0, 200)}`);
 
-    const attestationsRoot = path.join(tmpHome, 'attestations');
     const attFile = findAttestation(attestationsRoot);
-    assert.ok(attFile, `attestation.json must exist somewhere under ${attestationsRoot}; stdout: ${r.stdout.slice(0, 300)}`);
+    assert.ok(attFile, `attestation.json must exist under ${attestationsRoot}; stdout: ${r.stdout.slice(0, 300)}`);
 
     const stat = fs.statSync(attFile);
-    // POSIX mode bits: extract permission bits (lower 9 bits).
     const perm = stat.mode & 0o777;
     assert.equal(perm, 0o600,
       `attestation.json mode must be 0o600 (got 0o${perm.toString(8)}). ` +
