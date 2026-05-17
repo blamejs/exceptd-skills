@@ -44,6 +44,22 @@
         "playbook_id": "sbom",
         "condition": "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 4"
       }
+    ],
+    "fed_by": [
+      "ai-api",
+      "cicd-pipeline-compromise",
+      "cloud-iam-incident",
+      "crypto",
+      "crypto-codebase",
+      "identity-sso-compromise",
+      "idp-incident",
+      "kernel",
+      "library-author",
+      "llm-tool-use-exfil",
+      "mcp",
+      "ransomware",
+      "sbom",
+      "webhook-callback-abuse"
     ]
   },
   "domain": {

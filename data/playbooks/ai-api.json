@@ -51,6 +51,11 @@
         "playbook_id": "mcp",
         "condition": "finding.includes_mcp_server_credential_exposure == true"
       }
+    ],
+    "fed_by": [
+      "llm-tool-use-exfil",
+      "mcp",
+      "sbom"
     ]
   },
   "domain": {

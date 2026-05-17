@@ -36,7 +36,8 @@ test('refresh-reverse-refs.js exports CATALOGS, buildReverseIndex, buildCveRever
   // Cycle 12 F3 (v0.12.32): added cwe-catalog entry from CVE direction
   // (`cve.entries → evidence_cves`). Catalog count grew 4 → 5.
   // Cycle 20 B F4 (v0.12.40): added CVE→framework-gap entry. 5 → 6.
-  assert.equal(refreshScript.CATALOGS.length, 6);
+  // v0.13.0: added ATLAS + ATT&CK cve_refs back-edges. 6 → 8.
+  assert.equal(refreshScript.CATALOGS.length, 8);
   assert.equal(typeof refreshScript.buildReverseIndex, 'function');
   assert.equal(typeof refreshScript.buildCveReverseIndex, 'function');
   assert.equal(typeof refreshScript.rebuildCatalog, 'function');

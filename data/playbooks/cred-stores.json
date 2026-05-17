@@ -38,6 +38,16 @@
         "playbook_id": "runtime",
         "condition": "finding.severity == 'critical'"
       }
+    ],
+    "fed_by": [
+      "cicd-pipeline-compromise",
+      "cloud-iam-incident",
+      "identity-sso-compromise",
+      "idp-incident",
+      "ransomware",
+      "runtime",
+      "secrets",
+      "webhook-callback-abuse"
     ]
   },
   "domain": {

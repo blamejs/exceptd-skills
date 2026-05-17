@@ -66,6 +66,9 @@
     "tactic_id": "TA0005",
     "detection_strategies": [
       "DS0009"
+    ],
+    "cve_refs": [
+      "CVE-2026-32202"
     ]
   },
   "T1040": {
@@ -74,7 +77,10 @@
   },
   "T1041": {
     "name": "Exfiltration Over C2 Channel",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-30615"
+    ]
   },
   "T1053.003": {
     "name": "Scheduled Task/Job: Cron",
@@ -91,23 +97,50 @@
     "detection_strategies": [
       "DS0009",
       "DS0017"
+    ],
+    "cve_refs": [
+      "CVE-2025-53773",
+      "CVE-2026-30615",
+      "CVE-2026-32202",
+      "CVE-2026-39884",
+      "CVE-2026-39987",
+      "CVE-2026-6973"
     ]
   },
   "T1059.001": {
     "name": "Command and Scripting Interpreter: PowerShell",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-53773"
+    ]
   },
   "T1059.006": {
     "name": "Command and Scripting Interpreter: Python",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "MAL-2026-3083"
+    ]
   },
   "T1059.007": {
     "name": "Command and Scripting Interpreter: JavaScript",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-45321",
+      "MAL-2026-NODE-IPC-STEALER"
+    ]
   },
   "T1068": {
     "name": "Exploitation for Privilege Escalation",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-0300",
+      "CVE-2026-31431",
+      "CVE-2026-33825",
+      "CVE-2026-43284",
+      "CVE-2026-43500",
+      "CVE-2026-46300",
+      "CVE-2026-6973"
+    ]
   },
   "T1071": {
     "name": "Application Layer Protocol",
@@ -115,11 +148,21 @@
   },
   "T1078": {
     "name": "Valid Accounts",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-33825",
+      "CVE-2026-39884",
+      "CVE-2026-42897",
+      "CVE-2026-6973",
+      "MAL-2026-NODE-IPC-STEALER"
+    ]
   },
   "T1078.001": {
     "name": "Valid Accounts: Default Accounts",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-42208"
+    ]
   },
   "T1078.002": {
     "name": "Valid Accounts: Domain Accounts",
@@ -131,7 +174,11 @@
   },
   "T1078.004": {
     "name": "Valid Accounts: Cloud Accounts",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-45321",
+      "MAL-2026-3083"
+    ]
   },
   "T1098": {
     "name": "Account Manipulation",
@@ -160,7 +207,11 @@
   },
   "T1133": {
     "name": "External Remote Services",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-0300",
+      "CVE-2026-39987"
+    ]
   },
   "T1136.001": {
     "name": "Create Account: Local Account",
@@ -168,7 +219,17 @@
   },
   "T1190": {
     "name": "Exploit Public-Facing Application",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-53773",
+      "CVE-2026-0300",
+      "CVE-2026-32202",
+      "CVE-2026-39987",
+      "CVE-2026-42208",
+      "CVE-2026-42897",
+      "CVE-2026-42945",
+      "CVE-2026-6973"
+    ]
   },
   "T1195": {
     "name": "Supply Chain Compromise",
@@ -176,11 +237,23 @@
   },
   "T1195.001": {
     "name": "Supply Chain Compromise: Software Dependencies and Development Tools",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-30615",
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TANSTACK-MINI"
+    ]
   },
   "T1195.002": {
     "name": "Supply Chain Compromise: Software Supply Chain",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2024-3094",
+      "CVE-2026-45321",
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER"
+    ]
   },
   "T1199": {
     "name": "Trusted Relationship",
@@ -245,7 +318,11 @@
   },
   "T1548.001": {
     "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-31431",
+      "CVE-2026-43284"
+    ]
   },
   "T1548.003": {
     "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
@@ -257,7 +334,13 @@
   },
   "T1552.001": {
     "name": "Unsecured Credentials: Credentials In Files",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-30615",
+      "MAL-2026-3083",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TANSTACK-MINI"
+    ]
   },
   "T1552.004": {
     "name": "Unsecured Credentials: Private Keys",
@@ -273,7 +356,10 @@
   },
   "T1554": {
     "name": "Compromise Host Software Binary",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2024-3094"
+    ]
   },
   "T1555": {
     "name": "Credentials from Password Stores",
@@ -318,7 +404,11 @@
   },
   "T1566": {
     "name": "Phishing",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-32202",
+      "CVE-2026-42897"
+    ]
   },
   "T1566.001": {
     "name": "Phishing: Spearphishing Attachment",
@@ -351,7 +441,10 @@
   },
   "T1574": {
     "name": "Hijack Execution Flow",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2026-45321"
+    ]
   },
   "T1574.005": {
     "name": "Hijack Execution Flow: Executable Installer File Permissions Weakness",
@@ -389,6 +482,9 @@
     "detection_strategies": [
       "DS0009",
       "DS0029"
+    ],
+    "cve_refs": [
+      "CVE-2024-21626"
     ]
   },
   "T1613": {

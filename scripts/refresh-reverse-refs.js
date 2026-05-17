@@ -113,6 +113,26 @@ const CATALOGS = [
     source: 'cve.entries',
     entryKey: null, // value is the iterating CVE id
   },
+  // v0.13.0: ATLAS / ATT&CK back-edge — every ATLAS TTP and ATT&CK
+  // technique gets a `cve_refs` array carrying the CVE ids that cite it.
+  // Pre-v0.13 these catalogs had only forward refs (CVE → TTP); operators
+  // reading an ATLAS / ATT&CK entry could not see which CVEs cite it
+  // without grepping the whole catalog. New back-edges close the
+  // asymmetric-edges cluster the cycle 20 audit B flagged.
+  {
+    file: 'atlas-ttps.json',
+    forwardField: 'atlas_refs',
+    reverseField: 'cve_refs',
+    source: 'cve.entries',
+    entryKey: null,
+  },
+  {
+    file: 'attack-techniques.json',
+    forwardField: 'attack_refs',
+    reverseField: 'cve_refs',
+    source: 'cve.entries',
+    entryKey: null,
+  },
 ];
 
 function readJson(p) {
@@ -223,6 +243,71 @@ function rebuildCatalog(cfg, manifest, cveCatalog) {
   };
 }
 
+/**
+ * v0.13.0: playbook `fed_by` reverse direction. Every playbook declares
+ * `feeds_into[]` listing playbook ids it chains TO; `fed_by[]` is the
+ * symmetric "which playbooks chain into me." Pre-v0.13 operators reading
+ * a playbook couldn't see what fed it without grepping every other
+ * playbook's feeds_into. The reverse field lives on the playbook's
+ * top-level under `_meta.fed_by` (paired with the existing _meta.feeds_into
+ * for shape symmetry).
+ */
+function rebuildPlaybookReverse() {
+  const playbooksDir = path.join(DATA_DIR, 'playbooks');
+  if (!fs.existsSync(playbooksDir)) return { file: 'playbooks/*.json', source: 'playbook.feeds_into', reverseField: 'fed_by', changed: 0, added: 0, removed: 0, unchanged: 0, orphans: [] };
+  const files = fs.readdirSync(playbooksDir).filter((n) => n.endsWith('.json'));
+  const playbookEntries = [];
+  for (const f of files) {
+    const filePath = path.join(playbooksDir, f);
+    let data;
+    try { data = JSON.parse(fs.readFileSync(filePath, 'utf8')); }
+    catch (e) { continue; }
+    if (!data || !data._meta || !data._meta.id) continue;
+    playbookEntries.push({ file: f, filePath, data });
+  }
+  // Build reverse index: target-id -> Set<source-id>
+  // feeds_into entries are objects with `playbook_id` + `condition`.
+  // The fed_by reverse is a simple array of source playbook ids (the
+  // condition is per-edge; preserved on feeds_into, not duplicated on
+  // fed_by — operators read fed_by to find candidates, then look at the
+  // source playbook's feeds_into for the gating condition).
+  const index = new Map();
+  for (const { data } of playbookEntries) {
+    const meta = data._meta;
+    const targets = Array.isArray(meta.feeds_into) ? meta.feeds_into : [];
+    for (const t of targets) {
+      const targetId = (t && typeof t === 'object') ? t.playbook_id : t;
+      if (!targetId || typeof targetId !== 'string') continue;
+      if (!index.has(targetId)) index.set(targetId, new Set());
+      index.get(targetId).add(meta.id);
+    }
+  }
+  let changed = 0, added = 0, removed = 0, unchanged = 0;
+  const orphans = [];
+  const knownIds = new Set(playbookEntries.map((e) => e.data._meta.id));
+  for (const { filePath, data } of playbookEntries) {
+    const meta = data._meta;
+    const before = Array.isArray(meta.fed_by) ? [...meta.fed_by] : [];
+    const computed = index.has(meta.id) ? Array.from(index.get(meta.id)).sort() : [];
+    const beforeSet = new Set(before);
+    const computedSet = new Set(computed);
+    const sameContent = before.length === computed.length && before.every((x, i) => x === computed[i]);
+    if (!sameContent) {
+      meta.fed_by = computed;
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+      changed += 1;
+      for (const s of computed) if (!beforeSet.has(s)) added += 1;
+      for (const s of before) if (!computedSet.has(s)) removed += 1;
+    } else {
+      unchanged += 1;
+    }
+  }
+  for (const targetId of index.keys()) {
+    if (!knownIds.has(targetId)) orphans.push(targetId);
+  }
+  return { file: 'playbooks/*.json', source: 'playbook.feeds_into', reverseField: 'fed_by', changed, added, removed, unchanged, orphans };
+}
+
 function main() {
   const manifest = readJson(MANIFEST_PATH);
   const cveCatalog = readJson(CVE_CATALOG_PATH);
@@ -230,6 +315,7 @@ function main() {
   for (const cfg of CATALOGS) {
     results.push(rebuildCatalog(cfg, manifest, cveCatalog));
   }
+  results.push(rebuildPlaybookReverse());
   for (const r of results) {
     process.stdout.write(
       `${r.file} (${r.source || 'skills'} → ${r.reverseField}): ${r.changed} entries changed ` +

@@ -54,6 +54,10 @@
         "playbook_id": "cred-stores",
         "condition": "finding.severity == 'critical' OR analyze.blast_radius_score >= 3"
       }
+    ],
+    "fed_by": [
+      "cred-stores",
+      "hardening"
     ]
   },
   "domain": {
