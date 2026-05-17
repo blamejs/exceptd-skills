@@ -3,6 +3,7 @@
     "schema_version": "1.3.0",
     "version": "1.3.0",
     "last_updated": "2026-05-15",
+    "last_threat_review": "2026-05-17",
     "note": "Multi-jurisdiction framework registry. patch_sla in hours. notification_sla in hours. source field must be primary regulatory source. v1.3.0 expansion: NO, MX, AR, TR, TH, PH, US_CALIFORNIA top-level jurisdictions added; EU member-state sub-regulator blocks added for Germany (BSI), France (ANSSI), Spain (AEPD + AESIA), Italy (ACN + AgID); EU-level technical body ENISA added as cross-cutting reference. v1.2.0 expansion: IL, CH, HK, TW, ID, VN, US_NYDFS added; JP expanded with APPI/PPC, FISC, NISC, METI, Economic Security Promotion Act, AI Strategy Council guidance. v1.1.0 expansion: BR, CN, ZA, AE, SA, NZ, KR, CL added; IN and CA enriched with data-protection law entries (DPDPA, Quebec Law 25, PIPEDA).",
     "tlp": "CLEAR",
     "source_confidence": {

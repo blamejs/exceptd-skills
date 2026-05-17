@@ -49,16 +49,19 @@ last_threat_review: "2026-05-01"
 
 ### Required Body Sections
 
-Every skill body must have these sections in order:
+Every skill body must have these seven sections in order (canonical list in AGENTS.md §Skill File Format):
 
-1. **Threat Context (mid-2026)** — What's actually happening. Specific CVEs, observed campaigns, statistics. Not theoretical.
+1. **Threat Context** — What's actually happening in mid-2026 relevant to this domain. Specific CVEs, observed campaigns, statistics. Not theoretical.
 2. **Framework Lag Declaration** — Per-framework table: control ID, what it was designed for, why it fails against current TTPs.
 3. **TTP Mapping** — Table: ATLAS/ATT&CK ID, technique name, gap flag (covered/partial/missing), exploitation example.
 4. **Exploit Availability Matrix** — Per-CVE: CVSS, RWEP, KEV, PoC, AI-accelerated, patch status, live-patch, reboot required.
-5. **Analysis Procedure** — Numbered steps for the AI to follow when performing this analysis.
+5. **Analysis Procedure** — Numbered steps for the AI to follow when performing this analysis. Each procedure threads defense in depth, least privilege, and zero trust.
 6. **Output Format** — Exact structure (tables, sections, score formats) the skill should produce.
 7. **Compliance Theater Check** — Specific question or test that distinguishes paper compliance from actual security.
-8. **Remediation Guidance** — Accounts for: live systems, patching windows, live kernel patching, ephemeral infra, AI pipelines.
+
+Optional 8th section (required for skills shipped on or after 2026-05-11; pre-existing skills exempt until their next minor version bump):
+
+8. **Defensive Countermeasure Mapping** — Maps offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per Hard Rule #9.
 
 ---
 

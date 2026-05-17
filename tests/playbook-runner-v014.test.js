@@ -397,7 +397,10 @@ describe('F7: corrupt catalog yields structured blocked_by, not crash', () => {
       const r = local.run('p', 'default', {});
       assert.equal(r.ok, false);
       assert.equal(r.blocked_by, 'catalog_corrupt');
-      assert.ok(r.error);
+      // Pair the field-presence assertion with a type + non-empty check
+      // (field-present-not-populated regression class).
+      assert.equal(typeof r.error, 'string');
+      assert.ok(r.error.length > 0, 'error string must be non-empty');
     } finally {
       if (prevData === undefined) delete process.env.EXCEPTD_DATA_DIR;
       else process.env.EXCEPTD_DATA_DIR = prevData;

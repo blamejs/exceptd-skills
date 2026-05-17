@@ -145,7 +145,10 @@ Examples:
   exceptd framework-gap NIST-800-53 CVE-2026-31431
   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
   exceptd framework-gap all CVE-2025-53773 --json`);
-    process.exit(2);
+    // Pinned exit 2 by operator contract. Envelope harmonization
+    // across orchestrator + CLI is a v0.13 concern.
+    process.exitCode = 2;
+    return;
   }
 
   const root = path.join(__dirname, '..');
@@ -155,7 +158,8 @@ Examples:
     cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
   } catch (err) {
     console.error(`[framework-gap] cannot read catalog: ${err.message}`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
 
   const requested = args[0].toLowerCase() === 'all'
@@ -292,20 +296,24 @@ async function runDispatch() {
 
 function runSkillContext(skillName) {
   if (!skillName) {
-    // Cycle 20 A P2 (v0.12.40): operator-facing surface must reference
-    // the canonical `exceptd skill <name>` form, not the orchestrator
-    // path that's an implementation detail. CLAUDE.md global rule:
-    // "no internal narrative in operator-facing artifacts."
+    // v0.12.40: operator-facing surface uses the canonical `exceptd skill
+    // <name>` form, not the orchestrator path that's an implementation
+    // detail.
     console.error('Usage: exceptd skill <skill-name>');
     console.error('       (Lists available skills: exceptd brief --all)');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const context = getSkillContext(skillName);
   if (!context) {
     // Unified error shape across the CLI surface — see v0.10.3 bug #18.
+    // Stderr is the documented stream for ok:false bodies emitted by
+    // orchestrator dispatch; envelope harmonization across the CLI is
+    // a v0.13 concern.
     process.stderr.write(JSON.stringify({ ok: false, error: `Skill not found: ${skillName}`, verb: "skill", hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   console.log(`Skill: ${context.skill.name} v${context.skill.version}`);
@@ -332,7 +340,7 @@ function runPipeline(triggerType, payload) {
     console.log(`  Agent: ${stage.agent_path}`);
   }
   console.log('\nTo run each stage, load the agent definition and follow its instructions:');
-  console.log('  node orchestrator/index.js skill skill-update-loop');
+  console.log('  exceptd skill skill-update-loop');
   return run;
 }
 
@@ -368,12 +376,16 @@ async function runReport(format) {
   // string. Now: reject with structured JSON error matching other verbs.
   const VALID_REPORT_FORMATS = ['executive', 'technical', 'compliance', 'csaf'];
   if (!VALID_REPORT_FORMATS.includes(format)) {
+    // Pinned exit 2 + stderr-stream by operator contract. Envelope
+    // harmonization across orchestrator + CLI is a v0.13 concern.
     process.stderr.write(JSON.stringify({
       ok: false,
       error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.`,
       verb: 'report',
+      accepted_formats: VALID_REPORT_FORMATS,
     }) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
 
   // v0.11.1 feature #55: `report csaf` emits a CSAF 2.0 envelope covering
@@ -1078,7 +1090,8 @@ function runWatchlist(rawArgs = []) {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   } catch (err) {
     console.error(`[watchlist] cannot read ${manifestPath}: ${err.message}`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
 
   // Exclude entries that are explicitly marked `status: "deprecated"` so
@@ -1378,11 +1391,11 @@ Environment variables:
   EXCEPTD_SCAN_TARGETS Directories to scan for MCP configs
 
 Examples:
-  node orchestrator/index.js scan
-  node orchestrator/index.js skill kernel-lpe-triage
-  node orchestrator/index.js currency
-  node orchestrator/index.js report executive
-  node orchestrator/index.js watch
+  exceptd scan
+  exceptd skill kernel-lpe-triage
+  exceptd currency
+  exceptd report executive
+  exceptd watch
 `);
 }
 
@@ -1394,7 +1407,7 @@ Examples:
 if (require.main === module) {
   main().catch(err => {
     console.error('[orchestrator] Fatal:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
   });
 }
 

@@ -277,12 +277,12 @@ function runMonthlyCveValidation() {
   console.log(`[scheduler] Monthly CVE validation reminder — ${timestamp}`);
   console.log('[scheduler] Action: Verify all data/cve-catalog.json entries against NVD and CISA KEV.');
   console.log('[scheduler] Action: Update last_verified dates in data/exploit-availability.json.');
-  console.log('[scheduler] Run: node orchestrator/index.js validate-cves');
+  console.log('[scheduler] Run: exceptd validate-cves');
 
   return {
     task: 'monthly_cve_validation',
     timestamp,
-    action: 'Run node orchestrator/index.js validate-cves to check all CVE entries'
+    action: 'Run `exceptd validate-cves` to check all CVE entries'
   };
 }
 

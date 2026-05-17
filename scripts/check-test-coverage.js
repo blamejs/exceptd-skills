@@ -193,9 +193,9 @@ const DOCS_ALWAYS_GREEN = new Set([
   "CLAUDE.md", "SUPPORT.md", ".gitignore", ".npmrc", ".editorconfig",
 ]);
 
-// Cycle 9 finding: operator-facing docs (release notes, install instructions,
-// security disclosure policy, migration guides, AI-assistant ground truth)
-// previously auto-greened. A PR could land deceptive copy here without any
+// Operator-facing docs (release notes, install instructions, security
+// disclosure policy, migration guides, AI-assistant ground truth) must not
+// auto-green — a PR could otherwise land deceptive copy here without any
 // reviewer signal. Downgrade to manual-review so the diff surfaces in the
 // gate output — a human (or the maintainer reviewing the bot summary) at
 // least sees the change exists.
@@ -478,9 +478,9 @@ function coversCveIoc(corpus, cveId) {
 //   assert.notEqual(foo.status, 2, 'must not be unknown-cmd')   ← also refused
 // unless the same line ends with `// allow-notEqual: <reason>`.
 //
-// Cycle 8 JJJ: pre-fix, this class was a per-instance hunt across 25+ test
-// sites. Moving it to a structural lint keeps new tests / new ports from
-// regressing. Fix the class, not the instance (CLAUDE.md pitfall).
+// Structural lint replaces a per-instance hunt across 25+ test sites — keeps
+// new tests / new ports from regressing into coincidence-passing assertions.
+// Fix the class, not the instance.
 function scanForCoincidenceAsserts(cwd) {
   const out = [];
   const testsDir = path.join(cwd, "tests");
