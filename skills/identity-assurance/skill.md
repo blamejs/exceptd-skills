@@ -21,10 +21,8 @@ triggers:
   - phishing-resistant
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
+  - exploit-availability.json
   - framework-control-gaps.json
-  - cwe-catalog.json
-  - d3fend-catalog.json
   - rfc-references.json
 atlas_refs:
   - AML.T0051

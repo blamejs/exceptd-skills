@@ -50,10 +50,13 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
+  // v0.13.0 added 4 playbooks (webhook-callback-abuse, cicd-pipeline-
+  // compromise, identity-sso-compromise, llm-tool-use-exfil) bringing
+  // the canonical set to 20.
   assert.equal(
     playbooks.length,
-    16,
-    `expected 16 shipped playbooks, found ${playbooks.length}`,
+    20,
+    `expected 20 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

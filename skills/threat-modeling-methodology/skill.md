@@ -18,10 +18,11 @@ triggers:
   - trust boundary
 data_deps:
   - atlas-ttps.json
-  - framework-control-gaps.json
   - cve-catalog.json
   - cwe-catalog.json
   - d3fend-catalog.json
+  - framework-control-gaps.json
+  - zeroday-lessons.json
 atlas_refs: []
 attack_refs: []
 framework_gaps:

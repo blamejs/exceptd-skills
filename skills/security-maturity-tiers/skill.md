@@ -16,9 +16,8 @@ triggers:
   - defense in depth
   - how do we get from here to there
 data_deps:
+  - atlas-ttps.json
   - cve-catalog.json
-  - framework-control-gaps.json
-  - global-frameworks.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []

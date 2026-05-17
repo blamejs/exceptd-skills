@@ -166,22 +166,16 @@ const GATES = [
     ciJobName: "Diff coverage",
   },
   {
-    // v0.12.12 — Validate every playbook in data/playbooks/ against the
-    // JSON schema + cross-playbook + cross-catalog references. Runs as
-    // informational (warnings, not failures) for v0.12.12 so the patch-
-    // class release can land without retroactively breaking schema-drift
-    // cases that operators have not yet reconciled. v0.13.0 will flip
-    // `informational: false`.
-    name: "Validate playbooks (schema + cross-refs, informational)",
+    // Validate every playbook in data/playbooks/ against the JSON schema
+    // + cross-playbook + cross-catalog references. v0.12.12 first wired
+    // this as informational so the patch-class release could land without
+    // retroactively breaking schema-drift cases; v0.13.0 flips it to
+    // required because the 20-playbook canonical set (including the 4
+    // v0.13.0 additions) all validate cleanly.
+    name: "Validate playbooks (schema + cross-refs)",
     command: process.execPath,
     args: [path.join(ROOT, "lib", "validate-playbooks.js")],
     ciJobName: "Validate playbooks",
-    informational: true,
-    // cap informational acceptance at exit 1 so a CRASH (137 OOM,
-    // 139 SIGSEGV, 134 SIGABRT, etc.) surfaces as a real failure instead of
-    // being absorbed under the informational bucket. Matches the
-    // forward-watch gate (line ~111) which already pins the same ceiling.
-    informationalMaxExitCode: 1,
   },
 ];
 

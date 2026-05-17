@@ -19,12 +19,7 @@ triggers:
   - patient data
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
-  - cwe-catalog.json
   - d3fend-catalog.json
-  - dlp-controls.json
 atlas_refs:
   - AML.T0051
   - AML.T0017

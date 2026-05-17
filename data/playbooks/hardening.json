@@ -47,6 +47,10 @@
         "playbook_id": "runtime",
         "condition": "finding.severity >= 'high'"
       }
+    ],
+    "fed_by": [
+      "cicd-pipeline-compromise",
+      "runtime"
     ]
   },
   "domain": {

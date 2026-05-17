@@ -13,9 +13,10 @@ triggers:
   - covert channel ai
   - aml.t0096
 data_deps:
-  - atlas-ttps.json
   - cve-catalog.json
+  - d3fend-catalog.json
   - framework-control-gaps.json
+  - rfc-references.json
 atlas_refs:
   - AML.T0096
   - AML.T0017
@@ -48,7 +49,7 @@ d3fend_refs:
   - D3-NI
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-17"
 ---
 
 # AI C2 Detection
@@ -153,6 +154,14 @@ PROMPTSTEAL uses LLMs as live intelligence analysts for exfiltration targeting.
 | ISO 27001:2022 A.8.16 | Monitoring Activities | Monitoring of systems, networks, and applications. No guidance for AI API behavioral baseline, no mention of AI traffic as a monitoring concern. |
 | SOC 2 CC7 | System Operations (Anomaly Detection) | Detect and respond to security events. CC7 implementations baseline network traffic and system events. AI API calls are typically in the same anomaly detection blind spot as other SaaS traffic. |
 | ATT&CK T1071 | Application Layer Protocol | ATT&CK documents C2 over application protocols. AI API as C2 fits the technique but detection guidance doesn't address legitimate-endpoint C2 specifically. |
+| EU NIS2 | Art. 21(2)(b) (incident handling) + Art. 21(2)(g) (network and information systems security including monitoring) | "Appropriate and proportionate" monitoring language. Member-state transpositions (BSI IT-SiG 2.0, ANSSI, ENISA) do not enumerate AI-API egress baselining as an expected monitoring control. An essential entity meets the NIS2 monitoring obligation with traditional SIEM coverage while leaving AI-as-C2 entirely undetected. |
+| EU DORA | Art. 10 (detection) + Art. 17 (ICT-related incident management) | Detection obligation for financial entities. RTS on threat-led penetration testing (TIBER-EU JC 2024/40) does not include AI-as-C2 scenarios in the TT&P inventory as of mid-2026. CBEST / iCAST scenario libraries lag by 12-18 months. |
+| EU AI Act (Regulation 2024/1689) | Art. 15 (cybersecurity for high-risk AI systems) + Art. 72 (post-market monitoring) | High-risk AI cybersecurity language addresses adversarial robustness and integrity of the AI system itself. AI APIs being abused as a C2 channel by non-AI malware is outside the scoped attack surface — providers do not log per-prompt to detect attacker use, and operators have no mandated detection control for legitimate-endpoint C2. |
+| UK NCSC CAF | Principle C1 (Security Monitoring) + Principle C2 (Proactive Security Event Discovery) | Outcome-based monitoring language. NCSC's 2024 guidance on monitoring egress to SaaS APIs recommends behavioural baselining but the CAF outcome statements are satisfied by traditional endpoint and network monitoring. An organisation can meet C1 / C2 at Achieved level with zero AI-API egress baselining. |
+| UK NCSC Cyber Assessment Framework — sectoral profiles (Telecoms Security Code of Practice, Energy CAF profile) | Sector-specific monitoring obligations | Sectoral CAF profiles inherit C1/C2 outcomes; none enumerate AI API egress as an in-scope monitored channel. Telecoms operators meeting the TSA 2021 Code monitoring obligations have the same blind spot. |
+| AU ASD Essential 8 | Strategy: Application Control + User Application Hardening | Application Control (allowlisting) covers what runs locally; it does not cover what allowed applications connect to. A whitelisted browser or IDE making AI API calls passes Application Control while operating as a C2 channel. Essential 8 does not include an egress-control strategy. |
+| AU ASD ISM | ISM-1228 (event log monitoring) + ISM-0859 (network access controls) + ISM-1729 (data loss prevention) | Event-log monitoring assumes signature-or-rule detection over known malicious indicators. ISM-1729 DLP addresses outbound sensitive-data flows but is content-pattern based — AI-API egress with attacker-controlled prompts is data-flowing-to-a-trusted-vendor from the DLP perspective. |
+| AU APRA CPS 234 | Para 27(b) (capability to detect and respond to information security incidents in a timely manner) | "Timely" detection capability. APRA CPS 234 attestations are satisfied by SIEM/SOC capability over traditional indicators. AI-as-C2 detection capability is not a CPS 234 examined control. |
 
 ---
 

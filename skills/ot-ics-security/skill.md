@@ -20,9 +20,6 @@ triggers:
   - purdue
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - cwe-catalog.json
   - d3fend-catalog.json
 atlas_refs:
   - AML.T0010

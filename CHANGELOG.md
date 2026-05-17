@@ -1,5 +1,96 @@
 # Changelog
 
+## 0.13.0 — 2026-05-17
+
+Minor release. Breaking-change bundle for the v0.10.x legacy-verb removal that has been deprecation-bannered since v0.11.0; envelope harmonization across every JSON-emitting verb; 4 new playbooks expanding the canonical set to 20; engine hardening (factor-shape validation, cache invalidation, fsync-on-rename, deterministic SBOM); schema reverse fields on ATLAS, ATT&CK, and the playbook chain.
+
+### Breaking changes — migration required
+
+**Five v0.10.x legacy verbs hard-removed: `plan`, `govern`, `direct`, `look`, `ingest`.** They were deprecation-bannered since v0.11.0 and slated-for-removal-in-v0.13 since v0.12.0. Operators on v0.10.x → v0.13.0 now get a structured `ok:false` refusal with the v0.11+ replacement command. Each removal is a pure rename — same underlying capability is reachable via the replacement. Refusal body shape:
+
+```json
+{
+  "ok": false,
+  "error": "'plan' was removed in v0.13.0. Use `exceptd brief --all` instead.",
+  "verb": "plan",
+  "removed_in": "0.13.0",
+  "replacement": "brief --all",
+  "deprecation_history": "Deprecated in v0.11.0 ... removed in v0.13.0."
+}
+```
+
+Replacements:
+- `exceptd plan` → `exceptd brief --all`
+- `exceptd govern <pb>` → `exceptd brief <pb> --phase govern`
+- `exceptd direct <pb>` → `exceptd brief <pb> --phase direct`
+- `exceptd look <pb>` → `exceptd brief <pb> --phase look`
+- `exceptd ingest <args>` → `exceptd run <args>`
+
+`reattest` and `list-attestations` were also deprecation-bannered but are PRESERVED — they remain canonical short-form routings of `attest diff` / `attest list` and stay functional.
+
+The deprecation-banner + tempdir-marker mechanism (added v0.11.0, persisted via `EXCEPTD_DEPRECATION_SHOWN` env var + `exceptd-deprecation-shown-v<X.Y.Z>` tempdir marker) is removed. Pre-v0.13 scripts that pinned the banner shape should remove those assertions.
+
+**Orchestrator exit-code class change: usage errors exit 1 (`GENERIC_FAILURE`), not 2 (`DETECTED_ESCALATE`).** Affected verbs: `framework-gap` (missing args), `report <format>` (unknown format), `validate-cves` / `validate-rfcs` (catalog-read failure), `watchlist` (manifest-read failure), `skill <name>` (skill-not-found). Pre-v0.13 these exited 2, colliding with the canonical CI contract where exit 2 means "verb ran and detected an escalation-worthy finding." CI gates wired to branch on exit 2 will need to also accept exit 1 for these verbs, OR pre-validate inputs before invocation.
+
+**Envelope harmonization: every JSON-emitting verb now carries top-level `ok` and (where applicable) `verb`.** Pre-v0.13 `brief --all`, `watchlist`, `ci`, `doctor`, `discover`, `attest show`, `attest export`, and `cmdRunMulti` omitted one or both fields inconsistently. `emit()` now defaults `ok: true` when not set (symmetric to the existing `ok: false → exit 1` fallback), and per-verb call sites set `verb: "..."` explicitly. Consumers that parsed bodies for the absence of these fields will break; consumers reading specific known fields are unaffected.
+
+**Orchestrator `ok:false` bodies now land on stdout (not stderr).** Aligns with the bin/exceptd.js convention so a single consumer can parse the verb's envelope without splitting across two streams. Advisory text (`[verb] hint: ...`) still goes to stderr.
+
+### Security
+
+**`lib/sign.js` `generateKeypair()` ACL-hardening status surfaces in CLI output.** `restrictWindowsAcl()` now returns a boolean; the verdict line announces `Windows ACL hardened: yes|NO` rather than silently warning.
+
+**`lib/cve-curation.js` + `lib/refresh-external.js` `writeJsonAtomic()` fsync before rename.** Pre-v0.13 a power loss between the tmp-write and the rename could leave the renamed destination zero-length / partial. The open + write + fsync + close + rename idiom closes the durability gap on both atomic-write helpers.
+
+### Features
+
+**4 new playbooks expand the canonical set to 20.**
+- `webhook-callback-abuse` — OAuth callback hijack, inbound-webhook signature validation, Slack/Teams/Discord webhook leakage, the Snowflake-class long-lived-callback-token-in-CI-log pattern.
+- `cicd-pipeline-compromise` — self-hosted runner takeover, workflow-injection (the `${{ inputs.* }}` class), third-party Action SHA-pin discipline, OIDC trust-policy abuse, runner-scoped signing keys. Distinct from `sbom` (package-registry supply chain).
+- `identity-sso-compromise` — in-progress IdP-plane detection (Salt Typhoon / Scattered Spider / Okta-2023 / golden-SAML / PRT theft patterns). Detect-side counterpart to the existing `idp-incident` (response playbook).
+- `llm-tool-use-exfil` — agentic-AI tool abuse via prompt injection. Auto-approve-on-high-impact-tool, instruction-coercion grammar in tool responses, unprompted tool chains, credential-shadow in tool args. Distinct from `dlp-exfiltration` (enterprise DLP) and `mcp` (install-time tool trust).
+
+Each new playbook carries `threat_currency_score >= 90`, full air-gap alternatives on look artifacts, substantive theater_test blocks on framework gaps, and `feeds_into[]` chains into the existing playbook set.
+
+**Schema reverse fields populated across 3 catalogs + playbooks.**
+- ATLAS TTPs now carry `cve_refs[]` (11 entries populated with 21 back-edges from `cve.atlas_refs`).
+- ATT&CK techniques now carry `cve_refs[]` (20 entries populated with 56 back-edges from `cve.attack_refs`).
+- Every playbook now carries `_meta.fed_by[]` (11 playbooks populated with 54 back-edges from `_meta.feeds_into[].playbook_id`). Operators reading a playbook can see what chains INTO it without grepping every other playbook.
+
+`scripts/refresh-reverse-refs.js` extends to 8 reverse-direction passes (4 manifest-driven, 2 CVE-driven, 2 catalog-back-edge, 1 playbook-back-edge); `npm run refresh-reverse-refs` rebuilds the full set in one pass.
+
+**`lib/scoring.js validate()` refuses mixed Shape A / Shape B factor sets.** The catalog historically stored `rwep_factors` in two distinct shapes (raw booleans + post-weight integers). Mixing shapes inside one entry silently broke the sum invariant — a CVE with `cisa_kev: true, blast_radius: 30` reported rwep 30 instead of the operator-intended 55. The new `detectFactorShape()` helper detects mixed entries and emits a structured error pointing at the affected CVE id.
+
+**`lib/cross-ref-api.js` cache invalidation uses (mtime, size) tier.** Pre-v0.13 cache invalidation was mtime-only; on filesystems with 1-2s mtime granularity (FAT32, HFS+ pre-APFS, NFSv3, Docker bind-mounts that proxy mtime) a rapid refresh-then-reload within the same second served stale data. Adding `size` catches every content change that affects byte count.
+
+**`lib/lint-skills.js` enforces `last_threat_review` staleness gate.** Warn at >180 days; hard fail at >365 days. Operators with stale skills get a structured warning naming the affected file + the exact day count; year-stale skills fail the lint outright. The forcing function for Hard Rule #8 (which was policy-only pre-v0.13).
+
+**`scripts/refresh-sbom.js` produces a deterministic bundle.** `metadata.timestamp` and `serialNumber` are derived from the content-hash seed (`<name>@<version>@<bundleSha>`) instead of wall-clock. Identical content → identical SBOM across re-runs. The SBOM-currency predeploy gate can now rely on byte-identity for the no-change case.
+
+**`exceptd doctor --fix` second remediation branch: post-rotate stale signatures.** Continues the v0.12.41 fix. When the private key IS present but the signatures check fails (the `generate-keypair --rotate` followup state), `doctor --fix` runs `sign-all` to re-sign skills + manifest against the current keypair. Without this branch the rotation flow would converge to a broken-but-not-self-healing state.
+
+### Bugs
+
+**3 catalogs got `last_threat_review` fields backfilled.** `exploit-availability.json`, `global-frameworks.json`, `zeroday-lessons.json` carried `last_updated` but lacked the threat-review timestamp the other 8 catalogs use. All 11 now follow the same shape.
+
+**`active_exploitation` field vocabulary now declared in `cve-catalog.json._meta`.** Pre-v0.13 the field accepted free-form values; 10 entries used `"unknown"` which wasn't documented. The new `_meta.active_exploitation_vocabulary` block enumerates `confirmed | suspected | theoretical | none | unknown` with per-value definitions.
+
+**4 CVEs flipped `_draft: false` (verified).** `CVE-2024-3094` (xz-utils backdoor), `CVE-2024-21626` (Leaky Vessels), `CVE-2026-42945` (NGINX Rift), `MAL-2026-TANSTACK-MINI`. 1 quarantined (`MAL-2026-ANTHROPIC-MCP-STDIO` — duplicate of `CVE-2026-30623`). The remaining 15 draft CVEs are now marked with a structured `_draft_reason` ("blocked on missing zeroday-lessons entry" in all 14 cases except the GTIG embargoed placeholder).
+
+**Hard Rule #5 regional-framework backfill on 7 skills.** `policy-exception-gen`, `compliance-theater`, `exploit-scoring`, `ai-c2-detection`, `ai-attack-surface`, `mcp-agent-trust`, `api-security` previously cited NIST without one or more of EU/UK/AU/ISO equivalents. Each now carries substantive references to NIS2/DORA/EU AI Act, NCSC CAF, ASD ISM/Essential 8, and ISO 27001:2022 controls as appropriate.
+
+**39 of 42 skills got `data_deps` arrays regenerated** from body content references. Pre-v0.13 the array drifted whenever a skill body added or removed a `data/<file>.json` reference without the frontmatter being updated. `api-security` and `email-security-anti-phishing` ended up with empty `data_deps` — their bodies reference no catalog file by name; flagged for v0.14 body-content review.
+
+**`scripts/refresh-reverse-refs.js` orphan detection caught 8 framework-gap forward-orphan references introduced by the Hard Rule #5 backfill.** `NIST-800-53-SC-39`, `ISO-27001-2022-A.8.22`, `CIS-Kubernetes-Benchmark-5.7`, `NIST-800-218-SSDF-PW.4`, `NIST-800-53-SR-3`, `SLSA-v1.0-Source-L3`, `NIST-AI-RMF-MAP-3.4`, `OWASP-Top-10-2021-A06`. These are real framework controls cited by the new skill content but absent from the gap catalog; tracked for v0.14 gap-catalog expansion.
+
+### Internal
+
+- `lib/exit-codes.js` exports `safeExit(code)` — sets `process.exitCode` without calling `process.exit()`. Dispatch surface (`bin/exceptd.js`, `orchestrator/index.js`) converted from `process.exit(N)` to `safeExit(EXIT_CODES.X)` for non-zero codes; `tests/safe-exit-grep.test.js` refuses regressions.
+- `validate-playbooks` predeploy gate flipped from informational to required. 20/20 playbooks validate cleanly.
+- 7 new pinning tests in `tests/v0_12_41-fixes.test.js`, `tests/safe-exit-grep.test.js`, `tests/atlas-version-canonical.test.js`, `tests/operator-leak-grep.test.js`, `tests/verify-shipped-tarball-wrapper.test.js`.
+- Test suite: 1179 total, 1173 pass, 6 skipped (POSIX-only / no-privkey gates), 0 fail.
+- `release.yml` publish-job split (id-token:write vs contents:write separation) and `refresh.yml` split-checkout pattern remain in v0.14 backlog; they're workflow-security hardening with no operator-facing surface change.
+
 ## 0.12.41 — 2026-05-17
 
 Cross-domain hygiene pass: signature-regression class fix, sidecar hardening, attestation UX, ATLAS pin reconciliation, operator-narrative scrub, and structural test pins to lock the class fixes against future drift.

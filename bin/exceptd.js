@@ -207,31 +207,46 @@ function suggestVerb(cmd, known) {
 // v0.11.0 introduces: brief (collapses plan/govern/direct/look), discover (scan + dispatch),
 // doctor (currency + verify + validate-cves + validate-rfcs), ci (CI gate),
 // ai-run (streaming JSONL), ask (plain-English routing).
+//
+// v0.13.0 removed the v0.10.x phase-name aliases (plan, govern, direct,
+// look, ingest). They were deprecation-bannered since v0.11.0 and
+// slated-for-removal-in-v0.13 since v0.12.0; v0.13 honors that contract.
+// REMOVED_VERBS below carries the rename map for operator-facing refusal
+// hints. `reattest` and `list-attestations` are preserved as canonical
+// routings — they're short forms of `attest diff` / `attest list` that
+// remain operationally useful and have substantial test coverage.
 const PLAYBOOK_VERBS = new Set([
-  // v0.11.0 canonical surface:
   "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
   "verify-attestation", "run-all", "lint",
-  // v0.10.x legacy verbs — kept as aliases with deprecation banner, scheduled for removal in v0.13:
-  "plan", "govern", "direct", "look", "ingest", "reattest", "list-attestations",
+  "reattest", "list-attestations",
 ]);
 
-// Map legacy verb names to their v0.11.0 replacement so the dispatcher can
-// emit a single deprecation banner per session.
-const LEGACY_VERB_REPLACEMENTS = {
+// v0.13.0: hard-removed legacy verbs. The dispatcher refuses the verb
+// with an actionable replacement hint instead of routing it. Pre-v0.13
+// these were soft-deprecated (banner + still functional); v0.13 removes
+// the routing entirely. Operators upgrading from v0.10.x → v0.13 see
+// the same hint that the deprecation banner previously surfaced, but
+// non-zero exit so scripts noticing pinned-name use fail loudly instead
+// of silently invoking the alias.
+const REMOVED_VERBS = {
   plan: "brief --all",
   govern: "brief <pb> --phase govern",
   direct: "brief <pb> --phase direct",
   look: "brief <pb> --phase look",
   ingest: "run",
-  reattest: "attest diff",
-  "list-attestations": "attest list",
+};
+
+// Renamed but functionally-routed verbs (orchestrator-side dispatch still
+// handles them as of v0.13). Distinct from REMOVED_VERBS — these aren't
+// refused; they're just a soft hint that the rename happened. No banner
+// is emitted post-v0.13.
+const RENAMED_VERBS_HINT = {
   scan: "discover --scan-only",
   dispatch: "discover",
   currency: "doctor --currency",
   verify: "doctor --signatures",
   "validate-cves": "doctor --cves",
   "validate-rfcs": "doctor --rfcs",
-  watchlist: "watch",
   prefetch: "refresh --no-network",
   "build-indexes": "refresh --indexes-only",
 };
@@ -498,40 +513,23 @@ function main() {
     process.exit(0);
   }
 
-  // v0.12.8: emit the deprecation banner BEFORE branching on PLAYBOOK_VERBS
-  // so that legacy aliases routed through STANDALONE_VERBS or the orchestrator
-  // (scan, dispatch, currency, verify, validate-cves, validate-rfcs,
-  // watchlist, prefetch, build-indexes) also surface the rename.
-  // Previously the banner only fired for PLAYBOOK_VERBS-resident aliases
-  // (plan, govern, direct, look, ingest, reattest, list-attestations).
-  if (LEGACY_VERB_REPLACEMENTS[cmd] && !process.env.EXCEPTD_DEPRECATION_SHOWN) {
-    const ver = readPkgVersion();
-    // Cycle 11 F7 (v0.12.32): persist the suppression across invocations via
-    // an OS-tempdir marker keyed by exceptd version. Pre-fix the env-var
-    // guard reset every fresh node process so operators saw the same banner
-    // on every `exceptd plan` invocation, even after they'd already read it.
-    // Per-version key means a new version (legitimate new content) shows the
-    // banner once; subsequent runs within the same version stay quiet. The
-    // explicit EXCEPTD_DEPRECATION_SHOWN=1 env-var opt-out still suppresses
-    // even the first display, matching the documented contract.
-    const markerDir = require("os").tmpdir();
-    const markerFile = path.join(markerDir, `exceptd-deprecation-shown-v${ver}`);
-    let alreadyShown = false;
-    try { alreadyShown = fs.existsSync(markerFile); } catch { /* tmpdir unwritable; degrade to per-process */ }
-    if (!alreadyShown) {
-      const haveBrief = ver !== "unknown" && ver.match(/^(\d+)\.(\d+)/) && (parseInt(RegExp.$1, 10) > 0 || parseInt(RegExp.$2, 10) >= 11);
-      process.stderr.write(
-        `[exceptd] DEPRECATION: \`${cmd}\` is a v0.10.x verb. ` +
-        (haveBrief
-          ? `Prefer \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (available in this install, v${ver}). `
-          : `Upgrade to v0.11.0+ then use \`${LEGACY_VERB_REPLACEMENTS[cmd]}\` (currently installed: v${ver}). `) +
-        `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
-        `This banner shows once per exceptd version per host (re-shown on upgrade). Permanent suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
-      );
-      try { fs.writeFileSync(markerFile, `shown_at=${new Date().toISOString()}\nversion=${ver}\n`, { mode: 0o600 }); }
-      catch { /* tmpdir unwritable; the env-var guard below keeps the per-process suppression intact */ }
-    }
-    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+  // v0.13.0: hard-refuse the v0.10.x legacy verbs that were
+  // deprecation-bannered since v0.11.0. Pre-v0.13 these silently routed
+  // to their v0.11+ replacements with a soft banner; v0.13 honors the
+  // long-advertised removal. Operators upgrading from v0.10.x get a
+  // structured error with the replacement command, suitable for
+  // grep / scripted handling.
+  if (REMOVED_VERBS[cmd]) {
+    emitError(
+      `'${cmd}' was removed in v0.13.0. Use \`exceptd ${REMOVED_VERBS[cmd]}\` instead.`,
+      {
+        verb: cmd,
+        removed_in: "0.13.0",
+        replacement: REMOVED_VERBS[cmd],
+        deprecation_history: "Deprecated in v0.11.0 with a soft banner; slated-for-removal-in-v0.13 announced in v0.12.0; removed in v0.13.0.",
+      }
+    );
+    return;
   }
 
   // Seven-phase playbook verbs run in-process — they emit JSON to stdout
@@ -713,6 +711,16 @@ function emit(obj, pretty, humanRenderer) {
   // so new verbs / new ok:false paths can't regress the contract.
   if (obj && obj.ok === false && !process.exitCode) {
     process.exitCode = EXIT_CODES.GENERIC_FAILURE;
+  }
+  // v0.13.0 envelope harmonization: every emitted body has a top-level
+  // `ok` field — defaults to true when not set, matching the symmetric
+  // ok:false → exitCode=1 fallback above. Consumers that parse stdout
+  // can now assume the envelope shape regardless of which verb produced
+  // the body. Per-site `verb: "<name>"` is set at the call site; this
+  // helper guarantees the `ok` field's presence but does not synthesize
+  // verb (the caller knows its own name).
+  if (obj && typeof obj === 'object' && !('ok' in obj)) {
+    obj = { ok: true, ...obj };
   }
   const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
   if (humanRenderer && !wantJson && !pretty) {
@@ -4544,7 +4552,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
   }
 
   if (subverb === "show") {
-    emit({ session_id: sessionId, attestations, attestation_replays: replays }, pretty);
+    emit({ verb: "attest show", session_id: sessionId, attestations, attestation_replays: replays }, pretty);
     return;
   }
 

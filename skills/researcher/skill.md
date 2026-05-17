@@ -14,12 +14,13 @@ triggers:
   - threat intel triage
   - exceptd research
 data_deps:
-  - cve-catalog.json
   - atlas-ttps.json
-  - framework-control-gaps.json
-  - zeroday-lessons.json
+  - cve-catalog.json
+  - d3fend-catalog.json
   - exploit-availability.json
+  - framework-control-gaps.json
   - global-frameworks.json
+  - zeroday-lessons.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []

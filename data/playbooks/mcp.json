@@ -78,6 +78,12 @@
         "playbook_id": "ai-api",
         "condition": "finding.includes_credential_exposure == true"
       }
+    ],
+    "fed_by": [
+      "ai-api",
+      "llm-tool-use-exfil",
+      "sbom",
+      "webhook-callback-abuse"
     ]
   },
   "domain": {

@@ -14,13 +14,14 @@ triggers:
   - atlas update
   - framework update
 data_deps:
-  - cve-catalog.json
   - atlas-ttps.json
+  - cve-catalog.json
+  - d3fend-catalog.json
+  - exploit-availability.json
   - framework-control-gaps.json
   - global-frameworks.json
-  - zeroday-lessons.json
-  - exploit-availability.json
   - rfc-references.json
+  - zeroday-lessons.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []

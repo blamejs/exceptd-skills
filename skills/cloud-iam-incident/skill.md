@@ -23,12 +23,8 @@ triggers:
   - access key public repo
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - attack-techniques.json
-  - framework-control-gaps.json
-  - global-frameworks.json
-  - cwe-catalog.json
   - d3fend-catalog.json
+  - framework-control-gaps.json
 atlas_refs:
   - AML.T0051
 attack_refs:

@@ -1127,8 +1127,10 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2024-3094",
       "MAL-2026-3083",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TANSTACK-MINI"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -1349,6 +1351,7 @@
     ],
     "evidence_cves": [
       "CVE-2026-0300",
+      "CVE-2026-42945",
       "CVE-2026-43500",
       "CVE-2026-46300"
     ],
@@ -1656,6 +1659,7 @@
       "supply-chain-integrity"
     ],
     "evidence_cves": [
+      "CVE-2024-3094",
       "MAL-2026-NODE-IPC-STEALER"
     ],
     "framework_controls_partially_addressing": [
@@ -1688,7 +1692,9 @@
       "sector-federal-government",
       "supply-chain-integrity"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-TANSTACK-MINI"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
       "NIST-800-53-SI-2",

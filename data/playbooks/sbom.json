@@ -80,6 +80,19 @@
         "playbook_id": "ai-api",
         "condition": "any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']"
       }
+    ],
+    "fed_by": [
+      "ai-api",
+      "cicd-pipeline-compromise",
+      "cloud-iam-incident",
+      "containers",
+      "crypto",
+      "crypto-codebase",
+      "framework",
+      "kernel",
+      "library-author",
+      "mcp",
+      "webhook-callback-abuse"
     ]
   },
   "domain": {

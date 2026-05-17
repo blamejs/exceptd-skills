@@ -19,12 +19,7 @@ triggers:
   - broken access control
   - ai generated code
 data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
   - framework-control-gaps.json
-  - cwe-catalog.json
-  - d3fend-catalog.json
-  - rfc-references.json
 atlas_refs:
   - AML.T0051
 attack_refs:

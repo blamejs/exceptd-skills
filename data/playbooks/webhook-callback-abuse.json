@@ -1,0 +1,916 @@
+{
+  "_meta": {
+    "id": "webhook-callback-abuse",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-17",
+    "threat_currency_score": 93,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-17",
+        "summary": "Initial seven-phase webhook + OAuth-callback trust-model playbook. Covers the cross-cutting failure mode where an inbound webhook receiver, an OAuth redirect_uri, or a chat-platform incoming webhook (Slack / Teams / Discord / GitHub Apps) becomes the persistent trust anchor that fans out to cloud, source-control, and CI/CD planes. Walks installed receivers + their secret-handling + redirect_uri allowlists + state-parameter enforcement + per-app webhook signing verification. Closes the GRC loop with NIST 800-53 IA-9 + AC-4 gaps, ISO 27001 A.5.16 + A.8.21 gaps, NIS2 Art.21(2)(d) supply-chain-of-trust gap, and SOC 2 CC6.6 inbound-endpoint gap. Cross-cuts mcp (overlapping tool-trust model), cred-stores (token leakage path), and sbom (compromised webhook → poisoned package upload).",
+        "cves_added": [
+          "CVE-2024-1709",
+          "CVE-2026-42208"
+        ],
+        "framework_gaps_updated": [
+          "nist-800-53-IA-9-webhook-trust",
+          "nist-800-53-AC-4-callback-state",
+          "iso-27001-2022-A.5.16-federated-callback",
+          "nis2-art21-2d-supply-chain-of-trust",
+          "soc2-CC6.6-inbound-endpoint"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "filesystem-or-api-read",
+        "description": "Agent must be able to enumerate either (a) the operator's source repository for webhook configuration files and OAuth client metadata, OR (b) GitHub Apps / Slack / Teams / Discord / Atlassian Connect admin APIs to list installed webhook subscriptions. Pure-runtime hosts with no repo + no admin API access mark the playbook visibility_gap=no_webhook_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_admin_api_token == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "operator-owns-receivers",
+        "description": "The operator must own (or hold explicit written authorisation for) the OAuth client registrations + webhook subscriptions being inventoried. Probing third-party callback endpoints without authorisation is out-of-scope.",
+        "check": "operator_ownership_attested == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.includes_token_leakage == true"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.includes_package_upload_webhook == true"
+      },
+      {
+        "playbook_id": "mcp",
+        "condition": "finding.includes_agentic_tool_callback == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Webhook + OAuth-callback trust model abuse",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1199",
+      "T1078.004",
+      "T1552.004",
+      "T1098.001"
+    ],
+    "cve_refs": [
+      "CVE-2024-1709",
+      "CVE-2026-42208"
+    ],
+    "cwe_refs": [
+      "CWE-352",
+      "CWE-345",
+      "CWE-918",
+      "CWE-522",
+      "CWE-287",
+      "CWE-200"
+    ],
+    "d3fend_refs": [
+      "D3-CBAN",
+      "D3-NTA",
+      "D3-IOPR",
+      "D3-EI"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "soc2",
+      "pci-dss-4",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "webhook_receiver_inventory",
+            "secret_exposure_window_estimate",
+            "downstream_token_revocation_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "ict_third_party_callback_inventory",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "callback_log_excerpt",
+            "data_subject_impact_assessment"
+          ]
+        },
+        {
+          "jurisdiction": "US-NY",
+          "regulation": "NYDFS 23 NYCRR 500.17",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "callback_log_excerpt",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Privacy Act 1988 — Notifiable Data Breaches scheme (s26WK)",
+          "obligation": "notify_regulator",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "australian_resident_records_affected",
+            "remediation_completed_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "https-redirect-uri-as-proof",
+          "claim": "All OAuth redirect_uri values use HTTPS, so the callback flow is secure.",
+          "fast_detection_test": "Enumerate redirect_uri allowlists for every OAuth client. Look for wildcard subdomains (`https://*.example.com/cb`), open redirects on the registered host (`/redirect?to=`), and unbound localhost loopback (`http://127.0.0.1:*/cb` with no port pin). HTTPS alone does not prevent CSRF or open-redirect-chained callback hijack.",
+          "implicated_controls": [
+            "nist-800-53-IA-9",
+            "iso-27001-2022-A.5.16",
+            "soc2-cc6.6"
+          ]
+        },
+        {
+          "pattern_id": "webhook-secret-as-authentication",
+          "claim": "Every inbound webhook receiver validates an HMAC signature so the payload is trusted.",
+          "fast_detection_test": "Confirm the receiver (a) actually rejects requests with missing / mismatched signatures (not just logs them), (b) loads the secret from a real secret store rather than an environment variable copy-pasted in deploy YAML, and (c) the same secret is not reused across stage + prod or across multiple unrelated apps. Replay protection (timestamp window + nonce cache) must be present; signature-only is replayable indefinitely."
+        },
+        {
+          "pattern_id": "platform-incoming-webhook-as-public-url",
+          "claim": "The Slack / Teams / Discord incoming-webhook URL is just a posting endpoint — it does not need to be secret.",
+          "fast_detection_test": "Grep the source repo, CI logs, error-tracker payloads, and the GitHub Actions secrets export for any incoming-webhook URL pattern (`hooks.slack.com/services/`, `outlook.office.com/webhook/`, `discord.com/api/webhooks/`). A leaked URL is a primitive for impersonation-into-the-channel + persistent C2 for an attacker that wants to look like a legitimate bot."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Webhook + OAuth callback receivers are the most common authentication boundary that ships without an explicit owning control. NIST 800-53 IA-9 (Service Identification and Authentication) covers identifying external services to the organisation but is silent on identifying the organisation TO external services on the inbound callback path. ISO 27001 A.5.16 (Identity management) treats federated identity but not the long-tail of service-to-service callback registrations. NIS2 Art.21(2)(d) requires supply-chain security for ICT services, but inbound webhook receivers from SaaS partners (Stripe, GitHub Apps, Atlassian Connect) are routinely excluded from the supply-chain register because they're not 'suppliers' in the procurement sense. SOC 2 CC6.6 covers logical access boundary protection on inbound traffic but doesn't require redirect_uri allowlist hygiene, state-parameter enforcement, or signature-validation behaviour testing. The result: a callback URL that an OAuth provider trusts becomes an unowned, undocumented persistent trust anchor.",
+        "lag_score": 22,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IA-9 — Service Identification and Authentication",
+            "designed_for": "Identifying external services so the organisation can decide whether to trust them.",
+            "insufficient_because": "The control names outbound trust (do we trust them?) but not the inbound callback (does the redirect_uri allowlist enforce that only the operator's domain receives the authorisation code?). Open-redirect-into-callback chains satisfy IA-9 trivially because the named service is unchanged."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "AC-4 — Information Flow Enforcement",
+            "designed_for": "Controlling information flow within and between connected systems.",
+            "insufficient_because": "Does not require state-parameter binding on OAuth callbacks (the standard CSRF defence) and does not require replay-window enforcement on inbound webhooks. A receiver can pass AC-4 review and still accept a 4-day-old replayed payload."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.16 — Identity management",
+            "designed_for": "Lifecycle management of identities in federated and non-federated relationships.",
+            "insufficient_because": "Treats human + service identities, not callback-URL identities. The redirect_uri allowlist itself is an identity decision that A.5.16 doesn't anchor."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(d) — Supply chain security",
+            "designed_for": "Security of supply chains including direct supplier relationships.",
+            "insufficient_because": "Inbound webhook receivers from SaaS partners are excluded from most supply-chain registers because the partner isn't a procurement vendor. Yet the receiver is the persistent trust anchor that decides whether a payload from that partner gets actioned."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC6.6 — Logical and physical access controls — boundary protection",
+            "designed_for": "Logical access boundary protection on the entity's perimeter.",
+            "insufficient_because": "Inbound webhook receivers are tested for TLS + WAF rules but not for HMAC-signature-validation behaviour, redirect_uri allowlist hygiene, or state-parameter enforcement. A receiver can pass CC6.6 with TLS + WAF and still trust an unsigned payload."
+          }
+        ]
+      },
+      "skill_preload": [
+        "identity-assurance",
+        "api-security",
+        "cloud-iam-incident",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Q1-Q2 2026 callback-and-webhook abuse landscape. The 2024 Snowflake intrusion chain (leaked GitHub Actions token from a public CI log → snowflake.com customer-tenant access) remains the canonical 'leaked-callback-as-cloud-account-takeover' pattern; UNC5537 monetised it across ~165 tenants and the failure mode (long-lived token in CI log, no provider-side anomaly detection) has not closed at the platform level. Salt Typhoon's telecom intrusions in 2024-2025 included GitHub Apps webhook secret reuse across stage + prod, allowing a single leaked secret to fan out across environments. CVE-2024-1709 (ConnectWise ScreenConnect SetupWizard unauthenticated auth-bypass) is the canonical example of the receiver-trust-itself failure: the endpoint that should have validated callback authorisation accepted a synthesized admin session instead. Microsoft Power Automate + Power Apps incoming-webhook URLs have been observed as C2 channels in 2025 incidents — the URL is treated as 'just a posting endpoint' but a leaked one is impersonation-into-the-channel. GitHub Apps webhook secrets in plaintext CI logs continue to surface in researcher-reported bugs; the platform does not rotate them on detection. The unifying thread: an inbound trust boundary that the operator never enumerated, secured by a shared secret that nobody owns rotating.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 IA-9 + AC-4, ISO 27001 A.5.16, NIS2 Art.21(2)(d), and SOC 2 CC6.6 collectively underspecify the inbound-callback trust boundary. None mandate redirect_uri allowlist hygiene, OAuth state-parameter binding, webhook-signature replay-window enforcement, or per-app webhook-secret isolation. The 2024-2025 Snowflake / Salt Typhoon / GitHub-Apps-secret-leak class incidents would all satisfy a literal reading of these controls. UK CAF B3 (Data security) treats inbound endpoints as part of the perimeter but does not require behaviour-tested signature validation. AU ISM-1551 (web application authentication) names HMAC signatures but not the replay-window + secret-rotation discipline that turns a signature into a real authentication boundary.",
+      "skill_chain": [
+        {
+          "skill": "identity-assurance",
+          "purpose": "Establish baseline authentication-boundary strength for every enumerated callback + webhook receiver — does the receiver actually authenticate the caller, or just terminate TLS?",
+          "required": true
+        },
+        {
+          "skill": "api-security",
+          "purpose": "Score each receiver against the OWASP API Security Top 10 inbound-trust dimensions: BOLA, broken authentication, broken object property level authorisation, unrestricted resource consumption.",
+          "required": true
+        },
+        {
+          "skill": "cloud-iam-incident",
+          "purpose": "When a leaked callback or webhook secret already maps to a cloud-issued credential, run the cloud-IAM incident path to rotate + revoke + assess blast radius.",
+          "skip_if": "analyze.findings_with_cloud_credential_mapping == 0",
+          "required": false
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each finding to the framework control that should have caught it and why it didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the theater test — does the org's claimed inbound-endpoint review actually catch a wildcard redirect_uri or a missing replay window?",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language if a receiver cannot be hardened within the jurisdiction's window.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 16500,
+        "breakdown": {
+          "govern": 2200,
+          "direct": 1500,
+          "look": 1800,
+          "detect": 2200,
+          "analyze": 3600,
+          "validate": 3000,
+          "close": 2200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "oauth-client-inventory",
+          "type": "config_file",
+          "source": "Repository walk for OAuth client definitions: grep for client_id, client_secret, redirect_uri, authorize_url across .env.example / app.yaml / config/*.{yml,yaml,json,toml} / terraform *.tf for okta_oauth2_app / azuread_application / google_oauth_client / aws_cognito_user_pool_client resources",
+          "description": "Inventory of OAuth client registrations the operator owns, with their redirect_uri allowlists, scopes, and which secret store the client_secret lives in.",
+          "required": true,
+          "air_gap_alternative": "If admin APIs are unreachable, restrict to the repository walk and mark cloud-provider-managed clients as inventory_gap=admin_api_unavailable."
+        },
+        {
+          "id": "webhook-receiver-inventory",
+          "type": "config_file",
+          "source": "Repository walk for inbound webhook receiver routes: grep for /webhooks/, /hooks/, /callback, /oauth/callback patterns in routes/*.{ts,js,py,rb,go} + GitHub Apps app.yml + Stripe webhook handler decorators + Slack Bolt receiver registrations + Atlassian Connect descriptor.json. Capture the route path, the HTTP method allowlist, the signature header expected, and the secret-resolution source.",
+          "description": "Every inbound webhook endpoint the operator hosts, with the signing scheme it expects and how the secret is loaded.",
+          "required": true,
+          "air_gap_alternative": "Repository walk only; do not call the SaaS provider's listing API."
+        },
+        {
+          "id": "platform-incoming-webhook-urls",
+          "type": "config_file",
+          "source": "Grep secrets/, .env*, *.tfvars, GitHub Actions secrets (gh secret list --json), Vault paths, AWS Secrets Manager + GCP Secret Manager + Azure Key Vault for: hooks.slack.com/services/, outlook.office.com/webhook/, discord.com/api/webhooks/, *.zapier.com/hooks/, hooks.zapier.com/, *.webhook.office.com/",
+          "description": "Platform-issued incoming-webhook URLs treated as secrets. Leaked URLs are impersonation primitives.",
+          "required": true,
+          "air_gap_alternative": "Local repository + local secret-store CLI only; skip cloud-provider secret-manager enumeration if offline."
+        },
+        {
+          "id": "github-apps-webhook-config",
+          "type": "api_response",
+          "source": "gh api /orgs/{org}/installations + gh api /app/installations + gh api /app + organisation webhook list (gh api /orgs/{org}/hooks)",
+          "description": "GitHub Apps installations with their webhook URLs, signing secret presence, and the events they subscribe to.",
+          "required": false,
+          "air_gap_alternative": "If `gh` is offline, fall back to the repository's .github/app.yml + capture from cached `gh api` responses if present in CI artefacts."
+        },
+        {
+          "id": "ci-cd-pipeline-webhook-config",
+          "type": "config_file",
+          "source": "Walk .github/workflows/*.yml + .gitlab-ci.yml + Jenkinsfile + bitbucket-pipelines.yml + .circleci/config.yml for outbound webhook posts, inbound trigger configurations (workflow_dispatch with HTTP trigger, repository_dispatch), and any `pipelines.bitbucket.org/webhooks/` or `gitlab.com/api/v4/projects/{id}/triggers` references.",
+          "description": "CI/CD pipeline webhook trigger configuration. A leaked Bitbucket pipeline webhook is a direct path to artefact-publish access.",
+          "required": false,
+          "air_gap_alternative": "Repository-only walk; mark cloud CI inventory as inventory_gap=admin_api_unavailable."
+        },
+        {
+          "id": "callback-state-enforcement",
+          "type": "config_file",
+          "source": "For each OAuth client found in oauth-client-inventory, grep its callback handler implementation for the state= parameter: passport-oauth2 `state: true`, authlib `request.state`, raw checks `session['oauth_state'] == request.args['state']`. Absence is the signal.",
+          "description": "State-parameter enforcement on OAuth callback handlers. Absence = CSRF-via-callback primitive.",
+          "required": false
+        },
+        {
+          "id": "webhook-replay-window",
+          "type": "config_file",
+          "source": "For each receiver in webhook-receiver-inventory, grep the handler for a timestamp-tolerance check: stripe.Webhook.constructEvent (300s default), slack-bolt request.body.event_time, raw `abs(now - request.headers['x-timestamp']) < N`. Absence + signature-only = indefinite replay.",
+          "description": "Replay-window enforcement on inbound webhook receivers. Signature-only with no timestamp window is indefinite replay-able.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "operator_owned_repos_and_oauth_clients_and_webhook_receivers",
+        "depth": "standard",
+        "sampling": "full repository walk + full admin-API enumeration where reachable. Re-run on every new OAuth client registration or webhook subscription change."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator owns the OAuth client registrations + webhook subscriptions being inventoried",
+          "if_false": "Halt with authorisation_required — probing third-party callback endpoints without authorisation is out-of-scope."
+        },
+        {
+          "assumption": "repository tree is readable",
+          "if_false": "Mark every artefact requiring repository walk as inventory_gap=no_repo_access and downgrade overall confidence to medium."
+        },
+        {
+          "assumption": "secret-store CLIs (gh secret, aws secretsmanager, vault, az keyvault) are configured",
+          "if_false": "platform-incoming-webhook-urls artefact is collected from repo-only sources; mark provider-side secret enumeration as inventory_gap=secret_store_unreachable."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "github-apps-webhook-config",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "ci-cd-pipeline-webhook-config",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "platform-incoming-webhook-urls",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "oauth-client-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "wildcard-redirect-uri",
+          "type": "log_pattern",
+          "value": "OAuth client redirect_uri allowlist contains a wildcard subdomain or path: `https://*.<domain>/...`, `https://<host>/redirect?to=`, `https://<host>/oauth/callback?next=`",
+          "description": "Wildcard or open-redirect-style redirect_uri allows an attacker who controls any matched host or any reachable open-redirect to receive the authorisation code.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the wildcard expands to a domain the operator fully controls — for github.dev / vercel preview deployments / netlify branch URLs, the wildcard is a legitimate per-PR preview pattern but only if the preview environment ALSO requires the OAuth provider's CORS or origin check. Without an origin enforcement, the wildcard is still exploitable.",
+            "Test the registered host's `/redirect`, `/r`, `/url`, `/next`, `/return_to`, `/continue`, `/callback?to=`, `/login?next=` paths for open redirect to an attacker-controlled host. If none of those paths redirect, the wildcard's blast radius is limited to genuine subdomain takeover scenarios — still a finding, but downgrade severity."
+          ]
+        },
+        {
+          "id": "missing-state-parameter",
+          "type": "log_pattern",
+          "value": "OAuth callback handler does not load, compare, or invalidate a `state` parameter bound to the originating session.",
+          "description": "Missing state-parameter binding = CSRF-via-callback. Attacker initiates the OAuth flow with their own code_verifier, the victim's session links the returned account.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the OAuth library in use does not enforce state by default at a layer the handler doesn't visibly call (passport-oauth2 with `state: true` in strategy options, authlib's built-in state, NextAuth's built-in state). If the library enforces it transparently, demote to medium.",
+            "Confirm PKCE (code_challenge / code_verifier) is also absent — PKCE-enforced flows offer partial CSRF defence even without state, but only for the auth-code-injection sub-class, not for full session-linking attacks."
+          ]
+        },
+        {
+          "id": "missing-webhook-signature-validation",
+          "type": "log_pattern",
+          "value": "Inbound webhook receiver does not invoke a signature-comparison primitive (hmac.compare_digest, crypto.timingSafeEqual, Stripe.webhooks.constructEvent, slack_bolt SignatureVerifier) before processing the payload.",
+          "description": "Missing or non-constant-time signature validation = inbound endpoint trusts any caller. Compare-with-== leaks timing.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the receiver is not behind an authenticated platform-managed gateway (AWS API Gateway with IAM auth, Cloudflare Access policy, Tailscale Funnel with ACL) that itself enforces caller identity. If the gateway terminates trust and the receiver runs only on the private network, demote to medium.",
+            "Confirm the comparison primitive is constant-time. `==` / `===` / Python `str.__eq__` against the signature header IS a finding even when present, because it leaks timing. Constant-time primitives only."
+          ]
+        },
+        {
+          "id": "missing-webhook-replay-window",
+          "type": "log_pattern",
+          "value": "Inbound webhook receiver validates the signature but does not check a request-timestamp tolerance window (typically 60-300s).",
+          "description": "Signature-only with no timestamp window = indefinite replay. A captured payload remains valid for as long as the secret does.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1199",
+          "false_positive_checks_required": [
+            "Confirm the receiver does not record + reject duplicate event_ids in an idempotency cache (Stripe event_id, Slack event_id, GitHub X-GitHub-Delivery UUID). An idempotency cache covering the receiver's retention window is a valid alternative to a strict timestamp check.",
+            "Confirm the signed payload includes a server-issued timestamp (Stripe's `t=` prefix, Slack's X-Slack-Request-Timestamp). If the signature only covers the body and there's no timestamp in scope of the signature, the replay window is unenforceable even if the receiver checks it — escalate finding severity."
+          ]
+        },
+        {
+          "id": "leaked-incoming-webhook-url",
+          "type": "log_pattern",
+          "value": "A platform-issued incoming-webhook URL (hooks.slack.com/services/T*/B*/*, outlook.office.com/webhook/<guid>@<tenant>/IncomingWebhook/<id>, discord.com/api/webhooks/<id>/<token>) is present in (a) a public repository, (b) a CI log, (c) an error-tracker payload (Sentry / Datadog / Honeybadger), or (d) a frontend bundle.",
+          "description": "Leaked incoming-webhook URL = persistent impersonation primitive in the target channel.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.004",
+          "false_positive_checks_required": [
+            "Confirm the URL is currently active by checking the audit trail of the parent app (Slack incoming-webhook admin page, Teams workflow audit, Discord channel webhook page). A revoked URL is a hygiene finding, not an active exposure.",
+            "Confirm the exposure surface is reachable to an attacker. A URL in a private repo with restricted access is lower-severity than the same URL in a public Stack Overflow answer; rate by exposure surface."
+          ]
+        },
+        {
+          "id": "webhook-secret-shared-across-apps",
+          "type": "log_pattern",
+          "value": "The same HMAC secret value appears in webhook-receiver-inventory for two or more distinct receivers (cross-checked by hashing the loaded secret).",
+          "description": "Secret reuse across receivers = one compromised app extends to every other app that shares the secret.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Confirm the receivers are not intentionally part of a single logical application (e.g. a monorepo with a shared signing key for internal services). If intentional, the finding is per-environment-isolation rather than per-receiver-isolation: confirm stage + prod still use distinct secrets.",
+            "Hash the secret before comparing — do not log the secret value. Use a salted hash so the audit trail does not become a secret-exposure path itself."
+          ]
+        },
+        {
+          "id": "long-lived-callback-token-in-ci-log",
+          "type": "log_pattern",
+          "value": "A long-lived OAuth refresh_token, GitHub Apps installation-token, Atlassian Connect JWT, or platform incoming-webhook URL appears in a CI log artefact retained > 7 days.",
+          "description": "Snowflake-class pattern — long-lived credential in a CI log becomes a persistent take-over primitive.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1552.004",
+          "cve_ref": "CVE-2024-1709",
+          "false_positive_checks_required": [
+            "Confirm the artefact is actually retrievable by the threat model in scope. GitHub Actions logs are restricted to repo readers by default; a private repo log is lower-blast-radius than a public one. Score the exposure by the audience that can read the log.",
+            "Confirm the token is still valid. Revoked tokens are a hygiene finding, not an active exposure. Use a low-impact validity probe (e.g. GitHub Apps `gh api /app` with the installation token; do not exercise destructive scopes)."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "wildcard-redirect-uri",
+          "benign_pattern": "Vercel / Netlify per-PR preview deployments that legitimately need wildcard redirect_uri for `*.vercel.app` or `*.netlify.app`.",
+          "distinguishing_test": "Confirm the upstream OAuth provider ALSO enforces a Referer / Origin check on the callback (Google's per-client origin allowlist, GitHub Apps' explicit callback URL list). Wildcard with no origin check is exploitable; wildcard with origin check is the intended preview pattern."
+        },
+        {
+          "indicator_id": "missing-webhook-signature-validation",
+          "benign_pattern": "Receiver running inside a mesh that enforces caller identity at the mesh layer (Istio / Linkerd mTLS, AWS PrivateLink with VPC endpoint policy).",
+          "distinguishing_test": "Verify the mesh policy is enforcing — not just present. An Istio AuthorizationPolicy in permissive-mode logs violations without blocking; that is not a substitute for receiver-side signature validation."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one of {missing-state-parameter, missing-webhook-signature-validation, leaked-incoming-webhook-url, webhook-secret-shared-across-apps, long-lived-callback-token-in-ci-log} fires, OR two or more high-confidence indicators fire together. Receiver inventory > 0.",
+        "inconclusive": "Receiver inventory > 0 but every indicator's false_positive_checks_required step was blocked (admin API unreachable, mesh policy state unknown). Cannot deny without resolving the inventory gaps.",
+        "not_detected": "Receiver inventory > 0, every receiver enforces signature validation + replay window + (for OAuth clients) state-parameter binding, redirect_uri allowlists are exact-host, and no leaked URLs surface in the scanned exposure surfaces."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "missing-state-parameter",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "PKCE / state-binding attacks are well-documented; assume public PoC."
+        },
+        {
+          "signal_id": "missing-webhook-signature-validation",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Unsigned webhook receivers are routinely exploited in researcher disclosures + active intrusions."
+        },
+        {
+          "signal_id": "leaked-incoming-webhook-url",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Leaked Slack / Teams / Discord webhooks have documented impersonation-into-channel abuse in 2024-2025 incidents."
+        },
+        {
+          "signal_id": "long-lived-callback-token-in-ci-log",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "2024 Snowflake intrusion class — confirmed widespread exploitation of long-lived CI-log-leaked tokens."
+        },
+        {
+          "signal_id": "long-lived-callback-token-in-ci-log",
+          "rwep_factor": "cisa_kev",
+          "weight": 20,
+          "notes": "Multiple linked CVEs (CVE-2024-1709 included) carry KEV listing for the receiver-trust class."
+        },
+        {
+          "signal_id": "webhook-secret-shared-across-apps",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Shared-secret = blast radius multiplier across all sharing receivers."
+        },
+        {
+          "signal_id": "missing-webhook-replay-window",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Replay-without-window attacks are trivially scripted from any captured payload."
+        },
+        {
+          "signal_id": "wildcard-redirect-uri",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "Wildcard-redirect + open-redirect-chain payload generation is a documented AI-assisted attacker workflow."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If an attacker successfully abuses a matched webhook or callback finding, what scope of downstream compromise does the trust anchor deliver?",
+        "scoring_rubric": [
+          {
+            "condition": "Receiver is a single-app notification consumer (no token issued, no action taken beyond logging).",
+            "blast_radius_score": 1,
+            "description": "Impersonated message in one channel. Cleanup = revoke + audit log review."
+          },
+          {
+            "condition": "Receiver triggers a workflow inside the operator's CI (repository_dispatch, Slack workflow with code-execution step).",
+            "blast_radius_score": 2,
+            "description": "Workflow trigger → code execution path in the operator's CI runner."
+          },
+          {
+            "condition": "Receiver maps to a cloud-issued credential (Snowflake-class — leaked callback token = STS access).",
+            "blast_radius_score": 3,
+            "description": "Direct cloud-tenant access via the issued credential."
+          },
+          {
+            "condition": "Receiver triggers a package-publish or release-pipeline workflow (GitHub Apps with `contents: write` + `packages: write`).",
+            "blast_radius_score": 4,
+            "description": "Supply-chain primitive — attacker can push a release that downstream operators install."
+          },
+          {
+            "condition": "Receiver maps to an IdP admin scope (Slack admin webhook, GitHub Apps with `org_admin` scope, Atlassian Connect with admin install).",
+            "blast_radius_score": 5,
+            "description": "Identity-plane compromise. Full org pivot."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "All inbound endpoints are reviewed under SOC 2 CC6.6 / ISO 27001 A.5.16 / NIST IA-9 with TLS enforced, WAF rules in place, and signed agreements with every external provider — therefore the webhook + callback trust boundary is managed.",
+        "audit_evidence": "Inbound-endpoint catalogue with TLS posture report, WAF rule export, and signed Data Processing Agreement / Integration Agreement with every provider.",
+        "reality_test": "For a sample of 5 receivers from the catalogue: (a) submit a request with a deliberately-mangled signature and confirm the receiver rejects with 401/403, not 200; (b) capture a real payload and replay it 10 minutes later, confirm the receiver rejects on the replay window; (c) for an OAuth client, attempt a callback with the state parameter stripped and confirm the handler rejects. Theater verdict if any of (a)-(c) succeed: the paper compliance does not bind to the behaviour.",
+        "theater_verdict_if_gap": "Org demonstrates inbound-endpoint inventory + TLS + WAF posture that satisfies the literal control language, while the receivers themselves accept unsigned, replayed, or state-stripped payloads. Either (a) add receiver-behaviour conformance tests to the CC6.6 / IA-9 evidence package, (b) treat receivers as supply-chain artefacts and bring them under the NIS2 Art.21(2)(d) register with per-receiver secret-rotation cadence, OR (c) generate a defensible exception via policy-exception-gen acknowledging the residual risk."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "webhook-receiver-trust-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "IA-9 — Service Identification and Authentication",
+          "actual_gap": "Identifies outbound trust but not inbound callback authentication. Wildcard redirect_uri + open-redirect chain satisfies IA-9 trivially.",
+          "required_control": "Add an inbound-callback variant: every receiver must demonstrate (a) signature validation with constant-time comparison, (b) replay-window enforcement, (c) for OAuth, state-parameter binding to the originating session. Behaviour conformance tested per-deploy, not just per-audit."
+        },
+        {
+          "finding_id": "webhook-receiver-trust-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "AC-4 — Information Flow Enforcement",
+          "actual_gap": "Does not require state-parameter binding on OAuth callbacks or replay-window enforcement on inbound webhooks. A receiver passes AC-4 review and still accepts 4-day-old replays.",
+          "required_control": "Inbound flow controls must include CSRF defence (state binding) and replay defence (timestamp tolerance + nonce cache) as explicit testable requirements."
+        },
+        {
+          "finding_id": "webhook-receiver-trust-failure",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.16 — Identity management",
+          "actual_gap": "Treats human + service identities but not callback-URL identities. The redirect_uri allowlist itself is an identity decision A.5.16 doesn't anchor.",
+          "required_control": "Extend A.5.16 to enumerate callback-URL identities as first-class identity artefacts, with allowlist-hygiene + secret-rotation + exposure-surface monitoring requirements."
+        },
+        {
+          "finding_id": "webhook-receiver-trust-failure",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(d) — Supply chain security",
+          "actual_gap": "SaaS callback partners excluded from supply-chain register because they're not procurement vendors. The receiver is the persistent trust anchor.",
+          "required_control": "Bring inbound webhook receivers under the Art.21(2)(d) register. Track per-receiver secret-rotation cadence, exposure-surface scans, and downstream-credential mapping."
+        },
+        {
+          "finding_id": "webhook-receiver-trust-failure",
+          "framework": "soc2",
+          "claimed_control": "CC6.6 — Logical and physical access controls — boundary protection",
+          "actual_gap": "Tests TLS + WAF rules but not HMAC-signature-validation behaviour, redirect_uri allowlist hygiene, or state-parameter enforcement.",
+          "required_control": "Add receiver-behaviour conformance tests (mangled-signature reject, replayed-payload reject, state-stripped reject) to the CC6.6 evidence package, run per-deploy."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "rwep >= 90 AND blast_radius_score >= 3",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "long-lived-callback-token-in-ci-log == fired AND cloud-credential-mapping_present == true",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "blast_radius_score >= 4 AND finding.includes_package_upload_webhook == true",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "leaked-incoming-webhook-url == fired AND exposure_surface == 'public'",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "rotate-and-revoke",
+          "description": "Rotate every flagged webhook secret + OAuth client secret + platform incoming-webhook URL. Revoke flagged long-lived tokens at the issuing provider. Confirm rotation propagated to every consumer with a synthetic-event test.",
+          "preconditions": [
+            "operator_holds_secret_rotation_authority == true",
+            "downstream_consumers_can_be_updated_in_rotation_window == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "rotation_recorded_in_secret_store_audit_log",
+            "synthetic_event_validates_new_secret"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "harden-receiver-behaviour",
+          "description": "Patch each flagged receiver to enforce signature validation (constant-time), replay-window, and state-parameter binding. Replace `==` comparisons with `hmac.compare_digest` / `crypto.timingSafeEqual`. Adopt the platform SDK's verified-receiver pattern (stripe.webhooks.constructEvent, slack-bolt's built-in SignatureVerifier, Octokit Webhooks).",
+          "preconditions": [
+            "receiver_source_is_operator_owned == true",
+            "deploy_window_within_72h == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "behaviour_test_added_to_ci",
+            "deploy_recorded_in_change_management"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "tighten-redirect-uri-allowlist",
+          "description": "For each OAuth client with a wildcard or open-redirect-chained redirect_uri, replace with the exact-host allowlist required by the deployed environments. Where per-PR previews legitimately need a wildcard, enforce a per-deploy origin-allowlist at the provider's CORS layer.",
+          "preconditions": [
+            "operator_admin_on_oauth_provider == true",
+            "downstream_app_can_tolerate_temporary_callback_outage == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "redirect_uri_allowlist_recorded_in_secret_store",
+            "callback_handler_logs_rejected_origins"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate an auditor-ready policy exception when faster paths are blocked (legacy receiver cannot be patched within window, provider does not offer state-parameter enforcement, etc.) with compensating controls and time-bound risk acceptance.",
+          "preconditions": [
+            "remediation_paths[1..3] all blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "enhanced_receiver_log_review",
+            "weekly_secret_exposure_scan"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "mangled-signature-reject",
+          "test": "Submit a synthetic payload with a deliberately-mangled signature header to each flagged receiver. Confirm response is 401/403 + no downstream side effect.",
+          "expected_result": "All flagged receivers reject with 4xx; downstream side-effect counter does not increment.",
+          "test_type": "negative"
+        },
+        {
+          "id": "replay-window-reject",
+          "test": "Capture a real signed payload, wait past the configured replay window (default 5 minutes), replay. Confirm rejection.",
+          "expected_result": "Receiver rejects with 401/403; logs entry tagged as replay_window_exceeded.",
+          "test_type": "negative"
+        },
+        {
+          "id": "state-stripped-callback-reject",
+          "test": "For each flagged OAuth client, initiate a callback with the state parameter stripped or replaced. Confirm the handler rejects without linking the OAuth provider's response to any user session.",
+          "expected_result": "Handler returns 4xx + does not link session; audit log shows state_mismatch.",
+          "test_type": "negative"
+        },
+        {
+          "id": "secret-rotation-propagated",
+          "test": "Post-rotation, submit a payload signed with the OLD secret. Confirm rejection.",
+          "expected_result": "Receiver rejects payload signed with rotated-out secret.",
+          "test_type": "negative"
+        },
+        {
+          "id": "no-regression-on-legitimate-traffic",
+          "test": "Run the receiver's standard integration test suite (or replay 24h of legitimate captured traffic with current secrets).",
+          "expected_result": "All legitimate traffic succeeds; no regression in receiver throughput.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Webhook + OAuth callback trust boundary contains receivers that cannot be hardened to the required behaviour conformance within the jurisdiction's notification window.",
+        "why_remains": "Either (a) a legacy receiver depends on an upstream SDK that does not expose constant-time signature validation, (b) the OAuth provider does not enforce state parameter and the receiver cannot be updated until next deploy window, OR (c) a SaaS provider rotates incoming-webhook URLs only via a manual support ticket process slower than the window.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "enhanced_receiver_log_review",
+          "weekly_secret_exposure_scan",
+          "downstream_credential_mapping_monitored"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "Diff of receiver-handler code showing signature-validation + replay-window + state-binding additions, plus the change-management approval reference.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "nist-800-53-IA-9",
+            "nist-800-53-AC-4",
+            "iso-27001-2022-A.5.16",
+            "soc2-cc6.6"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Exposure-surface scan output showing leaked-URL hits before + after remediation (CI logs, error-tracker, public repos).",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc6.6",
+            "iso-27001-2022-A.8.21"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Receiver-behaviour test results showing mangled-signature reject, replay-window reject, and state-stripped reject all pass post-remediation.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc6.6",
+            "iso-27001-2022-A.5.16"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, receiver inventory pre/post, RWEP at detection, RWEP post-remediation, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2d"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_oauth_client_registered == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_webhook_subscription_created == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "incoming_webhook_url_added_to_secret_store == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly",
+          "interval": "7d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "all_validation_tests_passed",
+          "receiver_inventory_pre_post",
+          "exploit_replay_negative",
+          "secret_rotation_audit_record",
+          "residual_risk_statement",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Webhook or OAuth callback trust boundary abuse — $finding_class (e.g. missing-state-parameter, leaked-incoming-webhook-url, long-lived-callback-token-in-ci-log).",
+          "control_gap": "Inbound-endpoint inventory + TLS + WAF satisfied the literal control language but did not bind to receiver behaviour. Signature validation, replay-window, state-parameter binding were not tested per-deploy.",
+          "framework_gap": "NIST IA-9 + AC-4, ISO A.5.16, NIS2 Art.21(2)(d), SOC 2 CC6.6 all underspecify the inbound-callback trust boundary. None mandate redirect_uri allowlist hygiene, OAuth state binding, replay-window enforcement, or per-app secret isolation.",
+          "new_control_requirement": "Add receiver-behaviour conformance to each framework's inbound-trust control: mangled-signature reject + replay-window reject + state-stripped reject tested per-deploy. Bring SaaS callback partners under the supply-chain register with per-receiver secret-rotation cadence."
+        },
+        "feeds_back_to_skills": [
+          "identity-assurance",
+          "api-security",
+          "cloud-iam-incident",
+          "framework-gap-analysis",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "webhook_receiver_inventory",
+            "secret_exposure_window_estimate",
+            "downstream_token_revocation_record"
+          ],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: webhook + OAuth callback trust-boundary compromise across ${affected_receiver_count} receiver(s). Findings include: ${finding_classes_present}. Exposure window: ${exposure_window_estimate}. Containment in place: ${containment_record}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "ict_third_party_callback_inventory",
+            "containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — webhook/callback trust-boundary compromise affecting ICT third-party integration(s) ${ict_third_party_callback_inventory}. Critical or important functions affected: ${affected_functions}. Full classification + impact assessment to follow within statutory windows."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (provider_does_not_expose_required_primitive == true AND alternative_provider_migration_eta > jurisdiction_window)",
+        "exception_template": {
+          "scope": "Webhook + OAuth callback trust-boundary residual risk across ${affected_receiver_count} receiver(s); remediation paths 1-3 blocked or partially blocked.",
+          "duration": "until_provider_primitive_available_or_30d",
+          "compensating_controls": [
+            "enhanced_receiver_log_review",
+            "weekly_secret_exposure_scan",
+            "downstream_credential_mapping_monitored",
+            "leaked_url_takedown_runbook"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organisation documents a time-bound risk acceptance for webhook + OAuth callback trust-boundary findings across ${affected_receiver_count} receiver(s). Provider-side primitive availability: ${provider_primitive_status}. Alternative-provider migration ETA: ${migration_eta}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. The exception will be re-evaluated on (a) provider primitive availability, (b) the listed expiry date, OR (c) a new exposure indicator firing — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-callback-and-webhook-receivers",
+      "title": "Inventory + behaviour-test every OAuth callback handler + inbound webhook receiver",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "snowflake-class-ci-log-leak",
+      "title": "Targeted scan for Snowflake-class long-lived-callback-token-in-CI-log exposure",
+      "applies_to": {
+        "attack_technique": "T1552.004"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 75,
+            "monitor": 50,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "github-apps-installation-trust",
+      "title": "Targeted review for GitHub Apps installation + webhook secret hygiene",
+      "applies_to": {
+        "attack_technique": "T1199"
+      }
+    }
+  ]
+}

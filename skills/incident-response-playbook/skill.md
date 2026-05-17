@@ -17,12 +17,8 @@ triggers:
   - prompt injection incident
   - model exfiltration incident
 data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
-  - cwe-catalog.json
   - d3fend-catalog.json
+  - framework-control-gaps.json
   - zeroday-lessons.json
 atlas_refs:
   - AML.T0096

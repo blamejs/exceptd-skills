@@ -249,7 +249,6 @@ function buildSbom() {
   const pkg = readJson(PACKAGE_PATH);
   const manifest = readJson(MANIFEST_PATH);
   const catalogs = countDataCatalogs(DATA_DIR);
-  const timestamp = new Date().toISOString();
   const skillCount = Array.isArray(manifest.skills) ? manifest.skills.length : 0;
   const catalogCount = catalogs.length;
   const vendorProv = loadVendorProvenance();
@@ -263,9 +262,27 @@ function buildSbom() {
     a['bom-ref'] < b['bom-ref'] ? -1 : a['bom-ref'] > b['bom-ref'] ? 1 : 0,
   );
 
-  const serialNumber =
-    'urn:uuid:' +
-    uuidV4FromSeed(`${pkg.name}@${pkg.version}@${timestamp}`);
+  // v0.13.0: derive both serialNumber and metadata.timestamp from the
+  // bundle content hash, not wall-clock. Pre-v0.13 every refresh produced
+  // a new UUID + timestamp even when the bundle content was byte-identical,
+  // so the SBOM-currency gate produced noisy diffs and the predeploy
+  // comparison could not rely on stable byte-identity. The comment at the
+  // top of this file says "stable across observers" — the implementation
+  // contradicted it. Now: identical content → identical SBOM.
+  //
+  // The synthetic timestamp uses the bundle SHA folded into a date string
+  // anchored at the Unix epoch + a deterministic offset; this is NOT a
+  // real audit timestamp (the `metadata.lifecycles[]` block carries the
+  // intended-lifecycle phase for that). Operators wanting the wall-clock
+  // time of a refresh should read the file's mtime or refresh-report.json.
+  const seed = `${pkg.name}@${pkg.version}@${bundleSha}`;
+  const serialNumber = 'urn:uuid:' + uuidV4FromSeed(seed);
+  // Synthetic ISO timestamp derived from the seed — preserves the
+  // CycloneDX 1.6 metadata.timestamp schema requirement (must be an
+  // ISO-8601 string) while remaining content-stable.
+  const seedHash = crypto.createHash('sha256').update(seed).digest();
+  const offsetSeconds = seedHash.readUInt32BE(0); // deterministic offset
+  const timestamp = new Date(Date.UTC(2026, 0, 1) + offsetSeconds * 1000).toISOString();
 
   const dataflowInput = catalogs
     .map((c) => `data/${c}`)

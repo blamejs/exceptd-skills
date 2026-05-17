@@ -13,9 +13,7 @@ triggers:
   - promptsteal
   - promptflux
 data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
+  - d3fend-catalog.json
 atlas_refs:
   - AML.T0043
   - AML.T0051
@@ -61,7 +59,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-17"
 ---
 
 # AI Attack Surface Assessment
@@ -160,6 +158,15 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 | PCI DSS 4.0 | 6.4.1 | Web application protection (WAF). WAFs operate on HTTP request/response patterns. They have no semantic understanding of prompt injection embedded in JSON `message` fields. |
 | MITRE ATT&CK | Enterprise | Does not include prompt injection as a technique. AI-as-C2 (SesameOp) is not in ATT&CK as of mid-2026. ATLAS v5.4.0 covers these but is not part of SOC detection engineering programs that are ATT&CK-mapped. |
 | NIST AI RMF | MEASURE 2.5 | Measure AI risks during operation. Provides a framework for thinking about AI risk but no specific controls for prompt injection, MCP supply chain, or AI-as-C2. |
+| EU NIS2 | Art. 21(2)(d) (supply-chain security) + Art. 21(2)(e) (security in acquisition, development and maintenance) | "Appropriate and proportionate" supply-chain language. Member-state transpositions (BSI IT-SiG 2.0, ANSSI) do not enumerate MCP servers or LLM API providers as in-scope supply-chain components. An essential entity can meet NIS2 supplier-management obligations with traditional SaaS vendor reviews while having zero coverage of AI-assistant tool ecosystems. |
+| EU DORA | Art. 8 (ICT asset management) + Art. 28 (ICT third-party register) + Art. 30 (key contractual provisions) | Financial-entity ICT third-party language scoped to traditional ICT providers. LLM API providers acting as data processors for prompt content and developer-environment MCP servers are not enumerated as ICT third-party service providers. ESAs RTS on subcontracting (JC 2024/53) is silent on AI/ML SaaS dependency classes. |
+| EU AI Act (Regulation 2024/1689) | Art. 15 (accuracy, robustness, cybersecurity) for high-risk AI + Art. 9 (risk management) | High-risk AI cybersecurity language refers to "state of the art" without naming prompt injection, MCP supply chain, or AI-as-C2 as scoped attack classes. Conformity assessments (Annex VI/VII) accept documentation completeness; harmonized standards (CEN-CENELEC JTC 21) through 2026-2027 may operationalize this. |
+| UK NCSC CAF | Principle A4 (Supply Chain), B2 (Identity and Access Control), B4 (System Security), C1 (Security Monitoring) | Outcome-based language. NCSC's 2024 guidance on securing AI systems and the DSIT AI Cyber Code of Practice (2025) name the attack classes at the principle level (prompt injection, model supply chain, monitoring), but the CAF outcome statements are unchanged. An organisation achieves CAF outcomes at Achieved level with zero MCP-trust controls and zero prompt-injection detection. |
+| UK DSIT AI Cyber Code of Practice (2025) | 13 principles for secure AI development and deployment | Principles-based. Names training-data integrity, model-deployment security, monitoring, and supply chain — but as principles, not testable controls. No technical floor for prompt-injection defence, MCP allowlisting, or AI-as-C2 detection. |
+| AU ASD Essential 8 | Strategy: Application Control + User Application Hardening + Restrict Administrative Privileges | Application Control (allowlisting) covers what runs locally; it does not cover AI-assistant tool-use chains where the AI agent dynamically composes the executed action. None of the eight strategies address prompt injection, model supply chain, or LLM-as-C2 channel. |
+| AU ASD ISM | ISM-1808 (cloud consumer responsibilities) + ISM-1728 (supply chain risk) + ISM-1228 (event monitoring) | ISM-1728 supply-chain control is scoped to traditional vendor classes; LLM APIs and MCP servers fall outside enumerated supply-chain categories. ISM-1228 event-log monitoring assumes signature-or-rule detection over known indicators — AI API egress as C2 and prompt-injection-coerced actions produce no traditional indicator. |
+| AU Voluntary AI Safety Standard (10 guardrails, 2024) | Guardrails 5 (test and monitor), 6 (transparency), 8 (record-keeping) | Voluntary, principles-language. Operationally identical to the UK DSIT AI Cyber Code lag — names the right concerns at the principle layer without testable controls for prompt injection, MCP trust, or AI-as-C2 detection. |
+| AU APRA CPS 234 | Para 27 (information security capability proportional to vulnerabilities and threats) + APRA CPG 235 (managing data risk) | "Proportional" capability language. APRA-regulated entities deploying AI assistants meet CPS 234 attestation with traditional information-security capability; AI-specific attack surface is not an examined capability class. APRA Information Paper on AI (2024) names the risks at the supervisory level without altering CPS 234 obligations. |
 
 ---
 
