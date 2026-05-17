@@ -5493,6 +5493,29 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     }
   }
 
+  // Second --fix path: private key IS present but the signatures check
+  // FAILED. This is the post-rotation case (codex P2 v0.12.41): operator
+  // ran `node $(exceptd path)/lib/sign.js generate-keypair --rotate`,
+  // got a fresh keypair, but the manifest + skills still carry signatures
+  // from the OLD keypair. Pre-fix doctor --fix's signing path only fired
+  // when the private key was missing, so the rotation flow's remediation
+  // step was a no-op. Chain sign-all here so the post-rotate doctor --fix
+  // converges to a fully-verified state.
+  if (args.fix && checks.signing && checks.signing.private_key_present && checks.signatures && checks.signatures.ok === false && !out.summary.fix_applied && !out.summary.fix_attempted) {
+    process.stderr.write("[doctor --fix] private key present, signatures failing — running sign-all to re-sign skills + manifest...\n");
+    const s = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "sign-all"], {
+      stdio: ["ignore", "pipe", "pipe"], cwd: PKG_ROOT,
+    });
+    if (s.status === 0) {
+      out.summary.fix_applied = "skills_resigned_against_current_keypair";
+      process.stderr.write("[doctor --fix] sign-all complete — re-run `exceptd doctor` to confirm.\n");
+    } else {
+      out.summary.fix_attempted = "sign_all_failed";
+      out.summary.sign_all_exit_code = s.status;
+      process.stderr.write(`[doctor --fix] sign-all failed (exit=${s.status}); run \`node $(exceptd path)/lib/sign.js sign-all\` manually.\n`);
+    }
+  }
+
   if (wantJson) {
     emit(out, indent);
     if (!allGreen) process.exitCode = EXIT_CODES.GENERIC_FAILURE;

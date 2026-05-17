@@ -82,6 +82,20 @@ test('F3: bin/exceptd.js doctor --fix refuses when keys/public.pem present witho
   assert.match(src, /sign-all/, 'doctor --fix must chain sign-all after generate-keypair succeeds');
 });
 
+test('F3b: doctor --fix detects post-rotate stale signatures and chains sign-all (codex P2)', () => {
+  // codex P2 v0.12.41: after `generate-keypair --rotate` the private key
+  // IS present, so the missing-key remediation path never fires.
+  // doctor --fix must ALSO detect signatures-failing-while-key-present
+  // and chain sign-all so the post-rotate flow converges to verified.
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  assert.match(src, /skills_resigned_against_current_keypair/,
+    'doctor --fix must support the post-rotation re-sign path');
+  // Pin the precondition: only fires when key IS present AND signatures
+  // check failed AND no earlier --fix path already ran.
+  assert.match(src, /checks\.signing\.private_key_present[\s\S]{0,200}checks\.signatures[\s\S]{0,50}ok === false/,
+    'post-rotate sign-all path must gate on private_key_present && signatures.ok === false');
+});
+
 // ---------- F4 — attest unknown subverb did-you-mean ----------
 
 test('F4: attest unknown subverb returns did_you_mean[] in JSON body', () => {
