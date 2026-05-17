@@ -29,11 +29,8 @@ triggers:
   - tenant compromise
 data_deps:
   - cve-catalog.json
-  - attack-techniques.json
-  - framework-control-gaps.json
-  - global-frameworks.json
-  - cwe-catalog.json
   - d3fend-catalog.json
+  - framework-control-gaps.json
 atlas_refs: []
 attack_refs:
   - T1078.004

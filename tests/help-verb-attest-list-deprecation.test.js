@@ -122,38 +122,44 @@ test('F5: `attest list` empty-state human output names each candidate root', () 
   }
 });
 
-// F7 ------------------------------------------------------------------------
+// F7 v0.13.0 update --------------------------------------------------------
+//
+// v0.13.0 honored the long-advertised legacy-verb removal. The pre-v0.13
+// deprecation-banner mechanism (soft banner + tempdir marker for once-per-
+// version display) was replaced by a hard refusal with a replacement hint.
+// The two prior F7 tests asserted banner+suppress semantics; both are
+// replaced with refusal-shape assertions below.
 
-test('F7: legacy-verb deprecation banner shows once, then is suppressed by tempdir marker', () => {
-  const pkg = require(path.join(ROOT, 'package.json'));
-  const marker = path.join(os.tmpdir(), `exceptd-deprecation-shown-v${pkg.version}`);
-  // Reset to ensure a clean test run.
-  try { fs.unlinkSync(marker); } catch {}
-  try {
-    // First invocation: banner must fire on stderr.
-    const r1 = cli(['plan'], { env: { EXCEPTD_DEPRECATION_SHOWN: '' } });
-    assert.equal(r1.status, 0);
-    assert.match(r1.stderr, /DEPRECATION.*plan.*is a v0\.10\.x verb/);
-    assert.equal(fs.existsSync(marker), true, 'marker file must be created after first banner');
-    // Second invocation: marker present, banner suppressed.
-    const r2 = cli(['plan'], { env: { EXCEPTD_DEPRECATION_SHOWN: '' } });
-    assert.equal(r2.status, 0);
-    assert.equal(r2.stderr.includes('DEPRECATION'), false,
-      `second invocation must NOT emit the deprecation banner; got stderr: ${r2.stderr.slice(0, 200)}`);
-  } finally {
-    try { fs.unlinkSync(marker); } catch {}
+test('F7: removed legacy verbs (plan/govern/direct/look/ingest) are refused with replacement hint', () => {
+  // Exhaustive across the 5 removed verbs so a regression that re-routes
+  // one of them silently is caught. (reattest and list-attestations are
+  // preserved as canonical short-form routings — they remain operationally
+  // useful and v0.13 does not remove them.)
+  const removedPairs = [
+    ['plan', 'brief --all'],
+    ['govern', 'brief <pb> --phase govern'],
+    ['direct', 'brief <pb> --phase direct'],
+    ['look', 'brief <pb> --phase look'],
+    ['ingest', 'run'],
+  ];
+  for (const [removed, replacement] of removedPairs) {
+    const r = cli([removed]);
+    assert.equal(r.status, 1, `${removed}: expected exit 1; got ${r.status}`);
+    const body = JSON.parse(r.stderr.trim());
+    assert.equal(body.ok, false, `${removed}: body must be ok:false`);
+    assert.equal(body.verb, removed, `${removed}: body.verb must echo input`);
+    assert.equal(body.removed_in, '0.13.0', `${removed}: removed_in must be "0.13.0"`);
+    assert.equal(body.replacement, replacement,
+      `${removed}: replacement must be "${replacement}"; got "${body.replacement}"`);
+    assert.match(body.error, new RegExp(`'${removed}' was removed in v0\\.13\\.0\\. Use .exceptd ${replacement.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')}.`),
+      `${removed}: error string must point at the replacement command`);
   }
 });
 
-test('F7: explicit EXCEPTD_DEPRECATION_SHOWN=1 suppresses even the first display', () => {
-  const pkg = require(path.join(ROOT, 'package.json'));
-  const marker = path.join(os.tmpdir(), `exceptd-deprecation-shown-v${pkg.version}`);
-  try { fs.unlinkSync(marker); } catch {}
-  try {
-    const r = cli(['plan'], { env: { EXCEPTD_DEPRECATION_SHOWN: '1' } });
-    assert.equal(r.status, 0);
-    assert.equal(r.stderr.includes('DEPRECATION'), false);
-  } finally {
-    try { fs.unlinkSync(marker); } catch {}
-  }
+test('F7: removal refusal carries deprecation_history field for operator audit', () => {
+  const r = cli(['plan']);
+  const body = JSON.parse(r.stderr.trim());
+  assert.equal(typeof body.deprecation_history, 'string');
+  assert.match(body.deprecation_history, /v0\.11\.0/);
+  assert.match(body.deprecation_history, /v0\.13\.0/);
 });

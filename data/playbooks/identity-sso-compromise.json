@@ -1,0 +1,951 @@
+{
+  "_meta": {
+    "id": "identity-sso-compromise",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-17",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-17",
+        "summary": "Initial seven-phase in-progress IdP-compromise DETECTION playbook. Counterpart to idp-incident (post-incident response): this playbook walks the IdP control-plane for indicators that compromise IS happening now — tenant-admin-tier persistence (extra global-admin grants, new OAuth-application owner additions), OAuth refresh-token hoarding (anomalous refresh-token issuance volume per service principal), conditional-access policy tampering (newly-introduced bypass rules, weakened MFA requirements), Primary Refresh Token (PRT) theft signatures (TokenSigningCertificate exports, device-registration anomalies), and golden-SAML / AD FS signing-cert misuse. Detection-side counterpart to the post-incident response in idp-incident; escalates into idp-incident when detection confirms compromise.",
+        "framework_gaps_updated": [
+          "nist-800-53-AC-2(11)-anomaly-detection",
+          "nist-800-53-IA-5-token-hoarding",
+          "iso-27001-2022-A.8.16-monitoring-activity-IdP",
+          "soc2-CC7.2-detection-IdP-plane",
+          "uk-caf-C1-security-monitoring-IdP",
+          "au-essential-8-ML3-detection-event-logging"
+        ]
+      }
+    ],
+    "owner": "@blamejs/grc",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "idp-audit-api-reachable",
+        "description": "The IdP tenant's audit-log API must be reachable for read-only enumeration (Okta /api/v1/logs, Entra ID /auditLogs/signIns + /auditLogs/directoryAudits via Graph, Auth0 /api/v2/logs, Ping /environments/{id}/auditTrails, OneLogin /api/2/events).",
+        "check": "idp_audit_api_reachable == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "read-only-admin-rbac",
+        "description": "Operator must hold at minimum a Read-only Admin / Reports Reader / Global Reader role sufficient to enumerate sign-ins, audit events, consent grants, federated-trust configuration, conditional-access policy state, and privileged-role assignments. A read-only role keeps the detection sweep from introducing additional attack surface.",
+        "check": "operator_has_idp_read_admin == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "tenant-ownership",
+        "description": "The operator must own the tenant under investigation (or hold explicit written authorisation from the tenant owner).",
+        "check": "tenant_ownership_attested == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "idp-incident",
+        "condition": "phases.detect.classification == 'detected'"
+      },
+      {
+        "playbook_id": "cred-stores",
+        "condition": "analyze.blast_radius_score >= 3"
+      },
+      {
+        "playbook_id": "cloud-iam-incident",
+        "condition": "finding.includes_cloud_role_assumption == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Identity-provider in-progress compromise detection (SSO / federated-trust plane)",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [
+      "AML.T0048",
+      "AML.T0096"
+    ],
+    "attack_refs": [
+      "T1078.004",
+      "T1556.007",
+      "T1098.001",
+      "T1606.002",
+      "T1199",
+      "T1528"
+    ],
+    "cve_refs": [
+      "CVE-2024-1709"
+    ],
+    "cwe_refs": [
+      "CWE-287",
+      "CWE-269",
+      "CWE-284",
+      "CWE-522",
+      "CWE-345",
+      "CWE-863"
+    ],
+    "d3fend_refs": [
+      "D3-MFA",
+      "D3-NTA",
+      "D3-IOPR",
+      "D3-CBAN"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "hipaa"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "exposure_window_estimate",
+            "rotation_status"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "affected_critical_or_important_functions",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "idp_audit_log_excerpt",
+            "data_subject_impact_assessment"
+          ]
+        },
+        {
+          "jurisdiction": "US-Federal",
+          "regulation": "SEC Item 1.05 (8-K)",
+          "obligation": "notify_regulator",
+          "window_hours": 96,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "material_impact_determination",
+            "incident_description"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "Privacy Act 1988 — Notifiable Data Breaches scheme (s26WK)",
+          "obligation": "notify_regulator",
+          "window_hours": 720,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "australian_resident_records_affected",
+            "remediation_completed_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "mfa-enrollment-as-detection",
+          "claim": "Every user has MFA enrolled and conditional access requires MFA on every sign-in, therefore IdP compromise is detectable from sign-in logs alone.",
+          "fast_detection_test": "Verify whether the conditional-access policy is actually IN ENFORCING state for the named tenant — not report-only — and whether there exist exclusion groups (Break-Glass accounts, sync accounts, app service principals) that bypass MFA in scope. MFA enrolled ≠ MFA enforced; conditional-access in report-only generates audit signals but does not BLOCK the attacker that has the password.",
+          "implicated_controls": [
+            "nist-800-53-IA-2(1)",
+            "iso-27001-2022-A.5.17",
+            "soc2-cc6.6"
+          ]
+        },
+        {
+          "pattern_id": "audit-log-collected-therefore-monitored",
+          "claim": "Sign-in + directory-audit logs are streamed to the SIEM, therefore IdP-plane compromise will be detected.",
+          "fast_detection_test": "Distinguish 'logs collected' from 'detection rules deployed'. Confirm the SIEM has active rules for: (a) new global-admin grant outside change-management window, (b) anomalous refresh-token issuance volume per service principal, (c) conditional-access policy modification, (d) federation signing-certificate addition or rotation. Logs without rules are storage, not detection."
+        },
+        {
+          "pattern_id": "okta-support-session-as-out-of-scope",
+          "claim": "Vendor support sessions (Okta, Microsoft FastTrack) are vendor responsibility, so we don't audit them.",
+          "fast_detection_test": "Enumerate any vendor-side admin access historically granted to the tenant. The 2023 Okta customer-support compromise was the canonical incident where attacker traffic looked like legitimate vendor sessions. Every vendor session should be audited as if it were a tenant-admin session, with timing + IP + RBAC scope cross-checked against the support case it claims to back."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "IdP-plane in-progress detection has structural gaps across NIST 800-53, ISO 27001:2022, SOC 2, NIS2, and APRA / Essential 8. The frameworks describe access management at the user-identity layer and detection at the SIEM-rule layer, but the IdP control plane sits between: who has tenant-admin? which app service principals have refresh-token hoarding patterns? which conditional-access policies have exclusion groups whose membership changes silently? NIST AC-2(11) names automated session monitoring but not IdP-control-plane-specific anomaly detection. ISO A.8.16 covers monitoring of system activity but does not bind to IdP-tenant-admin event semantics. SOC 2 CC7.2 covers system monitoring and CC6.6 covers logical access boundaries but not the IdP tenant-admin or OAuth-consent boundary. UK CAF C1 (Security monitoring) is outcome-based and does not specify IdP-control-plane detection rules. AU Essential 8 ML3 multi-factor authentication is about enforcement, not detection of bypass. The result: an IdP tenant where Salt Typhoon-class persistence or Scattered Spider-class consent abuse is in progress can satisfy literal framework controls while the attacker holds the IdP plane.",
+        "lag_score": 26,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "AC-2(11) — Account Management — Usage Conditions",
+            "designed_for": "Automated monitoring of account usage conditions and anomalies.",
+            "insufficient_because": "Does not specify IdP-control-plane-specific signals (admin-role-grant outside change window, refresh-token hoarding by service principal, federation-signing-cert addition). Generic anomaly-detection rules miss these unless explicitly authored."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.16 — Monitoring activities",
+            "designed_for": "Monitoring system activity for anomalies.",
+            "insufficient_because": "Does not bind to IdP-tenant-admin event semantics. The control passes with generic SIEM collection but does not require IdP-plane-specific detection rules."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC7.2 — System monitoring",
+            "designed_for": "Monitoring system components and the operation of controls.",
+            "insufficient_because": "Treats the IdP as a vendor-managed component out of scope; in-progress detection in the IdP control plane is not assessed."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(f) — Policies and procedures regarding the use of multi-factor authentication",
+            "designed_for": "MFA enforcement policy for essential entities.",
+            "insufficient_because": "Specifies enforcement; silent on detection of MFA-bypass patterns (conditional-access exclusion group changes, app-passwords issuance, legacy-auth re-enablement). MFA-enforced posture can coexist with active MFA-bypass."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "C1 — Security monitoring",
+            "designed_for": "Outcome — the organisation monitors security-relevant activity.",
+            "insufficient_because": "Outcome-based, not IdP-control-plane-specific. Regulator interpretation varies; a SIEM with generic anomaly rules and no IdP-plane rules can defensibly satisfy C1."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 6 — Multi-factor authentication",
+            "designed_for": "ASD mitigation strategy for MFA, with maturity levels 1-3.",
+            "insufficient_because": "Strategy 6 is about MFA enforcement scope and phishing-resistance; not about detection of in-progress IdP-plane compromise that bypasses MFA via the control plane (admin-tier grant, federation signing-cert misuse, golden-SAML)."
+          }
+        ]
+      },
+      "skill_preload": [
+        "identity-assurance",
+        "idp-incident-response",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Q1-Q2 2026 IdP-compromise-in-progress landscape. Salt Typhoon's telecom intrusions in 2024-2025 included tenant-admin-tier persistence inside Entra ID + Okta tenants belonging to critical-infrastructure carriers — the attacker held the IdP plane for weeks before lateral movement, and the detection signal that surfaced compromise was IdP-control-plane (admin-role grant out of normal change window) rather than endpoint or network. Scattered Spider's 2024-2025 SaaS-supply-chain attacks routinely abused OAuth-app-consent grants to access mailboxes + repositories + SaaS data without triggering MFA prompts on the victim user. The 2023 Okta customer-support session-theft incident remains a foundational reminder: vendor-tier admin access is in-scope for monitoring, and the attacker did not need to pass MFA at the customer tenant — they used vendor-side session material. Golden-SAML technique (signing-certificate theft from AD FS or Entra ID federation trust) is operational since 2020 (Solarigate origin) and remains in active use; the detection signature is federation-trust-config modification + sudden signed-assertion volume increase. Primary Refresh Token (PRT) theft, primarily via TokenBroker or seamless-SSO endpoints on a compromised endpoint, gives the attacker indefinite tenant access without re-authentication. The AI-attack dimension: AML.T0048 (model exfiltration) + AML.T0096 (LLM plugin compromise) cross into the IdP plane when an attacker abuses an LLM tool's OAuth grant against the IdP itself — refresh-token hoarding by an OAuth app is a credible AI-C2 fingerprint. This playbook detects compromise IN PROGRESS; the post-incident IR workflow lives in idp-incident.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST 800-53 AC-2(11) + IA-5, ISO 27001 A.8.16, SOC 2 CC7.2 + CC6.6, NIS2 Art.21(2)(f), UK CAF C1, AU Essential 8 ML3, AU ISM-1559 collectively underspecify in-progress IdP-control-plane compromise detection. None mandate the specific IdP-plane signals: admin-role grant outside change-management window, refresh-token hoarding per service principal, conditional-access exclusion-group membership changes, federation signing-certificate additions or rotations, OAuth-app-consent grants with high-impact scopes (Mail.ReadWrite, Files.ReadWrite.All, full_access_as_app). MFA enforcement (Art.21(2)(f), Strategy 6) coexists with active control-plane bypass. The Salt Typhoon, Scattered Spider, and 2023 Okta cases each satisfied literal framework readings while the attacker held the IdP plane.",
+      "skill_chain": [
+        {
+          "skill": "identity-assurance",
+          "purpose": "Establish baseline identity assurance state for the tenant: which auth methods are enforced, which exclusion groups exist, which OAuth apps have high-impact scopes.",
+          "required": true
+        },
+        {
+          "skill": "idp-incident-response",
+          "purpose": "Load IR context so that detected compromise can flow directly into the post-incident playbook without losing the detection-side evidence chain.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each detection finding to the framework control that should have caught it and why it didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the theater test — does the org's claimed IdP monitoring actually distinguish a normal admin-grant change-management window from an out-of-window grant?",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language if a detection gap cannot be closed within the jurisdiction's window.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 16500,
+        "breakdown": {
+          "govern": 2200,
+          "direct": 1700,
+          "look": 1700,
+          "detect": 2400,
+          "analyze": 3500,
+          "validate": 2800,
+          "close": 2200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "privileged-role-assignments",
+          "type": "api_response",
+          "source": "Entra ID: GET /directoryRoles + /directoryRoles/{id}/members via Graph (incl. PIM eligible AND active assignments). Okta: GET /api/v1/iam/assignees/users + roles inventory. Auth0: GET /api/v2/users-by-role.",
+          "description": "Current snapshot of every privileged-role assignment (Global Admin, Privileged Role Administrator, Tenant Owner, Super Admin, Application Administrator, Cloud Application Administrator, Conditional Access Administrator) with who holds it, since when, and via what assignment path.",
+          "required": true,
+          "air_gap_alternative": "Cached Graph / Okta JSON exports from the operator's SIEM if direct API is unreachable."
+        },
+        {
+          "id": "directory-audit-window",
+          "type": "audit_trail",
+          "source": "Entra ID: GET /auditLogs/directoryAudits?$filter=activityDateTime gt {now-30d} (Graph). Okta: GET /api/v1/logs?since={now-30d}. Auth0: GET /api/v2/logs with date filter.",
+          "description": "Last 30 days of directory-audit events, partitioned by category: role assignment, application registration, conditional-access policy change, federation-trust modification, certificate addition.",
+          "required": true,
+          "air_gap_alternative": "SIEM-side audit-log export covering the same 30-day window."
+        },
+        {
+          "id": "oauth-app-consent-inventory",
+          "type": "api_response",
+          "source": "Entra ID: GET /servicePrincipals + /oauth2PermissionGrants + /appRoleAssignments (Graph). Okta: GET /api/v1/apps and /api/v1/apps/{id}/grants. Per-service-principal capture: requested scopes, granted scopes, consenting user / admin, consent date.",
+          "description": "Every OAuth application granted access to the tenant, with the scopes consented and when.",
+          "required": true,
+          "air_gap_alternative": "Cached Graph / Okta JSON exports if API unreachable."
+        },
+        {
+          "id": "conditional-access-policy-state",
+          "type": "api_response",
+          "source": "Entra ID: GET /identity/conditionalAccess/policies (Graph). Okta: GET /api/v1/policies?type=ACCESS_POLICY. Per-policy capture: state (enabled/report-only/disabled), assignment scope, exclusion groups, MFA requirement, session controls.",
+          "description": "Every conditional-access (or equivalent access) policy with its current state and exclusion groups.",
+          "required": true,
+          "air_gap_alternative": "IaC source (Terraform azuread_conditional_access_policy / okta_policy resources) plus the last cached policy state from the SIEM."
+        },
+        {
+          "id": "refresh-token-issuance-baseline",
+          "type": "audit_trail",
+          "source": "Entra ID: GET /auditLogs/signIns?$filter=appId eq {sp-id} grouped by appId over 30d. Okta: /api/v1/logs with eventType=user.session.start filtered by client. Build a baseline of refresh-token issuance volume per service principal.",
+          "description": "30-day baseline of refresh-token issuance per service principal, used to surface refresh-token-hoarding patterns.",
+          "required": false,
+          "air_gap_alternative": "SIEM-aggregated baseline if reachable; if neither API nor SIEM is reachable, mark refresh-token-hoarding indicator as inconclusive."
+        },
+        {
+          "id": "federation-trust-config",
+          "type": "api_response",
+          "source": "Entra ID: GET /domains/{id}/federationConfiguration + /policies/tokenIssuancePolicies. AD FS: Get-AdfsRelyingPartyTrust + Get-AdfsCertificate -CertificateType Token-Signing. Okta: GET /api/v1/idps + signing-key metadata.",
+          "description": "Federation trust configuration, with token-signing certificate fingerprints and any recent additions.",
+          "required": false,
+          "air_gap_alternative": "Cached config export; if unavailable, mark golden-SAML-class indicators as inconclusive."
+        },
+        {
+          "id": "break-glass-and-sync-accounts",
+          "type": "api_response",
+          "source": "Inventory of tenant accounts excluded from conditional access (Entra ID Break Glass pattern, Okta super-admin override accounts, AD Connect / Cloud Sync service accounts).",
+          "description": "Accounts whose conditional-access exclusion is by design. Used to suppress noise on indicators that fire on legitimate excluded accounts.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "30d",
+        "asset_scope": "single_idp_tenant",
+        "depth": "deep",
+        "sampling": "full tenant sweep, last 30 days of audit + sign-in events. Re-collect on every regression_trigger event."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator owns the tenant under investigation",
+          "if_false": "Halt with authorisation_required."
+        },
+        {
+          "assumption": "IdP admin API is reachable with read-only credentials",
+          "if_false": "Halt — IdP-plane visibility is load-bearing for this playbook."
+        },
+        {
+          "assumption": "audit retention covers at least the last 30 days",
+          "if_false": "Reduce time-window to actual retention; downgrade overall confidence to medium and emit a visibility note on the retention shortfall."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "refresh-token-issuance-baseline",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "federation-trust-config",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "oauth-app-consent-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "privileged-role-assignments",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "out-of-window-global-admin-grant",
+          "type": "log_pattern",
+          "value": "Directory-audit event 'Add member to role' or 'Activate role assignment' for a Tier-0 role (Global Admin, Privileged Role Administrator, Conditional Access Administrator, Application Administrator, Cloud Application Administrator, Tenant Owner) OUTSIDE the operator's documented change-management window.",
+          "description": "Tenant-admin-tier grant outside change-management = candidate persistence event. Salt Typhoon-class signature.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1098.003",
+          "false_positive_checks_required": [
+            "Cross-check against the operator's change-management ticket system (Jira, ServiceNow, GitHub Issues) for a matching ticket within +/- 30 minutes. A matched ticket with appropriate approver downgrades to medium.",
+            "Confirm the actor identity is not a known break-glass account performing a legitimate emergency-access activation. Break-glass activations must STILL be reviewed but are not in themselves compromise indicators."
+          ]
+        },
+        {
+          "id": "high-impact-oauth-consent-grant",
+          "type": "log_pattern",
+          "value": "OAuth app consent grant with any of: Mail.ReadWrite, Mail.Send, Files.ReadWrite.All, Sites.FullControl.All, full_access_as_app, Application.ReadWrite.All, Directory.ReadWrite.All, RoleManagement.ReadWrite.Directory — granted to a service principal not on the operator's allowlist.",
+          "description": "Scattered Spider-class OAuth-consent abuse. High-impact scopes grant data + identity-plane reach without user-interactive MFA.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1528",
+          "false_positive_checks_required": [
+            "Confirm the service principal is not a known first-party integration (Microsoft Teams, Power Automate, the operator's own AD app registrations). Allowlisting must be evidence-backed, not vibes.",
+            "Confirm the consenting actor was an admin (admin-consent flow) and that the admin's session itself is not already flagged on another indicator. Compromised admin granting consent counts twice — once as the grant, once as the admin-takeover."
+          ]
+        },
+        {
+          "id": "conditional-access-exclusion-membership-change",
+          "type": "log_pattern",
+          "value": "Group membership change adding a user to a group that is in the EXCLUSION list of one or more conditional-access policies (MFA bypass, location bypass, device-compliance bypass).",
+          "description": "Silent exclusion-group additions are a documented MFA-bypass primitive. The visible policy state doesn't change; only the membership does.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1556.007",
+          "false_positive_checks_required": [
+            "Cross-check against the change-management ticket system. A matched ticket downgrades to medium.",
+            "Confirm the modified group IS in the exclusion list of at least one conditional-access policy currently in 'enabled' state. Exclusions on report-only or disabled policies are not active bypass paths."
+          ]
+        },
+        {
+          "id": "federation-signing-cert-added",
+          "type": "log_pattern",
+          "value": "Federation configuration event: TokenSigningCertificate added, federation-domain trust modified, or new token-issuance policy created.",
+          "description": "Golden-SAML signature — attacker adding a signing certificate they hold the private key for, enabling forged SAML assertions tenant-wide.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1606.002",
+          "false_positive_checks_required": [
+            "Confirm the change was performed by a tenant-admin AND has a matching change-management ticket for token-signing rotation. Routine rotation is legitimate; unscheduled addition is the signal.",
+            "Confirm no concurrent unusual SAML-assertion volume from the affected federation domain. A real rotation produces a clean cutover; a malicious addition often coincides with parallel attacker-signed assertions."
+          ]
+        },
+        {
+          "id": "refresh-token-hoarding-by-sp",
+          "type": "log_pattern",
+          "value": "Service principal's 30-day refresh-token issuance volume exceeds baseline-mean + 4 * baseline-stddev OR exceeds 10x its 90-day median.",
+          "description": "OAuth-app refresh-token hoarding pattern — attacker accumulating long-lived access via repeated consent flows or sign-in induction.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Confirm the SP did not have a legitimate change in user-base scope (new rollout, new region launch). A growing user-base legitimately grows refresh-token volume; this is a step-change pattern not a slow growth.",
+            "Confirm the geographic distribution of refresh-token issuance matches the SP's expected user base. A surge of issuance from a single anomalous geography against a globally-distributed SP is higher-confidence than uniform growth."
+          ]
+        },
+        {
+          "id": "prt-claim-anomaly",
+          "type": "log_pattern",
+          "value": "Sign-in event with a Primary Refresh Token claim where the claim's device-id does not appear in the tenant's registered-devices inventory, OR the device-id was first-seen within the last 24h with no corresponding device-registration event.",
+          "description": "Primary Refresh Token theft signature — attacker presenting a PRT for a device the tenant never registered.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Confirm the device-id is genuinely absent from the registered-devices inventory (Entra ID GET /devices?$filter=deviceId eq 'X'). API-pagination misses are a common false-negative on the registered-devices side; require a paginated full scan before classifying as hit.",
+            "Confirm the user's recent device-registration history. A user who legitimately re-registered a device within the 24h window can produce a transient indeterminate signal; require correlation with the registration audit event."
+          ]
+        },
+        {
+          "id": "okta-class-support-session",
+          "type": "log_pattern",
+          "value": "Tenant-admin action whose actor metadata indicates vendor-support session (Okta SuperAdmin via support impersonation, Microsoft FastTrack tenant access) OUTSIDE a documented support case.",
+          "description": "2023 Okta-class vendor-side compromise signature. Vendor-support session without a tracked support case is the canonical anomaly.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1199",
+          "false_positive_checks_required": [
+            "Cross-check against the operator's vendor-support case tracker for a matching open case in the same time window. A matched case downgrades to medium (still review the case-vs-action scope match).",
+            "Confirm the vendor-support session's RBAC scope was the minimum required for the support case. Excess RBAC on a legitimate support case is itself a finding even when the case is real."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "out-of-window-global-admin-grant",
+          "benign_pattern": "Documented emergency-access activation by a break-glass account.",
+          "distinguishing_test": "Cross-reference the actor against the inventoried break-glass accounts (look.artifacts.break-glass-and-sync-accounts). If matched AND the activation has a post-hoc incident review record, downgrade to medium. Still require human review."
+        },
+        {
+          "indicator_id": "high-impact-oauth-consent-grant",
+          "benign_pattern": "First-party Microsoft / Google / Okta integration consented with documented business need.",
+          "distinguishing_test": "Compare the publisher domain + AppId against the published Microsoft/Google/Okta first-party publisher list. Spoofed publishers with similar-looking domains are not first-party; require canonical-publisher-ID match."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any single deterministic indicator fires AND its false_positive_checks_required step does not produce an unambiguous benign explanation. For deterministic-true indicators (golden-SAML class, PRT-anomaly class), single-fire = detected. For high-confidence indicators (refresh-token-hoarding), require two corroborating indicators OR cross-correlation with the operator's IR team.",
+        "inconclusive": "Inventory complete but indicators fire on accounts / SPs whose status cannot be resolved without admin intervention (e.g. service-principal owner unreachable). Cannot deny without escalation.",
+        "not_detected": "All inventory complete, no indicator fires, all admin grants traceable to change-management tickets, all OAuth high-impact scopes on allowlisted first-party SPs, no exclusion-group membership changes outside change windows, refresh-token issuance within baseline."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "out-of-window-global-admin-grant",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Salt Typhoon-class persistence pattern — confirmed active exploitation against critical-infrastructure tenants."
+        },
+        {
+          "signal_id": "high-impact-oauth-consent-grant",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Scattered Spider-class OAuth-app abuse — confirmed active exploitation against SaaS-dependent enterprises."
+        },
+        {
+          "signal_id": "federation-signing-cert-added",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Golden-SAML technique in active use since 2020; routinely confirmed in nation-state intrusions."
+        },
+        {
+          "signal_id": "okta-class-support-session",
+          "rwep_factor": "cisa_kev",
+          "weight": 20,
+          "notes": "Vendor-tier compromise has CISA-published advisories tying to the 2023 Okta incident class."
+        },
+        {
+          "signal_id": "conditional-access-exclusion-membership-change",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Exclusion-group abuse is well-documented in researcher write-ups and red-team playbooks."
+        },
+        {
+          "signal_id": "refresh-token-hoarding-by-sp",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-tool OAuth-grant abuse is operational; refresh-token hoarding is the credible AI-C2 fingerprint."
+        },
+        {
+          "signal_id": "prt-claim-anomaly",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "PRT-theft tooling (TokenBroker abuse, ROADtools) is publicly documented."
+        },
+        {
+          "signal_id": "out-of-window-global-admin-grant",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Tier-0 grant = tenant-wide blast radius."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If the in-progress IdP-plane compromise is confirmed, what scope of downstream compromise does the IdP control plane deliver?",
+        "scoring_rubric": [
+          {
+            "condition": "Indicator scoped to a single non-admin user with only personal-data scope.",
+            "blast_radius_score": 1,
+            "description": "Single user-scope compromise; revoke session + reset credentials."
+          },
+          {
+            "condition": "Indicator scoped to an OAuth app with read-only data access.",
+            "blast_radius_score": 2,
+            "description": "Data-exfiltration scope; revoke consent + audit data accessed."
+          },
+          {
+            "condition": "Indicator scoped to an OAuth app with high-impact data scope (Mail.ReadWrite, Files.ReadWrite.All) or a non-Tier-0 admin role.",
+            "blast_radius_score": 3,
+            "description": "Multi-user mailbox / file / app-scope compromise; revoke + full data-access audit."
+          },
+          {
+            "condition": "Indicator scoped to a Tier-0 admin role grant OR conditional-access exclusion-group membership change OR PRT-claim-anomaly on an admin account.",
+            "blast_radius_score": 4,
+            "description": "Tenant-admin scope compromise; full tenant-wide reset + downstream cloud-IAM rotation."
+          },
+          {
+            "condition": "Indicator scoped to federation-signing-cert-added OR golden-SAML signature OR vendor-support-session abuse.",
+            "blast_radius_score": 5,
+            "description": "Federation-trust-root compromise OR vendor-tier compromise; full federation rotation + cross-tenant audit."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "IdP audit logs are streamed to the SIEM and reviewed continuously, therefore IdP-plane compromise is detected.",
+        "audit_evidence": "SIEM data-ingest configuration showing IdP audit logs forwarded; on-call rotation reviewing alerts.",
+        "reality_test": "For a sample audit period (last 90 days), enumerate the SIEM rules active against the IdP audit data. Confirm rules exist for: (a) Tier-0 role grant outside change window, (b) high-impact OAuth consent grant to non-allowlisted SP, (c) conditional-access exclusion-group membership change, (d) federation signing-cert addition, (e) refresh-token issuance anomaly per SP. Theater verdict if any of (a)-(e) lacks an active rule: paper compliance (logs collected, on-call rotation) coexists with no actual detection for the IdP-plane signals.",
+        "theater_verdict_if_gap": "Org demonstrates SIEM ingestion + on-call review, but no active rules cover the IdP-control-plane signals. Either (a) deploy the missing IdP-plane SIEM rules with documented response runbooks, (b) move the IdP audit log to a dedicated detection platform with IdP-aware rule packs, OR (c) generate a defensible exception via policy-exception-gen with enhanced manual review cadence as the compensating control."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "idp-control-plane-detection-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "AC-2(11) — Account Management — Usage Conditions",
+          "actual_gap": "Generic anomaly-detection without IdP-control-plane-specific signals. Tier-0 grants outside change window, refresh-token hoarding by SP, federation-signing-cert addition are not in scope.",
+          "required_control": "Add IdP-control-plane-specific signal enumeration to AC-2(11): documented rules for each of the seven indicator classes in this playbook, with per-rule response runbooks."
+        },
+        {
+          "finding_id": "idp-control-plane-detection-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.16 — Monitoring activities",
+          "actual_gap": "Generic SIEM collection satisfies the control without IdP-plane-specific detection rules.",
+          "required_control": "Bind A.8.16 to IdP-tenant-admin event semantics: require documented IdP-plane detection rules with quarterly conformance testing."
+        },
+        {
+          "finding_id": "idp-control-plane-detection-gap",
+          "framework": "soc2",
+          "claimed_control": "CC7.2 — System monitoring",
+          "actual_gap": "Treats IdP as vendor-managed and out of scope; in-progress IdP-plane detection not assessed.",
+          "required_control": "Bring IdP-control-plane into CC7.2 scope. Require evidence of IdP-plane detection rules + tested response procedures."
+        },
+        {
+          "finding_id": "idp-control-plane-detection-gap",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(f) — Multi-factor authentication",
+          "actual_gap": "Specifies enforcement; silent on detection of MFA-bypass patterns (conditional-access exclusion group changes, app-passwords issuance, legacy-auth re-enablement).",
+          "required_control": "Pair MFA-enforcement requirement with MFA-bypass-detection requirement covering exclusion-group changes, legacy-auth re-enablement, federation-bypass."
+        },
+        {
+          "finding_id": "idp-control-plane-detection-gap",
+          "framework": "uk-caf",
+          "claimed_control": "C1 — Security monitoring",
+          "actual_gap": "Outcome-based; regulator interpretation varies. SIEM with generic anomaly rules can defensibly satisfy C1.",
+          "required_control": "CAF C1 guidance should enumerate IdP-control-plane signals as required for any operator with a federated identity dependency."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "phases.detect.classification == 'detected'",
+          "action": "trigger_playbook",
+          "target_playbook": "idp-incident"
+        },
+        {
+          "condition": "rwep >= 85 AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "federation-signing-cert-added == fired",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "blast_radius_score >= 3 AND finding.includes_cloud_role_assumption == true",
+          "action": "trigger_playbook",
+          "target_playbook": "cloud-iam-incident"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "deploy-missing-detection-rules",
+          "description": "Author the missing SIEM detection rules for each of the seven indicator classes. Document per-rule response runbooks and on-call escalation paths.",
+          "preconditions": [
+            "siem_admin_authority == true",
+            "rule_authoring_capacity_within_72h == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "rule_set_recorded_in_iac",
+            "rule_test_suite_in_ci"
+          ],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "tighten-conditional-access-exclusions",
+          "description": "Audit every conditional-access exclusion group. Remove any account that does not have a documented break-glass / sync-account / vendor-integration justification. For remaining exclusions, require quarterly attestation by the role-owner.",
+          "preconditions": [
+            "ca_policy_admin_authority == true",
+            "break_glass_inventory_complete == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "exclusion_group_membership_alert_active",
+            "quarterly_attestation_recorded"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "revoke-stale-high-impact-oauth-consents",
+          "description": "Revoke OAuth consents for service principals on the high-impact-scope list that no longer have documented business justification. Require admin-consent re-approval with named scope justification for any re-grant.",
+          "preconditions": [
+            "oauth_admin_authority == true",
+            "business_owner_engagement_secured == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "consent_revocation_recorded",
+            "re_grant_requires_documented_justification"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "rotate-federation-signing-certs",
+          "description": "If federation-signing-cert-added fired or any signing-cert is older than the rotation window, rotate. Confirm rotation by verifying only the new cert produces valid SAML assertions.",
+          "preconditions": [
+            "federation_admin_authority == true",
+            "downstream_dependent_apps_can_tolerate_rotation_window == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "rotation_recorded_in_change_management",
+            "old_cert_signed_assertions_quarantined_for_review"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate auditor-ready policy exception when faster paths are blocked.",
+          "preconditions": [
+            "remediation_paths[1..4] partially blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 5,
+          "compensating_controls": [
+            "enhanced_manual_audit_log_review_daily",
+            "weekly_oauth_app_inventory_review"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "detection-rule-fires-on-synthetic-event",
+          "test": "For each deployed rule, generate a synthetic event in the test tenant matching the indicator pattern. Confirm the rule fires + escalates per runbook.",
+          "expected_result": "Each rule fires on the synthetic event with the expected severity + on-call paged.",
+          "test_type": "functional"
+        },
+        {
+          "id": "conditional-access-exclusion-attestation",
+          "test": "Enumerate every CA exclusion group post-remediation. Cross-check membership against the attestation record.",
+          "expected_result": "Every excluded member has a current attestation record naming the role-owner.",
+          "test_type": "functional"
+        },
+        {
+          "id": "high-impact-oauth-allowlist-conformance",
+          "test": "For every SP with a high-impact scope, confirm it appears on the documented allowlist with named business owner.",
+          "expected_result": "100% of high-impact SPs on the allowlist; no orphan SPs.",
+          "test_type": "functional"
+        },
+        {
+          "id": "federation-rotation-cutover",
+          "test": "After federation-signing-cert rotation, attempt a SAML assertion signed by the old cert. Confirm rejection.",
+          "expected_result": "Old-cert SAML rejected; only new-cert SAML accepted.",
+          "test_type": "negative"
+        },
+        {
+          "id": "no-regression-on-legitimate-admin-workflows",
+          "test": "Run the operator's standard admin workflow suite (legitimate role grant via PIM, legitimate OAuth consent for a new first-party integration) and confirm rules do not fire (rules treat these as benign).",
+          "expected_result": "Legitimate admin workflows complete without rule fires.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "IdP-control-plane detection coverage has gaps that cannot be closed within the jurisdiction's notification window.",
+        "why_remains": "Either (a) SIEM rule-authoring capacity is constrained, (b) a vendor-support session pattern lacks a programmatic API to query case status, OR (c) baseline-data history is too short to set a refresh-token-issuance baseline with required confidence.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "enhanced_manual_audit_log_review_daily",
+          "weekly_oauth_app_inventory_review",
+          "vendor_support_case_cross_check_runbook"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "Diff of SIEM rule set pre / post remediation, plus per-rule runbook documents.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "nist-800-53-AC-2(11)",
+            "iso-27001-2022-A.8.16",
+            "soc2-cc7.2"
+          ]
+        },
+        {
+          "evidence_type": "log_excerpt",
+          "description": "Audit-log excerpts for each fired indicator, with the false_positive_checks_required resolution outcome documented per fire.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-cc7.2",
+            "iso-27001-2022-A.8.16"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Snapshot of privileged-role assignments + OAuth-app consents + conditional-access policy state + federation-trust config pre + post remediation.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "nist-800-53-AC-2",
+            "iso-27001-2022-A.5.16"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, fired indicators, RWEP at detection, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2f"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_tenant_admin_grant == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_high_impact_oauth_consent == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "conditional_access_policy_modified == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "federation_config_modified == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly",
+          "interval": "7d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "all_validation_tests_passed",
+          "siem_rule_set_diff",
+          "fired_indicator_log_excerpts",
+          "idp_tenant_snapshot_pre_post",
+          "residual_risk_statement",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "IdP-control-plane in-progress compromise — $finding_class (e.g. out-of-window-global-admin-grant, high-impact-oauth-consent-grant, federation-signing-cert-added, conditional-access-exclusion-membership-change).",
+          "control_gap": "SIEM ingestion of IdP audit logs satisfied the literal monitoring control but lacked IdP-plane-specific detection rules. MFA enforcement coexisted with active MFA-bypass.",
+          "framework_gap": "NIST AC-2(11), ISO A.8.16, SOC 2 CC7.2, NIS2 Art.21(2)(f), UK CAF C1, AU Essential 8 ML3 collectively underspecify IdP-control-plane detection. Generic anomaly rules pass without binding to IdP-tenant-admin event semantics.",
+          "new_control_requirement": "Each framework's relevant monitoring or MFA control must enumerate IdP-control-plane signals as in-scope: Tier-0 role grant outside change window, high-impact OAuth consent to non-allowlisted SP, conditional-access exclusion-group membership change, federation signing-cert addition, refresh-token hoarding per SP, PRT-claim anomaly, vendor-support session outside documented case."
+        },
+        "feeds_back_to_skills": [
+          "identity-assurance",
+          "idp-incident-response",
+          "framework-gap-analysis",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "exposure_window_estimate",
+            "rotation_status"
+          ],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: in-progress IdP-control-plane compromise detection. Indicators fired: ${fired_indicator_ids}. Affected scope: ${affected_scope}. Containment in place: ${containment_record}. Detection-side investigation now escalating to IR via idp-incident. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "idp_audit_log_excerpt",
+            "affected_critical_or_important_functions",
+            "containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — IdP-tenant compromise indicators active. Critical or important functions reliant on this IdP: ${affected_critical_or_important_functions}. Containment in progress; full classification + impact assessment to follow within statutory windows."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "siem_rule_authoring_capacity_blocked == true OR (federation_admin_authority_unavailable == true AND signing_cert_rotation_blocked_until_next_change_window == true)",
+        "exception_template": {
+          "scope": "IdP-control-plane detection-coverage residual risk for tenant ${tenant_id}; remediation paths 1-4 partially blocked.",
+          "duration": "until_capacity_available_or_30d",
+          "compensating_controls": [
+            "enhanced_manual_audit_log_review_daily",
+            "weekly_oauth_app_inventory_review",
+            "vendor_support_case_cross_check_runbook"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organisation documents a time-bound risk acceptance for IdP-control-plane detection-coverage gaps in tenant ${tenant_id}. Missing rule classes: ${missing_rule_classes}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. The exception will be re-evaluated on (a) rule-authoring capacity availability, (b) the listed expiry date, OR (c) a new indicator firing under the manual-review compensating control — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-idp-control-plane-signals",
+      "title": "Run the full IdP-control-plane in-progress detection sweep",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "golden-saml-targeted",
+      "title": "Targeted golden-SAML / federation-signing-cert sweep",
+      "applies_to": {
+        "attack_technique": "T1606.002"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 75,
+            "monitor": 50,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "scattered-spider-class-oauth-consent",
+      "title": "Targeted high-impact OAuth-consent abuse sweep (Scattered Spider class)",
+      "applies_to": {
+        "attack_technique": "T1528"
+      }
+    }
+  ]
+}

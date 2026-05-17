@@ -13,9 +13,9 @@ triggers:
   - compliance gap
   - why doesn't this control cover
 data_deps:
-  - framework-control-gaps.json
   - atlas-ttps.json
   - cve-catalog.json
+  - exploit-availability.json
   - global-frameworks.json
 atlas_refs: []
 attack_refs: []

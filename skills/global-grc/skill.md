@@ -17,9 +17,10 @@ triggers:
   - multi-jurisdiction
   - global compliance
 data_deps:
-  - global-frameworks.json
-  - framework-control-gaps.json
   - atlas-ttps.json
+  - exploit-availability.json
+  - framework-control-gaps.json
+  - global-frameworks.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []

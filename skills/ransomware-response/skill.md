@@ -26,12 +26,8 @@ triggers:
   - double extortion
   - data theft before encryption
 data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
-  - cwe-catalog.json
   - d3fend-catalog.json
+  - framework-control-gaps.json
   - zeroday-lessons.json
 atlas_refs: []
 attack_refs:

@@ -18,13 +18,12 @@ triggers:
   - embedding store exfil
   - clipboard ai paste
 data_deps:
-  - dlp-controls.json
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
   - cwe-catalog.json
   - d3fend-catalog.json
+  - dlp-controls.json
+  - framework-control-gaps.json
+  - global-frameworks.json
 atlas_refs:
   - AML.T0096
   - AML.T0017

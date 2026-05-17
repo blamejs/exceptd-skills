@@ -49,11 +49,16 @@ test('#18 unknown command returns JSON error', () => {
     'hint must point operators at `exceptd help` so a typo never dead-ends');
 });
 
-test('#18 skill not found returns JSON error', () => {
+test('#18 skill not found returns JSON error on stdout', () => {
+  // v0.13.0 envelope harmonization: ok:false bodies land on stdout
+  // alongside successful responses so a single consumer parses one
+  // stream. Pre-v0.13 the orchestrator wrote ok:false bodies to stderr.
   const r = cli(['skill', 'nonexistent-skill']);
-  const err = tryJson(r.stderr.trim());
-  assert.ok(err, 'stderr should be parseable JSON');
+  assert.equal(r.status, 1, `expected exit 1 (GENERIC_FAILURE); got ${r.status}`);
+  const err = tryJson(r.stdout.trim()) || tryJson(r.stderr.trim());
+  assert.ok(err, 'response should be parseable JSON');
   assert.equal(err.ok, false);
+  assert.equal(err.verb, 'skill');
   assert.match(err.error, /Skill not found/);
 });
 
@@ -107,10 +112,13 @@ test('#33 --session-key must be hex', () => {
     'error must name the flag and the hex requirement so operators see the exact constraint, not a generic "invalid argument"');
 });
 
-test('#46 plan --directives includes description', () => {
-  const r = cli(['plan', '--directives', '--json']);
+test('#46 brief --all --directives includes description', () => {
+  // v0.13.0: `plan` was removed; `brief --all` is the canonical form
+  // and emits the same shape (the v0.11+ alias documented in the
+  // removed-verb refusal message).
+  const r = cli(['brief', '--all', '--directives', '--json']);
   const data = tryJson(r.stdout);
-  assert.ok(data, 'plan output should be JSON');
+  assert.ok(data, 'brief --all output should be JSON');
   const pb = data.playbooks?.[0];
   assert.ok(pb, 'plan must surface at least one playbook');
   assert.ok(Array.isArray(pb.directives) && pb.directives.length > 0,
@@ -699,12 +707,18 @@ test('#98 attest export on missing session id returns session-not-found error', 
     'rejected session id must echo back so operators see what was searched');
 });
 
-test('#98 report garbage returns JSON error exit 2', () => {
+test('#98 report garbage returns JSON error exit 1 (v0.13 exit-code class)', () => {
+  // v0.13.0: usage errors exit 1 (GENERIC_FAILURE), not 2 (DETECTED_ESCALATE).
+  // Exit 2 in the canonical CLI contract means "verb ran and detected an
+  // escalation-worthy finding" — unknown-format is a usage error, not a
+  // detected finding. Envelope harmonization also routes ok:false to stdout.
   const r = cli(['report', 'garbage']);
-  assert.equal(r.status, 2);
-  const err = tryJson(r.stderr.trim());
+  assert.equal(r.status, 1, `expected exit 1; got ${r.status}`);
+  const err = tryJson(r.stdout.trim()) || tryJson(r.stderr.trim());
   assert.ok(err && err.ok === false);
+  assert.equal(err.verb, 'report');
   assert.match(err.error, /not in accepted set/);
+  assert.ok(Array.isArray(err.accepted_formats));
 });
 
 // ===================================================================

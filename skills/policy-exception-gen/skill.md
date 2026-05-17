@@ -12,8 +12,9 @@ triggers:
   - zero trust exception
   - compensating control
 data_deps:
-  - framework-control-gaps.json
-  - global-frameworks.json
+  - atlas-ttps.json
+  - cve-catalog.json
+  - exploit-availability.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
@@ -22,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-17"
 ---
 
 # Policy Exception Generation
@@ -75,6 +76,13 @@ Per-framework lag statements for each exception category in this skill:
 | PCI DSS 4.0 | 12.3.4 (Inventory of system components) | Persistent-asset assumption — fails for autoscaled ephemeral compute. |
 | PCI DSS 4.0 | 1.3 (Network segmentation) | Implicit perimeter-trust model; ZTA evidence shape does not match the language. |
 | NIS2 | Art. 21 (Cybersecurity risk-management measures) | Asset register and patch management language predates serverless; ephemeral nodes cannot be inventoried as the article assumes. |
+| EU DORA | Art. 8 (ICT-related risk and ICT asset management) + Art. 9 (protection and prevention) + Art. 28 (ICT third-party risk) | Financial-entity asset register and patch-management obligations mirror the NIS2 lag: ephemeral compute has no clean register fit, and Art. 28 ICT third-party register is silent on LLM API providers and developer-environment MCP servers. ESAs RTS on subcontracting (JC 2024/53) does not enumerate AI/ML SaaS classes. |
+| EU AI Act (Regulation 2024/1689) | Art. 13 (transparency / instructions for use) + Art. 15 (cybersecurity for high-risk AI) | Drafted around vendor-provided AI systems with documented change-management. External provider model updates that change behavior mid-deployment have no exception language; high-risk AI Art. 15 cybersecurity expectations assume operator control over the model. |
+| UK NCSC CAF | Principle A2 (Risk Management), A4 (Supply Chain), B4 (System Security) | Outcome-based assessment. NCSC Cloud Security Principles and ZT Architecture Design Principles (NCSC 2024) recognize ephemeral and identity-centric architectures, but the CAF outcome statements do not enumerate ZTA / ephemeral / AI-model-update as explicit deviation classes. Exception language must map the operator's compensating-control bundle to the CAF principle's outcome rather than to a prescriptive control. |
+| UK Cyber Essentials Plus | Patch management + Secure Configuration criteria | 14-day patch SLA assumes persistent assets the operator patches. Ephemeral / immutable / provider-patched runtimes (Lambda, Cloud Run, Cloudflare Workers) fall outside the criterion as written. The CE+ assessor expects a documented justification when a service does not fit the standard model. |
+| AU ASD Essential 8 | Patch Applications + Patch Operating Systems + Application Control (ML1-ML3) | Patch-window language assumes a persistent OS / application installation the operator patches. Ephemeral container workloads with immutable images and serverless runtimes break the model. Application Control (allowlisting) does not contemplate AI-coding-assistant tool-use chains where the AI agent dynamically composes the executed action. |
+| AU ASD ISM | ISM-1493 (vulnerability identification and patching) + ISM-1144 (patching frequency) + ISM-1808 (cloud service consumer responsibilities) | ISM-1808 acknowledges cloud shared-responsibility but does not specify exception language for provider-controlled runtimes. ISM-1493 / ISM-1144 patch-frequency controls assume operator-controlled patching. |
+| AU APRA CPS 234 | Para 27 (information security capability) + Para 36 (control testing) | "Capability commensurate with vulnerabilities and threats" language. AI-pipeline and ZTA architectures are not enumerated as in-scope capability classes; an APRA-regulated entity must document the architectural deviation explicitly to avoid a control-testing finding. |
 
 This skill's exceptions exist precisely because the framework language has not caught up to the architecture. The exceptions do not claim the threat goes away — they document the compensating controls that handle the residual TTPs (see TTP Mapping).
 

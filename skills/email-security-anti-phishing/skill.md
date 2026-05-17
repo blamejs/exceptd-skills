@@ -20,14 +20,7 @@ triggers:
   - deepfake phishing
   - ai phishing
   - secure email gateway
-data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - cwe-catalog.json
-  - d3fend-catalog.json
-  - rfc-references.json
-  - dlp-controls.json
+data_deps: []
 atlas_refs: []
 attack_refs:
   - T1566

@@ -3,15 +3,15 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1591076,
-    "total_approx_tokens": 397775,
+    "total_chars": 1610543,
+    "total_approx_tokens": 402643,
     "skill_count": 42
   },
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "bytes": 30522,
-      "chars": 30353,
+      "bytes": 30519,
+      "chars": 30350,
       "lines": 395,
       "approx_tokens": 7588,
       "approx_chars_per_token": 4,
@@ -70,10 +70,10 @@
     },
     "ai-attack-surface": {
       "path": "skills/ai-attack-surface/skill.md",
-      "bytes": 25250,
-      "chars": 25182,
-      "lines": 328,
-      "approx_tokens": 6296,
+      "bytes": 29104,
+      "chars": 29030,
+      "lines": 335,
+      "approx_tokens": 7258,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -82,9 +82,9 @@
           "approx_tokens": 1999
         },
         "framework-lag-declaration": {
-          "bytes": 2465,
-          "chars": 2461,
-          "approx_tokens": 615
+          "bytes": 6368,
+          "chars": 6358,
+          "approx_tokens": 1590
         },
         "ttp-mapping": {
           "bytes": 2046,
@@ -120,10 +120,10 @@
     },
     "mcp-agent-trust": {
       "path": "skills/mcp-agent-trust/skill.md",
-      "bytes": 27437,
-      "chars": 27349,
-      "lines": 366,
-      "approx_tokens": 6837,
+      "bytes": 30991,
+      "chars": 30899,
+      "lines": 376,
+      "approx_tokens": 7725,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -132,9 +132,9 @@
           "approx_tokens": 1362
         },
         "framework-lag-declaration": {
-          "bytes": 3837,
-          "chars": 3825,
-          "approx_tokens": 956
+          "bytes": 7345,
+          "chars": 7329,
+          "approx_tokens": 1832
         },
         "ttp-mapping": {
           "bytes": 1236,
@@ -175,8 +175,8 @@
     },
     "framework-gap-analysis": {
       "path": "skills/framework-gap-analysis/skill.md",
-      "bytes": 27420,
-      "chars": 27364,
+      "bytes": 27418,
+      "chars": 27362,
       "lines": 379,
       "approx_tokens": 6841,
       "approx_chars_per_token": 4,
@@ -230,10 +230,10 @@
     },
     "compliance-theater": {
       "path": "skills/compliance-theater/skill.md",
-      "bytes": 29641,
-      "chars": 29575,
-      "lines": 375,
-      "approx_tokens": 7394,
+      "bytes": 33923,
+      "chars": 33853,
+      "lines": 383,
+      "approx_tokens": 8463,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -247,9 +247,9 @@
           "approx_tokens": 497
         },
         "framework-lag-declaration": {
-          "bytes": 3812,
-          "chars": 3810,
-          "approx_tokens": 953
+          "bytes": 8106,
+          "chars": 8100,
+          "approx_tokens": 2025
         },
         "ttp-mapping": {
           "bytes": 2210,
@@ -285,10 +285,10 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "bytes": 24352,
-      "chars": 24212,
-      "lines": 357,
-      "approx_tokens": 6053,
+      "bytes": 25424,
+      "chars": 25282,
+      "lines": 362,
+      "approx_tokens": 6321,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -302,9 +302,9 @@
           "approx_tokens": 599
         },
         "framework-lag-declaration": {
-          "bytes": 2410,
-          "chars": 2404,
-          "approx_tokens": 601
+          "bytes": 3437,
+          "chars": 3429,
+          "approx_tokens": 857
         },
         "ttp-mapping": {
           "bytes": 1222,
@@ -350,10 +350,10 @@
     },
     "rag-pipeline-security": {
       "path": "skills/rag-pipeline-security/skill.md",
-      "bytes": 31195,
-      "chars": 31022,
-      "lines": 330,
-      "approx_tokens": 7756,
+      "bytes": 31249,
+      "chars": 31076,
+      "lines": 332,
+      "approx_tokens": 7769,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -430,10 +430,10 @@
     },
     "ai-c2-detection": {
       "path": "skills/ai-c2-detection/skill.md",
-      "bytes": 36020,
-      "chars": 35874,
-      "lines": 477,
-      "approx_tokens": 8969,
+      "bytes": 39136,
+      "chars": 38984,
+      "lines": 486,
+      "approx_tokens": 9746,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -442,9 +442,9 @@
           "approx_tokens": 1343
         },
         "framework-lag-declaration": {
-          "bytes": 1486,
-          "chars": 1484,
-          "approx_tokens": 371
+          "bytes": 4574,
+          "chars": 4566,
+          "approx_tokens": 1142
         },
         "detection-architecture": {
           "bytes": 2619,
@@ -500,10 +500,10 @@
     },
     "policy-exception-gen": {
       "path": "skills/policy-exception-gen/skill.md",
-      "bytes": 28969,
-      "chars": 28887,
-      "lines": 444,
-      "approx_tokens": 7222,
+      "bytes": 31881,
+      "chars": 31799,
+      "lines": 452,
+      "approx_tokens": 7950,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -517,9 +517,9 @@
           "approx_tokens": 557
         },
         "framework-lag-declaration": {
-          "bytes": 2557,
-          "chars": 2551,
-          "approx_tokens": 638
+          "bytes": 5457,
+          "chars": 5451,
+          "approx_tokens": 1363
         },
         "ttp-mapping": {
           "bytes": 1948,
@@ -555,10 +555,10 @@
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "bytes": 27335,
-      "chars": 27223,
+      "bytes": 27330,
+      "chars": 27218,
       "lines": 411,
-      "approx_tokens": 6806,
+      "approx_tokens": 6805,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -620,10 +620,10 @@
     },
     "global-grc": {
       "path": "skills/global-grc/skill.md",
-      "bytes": 39881,
-      "chars": 39687,
-      "lines": 566,
-      "approx_tokens": 9922,
+      "bytes": 39911,
+      "chars": 39717,
+      "lines": 567,
+      "approx_tokens": 9929,
       "approx_chars_per_token": 4,
       "sections": {
         "framework-registry-mid-2026-currency": {
@@ -740,10 +740,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 33357,
-      "chars": 33211,
-      "lines": 547,
-      "approx_tokens": 8303,
+      "bytes": 33405,
+      "chars": 33259,
+      "lines": 549,
+      "approx_tokens": 8315,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -820,10 +820,10 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "bytes": 47110,
-      "chars": 46978,
-      "lines": 518,
-      "approx_tokens": 11745,
+      "bytes": 47134,
+      "chars": 47002,
+      "lines": 519,
+      "approx_tokens": 11751,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -895,10 +895,10 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "bytes": 30252,
-      "chars": 30088,
-      "lines": 489,
-      "approx_tokens": 7522,
+      "bytes": 30213,
+      "chars": 30049,
+      "lines": 488,
+      "approx_tokens": 7512,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -980,10 +980,10 @@
     },
     "researcher": {
       "path": "skills/researcher/skill.md",
-      "bytes": 32034,
-      "chars": 31862,
-      "lines": 334,
-      "approx_tokens": 7966,
+      "bytes": 32058,
+      "chars": 31886,
+      "lines": 335,
+      "approx_tokens": 7972,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -1035,10 +1035,10 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "bytes": 32626,
-      "chars": 32485,
+      "bytes": 32636,
+      "chars": 32495,
       "lines": 386,
-      "approx_tokens": 8121,
+      "approx_tokens": 8124,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1085,10 +1085,10 @@
     },
     "fuzz-testing-strategy": {
       "path": "skills/fuzz-testing-strategy/skill.md",
-      "bytes": 30550,
-      "chars": 30409,
-      "lines": 314,
-      "approx_tokens": 7602,
+      "bytes": 30523,
+      "chars": 30382,
+      "lines": 313,
+      "approx_tokens": 7596,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1135,10 +1135,10 @@
     },
     "dlp-gap-analysis": {
       "path": "skills/dlp-gap-analysis/skill.md",
-      "bytes": 41718,
-      "chars": 41451,
-      "lines": 345,
-      "approx_tokens": 10363,
+      "bytes": 41698,
+      "chars": 41431,
+      "lines": 344,
+      "approx_tokens": 10358,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1185,10 +1185,10 @@
     },
     "supply-chain-integrity": {
       "path": "skills/supply-chain-integrity/skill.md",
-      "bytes": 40250,
-      "chars": 40112,
-      "lines": 325,
-      "approx_tokens": 10028,
+      "bytes": 40287,
+      "chars": 40149,
+      "lines": 326,
+      "approx_tokens": 10037,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1285,10 +1285,10 @@
     },
     "identity-assurance": {
       "path": "skills/identity-assurance/skill.md",
-      "bytes": 32920,
-      "chars": 32773,
-      "lines": 278,
-      "approx_tokens": 8193,
+      "bytes": 32885,
+      "chars": 32738,
+      "lines": 276,
+      "approx_tokens": 8185,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1340,10 +1340,10 @@
     },
     "ot-ics-security": {
       "path": "skills/ot-ics-security/skill.md",
-      "bytes": 36339,
-      "chars": 36143,
-      "lines": 344,
-      "approx_tokens": 9036,
+      "bytes": 36266,
+      "chars": 36070,
+      "lines": 341,
+      "approx_tokens": 9018,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1450,10 +1450,10 @@
     },
     "threat-modeling-methodology": {
       "path": "skills/threat-modeling-methodology/skill.md",
-      "bytes": 30592,
-      "chars": 30415,
-      "lines": 316,
-      "approx_tokens": 7604,
+      "bytes": 30617,
+      "chars": 30440,
+      "lines": 317,
+      "approx_tokens": 7610,
       "approx_chars_per_token": 4,
       "sections": {
         "purpose": {
@@ -1510,10 +1510,10 @@
     },
     "webapp-security": {
       "path": "skills/webapp-security/skill.md",
-      "bytes": 29073,
-      "chars": 28899,
-      "lines": 287,
-      "approx_tokens": 7225,
+      "bytes": 28963,
+      "chars": 28789,
+      "lines": 282,
+      "approx_tokens": 7197,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1565,10 +1565,10 @@
     },
     "ai-risk-management": {
       "path": "skills/ai-risk-management/skill.md",
-      "bytes": 34702,
-      "chars": 34520,
-      "lines": 318,
-      "approx_tokens": 8630,
+      "bytes": 34753,
+      "chars": 34571,
+      "lines": 320,
+      "approx_tokens": 8643,
       "approx_chars_per_token": 4,
       "sections": {
         "purpose": {
@@ -1625,10 +1625,10 @@
     },
     "sector-healthcare": {
       "path": "skills/sector-healthcare/skill.md",
-      "bytes": 47755,
-      "chars": 47567,
-      "lines": 377,
-      "approx_tokens": 11892,
+      "bytes": 47633,
+      "chars": 47445,
+      "lines": 372,
+      "approx_tokens": 11861,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1680,10 +1680,10 @@
     },
     "sector-financial": {
       "path": "skills/sector-financial/skill.md",
-      "bytes": 49847,
-      "chars": 49684,
-      "lines": 402,
-      "approx_tokens": 12421,
+      "bytes": 49779,
+      "chars": 49616,
+      "lines": 399,
+      "approx_tokens": 12404,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1735,10 +1735,10 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "bytes": 44157,
-      "chars": 43984,
-      "lines": 306,
-      "approx_tokens": 10996,
+      "bytes": 44140,
+      "chars": 43967,
+      "lines": 305,
+      "approx_tokens": 10992,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1790,10 +1790,10 @@
     },
     "sector-energy": {
       "path": "skills/sector-energy/skill.md",
-      "bytes": 54006,
-      "chars": 53798,
-      "lines": 413,
-      "approx_tokens": 13450,
+      "bytes": 53906,
+      "chars": 53698,
+      "lines": 409,
+      "approx_tokens": 13425,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1845,10 +1845,10 @@
     },
     "sector-telecom": {
       "path": "skills/sector-telecom/skill.md",
-      "bytes": 20782,
-      "chars": 20682,
-      "lines": 260,
-      "approx_tokens": 5171,
+      "bytes": 20690,
+      "chars": 20590,
+      "lines": 256,
+      "approx_tokens": 5148,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1900,10 +1900,10 @@
     },
     "api-security": {
       "path": "skills/api-security/skill.md",
-      "bytes": 35524,
-      "chars": 35289,
-      "lines": 295,
-      "approx_tokens": 8822,
+      "bytes": 37397,
+      "chars": 37162,
+      "lines": 294,
+      "approx_tokens": 9291,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1912,9 +1912,9 @@
           "approx_tokens": 1287
         },
         "framework-lag-declaration": {
-          "bytes": 3278,
-          "chars": 3269,
-          "approx_tokens": 817
+          "bytes": 5290,
+          "chars": 5281,
+          "approx_tokens": 1320
         },
         "ttp-mapping": {
           "bytes": 2299,
@@ -1955,10 +1955,10 @@
     },
     "cloud-security": {
       "path": "skills/cloud-security/skill.md",
-      "bytes": 55732,
-      "chars": 55494,
-      "lines": 388,
-      "approx_tokens": 13874,
+      "bytes": 55635,
+      "chars": 55397,
+      "lines": 384,
+      "approx_tokens": 13849,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2010,10 +2010,10 @@
     },
     "container-runtime-security": {
       "path": "skills/container-runtime-security/skill.md",
-      "bytes": 49104,
-      "chars": 48944,
-      "lines": 385,
-      "approx_tokens": 12236,
+      "bytes": 49060,
+      "chars": 48900,
+      "lines": 383,
+      "approx_tokens": 12225,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2065,10 +2065,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 45463,
-      "chars": 45171,
-      "lines": 330,
-      "approx_tokens": 11293,
+      "bytes": 45439,
+      "chars": 45147,
+      "lines": 329,
+      "approx_tokens": 11287,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2120,10 +2120,10 @@
     },
     "incident-response-playbook": {
       "path": "skills/incident-response-playbook/skill.md",
-      "bytes": 63247,
-      "chars": 62995,
-      "lines": 553,
-      "approx_tokens": 15749,
+      "bytes": 63158,
+      "chars": 62906,
+      "lines": 549,
+      "approx_tokens": 15727,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2175,10 +2175,10 @@
     },
     "ransomware-response": {
       "path": "skills/ransomware-response/skill.md",
-      "bytes": 48543,
-      "chars": 48363,
-      "lines": 375,
-      "approx_tokens": 12091,
+      "bytes": 48454,
+      "chars": 48274,
+      "lines": 371,
+      "approx_tokens": 12069,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2230,10 +2230,10 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 26531,
-      "chars": 26433,
-      "lines": 215,
-      "approx_tokens": 6608,
+      "bytes": 26370,
+      "chars": 26272,
+      "lines": 208,
+      "approx_tokens": 6568,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2285,10 +2285,10 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "bytes": 69650,
-      "chars": 69362,
-      "lines": 460,
-      "approx_tokens": 17341,
+      "bytes": 69560,
+      "chars": 69272,
+      "lines": 456,
+      "approx_tokens": 17318,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2340,10 +2340,10 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "bytes": 44562,
-      "chars": 44404,
-      "lines": 420,
-      "approx_tokens": 11101,
+      "bytes": 44467,
+      "chars": 44309,
+      "lines": 416,
+      "approx_tokens": 11077,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2395,10 +2395,10 @@
     },
     "idp-incident-response": {
       "path": "skills/idp-incident-response/skill.md",
-      "bytes": 46352,
-      "chars": 46222,
-      "lines": 353,
-      "approx_tokens": 11556,
+      "bytes": 46277,
+      "chars": 46147,
+      "lines": 350,
+      "approx_tokens": 11537,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {

@@ -15,8 +15,8 @@ triggers:
   - kernel patch
   - live kernel patch
 data_deps:
-  - cve-catalog.json
-  - exploit-availability.json
+  - d3fend-catalog.json
+  - rfc-references.json
 atlas_refs: []
 attack_refs:
   - T1068

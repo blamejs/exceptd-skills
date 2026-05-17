@@ -11,7 +11,7 @@ triggers:
   - checkbox security
   - audit theater
 data_deps:
-  - framework-control-gaps.json
+  - atlas-ttps.json
   - cve-catalog.json
   - exploit-availability.json
 atlas_refs: []
@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-05-14"
+last_threat_review: "2026-05-17"
 ---
 
 # Compliance Theater Detection
@@ -65,6 +65,14 @@ Compliance theater is the operational shadow of framework lag. Per-framework lag
 | NIST 800-53 | AT-2 (Security Awareness Training) | Drafted against human-template phishing. 82.6% of phishing emails now contain AI-generated content. Grammar/style heuristics are no longer reliable detectors. A < 5% click rate on human-generated simulations says nothing about resistance to AI-generated highly personalized spear-phishing. |
 | US FedRAMP | Rev 5 Moderate baseline | Authorization-as-evidence pattern. A current ATO certifies that the CSP's control implementation was assessed against the Rev 5 Moderate baseline at a point in time. It does not certify that the CSP has any control over MCP servers running in tenant developer environments, prompt-injection attack surface in AI features, or AI-API providers used downstream. The Authority To Operate is treated by procurement as a security guarantee — Pattern 6 (Vendor/Third-Party Risk Theater) recurs at the federal-cloud layer. |
 | US DoD | CMMC 2.0 Level 2 (110 NIST 800-171 practices) | Certification-as-evidence pattern. A Level 2 certificate attests to assessor-verified implementation of the 110 practices at the time of assessment. It does not cover AI coding-assistant supply chain, MCP server trust on engineering workstations developing CUI-touching software, or model-update change control. The same Pattern 5 (Change Management Theater) and Pattern 6 (Vendor Management Theater) patterns recur with sharper consequences because CMMC gates DoD contract eligibility. |
+| EU NIS2 | Art. 21(2)(c) (vulnerability handling and disclosure) + Art. 21(2)(d) (supply-chain security) | "Appropriate and proportionate" measures language. Member-state transpositions (BSI IT-SiG 2.0, ANSSI, CNIL, ENISA technical guidance) typically pin remediation to CVSS bands with month-scale SLAs. NIS2 does not operationalize CISA-KEV-class urgency, AI-discovery weighting, or MCP/LLM third-party scope. An essential entity can be NIS2-compliant on paper while leaving CVE-2026-31431 and CVE-2026-30615 class exposures unaddressed inside the regulator's expected remediation window. |
+| EU DORA | Art. 6 (ICT risk-management framework) + Art. 28 (ICT third-party risk) | Financial-entity ICT risk language scoped to traditional ICT providers and cloud outsourcing. Does not enumerate LLM API providers as ICT third-party service providers requiring the Art. 28 register, contractual safeguards, and exit-strategy obligations. ESAs RTS on subcontracting (JC 2024/53) is silent on MCP servers running inside trading-desk developer environments. Pattern 6 (Vendor Management Theater) recurs cleanly inside a DORA-compliant TPRM programme. |
+| EU AI Act (Regulation 2024/1689) | Art. 9 (risk management) + Art. 15 (accuracy, robustness, cybersecurity) for high-risk AI | High-risk AI cybersecurity language refers to "state of the art" without naming prompt injection, model-update change control, or MCP supply chain as scoped attack classes. Conformity assessments under Annex VI/VII can pass on documentation completeness while leaving Pattern 3 (Access Control Theater) and Pattern 5 (Change Management Theater) wide open. Implementing acts and harmonized standards (CEN-CENELEC JTC 21) through 2026-2027 may tighten this. |
+| UK NCSC CAF | Principle A2 (Risk Management), B2 (Identity and Access Control), B4 (System Security), D1 (Response and Recovery) | Outcome-based assessment language ("Risks are identified, assessed and understood"; "Access is appropriately controlled"). Outcome language permits theater because the auditor verifies that an outcome statement exists, not that the underlying control disrupts the documented adversary TTP. NCSC's 2024 prompt-injection and AI-supply-chain guidance updates the threat narrative but the CAF outcome statements are unchanged — Patterns 3 / 5 / 6 recur cleanly inside a CAF Level-3 attestation. |
+| UK FCA / PRA SS1/21 (Operational Resilience) | Important Business Service tolerance + scenario testing | Operational-resilience scenario testing is principle-based about severe-but-plausible disruptions. CBEST TIBER-EU scenario libraries lag adversary capability 12-18 months and rarely include AI-as-C2 / prompt-injection / MCP-class scenarios. An FCA-attested IBS resilience programme can be "compliant" with zero exercised coverage of Patterns 3 / 4 / 5 / 6 / 7. |
+| AU APRA CPS 234 | Para 26 (notification) + Para 27 (information security capability proportional to vulnerabilities and threats) | "Proportional to vulnerabilities and threats" language. APRA quarterly returns and tripartite reviews verify documented capability exists; they do not verify the capability disrupts a current-vintage TTP. CPS 234 attestation can be clean while Patterns 1 / 3 / 5 / 6 / 7 are all present. CPS 230 operational-resilience overlay (effective 2025-07-01) is silent on AI-specific operational scenarios. |
+| AU ASD Essential 8 | Patch Applications + Patch Operating Systems + Restrict Administrative Privileges (ML1-ML3) | ML3 48-hour patch window with public exploit is the closest national baseline to adequate for Pattern 1, but the other six strategies (User Application Hardening, Office Macros, Application Control, Daily Backups, MFA, Restrict Admin) do not address Patterns 3 / 5 / 6 / 7 at all. ACSC assessments score the eight strategies; they do not score AI-pipeline integrity or LLM-provider third-party risk. |
+| AU Voluntary AI Safety Standard (10 guardrails, 2024) | Guardrails 5 (test and monitor), 7 (transparency), 8 (record-keeping), 10 (stakeholder engagement) | Voluntary, principles-language. Operationally identical to the EU AI Act / UK DSIT AI Cyber Code lag — names the right concerns at the principle layer without testable controls. Patterns 3 / 4 / 5 are unaddressed by current guardrail attestation. |
 
 The pre-analyzed gaps for these controls live in the framework-gap-analysis skill's Built-In Gap Catalog. This skill consumes those gaps and produces a theater detection per gap.
 

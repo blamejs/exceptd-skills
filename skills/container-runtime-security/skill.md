@@ -22,11 +22,9 @@ triggers:
   - vllm
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
   - cwe-catalog.json
   - d3fend-catalog.json
-  - rfc-references.json
+  - framework-control-gaps.json
 atlas_refs:
   - AML.T0010
 attack_refs:

@@ -27,6 +27,7 @@ const { dispatch, routeQuery, getSkillContext } = require('./dispatcher');
 const { currencyCheck, initPipeline } = require('./pipeline');
 const { bus, EVENT_TYPES } = require('./event-bus');
 const { start: startScheduler, stop: stopScheduler, runCurrencyNow } = require('./scheduler');
+const { EXIT_CODES, safeExit } = require('../lib/exit-codes');
 
 const cmd = process.argv[2];
 const args = process.argv.slice(3);
@@ -145,9 +146,11 @@ Examples:
   exceptd framework-gap NIST-800-53 CVE-2026-31431
   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
   exceptd framework-gap all CVE-2025-53773 --json`);
-    // Pinned exit 2 by operator contract. Envelope harmonization
-    // across orchestrator + CLI is a v0.13 concern.
-    process.exitCode = 2;
+    // v0.13 exit-code class fix: usage error is GENERIC_FAILURE (1),
+    // not DETECTED_ESCALATE (2). Pre-v0.13 the orchestrator emitted
+    // exit 2 for usage errors, colliding with CI gates that branch on
+    // exit 2 to mean "verb ran + detected escalation-worthy finding".
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
@@ -158,7 +161,7 @@ Examples:
     cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
   } catch (err) {
     console.error(`[framework-gap] cannot read catalog: ${err.message}`);
-    process.exitCode = 2;
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
@@ -296,23 +299,19 @@ async function runDispatch() {
 
 function runSkillContext(skillName) {
   if (!skillName) {
-    // v0.12.40: operator-facing surface uses the canonical `exceptd skill
-    // <name>` form, not the orchestrator path that's an implementation
-    // detail.
     console.error('Usage: exceptd skill <skill-name>');
     console.error('       (Lists available skills: exceptd brief --all)');
-    process.exitCode = 1;
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
   const context = getSkillContext(skillName);
   if (!context) {
-    // Unified error shape across the CLI surface — see v0.10.3 bug #18.
-    // Stderr is the documented stream for ok:false bodies emitted by
-    // orchestrator dispatch; envelope harmonization across the CLI is
-    // a v0.13 concern.
-    process.stderr.write(JSON.stringify({ ok: false, error: `Skill not found: ${skillName}`, verb: "skill", hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
-    process.exitCode = 1;
+    // v0.13 envelope harmonization: ok:false bodies land on stdout
+    // alongside successful results so a single consumer can parse the
+    // verb's envelope without splitting across two streams.
+    process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
@@ -376,15 +375,17 @@ async function runReport(format) {
   // string. Now: reject with structured JSON error matching other verbs.
   const VALID_REPORT_FORMATS = ['executive', 'technical', 'compliance', 'csaf'];
   if (!VALID_REPORT_FORMATS.includes(format)) {
-    // Pinned exit 2 + stderr-stream by operator contract. Envelope
-    // harmonization across orchestrator + CLI is a v0.13 concern.
-    process.stderr.write(JSON.stringify({
+    // v0.13 envelope harmonization: ok:false body on stdout, exit 1
+    // (GENERIC_FAILURE) not 2 (DETECTED_ESCALATE). Pre-v0.13 the
+    // body went to stderr and exit was 2; both broke CI consumers
+    // that expected the dispatch-error vs verb-finding distinction.
+    process.stdout.write(JSON.stringify({
       ok: false,
-      error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.`,
       verb: 'report',
+      error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.`,
       accepted_formats: VALID_REPORT_FORMATS,
     }) + '\n');
-    process.exitCode = 2;
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
@@ -705,7 +706,8 @@ async function runValidateCves(rawArgs = []) {
     catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
   } catch (err) {
     console.error(`[validate-cves] cannot read ${catalogPath}: ${err.message}`);
-    process.exit(2);
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
   }
 
   // --since <ISO|YYYY-MM-DD>: scope-limit validation to CVEs whose
@@ -875,7 +877,7 @@ async function runValidateCves(rawArgs = []) {
   }
   if (driftFound > 0) {
     console.log(`\n[validate-cves] DRIFT DETECTED on ${driftFound} CVE(s). Update data/cve-catalog.json and bump source_verified.`);
-    if (!noFail) process.exit(1);
+    if (!noFail) { safeExit(EXIT_CODES.GENERIC_FAILURE); return; }
   } else {
     console.log('[validate-cves] No drift detected against reachable sources.');
   }
@@ -926,7 +928,8 @@ async function runValidateRfcs(rawArgs = []) {
     refs = JSON.parse(fs.readFileSync(refsPath, 'utf8'));
   } catch (err) {
     console.error(`[validate-rfcs] cannot read ${refsPath}: ${err.message}`);
-    process.exit(2);
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
   }
 
   // --since <ISO|YYYY-MM-DD>: scope-limit (parity with validate-cves).
@@ -1055,7 +1058,7 @@ async function runValidateRfcs(rawArgs = []) {
   console.log();
   if (driftFound > 0) {
     console.log(`[validate-rfcs] DRIFT DETECTED on ${driftFound} entry(ies). Update data/rfc-references.json and bump last_verified.`);
-    if (!noFail) process.exit(1);
+    if (!noFail) { safeExit(EXIT_CODES.GENERIC_FAILURE); return; }
   } else if (unreachable > 0) {
     console.log(`[validate-rfcs] ${unreachable} entry(ies) unreachable. Network/IETF Datatracker is intermittent — re-run later.`);
   } else if (!offline && validator) {
@@ -1090,7 +1093,7 @@ function runWatchlist(rawArgs = []) {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   } catch (err) {
     console.error(`[watchlist] cannot read ${manifestPath}: ${err.message}`);
-    process.exitCode = 2;
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
 
@@ -1138,7 +1141,12 @@ function runWatchlist(rawArgs = []) {
 
   const jsonOut = rawArgs.includes('--json');
   if (jsonOut) {
+    // v0.13.0 envelope harmonization: top-level `ok: true` so every
+    // verb's JSON body shares the contract whether emitted by
+    // bin/exceptd.js emit() (which auto-defaults `ok`) or by the
+    // orchestrator dispatch (which writes stdout directly).
     const out = {
+      ok: true,
       generated_at: new Date().toISOString(),
       skills_scanned: skills.length,
       parse_errors: parseErrors,

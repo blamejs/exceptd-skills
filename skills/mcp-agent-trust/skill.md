@@ -14,9 +14,11 @@ triggers:
   - claude code security
   - ai agent security
 data_deps:
-  - cve-catalog.json
   - atlas-ttps.json
-  - framework-control-gaps.json
+  - cve-catalog.json
+  - d3fend-catalog.json
+  - exploit-availability.json
+  - rfc-references.json
 atlas_refs:
   - AML.T0010
   - AML.T0016
@@ -65,7 +67,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local MCP/agent runtime trust; track patch and integration advisories
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Claude Code MCP collision-scored entry by Viettel Cyber Security; CVE in flight; track MCP trust and tool-collision advisory
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-17"
 ---
 
 # MCP Agent Trust Assessment
@@ -142,6 +144,14 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 | CIS Controls v8 | Control 2 (Inventory and Control of Software Assets) | Software inventory and allowlisting. Does not explicitly cover MCP servers. AI coding assistant MCP configs are not in scope for most enterprise software inventory processes. |
 | PCI DSS 4.0 | 12.3.4 | Review and manage third-party service providers. Scoped to service providers with access to cardholder data. An MCP server running on a developer workstation accessing a PCI-scoped codebase is not clearly in scope and would not appear in vendor management reviews. |
 | SWIFT CSCF v2026 | 1.1 (SWIFT Environment Protection — allowlisted software inside the secure zone) | Mandates allowlisted software and protected operator-PC posture for the SWIFT secure zone. The control's allowlist concept is the closest existing analogue to MCP tool allowlisting, but CSCF 1.1 was written for traditional middleware and does not contemplate MCP servers, agent-mediated tool calls, or model-judgment-as-authorization on operator workstations adjacent to the SWIFT zone. |
+| EU NIS2 | Art. 21(2)(d) (supply-chain security) + Art. 21(2)(e) (security in acquisition, development and maintenance) | "Appropriate and proportionate" supply-chain language. Member-state transpositions (BSI IT-SiG 2.0, ANSSI, CNIL) do not enumerate MCP servers as in-scope third-party components. An essential entity meets the NIS2 supplier-management obligation with traditional SaaS vendor reviews while leaving developer-workstation MCP servers entirely outside the supply-chain register. |
+| EU DORA | Art. 28 (ICT third-party risk register) + Art. 30 (key contractual provisions) + Art. 6 (ICT risk-management framework) | Financial-entity ICT third-party language scoped to traditional ICT providers and cloud outsourcing. ESAs RTS on subcontracting (JC 2024/53) is silent on MCP servers running inside trading-desk developer environments, even though those MCP servers can reach repository, trading-system, and ticketing-system tools via the AI assistant. |
+| EU AI Act (Regulation 2024/1689) | Art. 9 (risk management for high-risk AI) + Art. 15 (cybersecurity) + Art. 25 (responsibilities along the AI value chain) | Art. 25 addresses providers, deployers, importers, and distributors but does not categorize MCP server publishers as in-scope value-chain actors. High-risk AI cybersecurity language refers to "state of the art" without naming MCP supply chain as a scoped attack class. |
+| UK NCSC CAF | Principle A4 (Supply Chain), B4 (System Security), B2 (Identity and Access Control) | Outcome-based language. NCSC's 2024 guidance on securing AI systems names supply-chain integrity for AI tooling, but the CAF outcome statements are unchanged — an organisation can achieve A4 / B4 outcomes at Achieved level with zero MCP server allowlisting, no signature verification, and no per-server authentication. |
+| UK DSIT AI Cyber Code of Practice (2025) | Principle 7 (secure software supply chain) + Principle 8 (secure development) | Names supply-chain integrity for AI development but as a principle, not a testable control. No technical floor for MCP signing, allowlisting, or per-server auth. |
+| AU ASD Essential 8 | Strategy: Application Control + Restrict Administrative Privileges | Application Control (allowlisting) is the closest existing strategy to MCP allowlisting but is scoped to operating-system-level executables. MCP servers run as long-lived child processes spawned by the AI assistant's process — Application Control rarely reaches the npm/pip-installed JavaScript or Python that constitutes an MCP server. None of the eight strategies address agent-mediated tool execution. |
+| AU ASD ISM | ISM-1728 (managing cyber supply chain risk) + ISM-1808 (cloud consumer responsibilities) + ISM-0935 (application control) | ISM-1728 supply-chain language is scoped to traditional vendor classes; MCP servers fall outside enumerated supply-chain categories. ISM-0935 application control is operating-system-level and does not reach package-level MCP servers. |
+| AU APRA CPS 234 / CPS 230 | Para 27 (information security capability) + CPS 230 ICT-service-provider obligations | "Capability commensurate with vulnerabilities and threats" language. APRA-regulated entities deploying AI coding assistants meet CPS 234 attestation with traditional vendor-management capability; MCP-specific supply-chain capability is not an examined control. CPS 230 (effective 2025-07-01) third-party-arrangements obligations do not enumerate MCP servers as in-scope material service providers. |
 
 **Fundamental gap:** No current framework has a control category for "AI tool trust boundaries" — the concept that an AI model can be the authorization mechanism for code execution, and that this creates a new class of supply chain and access control risk.
 

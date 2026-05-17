@@ -63,6 +63,7 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "exploit-scoring",
       "framework-gap-analysis",
       "fuzz-testing-strategy",
       "global-grc",
@@ -73,6 +74,7 @@
       "mcp-agent-trust",
       "mlops-security",
       "ot-ics-security",
+      "policy-exception-gen",
       "pqc-first",
       "rag-pipeline-security",
       "ransomware-response",
@@ -91,7 +93,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 40
+    "skill_count": 42
   },
   "AU": {
     "skills": [
@@ -120,6 +122,7 @@
       "mcp-agent-trust",
       "mlops-security",
       "ot-ics-security",
+      "policy-exception-gen",
       "pqc-first",
       "rag-pipeline-security",
       "ransomware-response",
@@ -138,7 +141,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 41
+    "skill_count": 42
   },
   "SG": {
     "skills": [
@@ -548,21 +551,29 @@
   "EU_DE_BSI": {
     "skills": [
       "age-gates-child-safety",
+      "ai-attack-surface",
+      "ai-c2-detection",
       "cloud-security",
+      "compliance-theater",
       "coordinated-vuln-disclosure",
       "fuzz-testing-strategy",
+      "mcp-agent-trust",
       "pqc-first"
     ],
     "example_excerpts": {},
-    "skill_count": 5
+    "skill_count": 9
   },
   "EU_FR_ANSSI": {
     "skills": [
+      "ai-attack-surface",
+      "ai-c2-detection",
       "cloud-security",
+      "compliance-theater",
+      "mcp-agent-trust",
       "pqc-first"
     ],
     "example_excerpts": {},
-    "skill_count": 2
+    "skill_count": 6
   },
   "EU_ES_AEPD": {
     "skills": [

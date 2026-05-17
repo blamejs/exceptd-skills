@@ -1,0 +1,963 @@
+{
+  "_meta": {
+    "id": "llm-tool-use-exfil",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-17",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-17",
+        "summary": "Initial seven-phase agentic-AI tool-abuse playbook. Distinct from dlp-exfiltration (enterprise DLP plane) and mcp-supply-chain (tool trust at install time): this playbook covers the in-runtime case where a legitimately-installed AI tool with legitimate auth is COERCED via prompt injection (direct, indirect, or RAG-derived) into exfiltrating data the model has access to. Walks the agent's tool-allowlist, RAG-pipeline ingestion sources, tool-call transcripts for instruction-coercion patterns, egress destinations of agent-initiated tool calls, and the AI provider's audit-trail surface. Closes the GRC loop with NIST AI RMF GV-1.5 + MS-2.6 + MG-4.1 gaps, EU AI Act Art.15 + Art.55 agentic-oversight gap, ISO 42001 Cl. 6.1.3 AI-risk-assessment gap, and SOC 2 CC6.7 data-exfiltration-via-agent gap.",
+        "cves_added": [
+          "CVE-2025-53773",
+          "CVE-2026-30615",
+          "CVE-2026-30623",
+          "CVE-2026-42208"
+        ],
+        "framework_gaps_updated": [
+          "nist-ai-rmf-GV-1.5-agent-oversight",
+          "nist-ai-rmf-MS-2.6-tool-use-monitoring",
+          "nist-ai-rmf-MG-4.1-incident-response-agent",
+          "eu-ai-act-art15-robustness-agentic",
+          "eu-ai-act-art55-systemic-risk-agentic",
+          "iso-42001-6.1.3-ai-risk-assessment",
+          "soc2-CC6.7-data-exfil-via-agent"
+        ]
+      }
+    ],
+    "owner": "@blamejs/ai-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "agent-config-readable",
+        "description": "Agent must be able to read the operator's AI-agent configuration: tool allowlists (.claude/*, .cursor/mcp.json, .codeium/windsurf/*, agent-platform tool definitions), RAG pipeline ingestion config, and tool-call transcript logs for the audit window.",
+        "check": "agent_has_filesystem_read == true OR agent_has_audit_log_access == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "ai-agent-deployed",
+        "description": "At least one agentic-AI tool-using workload must be deployed (Claude Code / Cursor / Windsurf / OpenAI Assistants / LangChain agent / LiteLLM proxy / internal RAG agent). If none, this playbook returns visibility_gap=no_agent_deployed.",
+        "check": "exists($HOME/.claude) || exists($HOME/.cursor) || exists($HOME/.codeium/windsurf) || agent_platform_endpoint_configured == true",
+        "on_fail": "skip_phase"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "ai-api",
+        "condition": "finding.includes_ai_api_egress == true"
+      },
+      {
+        "playbook_id": "mcp",
+        "condition": "finding.tool_surface == 'mcp'"
+      },
+      {
+        "playbook_id": "secrets",
+        "condition": "finding.includes_credential_exposure == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Agentic-AI tool abuse via prompt injection for data exfiltration",
+    "attack_class": "rag-exfiltration",
+    "atlas_refs": [
+      "AML.T0051",
+      "AML.T0096",
+      "AML.T0024",
+      "AML.T0048"
+    ],
+    "attack_refs": [
+      "T1041",
+      "T1567",
+      "T1552.001",
+      "T1059"
+    ],
+    "cve_refs": [
+      "CVE-2025-53773",
+      "CVE-2026-30615",
+      "CVE-2026-30623",
+      "CVE-2026-42208"
+    ],
+    "cwe_refs": [
+      "CWE-1426",
+      "CWE-200",
+      "CWE-94",
+      "CWE-77",
+      "CWE-918"
+    ],
+    "d3fend_refs": [
+      "D3-NTA",
+      "D3-CBAN",
+      "D3-IOPR",
+      "D3-EAL"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "eu-ai-act",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU AI Act Art.15",
+          "obligation": "notify_regulator",
+          "window_hours": 360,
+          "clock_starts": "validate_complete",
+          "evidence_required": [
+            "ai_system_inventory",
+            "robustness_assessment_update",
+            "remediation_completed_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU AI Act Art.73 (serious incident)",
+          "obligation": "notify_regulator",
+          "window_hours": 360,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "incident_description",
+            "ai_system_inventory",
+            "affected_users_estimate"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "exfiltrated_data_categories",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "exfiltration_scope_estimate",
+            "agent_tool_chain_inventory",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "exfiltrated_data_categories",
+            "data_subject_impact_assessment"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "model-card-as-safety-control",
+          "claim": "The model provider's system card documents prompt-injection robustness, therefore agentic workloads built on it are safe.",
+          "fast_detection_test": "Distinguish model-card claims (laboratory benchmark results) from deployed-system behaviour. The model's prompt-injection benchmark is run against a generic adversarial corpus; it does not generalise to operator-specific tools whose responses contain instruction-coercion grammar. Run the operator-specific tool-injection battery against the deployed agent; benchmark scores are not deployment evidence.",
+          "implicated_controls": [
+            "eu-ai-act-art15",
+            "iso-42001-6.1.3"
+          ]
+        },
+        {
+          "pattern_id": "human-in-the-loop-as-mitigation",
+          "claim": "Every agent tool call requires human approval, so prompt-injection-induced exfiltration cannot succeed.",
+          "fast_detection_test": "Inventory the tool-allowlist for any `auto-approve` flag. CVE-2025-53773 (GitHub Copilot YOLO mode) is the canonical example — operators enable broad auto-approval to speed development workflows, breaking the human-in-the-loop assumption. For tools requiring approval, measure the actual approval latency + denial rate; rubber-stamp approval is functionally equivalent to auto-approval."
+        },
+        {
+          "pattern_id": "egress-allowlist-as-exfil-defence",
+          "claim": "Outbound network requests from the agent are restricted to an allowlist, so exfiltration is contained.",
+          "fast_detection_test": "Verify the allowlist includes the model provider's API endpoint AND any documentation / search / web-fetch domain the agent legitimately needs. Each allowlisted high-cardinality destination (cdn.<provider>.com, *.googleusercontent.com, github.com) is a credible exfil channel for an attacker that can encode data into request paths or query parameters. The allowlist's mere existence is not the defence; egress payload inspection is."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Agentic-AI tool abuse via prompt injection sits in a structural framework gap. NIST AI RMF (GV-1.5 governance, MS-2.6 measurement of AI system performance, MG-4.1 incident response) addresses AI-system risk management but not the specific case of a legitimately-installed tool with legitimate auth being coerced into exfiltration. EU AI Act Art.15 (accuracy, robustness, cybersecurity) covers robustness but the conformity assessment is per-model, not per-deployment; an agent built on a conformant model that COMBINES the model with operator-deployed tools is out of the per-model assessment scope. EU AI Act Art.55 (systemic risk for general-purpose AI) is closer but applies only to the few largest providers, not to the operator's deployment. ISO 42001 Cl. 6.1.3 AI risk assessment is methodology-focused; does not bind to tool-abuse-via-prompt-injection specifically. SOC 2 CC6.7 covers data transmission but not the agent-mediated case where the data is legitimately fetched by an authorised tool then exfiltrated via a different authorised tool's response surface. The result: a deployed agent with conformant model + allowlisted tools + audited egress can satisfy every applicable framework reading while being one prompt-injected document away from full data exfiltration.",
+        "lag_score": 30,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-csf-2",
+            "control_id": "PR.DS-02 (Data-in-transit) + PR.DS-10 (Data confidentiality)",
+            "designed_for": "Data confidentiality during transmission + at rest.",
+            "insufficient_because": "Treats the agent's tool calls as legitimate transmission. Prompt-injection-induced exfiltration uses authorised tools to transmit; the controls cannot distinguish operator-intended from attacker-induced tool calls."
+          },
+          {
+            "framework": "eu-ai-act",
+            "control_id": "Art.15 — Accuracy, robustness, cybersecurity",
+            "designed_for": "Per-model robustness conformity assessment.",
+            "insufficient_because": "Per-model assessment does not cover the per-deployment composition of model + operator tools + RAG sources. A conformant model in an agentic deployment is one indirect-injection away from exfiltration; the conformity scope misses the composition."
+          },
+          {
+            "framework": "eu-ai-act",
+            "control_id": "Art.55 — Obligations for providers of general-purpose AI models with systemic risk",
+            "designed_for": "Systemic-risk obligations on the largest providers.",
+            "insufficient_because": "Applies only to providers; operator deployments are out-of-scope. The deployer assumes systemic-risk implications without bearing the corresponding obligations."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.16 — Identity management + A.5.17 — Authentication information",
+            "designed_for": "Identity + authentication for users + services.",
+            "insufficient_because": "Treats tool-auth as service authentication. Doesn't address the case where the SERVICE acts on behalf of the user but is induced by attacker-supplied content. The tool's auth is legitimate; the prompt is not."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC6.7 — Transmission of data",
+            "designed_for": "Restricting data transmission to authorised recipients.",
+            "insufficient_because": "Authorised tools transmitting to authorised destinations satisfy CC6.7. Agent-mediated exfiltration uses authorised tools + authorised destinations and is invisible to the control."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(e) — Security in the acquisition, development and maintenance of network and information systems",
+            "designed_for": "Security across the system lifecycle.",
+            "insufficient_because": "Treats AI systems as software in the procurement / lifecycle sense; does not specify agentic-tool-composition risk assessment, prompt-injection detection, or per-deployment robustness assessment."
+          }
+        ]
+      },
+      "skill_preload": [
+        "ai-attack-surface",
+        "rag-pipeline-security",
+        "mcp-agent-trust",
+        "ai-c2-detection",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Q1-Q2 2026 agentic-AI tool-abuse landscape. CVE-2025-53773 (GitHub Copilot / VS Code YOLO-mode prompt-injection RCE) is the canonical 'auto-approve broke the human-in-the-loop' incident — operators enabled `chat.tools.autoApprove: true` for developer-velocity reasons, removing the only barrier between an indirect-injection-coerced agent and arbitrary tool execution. CVE-2026-30615 (Windsurf MCP local-vector RCE via adversarial tool response) and CVE-2026-30623 (Anthropic MCP SDK stdio command-injection) showed that the tool surface itself can be coerced — a tool response containing instruction-coercion grammar can pivot the agent's next call. CVE-2026-42208 (BerriAI LiteLLM Proxy Auth SQL Injection) showed that the proxy layer many agentic stacks sit behind has its own exploitable surfaces. The 2025 'ChatGPT Operator' class incidents demonstrated the same pattern at the consumer-product layer: an agent with browser tool authorised for legitimate user-driven research was coerced via injected page content into navigating to attacker-controlled pages + submitting forms with the user's session. Anthropic's MAL-2026 catalogue series documents the MCP-side trust failures. The AML.T0051 (LLM prompt injection) and AML.T0096 (LLM plugin compromise) ATLAS techniques are operational across consumer + enterprise deployments. Critical observation: the agent IS the attacker's confused-deputy proxy — the model holds legitimate access, the tools hold legitimate auth, and the only attacker primitive needed is one document the agent will read.",
+      "rwep_threshold": {
+        "escalate": 85,
+        "monitor": 65,
+        "close": 30
+      },
+      "framework_lag_declaration": "NIST CSF 2.0 PR.DS-02 + PR.DS-10, EU AI Act Art.15 + Art.55, ISO 27001 A.5.16 + A.5.17, SOC 2 CC6.7, and NIS2 Art.21(2)(e) collectively underspecify agentic-AI tool abuse. None mandate per-deployment robustness assessment for the model + tool + RAG-source composition. None require egress-payload entropy / pattern inspection to distinguish operator-intended tool calls from attacker-induced ones. None bind to the AML.T0051 + AML.T0096 detection signal classes. EU AI Act Art.15 conformity is per-model not per-deployment. The CVE-2025-53773 + CVE-2026-30615 + CVE-2026-30623 incidents would each satisfy a literal reading of every applicable control. ISO 42001 Cl. 6.1.3 is closest but methodology-only; no binding signal list.",
+      "skill_chain": [
+        {
+          "skill": "ai-attack-surface",
+          "purpose": "Map the operator's deployed-agent attack surface: which models, which tools, which RAG sources, which egress destinations, which approval gates.",
+          "required": true
+        },
+        {
+          "skill": "rag-pipeline-security",
+          "purpose": "Assess RAG ingestion sources for indirect-injection susceptibility: which sources are operator-owned vs. external, which carry untrusted content, which have integrity controls.",
+          "required": true
+        },
+        {
+          "skill": "mcp-agent-trust",
+          "purpose": "When the tool surface is MCP, score per-tool trust posture (signed manifest, allowlist, response-content sanitisation).",
+          "skip_if": "phases.look.findings.tool_surface_mcp_count == 0",
+          "required": false
+        },
+        {
+          "skill": "ai-c2-detection",
+          "purpose": "Score the agent's tool-call + egress patterns for AI-C2 signatures (refresh-token hoarding, persistent unprompted tool calls, exfil-encoding patterns in tool arguments).",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each finding to the framework control that should have caught it and why it didn't.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the theater test — does the org's claimed agent oversight actually distinguish operator-intended tool calls from attacker-induced ones?",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language if a finding cannot be remediated within the jurisdiction's window.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 17500,
+        "breakdown": {
+          "govern": 2400,
+          "direct": 1800,
+          "look": 1900,
+          "detect": 2400,
+          "analyze": 3600,
+          "validate": 3000,
+          "close": 2400
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "agent-tool-allowlist",
+          "type": "config_file",
+          "source": "Inventory tool definitions across deployed agents: .claude/settings.json (Claude Code), .cursor/mcp.json + .cursor/rules (Cursor), .codeium/windsurf/mcp_config.json (Windsurf), .vscode/settings.json for chat.tools.autoApprove + chat.experimental.* (GitHub Copilot), agent-platform tool definitions (LangChain ToolNode, OpenAI Assistants tool list).",
+          "description": "Every tool the agent is allowed to call, with auto-approve / approval-required state per tool and per scope.",
+          "required": true,
+          "air_gap_alternative": "Local config walk only; mark agent-platform-side definitions as inventory_gap=platform_api_unavailable."
+        },
+        {
+          "id": "rag-ingestion-sources",
+          "type": "config_file",
+          "source": "Inventory RAG / context-injection sources: vector-store ingestion configs (Pinecone / Chroma / Weaviate / pgvector loaders), web-fetch tool URL allowlists, file-read tool path allowlists, MCP server document sources. Per source: operator-owned vs. external, integrity-control state (signed content, hash-pinned, none).",
+          "description": "Every source from which content can reach the agent's context window. Indirect-injection arrives through these.",
+          "required": true,
+          "air_gap_alternative": "Local config walk + secret-store inventory; mark vector-store-side enumeration as inventory_gap=admin_api_unavailable."
+        },
+        {
+          "id": "tool-call-transcripts",
+          "type": "audit_trail",
+          "source": "Capture the last 30 days of agent tool-call transcripts: Anthropic API tool_use blocks, OpenAI Assistants run-step traces, LangChain agent call logs, MCP server stdio logs. Per call: tool name, arguments, response, calling-conversation id, approval state.",
+          "description": "Tool-call transcript log for the audit window. Used for instruction-coercion pattern detection + egress-pattern analysis.",
+          "required": true,
+          "air_gap_alternative": "Local agent logs only; mark provider-side trace data as inventory_gap=provider_api_unavailable."
+        },
+        {
+          "id": "egress-destination-inventory",
+          "type": "network_capture",
+          "source": "Outbound destinations agent tool calls actually reached over the audit window. Capture from: outbound proxy logs (Squid / Tinyproxy / corporate proxy), eBPF egress capture, NetFlow / VPC Flow Logs scoped to the agent's host or namespace.",
+          "description": "Actual egress destinations reached by agent tool calls. Compared against tool-allowlist + RAG-source-allowlist.",
+          "required": false,
+          "air_gap_alternative": "Local egress proxy logs only; mark cloud-side flow logs as inventory_gap=cloud_logging_unavailable."
+        },
+        {
+          "id": "approval-latency-and-denial-rate",
+          "type": "audit_trail",
+          "source": "For tools requiring human approval: per-call timestamp of request + approval/denial. Compute mean approval latency + denial rate per tool. Source: same transcript stream as tool-call-transcripts, partitioned on approval-required tools.",
+          "description": "Human-in-the-loop liveness signal. Rubber-stamp approval (< 5s, < 1% denial) is functionally auto-approval.",
+          "required": false
+        },
+        {
+          "id": "model-system-prompt-and-context-state",
+          "type": "model_output",
+          "source": "For each deployed agent, capture the current system prompt + any persistent context-injection (project rules, agent-platform global instructions, Claude.md, .cursorrules, .cursor/rules/*).",
+          "description": "Persistent context — used to detect attacker-introduced rules that broaden tool authority or relax egress restrictions.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "30d",
+        "asset_scope": "operator_deployed_agents_and_their_tool_surfaces",
+        "depth": "deep",
+        "sampling": "full inventory of deployed agents + tool-allowlists + RAG ingestion sources. 30-day audit of tool-call transcripts + egress. Re-collect on every new agent deployment, tool addition, or RAG source change."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator-deployed agentic-AI workloads exist",
+          "if_false": "Skip playbook with visibility_gap=no_agent_deployed."
+        },
+        {
+          "assumption": "tool-call transcripts are retained for the audit window",
+          "if_false": "Reduce time-window to actual retention; downgrade overall confidence to medium and emit a visibility note on the retention shortfall."
+        },
+        {
+          "assumption": "outbound proxy or egress capture is in place for at least one deployed agent",
+          "if_false": "egress-destination-inventory marked inconclusive; rely on tool-allowlist + RAG-ingestion-source inventory for the static-analysis side; downgrade exfil-detection confidence to medium."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "egress-destination-inventory",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "tool-call-transcripts",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "rag-ingestion-sources",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "approval-latency-and-denial-rate",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "auto-approve-on-high-impact-tool",
+          "type": "log_pattern",
+          "value": "Tool allowlist marks any tool with a high-impact operation (file_write, shell_exec, network_post, mcp_call) as auto-approved: VS Code `chat.tools.autoApprove: true`, Claude Code `permissions: { write: 'always' }`, Cursor MCP `autorun: true`.",
+          "description": "CVE-2025-53773 YOLO-mode class. Auto-approval breaks the human-in-the-loop gate on high-impact operations.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1059",
+          "cve_ref": "CVE-2025-53773",
+          "false_positive_checks_required": [
+            "Confirm the auto-approve is NOT scoped to a read-only or sandbox-only operation. `chat.tools.autoApprove` scoped to `read_file` is lower-blast-radius than the same scoped to `shell_exec`; classify per-tool.",
+            "Confirm there is not a complementary egress allowlist that meaningfully restricts what the auto-approved tool can reach. Auto-approve + restricted egress is medium-risk; auto-approve + open egress is high-risk."
+          ]
+        },
+        {
+          "id": "instruction-coercion-in-tool-response",
+          "type": "log_pattern",
+          "value": "Tool-call transcript contains a response with instruction-coercion grammar: `<IMPORTANT>`, `<system>`, `<instructions>`, `Ignore previous instructions`, `Before using this tool, read`, `Do not mention to user`, Unicode tag-block range U+E0000-U+E007F, ANSI escape byte 0x1B in a context where escape sequences are not expected.",
+          "description": "Indirect prompt-injection signature — tool response carries grammar designed to subvert the model's next action.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0051",
+          "false_positive_checks_required": [
+            "Confirm the response is not a legitimate document about prompt injection itself (security-research blog post, exceptd skill content, vendor advisory). Educational discussion of injection patterns is not injection; classify by intent + provenance.",
+            "Confirm the grammar appears in a position the model would treat as authoritative. The same string in a markdown code-fence inside a documentation tool response is much lower-risk than the same string in a free-text web-fetch tool response that the model treats as ground-truth."
+          ]
+        },
+        {
+          "id": "unprompted-tool-chain",
+          "type": "log_pattern",
+          "value": "Tool call sequence shows the agent invoking a sensitive tool (file_read on credentials path, network_post to non-allowlisted destination, mcp_call to a different server) without a corresponding user-conversation turn that requested it. Latent transitions across 3+ tool calls without user prompt.",
+          "description": "AI-C2 signature — agent acting on attacker-injected instructions rather than user-supplied ones.",
+          "confidence": "high",
+          "deterministic": false,
+          "atlas_ref": "AML.T0096",
+          "false_positive_checks_required": [
+            "Confirm the agent's system prompt or persistent context does NOT instruct multi-step autonomous behaviour for the observed pattern. Some operator workflows (background-refresh-then-summarise) legitimately produce unprompted chains.",
+            "Confirm the tool chain's targets are sensitive — file_read on a project source file the user just discussed is not exfil; file_read on ~/.ssh, /etc/shadow, or a credential store IS exfil regardless of intent."
+          ]
+        },
+        {
+          "id": "agent-egress-to-non-allowlisted-destination",
+          "type": "network_pattern",
+          "value": "Egress capture shows the agent making an outbound request to a destination not on the egress allowlist OR on the allowlist but with a path / query parameter pattern containing base64 / hex / URL-encoded data segments > 64 bytes that do not correspond to a documented API surface.",
+          "description": "Exfiltration channel — direct (non-allowlisted) or encoded-into-allowlisted-host (CDN-as-exfil-channel).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1041",
+          "false_positive_checks_required": [
+            "Confirm the encoded segment is not a legitimate cache key, image hash, or SDK telemetry payload. Many CDN URLs contain encoded content-addressing; differentiate by destination's documented API surface, not the encoding itself.",
+            "Confirm the destination is not a model-provider's tool-augmentation endpoint (Anthropic file upload, OpenAI vector-store ingest). Provider-internal flows look exfil-shaped but are legitimate when correlated with a corresponding tool_use block in the transcript."
+          ]
+        },
+        {
+          "id": "credential-shadow-in-tool-args",
+          "type": "log_pattern",
+          "value": "Tool-call arguments contain content matching credential patterns: AWS access-key prefix (AKIA, ASIA), GitHub PAT prefix (ghp_, gho_, github_pat_), Slack token prefix (xoxb-, xoxa-), JWT-shape strings, RSA / OpenSSH key headers — when the tool's documented purpose does not require credential handling.",
+          "description": "Cross-server credential-shadow — agent passing credentials to a tool that should not need them. Embrace the Red tool-poisoning signature.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "Confirm the tool is not one the operator legitimately built for credential management (vault-fetch, secret-rotate). Allowlisting must be evidence-backed via documented per-tool purpose.",
+            "Confirm the credential pattern hit is not a legitimate test fixture or documentation string. Hash the matched substring against a known-test-fixtures denylist before classifying as live credential."
+          ]
+        },
+        {
+          "id": "rag-source-from-untrusted-origin",
+          "type": "log_pattern",
+          "value": "RAG ingestion source includes an externally-writable surface (public-internet web page, public Slack channel, public GitHub repo issue body, public Google Doc, public Notion page) without integrity controls (no hash-pinning, no operator-side content review, no content-source attestation).",
+          "description": "Indirect-injection arrival vector — attacker-controllable content reaches the agent's context window through legitimate RAG ingestion.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "atlas_ref": "AML.T0024",
+          "false_positive_checks_required": [
+            "Confirm the source is genuinely externally-writable. A public-read but operator-write GitHub repo is lower-risk than the same repo with `triage` access granted to community contributors.",
+            "Confirm the agent's downstream context-handling does not apply trust-zone segregation (treating retrieved content as 'data' not 'instruction'). Trust-zoned content handling demotes; raw concatenation into the model's context window does not."
+          ]
+        },
+        {
+          "id": "rubber-stamp-approval-pattern",
+          "type": "log_pattern",
+          "value": "Approval-latency baseline for a sensitive tool shows mean approval-time < 5s AND denial rate < 1% over > 50 calls.",
+          "description": "Human-in-the-loop attestation failure — approval is functionally automatic. Removes the gate without removing the audit trail.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1059",
+          "false_positive_checks_required": [
+            "Confirm the approver is not a dedicated operator using a documented workflow that legitimately produces fast approval (e.g. a developer with deep context approving their own agent's expected next call).",
+            "Confirm the call population is from real attacker-relevant scenarios. A baseline drawn entirely from legitimate routine flows will trivially produce rubber-stamp metrics; sample at least 10% of calls flagged by other indicators."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "instruction-coercion-in-tool-response",
+          "benign_pattern": "Tool response is a documentation page or security-research article that legitimately quotes injection patterns as examples.",
+          "distinguishing_test": "Apply trust-zone classification: the tool response's source URL or file path should be classified as trusted (operator-curated docs) or untrusted (web-fetch of arbitrary URL). Instruction-coercion in trusted-source content is documentation; the same in untrusted-source content is an injection attempt."
+        },
+        {
+          "indicator_id": "agent-egress-to-non-allowlisted-destination",
+          "benign_pattern": "Model provider's documented tool augmentation endpoint (file upload, vector-store ingest) not yet on the operator's allowlist.",
+          "distinguishing_test": "Correlate the egress hit with the contemporaneous tool_use block in the transcript. A legitimate file_upload tool call produces a corresponding outbound to the provider's documented endpoint; an unprompted outbound with no transcript correlate is the signal."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "Any deterministic indicator fires AND the false_positive_checks_required step does not produce an unambiguous benign explanation. For agent-egress-to-non-allowlisted-destination + credential-shadow-in-tool-args, single fire = detected. For instruction-coercion + rag-source-from-untrusted-origin, require pairing with at least one other indicator firing on the same agent within the same conversation window.",
+        "inconclusive": "Inventory complete but tool-call transcripts or egress data are partial (retention shortfall, provider API unreachable). Cannot deny without resolving the data gaps.",
+        "not_detected": "All inventory complete, no indicator fires, tool-allowlists do not auto-approve high-impact operations, RAG sources are operator-owned or integrity-controlled, egress is allowlisted with payload inspection, approval-latency baseline shows non-rubber-stamp pattern, no instruction-coercion grammar in tool responses."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "auto-approve-on-high-impact-tool",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "CVE-2025-53773 confirmed exploitation; YOLO-mode pattern observed widely in developer-tooling deployments."
+        },
+        {
+          "signal_id": "instruction-coercion-in-tool-response",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "CVE-2026-30615 + Trail of Bits + Invariant Labs disclosures show active exploitation."
+        },
+        {
+          "signal_id": "credential-shadow-in-tool-args",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Cross-server credential-shadow pattern documented in researcher disclosures + operational incidents."
+        },
+        {
+          "signal_id": "agent-egress-to-non-allowlisted-destination",
+          "rwep_factor": "active_exploitation",
+          "weight": 25,
+          "notes": "Direct exfil channel — confirmed in 2025 ChatGPT Operator-class incident reports."
+        },
+        {
+          "signal_id": "rag-source-from-untrusted-origin",
+          "rwep_factor": "public_poc",
+          "weight": 15,
+          "notes": "Indirect-injection-via-RAG PoCs are publicly documented (Embrace the Red, Simon Willison)."
+        },
+        {
+          "signal_id": "unprompted-tool-chain",
+          "rwep_factor": "ai_weaponization",
+          "weight": 10,
+          "notes": "AI-C2 fingerprint; the technique IS AI-weaponisation."
+        },
+        {
+          "signal_id": "auto-approve-on-high-impact-tool",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Auto-approve multiplies blast radius of any other indicator that fires together."
+        },
+        {
+          "signal_id": "rubber-stamp-approval-pattern",
+          "rwep_factor": "blast_radius",
+          "weight": 5,
+          "notes": "Functionally equivalent to auto-approval — same blast-radius multiplier."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If the agent is successfully prompt-injected into exfiltrating data, what scope of data is in reach of the agent's tools?",
+        "scoring_rubric": [
+          {
+            "condition": "Agent scoped to a single sandbox / scratch directory with no network egress and no credential access.",
+            "blast_radius_score": 1,
+            "description": "Sandbox-scope exfil only; cleanup = sandbox reset."
+          },
+          {
+            "condition": "Agent has read-only access to a single project's source + read-only network egress to documentation domains.",
+            "blast_radius_score": 2,
+            "description": "Single project source exfil; data is operator-owned but limited scope."
+          },
+          {
+            "condition": "Agent has access to operator credentials (env vars, ~/.aws, ~/.ssh, vault tokens) for non-prod environments.",
+            "blast_radius_score": 3,
+            "description": "Credential exfil + lateral-movement primitive scoped to non-prod."
+          },
+          {
+            "condition": "Agent has access to production credentials, cloud-provider OIDC tokens, or model-provider API keys with billing scope.",
+            "blast_radius_score": 4,
+            "description": "Production credential exfil; downstream compromise of cloud + provider account."
+          },
+          {
+            "condition": "Agent has access to customer data, PII corpus, or model-provider account with full org-admin scope (Anthropic Workspaces admin, OpenAI org owner).",
+            "blast_radius_score": 5,
+            "description": "Customer-data exfil OR full AI-provider org compromise."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "The deployed agent is under EU AI Act Art.15 robustness conformity, with human-in-the-loop oversight on all sensitive tool calls, and egress is restricted to an allowlist — therefore prompt-injection-induced exfiltration is not possible.",
+        "audit_evidence": "Model conformity-assessment certificate, tool-allowlist documentation showing approval-required state per tool, egress-allowlist configuration.",
+        "reality_test": "For a sample deployed agent: (a) submit an indirect-injection payload via a RAG-source that the agent will retrieve (operator-controlled test channel) containing a crafted instruction to call file_read on a credential path and post the result to an operator-controlled exfil endpoint; (b) observe whether the agent attempts the tool calls; (c) for approval-required tools, measure whether the approver actually denies. Theater verdict if any of (a)-(c) succeeds: paper compliance + human-in-the-loop coexist with an exploitable exfil path.",
+        "theater_verdict_if_gap": "Org demonstrates AI Act conformity + tool-allowlist + egress restriction, but the deployed-system composition still permits prompt-injection-induced exfiltration. Either (a) add per-deployment robustness testing with the operator-specific tool + RAG composition, (b) introduce trust-zone segregation between retrieved content and model instructions, (c) deploy egress-payload inspection (not just destination allowlist), OR (d) generate a defensible exception via policy-exception-gen."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "llm-tool-use-exfil-detected",
+          "framework": "nist-csf-2",
+          "claimed_control": "PR.DS-02 + PR.DS-10",
+          "actual_gap": "Treats agent's tool calls as legitimate transmission. Cannot distinguish operator-intended from attacker-induced calls.",
+          "required_control": "Add agent-call provenance attribution to data-confidentiality controls. Each tool call should carry an attestation linking it to the user-conversation turn that authorised it; calls without such linkage are exfil candidates."
+        },
+        {
+          "finding_id": "llm-tool-use-exfil-detected",
+          "framework": "eu-ai-act",
+          "claimed_control": "Art.15 — Accuracy, robustness, cybersecurity",
+          "actual_gap": "Per-model conformity does not cover per-deployment model + tool + RAG composition.",
+          "required_control": "Extend Art.15 conformity to per-deployment composition assessment for high-risk agentic systems. Operator-specific tool-injection batteries must be part of the conformity evidence."
+        },
+        {
+          "finding_id": "llm-tool-use-exfil-detected",
+          "framework": "eu-ai-act",
+          "claimed_control": "Art.55 — Systemic-risk obligations on GPAI providers",
+          "actual_gap": "Applies only to providers; operator deployments are out of scope.",
+          "required_control": "A parallel deployer-side obligation set for high-risk agentic deployments. Bring composition-risk assessment + per-deployment red-teaming into scope."
+        },
+        {
+          "finding_id": "llm-tool-use-exfil-detected",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.16 + A.5.17",
+          "actual_gap": "Treats tool-auth as service authentication; does not address attacker-supplied content inducing the legitimate-auth service.",
+          "required_control": "Extend identity controls to include intent attribution: every service call should carry an attestation of the upstream user-intent it serves."
+        },
+        {
+          "finding_id": "llm-tool-use-exfil-detected",
+          "framework": "soc2",
+          "claimed_control": "CC6.7 — Transmission of data",
+          "actual_gap": "Authorised tools + authorised destinations satisfy CC6.7; agent-mediated exfil invisible.",
+          "required_control": "Add agent-call provenance + payload-entropy inspection to the CC6.7 evidence package."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "rwep >= 85 AND blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "credential-shadow-in-tool-args == fired",
+          "action": "trigger_playbook",
+          "target_playbook": "secrets"
+        },
+        {
+          "condition": "agent-egress-to-non-allowlisted-destination == fired AND blast_radius_score >= 3",
+          "action": "trigger_playbook",
+          "target_playbook": "ai-api"
+        },
+        {
+          "condition": "instruction-coercion-in-tool-response == fired AND finding.tool_surface == 'mcp'",
+          "action": "trigger_playbook",
+          "target_playbook": "mcp"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "disable-auto-approve-on-high-impact-tools",
+          "description": "Remove auto-approve flags for any high-impact tool (file_write, shell_exec, network_post, mcp_call to non-allowlisted server). Migrate from `chat.tools.autoApprove: true` to per-tool approval with operator-defined criteria.",
+          "preconditions": [
+            "operator_admin_on_agent_config == true",
+            "developer_workflow_can_tolerate_approval_friction == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "approval_decision_recorded_in_audit_log",
+            "approval_pattern_baseline_monitored"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "introduce-trust-zone-segregation",
+          "description": "Refactor the agent's context-handling so that RAG-retrieved content + tool responses are clearly delineated as untrusted-data not instructions. Use explicit role-tagged context blocks (`<retrieved-content trust='untrusted'>...</retrieved-content>`) and instruct the model in the system prompt to treat untrusted-zone content as data only.",
+          "preconditions": [
+            "agent_code_is_operator_owned == true",
+            "model_supports_trust_zone_pattern == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "trust_zone_test_battery_in_ci",
+            "system_prompt_versioned_in_source_control"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "deploy-egress-payload-inspection",
+          "description": "Add egress-payload inspection (not just destination allowlist) for the agent's outbound surface. Flag high-entropy query parameters, base64 / hex segments > 64 bytes on non-API paths, and unusual content-length-to-destination patterns.",
+          "preconditions": [
+            "egress_inspection_capability_available == true",
+            "agent_egress_traffic_routable_through_inspection == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "inspection_rules_recorded_in_iac",
+            "false_positive_baseline_established"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "lock-down-rag-sources",
+          "description": "Restrict RAG ingestion to operator-owned sources OR external sources with integrity controls (hash-pinning, signed content, operator-side content review). Remove any source that is externally-writable without integrity controls.",
+          "preconditions": [
+            "operator_admin_on_rag_pipeline == true",
+            "alternative_content_sources_available_for_removed_externals == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "rag_source_inventory_recorded",
+            "integrity_control_evidence_per_source"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "policy-exception",
+          "description": "Generate auditor-ready policy exception when faster paths are blocked.",
+          "preconditions": [
+            "remediation_paths[1..4] partially blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 5,
+          "compensating_controls": [
+            "enhanced_transcript_review_daily",
+            "weekly_agent_red_team_battery"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "indirect-injection-payload-blocked",
+          "test": "Place an operator-controlled indirect-injection payload in a RAG-source the agent reads. Confirm the agent does NOT execute the injected instruction OR — if it attempts — the approval gate denies AND the egress-inspection layer blocks the exfil.",
+          "expected_result": "Agent treats injected content as data; either does not attempt the call, approval gate denies, or egress inspection blocks.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "auto-approve-disabled-on-high-impact",
+          "test": "Inspect the deployed agent config for any auto-approve flag on high-impact tools. Confirm none remain.",
+          "expected_result": "No auto-approve flag on file_write, shell_exec, network_post, mcp_call to non-allowlisted server.",
+          "test_type": "functional"
+        },
+        {
+          "id": "egress-payload-inspection-fires",
+          "test": "Submit a synthetic agent request with a high-entropy base64 payload in a non-API query parameter. Confirm the inspection layer flags + blocks.",
+          "expected_result": "Inspection layer fires + blocks; audit log records the decision.",
+          "test_type": "negative"
+        },
+        {
+          "id": "rag-source-inventory-conformance",
+          "test": "Enumerate every RAG ingestion source. Confirm each appears on the allowlist with integrity-control evidence.",
+          "expected_result": "100% of RAG sources have documented integrity controls or are operator-owned.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-regression-on-legitimate-agent-workflows",
+          "test": "Run the operator's standard agent workflow suite (typical developer tasks, expected RAG retrievals). Confirm no regression — legitimate workflows complete without spurious denials.",
+          "expected_result": "Legitimate workflows complete; spurious-denial rate within baseline.",
+          "test_type": "regression"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Agentic-AI tool-abuse-via-prompt-injection residual risk that cannot be closed within the jurisdiction's notification window.",
+        "why_remains": "Either (a) trust-zone refactoring requires a model + tool architecture migration the team has not yet completed, (b) egress-payload inspection is not feasible for the agent's deployment environment (edge / mobile / customer-premise), OR (c) RAG sources include externally-writable surfaces with no available alternative.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "enhanced_transcript_review_daily",
+          "weekly_agent_red_team_battery",
+          "approval_latency_baseline_monitored"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "Diff of agent config showing auto-approve removal + trust-zone introduction + RAG-source allowlist tightening, plus the change-management approval reference.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "eu-ai-act-art15",
+            "iso-27001-2022-A.5.16",
+            "soc2-cc6.7"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Indirect-injection-payload-blocked test results showing the agent does not execute injected instructions post-remediation.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "eu-ai-act-art15",
+            "soc2-cc6.7"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Agent inventory + tool-allowlist + RAG-source inventory + egress-allowlist snapshot pre + post remediation.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "eu-ai-act-art15",
+            "iso-27001-2022-A.5.16"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, fired indicators, RWEP at detection, RWEP post-remediation, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "eu-ai-act-art15"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_agent_deployed == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_tool_added_to_allowlist == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_rag_source_added == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "model_provider_version_bump == true",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly",
+          "interval": "7d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "all_validation_tests_passed",
+          "agent_config_diff",
+          "tool_allowlist_pre_post",
+          "rag_source_inventory_pre_post",
+          "exploit_replay_negative",
+          "residual_risk_statement",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Agentic-AI tool abuse via prompt injection — $finding_class (e.g. auto-approve-on-high-impact-tool, instruction-coercion-in-tool-response, agent-egress-to-non-allowlisted-destination, credential-shadow-in-tool-args).",
+          "control_gap": "Per-model conformity + per-tool allowlist + per-destination egress allowlist all satisfied the literal controls, while the per-deployment composition of model + tools + RAG sources permitted exfil through legitimate-auth tools.",
+          "framework_gap": "NIST CSF 2.0 PR.DS-02 + PR.DS-10, EU AI Act Art.15 + Art.55, ISO 27001 A.5.16 + A.5.17, SOC 2 CC6.7, NIS2 Art.21(2)(e) collectively underspecify agentic-AI tool abuse. Per-model assessment, per-tool allowlist, per-destination egress allowlist all pass while the composition permits exfil.",
+          "new_control_requirement": "Per-deployment composition assessment for agentic systems: operator-specific tool-injection battery, trust-zone segregation between retrieved content + model instructions, egress-payload inspection (not just destination allowlist), agent-call provenance attribution linking each tool call to the user-conversation turn that authorised it."
+        },
+        "feeds_back_to_skills": [
+          "ai-attack-surface",
+          "rag-pipeline-security",
+          "mcp-agent-trust",
+          "ai-c2-detection",
+          "framework-gap-analysis",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/EU AI Act Art.73 (serious incident) 360h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "incident_description",
+            "ai_system_inventory",
+            "affected_users_estimate"
+          ],
+          "draft_notification": "EU AI Act Art.73 serious-incident notification: agentic-AI tool-abuse incident affecting AI system ${ai_system_inventory}. Fired indicators: ${fired_indicator_ids}. Affected users estimate: ${affected_users_estimate}. Containment in place: ${containment_record}. Full incident description attached."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "exfiltrated_data_categories",
+            "data_subject_impact_assessment",
+            "containment_record"
+          ],
+          "draft_notification": "GDPR Art.33 notification: personal data breach via agentic-AI tool-abuse exfiltration. Data categories: ${exfiltrated_data_categories}. Data-subject impact: ${data_subject_impact_assessment}. Containment: ${containment_record}."
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "exfiltration_scope_estimate",
+            "agent_tool_chain_inventory",
+            "containment_record"
+          ],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: agentic-AI tool-abuse incident. Exfiltration scope estimate: ${exfiltration_scope_estimate}. Agent tool chain inventory: ${agent_tool_chain_inventory}. Containment in place: ${containment_record}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (trust_zone_refactor_eta > jurisdiction_window AND egress_payload_inspection_infeasible_in_deployment_environment == true)",
+        "exception_template": {
+          "scope": "Agentic-AI tool-abuse residual risk across ${affected_agent_count} deployed agent(s); remediation paths 1-4 partially blocked.",
+          "duration": "until_architecture_migration_or_30d",
+          "compensating_controls": [
+            "enhanced_transcript_review_daily",
+            "weekly_agent_red_team_battery",
+            "approval_latency_baseline_monitored",
+            "rag_source_external_writable_quarantine"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organisation documents a time-bound risk acceptance for agentic-AI tool-abuse residual risk across ${affected_agent_count} deployed agent(s). Trust-zone refactor ETA: ${refactor_eta}. Egress-payload inspection feasibility: ${inspection_feasibility}. Compensating controls in place: ${compensating_controls}. Residual RWEP post-compensation: ${rwep_post_compensation}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. The exception will be re-evaluated on (a) architecture migration completion, (b) the listed expiry date, OR (c) a new indicator firing under the manual-review compensating control — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-deployed-agents-and-tool-surfaces",
+      "title": "Inventory + behaviour-test every deployed agent, tool surface, and RAG source",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "yolo-mode-class-sweep",
+      "title": "Targeted sweep for CVE-2025-53773 YOLO-mode-class auto-approve exposure",
+      "applies_to": {
+        "cve": "CVE-2025-53773"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 75,
+            "monitor": 50,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "indirect-injection-via-rag-targeted",
+      "title": "Targeted indirect-injection-via-RAG sweep (AML.T0024 + AML.T0051 chained)",
+      "applies_to": {
+        "atlas_ttp": "AML.T0051"
+      }
+    }
+  ]
+}

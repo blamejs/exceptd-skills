@@ -19,11 +19,12 @@ triggers:
   - csaf
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - rfc-references.json
   - cwe-catalog.json
   - d3fend-catalog.json
+  - exploit-availability.json
+  - framework-control-gaps.json
+  - global-frameworks.json
+  - rfc-references.json
 atlas_refs:
   - AML.T0010
   - AML.T0018

@@ -18,8 +18,10 @@ triggers:
   - fips 204
   - fips 205
 data_deps:
-  - cve-catalog.json
-  - framework-control-gaps.json
+  - atlas-ttps.json
+  - exploit-availability.json
+  - global-frameworks.json
+  - rfc-references.json
 atlas_refs: []
 attack_refs: []
 framework_gaps:

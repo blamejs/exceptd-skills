@@ -55,17 +55,16 @@ test('brief --all envelope: exact top-level key set', () => {
   assert.equal(r.status, 0);
   const body = tryJson(r.stdout);
   assert.ok(body, `brief --all must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
-  // Pre-cycle-19-B-audit shape: 8 top-level keys, NO `verb` field.
-  // The verb-field absence is a transitional inconsistency with the rest
-  // of the CLI; flagged for the v0.13 envelope-harmonization pass.
+  // v0.13.0 envelope harmonization: every emit() body now carries top-level
+  // `ok: true` (default) injected by emit() itself, alongside the existing
+  // payload keys. Pre-v0.13 brief --all and watchlist were the holdouts
+  // without `ok`; v0.13 normalizes.
   const expected = [
     'contract', 'exceptd_owns', 'generated_at', 'grouped_by_scope',
-    'host_ai_owns', 'playbooks', 'scope_summary', 'session_id',
+    'host_ai_owns', 'ok', 'playbooks', 'scope_summary', 'session_id',
   ];
   assert.deepEqual(Object.keys(body).sort(), expected);
-  // Per cycle 19 B doc: pin absence of `verb` for the transition.
-  assert.equal(body.verb, undefined,
-    'brief --all does NOT emit a verb field today; if you added one, update this test + flag for v0.13 harmonization');
+  assert.equal(body.ok, true, 'v0.13: brief --all carries ok:true');
   assert.match(body.contract, /seven-phase: govern → direct → look → detect → analyze → validate → close/);
   assert.match(body.session_id, /^[0-9a-f]{16}$/);
   assert.match(body.generated_at, /^\d{4}-\d{2}-\d{2}T/);
@@ -82,11 +81,14 @@ test('ci --required <pb> envelope: exact top-level key set + summary sub-key set
   // for the envelope-shape test — we only care about the JSON shape.
   const body = tryJson(r.stdout);
   assert.ok(body, `ci must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
-  const expected = ['playbooks_run', 'results', 'session_id', 'summary', 'verb'];
+  // v0.13.0: every emit() body carries top-level `ok` (defaulted to true
+  // when absent). Pre-v0.13 ci omitted `ok` and signaled pass/fail
+  // exclusively via summary.verdict; v0.13 adds the field without
+  // displacing summary.verdict as the authoritative pass/fail signal.
+  const expected = ['ok', 'playbooks_run', 'results', 'session_id', 'summary', 'verb'];
   assert.deepEqual(Object.keys(body).sort(), expected);
   assert.equal(body.verb, 'ci');
-  assert.equal(body.ok, undefined,
-    'ci does NOT emit top-level ok — pass/fail flows through summary.verdict');
+  assert.equal(body.ok, true, 'v0.13: ci carries ok:true (summary.verdict remains authoritative)');
   assert.ok(Array.isArray(body.playbooks_run));
   assert.ok(Array.isArray(body.results));
 
@@ -110,9 +112,11 @@ test('discover envelope: exact top-level key set + context sub-keys', () => {
   assert.equal(r.status, 0);
   const body = tryJson(r.stdout);
   assert.ok(body, `discover must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
-  const expected = ['context', 'next_steps', 'recommended_playbooks', 'verb'];
+  // v0.13.0 envelope harmonization: `ok` now top-level.
+  const expected = ['context', 'next_steps', 'ok', 'recommended_playbooks', 'verb'];
   assert.deepEqual(Object.keys(body).sort(), expected);
   assert.equal(body.verb, 'discover');
+  assert.equal(body.ok, true);
   assert.ok(Array.isArray(body.next_steps));
   assert.ok(Array.isArray(body.recommended_playbooks));
 
@@ -135,10 +139,10 @@ test('doctor envelope: exact top-level + summary sub-key set + baseline check se
   // doctor exit may be 1 if signing key absent; envelope shape unchanged.
   const body = tryJson(r.stdout);
   assert.ok(body, `doctor must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
-  assert.deepEqual(Object.keys(body).sort(), ['checks', 'summary', 'verb']);
+  // v0.13.0: top-level `ok` added (summary.all_green remains authoritative).
+  assert.deepEqual(Object.keys(body).sort(), ['checks', 'ok', 'summary', 'verb']);
   assert.equal(body.verb, 'doctor');
-  assert.equal(body.ok, undefined,
-    'doctor does NOT emit top-level ok — pass/fail flows through summary.all_green');
+  assert.equal(body.ok, true, 'v0.13: doctor carries ok:true (summary.all_green remains authoritative)');
 
   // Baseline 5 checks always present (registry conditional on --registry-key).
   const baselineChecks = ['currency', 'cves', 'rfcs', 'signatures', 'signing'];
@@ -166,8 +170,9 @@ test('watchlist (default by-item mode) envelope: exact top-level key set', () =>
   assert.equal(r.status, 0);
   const body = tryJson(r.stdout);
   assert.ok(body, `watchlist must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
+  // v0.13.0 envelope harmonization: `ok` added.
   assert.deepEqual(Object.keys(body).sort(),
-    ['by_item', 'generated_at', 'mode', 'parse_errors', 'skills_scanned']);
+    ['by_item', 'generated_at', 'mode', 'ok', 'parse_errors', 'skills_scanned']);
   assert.equal(body.mode, 'by-item');
   assert.equal(typeof body.skills_scanned, 'number');
   assert.equal(typeof body.parse_errors, 'number');
@@ -182,8 +187,9 @@ test('watchlist --by-skill envelope: by_skill key replaces by_item', () => {
   assert.equal(r.status, 0);
   const body = tryJson(r.stdout);
   assert.ok(body, `watchlist --by-skill must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
+  // v0.13.0 envelope harmonization: `ok` added.
   assert.deepEqual(Object.keys(body).sort(),
-    ['by_skill', 'generated_at', 'mode', 'parse_errors', 'skills_scanned']);
+    ['by_skill', 'generated_at', 'mode', 'ok', 'parse_errors', 'skills_scanned']);
   assert.equal(body.mode, 'by-skill');
   assert.equal(body.by_item, undefined,
     'by-skill mode must NOT carry by_item; mutually exclusive');

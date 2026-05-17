@@ -21,11 +21,10 @@ triggers:
   - stateramp
 data_deps:
   - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
   - cwe-catalog.json
   - d3fend-catalog.json
+  - exploit-availability.json
+  - framework-control-gaps.json
 atlas_refs: []
 attack_refs:
   - T1190

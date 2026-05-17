@@ -18,10 +18,12 @@ triggers:
   - ai management system
 data_deps:
   - atlas-ttps.json
-  - framework-control-gaps.json
-  - global-frameworks.json
+  - cve-catalog.json
   - cwe-catalog.json
   - d3fend-catalog.json
+  - exploit-availability.json
+  - framework-control-gaps.json
+  - global-frameworks.json
   - zeroday-lessons.json
 atlas_refs:
   - AML.T0051

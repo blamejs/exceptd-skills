@@ -12,6 +12,8 @@ triggers:
   - vector poisoning
 data_deps:
   - atlas-ttps.json
+  - d3fend-catalog.json
+  - exploit-availability.json
   - framework-control-gaps.json
 atlas_refs:
   - AML.T0020

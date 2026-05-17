@@ -17,13 +17,7 @@ triggers:
   - ai api security
   - mcp transport
   - openapi security
-data_deps:
-  - cve-catalog.json
-  - atlas-ttps.json
-  - framework-control-gaps.json
-  - cwe-catalog.json
-  - d3fend-catalog.json
-  - rfc-references.json
+data_deps: []
 atlas_refs:
   - AML.T0096
   - AML.T0017
@@ -67,7 +61,7 @@ forward_watch:
   - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; track for active-exploitation confirmation and patch advisory affecting API gateway / reverse-proxy deployments
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; LLM-proxy API surface; track upstream patch and CVE assignments
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-17"
 ---
 
 # API Security Assessment
@@ -118,6 +112,11 @@ APIs are now the integration substrate of every non-trivial system. The mid-2026
 | BR Open Finance (Bacen) | FAPI 2.0 derivative | Banking-API auth surface only. |
 | IN UPI / Account Aggregator (NPCI / RBI) | Payments + AA security framework | Sector-specific payment-API + consent-API surface. AI-API egress out of scope. |
 | NYDFS 23 NYCRR 500 | §500.5 penetration testing | APIs are in scope for the annual pen test where they expose covered data. "Annual" is structurally inadequate against agentic API-exploit timelines. |
+| UK NCSC CAF | Principle B2 (Identity and Access Control), B4 (System Security), C1 (Security Monitoring) | Outcome-based assessment. CAF outcomes are silent on BOLA / BFLA / BOPLA as testable surfaces and silent on AI-API egress baselining. An organisation can achieve CAF outcomes at Achieved level with zero per-object authorisation testing and zero AI-API consumer monitoring. NCSC API Security Guidance (2024) recommends per-object scoping but is not a CAF outcome statement. |
+| UK FCA / PRA SS1/21 (Operational Resilience) + CBEST | Important Business Service tolerance + threat-led pen testing | CBEST scenario libraries lag adversary capability 12-18 months and rarely include BOLA/BFLA-by-AI-agent or AI-API-as-C2 test cases. An FCA-attested operational-resilience programme can be "compliant" with zero exercised coverage of agentic API exploitation. |
+| AU ASD Essential 8 | Strategy: Restrict Administrative Privileges + Application Control + MFA | None of the eight strategies address API-level authorisation (per-object scoping, per-field scoping) or AI-API egress monitoring. Essential 8 ML3 attestation does not bind any API security control surface. |
+| AU ASD ISM | ISM-1228 (event log monitoring) + ISM-1546 (MFA on privileged access) + ISM-1808 (cloud consumer responsibilities) | Event-log monitoring assumes traditional indicators; BOLA / BFLA exploitation produces authenticated, authorised log entries with attacker-supplied object IDs. ISM-1808 cloud-consumer language does not address AI-API consumer scope. |
+| AU APRA CPS 234 + CPS 230 | Para 27 (information security capability) + CPS 230 ICT-service-provider obligations | "Proportional capability" language. APRA-regulated entities meet CPS 234 attestation with traditional API gateway + WAF posture; per-object authorisation testing depth and AI-API consumer monitoring are not examined capability classes. CPS 230 third-party-arrangements obligations do not enumerate AI-API providers as in-scope material service providers. |
 
 ---
 
