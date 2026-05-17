@@ -25,7 +25,7 @@ Changes to the following paths require maintainer review per `.github/CODEOWNERS
 
 - `/data/` and `/data/*.json` — all intelligence catalogs, including:
   - `/data/cve-catalog.json` — CVE metadata and RWEP scores
-  - `/data/atlas-ttps.json` — MITRE ATLAS v5.1.0 TTPs
+  - `/data/atlas-ttps.json` — MITRE ATLAS v5.4.0 TTPs
   - `/data/framework-control-gaps.json` — per-control gap analysis
   - `/data/global-frameworks.json` — multi-jurisdiction framework registry
   - `/data/zeroday-lessons.json` — zero-day learning loop entries
@@ -81,7 +81,7 @@ The project publishes `@blamejs/exceptd-skills` to npm with provenance attestati
    node scripts/refresh-sbom.js
    node scripts/build-indexes.js
    ```
-4. Run the full predeploy gate (13 gates as of v0.9.0):
+4. Run the full predeploy gate sequence:
    ```
    npm run predeploy
    ```
@@ -94,7 +94,7 @@ The project publishes `@blamejs/exceptd-skills` to npm with provenance attestati
 7. The `Release` workflow fires automatically. It will:
    - Verify the tag matches `package.json` version
    - Run `npm run bootstrap` (verify-only path)
-   - Run `npm run predeploy` (all 13 gates)
+   - Run `npm run predeploy` (the predeploy gate sequence)
    - `npm pack --dry-run --json` and surface the tarball preview
    - `npm publish --access public --provenance` using `NPM_TOKEN` + GitHub OIDC
    - Create a GitHub Release with the CHANGELOG section as the body

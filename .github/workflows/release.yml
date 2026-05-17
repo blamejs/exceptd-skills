@@ -75,13 +75,11 @@ jobs:
 
       - name: Verify tag matches package.json version
         id: version_check
-        # Cycle 19 P1 F1 (v0.12.39): pre-fix `${{ inputs.tag }}` was
-        # interpolated directly into the run: block. A workflow_dispatch
-        # caller could pass `tag` containing shell metacharacters and
-        # achieve script injection on the runner — same CWE-94 / CWE-78
-        # class as the `refresh.yml` `inputs.source` sink the project
-        # already hardened against. Route through env: indirection +
-        # regex allowlist on the canonical tag shape v<semver>.
+        # v0.12.39: route inputs.tag via env to prevent shell injection.
+        # A workflow_dispatch caller could otherwise pass `tag` containing
+        # shell metacharacters and achieve script injection on the runner
+        # (CWE-94 / CWE-78). Env indirection + regex allowlist on the
+        # canonical tag shape v<semver> closes the sink.
         env:
           INPUT_TAG: ${{ inputs.tag }}
         run: |

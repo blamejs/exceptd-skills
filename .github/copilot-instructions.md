@@ -26,7 +26,7 @@ All threat data lives in `data/`. Do not fabricate CVE or framework data:
 | File | Use |
 |------|-----|
 | `data/cve-catalog.json` | CVE metadata, RWEP scores, KEV status |
-| `data/atlas-ttps.json` | MITRE ATLAS v5.1.0 TTPs |
+| `data/atlas-ttps.json` | MITRE ATLAS v5.4.0 TTPs |
 | `data/framework-control-gaps.json` | Per-control gap analysis |
 | `data/exploit-availability.json` | PoC status and weaponization stage |
 | `data/global-frameworks.json` | 14-jurisdiction framework registry |

@@ -528,7 +528,7 @@ function main() {
         `Legacy verbs remain functional through this release; they will be removed in v0.13. ` +
         `This banner shows once per exceptd version per host (re-shown on upgrade). Permanent suppress: export EXCEPTD_DEPRECATION_SHOWN=1.\n`
       );
-      try { fs.writeFileSync(markerFile, `shown_at=${new Date().toISOString()}\nversion=${ver}\n`); }
+      try { fs.writeFileSync(markerFile, `shown_at=${new Date().toISOString()}\nversion=${ver}\n`, { mode: 0o600 }); }
       catch { /* tmpdir unwritable; the env-var guard below keeps the per-process suppression intact */ }
     }
     process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
@@ -2858,8 +2858,10 @@ function cmdRun(runner, args, runOpts, pretty) {
     // exit-code expectations regardless of which verb they call. Without
     // --ci the legacy exit 1 is preserved (ok:false bodies are framework
     // signals when no CI gating is requested).
-    process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
+    // Set exitCode BEFORE emit(): emit's ok:false fallback only fires when
+    // exitCode is not already set, so the BLOCKED override survives.
     process.exitCode = args.ci ? EXIT_CODES.BLOCKED : EXIT_CODES.GENERIC_FAILURE;
+    emit(result, pretty);
     return;
   }
 
@@ -3535,8 +3537,7 @@ function cmdIngest(runner, args, runOpts, pretty) {
   }
 
   if (result && result.ok === false) {
-    process.stderr.write((pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result)) + "\n");
-    process.exitCode = EXIT_CODES.GENERIC_FAILURE;
+    emit(result, pretty);
     return;
   }
   emit(result, pretty);
@@ -3897,13 +3898,18 @@ function maybeSignAttestation(filePath) {
         algorithm: "Ed25519",
         signature_base64: sig.toString("base64"),
         note: "Ed25519 signature covers the attestation file bytes only. Use filesystem mtime for freshness; use the attestation's `captured_at` for the signed timestamp.",
-      }, null, 2));
+      }, null, 2), { mode: 0o600 });
+      // Mirror the v0.12.38 attestation.json hardening: 0o600 on POSIX +
+      // icacls inheritance strip on win32. The sidecar carries the
+      // signature payload; multi-tenant hosts shouldn't leak it.
+      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
     } else {
       fs.writeFileSync(sigPath, JSON.stringify({
         algorithm: "unsigned",
         signed: false,
-        note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `node lib/sign.js generate-keypair` to enable signing.",
-      }, null, 2));
+        note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `exceptd doctor --fix` to enable signing.",
+      }, null, 2), { mode: 0o600 });
+      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
     }
   } catch { /* non-fatal — signing failure shouldn't block the run */ }
 }
@@ -4477,6 +4483,23 @@ function cmdAttest(runner, args, runOpts, pretty) {
   if (!subverb) {
     return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> | diff <sid>", null, pretty);
   }
+  // Validate subverb membership BEFORE the session-id branch so a typo
+  // (`attest verfy sid`) gets the did-you-mean response, not the
+  // misleading "no session dir for sid" downstream. Pre-fix the
+  // session-id resolution ran first and a valid-but-unrecognized
+  // subverb collapsed into a session-lookup failure.
+  const ATTEST_SUBVERBS = ["list", "show", "export", "verify", "diff"];
+  if (!ATTEST_SUBVERBS.includes(subverb)) {
+    const dym = suggestVerb(subverb, ATTEST_SUBVERBS);
+    const hint = dym.length > 0
+      ? `Did you mean: ${dym.join(" | ")}? Accepted: ${ATTEST_SUBVERBS.join(" | ")}.`
+      : `Accepted: ${ATTEST_SUBVERBS.join(" | ")}.`;
+    return emitError(
+      `attest: unknown subverb "${subverb}". ${hint}`,
+      { verb: "attest", subverb_input: subverb, did_you_mean: dym, accepted_subverbs: ATTEST_SUBVERBS },
+      pretty
+    );
+  }
   // `list` doesn't require a session-id positional.
   if (subverb === "list") {
     return cmdListAttestations(runner, args, runOpts, pretty);
@@ -4568,6 +4591,15 @@ function cmdAttest(runner, args, runOpts, pretty) {
         return emitError(`attest diff --against ${args.against}: no attestations under that session id.`, null, pretty);
       }
       const self = attestations[0];
+      if (!self) {
+        // Session dir contains only replay records, no attestation —
+        // diff has nothing to compare on the A side.
+        return emitError(
+          `attest diff ${sessionId}: no attestation found in session dir (only replay records). The session may be replay-only; verify with \`exceptd attest show ${sessionId}\`.`,
+          { verb: "attest diff", session_id: sessionId, attestation_count: 0, replay_count: replays.length },
+          pretty
+        );
+      }
       emit({
         verb: "attest diff",
         a_session: sessionId,
@@ -4597,10 +4629,6 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // sentinel and re-dispatching via cmdReattest.
     args._ = [sessionId];
     return cmdReattest(runner, args, {}, pretty);
-  }
-
-  if (subverb === "list") {
-    return cmdListAttestations(runner, args, {}, pretty);
   }
 
   if (subverb === "verify") {
@@ -4796,7 +4824,10 @@ function cmdAttest(runner, args, runOpts, pretty) {
     return;
   }
 
-  return emitError(`attest: unknown subverb "${subverb}". Try export | verify | show.`, null, pretty);
+  // Unreachable — front-loaded subverb membership check above handles
+  // unknown subverbs. Defensive return so future refactors that move
+  // the gate don't silently fall through.
+  return emitError(`attest: unknown subverb "${subverb}".`, { verb: "attest", subverb_input: subverb }, pretty);
 }
 
 /**
@@ -5335,7 +5366,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         severity: present ? "info" : "warn",
         private_key_present: present,
         can_sign_attestations: present,
-        ...(present ? {} : { hint: "run `node lib/sign.js generate-keypair` (or `exceptd doctor --fix`) to enable attestation signing" }),
+        ...(present ? {} : { hint: "run `exceptd doctor --fix` to generate an Ed25519 keypair and sign skills (or `node $(exceptd path)/lib/sign.js generate-keypair` from a contributor checkout)" }),
       };
     } catch (e) {
       checks.signing = { ok: false, error: e.message };
@@ -5410,27 +5441,78 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     },
   };
 
-  // v0.11.6 (#97): --fix runs BEFORE the JSON early-return so `exceptd doctor
-  // --fix --json` actually fixes (was a no-op pre-0.11.6). Re-runs the
-  // signing check after fix so the returned JSON reflects the post-fix state.
+  // --fix runs BEFORE the JSON early-return so `exceptd doctor --fix --json`
+  // actually fixes (was a no-op pre-v0.11.6). Re-runs the signing check
+  // after fix so the returned JSON reflects the post-fix state.
+  //
+  // Safety: lib/sign.js generateKeypair() refuses if keys/public.pem
+  // already exists (overwriting it would orphan every shipped signature —
+  // the v0.11.x regression class). Surface that refusal as a distinct
+  // fix_attempted reason so operators see WHY the fix declined.
+  // After successful key generation, chain sign-all so the manifest +
+  // every shipped skill carries a signature paired with the new public
+  // key. Without this chain, `doctor --fix` succeeds but the very next
+  // `exceptd doctor` (signatures check) reports 0/N passing.
   if (args.fix && checks.signing && !checks.signing.private_key_present) {
-    process.stderr.write("[doctor --fix] generating Ed25519 keypair via `node lib/sign.js generate-keypair`...\n");
-    const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], {
+    const pubKeyExists = fs.existsSync(path.join(PKG_ROOT, "keys", "public.pem"));
+    if (pubKeyExists) {
+      out.summary.fix_attempted = "ed25519_keypair_generation_declined";
+      out.summary.fix_decline_reason = "keys/public.pem already exists but no matching private key. Generating a fresh keypair would overwrite the public key and orphan every shipped signature. If you intend to establish a new signing identity, run `node $(exceptd path)/lib/sign.js generate-keypair --rotate` followed by sign-all.";
+      process.stderr.write("[doctor --fix] refused: keys/public.pem present without matching private key. Pass --rotate via the underlying lib/sign.js if a new identity is intended.\n");
+    } else {
+      process.stderr.write("[doctor --fix] generating Ed25519 keypair...\n");
+      const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], {
+        stdio: ["ignore", "pipe", "pipe"], cwd: PKG_ROOT,
+      });
+      if (r.status === 0) {
+        // Chain sign-all so the manifest + skills carry signatures paired
+        // with the new keypair. Without this every shipped signature is
+        // invalid against the new public key.
+        process.stderr.write("[doctor --fix] keypair generated — signing skills + manifest...\n");
+        const s = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "sign-all"], {
+          stdio: ["ignore", "pipe", "pipe"], cwd: PKG_ROOT,
+        });
+        const keyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+        const present = fs.existsSync(keyPath);
+        checks.signing = { ok: present, severity: present ? "info" : "warn", private_key_present: present, can_sign_attestations: present };
+        out.checks = checks;
+        if (s.status === 0) {
+          out.summary.fix_applied = "ed25519_keypair_generated_and_skills_signed";
+          process.stderr.write("[doctor --fix] keypair + sign-all complete — re-checking signing status.\n");
+        } else {
+          out.summary.fix_applied = "ed25519_keypair_generated";
+          out.summary.fix_partial = "sign_all_failed";
+          out.summary.sign_all_exit_code = s.status;
+          process.stderr.write(`[doctor --fix] WARNING: keypair generated but sign-all failed (exit=${s.status}). Skills carry signatures from a different key; verify will report mismatches.\n`);
+        }
+      } else {
+        out.summary.fix_attempted = "ed25519_keypair_generation_failed";
+        out.summary.fix_exit_code = r.status;
+        process.stderr.write(`[doctor --fix] generation failed (exit=${r.status}); run \`node $(exceptd path)/lib/sign.js generate-keypair\` manually.\n`);
+      }
+    }
+  }
+
+  // Second --fix path: private key IS present but the signatures check
+  // FAILED. This is the post-rotation case (codex P2 v0.12.41): operator
+  // ran `node $(exceptd path)/lib/sign.js generate-keypair --rotate`,
+  // got a fresh keypair, but the manifest + skills still carry signatures
+  // from the OLD keypair. Pre-fix doctor --fix's signing path only fired
+  // when the private key was missing, so the rotation flow's remediation
+  // step was a no-op. Chain sign-all here so the post-rotate doctor --fix
+  // converges to a fully-verified state.
+  if (args.fix && checks.signing && checks.signing.private_key_present && checks.signatures && checks.signatures.ok === false && !out.summary.fix_applied && !out.summary.fix_attempted) {
+    process.stderr.write("[doctor --fix] private key present, signatures failing — running sign-all to re-sign skills + manifest...\n");
+    const s = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "sign-all"], {
       stdio: ["ignore", "pipe", "pipe"], cwd: PKG_ROOT,
     });
-    if (r.status === 0) {
-      // Re-verify the private key is now present so the JSON output reflects
-      // the fix. v0.12.9 codex P1: PKG_ROOT-only (sign + verify use this path).
-      const keyPath = path.join(PKG_ROOT, ".keys", "private.pem");
-      const present = fs.existsSync(keyPath);
-      checks.signing = { ok: present, severity: present ? "info" : "warn", private_key_present: present, can_sign_attestations: present };
-      out.checks = checks;
-      out.summary.fix_applied = "ed25519_keypair_generated";
-      process.stderr.write("[doctor --fix] keypair generated — re-checking signing status.\n");
+    if (s.status === 0) {
+      out.summary.fix_applied = "skills_resigned_against_current_keypair";
+      process.stderr.write("[doctor --fix] sign-all complete — re-run `exceptd doctor` to confirm.\n");
     } else {
-      out.summary.fix_attempted = "ed25519_keypair_generation_failed";
-      out.summary.fix_exit_code = r.status;
-      process.stderr.write(`[doctor --fix] generation failed (exit=${r.status}); run \`node lib/sign.js generate-keypair\` manually.\n`);
+      out.summary.fix_attempted = "sign_all_failed";
+      out.summary.sign_all_exit_code = s.status;
+      process.stderr.write(`[doctor --fix] sign-all failed (exit=${s.status}); run \`node $(exceptd path)/lib/sign.js sign-all\` manually.\n`);
     }
   }
 
@@ -5509,7 +5591,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     if (checks.signing.private_key_present) {
       lines.push(`  [ok] attestation signing: private key present (.keys/private.pem)`);
     } else {
-      lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`node lib/sign.js generate-keypair\` to enable`);
+      lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`exceptd doctor --fix\` to enable`);
     }
   }
   lines.push("");
@@ -5526,7 +5608,11 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   if (out.summary.fix_applied) {
     process.stdout.write(`\n[doctor --fix] ${out.summary.fix_applied} — re-run \`exceptd doctor\` to confirm.\n`);
   } else if (out.summary.fix_attempted) {
-    process.stdout.write(`\n[doctor --fix] ${out.summary.fix_attempted} (exit=${out.summary.fix_exit_code}); run \`node lib/sign.js generate-keypair\` manually.\n`);
+    if (out.summary.fix_decline_reason) {
+      process.stdout.write(`\n[doctor --fix] ${out.summary.fix_attempted}: ${out.summary.fix_decline_reason}\n`);
+    } else {
+      process.stdout.write(`\n[doctor --fix] ${out.summary.fix_attempted} (exit=${out.summary.fix_exit_code}); run \`node $(exceptd path)/lib/sign.js generate-keypair\` from a contributor checkout if needed.\n`);
+    }
     process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
@@ -5764,10 +5850,11 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       );
     }
     if (!result || result.ok === false) {
-      // v0.12.12: same exit-after-write anti-pattern as the pre-stream
-      // load path. Use exitCode + return so stderr drains.
-      process.stderr.write((pretty ? JSON.stringify(result || {}, null, 2) : JSON.stringify(result || {})) + "\n");
-      process.exitCode = EXIT_CODES.GENERIC_FAILURE;
+      // Route through emit() so the body lands on stdout (per v0.12.39
+      // envelope contracts) and exitCode is set by the shared ok:false
+      // fallback. Pre-fix the body went to stderr, which split it from
+      // the success path and made consumers parse two streams.
+      emit(result || { ok: false, error: 'ai-run returned empty result' }, pretty);
       return;
     }
     // v0.12.14: ai-run --no-stream previously emitted a
@@ -6132,7 +6219,10 @@ function cmdAsk(runner, args, runOpts, pretty) {
       routed_to: [],
       hint: "No playbook matched. Try `exceptd brief --all` to see what's available, or `exceptd discover` to detect what's in your cwd.",
     };
-    if (args.json) return emit(result, pretty);
+    // Honor --pretty as an implicit opt-in to structured output, matching
+    // the discover/doctor convention. Pre-fix `ask "..." --pretty` fell
+    // into the human-text branch and silently ignored the flag.
+    if (args.json || args.pretty) return emit(result, pretty);
     process.stdout.write(`ask: ${question}\n  no playbook matched.\n  try: exceptd discover  (auto-detect what's in your cwd)\n`);
     return;
   }
@@ -6145,7 +6235,7 @@ function cmdAsk(runner, args, runOpts, pretty) {
     next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
     full_match_list: top,
   };
-  if (args.json) return emit(result, pretty);
+  if (args.json || args.pretty) return emit(result, pretty);
   process.stdout.write(`ask: ${question}\n  top match: ${top[0].id} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${top.slice(1).map(t => t.id).join(", ") || "(none)"}\n`);
 }
 

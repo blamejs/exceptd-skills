@@ -10,7 +10,8 @@
  * atlas-ttps, `skills_referencing` for the other three) listing every
  * skill that points at that entry. The reverse field drifts whenever a
  * skill adds or removes a forward ref without the catalog being updated
- * in lockstep — Cycle 9 audit found this drift in production.
+ * in lockstep — this script rebuilds the reverse direction from the
+ * forward source of truth so the two never disagree.
  *
  * Behaviour. For each catalog file:
  *   1. Walk every skill's relevant forward-ref array in manifest.json.
@@ -22,7 +23,7 @@
  *
  * The script does NOT touch playbooks_referencing — that field carries
  * playbook ids (data/playbooks/*.json), not skill names; it has its own
- * source of truth and is out of scope for this audit fix.
+ * source of truth and is out of scope for this refresh.
  *
  * Run:   node scripts/refresh-reverse-refs.js
  *        npm run refresh-reverse-refs
@@ -46,8 +47,8 @@ const DATA_DIR = path.join(REPO_ROOT, 'data');
  *   forwardField      source-collection[].* array name
  *   reverseField      per-entry reverse field name in the catalog
  *   source            'manifest.skills' (default) — walk every skill's forward ref
- *                     'cve.entries'   — walk every CVE's forward ref (cycle 12 F3
- *                     extension); contributes CVE-IDs (skipping `_draft: true`
+ *                     'cve.entries'   — walk every CVE's forward ref (added in
+ *                     v0.12.32); contributes CVE-IDs (skipping `_draft: true`
  *                     entries so the reverse direction tracks operator-queryable
  *                     truth, not in-progress curation state)
  *   entryKey          field on the source object used as the reverse-list value
@@ -83,12 +84,12 @@ const CATALOGS = [
     source: 'manifest.skills',
     entryKey: 'name',
   },
-  // Cycle 12 F3 (v0.12.32): CVE → CWE reverse direction. CWE entries
-  // declare `evidence_cves` as the operator-facing "which CVEs land here"
-  // index; pre-fix this was hand-maintained and drifted whenever a new
-  // CVE landed without the matching CWE's evidence_cves being updated.
-  // Now mirrors `cve.cwe_refs` → `cwe.evidence_cves` automatically.
-  // Drafts excluded (they're invisible to default consumers anyway).
+  // v0.12.32: CVE → CWE reverse direction. CWE entries declare
+  // `evidence_cves` as the operator-facing "which CVEs land here" index;
+  // previously hand-maintained and drifted whenever a new CVE landed
+  // without the matching CWE's evidence_cves being updated. Now mirrors
+  // `cve.cwe_refs` → `cwe.evidence_cves` automatically. Drafts excluded
+  // (they're invisible to default consumers anyway).
   {
     file: 'cwe-catalog.json',
     forwardField: 'cwe_refs',
@@ -96,13 +97,13 @@ const CATALOGS = [
     source: 'cve.entries',
     entryKey: null, // value is the iterating CVE id
   },
-  // Cycle 20 B F4 (v0.12.40): CVE → framework-gap reverse direction.
-  // Pre-fix 137 directional mismatches between cve.framework_control_gaps
-  // (dict-keyed by gap-id) and gap.evidence_cves (array of CVE ids).
-  // The forward shape on the CVE side is an OBJECT not an array — keys
-  // are the gap ids, values are per-CVE narrative. The reverse direction
-  // (which CVEs cite this gap) is a simple set of CVE ids on the gap
-  // entry. The helper handles the dict-keyed forward field via the
+  // v0.12.40: CVE → framework-gap reverse direction. Resolved 137
+  // directional mismatches between cve.framework_control_gaps (dict-keyed
+  // by gap-id) and gap.evidence_cves (array of CVE ids). The forward
+  // shape on the CVE side is an OBJECT not an array — keys are the gap
+  // ids, values are per-CVE narrative. The reverse direction (which CVEs
+  // cite this gap) is a simple set of CVE ids on the gap entry. The
+  // helper handles the dict-keyed forward field via the
   // `forwardFieldShape: 'object-keys'` flag.
   {
     file: 'framework-control-gaps.json',
@@ -131,14 +132,14 @@ function buildReverseIndex(skills, forwardField) {
   return index;
 }
 
-// Cycle 12 F3 (v0.12.32): build a reverse index keyed by catalog ID from the
-// CVE catalog's forward refs. Each CVE entry has cwe_refs / attack_refs
+// v0.12.32: build a reverse index keyed by catalog ID from the CVE
+// catalog's forward refs. Each CVE entry has cwe_refs / attack_refs
 // arrays; the reverse side is the CVE ID, indexed by the catalog entry.
 // Draft entries are skipped — drafts are invisible to default consumers
 // via cross-ref-api, so the reverse direction should track operator-
 // queryable truth, not in-progress curation state.
 //
-// Cycle 20 B F4 (v0.12.40): forwardFieldShape parameter handles the
+// v0.12.40: forwardFieldShape parameter handles the
 // CVE.framework_control_gaps case where the forward field is a dict
 // (gap-id → narrative) rather than an array.
 function buildCveReverseIndex(cveCatalog, forwardField, forwardFieldShape) {

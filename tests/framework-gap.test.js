@@ -64,11 +64,16 @@ test('lagScore() falls back gracefully when framework not in global-frameworks.j
 
 test('gapReport() returns a structured report with universal gaps and theater risks', () => {
   const r = gapReport(['NIST SP 800-53 Rev 5', 'ISO/IEC 27001:2022'], 'prompt injection', controlGaps, cveCatalog);
-  assert.ok(r.threat_scenario === 'prompt injection');
-  assert.ok(r.frameworks);
+  assert.equal(r.threat_scenario, 'prompt injection');
+  // Pair field-presence with shape: field-present-not-populated is a
+  // recurring regression class (jurisdiction_notifications, total_compared).
+  // Each ok() pairs with a typeof / Array.isArray / Object.keys check.
+  assert.equal(typeof r.frameworks, 'object');
+  assert.ok(r.frameworks && !Array.isArray(r.frameworks), 'frameworks must be a plain object');
   assert.ok(Array.isArray(r.universal_gaps));
   assert.ok(Array.isArray(r.theater_risks));
-  assert.ok(r.summary);
+  assert.equal(typeof r.summary, 'object');
+  assert.ok(r.summary && !Array.isArray(r.summary), 'summary must be a plain object');
   assert.equal(typeof r.summary.total_gaps, 'number');
   assert.equal(typeof r.summary.universal_gaps, 'number');
 });
@@ -76,7 +81,14 @@ test('gapReport() returns a structured report with universal gaps and theater ri
 test('gapReport() surfaces ALL-scoped universal gaps from the catalog', () => {
   // The shipping catalog includes ALL-AI-PIPELINE-INTEGRITY, ALL-MCP-TOOL-TRUST, ALL-PROMPT-INJECTION-ACCESS-CONTROL
   const r = gapReport(['NIST SP 800-53 Rev 5'], 'mcp', controlGaps, cveCatalog);
-  assert.ok(r.universal_gaps.length >= 1, 'expected at least one ALL-framework universal gap');
+  assert.ok(Array.isArray(r.universal_gaps));
+  assert.ok(r.universal_gaps.length >= 1, `expected at least one ALL-framework universal gap; got count ${r.universal_gaps.length}`);
+  // Pin each entry's shape so a future regression that returns array of
+  // partial stubs still trips the assertion.
+  for (const g of r.universal_gaps) {
+    assert.equal(typeof g, 'object');
+    assert.ok(g, 'universal_gap entry must not be null');
+  }
 });
 
 test('gapReport() can find gaps by CVE id in evidence_cves', () => {
@@ -118,7 +130,7 @@ test('theaterCheck() preserves no-finding case when given an empty control set',
 test('compareFrameworks() returns an array sorted by lag score descending', () => {
   const r = compareFrameworks(controlGaps, globalFrameworks);
   assert.ok(Array.isArray(r));
-  assert.ok(r.length > 0, 'expected at least one framework in the comparison');
+  assert.ok(r.length > 0, `expected at least one framework in the comparison; got count ${r.length}`);
   for (let i = 1; i < r.length; i++) {
     assert.ok(r[i - 1].score >= r[i].score,
       `not sorted descending at index ${i}: ${r[i - 1].score} < ${r[i].score}`);
@@ -127,7 +139,8 @@ test('compareFrameworks() returns an array sorted by lag score descending', () =
     assert.equal(typeof row.framework, 'string');
     assert.equal(typeof row.score, 'number');
     assert.equal(typeof row.label, 'string');
-    assert.ok(row.breakdown);
+    assert.equal(typeof row.breakdown, 'object');
+    assert.ok(row.breakdown && !Array.isArray(row.breakdown), 'breakdown must be a plain object');
   }
 });
 

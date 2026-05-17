@@ -1504,7 +1504,14 @@ test('#87 doctor --fix is registered (smoke)', () => {
   // exercises the dispatch + flag-registration surface without invoking the
   // mutating code path at all.
   const r = cli(['doctor', '--help']);
-  assert.notEqual(r.status, 2, 'doctor --help must not be an unknown-command error'); // allow-notEqual: refusal-pin (rejects specific unknown-command code 2; help can exit 0 or non-zero codes for help-render)
+  // Pin the accepted exit codes explicitly rather than `notEqual(.status, 2)`.
+  // Pre-fix the notEqual form would have silently absorbed a regression
+  // that flipped --help to exit 2 (DETECTED_ESCALATE) — the test would
+  // still fail only if exit was exactly 2, accepting all other regressions.
+  // --help canonically exits 0; some help-renderers exit 1. Both fine.
+  // Code 2 (DETECTED_ESCALATE) and 10 (UNKNOWN_COMMAND) are not.
+  assert.ok([0, 1].includes(r.status),
+    `doctor --help must exit 0 or 1 (got ${r.status}); refuses 2 (DETECTED_ESCALATE) and 10 (UNKNOWN_COMMAND).`);
   const text = (r.stdout || '') + (r.stderr || '');
   assert.match(text, /--fix\b/,
     'doctor --help must advertise the --fix flag so operators can discover it. Got: ' + text.slice(0, 400));

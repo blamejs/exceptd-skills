@@ -132,8 +132,7 @@
       "AML.T0051"
     ],
     "attack_refs": [
-      "T1059",
-      "T1204"
+      "T1059"
     ],
     "theater_test": {
       "claim": "We hardened user applications per Essential Eight Maturity Level 2; browsers and Office are locked down.",
@@ -2184,7 +2183,10 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [],
     "atlas_refs": [],
-    "attack_refs": [],
+    "attack_refs": [
+      "T1573",
+      "T1600"
+    ],
     "theater_test": {
       "claim": "Our cryptographic suite review meets PCI DSS 4.0.1 12.3.3 annual cadence.",
       "test": "Pull the cryptographic suite inventory and most-recent annual review. Confirm enumeration of in-use algorithms with deprecation status. Confirm a PQC-readiness assessment exists with migration roadmap for long-lived keys (TLS for >5y data, signing for code/SBOM). Theater verdict if PQC is absent from the review, or if deprecated algorithms remain in use without a documented exception.",
@@ -3686,7 +3688,8 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [
       "CVE-2026-0300",
-      "CVE-2026-42897"
+      "CVE-2026-42897",
+      "CVE-2026-46300"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -3942,6 +3945,136 @@
         "anti-malware deployment report with protection-mechanism-path test fields",
         "AV platform-update currency metric (distinct from signature currency)",
         "AV / EDR coercion-resistance test results for sampled endpoints"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "UK-CAF-B4": {
+    "framework": "UK NCSC Cyber Assessment Framework (CAF)",
+    "control_id": "B4",
+    "control_name": "System security",
+    "designed_for": "Principle B4 — networks and information systems supporting essential functions are protected against attack. Covers secure configuration, secure architecture, and the management of vulnerabilities in deployed systems.",
+    "misses": [
+      "Subsystem-level kernel-module disable as a compensating control for an unpatched deterministic local-privilege-escalation is not enumerated as an interim posture distinct from vendor-patch application",
+      "CAF assumes patch-application timelines tied to advisory dates; deterministic LPEs with public PoC require operational pivots (module unload, syscall filter) that the principle does not name",
+      "Where vendor patch + reboot cycle is multi-day on operationally-sensitive hosts, the absence of a named compensating-control path forces operators to either accept the exposure window or schedule disruptive reboots without policy cover"
+    ],
+    "real_requirement": "B4 implementation must explicitly enumerate compensating-control postures for unpatched deterministic LPEs: kernel-module blacklist (esp4 / esp6 / rxrpc class), syscall filter (seccomp profile narrowing), or live-patch where vendor offers it. Each compensating control must be reversible, monitored, and have a documented conversion-SLA to the vendor binary patch.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2026-46300"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ],
+    "theater_test": {
+      "claim": "Our UK CAF B4 system-security posture covers unpatched kernel LPEs with documented compensating controls.",
+      "test": "Pull the operator's B4 evidence pack. For the most recent deterministic kernel LPE with public PoC (CVE-2026-46300 / Fragnesia is the reference case), confirm whether the evidence pack names a compensating-control posture (module unload, syscall filter, or live-patch) distinct from the binary-patch path, and whether that posture is monitored and has a conversion-SLA back to the binary patch. Theater verdict if the evidence pack reduces to 'patch within 30 days' without a named interim compensating control, or if the compensating control is deployed without monitoring and SLA.",
+      "evidence_required": [
+        "B4 evidence pack covering the most recent deterministic kernel LPE",
+        "named compensating-control posture (module blacklist, seccomp, live-patch) with monitoring",
+        "conversion-SLA documenting return-to-binary-patch timeline"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "AU-ISM-1546": {
+    "framework": "Australian Government Information Security Manual (ISM)",
+    "control_id": "ISM-1546",
+    "control_name": "Patch operating systems and applications",
+    "designed_for": "Patching operating systems and applications within timeframes set by the Essential Eight Maturity Model — ML1: 1 month for non-critical, 2 weeks for internet-facing; ML2: 2 weeks for non-critical, 48 hours for internet-facing or exploited; ML3: 48 hours for non-critical, 48 hours for internet-facing or exploited.",
+    "misses": [
+      "Patch-application timeframes anchor on advisory date, not on public-PoC availability — a deterministic LPE with a public PoC is exploitable from disclosure-minus-zero regardless of the 48h ML3 window",
+      "The maturity ladder does not differentiate between exploitable-from-disclosure (public PoC + deterministic primitive) and theoretically-exploitable, so the highest-tempo bucket is still slower than the threat",
+      "No requirement to deploy reversible compensating controls (kernel-module blacklist, syscall filter) while the patch cycle proceeds, even when the vendor offers them in the same advisory window"
+    ],
+    "real_requirement": "ISM-1546 implementation must add: (1) a PoC-availability-aware tempo overlay where deterministic LPEs with public PoCs trigger a same-day-mitigation requirement separate from patch SLA, (2) a named compensating-control posture per maturity level (module blacklist at ML1, seccomp at ML2, live-patch at ML3), (3) explicit evidence that the operator inspected the advisory for non-binary mitigation paths before defaulting to the patch-only response.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2026-46300"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1068"
+    ],
+    "theater_test": {
+      "claim": "Our AU ISM-1546 patch programme meets Essential Eight Maturity Level 3 for kernel-class vulnerabilities.",
+      "test": "Pull the patch-management evidence pack and select the most recent deterministic kernel LPE with public PoC (CVE-2026-46300 / Fragnesia is the reference case). Confirm whether the evidence shows (a) same-day deployment of a named compensating control (module blacklist, seccomp profile, live-patch) distinct from the binary patch, and (b) the operator documented inspection of the advisory for non-binary mitigation before defaulting to the patch SLA. Theater verdict if the evidence collapses to 'patch within 48h' without a named same-day compensating control, or if the compensating control was deployed without advisory-side evidence of evaluation.",
+      "evidence_required": [
+        "patch-management evidence pack for the reference deterministic LPE",
+        "same-day compensating-control deployment record",
+        "advisory inspection notes documenting non-binary mitigation evaluation"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.5.7": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.5.7",
+    "control_name": "Threat intelligence",
+    "designed_for": "Information about information-security threats is collected and analysed to produce threat intelligence. Output feeds risk-management, vulnerability-management, incident-management, and awareness programmes.",
+    "misses": [
+      "Threat intelligence collection is treated as feed ingestion; the control does not require an operational pivot when intel surfaces a same-family sequel to a previously-patched bug (Dirty Frag → Fragnesia is the reference case)",
+      "AI-attack-development feeds (AI-assisted discovery, AI-built exploitation chains, AI-orchestrated supply-chain attacks) are not explicitly enumerated as a feed category, despite being a current-reality threat per Hard Rule #7",
+      "Threat-intelligence-to-action latency is undefined; intel may be 'collected' weeks before the operational response, with no control text requiring conversion-SLA from intel to action"
+    ],
+    "real_requirement": "A.5.7 implementation must add: (1) AI-attack-development feeds as a named feed category (GTIG zero-day attribution, Anthropic / OpenAI / Google threat reports, Zellic / depthfirst / Big Sleep disclosure channels), (2) intel-to-action conversion-SLA per threat category (deterministic LPE same-family sequel: 24h to compensating control), (3) explicit operational-pivot list mapping intel signal to immediate non-patch action (module blacklist, syscall filter, egress block, MFA enforcement).",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2026-46300"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1068"
+    ],
+    "theater_test": {
+      "claim": "Our ISO 27001:2022 A.5.7 threat-intelligence programme drives operational action against current-reality threats including AI-assisted attack development.",
+      "test": "Pull the threat-intelligence feed inventory and the last 12 months of intel-driven action records. Confirm explicit enumeration of AI-attack-development feed sources (GTIG, vendor threat reports, AI-assisted-disclosure outlets). Confirm an intel-to-action conversion-SLA per threat category. Sample the most recent same-family sequel disclosure (Fragnesia following Dirty Frag, or equivalent) and verify a compensating-control action fired within the SLA. Theater verdict if AI-attack-development feeds are absent from the inventory, or if intel-to-action conversion-SLA is undocumented, or if the sampled same-family sequel produced no operational pivot.",
+      "evidence_required": [
+        "threat-intelligence feed inventory with AI-attack-development category",
+        "intel-to-action conversion-SLA per threat category",
+        "operational pivot record for the most recent same-family sequel disclosure"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-supply-chain": {
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
+    "control_id": "Art-21-supply-chain",
+    "control_name": "Supply chain security measures",
+    "designed_for": "Article 21(2)(d) — supply-chain security including security-related aspects concerning the relationships between each entity and its direct suppliers or service providers. Covers risk-management measures for the supply chain, including transitive dependencies where systemically relevant.",
+    "misses": [
+      "Generic supply-chain controls do not address ecosystem-specific compromise classes — npm registry account-recovery via expired maintainer-email domain, postinstall vs main-module payload distinction, and registry-account MFA enforcement are not enumerated",
+      "Container-runtime supply chain is not differentiated from application-runtime supply chain — the runtime (containerd, runc, CRI-O) and the workloads it executes have different exposure shapes that the directive collapses",
+      "Maintainer-account integrity is presumed; the directive does not require monitoring of maintainer-email-domain expiry, registry-side MFA enforcement on critical-path packages, or post-publish freshness cooldowns as protective measures"
+    ],
+    "real_requirement": "NIS2 Art. 21 supply-chain measures must add ecosystem-specific controls: (1) container-runtime supply chain enumerated distinct from application supply chain with separate risk-management posture, (2) npm / PyPI / RubyGems / crates.io maintainer-account integrity monitoring (email-domain expiry, MFA enforcement, registry-side anomaly detection), (3) post-publish cooldown periods on consumption of fresh releases from systemically-important upstream maintainers, (4) postinstall vs main-module payload distinction in consumer-side defence (--ignore-scripts is insufficient against main-module payloads), (5) lockfile audit against known-malicious version sets during the active exposure window.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "MAL-2026-NODE-IPC-STEALER"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0020"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002"
+    ],
+    "theater_test": {
+      "claim": "Our NIS2 Art. 21 supply-chain security programme covers ecosystem-specific compromise classes including container runtime and registry account-recovery abuse.",
+      "test": "Pull the supply-chain risk-management evidence pack. Confirm container-runtime supply chain is enumerated distinct from application supply chain. Confirm maintainer-account integrity monitoring (email-domain expiry tracking, registry-side MFA enforcement evidence) for critical-path packages. Sample the most recent registry account-recovery incident (MAL-2026-NODE-IPC-STEALER reference case) and verify the consumer-side response covered lockfile audit against the malicious version set during the exposure window. Theater verdict if container runtime and application runtime collapse into a single supply-chain register, or if maintainer-account integrity monitoring is undocumented, or if the sampled incident response did not include lockfile audit within the exposure window.",
+      "evidence_required": [
+        "supply-chain register differentiating container runtime from application runtime",
+        "maintainer-account integrity monitoring records for critical-path packages",
+        "lockfile audit log from the reference registry account-recovery incident"
       ],
       "verdict_when_failed": "compliance-theater"
     }

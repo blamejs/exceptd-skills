@@ -60,25 +60,25 @@ Scheduled tasks:
 
 ```bash
 # Scan current environment and produce findings
-node orchestrator/index.js scan
+exceptd scan
 
 # Route findings to relevant skills
-node orchestrator/index.js dispatch
+exceptd dispatch
 
 # Run a specific skill programmatically
-node orchestrator/index.js skill kernel-lpe-triage
+exceptd skill kernel-lpe-triage
 
 # Run the full agent pipeline (threat-researcher → report)
-node orchestrator/index.js pipeline
+exceptd pipeline
 
 # Check skill currency scores
-node orchestrator/index.js currency
+exceptd currency
 
 # Generate an executive report from current findings
-node orchestrator/index.js report --format executive
+exceptd report --format executive
 
 # Watch for events and trigger updates automatically
-node orchestrator/index.js watch
+exceptd watch
 ```
 
 ## Output Formats

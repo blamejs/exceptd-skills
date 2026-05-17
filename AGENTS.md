@@ -6,29 +6,43 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
 
 ## Hard Rules
 
+Each rule below carries a **Forcing function** annotation declaring whether it is mechanically enforced by a script in the predeploy / CI gate sequence, or whether it is policy-only (reviewer trust). Policy-only rules are not weaker — they are auditable through reviewer judgment, not via a script — but operators should know which class a given rule sits in.
+
 1. **No stale threat intel** — Every CVE reference must include: CVSS score, KEV status, PoC availability, AI-discovery flag, active exploitation status, and patch/live-patch availability. No theoretical vulnerabilities without real-world grounding.
+   *Forcing function:* enforced by `lib/validate-cve-catalog.js` (predeploy gate).
 
 2. **Framework lag is a first-class concept** — Every skill must explicitly declare which framework controls are insufficient for the threats it covers. Never imply a framework control is adequate when current TTPs bypass it.
+   *Forcing function:* enforced by `lib/lint-skills.js` (Framework Lag Declaration section is one of the seven required sections; predeploy gate).
 
 3. **No CVSS-only risk scoring** — CVSS is a severity metric, not a risk metric. Every risk score uses the Real-World Exploit Priority (RWEP) model defined in `lib/scoring.js`. CVSS is reported alongside RWEP for compatibility, never as the sole score.
+   *Forcing function:* enforced by the RWEP forcing-function test added in v0.12.36 (test suite gate).
 
 4. **No orphaned controls** — Every control recommendation maps to a real attacker TTP in `data/atlas-ttps.json` or `data/cve-catalog.json`. Controls without a mapped threat are removed, not kept for completeness.
+   *Forcing function:* partial — `data/framework-control-gaps.json` requires `evidence_cves`, but skill-body recommendations are reviewer-checked, not lint-enforced.
 
 5. **Global-first, not US-centric** — Every framework gap analysis includes at least EU (NIS2/DORA/EU AI Act), UK (CAF), AU (ISM/Essential 8), and ISO 27001:2022 alongside NIST references. US-only analysis is incomplete.
+   *Forcing function:* partial — no explicit lint asserts every gap analysis touches all jurisdictions; enforced by code review.
 
 6. **Zero-day learning is live** — `data/zeroday-lessons.json` is updated whenever a new CVE in scope is added to `data/cve-catalog.json`. The learning loop (zero-day → attack vector → control gap → framework gap → new control requirement) runs completely, not partially.
+   *Forcing function:* enforced by the theater-test backfill — each `zeroday-lessons.json` entry is required to chain attack vector → framework gap → new control (predeploy gate).
 
 7. **Skill files are instructions, not descriptions** — Each `skill.md` tells the AI assistant exactly how to perform the analysis: what questions to ask, what data to pull, how to score, what to output. Generic "assess security posture" language is not a skill.
+   *Forcing function:* enforced by `lib/lint-skills.js` (required-section list; predeploy gate).
 
 8. **Compliance theater detection is mandatory** — Every skill that touches a compliance framework must include a compliance theater check: a specific question or test that distinguishes paper compliance from actual security.
+   *Forcing function:* enforced (cycle 16 added a lint check that asserts the Compliance Theater Check section is present in every framework-touching skill; predeploy gate).
 
 9. **Ephemeral and AI-pipeline realities are first-class** — Never recommend controls that are architecturally impossible for serverless, container, or AI pipeline environments without providing an explicitly scoped alternative.
+   *Forcing function:* **policy only** — no CI gate enforces this; reviewers check during PR review.
 
 10. **No placeholder data** — `data/*.json` files contain real CVE metadata, real ATLAS TTP IDs, real framework control IDs. Placeholder entries (`"tbd"`, `"coming soon"`, empty arrays where data exists) fail the pre-ship check.
+    *Forcing function:* enforced by catalog schema validation in the predeploy gate.
 
 11. **No-MVP ban** — A half-implemented skill is worse than no skill. Every shipped skill has: complete frontmatter, all required body sections, real data deps populated, a compliance theater check, and a concrete output format. Partial skills are not merged — they are finished or removed.
+    *Forcing function:* covered by `lib/lint-skills.js` (required-section list) plus Hard Rule #15 (diff coverage); predeploy gate.
 
 12. **External data version pinning** — Every reference to external data (MITRE ATLAS, MITRE ATT&CK, NIST frameworks, CISA KEV, IETF RFCs and Internet-Drafts) must pin to a specific version. When a new version is released: (a) audit for breaking changes (renamed TTPs, tactic-split moves, replaced RFCs, deprecated controls), (b) bump `last_threat_review` in all affected skills, (c) update `_meta` version fields in the relevant `data/*.json` file, (d) update `last_verified` on affected `data/rfc-references.json` entries, (e) never silently inherit version changes. Frameworks lag RFCs; RFCs lag attacker innovation — skills must track lag at every layer.
+    *Forcing function:* `_meta` version fields are schema-required; reviewer-checked for cross-file version consistency.
 
     **Pinned ATLAS version: v5.4.0 (February 2026), Secure AI v2 layer (May 2026). Audit cadence: monthly** (ATLAS now ships monthly per CTID; the Secure AI v2 layered set and per-technique maturity classification are tracked separately in `data/atlas-ttps.json` via the `secure_ai_v2_layer` and `maturity` fields).
 
@@ -37,8 +51,10 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
     The IETF RFC / Internet-Draft catalog lives at `data/rfc-references.json`; each entry tracks status, errata count, replaces / replaced-by, and `last_verified`.
 
 13. **Skill integrity verification** — Every skill in `manifest.json` carries an Ed25519 `signature` (base64) and a `signed_at` timestamp covering its `skill.md` content. `lib/verify.js` checks each signature against the public key at `keys/public.pem` before any skill is loaded by the orchestrator. Tampered or unsigned skills are rejected. The private key at `.keys/private.pem` is gitignored and never enters the repo. Run `node lib/verify.js` (or `npm run verify`) before shipping; sign new or changed skills with `npm run bootstrap` for first-run, or `node lib/sign.js sign-all` after content changes.
+    *Forcing function:* enforced by `lib/verify.js` (predeploy gate, plus `scripts/verify-shipped-tarball.js` which re-runs verification on the extracted `npm pack` output).
 
 14. **Primary-source IoC review** — Any CVE entry in `data/cve-catalog.json` whose `poc_available: true` AND whose exploit code is publicly available (published PoC repo, vendor advisory with attached payload, researcher blog with reproducer) must include `iocs` populated from a line-level cross-reference of the published source — not from secondary-source paraphrase. The `iocs` block records which IoC categories were extracted (`payload_artifacts`, `persistence_artifacts`, `credential_paths_scanned`, `c2_indicators`, `host_recon`, `behavioral`, `runtime_syscall`, `kernel_trace`, `livepatch_gap`, `destructive`, `payload_content_patterns`, `supply_chain_entry_vectors`), and each IoC must be traceable to a specific source URL or commit hash. v0.12.6 audit reviewed CVE-2026-45321 (Mini Shai-Hulud), CVE-2026-31431 (Copy Fail / Dirty Pipe / Dirty COW family), CVE-2026-43284 + CVE-2026-43500 (Dirty Frag pair), CVE-2025-53773 (Copilot YOLO mode), and CVE-2026-30615 (Windsurf MCP) against primary sources from Aikido, StepSecurity, Socket, Wiz, Datadog, Sysdig, Trail of Bits, Invariant Labs, Embrace the Red, NVD, MSRC. Catalog updates landed in v0.12.6 changelog. Skipping this audit is equivalent to shipping "untested security advice" — the IoC list IS the operator-facing detection contract.
+    *Forcing function:* **policy only** — IoC presence is reviewer-audited per catalog change; no CI gate asserts every PoC-available CVE has an `iocs` block.
 
 15. **Test coverage on every diff** — Every feature change (added, removed, or modified) must land with a covering test reference in the same PR. The shapes the gate enforces:
 
@@ -53,6 +69,7 @@ Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill syste
     Mechanical enforcement lives in `scripts/check-test-coverage.js` and runs as the 13th gate of `npm run predeploy` (also the `Diff coverage` job in `ci.yml`). Docs (`*.md`), workflow YAML, and skill body changes are allowlisted — skill bodies are covered by the Ed25519 signature gate (Hard Rule #13), workflows surface a manual-review flag rather than a hard finding. Whitespace-only diffs are ignored.
 
     The gate is blocking: a covered surface change without a covering test reference fails the predeploy run and the `Diff coverage` CI job. Never bypass with `--no-verify` or `--warn-only` — add the covering test first. This rule is additive to Hard Rule #11 (no-MVP ban): a new playbook indicator or CLI surface that ships without a regression test is the same shape of incomplete-feature ship that #11 forbids, applied to the test layer.
+    *Forcing function:* enforced by `scripts/check-test-coverage.js` (predeploy gate plus the `Diff coverage` CI job).
 
 ---
 

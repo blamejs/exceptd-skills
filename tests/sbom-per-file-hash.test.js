@@ -31,14 +31,36 @@ const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 // files like data/_indexes/*.json + manifest.json signatures mid-run.
 // The verify-shipped-tarball predeploy gate is the authoritative check
 // for the ship-time SBOM-vs-tarball match.
+//
+// Snapshot sbom.cdx.json before regenerating so a Ctrl-C / test crash
+// mid-test does not leave the repo's sbom.cdx.json polluted with the
+// test's regenerated content. Identical shape to the snapshot-restore
+// pattern build-incremental.test.js uses for mutating-state safety.
+const SBOM_PATH = path.join(ROOT, 'sbom.cdx.json');
+const sbomBytesBeforeTest = fs.existsSync(SBOM_PATH) ? fs.readFileSync(SBOM_PATH) : null;
+const restoreSbom = () => {
+  try {
+    if (sbomBytesBeforeTest === null) {
+      if (fs.existsSync(SBOM_PATH)) fs.unlinkSync(SBOM_PATH);
+    } else {
+      fs.writeFileSync(SBOM_PATH, sbomBytesBeforeTest);
+    }
+  } catch { /* best-effort restoration */ }
+};
+const sbomSigHandler = () => { restoreSbom(); process.exit(130); };
+process.once('SIGINT', sbomSigHandler);
+process.once('SIGTERM', sbomSigHandler);
+process.once('exit', restoreSbom);
+
 const refresh = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'refresh-sbom.js')], {
   cwd: ROOT,
   encoding: 'utf8',
 });
 if (refresh.status !== 0) {
+  restoreSbom();
   throw new Error('scripts/refresh-sbom.js failed: ' + (refresh.stderr || refresh.stdout));
 }
-const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+const sbom = JSON.parse(fs.readFileSync(SBOM_PATH, 'utf8'));
 
 function walkFiles(absDir) {
   const out = [];
