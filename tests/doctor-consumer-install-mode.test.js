@@ -68,6 +68,49 @@ test("doctor: contributor checkout WITH private key reports severity:info + warn
   assert.ok(!body.summary.failed_checks.includes("signing"));
 });
 
+test("doctor: consumer detection survives realpath-resolved symlink (parent-is-@blamejs signal)", () => {
+  // Codex P1 on PR #53: single-signal "PKG_ROOT contains node_modules"
+  // is fragile against symlink-resolved paths (npm link / workspaces).
+  // The v0.13.14 fix adds a second signal: PKG_ROOT's parent dir basename
+  // is "@blamejs". Stage a layout where the package sits inside an
+  // @blamejs/ scope dir but NOT under any node_modules/ ancestor (the
+  // realpath-after-symlink-resolution shape codex named). Detection
+  // must still classify as consumer.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-realpath-"));
+  try {
+    const pkg = path.join(tmp, "@blamejs", "exceptd-skills");
+    fs.mkdirSync(pkg, { recursive: true });
+    const SYMLINK_OK = new Set([
+      "data", "lib", "orchestrator", "scripts", "sources", "vendor", "skills", "agents", "keys",
+      "AGENTS.md", "ARCHITECTURE.md", "CHANGELOG.md", "CONTEXT.md",
+      "LICENSE", "NOTICE", "README.md", "SECURITY.md",
+      "manifest.json", "manifest-snapshot.json", "manifest-snapshot.sha256", "sbom.cdx.json",
+      "package.json",
+    ]);
+    for (const rel of fs.readdirSync(ROOT)) {
+      if (rel === ".keys" || rel === ".git" || rel === "node_modules") continue;
+      const src = path.join(ROOT, rel);
+      const dst = path.join(pkg, rel);
+      if (rel === "bin") { fs.cpSync(src, dst, { recursive: true }); }
+      else if (SYMLINK_OK.has(rel)) {
+        try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? "dir" : "file"); }
+        catch { fs.cpSync(src, dst, { recursive: true }); }
+      } else { fs.cpSync(src, dst, { recursive: true }); }
+    }
+    const stagedCli = path.join(pkg, "bin", "exceptd.js");
+    const r = spawnSync(process.execPath, [stagedCli, "doctor", "--json"], {
+      encoding: "utf8", cwd: tmp,
+      env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1" },
+    });
+    const body = JSON.parse(r.stdout);
+    assert.equal(body.checks.signing.install_mode, "consumer",
+      "@blamejs parent-dir signal must detect consumer mode without a node_modules ancestor");
+    assert.equal(body.checks.signing.severity, "info");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 test("doctor: consumer install (PKG_ROOT under node_modules/) reports severity:info on missing key", () => {
   // Stage a fake "consumer install" layout: a temp dir with a
   // `node_modules/@blamejs/exceptd-skills/` shape. The doctor verb is

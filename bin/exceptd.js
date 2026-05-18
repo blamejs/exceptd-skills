@@ -5474,16 +5474,27 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       // contributor-checkout. Consumer installs live under node_modules/
       // and have no business signing — the doctor warning "private key
       // MISSING" reads as a problem on a fresh global install when it's
-      // actually expected. Detection: PKG_ROOT path contains node_modules
-      // separators. In consumer mode, the absent-key state is severity:info
-      // (signing intentionally not enabled), not severity:warn. In
-      // contributor checkouts (PKG_ROOT outside node_modules), absent
-      // remains severity:warn as before — Bug #61 (v0.11.2): the
-      // attestation pipeline writes unsigned files when this is absent
-      // and contributors need the nudge.
-      const isConsumerInstall = PKG_ROOT.includes(
-        path.sep + "node_modules" + path.sep,
-      );
+      // actually expected.
+      //
+      // Codex P1 on PR #53: single-signal detection (PKG_ROOT contains
+      // "node_modules") is fragile against symlink-resolved paths
+      // (npm link, workspaces). Two-signal detection: either signal
+      // counts as consumer.
+      //   (a) PKG_ROOT path contains a "node_modules" path segment —
+      //       real `npm install -g` lays the package at
+      //       <prefix>/lib/node_modules/@blamejs/exceptd-skills/
+      //   (b) PKG_ROOT's parent directory is exactly "@blamejs" — the
+      //       canonical scoped-npm-install marker, robust to symlink
+      //       realpath() walks because the parent's basename of the
+      //       published-tarball layout always carries the npm scope.
+      // Contributor checkouts (PKG_ROOT outside node_modules AND
+      // parent != @blamejs) keep severity:warn — Bug #61 (v0.11.2):
+      // the attestation pipeline writes unsigned files when this is
+      // absent and contributors need the nudge.
+      const pkgRootSegments = PKG_ROOT.split(/[\\/]/);
+      const containsNodeModulesSegment = pkgRootSegments.includes("node_modules");
+      const parentIsBlamejsScope = path.basename(path.dirname(PKG_ROOT)) === "@blamejs";
+      const isConsumerInstall = containsNodeModulesSegment || parentIsBlamejsScope;
       checks.signing = {
         ok: present, // not green if the key is missing on a contributor checkout
         severity: present
