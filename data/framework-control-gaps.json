@@ -1223,6 +1223,7 @@
       "CVE-2025-4919",
       "CVE-2026-0300",
       "CVE-2026-31431",
+      "CVE-2026-31635",
       "CVE-2026-42945",
       "CVE-2026-46300",
       "CVE-2026-46333"
@@ -1885,6 +1886,7 @@
       "CVE-2025-62849",
       "CVE-2026-0300",
       "CVE-2026-31431",
+      "CVE-2026-31635",
       "CVE-2026-32202",
       "CVE-2026-33825",
       "CVE-2026-42897",
@@ -5293,7 +5295,8 @@
     "status": "open",
     "opened_at": "2026-05-18",
     "evidence_cves": [
-      "CVE-2025-8671"
+      "CVE-2025-8671",
+      "CVE-2026-31635"
     ],
     "theater_test": {
       "claim": "We are compliant with Art-21-availability (Availability and resilience risk-management measures) because we follow the documented requirement: Article 21(2)(c-f) — measures for business continuity, supply-chain security, vulnerability handling, and the effectiveness of cybersecurity risk-management measures. The availability angle covers bac",

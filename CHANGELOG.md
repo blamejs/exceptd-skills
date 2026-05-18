@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.14 — 2026-05-18
+
+DirtyDecrypt catalog entry + intake-pipeline coverage fix for the silent-kernel-patch + delayed-research-disclosure class.
+
+### Features
+
+**`CVE-2026-31635` (DirtyDecrypt) added to the catalog.** Same Linux page-cache write primitive as Copy Fail (CVE-2026-31431), Dirty Frag (CVE-2026-43284 / 43500), and Fragnesia (CVE-2026-46300) — this one in the `rxgk_decrypt_skb` function. Affects kernels with `CONFIG_RXGK=y` (Fedora / Arch / openSUSE Tumbleweed). Patched in mainline 2026-04-25; V12 security team rediscovered 2026-05-09 (told it was duplicate of mainline fix); PoC + writeup published 2026-05-17. Entry carries an `intake_gap_note` explaining why the daily threat-intake routine missed it: the kernel.org Atom feed window rolled past the silent-patch commit, V12 went to maintainers privately rather than to oss-security@openwall, and the PoC publication surfaced on vendor security blogs that the 8-feed primary-source set did not cover.
+
+**Vendor-security-blog intake coverage.** Four new feeds added to `lib/source-advisories.js`: `microsoft-security-blog` (Linux-kernel CVE intel, anchored Dirty Frag 2026-05-08 analysis), `sysdig-blog` (kernel-LPE detection writeups, anchored Copy Fail / Dirty Frag), `trail-of-bits-blog` (MCP / supply-chain / AI-tool disclosures, anchored CVE-2026-30615), `embrace-the-red` (AI-tool prompt-injection + agentic-AI research, anchored CVE-2025-53773). These are the canonical signal channel for "kernel-class CVE patched silently, class-of-bug research published weeks later" and for AI-tool / MCP supply-chain disclosures — closing a class of intake-pipeline blind spot without polluting the catalog with news-aggregator noise.
+
+**`NEW-CTRL-072`** (`PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE`) added to `AGENTS.md`: requires threat-intake pipelines to cover vendor security blogs alongside advisory feeds. Maps to NIST 800-53 SI-5, ISO 27001:2022 A.5.7, CIS Controls v8 7.1.
+
+### Internal
+
+- `tests/intake-vendor-blog-coverage.test.js` pins: the four vendor feeds are registered with HTTPS URLs + `kind: rss`, the fixture has frozen content for each (no live-RSS fall-through), and the DirtyDecrypt entry + matching `zeroday-lessons.json` entry are present with the `intake_gap_note` and `NEW-CTRL-072` reference.
+- `tests/refresh-swarm.test.js` `8/8 feeds reachable` assertion replaced with a dynamic count derived from `lib/source-advisories.js#FEEDS.length` so future intake expansions don't require a test edit.
+- Fixture `tests/fixtures/refresh/advisories.json` extended with `microsoft-security-blog` / `sysdig-blog` / `trail-of-bits-blog` / `embrace-the-red` frozen RSS entries.
+
 ## 0.13.13 — 2026-05-18
 
 `exceptd doctor` now distinguishes consumer-install from contributor-checkout when reporting on signing.

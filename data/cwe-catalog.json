@@ -964,6 +964,7 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2026-31635",
       "CVE-2026-33825",
       "CVE-2026-46333"
     ],

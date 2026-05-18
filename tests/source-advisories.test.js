@@ -143,14 +143,31 @@ test('ADVISORIES_SOURCE: name matches registry key + describes report-only contr
   assert.match(ADVISORIES_SOURCE.description, /ZDI/i);
 });
 
-test('FEEDS: exactly 8 feeds as of v0.13.3 (Qualys, RHSA, USN, ZDI, kernel.org, oss-security, JFrog, CISA)', () => {
+test('FEEDS: exactly 12 feeds as of v0.13.14 — advisories + vendor security blogs', () => {
   // v0.13.1 shipped 4 (qualys, rhsa, usn, zdi). v0.13.3 added 4 more
   // covering kernel.org commits (catches CVE-2026-46333-class at T+0),
   // oss-security coordinated disclosure, JFrog supply-chain research,
-  // and CISA non-KEV advisories.
-  assert.equal(FEEDS.length, 8);
+  // and CISA non-KEV advisories. v0.13.14 added 4 vendor security blogs
+  // (microsoft-security-blog, sysdig-blog, trail-of-bits-blog,
+  // embrace-the-red) to close the DirtyDecrypt-class intake gap where a
+  // silent kernel patch + delayed-research-disclosure on a vendor blog
+  // fell through the advisory-only feed set.
+  assert.equal(FEEDS.length, 12);
   const names = FEEDS.map((f) => f.name).sort();
-  assert.deepEqual(names, ['cisa-current', 'jfrog', 'kernel-org', 'oss-security', 'qualys', 'rhsa', 'usn', 'zdi']);
+  assert.deepEqual(names, [
+    'cisa-current',
+    'embrace-the-red',
+    'jfrog',
+    'kernel-org',
+    'microsoft-security-blog',
+    'oss-security',
+    'qualys',
+    'rhsa',
+    'sysdig-blog',
+    'trail-of-bits-blog',
+    'usn',
+    'zdi',
+  ]);
 });
 
 test('FEEDS: every feed declares a URL + kind + description', () => {
@@ -184,6 +201,13 @@ test('fetchDiff: in fixture mode, surfaces CVE IDs not in catalog', async () => 
       'oss-security': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
       'jfrog': '<rss><channel></channel></rss>',
       'cisa-current': '<rss><channel></channel></rss>',
+      // v0.13.14: 4 more — vendor security blogs. Empty fixtures so the
+      // de-dup test still anchors on qualys + usn without contamination
+      // from the new vendor-blog feeds.
+      'microsoft-security-blog': '<rss><channel></channel></rss>',
+      'sysdig-blog': '<rss><channel></channel></rss>',
+      'trail-of-bits-blog': '<rss><channel></channel></rss>',
+      'embrace-the-red': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
     },
   };
   const ctx = {
