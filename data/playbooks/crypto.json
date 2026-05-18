@@ -48,6 +48,9 @@
         "playbook_id": "sbom",
         "condition": "analyze.blast_radius_score >= 4"
       }
+    ],
+    "fed_by": [
+      "post-quantum-migration"
     ]
   },
   "domain": {

@@ -89,6 +89,41 @@ test('--org-scan: NEW-CTRL-052 control_reference field is present', () => {
   assert.equal(body.control_reference, 'NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS lesson)');
 });
 
+test('--org-scan: --output-format markdown emits a GitHub-flavored table body', () => {
+  const r = cli(['watchlist', '--org-scan', '--org', 'exceptd-test-md', '--output-format', 'markdown'], {
+    env: { ...process.env, GITHUB_TOKEN: '', EXCEPTD_DEPRECATION_SHOWN: '1' },
+  });
+  const body = r.stdout;
+  // Not JSON — must NOT parse.
+  assert.equal(tryJson(body.trim()), null, 'markdown output must not be JSON');
+  assert.match(body, /^## GitHub Org-Scan: exceptd-test-md/m, 'missing markdown heading');
+  assert.match(body, /threat-actor naming patterns evaluated/, 'missing pattern-count line');
+  assert.match(body, /NEW-CTRL-052/, 'control reference must appear in markdown footer');
+});
+
+test('--org-scan: --output-format json equals legacy --json shorthand envelope', () => {
+  const r = cli(['watchlist', '--org-scan', '--org', 'exceptd-test-fmt-json', '--output-format', 'json'], {
+    env: { ...process.env, GITHUB_TOKEN: '', EXCEPTD_DEPRECATION_SHOWN: '1' },
+  });
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `expected JSON via --output-format json; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(body.verb, 'watchlist');
+  assert.equal(body.mode, 'org-scan');
+  assert.equal(body.org, 'exceptd-test-fmt-json');
+});
+
+test('--org-scan: invalid --output-format value refuses with accepted-set error', () => {
+  const r = cli(['watchlist', '--org-scan', '--org', 'x', '--output-format', 'xml'], {
+    env: { ...process.env, GITHUB_TOKEN: '', EXCEPTD_DEPRECATION_SHOWN: '1' },
+  });
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body);
+  assert.equal(body.ok, false);
+  assert.match(body.error, /--output-format "xml" not in accepted set/);
+  assert.deepEqual(body.accepted, ['json', 'markdown', 'human']);
+  assert.equal(r.status, 1, 'invalid --output-format must exit EXIT_CODES.GENERIC_FAILURE (1)');
+});
+
 test('--org-scan: each match carries the documented per-match shape', () => {
   // Use exceptd's actual repo org so the call exercises the real
   // fetch + parse path. Whether matches are returned is environment-

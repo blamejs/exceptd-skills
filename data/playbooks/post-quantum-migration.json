@@ -1,0 +1,1268 @@
+{
+  "_meta": {
+    "id": "post-quantum-migration",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-18",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-18",
+        "summary": "Initial seven-phase post-quantum migration POSTURE playbook. Distinct from `crypto` (general crypto-hygiene + handshake-level PQC readiness) and `crypto-codebase` (source-tree audit): post-quantum-migration covers the operational migration programme — per-asset classical-asymmetric inventory, migration-blocker enumeration (legacy HSMs without FIPS 203/204/205 firmware, embedded TLS stacks, downstream interop dependencies, third-party SaaS without PQC roadmap), per-regulator deadline tracking (CNSA 2.0 2027 mandatory, OMB M-23-02 annual, NIST SP 800-227, ETSI TS 119 312, BSI TR-02102), and the harvest-now-decrypt-later exposure-window analysis that bounds material risk against published CRQC estimates. Closes the GRC loop with NIST 800-53 SC-13(PQC sub-control) gap, ISO 27001 A.8.24 no-PQC-amendment gap, NIS2 Art.21(2)(h) cryptographic-inventory enforcement gap, DORA Art.9 financial-sector PQC migration-plan gap, and EU CRA Annex I 'state-of-the-art' interpretive gap. Cross-walks to crypto for handshake-level readiness and to framework for compliance-theater detection on the programme-level controls.",
+        "cves_added": [],
+        "framework_gaps_updated": [
+          "nist-800-53-SC-13-pqc-subcontrol",
+          "iso-27001-2022-A.8.24-pqc-amendment",
+          "iso-27001-2022-A.8.25-crypto-agility",
+          "nis2-art21-2h-pqc-enforcement",
+          "dora-art9-pqc-migration-plan",
+          "eu-cra-annex-i-state-of-the-art-pqc"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "cross-cutting",
+    "preconditions": [
+      {
+        "id": "asset-inventory-readable",
+        "description": "Agent must be able to read the operator's asset inventory: CMDB extracts, cryptographic-asset registers, vendor product registry, HSM/KMS configuration files, third-party SaaS dependency list. Pure-runtime hosts with no inventory access mark the playbook visibility_gap=no_asset_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_cmdb_api_token == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "operator-owns-migration-programme",
+        "description": "The operator must own (or hold explicit written authorisation for) the cryptographic migration programme being inventoried, including per-asset migration decisions and per-regulator deadline commitments.",
+        "check": "operator_ownership_attested == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "crypto",
+        "condition": "any per_asset.handshake_readiness_unknown == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.includes_classical_dependency_in_long_retention_product == true"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Post-quantum cryptography migration posture",
+    "attack_class": "pqc-exposure",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1040",
+      "T1557",
+      "T1573",
+      "T1600"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-310",
+      "CWE-326",
+      "CWE-327"
+    ],
+    "d3fend_refs": [
+      "D3-MENCR",
+      "D3-FE"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "pci-dss-4",
+      "nis2",
+      "dora",
+      "eu-cra",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "sg-mas-trm",
+      "jp-nisc",
+      "in-cert",
+      "ca-osfi-b10",
+      "hipaa",
+      "cmmc",
+      "nerc-cip"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.21(2)(h)",
+          "obligation": "maintain_cryptographic_inventory",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "per_asset_cryptographic_inventory",
+            "pqc_migration_plan_with_per_asset_target_dates",
+            "classical_algorithm_sunset_register"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.9",
+          "obligation": "submit_cryptographic_resilience_evidence",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "financial_records_retention_horizon_matrix",
+            "per_asset_pqc_migration_status",
+            "third_party_provider_pqc_roadmap_attestation"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Annex I",
+          "obligation": "submit_state_of_the_art_cryptography_evidence",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "product_cryptographic_inventory",
+            "pqc_migration_plan_for_products_with_operational_life_gt_5y",
+            "classical_algorithm_sunset_register_per_product"
+          ]
+        },
+        {
+          "jurisdiction": "US-Federal",
+          "regulation": "OMB M-23-02 + NSM-10",
+          "obligation": "submit_federal_pqc_migration_inventory",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "federal_pqc_inventory",
+            "annual_migration_progress_report",
+            "high_value_asset_pqc_migration_prioritisation"
+          ]
+        },
+        {
+          "jurisdiction": "US-Federal",
+          "regulation": "CNSA 2.0 (NSS systems)",
+          "obligation": "complete_pqc_migration",
+          "window_hours": 35040,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "nss_pqc_completion_attestation",
+            "exception_register_for_unmigrated_assets"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "ACSC ISM-1546 / ISM-0457",
+          "obligation": "submit_approved_algorithm_attestation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "approved_algorithm_register",
+            "transition_plan_for_non_approved_algorithms"
+          ]
+        },
+        {
+          "jurisdiction": "DE",
+          "regulation": "BSI TR-02102 (German Federal Office for Information Security)",
+          "obligation": "submit_cryptographic_recommendation_alignment",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "per_asset_alignment_with_tr_02102_recommendations",
+            "deviation_register_with_justification"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "pqc-policy-without-inventory",
+          "claim": "We have a published cryptographic-migration policy that names PQC — our migration programme is in flight.",
+          "fast_detection_test": "Diff the policy against the asset register. A policy is only a programme when it binds to (a) per-asset current algorithm + key size, (b) per-asset data sensitivity horizon, (c) per-asset PQC migration target + algorithm choice, (d) per-asset classical-algorithm sunset date with assigned owner, (e) per-asset migration-blocker + dependency record. Absence of any of those five fields turns the policy into a document, not a programme. Inventory IS the programme.",
+          "implicated_controls": [
+            "nis2-art21-2h",
+            "dora-art9",
+            "iso-27001-2022-A.8.24",
+            "us-omb-m-23-02"
+          ]
+        },
+        {
+          "pattern_id": "vendor-roadmap-as-migration-plan",
+          "claim": "Our HSM / KMS / TLS gateway vendor has a published PQC roadmap, so our migration is on track.",
+          "fast_detection_test": "Read the vendor's published PQC roadmap and cross-walk against the operator's enforceable contractual commitments. Roadmap WITHOUT a contractual delivery date is marketing. The migration plan must record (a) the operator's contractual SLA for vendor PQC delivery, (b) the operator's alternative-vendor migration ETA if vendor misses the SLA, (c) the operator's compensating-control posture for the gap window. A 'vendor has a roadmap' line in the migration plan with no SLA is theater.",
+          "implicated_controls": [
+            "nis2-art21-2h",
+            "dora-art9",
+            "nis2-art21-2d"
+          ]
+        },
+        {
+          "pattern_id": "openssl-version-bump-as-migration-progress",
+          "claim": "We upgraded openssl across the fleet to a version that supports ML-KEM, so the PQC migration is complete on the TLS plane.",
+          "fast_detection_test": "Library upgrade enables capability; the programme question is whether assets are CONFIGURED to use the capability. Run a sample: openssl s_client -connect <prod_endpoint>:443 -tls1_3 -groups X25519MLKEM768 against five randomly-chosen production endpoints. If the hybrid group is not negotiated on any of the five, capability without configuration is theater. The migration plan must capture configuration deployment per asset, not just library version.",
+          "implicated_controls": [
+            "nist-800-53-SC-8",
+            "nist-800-53-SC-13",
+            "iso-27001-2022-A.8.24"
+          ]
+        },
+        {
+          "pattern_id": "hndl-as-future-problem",
+          "claim": "Harvest-now-decrypt-later is a future concern; we will migrate when CRQC is closer.",
+          "fast_detection_test": "Read the data-retention policy and compute the CRQC-overlap window: data with retention horizon Y years recorded today is decryptable on the CRQC day in year X. If X-Y < operator's aggressive-CRQC estimate (peer-reviewed 5-8 years from mid-2026), the recording happens today and the decryption happens within the data's sensitivity window. HNDL is not future — the recording surface is operational now. The 'future problem' framing is itself the theater.",
+          "implicated_controls": [
+            "nis2-art21-2h",
+            "dora-art9",
+            "iso-27001-2022-A.8.10"
+          ]
+        },
+        {
+          "pattern_id": "fips-203-validated-module-as-readiness-proof",
+          "claim": "We deployed a FIPS 203-validated module, so we are PQC-ready.",
+          "fast_detection_test": "A FIPS 203 validation certifies that one module correctly implements ML-KEM. Programme readiness requires (a) all asymmetric crypto in the asset's flow uses PQC or hybrid, (b) the certificate chain uses ML-DSA or hybrid signatures, (c) the peer entity also supports the negotiated PQC algorithm, (d) the operator has a downgrade-detection control. A single validated module without (a)-(d) covers one corner of one flow.",
+          "implicated_controls": [
+            "nist-800-53-SC-13",
+            "fips-140-3"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Frameworks treat PQC migration as policy + algorithm-selection rather than as a per-asset migration programme with enforceable deadlines. NIST 800-53 SC-13 cites FIPS-validated modules without distinguishing classical-only validations from FIPS 203/204/205 PQC validations; SC-8 does not require hybrid KEX. ISO 27001:2022 A.8.24 was published before FIPS 203/204/205 finalisation and has no scheduled amendment. PCI DSS 4.0 §3.6/§4.2.1 defines 'strong cryptography' with classical minimums, no PQC obligation for cardholder data with > 10y retention. NIS2 Art.21(2)(h) names cryptography as essential measure but defers algorithm specifics to implementing acts not yet published. DORA Art.9 inherits NIS2's gap. EU CRA Annex I uses 'state-of-the-art' as the standard, leaving PQC binding to interpretation. The US federal cycle is further along (CNSA 2.0 2027 deadline, OMB M-23-02 annual inventory, NIST SP 800-227 PQC-transition recommendations, NIST IR 8547 published migration roadmap) but the 800-53 control catalogue is unchanged. AU ISM-1546 transitions to PQC quarterly via approved-algorithm list updates but ISM remains advisory rather than binding for non-federal entities. The result: an organisation with no asset inventory, no per-asset migration plan, no vendor SLA, and no exposure-window analysis can satisfy every framework's literal language while being HNDL-vulnerable today across its long-retention data surface.",
+        "lag_score": 365,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-13 — Cryptographic Protection",
+            "designed_for": "Cryptographic-module validation against FIPS standards.",
+            "insufficient_because": "Cites FIPS-validated modules without a PQC sub-control. A FIPS 140-3 validated module that implements only classical algorithms passes SC-13 and is HNDL-vulnerable. No control text requires per-asset migration tracking, no requirement to bind to FIPS 203/204/205 for data with sensitivity horizon > CRQC estimate."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-12 — Cryptographic Key Establishment and Management",
+            "designed_for": "Key generation, distribution, storage, and destruction lifecycle.",
+            "insufficient_because": "Key-lifecycle language is algorithm-agnostic. No requirement for the key-management system to support hybrid (classical + PQC) keys, no requirement to track key sensitivity horizon against CRQC estimate."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.24 — Use of cryptography",
+            "designed_for": "Cryptographic policy + algorithm selection.",
+            "insufficient_because": "Published 2022 before FIPS 203/204/205 finalisation. Names no algorithms, no sunset dates, no migration tempo. Compliant policy can be entirely classical. No scheduled amendment as of 2026-05."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.25 — Secure development lifecycle",
+            "designed_for": "Security in development methodology.",
+            "insufficient_because": "Does not require crypto-agility — the ability to swap algorithms without re-architecting. Without crypto-agility, every PQC migration is a re-engineering project; the control does not surface this as a deficiency, leaving every classical-only design 'compliant' until the day migration becomes mandatory."
+          },
+          {
+            "framework": "pci-dss-4",
+            "control_id": "3.6 / 4.2.1 — Strong cryptography",
+            "designed_for": "Strong cryptography for cardholder data at rest and in transit.",
+            "insufficient_because": "Defines 'strong cryptography' with classical minimums (AES-128, ECC 224-bit). No PQC obligation. A PCI-compliant card processor today is HNDL-vulnerable for any cardholder data with > 10-year retention (regulatory + dispute window)."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(h) — Use of cryptography",
+            "designed_for": "Cryptographic measures as essential cybersecurity measure.",
+            "insufficient_because": "Names cryptography as essential measure; defers algorithm specifics to implementing acts not yet published. Permits classical-only posture today. No per-asset inventory enforcement, no per-asset migration deadline. Implementing acts to bind PQC remain in draft as of 2026-05."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.9 — ICT systems, protocols and tools (cryptographic resilience)",
+            "designed_for": "Cryptographic resilience for financial-entity ICT systems.",
+            "insufficient_because": "Inherits NIS2's gap. Financial-entity HNDL exposure is acute (long-retention financial records, customer-lifetime PII, regulatory-record retention) but the framework cadence is months behind operational PQC readiness. No RTS/ITS naming PQC migration deadlines."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I — Essential cybersecurity requirements",
+            "designed_for": "Manufacturer obligation to ship 'state-of-the-art' cryptography for products with digital elements.",
+            "insufficient_because": "'State-of-the-art' is interpretive. Without binding PQC reference in an implementing act, products ship classical-only. Operational life of products with digital elements routinely exceeds 5 years; HNDL exposure tracks operational life."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "B3 — Data security",
+            "designed_for": "NCSC CAF outcome that data is protected from compromise, including by cryptographic means.",
+            "insufficient_because": "Outcome-based — does not name algorithms or migration tempo. An entirely classical posture can be assessed as 'achieving' the outcome despite the HNDL adversary recording today against a CRQC decrypt date inside the data retention window."
+          },
+          {
+            "framework": "au-essential-8",
+            "control_id": "Strategy 8 — Regular backups (encryption at rest)",
+            "designed_for": "Resilient backups including encryption at rest.",
+            "insufficient_because": "Encryption at rest uses classical algorithms by default. Long-retention backups encrypted classically are HNDL-exposed for the retention period; the strategy makes no reference to PQC or algorithm-currency."
+          },
+          {
+            "framework": "au-ism",
+            "control_id": "ISM-0457 / ISM-1546",
+            "designed_for": "Approved cryptographic algorithms for protecting Australian Government information.",
+            "insufficient_because": "ISM transition guidance is advisory in 2026-05. Quarterly publishing cadence lags FIPS 203/204/205 finalisation. Approved-algorithm list mixes classical and PQC entries without binding migration deadlines."
+          },
+          {
+            "framework": "sg-mas-trm",
+            "control_id": "MAS TRM §11.1 — Cryptography",
+            "designed_for": "Cryptographic standards for Singapore financial institutions.",
+            "insufficient_because": "Cites international standards without a binding PQC migration deadline. No SG-specific guidance on per-asset inventory or HNDL exposure analysis. Cross-border financial-record retention horizon routinely 7-10 years; HNDL exposure proportional."
+          },
+          {
+            "framework": "jp-nisc",
+            "control_id": "NISC CSP guidance on PQC",
+            "designed_for": "Japanese central-government cryptographic recommendations.",
+            "insufficient_because": "CRYPTREC recommendations include PQC candidates but binding adoption for non-federal entities is voluntary. Long-tail enterprise migration unconstrained."
+          },
+          {
+            "framework": "hipaa",
+            "control_id": "Security Rule §164.312(a)(2)(iv) — Encryption and decryption",
+            "designed_for": "Addressable implementation specification for encryption of ePHI.",
+            "insufficient_because": "Encryption requirement is technology-agnostic. PHI retention horizon routinely exceeds 25 years (paediatric records to age of majority + 7 years, mental health, generational genetic data). HNDL exposure across the full retention window with no framework signal."
+          }
+        ]
+      },
+      "skill_preload": [
+        "pqc-first",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "global-grc",
+        "policy-exception-gen",
+        "security-maturity-tiers"
+      ]
+    },
+    "direct": {
+      "threat_context": "Post-quantum migration landscape mid-2026: FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA) finalised 2024-08-13 — production-ready for 21 months. NIST SP 800-227 (Recommendations for Discrete Logarithm Cryptography post-PQ transition) published Q1 2025. NIST IR 8547 (migration roadmap) draft published 2024; final expected mid-2026. CNSA 2.0 binding deadline for US NSS systems is 2027 (preferred) and 2030 (mandatory). OMB M-23-02 + NSM-10 mandate annual federal PQC inventory submission. ETSI TS 119 312 v1.5.1 updates cryptographic-suite recommendations to include PQC profiles. BSI TR-02102 publishes annual PQC migration recommendations. EU ENISA's PQC transition guidance is advancing toward binding Member State implementation through 2027-2028. The deployment gap is operational, not technical: OpenSSL 3.5 ships native ML-KEM/ML-DSA/SLH-DSA, OpenSSH 9.0+ ships sntrup761x25519, Chrome (v124+) negotiates X25519MLKEM768 with capable servers — yet a randomly-sampled enterprise endpoint in mid-2026 typically does not negotiate the hybrid group. The migration blockers are programme blockers, not algorithm blockers: legacy HSMs without PQC firmware (Thales Luna G7 awaiting PQC, AWS CloudHSM ML-KEM in beta, Entrust nShield 5 roadmap), embedded TLS stacks (mbedTLS, wolfSSL, BoringSSL forks shipping in operator products), third-party SaaS without PQC commitment (most CRM, ERP, payroll providers as of mid-2026), and downstream interop (a hybrid-only configuration breaks legacy peers that do not negotiate the hybrid group). HNDL is operational reality: state-level adversaries have been recording encrypted traffic at scale since 2013 (publicly known). Aggressive academic CRQC estimates now appear in peer-reviewed cryptanalysis literature in the 5-8 year horizon from mid-2026; conservative estimates 12-15 years. Either horizon makes today's classical-only TLS handshakes already-exfiltrated within the data's sensitivity window for any record with retention > 5 years.",
+      "rwep_threshold": {
+        "escalate": 70,
+        "monitor": 45,
+        "close": 25
+      },
+      "framework_lag_declaration": "NIST 800-53 SC-12/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0457/1546, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit fully-classical cryptographic posture as compliant. NIST itself is the exception via NIST IR 8547 + FIPS 203/204/205 + OMB M-23-02 + CNSA 2.0 — but the 800-53 control catalogue is unchanged. ISO 27001:2022 was published before PQC finalisation and has no scheduled amendment. PCI Council and EU regulators publicly aware but have not amended binding controls. Lag = ~365 days behind operational PQC readiness (FIPS 203/204/205 finalised 2024-08-13) and 5-15 years behind the CRQC horizon that drives HNDL. Compensating controls (per-asset inventory + per-asset migration plan + vendor SLA + exposure-window analysis + downgrade-detection monitoring) must close this programme-level gap before SLA-only compliance can be accepted. None of the frameworks in scope require any of those five compensating controls.",
+      "skill_chain": [
+        {
+          "skill": "pqc-first",
+          "purpose": "Enumerate per-asset asymmetric cryptography in use; classify by sensitivity horizon; identify migration blockers; produce per-asset migration plan with target algorithm + sunset date.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each per-asset gap to the framework control that should have caught it; surface which jurisdictions have binding deadlines vs advisory guidance.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the five theater tests in govern.theater_fingerprints; emit verdict per pattern.",
+          "required": true
+        },
+        {
+          "skill": "global-grc",
+          "purpose": "Cross-walk findings to per-jurisdiction obligations (CNSA 2.0, OMB M-23-02, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, BSI TR-02102, ACSC ISM) and notification clocks.",
+          "skip_if": "jurisdiction_obligations.length == 0",
+          "required": false
+        },
+        {
+          "skill": "security-maturity-tiers",
+          "purpose": "Place the operator's migration programme on a maturity tier (no-inventory / inventory-without-plan / inventory-with-plan / plan-with-vendor-SLAs / plan-in-execution / plan-substantially-complete) to bound the residual-risk statement.",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for assets that cannot reach hybrid PQC in this cycle.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 22500,
+        "breakdown": {
+          "govern": 3000,
+          "direct": 1800,
+          "look": 2600,
+          "detect": 3200,
+          "analyze": 5000,
+          "validate": 4100,
+          "close": 2800
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "cryptographic-asset-register",
+          "type": "config_file",
+          "source": "Read the operator's cryptographic asset register if one exists: typical paths include /etc/crypto-inventory.{yaml,json,csv}, organisation-owned `crypto-register/` directory, GRC platform export (ServiceNow GRC, Archer, OneTrust). If absent, this absence is itself the load-bearing finding for NIS2 Art.21(2)(h) compliance.",
+          "description": "The per-asset cryptographic register. Each entry should declare: asset_id, asset_owner, data_sensitivity_horizon_years, current_algorithm, current_key_size, pqc_migration_target, classical_sunset_date, migration_blocker, vendor_dependency, compensating_controls. Absence of register OR absence of any one of those fields per entry is a finding.",
+          "required": true,
+          "air_gap_alternative": "Walk the operator's CMDB / asset list + per-asset configuration files locally; reconstruct register from filesystem inventory."
+        },
+        {
+          "id": "asset-cmdb-extract",
+          "type": "config_file",
+          "source": "CMDB / asset-inventory export covering every system that processes, stores, or transmits sensitive data. Examples: ServiceNow CMDB export, Snipe-IT API dump, AWS Config inventory, Azure Resource Graph query, GCP Asset Inventory export. Capture asset_id, owner, environment, data classification, retention policy reference.",
+          "description": "The denominator for the migration programme. Every asset needs a row in the cryptographic register; missing rows in the register that exist in the CMDB are an inventory gap.",
+          "required": true,
+          "air_gap_alternative": "Local filesystem walk + locally-cached CMDB extract; mark cloud-resource inventory as inventory_gap=cloud_api_unavailable."
+        },
+        {
+          "id": "hsm-kms-inventory",
+          "type": "config_file",
+          "source": "List the operator's HSM + KMS deployments: AWS CloudHSM cluster IDs + firmware versions, AWS KMS key list + algorithm spec, Azure Key Vault HSM-backed key inventory, GCP Cloud HSM key inventory, on-prem Thales Luna / Entrust nShield / Utimaco / Atos / Yubico HSM2 firmware versions. Capture vendor + model + firmware-version + supported-algorithm list per appliance.",
+          "description": "HSM/KMS PQC capability is the most common migration blocker. Vendor + firmware + algorithm support determines per-asset migration timeline.",
+          "required": true,
+          "air_gap_alternative": "If cloud HSM APIs unreachable, fall back to operator's HSM purchase records + vendor advisory PDFs; mark live HSM state as inventory_gap=hsm_api_unavailable."
+        },
+        {
+          "id": "tls-library-inventory",
+          "type": "config_file",
+          "source": "Per-asset TLS library + version inventory: openssl version + libssl path on Linux hosts, schannel version on Windows, embedded TLS library + version in operator-shipped products (mbedTLS, wolfSSL, BoringSSL, BearSSL, s2n-tls). For container fleet, parse base-image labels + vendored library manifests.",
+          "description": "Library-version inventory bounds capability. OpenSSL 3.5+, BoringSSL with ML-KEM patches, wolfSSL with PQC build flags, s2n-tls with PQC-enabled — these support PQC. Earlier versions cannot without provider augmentation.",
+          "required": true,
+          "air_gap_alternative": "Local host filesystem walk only."
+        },
+        {
+          "id": "certificate-pki-inventory",
+          "type": "config_file",
+          "source": "Internal CA + external CA certificate inventory: openssl x509 -in <each cert> -noout -text for every cert in /etc/ssl/certs, /etc/pki, organisation-owned CA distribution points. Cross-reference against the operator's PKI runbook for CA hierarchy + cross-signing relationships.",
+          "description": "Certificate algorithm + sensitivity-horizon mapping. RSA-only or ECDSA-only certs protecting long-retention data flows are HNDL-recordable.",
+          "required": true,
+          "air_gap_alternative": "Local cert-store walk only; cross-signing visibility may be incomplete in air-gap mode."
+        },
+        {
+          "id": "vendor-pqc-roadmap-attestations",
+          "type": "config_file",
+          "source": "Per-vendor PQC roadmap + commitment evidence: vendor advisory PDFs, MSA / DPA amendments naming PQC delivery dates, support-portal commitments, vendor's published PQC migration milestone announcements. One entry per third-party SaaS or hardware vendor that handles operator data.",
+          "description": "Vendor roadmap is the migration-plan input for assets the operator does not own. A vendor without a committed delivery date is a migration blocker that requires alternative-vendor planning.",
+          "required": true,
+          "air_gap_alternative": "Locally cached vendor PDFs + MSA archive only."
+        },
+        {
+          "id": "data-retention-policy",
+          "type": "config_file",
+          "source": "Read the operator's data-retention policy: per-data-class retention horizon, regulatory basis (GDPR Art.5 + sectoral retention), records-management runbook. Map data classes to assets via the cryptographic asset register.",
+          "description": "Retention horizon × current algorithm × CRQC estimate = HNDL exposure window per asset. Without a retention policy, exposure cannot be computed.",
+          "required": true,
+          "air_gap_alternative": "Local policy filesystem walk."
+        },
+        {
+          "id": "compensating-control-inventory",
+          "type": "config_file",
+          "source": "Inventory of compensating controls in place for the HNDL gap window: VPN PQC tunnel overlay (Wireguard with PQC PSK augmentation, AWS Site-to-Site VPN with IKEv2 PQC, IPsec with hybrid keying), network segmentation for classical-only assets, shortened retention for classical-protected data, downgrade-detection monitoring.",
+          "description": "What the operator runs today to mitigate the gap. Maps to the residual-risk acceptance.",
+          "required": false
+        },
+        {
+          "id": "regulator-deadline-tracker",
+          "type": "config_file",
+          "source": "Per-jurisdiction PQC migration deadline tracker: CNSA 2.0 2027/2030 NSS deadlines if operator is US federal, OMB M-23-02 annual cycle, BSI TR-02102 yearly publication, ENISA implementing acts, ACSC ISM quarterly cycle, MAS TRM updates.",
+          "description": "Per-jurisdiction binding deadlines that the migration plan must align to. Absence = no programme orchestration against external clocks.",
+          "required": false
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "operator_full_asset_estate",
+        "depth": "deep",
+        "sampling": "complete register reconciliation against CMDB. Sample (5%, min 20 assets) for handshake-level validation via the crypto playbook. Re-collect on every regulator deadline shift, every vendor PQC milestone, every HSM firmware update."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator owns the cryptographic migration programme and the underlying assets",
+          "if_false": "Halt with authorisation_required."
+        },
+        {
+          "assumption": "CMDB / asset inventory is reachable and reasonably complete",
+          "if_false": "The denominator for the migration programme is unknown. Mark cryptographic-asset-register as visibility_gap=no_cmdb and downgrade overall confidence to medium; the absence of an asset register is itself a top finding."
+        },
+        {
+          "assumption": "data-retention policy is documented",
+          "if_false": "HNDL exposure window per asset is uncomputable. Mark exposure-analysis as inconclusive; raise undefined-retention as a separate finding under NIS2 Art.21(2)(c)/(h) and DORA Art.9."
+        },
+        {
+          "assumption": "vendor PQC roadmaps are obtainable",
+          "if_false": "Vendor-dependent assets cannot be planned. Mark each affected asset as migration_blocker=vendor_roadmap_unknown and escalate vendor-engagement as a programme-level action."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "cryptographic-asset-register",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "asset-cmdb-extract",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "hsm-kms-inventory",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "vendor-pqc-roadmap-attestations",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "data-retention-policy",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "regulator-deadline-tracker",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "no-cryptographic-asset-register",
+          "type": "behavioral_signal",
+          "value": "The cryptographic-asset-register artefact is empty / not found / does not enumerate per-asset rows. The CMDB extract returns N>0 assets that process sensitive data and the register returns 0 corresponding entries.",
+          "description": "Absence of register = NIS2 Art.21(2)(h) cryptographic-inventory obligation unmet. The migration programme cannot exist without the denominator.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the absence is not a search-path issue: check additional register locations (organisation-owned GRC platform, OneTrust / Archer / ServiceNow GRC module, operator's chosen records-management system). If a register exists in a non-default location, retrieve and re-evaluate.",
+            "Confirm the CMDB is itself complete: if the CMDB returns 0 assets in scope (e.g. a brand-new entity), then no register is needed yet and this indicator should not fire. The finding is conditional on CMDB-says-assets-exist + register-says-no-rows."
+          ]
+        },
+        {
+          "id": "register-incomplete-per-asset-fields",
+          "type": "behavioral_signal",
+          "value": "The cryptographic-asset-register exists but rows are missing one or more required fields: data_sensitivity_horizon_years, pqc_migration_target, classical_sunset_date, migration_blocker, vendor_dependency.",
+          "description": "Register-without-fields = inventory without programme. Each missing field corresponds to a binding NIS2/DORA/CRA/OMB requirement.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the missing field is not externally referenced (e.g. data_sensitivity_horizon_years may live in the data-retention-policy artefact rather than the register row, joined by data_class_id). If the join resolves the field, demote.",
+            "Confirm the asset is not explicitly marked as out-of-scope for the migration programme (e.g. an ephemeral dev sandbox with retention < 30 days documented in the asset row). Out-of-scope assets do not need migration-target fields populated."
+          ]
+        },
+        {
+          "id": "hsm-firmware-no-pqc",
+          "type": "log_pattern",
+          "value": "Within the hsm-kms-inventory artefact: at least one HSM/KMS appliance reports a firmware version whose vendor advisory documents 'PQC not supported' OR 'PQC roadmap TBD' for the algorithms ML-KEM, ML-DSA, SLH-DSA. Cross-reference vendor-pqc-roadmap-attestations — if the vendor commitment is 'TBD' or beyond the operator's binding deadline, the appliance is a migration blocker.",
+          "description": "HSM/KMS without PQC firmware = migration blocker for every key the appliance custodies.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the firmware version is the appliance's CURRENT version. Vendors typically ship PQC support in newer firmware lines; if a newer firmware is published and the operator has not upgraded, the finding is operator-side, not vendor-side. The remediation path differs.",
+            "Confirm the appliance is actually in the path for long-retention-data assets. An HSM that custodies only short-lived dev / ephemeral keys is lower-blast-radius than one that custodies the production CA root."
+          ]
+        },
+        {
+          "id": "vendor-no-pqc-commitment",
+          "type": "log_pattern",
+          "value": "Within the vendor-pqc-roadmap-attestations artefact: at least one vendor handling operator data records no committed delivery date for PQC support, OR the committed date is beyond the operator's binding regulatory deadline for the affected jurisdiction.",
+          "description": "Vendor without PQC commitment = persistent migration blocker requiring alternative-vendor or contractual escalation.",
+          "confidence": "high",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "Confirm the data routed through the vendor has retention horizon > CRQC estimate. A vendor handling only sub-1-year data with no PQC commitment is a lower-priority finding.",
+            "Confirm the vendor genuinely lacks commitment vs. the operator has not asked. Sometimes the contractual SLA exists but is not centrally tracked; check the legal / vendor-management archive before flagging."
+          ]
+        },
+        {
+          "id": "long-retention-classical-only-asset",
+          "type": "log_pattern",
+          "value": "Cross-join cryptographic-asset-register × data-retention-policy: any asset with retention_horizon_years > 5 AND current_algorithm in {RSA-1024, RSA-2048, RSA-3072, ECDSA-P256, ECDSA-P384, ECDH-X25519, ECDH-P256, ECDH-P384} AND pqc_migration_target == null OR classical_sunset_date == null OR classical_sunset_date > today + retention_horizon_years.",
+          "description": "Asset with retention horizon exceeding aggressive CRQC estimate, currently protected by classical-only crypto, with no migration plan. Primary HNDL-exposure indicator.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the asset is in the recording surface — a fully air-gapped asset behind a network boundary not reachable by the HNDL adversary's recording capability has lower exposure. Score by reachability of the recording surface, not abstract retention alone.",
+            "Confirm the classical-only protection is the ONLY layer. Layered envelopes (e.g. AES-256 symmetric over PQC-wrapped key) are not classical-only even if the outer transport is classical. Read the data-flow diagram, not just the transport summary.",
+            "Confirm sensitivity horizon truly extends beyond CRQC. If the data class becomes worthless before CRQC (e.g. ephemeral session keys, expired ad-targeting profiles), the asset's exposure window collapses."
+          ]
+        },
+        {
+          "id": "policy-without-vendor-sla",
+          "type": "log_pattern",
+          "value": "The operator's PQC migration policy names vendor PQC roadmap as a dependency AND the vendor-pqc-roadmap-attestations artefact contains no contractual SLA / MSA amendment / DPA addendum binding the vendor to a delivery date.",
+          "description": "Policy that depends on vendor roadmap without contractual SLA = vendor-roadmap-as-migration-plan theater.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "regulator-deadline-missing-or-stale",
+          "type": "log_pattern",
+          "value": "regulator-deadline-tracker artefact is empty OR contains deadlines whose last-reviewed date is > 180 days old. Cross-reference: CNSA 2.0, OMB M-23-02, NIS2 Art.21(2)(h) implementing-act publications, BSI TR-02102 yearly publication, ACSC ISM quarterly cycle.",
+          "description": "Regulator-deadline tracker stale = programme not orchestrated against external clocks; high risk of missing binding deadlines.",
+          "confidence": "high",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "Confirm the operator is in jurisdictions where these deadlines bind. A non-federal-US, non-EU, non-AU entity may have a narrower deadline tracker by design.",
+            "Confirm the staleness is not coverage-completeness: an updated-yesterday tracker that still misses a jurisdiction is worse than a 180-day-stale tracker that names every binding deadline."
+          ]
+        },
+        {
+          "id": "no-downgrade-detection",
+          "type": "behavioral_signal",
+          "value": "The compensating-control-inventory artefact does not enumerate a control that detects classical-fallback negotiation on services configured for hybrid PQC. Typical signals: server-side handshake-log analytics flagging non-hybrid completed handshakes, SIEM rule on `selected_group != X25519MLKEM768 AND service in hybrid_pqc_inventory`.",
+          "description": "No downgrade detection = hybrid configuration silently regresses without operator awareness during the compatibility window.",
+          "confidence": "high",
+          "deterministic": false
+        },
+        {
+          "id": "embedded-tls-stack-classical-only",
+          "type": "log_pattern",
+          "value": "Within the tls-library-inventory artefact: an operator-shipped product (firmware, IoT, embedded device) declares an embedded TLS stack (mbedTLS < 3.6, wolfSSL without --enable-experimental --enable-mlkem build flags, BoringSSL without PQC patch, BearSSL) AND the product is in active customer deployment.",
+          "description": "Embedded TLS stack classical-only = product fleet HNDL-exposed for the full operational life of every deployed unit.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the embedded product handles data with retention > 5 years AND is in a reachable recording surface. Embedded telemetry beacons sending public weather data may not be in scope.",
+            "Confirm there is no firmware update channel that can deliver a PQC-capable stack. If the channel exists and the operator's plan includes the upgrade, the finding shifts from migration-blocker to migration-in-progress.",
+            "Confirm the device is not behind a PQC-capable gateway. A classical-only embedded device behind a PQC tunnel inherits the gateway's hybrid posture for the upstream link."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "no-cryptographic-asset-register",
+          "benign_pattern": "Operator is a brand-new entity in onboarding phase; CMDB itself is empty.",
+          "distinguishing_test": "Confirm CMDB returns N > 0 assets that handle sensitive data. If N == 0, the register's absence is correctly explained by no in-scope estate."
+        },
+        {
+          "indicator_id": "long-retention-classical-only-asset",
+          "benign_pattern": "Asset is documented as handling only data with sensitivity that expires within the retention horizon (e.g. ad-targeting profiles invalid after 90 days even if technically retained for 3 years).",
+          "distinguishing_test": "Distinguish retention-for-compliance from retention-because-data-is-still-sensitive. If the data is retained only to satisfy a regulatory minimum and ceases to have intelligence value within the horizon, downgrade severity."
+        },
+        {
+          "indicator_id": "vendor-no-pqc-commitment",
+          "benign_pattern": "Vendor handles only short-lived ephemeral data with no HNDL exposure.",
+          "distinguishing_test": "Verify the data class routed to the vendor has retention < CRQC-aggressive estimate AND the data ceases to have value before CRQC. If both hold, demote to low."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one of {no-cryptographic-asset-register, register-incomplete-per-asset-fields, long-retention-classical-only-asset, hsm-firmware-no-pqc, embedded-tls-stack-classical-only} fires AND the operator is in scope for any binding jurisdictional deadline.",
+        "inconclusive": "CMDB or retention-policy artefacts incomplete; cannot compute per-asset exposure window. Register may exist but cannot be reconciled.",
+        "not_detected": "Cryptographic-asset-register present + complete for every CMDB asset, every entry has populated pqc_migration_target + classical_sunset_date, vendor-pqc-roadmap-attestations has contractual SLA for every vendor-dependent asset, downgrade-detection control is active, regulator-deadline tracker is current within 90 days."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "no-cryptographic-asset-register",
+          "rwep_factor": "blast_radius",
+          "weight": 30,
+          "notes": "Programme blast radius = whole estate. Register absence implicates every asset."
+        },
+        {
+          "signal_id": "no-cryptographic-asset-register",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "HNDL recording is operational today against the whole estate by default when no inventory drives selective hardening."
+        },
+        {
+          "signal_id": "long-retention-classical-only-asset",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Per-asset HNDL recording is operational. Confirmed adversary capability at the recording-collection step."
+        },
+        {
+          "signal_id": "long-retention-classical-only-asset",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Per-asset blast radius proportional to retention horizon × data sensitivity."
+        },
+        {
+          "signal_id": "hsm-firmware-no-pqc",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "HSM blast radius = every key custodied. Often includes CA root + signing keys."
+        },
+        {
+          "signal_id": "embedded-tls-stack-classical-only",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Embedded fleet HNDL-exposure persists for the full operational life of each unit."
+        },
+        {
+          "signal_id": "vendor-no-pqc-commitment",
+          "rwep_factor": "patch_available",
+          "weight": -5,
+          "notes": "Vendor-side; operator cannot patch unilaterally. Modest mitigation via alternative-vendor planning."
+        },
+        {
+          "signal_id": "no-downgrade-detection",
+          "rwep_factor": "active_exploitation",
+          "weight": 5,
+          "notes": "Silent regression risk during compatibility window."
+        },
+        {
+          "signal_id": "no-cryptographic-asset-register",
+          "rwep_factor": "ai_weaponization",
+          "weight": 5,
+          "notes": "AI-accelerated cryptanalysis tooling shortens the CRQC horizon estimate."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If an adversary records the operator's classical-encrypted traffic + retains operator-shipped product captures today and decrypts on the CRQC day (mid-2030s), what scope of compromise is the operator's MIGRATION PROGRAMME failure realistically delivering?",
+        "scoring_rubric": [
+          {
+            "condition": "Operator estate handles only ephemeral data with < 1-year sensitivity horizon AND no operator-shipped products.",
+            "blast_radius_score": 1,
+            "description": "Data stale by CRQC day; programme failure carries minimal HNDL cost."
+          },
+          {
+            "condition": "Operator estate handles internal corporate data with 1-3 year horizon; no regulated PII at scale.",
+            "blast_radius_score": 2,
+            "description": "Programme failure produces embarrassment + competitive cost; no regulatory notification obligations."
+          },
+          {
+            "condition": "Operator estate handles personal data (GDPR / HIPAA / PCI) with 3-10 year retention.",
+            "blast_radius_score": 3,
+            "description": "Programme failure produces delayed-clock notification obligations the framework does not yet contemplate; class-action exposure across affected data subjects."
+          },
+          {
+            "condition": "Operator estate handles financial transaction logs, long-retention healthcare records, IP/trade secrets, 10-25 year sensitivity OR ships products with > 5 year operational life under EU CRA scope.",
+            "blast_radius_score": 4,
+            "description": "Programme failure produces massive long-tail decryption event + significant material loss + regulatory action under multiple jurisdictions."
+          },
+          {
+            "condition": "Operator estate handles classified, state-sensitive, biometric template, or generational sensitivity data (25+ year horizon) OR is in CNSA 2.0 scope.",
+            "blast_radius_score": 5,
+            "description": "Programme failure delivers strategic, category-defining compromise on CRQC day. Loss is irreversible."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Cryptographic migration is in flight per NIS2 Art.21(2)(h), DORA Art.9, OMB M-23-02, EU CRA Annex I — the migration policy is published, the algorithms are selected, and FIPS-validated modules are deployed.",
+        "audit_evidence": "Published cryptographic-migration policy, FIPS 140-3 validated module deployment record, vendor announcements of PQC roadmap, NIST SP 800-227 alignment statement.",
+        "reality_test": "Pull the cryptographic-asset-register. Confirm (a) row count matches CMDB asset count for in-scope assets, (b) every row has populated data_sensitivity_horizon_years + current_algorithm + pqc_migration_target + classical_sunset_date + migration_blocker + vendor_dependency fields, (c) every vendor named as dependency has a contractual SLA naming a delivery date, (d) every classical_sunset_date precedes the asset's data_sensitivity_horizon expiry, (e) a downgrade-detection control is active on every asset migrated to hybrid configuration. Theater verdict if any of (a)-(e) fails: the policy exists but the programme does not.",
+        "theater_verdict_if_gap": "Operator demonstrates a published migration policy, vendor roadmap citations, and FIPS-validated module deployments while having no per-asset register, no per-asset migration targets, no vendor SLAs, and no downgrade detection. Either (a) build the per-asset register with all six fields and bring it under regulatory submission cadence, (b) escalate vendors without delivery SLAs to alternative-vendor or contractual-escalation, (c) deploy downgrade detection on every hybrid-configured asset, (d) reconcile classical sunset dates against retention horizons asset-by-asset, OR (e) generate a defensible policy exception via policy-exception-gen acknowledging the HNDL acceptance + crypto-agility roadmap."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-13 — Cryptographic Protection",
+          "actual_gap": "Cites FIPS-validated modules without distinguishing classical-only validations from FIPS 203/204/205 PQC validations. No per-asset migration tracking. No HNDL exposure analysis.",
+          "required_control": "Add SC-13(PQC) sub-control: any data with sensitivity horizon > aggressive-CRQC-estimate must be protected by FIPS 203/204/205 hybrid or PQC-pure algorithms. Per-asset inventory + sunset register + migration milestones tied to OMB M-23-02 annual cycle."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-12 — Cryptographic Key Establishment and Management",
+          "actual_gap": "Key-lifecycle controls are algorithm-agnostic. No requirement for KMS to support hybrid keys or track key sensitivity horizon vs. CRQC estimate.",
+          "required_control": "Add SC-12(PQC) sub-control requiring KMS to support FIPS 203/204/205 algorithms + hybrid key types; per-key sensitivity-horizon attribute + automated classical-key sunset enforcement."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.24 — Use of cryptography",
+          "actual_gap": "Published 2022 before PQC finalisation. No algorithm-currency requirement. No per-asset migration tracking.",
+          "required_control": "Amendment requiring: (a) per-asset cryptographic register, (b) per-asset sunset dates aligned to retention horizon, (c) hybrid PQC default for new deployments protecting data with horizon > 5 years, (d) crypto-agility built into architecture decisions."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.25 — Secure development lifecycle",
+          "actual_gap": "Does not require crypto-agility. PQC migration becomes re-engineering project that the control does not flag.",
+          "required_control": "Add crypto-agility requirement to A.8.25: design must support algorithm substitution without re-architecting. Conformance test: substitute one asymmetric algorithm with a hybrid PQC equivalent and confirm no architectural change required."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "pci-dss-4",
+          "claimed_control": "§3.6 / §4.2.1 — Strong cryptography",
+          "actual_gap": "'Strong cryptography' defined with classical minimums. No PQC obligation for long-retention cardholder data.",
+          "required_control": "Update 'strong cryptography' definition: FIPS 203/204/205 hybrid mandatory for cardholder data with retention > 5 years. Per-merchant cryptographic register filed with QSA."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(h) — Use of cryptography",
+          "actual_gap": "Names cryptography as essential measure; defers algorithm specifics to implementing acts. No per-asset enforcement.",
+          "required_control": "Implementing act to bind 'appropriate cryptography' to NIST PQC standards for essential entities. Per-essential-entity register submission cadence (annual). Per-asset migration deadlines aligned to CRQC horizon."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "dora",
+          "claimed_control": "Art.9 — ICT systems, protocols and tools (cryptographic resilience)",
+          "actual_gap": "Cryptographic-resilience language inherits NIS2 gap. Financial-entity HNDL exposure acute, framework cadence months behind.",
+          "required_control": "RTS/ITS requiring financial-entity cryptographic register with PQC migration timelines + per-vendor SLAs + downgrade detection. Annual ESA submission cadence."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I — Essential cybersecurity requirements",
+          "actual_gap": "'State-of-the-art' cryptography interpretive; no binding PQC reference. Products with > 5y operational life ship classical-only.",
+          "required_control": "Implementing act binding 'state-of-the-art' to NIST FIPS 203/204/205 for products with > 5-year operational life. Per-product cryptographic register accompanying CE marking."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "uk-caf",
+          "claimed_control": "B3 — Data security",
+          "actual_gap": "Outcome-based; does not name algorithms or migration tempo. Classical posture can be 'achieving' the outcome despite HNDL exposure.",
+          "required_control": "NCSC profile addendum: data with retention > 5y in scope must demonstrate FIPS 203/204/205 hybrid protection or documented HNDL acceptance with compensating controls."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "au-ism",
+          "claimed_control": "ISM-0457 / ISM-1546 — Approved cryptographic algorithms / Transition",
+          "actual_gap": "ISM transition guidance advisory; quarterly cadence lags FIPS 203/204/205. Mixed classical + PQC approved-algorithm list without binding migration deadlines.",
+          "required_control": "ISM update binding PQC migration deadlines per data classification + per asset class; per-Department register submission cadence aligned to ACSC quarterly cycle."
+        },
+        {
+          "finding_id": "pqc-migration-programme-failure",
+          "framework": "hipaa",
+          "claimed_control": "Security Rule §164.312(a)(2)(iv) — Encryption and decryption",
+          "actual_gap": "Encryption requirement technology-agnostic. PHI retention horizon routinely > 25 years; HNDL exposure across full retention.",
+          "required_control": "OCR guidance requiring covered entities + business associates to maintain per-asset cryptographic register + PQC migration plan with sunset dates for PHI flows."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "no-cryptographic-asset-register == fired AND jurisdiction_obligations contains NIS2-Art21-2h",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "long-retention-classical-only-asset == fired AND asset.data_sensitivity_horizon_years >= 10",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "hsm-firmware-no-pqc == fired AND any_affected_key_role == 'ca_root'",
+          "action": "trigger_playbook",
+          "target_playbook": "crypto"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater'",
+          "action": "trigger_playbook",
+          "target_playbook": "framework"
+        },
+        {
+          "condition": "embedded-tls-stack-classical-only == fired AND product_in_eu_cra_scope == true",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "build-per-asset-register",
+          "description": "Establish a per-asset cryptographic register covering every CMDB asset in scope. Required fields per row: asset_id, owner, data_sensitivity_horizon_years, current_algorithm, current_key_size, pqc_migration_target, classical_sunset_date, migration_blocker, vendor_dependency, compensating_controls. Bring under regulatory submission cadence for the operator's jurisdictions.",
+          "preconditions": [
+            "cmdb_extract_obtainable == true",
+            "data_retention_policy_documented == true",
+            "operator_assigns_register_owner == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "interim_high_value_asset_prioritisation",
+            "vendor_engagement_for_unattested_dependencies"
+          ],
+          "estimated_time_hours": 80
+        },
+        {
+          "id": "obtain-vendor-pqc-slas",
+          "description": "For every vendor named as migration dependency: open contractual addendum naming the PQC delivery date, the operator's compensating-control posture during the gap, and the alternative-vendor plan if vendor misses SLA. File the addendum in the vendor-management archive.",
+          "preconditions": [
+            "vendor_inventory_complete == true",
+            "operator_legal_team_engaged == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "alternative_vendor_shortlist_per_dependency",
+            "data_minimisation_for_vendor_handled_data"
+          ],
+          "estimated_time_hours": 60
+        },
+        {
+          "id": "deploy-downgrade-detection",
+          "description": "On every asset migrated to hybrid PQC configuration: deploy a downgrade-detection control. Sample patterns: server-side handshake-log analytics + SIEM rule on selected_group != hybrid for services in hybrid_pqc_inventory; sshd LogLevel VERBOSE + audit on kex_completion line; Caddy / nginx access log enriched with negotiated TLS group.",
+          "preconditions": [
+            "siem_or_log_aggregation_available == true",
+            "hybrid_configured_asset_inventory_present == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "alerting_on_downgrade_threshold_per_service",
+            "weekly_downgrade_report_to_security_team"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "schedule-hsm-firmware-upgrades",
+          "description": "For every HSM/KMS flagged as PQC-incapable: schedule firmware upgrade (vendor support contract) OR migration to a PQC-capable alternative. Pair with a key-migration plan: every classical-only key custodied by the appliance migrates to a hybrid key on the new firmware OR is sunset before the appliance.",
+          "preconditions": [
+            "vendor_pqc_firmware_published == true OR alternative_appliance_procurable == true",
+            "key_migration_window_within_jurisdiction_deadline == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "network_segmentation_for_classical_only_hsm",
+            "shortened_retention_for_keys_pending_migration"
+          ],
+          "estimated_time_hours": 40
+        },
+        {
+          "id": "establish-regulator-deadline-tracker",
+          "description": "Build a per-jurisdiction PQC deadline tracker covering every binding regulation the operator is subject to. Refresh on the regulator's publication cadence (BSI TR-02102 annual, ACSC ISM quarterly, OMB annual). Surface upcoming deadlines into the migration programme's schedule.",
+          "preconditions": [
+            "operator_jurisdictional_scope_documented == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "automated_regulator_publication_monitoring",
+            "quarterly_deadline_review_with_legal"
+          ],
+          "estimated_time_hours": 16
+        },
+        {
+          "id": "embedded-product-firmware-migration",
+          "description": "For embedded products in customer deployment: schedule firmware update path that delivers a PQC-capable TLS stack OR document end-of-life + customer-migration plan if no update path exists. For products in EU CRA scope, file the migration plan as part of conformance documentation.",
+          "preconditions": [
+            "firmware_update_channel_exists == true OR end_of_life_communicable_to_customers == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "pqc_gateway_for_classical_only_devices",
+            "customer_notification_of_hndl_exposure"
+          ],
+          "estimated_time_hours": 200
+        },
+        {
+          "id": "policy-exception",
+          "description": "For any asset that cannot reach hybrid PQC posture within the migration cycle: generate auditor-ready policy exception with crypto-agility roadmap + compensating controls + time-bound risk acceptance + alternative-vendor or end-of-life plan.",
+          "preconditions": [
+            "remediation_paths[1..6] blocked for the specific asset",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 7,
+          "compensating_controls": [
+            "network_segmentation",
+            "vpn_pqc_tunnel_overlay",
+            "shortened_retention_for_classical_protected_data",
+            "downgrade_detection_alerting",
+            "annual_crypto_agility_review",
+            "vendor_pqc_roadmap_tracking"
+          ],
+          "estimated_time_hours": 8
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "register-row-count-matches-cmdb",
+          "test": "Compute COUNT(cryptographic-asset-register) WHERE in_scope = true. Compare against COUNT(asset-cmdb-extract) WHERE handles_sensitive_data = true. Confirm equal.",
+          "expected_result": "Register row count equals CMDB in-scope asset count.",
+          "test_type": "functional"
+        },
+        {
+          "id": "every-row-has-required-fields",
+          "test": "For each row in the register, assert all of: data_sensitivity_horizon_years, current_algorithm, pqc_migration_target, classical_sunset_date, migration_blocker, vendor_dependency populated (non-null).",
+          "expected_result": "100% of register rows have all required fields.",
+          "test_type": "functional"
+        },
+        {
+          "id": "sunset-date-precedes-retention-horizon",
+          "test": "For each register row with classical-only current_algorithm: assert classical_sunset_date < today + retention_horizon_years.",
+          "expected_result": "0 rows where sunset date falls outside the retention horizon.",
+          "test_type": "functional"
+        },
+        {
+          "id": "vendor-sla-present-per-dependency",
+          "test": "For each register row with non-null vendor_dependency: assert a contractual SLA exists in vendor-pqc-roadmap-attestations with a delivery date.",
+          "expected_result": "100% of vendor-dependent rows have an SLA on file.",
+          "test_type": "functional"
+        },
+        {
+          "id": "downgrade-detection-active-on-hybrid-assets",
+          "test": "For each register row where pqc_migration_target indicates hybrid PQC AND classical_sunset_date is past: confirm a downgrade-detection control fires when a synthetic classical-only handshake is attempted against the service.",
+          "expected_result": "Synthetic classical-handshake triggers an alert within the SIEM / log-analytics threshold.",
+          "test_type": "exploit_replay"
+        },
+        {
+          "id": "regulator-deadline-tracker-current",
+          "test": "Read the regulator-deadline-tracker artefact. Assert last_reviewed dates are within the regulator's publication cadence (annual for BSI / OMB, quarterly for ACSC).",
+          "expected_result": "Every tracked deadline last_reviewed within its publication cadence.",
+          "test_type": "functional"
+        },
+        {
+          "id": "embedded-product-migration-documented",
+          "test": "For each embedded product in customer deployment with classical-only TLS stack: confirm either (a) firmware update path documented with target ship date, OR (b) end-of-life + customer-migration plan documented and filed.",
+          "expected_result": "Every embedded-product row has a documented migration or end-of-life plan.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Operator estate retains classical-only cryptographic protection for assets whose migration is blocked by vendor or embedded constraints, leaving an HNDL-exposure window for data with sensitivity horizon overlapping CRQC estimates.",
+        "why_remains": "PQC migration is multi-year and depends on vendor + ecosystem readiness outside operator control. HSM/KMS firmware lines, embedded TLS stacks, and third-party SaaS providers have heterogeneous PQC delivery cadences. Crypto-agility is an architecture investment, not a single fix. Until vendor SLAs and ecosystem readiness close, the operator carries HNDL exposure across the unmigrated subset.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "per_asset_register_with_sunset_dates",
+          "vendor_sla_tracking_with_alternative_vendor_plans",
+          "downgrade_detection_on_hybrid_configured_assets",
+          "network_segmentation_for_classical_only_assets",
+          "vpn_pqc_tunnel_overlay_where_feasible",
+          "shortened_retention_where_business_allows",
+          "annual_crypto_agility_programme_review"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "attestation",
+          "description": "Cryptographic-asset-register snapshot (signed) with row count matching CMDB in-scope asset count + all required fields populated + sunset dates precede retention horizons.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nis2-art21-2h",
+            "dora-art9",
+            "iso-27001-2022-A.8.24",
+            "us-omb-m-23-02",
+            "eu-cra-annex-i"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Vendor-SLA pack with contractual addenda for every vendor-dependent asset + alternative-vendor shortlist per dependency.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "dora-art9",
+            "nis2-art21-2d",
+            "nis2-art21-2h",
+            "iso-27001-2022-A.5.19"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Downgrade-detection control conformance test: synthetic classical-handshake against every hybrid-configured asset; expected alert generated.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "nist-800-53-SC-8",
+            "nist-800-53-SI-4",
+            "iso-27001-2022-A.8.16"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Regulator-deadline tracker snapshot showing per-jurisdiction binding deadlines + last_reviewed dates within publication cadence.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "us-omb-m-23-02",
+            "us-cnsa-2-0",
+            "bsi-tr-02102",
+            "acsc-ism-1546"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Embedded-product migration plan filings (firmware update channel + ship date OR end-of-life + customer-migration plan) for every operator-shipped product in EU CRA scope.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "eu-cra-annex-i",
+            "eu-cra-art-13"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_FIPS_PQC_standard_published",
+          "interval": "on_event"
+        },
+        {
+          "condition": "NIST_IR_8547_amendment",
+          "interval": "on_event"
+        },
+        {
+          "condition": "CNSA_2_0_milestone_published",
+          "interval": "on_event"
+        },
+        {
+          "condition": "vendor_pqc_firmware_release_for_inventoried_appliance",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_CRQC_estimate_published_in_peer_reviewed_literature",
+          "interval": "on_event"
+        },
+        {
+          "condition": "annual_register_submission_cycle",
+          "interval": "365d"
+        },
+        {
+          "condition": "quarterly_programme_review",
+          "interval": "90d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "cryptographic_asset_register",
+          "vendor_sla_pack",
+          "downgrade_detection_conformance_report",
+          "regulator_deadline_tracker_snapshot",
+          "embedded_product_migration_plan_filings",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Harvest-now-decrypt-later at the programme level: operator has no per-asset register, no per-asset migration target, no vendor SLA, no downgrade detection, no regulator-deadline orchestration. Adversary records classical-encrypted traffic against operator's whole estate today; CRQC-day decryption recovers data across the full retention horizon.",
+          "control_gap": "Frameworks treat PQC migration as policy + algorithm selection rather than as a per-asset migration programme. None require per-asset register + sunset dates + vendor SLAs + downgrade detection as a binding control set.",
+          "framework_gap": "NIST SC-12/SC-13, ISO A.8.24/A.8.25, PCI 3.6/4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0457/1546, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit classical-only posture as compliant. Federal cycle (CNSA 2.0, OMB M-23-02, NIST SP 800-227, NIST IR 8547) further along but commercial framework cadence ~365 days behind operational PQC readiness.",
+          "new_control_requirement": "Add a 'cryptographic migration programme' sub-control across the eleven framework controls listed above requiring: (a) per-asset cryptographic register with mandatory fields, (b) per-vendor SLA naming PQC delivery date, (c) per-asset classical sunset date preceding retention horizon, (d) downgrade-detection control on every hybrid-configured asset, (e) per-jurisdiction regulator-deadline tracker refreshed at publication cadence, (f) annual programme review against published CRQC estimates and FIPS PQC standard amendments."
+        },
+        "feeds_back_to_skills": [
+          "pqc-first",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "global-grc",
+          "security-maturity-tiers",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.21(2)(h) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "per_asset_cryptographic_inventory",
+            "pqc_migration_plan_with_per_asset_target_dates",
+            "classical_algorithm_sunset_register"
+          ],
+          "draft_notification": "NIS2 Art.21(2)(h) cryptographic-inventory submission: ${entity_name} (essential entity, jurisdiction ${member_state}) maintains a per-asset cryptographic register dated ${register_snapshot_date}. In-scope assets: ${in_scope_asset_count}. Assets currently protected by hybrid PQC: ${hybrid_pqc_count}. Assets with documented classical sunset dates: ${classical_with_sunset_count}. Assets requiring policy exception: ${exception_count}. Per-vendor SLA coverage: ${vendor_sla_coverage_pct}%. Next register submission cycle: ${next_submission_date}."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.9 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "financial_records_retention_horizon_matrix",
+            "per_asset_pqc_migration_status",
+            "third_party_provider_pqc_roadmap_attestation"
+          ],
+          "draft_notification": "DORA Art.9 cryptographic-resilience submission: ${financial_entity_name} attests cryptographic resilience per Art.9. Financial-records retention horizon: ${retention_horizon_summary}. Per-asset PQC migration status: ${pqc_migration_summary}. Third-party-provider PQC roadmap coverage: ${tpp_pqc_coverage_pct}%. Compensating-control posture for unmigrated assets: ${compensating_controls_summary}. Programme review cadence: ${review_cadence}."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Annex I 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "product_cryptographic_inventory",
+            "pqc_migration_plan_for_products_with_operational_life_gt_5y",
+            "classical_algorithm_sunset_register_per_product"
+          ],
+          "draft_notification": "EU CRA Annex I state-of-the-art cryptography evidence: ${manufacturer_name} attests that all in-scope products with operational life > 5 years are tracked in the product cryptographic inventory with PQC migration milestones. Affected product count: ${affected_product_count}. Products shipping hybrid PQC by default: ${hybrid_default_count}. Products with documented end-of-life migration: ${eol_migration_count}. Customer notification status: ${customer_notification_status}."
+        },
+        {
+          "obligation_ref": "US-Federal/OMB M-23-02 + NSM-10 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "federal_pqc_inventory",
+            "annual_migration_progress_report",
+            "high_value_asset_pqc_migration_prioritisation"
+          ],
+          "draft_notification": "OMB M-23-02 annual PQC migration inventory: ${federal_entity} reports ${total_assets} cryptographic assets inventoried, ${hybrid_pqc_count} migrated to PQC, ${high_value_assets_migrated} of ${high_value_assets_total} HVAs migrated. Per CNSA 2.0 binding deadline of 2030, current trajectory: ${on_track_or_off_track}. Programme owner: ${programme_owner}."
+        },
+        {
+          "obligation_ref": "US-Federal/CNSA 2.0 (NSS systems) 35040h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "nss_pqc_completion_attestation",
+            "exception_register_for_unmigrated_assets"
+          ],
+          "draft_notification": "CNSA 2.0 NSS PQC migration attestation: ${nss_entity} attests PQC migration status for NSS systems. Systems migrated: ${nss_migrated_count}. Systems on documented exception register: ${nss_exception_count}. Remediation milestones for unmigrated systems: ${remediation_milestones}."
+        },
+        {
+          "obligation_ref": "AU/ACSC ISM-1546 / ISM-0457 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "approved_algorithm_register",
+            "transition_plan_for_non_approved_algorithms"
+          ],
+          "draft_notification": "ACSC ISM approved-algorithm attestation: ${au_entity} attests per-asset alignment with ISM-0457 approved-algorithm list and ISM-1546 transition guidance. Assets on approved-algorithm list: ${approved_count}. Assets with documented transition plan: ${transition_plan_count}. Quarterly review cycle: ${quarterly_cycle_date}."
+        },
+        {
+          "obligation_ref": "DE/BSI TR-02102 (German Federal Office for Information Security) 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "per_asset_alignment_with_tr_02102_recommendations",
+            "deviation_register_with_justification"
+          ],
+          "draft_notification": "BSI TR-02102 alignment evidence: ${de_entity} attests per-asset alignment with the current TR-02102 recommendations. Aligned assets: ${aligned_count}. Documented deviations with justification: ${deviation_count}. Next TR-02102 publication cycle review: ${next_review_date}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR vendor_patch_pending == true OR architectural_impossibility == true",
+        "exception_template": {
+          "scope": "Asset(s) ${asset_list} cannot reach hybrid PQC posture within this migration cycle. Blocking factors: ${blocking_factors} (e.g. legacy HSM firmware lacking PQC, vendor SaaS without PQC commitment, embedded device end-of-life firmware, downstream interop dependencies).",
+          "duration": "until_vendor_pqc_or_180d",
+          "compensating_controls": [
+            "network_segmentation_isolating_classical_only_handshake_from_long_retention_data_flows",
+            "vpn_pqc_tunnel_overlay_for_traffic_to_or_from_affected_assets",
+            "shortened_retention_policy_for_data_protected_only_by_classical_crypto",
+            "downgrade_detection_monitoring_alerting_on_unexpected_classical_negotiation",
+            "annual_crypto_agility_review",
+            "vendor_pqc_roadmap_tracking_with_alternative_vendor_plan"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Cryptographic Protection / Use of Cryptography / Cryptographic Resilience / Essential Cybersecurity Requirements), the organisation documents a time-bound risk acceptance for asset(s) ${asset_list} that cannot reach hybrid post-quantum cryptography posture within the current migration cycle. The accepted risk class is harvest-now-decrypt-later (HNDL): adversaries with traffic-recording capability today may decrypt recorded handshakes and protected data on the cryptographically-relevant quantum computer (CRQC) date, currently estimated at 2030-2035 per aggressive academic cryptanalysis and 2035-2040 per conservative industry assessment. The organisation accepts that current framework controls define 'strong cryptography' against a classical threat model and do not require PQC for the affected asset(s). Documented gap reference: ${exceptd_framework_gap_mapping_ref}. Compensating controls in place during the exception window: ${compensating_controls}. Crypto-agility roadmap: ${crypto_agility_roadmap}. Vendor SLA status: ${vendor_sla_status}. Alternative-vendor plan: ${alternative_vendor_plan}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry} (vendor PQC firmware publication, sensitivity-horizon expiry of protected data, alternative-vendor migration complete, OR ${default_180d_expiry}, whichever is first). Re-evaluation triggers: vendor publishes PQC support, NIST issues PQC amendment to 800-53, new CRQC estimate published in peer-reviewed cryptanalysis literature, OR scheduled expiry."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "full-programme-audit",
+      "title": "Full PQC migration programme audit — per-asset register + vendor SLAs + downgrade detection + regulator deadlines",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "hndl-exposure-window-analysis",
+      "title": "HNDL exposure-window analysis across operator estate (T1040 / T1557)",
+      "applies_to": {
+        "attack_technique": "T1040"
+      }
+    },
+    {
+      "id": "cnsa-2-0-nss-readiness",
+      "title": "CNSA 2.0 NSS migration readiness check",
+      "applies_to": {
+        "always": true
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 80,
+            "monitor": 55,
+            "close": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "eu-cra-annex-i-readiness",
+      "title": "EU CRA Annex I product-cryptography readiness check for manufacturers",
+      "applies_to": {
+        "always": true
+      }
+    }
+  ]
+}

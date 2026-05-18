@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.13.5 — 2026-05-18
+
+Three new playbooks, two cross-cutting CLI behaviours, and a deterministic schema gate on `active_exploitation` vocabulary.
+
+### Features
+
+**Three new playbooks bring the canonical set to 23.**
+
+- **`post-quantum-migration`** — the operational migration programme (distinct from `crypto`, which is handshake-level). Covers per-asset cryptographic register, vendor-SLA tracking, regulator-deadline orchestration (CNSA 2.0, OMB M-23-02, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, BSI TR-02102, ACSC ISM-1546), and HNDL exposure-window analysis. Nine indicators including `no-cryptographic-asset-register`, `hsm-firmware-no-pqc` (Thales/Entrust/CloudHSM migration blocker), `long-retention-classical-only-asset`, and `embedded-tls-stack-classical-only`. 13 framework-gap mappings (NIST SC-12/SC-13, ISO A.8.24/A.8.25, PCI 3.6/4.2.1, NIS2/DORA/EU CRA, UK CAF, AU ISM, MAS TRM, JP NISC, HIPAA). Feeds into `crypto` + `framework` + `sbom`.
+
+- **`ai-discovered-cve-triage`** — operator-side response to AI-discovered CVE arrival. Anchors on CVE-2026-31431 (Copy Fail, Theori+Xint), CVE-2026-46300 (Fragnesia, Zellic AI-agentic), CVE-2026-42945 (NGINX Rift, depthfirst — first publicly-attributed AI-discovered nginx CVE), the GTIG 41% AI-zero-day statistic, and Hard Rule #7. Seven indicators including `ai-discovery-attribution-band-c-unverified` (don't apply +15 ai_factor on unverified claims), `ai-discovery-feed-coverage-incomplete` (operator pipeline misses Theori/depthfirst/Zellic/GTIG/Project Zero AI sources), and `asset-unpatched-past-rwep-sla` (RWEP-derived SLA: 4h ≥ 90, 24h 75–89, 72h 60–74). Feeds into `framework` + `kernel` + `sbom` + `runtime`.
+
+- **`supply-chain-recovery`** — post-compromise recovery workflow (distinct from `sbom`, which is pre-incident hygiene). Anchors on Shai-Hulud (Sep 2025 / Nov 2025 / May 2026 waves), MAL-2026-SHAI-HULUD-OSS (TeamPCP open-sourced 2026-05-12), MAL-2026-TANSTACK-MINI (42 `@tanstack/*` packages), MAL-2026-NODE-IPC-STEALER, and CVE-2026-45321. Encodes NEW-CTRL-050 (exhaustive maintainer-credential rotation), NEW-CTRL-051 (install-window audit), NEW-CTRL-052 (AI-assistant config exfil as first-class — `~/.cursor`, `~/.codeium`, `~/.claude`). Eight indicators including `ai-assistant-config-mutated` (Shai-Hulud startup-hook persistence), `outbound-exfil-during-window`, `operator-published-package-republish` (downstream notification mandatory), `long-lived-token-in-compromised-ci-log`. Feeds into `cred-stores` + `idp-incident-response` + `sbom` + `mcp` + `framework`.
+
+**`exceptd watchlist --org-scan --output-format markdown`.** Adds GitHub-flavored markdown table output for PR / issue / advisory body consumption. Accepted values: `json` | `markdown` | `human` (default). The legacy `--json` shorthand remains accepted (equivalent to `--output-format json`). Invalid values exit non-zero with the accepted-set in the error envelope.
+
+**`exceptd doctor --ai-config --fix` now repairs Windows ACLs.** The POSIX path applied `chmod 0600`; on Windows the audit reported the gap as "manual review." The Windows path now invokes `icacls /inheritance:r /grant:r` to restrict to the current user + SYSTEM + Administrators. The audit check itself (without `--fix`) parses `icacls <path>` and reports any extra principals.
+
+**Skill chain: MCP findings inside a CI runner escalate to `cicd-pipeline-compromise`.** New deterministic indicator `mcp-server-invoked-from-ci-pipeline` keys on `GITHUB_ACTIONS` / `GITLAB_CI` / `BUILDKITE` / `JENKINS_URL` / `CIRCLECI` / `RUNNER_OS` env vars and known runner workdirs (`/_work/`, `/builds/`, `/var/jenkins_home/workspace/`, `/var/lib/buildkite-agent/builds/`). When paired with any other high-confidence MCP signal, the finding feeds into `cicd-pipeline-compromise` for OIDC / signing-key / publish-channel scope handling. Without this arc, MCP findings in CI received local-dev close-out only, under-counting publish-channel blast radius.
+
+### Bugs
+
+**`cve-catalog.schema.json` `active_exploitation` enum now matches `_meta.active_exploitation_vocabulary`.** The schema enumerated four values (`confirmed` / `suspected` / `none` / `unknown`); the meta vocabulary listed five (adding `theoretical`). Catalog entries written against the meta vocabulary that used `theoretical` were silently rejected at validation time. Schema now lists five values; `validate-cve-catalog.js` adds a cross-check that fails the gate if the two surfaces ever drift again.
+
+### Internal
+
+- Test count baseline updated for the +3 playbook delta and the new `--output-format` test cases.
+- `validate-cve-catalog.js` schema-vs-meta enum cross-check is a hard predeploy gate.
+- All 23 playbooks pass `validate-playbooks` and `lint-skills` warning-free.
+
 ## 0.13.4 — 2026-05-18
 
 Warning-cleanup pass + catalog hygiene + docs surfacing. The post-v0.13.3 state had ~43 skill lint warnings and 20 cosmetic playbook warnings that operators saw on every predeploy run; this release drives both to zero. README and AGENTS catch up with the v0.13.0 → v0.13.3 operator surface.

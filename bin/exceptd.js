@@ -251,6 +251,63 @@ const RENAMED_VERBS_HINT = {
   "build-indexes": "refresh --indexes-only",
 };
 
+/**
+ * v0.13.5: Windows ACL audit helper for `doctor --ai-config`. Replaces
+ * the v0.13.3 "manual review" placeholder with a real check.
+ *
+ * Runs `icacls <path>` and parses the output for any principal beyond
+ * the current user. Anything other than the running USERNAME, NT
+ * AUTHORITY\SYSTEM, and BUILTIN\Administrators on the ACL counts as
+ * "broader than user-only" — typical offenders are inherited entries
+ * for BUILTIN\Users, Authenticated Users, or Everyone.
+ *
+ * Returns { ok: boolean, extraPrincipals: string[], error?: string }.
+ * On non-Windows hosts (defensive — only invoked from the win32 branch
+ * in cmdDoctor anyway), returns { ok: true, extraPrincipals: [] }.
+ */
+function checkWindowsAcl(targetPath) {
+  if (process.platform !== 'win32') return { ok: true, extraPrincipals: [] };
+  const childProc = require('child_process');
+  const user = (process.env.USERNAME || '').toLowerCase();
+  // Principals that are EXPECTED on every Windows ACL and don't count
+  // as "broader than user-only" — admins legitimately need access for
+  // system maintenance; SYSTEM is required for backup/restore.
+  const ALLOWED_PRINCIPAL_SUFFIXES = [
+    `\\${user}`,
+    'nt authority\\system',
+    'builtin\\administrators',
+    'administrators',
+  ];
+  let stdout;
+  try {
+    stdout = childProc.execFileSync('icacls', [targetPath], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 5000,
+    });
+  } catch (e) {
+    return { ok: false, extraPrincipals: [], error: (e && e.message) || String(e) };
+  }
+  const extraPrincipals = [];
+  // icacls output format: each principal on its own line, prefixed by
+  // whitespace and ending with permission bits in parens. Lines for
+  // the file itself (target path) and the "Successfully processed"
+  // footer are skipped.
+  for (const rawLine of stdout.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (line.toLowerCase().startsWith('successfully processed')) continue;
+    // The first line is the path; principal lines start with NT AUTHORITY,
+    // BUILTIN, or a domain\user. Match `name:(perms)` shape.
+    const m = line.match(/^([^:()]+?):\(/);
+    if (!m) continue;
+    const principal = m[1].trim().toLowerCase();
+    const isAllowed = ALLOWED_PRINCIPAL_SUFFIXES.some((suffix) => principal.endsWith(suffix));
+    if (!isAllowed) extraPrincipals.push(m[1].trim());
+  }
+  return { ok: extraPrincipals.length === 0, extraPrincipals };
+}
+
 function readPkgVersion() {
   try {
     return JSON.parse(fs.readFileSync(path.join(PKG_ROOT, "package.json"), "utf8")).version;
@@ -5510,15 +5567,23 @@ function cmdDoctor(runner, args, runOpts, pretty) {
           let st;
           try { st = fs.statSync(childAbs); } catch { continue; }
           if (process.platform === 'win32') {
-            // Windows POSIX mode bits don't carry meaningful ACL info.
-            // Flag every sensitive file with a manual-review note rather
-            // than emit a noisy permission claim that's likely wrong.
+            // v0.13.5: real ACL check via icacls. Replaces the v0.13.3
+            // "manual review" info-level placeholder. Confirms only the
+            // current-user SID has any read entry. Anything else (Users,
+            // Everyone, Authenticated Users, BUILTIN\Users, etc.) on the
+            // ACL counts as "broader than user-only" and surfaces as a
+            // warn finding. The `--fix` path applies `icacls /inheritance:r
+            // /grant:r <USER>:F` to strip inherited entries.
+            const aclCheck = checkWindowsAcl(childAbs);
+            if (aclCheck.ok) continue;
             findings.push({
               path: `${displayRoot}/${childRel}`,
               mode: null,
-              severity: 'info',
-              issue: 'win32_acl_check_not_implemented',
-              hint: 'On Windows the POSIX mode bits are not load-bearing. Use icacls to confirm only the current user has read access. Tracked for v0.14+.',
+              severity: 'warn',
+              issue: 'broader_than_user_only_acl',
+              acl_extra_principals: aclCheck.extraPrincipals,
+              hint: `icacls "${childAbs}" /inheritance:r /grant:r %USERNAME%:F  # NEW-CTRL-050: AI-assistant configs holding MCP tokens / API keys must restrict ACL to the workstation user`,
+              fix_command: ['icacls', childAbs, '/inheritance:r', '/grant:r', `${process.env.USERNAME}:F`],
             });
             continue;
           }
@@ -5530,6 +5595,8 @@ function cmdDoctor(runner, args, runOpts, pretty) {
               severity: 'warn',
               issue: 'group_or_other_readable',
               hint: `chmod 600 '${childAbs}'  # NEW-CTRL-050: AI-assistant configs holding MCP tokens / API keys must be 0600 to defeat unprivileged exfil`,
+              fix_chmod: 0o600,
+              fix_abs_path: childAbs,
             });
           }
         }
@@ -5543,9 +5610,49 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       }
     }
     const errorFindings = findings.filter((f) => f.severity === 'warn');
+
+    // v0.13.5: --fix path. When `doctor --ai-config --fix` is invoked
+    // AND warn-severity findings exist, apply the per-finding fix
+    // command (chmod 600 on POSIX; icacls /inheritance:r /grant:r on
+    // Windows). The fix attempt is recorded per-finding so the report
+    // surfaces which fixes landed vs which failed.
+    let fixesApplied = 0;
+    let fixesFailed = 0;
+    if (args.fix && errorFindings.length > 0) {
+      const childProc = require('child_process');
+      for (const f of errorFindings) {
+        if (f.fix_chmod && f.fix_abs_path) {
+          try {
+            fs.chmodSync(f.fix_abs_path, f.fix_chmod);
+            f.fix_status = 'chmod_applied';
+            fixesApplied++;
+          } catch (e) {
+            f.fix_status = 'chmod_failed';
+            f.fix_error = e.message;
+            fixesFailed++;
+          }
+          continue;
+        }
+        if (f.fix_command) {
+          try {
+            childProc.execFileSync(f.fix_command[0], f.fix_command.slice(1), {
+              stdio: ['ignore', 'ignore', 'pipe'],
+              timeout: 5000,
+            });
+            f.fix_status = 'icacls_applied';
+            fixesApplied++;
+          } catch (e) {
+            f.fix_status = 'icacls_failed';
+            f.fix_error = (e && e.message) || String(e);
+            fixesFailed++;
+          }
+        }
+      }
+    }
+
     checks.ai_config = {
-      ok: errorFindings.length === 0,
-      severity: errorFindings.length > 0 ? 'warn' : 'info',
+      ok: errorFindings.length === 0 || (args.fix && fixesFailed === 0),
+      severity: errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info'),
       scanned_dirs: scannedDirs,
       scanned_files: scannedFiles,
       directories_inspected: AI_CONFIG_DIRS.map((d) => d.display),
@@ -5553,8 +5660,9 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       findings,
       platform: process.platform,
       control_reference: 'NEW-CTRL-050 (MAL-2026-SHAI-HULUD-OSS lesson)',
+      ...(args.fix ? { fix_applied: fixesApplied, fix_failed: fixesFailed } : {}),
     };
-    if (errorFindings.length > 0) issues.push('ai_config');
+    if (errorFindings.length > 0 && (!args.fix || fixesFailed > 0)) issues.push('ai_config');
   }
 
   // Walk every check and split: errors (severity error/missing/fail) vs warnings

@@ -55,7 +55,8 @@
       }
     ],
     "fed_by": [
-      "identity-sso-compromise"
+      "identity-sso-compromise",
+      "supply-chain-recovery"
     ]
   },
   "domain": {

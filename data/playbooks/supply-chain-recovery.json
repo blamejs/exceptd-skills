@@ -1,0 +1,1332 @@
+{
+  "_meta": {
+    "id": "supply-chain-recovery",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-18",
+    "threat_currency_score": 96,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-18",
+        "summary": "Initial seven-phase post-compromise supply-chain recovery playbook. Distinct from `sbom` (pre-incident SBOM hygiene) and `mcp-supply-chain` (MCP tool trust): supply-chain-recovery covers the operator workflow AFTER a maintainer-credential compromise or poisoned-package install — full credential rotation across npm / PyPI / GitHub / cloud / AI-assistant configs, install-window audit (every install since the suspected compromise window), lateral exfil detection on hosts that ran the malicious postinstall, downstream blast-radius enumeration for packages the operator publishes, and provenance-revocation processing through OpenSSF + sigstore + ecosystem advisories. Anchors on MAL-2026-SHAI-HULUD-OSS (TeamPCP open-source release 2026-05-12), MAL-2026-TANSTACK-MINI (42 @tanstack/* packages May 2026), MAL-2026-NODE-IPC-STEALER, the September 2025 + November 2025 + May 2026 Shai-Hulud waves, and the Snowflake credential-leak class. Closes the GRC loop with NIST IR-4 + IR-6 + IR-8 gaps (incident response is undefined for ecosystem-package compromise), ISO A.5.24 + A.5.26 + A.5.27 (incident planning / response / learning), NIS2 Art.21(2)(f) crisis-management gap, DORA Art.17-20 ICT-incident-management gap, EU CRA Art.14 actively-exploited reporting gap, and SOC 2 CC7.4 incident-response gap. Cross-walks to cred-stores (rotation primitive), to idp-incident (when SSO compromise observed), to sbom (downstream consumer notification), to mcp (when AI-assistant configs are exfil targets — Shai-Hulud explicitly reads ~/.cursor, ~/.codeium, ~/.claude). The NEW-CTRL-050 / NEW-CTRL-051 / NEW-CTRL-052 controls from the Shai-Hulud lesson are encoded as remediation paths.",
+        "cves_added": [
+          "MAL-2026-SHAI-HULUD-OSS",
+          "MAL-2026-TANSTACK-MINI",
+          "MAL-2026-NODE-IPC-STEALER",
+          "CVE-2026-45321"
+        ],
+        "framework_gaps_updated": [
+          "nist-800-53-IR-4-ecosystem-package-compromise",
+          "nist-800-53-IR-6-supply-chain-incident-reporting",
+          "nist-800-53-IR-8-supply-chain-recovery-plan",
+          "iso-27001-2022-A.5.24-supply-chain-incident-planning",
+          "iso-27001-2022-A.5.26-supply-chain-response",
+          "iso-27001-2022-A.5.27-supply-chain-learning",
+          "nis2-art21-2f-crisis-management",
+          "dora-art17-20-supply-chain-ict-incident",
+          "eu-cra-art14-supply-chain-actively-exploited",
+          "soc2-CC7.4-supply-chain-response"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "cross-cutting",
+    "preconditions": [
+      {
+        "id": "incident-confirmed",
+        "description": "Agent invoked only after a supply-chain compromise is confirmed: a maintainer account is known-compromised, a malicious version has been installed, OR a worm-class indicator (MAL-2026-SHAI-HULUD-OSS family) has fired against operator infrastructure. Pre-incident hygiene playbook is `sbom`, not this one.",
+        "check": "supply_chain_incident_confirmed == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "credential-rotation-authority",
+        "description": "Agent must have (or hold attestation of) authority to rotate maintainer credentials across npm + PyPI + GitHub + cloud + AI-assistant config stores. Without this, the playbook cannot complete the rotation primitive that closes the compromise window.",
+        "check": "operator_holds_rotation_authority == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "install-history-readable",
+        "description": "Agent must be able to read npm install history (package-lock.json + .npmrc + ~/.npm/_logs), PyPI install history (pip freeze + pip cache + pipenv logs), and host process / network audit for the suspected compromise window. Without this, the install-window audit cannot bound the affected population.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.includes_credential_exposure == true"
+      },
+      {
+        "playbook_id": "idp-incident",
+        "condition": "finding.includes_sso_compromise == true"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.operator_publishes_packages == true"
+      },
+      {
+        "playbook_id": "mcp",
+        "condition": "finding.includes_ai_assistant_config_exfil == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Post-compromise supply-chain recovery",
+    "attack_class": "supply-chain",
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016"
+    ],
+    "attack_refs": [
+      "T1195.002",
+      "T1199",
+      "T1078.004",
+      "T1059",
+      "T1552.001",
+      "T1552.004",
+      "T1098",
+      "T1539",
+      "T1567"
+    ],
+    "cve_refs": [
+      "CVE-2026-45321"
+    ],
+    "cwe_refs": [
+      "CWE-94",
+      "CWE-200",
+      "CWE-256",
+      "CWE-269",
+      "CWE-287",
+      "CWE-345",
+      "CWE-522",
+      "CWE-798"
+    ],
+    "d3fend_refs": [
+      "D3-CA",
+      "D3-EAL",
+      "D3-EI",
+      "D3-IOPR",
+      "D3-FCR"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "eu-cra",
+      "uk-caf",
+      "au-ism",
+      "cmmc"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "compromised_maintainer_account_inventory",
+            "affected_install_window_estimate",
+            "downstream_blast_radius_estimate",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "DORA Art.19",
+          "obligation": "notify_regulator",
+          "window_hours": 4,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "ict_critical_function_impact",
+            "ict_third_party_dependencies_affected",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.14",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "actively_exploited_assessment",
+            "user_notification_draft",
+            "affected_product_inventory"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "data_subject_impact_assessment",
+            "exfiltration_window_estimate"
+          ]
+        },
+        {
+          "jurisdiction": "US-Federal",
+          "regulation": "SEC Item 1.05 (8-K)",
+          "obligation": "notify_regulator",
+          "window_hours": 96,
+          "clock_starts": "analyze_complete",
+          "evidence_required": [
+            "material_impact_determination",
+            "incident_description"
+          ]
+        },
+        {
+          "jurisdiction": "US-NY",
+          "regulation": "NYDFS 23 NYCRR 500.17",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "callback_log_excerpt",
+            "containment_record"
+          ]
+        },
+        {
+          "jurisdiction": "AU",
+          "regulation": "APRA CPS 234",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "validate_complete",
+          "evidence_required": [
+            "materiality_assessment",
+            "remediation_completed_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "NCSC CAF B5 + ICO Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "incident_assessment",
+            "containment_record"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "slsa-l3-as-compromise-immunity",
+          "claim": "We require SLSA L3 provenance on every dependency, so a compromised upstream cannot reach us.",
+          "fast_detection_test": "Read the SLSA provenance attestation for a sample of installed packages. SLSA L3 attests that the build was reproducible from a tamper-evident source — it does NOT attest that the source itself is benign. A maintainer-credential compromise where the attacker pushes malicious code through the legitimate signing key produces SLSA-L3-valid provenance for a malicious package. Verification: a fully L3-conformant package that runs malicious postinstall against the operator's host is not a theoretical case — Shai-Hulud 2.0 family attacks include this exact pattern.",
+          "implicated_controls": [
+            "slsa-l3-build-platform",
+            "nist-800-53-SR-3",
+            "iso-27001-2022-A.5.21"
+          ]
+        },
+        {
+          "pattern_id": "maintainer-credential-rotation-as-recovery",
+          "claim": "We rotated the compromised maintainer's npm token, so the incident is closed.",
+          "fast_detection_test": "Rotation closes the FUTURE-publish window. It does NOT close the past-install window. Every host that ran `npm install` on a compromised version during the window between malicious-publish and rotation has executed the postinstall payload. Recovery is incomplete without (a) install-window audit on every host, (b) lateral-credential rotation for every credential the postinstall could have exfil'd (cloud SDK creds, GITHUB_TOKEN, .ssh/, ~/.aws, ~/.config/gcloud, ~/.kube, ~/.cursor, ~/.codeium, ~/.claude, ~/.npmrc), (c) downstream-consumer notification if the operator's own packages republished the compromised dependency."
+        },
+        {
+          "pattern_id": "npm-audit-fix-as-resolution",
+          "claim": "We ran `npm audit fix` after the compromise and CI passed, so we are clean.",
+          "fast_detection_test": "`npm audit fix` upgrades to a non-vulnerable version. It does NOT clean a host whose previous install ran the postinstall payload. It does NOT detect lateral exfil that happened during the compromise window. It does NOT rotate the credentials that were exfil'd. The compromise model is: malicious code RAN on the host; npm audit fix only changes what RUNS NEXT TIME. Real recovery requires forensic-grade host audit + credential rotation + provenance re-establishment."
+        },
+        {
+          "pattern_id": "sbom-as-compromise-detector",
+          "claim": "Our SBOM scanner caught the compromised version and blocked the install, so the worm is contained.",
+          "fast_detection_test": "SBOM scanners catch named-CVE compromises with a lag — typically minutes to days after MAL-* publication. For wormable supply-chain attacks (Shai-Hulud, Mini Shai-Hulud, TanStack-mini) the malicious version is in the wild for hours before SBOM scanners catch it. Verify: pull the SBOM scanner's hit timestamp against the malicious-version publish timestamp. If the gap is > 0 and the operator's CI ran during the gap, at least one CI host executed the postinstall and the install-window audit is required regardless."
+        },
+        {
+          "pattern_id": "private-registry-mirror-as-shield",
+          "claim": "We pull everything from a private registry mirror, so npm registry compromises don't reach us.",
+          "fast_detection_test": "Check the mirror's sync cadence. Most private mirrors sync at hourly or sub-hourly cadence from the upstream registry — a compromised version is mirrored automatically within the sync window. The mirror provides version-pinning + cache durability but NOT a content-trust layer. Mirror + manual approval gates between upstream and developer-reachable mirror would close the gap; most mirrors don't have approval gates. Read the mirror config + recent sync log."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Incident-response frameworks do not contemplate the ecosystem-package-compromise class. NIST 800-53 IR-4 (Incident Handling) + IR-6 (Incident Reporting) + IR-8 (Incident Response Plan) define handling for organisation-owned incidents — the operator's host, the operator's network, the operator's identity plane. A compromise that arrives via the package ecosystem (npm install runs malicious postinstall, exfil'd creds appear in attacker's collector, downstream-consumer installs poisoned operator package) falls between IR's framing of 'incident' and SR's framing of 'supply chain' — neither owns the recovery primitive. ISO 27001 A.5.24 (Information security incident management planning and preparation) + A.5.26 (Response to information security incidents) + A.5.27 (Learning from information security incidents) similarly frame incidents as operator-owned events. NIS2 Art.21(2)(f) names crisis management without specifying supply-chain-recovery workflows. DORA Art.17-20 covers ICT-incident management with classification thresholds anchored on operator-side impact, not on upstream-source compromise. EU CRA Art.14 covers manufacturer disclosure of actively-exploited vulnerabilities — when the manufacturer IS the operator (the operator publishes a package), Art.14 binds; when the operator is consumer-only, Art.14 doesn't bind the consumer's response. SOC 2 CC7.4 (Incident response) inherits the same operator-incident framing. The result: an organisation can be fully NIST/ISO/NIS2/DORA/SOC 2 compliant for incident response while having NO documented procedure for the maintainer-credential-rotation + install-window-audit + AI-assistant-config-rotation + downstream-consumer-notification quadruple that recovery requires.",
+        "lag_score": 270,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IR-4 — Incident Handling",
+            "designed_for": "Handling of detected security incidents through preparation, detection, containment, eradication, recovery, and lessons-learned phases.",
+            "insufficient_because": "IR-4 framing assumes the incident is operator-owned (operator host, operator network, operator identity). An ecosystem-package compromise where the malicious code runs on developer + CI hosts via package-manager-mediated install does not have a documented IR-4 sub-procedure for: maintainer-credential rotation, install-window audit, AI-assistant config exfil scope, downstream-consumer notification."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "IR-6 — Incident Reporting",
+            "designed_for": "Reporting incidents to internal + external parties.",
+            "insufficient_because": "External-reporting language assumes regulator + law-enforcement + affected-individual. For ecosystem-package compromise, the affected population includes every downstream consumer of operator-published packages — IR-6 does not name this audience as a reporting target, leaving the OpenSSF MAL feed / npm-advisory / GHSA pipeline outside the operator's documented reporting workflow."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "IR-8 — Incident Response Plan",
+            "designed_for": "Documented IR plan covering all reasonable incident types.",
+            "insufficient_because": "Plans typically cover ransomware, DDoS, insider, account-compromise, data-breach. Supply-chain-recovery is rarely a named scenario; when present, it usually omits AI-assistant-config-exfil scope (the Shai-Hulud-class explicit exfil targets ~/.cursor, ~/.codeium, ~/.claude)."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SR-3 — Supply Chain Controls and Processes",
+            "designed_for": "Supply-chain risk management.",
+            "insufficient_because": "Pre-incident framing. SR-3 does not own post-incident recovery. The bridge from SR-3 (we manage supply-chain risk) to IR-4 (we handle incidents) for the ecosystem-package class is undefined."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.24 — Information security incident management planning and preparation",
+            "designed_for": "Documented incident-management process + responsibilities + playbooks.",
+            "insufficient_because": "Same operator-owned incident framing as NIST IR-4. Ecosystem-package compromise does not have a documented sub-process in standard A.5.24 implementations."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.26 — Response to information security incidents",
+            "designed_for": "Response workflows for confirmed incidents.",
+            "insufficient_because": "Response workflows assume operator-side mitigation primitives. Maintainer-credential rotation across multiple ecosystems + cross-ecosystem install-window audit + downstream-consumer notification are not standard A.5.26 response primitives."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.27 — Learning from information security incidents",
+            "designed_for": "Post-incident learning and control improvement.",
+            "insufficient_because": "Learning workflows assume operator-internal lessons. Cross-ecosystem learnings (e.g. Shai-Hulud-class AI-assistant-config exfil) require cross-org sharing not anchored in A.5.27."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(f) — Crisis management",
+            "designed_for": "Crisis-management measures as essential cybersecurity measure.",
+            "insufficient_because": "Names crisis management without specifying supply-chain-recovery workflows. Essential-entity crisis plans typically omit ecosystem-package compromise as a scenario; when present, recovery primitives are under-specified."
+          },
+          {
+            "framework": "dora",
+            "control_id": "Art.17-20 — ICT-related incident management",
+            "designed_for": "Financial-entity ICT incident classification + management + reporting.",
+            "insufficient_because": "Classification thresholds anchor on operator-side impact (clients affected, services unavailable, data lost). Upstream-source-compromise impact propagates through dependency tree before manifesting as operator-side impact — DORA classification can miss the early-detection window."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Art.14 — Coordinated vulnerability disclosure / actively-exploited reporting",
+            "designed_for": "Manufacturer obligation to disclose actively-exploited vulnerabilities.",
+            "insufficient_because": "Binds the manufacturer (operator who publishes packages). Does not bind the consumer-only operator. For a pure consumer, Art.14 produces inbound disclosure but no recovery primitive."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC7.4 — Incident response",
+            "designed_for": "Trust-services-criteria for incident response.",
+            "insufficient_because": "Inherits operator-incident framing. A CC7.4 evidence pack typically does not include ecosystem-package compromise sub-playbooks."
+          },
+          {
+            "framework": "uk-caf",
+            "control_id": "D1 — Response and recovery planning",
+            "designed_for": "NCSC CAF outcome for incident response + recovery.",
+            "insufficient_because": "Outcome-based. Supply-chain-recovery primitives not named as a D1 input. Compliant CAF profile may have no ecosystem-package compromise scenario in the recovery plan."
+          }
+        ]
+      },
+      "skill_preload": [
+        "supply-chain-integrity",
+        "incident-response-playbook",
+        "ransomware-response",
+        "coordinated-vuln-disclosure",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen",
+        "exploit-scoring"
+      ]
+    },
+    "direct": {
+      "threat_context": "Supply-chain-recovery landscape mid-2026 is dominated by the Shai-Hulud worm family. The September 2025 Shai-Hulud wave (180+ npm packages) established the modular pattern: postinstall harvests local credentials (~/.aws, ~/.config/gcloud, ~/.kube, ~/.ssh, ~/.cursor, ~/.codeium, ~/.claude, ~/.npmrc) and republishes to other packages the host has npm-publish access to. The November 2025 Shai-Hulud 2.0 wave doubled down on AI-assistant config exfil — explicit targets included Claude Code settings, Cursor MCP config, Codeium / Windsurf MCP config, plus startup hooks that re-execute the worm on Claude restart. The May 2026 Mini Shai-Hulud wave (Microsoft Security Research, 2026-05-11) compromised 170+ npm + 2 PyPI packages across 404 malicious versions including the @tanstack/* family (42 packages). TeamPCP open-sourced the complete Shai-Hulud framework to GitHub on 2026-05-12 under MIT license with a $1,000 USD (Monero) bounty contest judged on downstream supply-chain impact. Ox Security observed third-party copycats within hours of release. CVE-2026-45321 is the named worm-via-GitHub-Actions instance — a compromised package's postinstall captures the runner's GITHUB_TOKEN + cloud-OIDC token and uses them to publish more compromised packages from the operator's own pipeline. MAL-2026-NODE-IPC-STEALER extends the pattern to node-ipc-class targeted exfil. The 2024 Snowflake intrusion class remains the canonical credential-leak side: long-lived OIDC / API tokens leaked in CI logs or workstation config files become persistent take-over primitives across cloud, source-control, and AI-assistant planes. The unifying recovery primitive: every credential that EVER lived on a host that ran a compromised postinstall must be considered exfil'd; rotation must be exhaustive across every ecosystem (npm + PyPI + GitHub + cloud + AI-assistant + secret-store). NEW-CTRL-050 (post-compromise maintainer-credential-rotation exhaustiveness), NEW-CTRL-051 (install-window audit across the full ecosystem reach), and NEW-CTRL-052 (AI-assistant config exfil as first-class recovery primitive) emerged from the Shai-Hulud lesson and are encoded in this playbook's remediation paths.",
+      "rwep_threshold": {
+        "escalate": 95,
+        "monitor": 75,
+        "close": 35
+      },
+      "framework_lag_declaration": "NIST 800-53 IR-4 + IR-6 + IR-8 + SR-3, ISO 27001 A.5.24 + A.5.26 + A.5.27, NIS2 Art.21(2)(f), DORA Art.17-20, EU CRA Art.14, SOC 2 CC7.4, UK CAF D1 collectively do not specify the ecosystem-package compromise recovery class. None mandate maintainer-credential rotation across multiple ecosystems, install-window audit, AI-assistant config exfil scope, or downstream-consumer notification as named recovery primitives. The Shai-Hulud family compromises since September 2025 have established the recovery pattern operationally, but no framework has caught up. Lag = ~270 days behind operational pattern establishment. Compensating controls (maintainer credential rotation runbook + install-window audit tooling + AI-assistant config exfil monitoring + downstream-consumer notification process + provenance-revocation runbook) must close the gap before SLA-only compliance can be accepted. None of the frameworks in scope require any of those five recovery primitives.",
+      "skill_chain": [
+        {
+          "skill": "supply-chain-integrity",
+          "purpose": "Establish the trust-boundary baseline for the operator's dependency tree + outbound publish surface; identify which ecosystems are in scope.",
+          "required": true
+        },
+        {
+          "skill": "incident-response-playbook",
+          "purpose": "Anchor the recovery sequence: preparation, detection (already complete by precondition), containment, eradication, recovery, lessons-learned.",
+          "required": true
+        },
+        {
+          "skill": "ransomware-response",
+          "purpose": "Apply the credential-rotation + lateral-movement audit primitives (these primitives generalise from ransomware to supply-chain recovery; both require exhaustive rotation + multi-host scope).",
+          "skip_if": "no_lateral_movement_evidence == true",
+          "required": false
+        },
+        {
+          "skill": "coordinated-vuln-disclosure",
+          "purpose": "Drive the downstream-consumer notification path: OpenSSF MAL feed, GHSA advisory, npm-advisory, ecosystem-specific advisories.",
+          "skip_if": "operator_does_not_publish_packages == true",
+          "required": false
+        },
+        {
+          "skill": "exploit-scoring",
+          "purpose": "Compute RWEP for the recovery scope: every affected asset × every exfil'd credential class × every downstream consumer.",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each recovery primitive against the framework controls that don't require it.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the five theater tests in govern.theater_fingerprints; emit verdict per pattern.",
+          "required": true
+        },
+        {
+          "skill": "policy-exception-gen",
+          "purpose": "Generate auditor-ready exception language for recovery primitives that cannot be completed within the jurisdiction's window.",
+          "skip_if": "close.exception_generation.trigger_condition == false",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 24000,
+        "breakdown": {
+          "govern": 3000,
+          "direct": 1900,
+          "look": 2700,
+          "detect": 3300,
+          "analyze": 5000,
+          "validate": 4500,
+          "close": 3600
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "compromised-package-inventory",
+          "type": "config_file",
+          "source": "List the suspected-compromised packages with timestamps: the upstream advisory (OpenSSF MAL, GHSA, npm-advisory, PyPI-advisory) + the operator's own determination via Shai-Hulud-family indicators. Capture per package: name, malicious version(s), publish timestamp, removal/yanking timestamp.",
+          "description": "Bounded malicious-version inventory. Every other artefact + indicator scopes against this.",
+          "required": true,
+          "air_gap_alternative": "Use the operator's locally-cached advisory archive + community ingestion of the OpenSSF MAL feed; mark live advisory state as inventory_gap=advisories_unreachable."
+        },
+        {
+          "id": "install-history-per-host",
+          "type": "audit_trail",
+          "source": "Per host that may have run `npm install` or `pip install` since the compromise window: read package-lock.json + ~/.npm/_logs/*.log + ~/.npm/_cacache/ + pip freeze + ~/.cache/pip + ~/.local/share/pipenv/. For CI hosts: read GitHub Actions workflow logs + GitLab pipeline logs + BuildKite job logs + CircleCI artefacts. Cross-reference against compromised-package-inventory to surface hits.",
+          "description": "Per-host install audit. Lists every install of a compromised version within the window.",
+          "required": true,
+          "air_gap_alternative": "Local install-log walk only."
+        },
+        {
+          "id": "maintainer-credential-inventory",
+          "type": "config_file",
+          "source": "List every credential that ever lived on a host that ran a compromised install: npm tokens (~/.npmrc + npm whoami output cache), PyPI tokens (~/.pypirc), GitHub PAT + GitHub Apps installation tokens + GITHUB_TOKEN in CI logs, cloud SDK credentials (~/.aws/credentials, ~/.config/gcloud, ~/.azure, ~/.kube), SSH private keys (~/.ssh/id_*), AI-assistant config tokens (~/.cursor/mcp.json, ~/.codeium/windsurf/mcp_config.json, ~/.claude/settings.json + Claude Code startup hooks), secret-store CLI sessions (gh auth, vault token, doctl, gcloud auth).",
+          "description": "Exhaustive credential inventory across every credential class the Shai-Hulud family exfil's. Drives rotation scope.",
+          "required": true,
+          "air_gap_alternative": "Local host filesystem walk only."
+        },
+        {
+          "id": "outbound-publish-surface",
+          "type": "config_file",
+          "source": "Per ecosystem: list every package the operator's compromised maintainer credentials have publish authority on. npm: `npm access list packages` per token; PyPI: PyPI account project list; GitHub: repos with `write:packages` for the affected token. Cross-reference against the operator's published-package register.",
+          "description": "Downstream blast-radius enumeration. Lists every package the worm could have republished from the operator's credentials.",
+          "required": true,
+          "air_gap_alternative": "Local published-package register only; mark live publish-authority enumeration as inventory_gap=registry_api_unavailable."
+        },
+        {
+          "id": "lateral-exfil-network-evidence",
+          "type": "network_capture",
+          "source": "For the compromise window: pull network egress logs from hosts that ran compromised installs. Filter for outbound to Shai-Hulud-family C2 destinations + DNS queries for known worm collector domains + connections to known credential-collector endpoints (TeamPCP's documented C2 + ecosystem-aggregator pastebins). For CI hosts: outbound from runner during the window.",
+          "description": "Network-side exfil evidence. Confirms (or refutes) that credentials were actually exfil'd vs just exposed to the postinstall.",
+          "required": false,
+          "air_gap_alternative": "Local netflow + DNS query log + egress-proxy log retention."
+        },
+        {
+          "id": "ai-assistant-config-snapshot",
+          "type": "config_file",
+          "source": "Per host with AI-assistant installs: snapshot ~/.cursor/mcp.json, ~/.codeium/windsurf/mcp_config.json, ~/.claude/settings.json + ~/.claude/projects/* + Claude Code startup hooks (~/.claude/hooks/, ~/.bashrc / ~/.zshrc for Claude Code invocations). Compute SHA of each file; compare against pre-compromise baseline if available.",
+          "description": "AI-assistant config state. Shai-Hulud-family attacks add startup hooks that persist worm execution into the AI assistant — config snapshot detects the persistence.",
+          "required": true,
+          "air_gap_alternative": "Local filesystem walk."
+        },
+        {
+          "id": "downstream-consumer-list",
+          "type": "config_file",
+          "source": "For each operator-published package in outbound-publish-surface: enumerate downstream consumers via npm (`npm view <pkg> dependents`, libraries.io API, deps.dev API), PyPI (libraries.io), GitHub (dependents tab via gh api). Capture consumer count + sample of high-reach consumers.",
+          "description": "Downstream-consumer audience for the notification path. Drives advisory cadence.",
+          "required": false,
+          "air_gap_alternative": "Locally cached dependents enumeration; mark live consumer enumeration as inventory_gap=consumer_api_unavailable."
+        },
+        {
+          "id": "provenance-revocation-state",
+          "type": "config_file",
+          "source": "Per affected package: check sigstore + npm provenance + GHSA + OSV for revocation entries; check ecosystem-specific yanking state (npm: `npm view <pkg>@<ver> deprecated`, PyPI: yanked field). Capture per malicious version: revoked? deprecated? yanked? withdrawn?",
+          "description": "Provenance / yanking state across the affected package set. Drives the operator's downstream-consumer-aiding revocation steps.",
+          "required": false,
+          "air_gap_alternative": "Local cached provenance state + ecosystem advisory archive."
+        },
+        {
+          "id": "incident-response-plan",
+          "type": "config_file",
+          "source": "Read the operator's IR plan + IR runbook. Confirm ecosystem-package compromise is named, recovery primitives are documented, AI-assistant config exfil is named.",
+          "description": "Operator's pre-existing IR plan. Used to detect framework-coverage gap.",
+          "required": true,
+          "air_gap_alternative": "Local IR plan filesystem walk."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "compromise_window_plus_safety_margin",
+        "asset_scope": "every_host_that_ran_npm_or_pip_install_during_window_plus_operator_published_package_consumer_set",
+        "depth": "deep",
+        "sampling": "complete coverage of install history + maintainer credential inventory + AI-assistant config snapshot. Network-evidence + downstream-consumer enumeration sampled where complete collection is infeasible. Re-collect on every new advisory in the compromise family."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "operator has authority to rotate maintainer credentials across npm + PyPI + GitHub + cloud + AI-assistant + secret stores",
+          "if_false": "Halt with authorisation_required — recovery cannot complete without rotation primitive."
+        },
+        {
+          "assumption": "install-history is captured (package-lock.json, npm logs, pip cache, CI logs retained past the window)",
+          "if_false": "Install-window audit cannot bound the affected population. Mark install-history-per-host as inventory_gap=install_logs_pruned and treat every host with any install activity in the window as suspect."
+        },
+        {
+          "assumption": "AI-assistant config files are present and readable",
+          "if_false": "Cannot detect Shai-Hulud-family startup-hook persistence. Mark ai-assistant-config-snapshot as inventory_gap=ai_configs_absent; escalate every host that has AI-assistant installs as suspect-persistence."
+        },
+        {
+          "assumption": "downstream-consumer enumeration APIs reachable OR cached",
+          "if_false": "Mark downstream-consumer-list as inventory_gap=consumer_enumeration_unavailable; default the consumer notification to the broadest reasonable audience."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "compromised-package-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "install-history-per-host",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "maintainer-credential-inventory",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "outbound-publish-surface",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "lateral-exfil-network-evidence",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "ai-assistant-config-snapshot",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "downstream-consumer-list",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "medium"
+        },
+        {
+          "artifact_id": "incident-response-plan",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "compromised-install-on-host",
+          "type": "log_pattern",
+          "value": "Cross-join compromised-package-inventory × install-history-per-host: any host has an install record for a compromised version within the publish-to-rotation window.",
+          "description": "Host ran a compromised postinstall. Primary recovery scope indicator.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002",
+          "cve_ref": "MAL-2026-SHAI-HULUD-OSS",
+          "false_positive_checks_required": [
+            "Confirm the install actually executed lifecycle scripts. `npm install --ignore-scripts` or PyPI `--no-deps` runs the install but does not execute postinstall. Read the npm log for the postinstall line; absence demotes severity.",
+            "Confirm the host wasn't isolated (no outbound network, no credential mounting) during the install. A throwaway container with no credentials is lower-blast-radius than a developer workstation.",
+            "Confirm the install isn't a downgrade-and-test against an isolated reproduction environment. Researcher / red-team reproduction is not a recovery trigger."
+          ]
+        },
+        {
+          "id": "ai-assistant-config-mutated",
+          "type": "file_hash",
+          "value": "Within the ai-assistant-config-snapshot artefact: ~/.claude/settings.json OR ~/.cursor/mcp.json OR ~/.codeium/windsurf/mcp_config.json OR Claude Code startup hook files have SHA mismatch against pre-compromise baseline; OR baseline absent AND files contain references to non-allowlisted MCP servers / startup commands invoking shell-out to non-allowlisted binaries.",
+          "description": "AI-assistant config mutated — Shai-Hulud-family persistence pattern. Worm re-executes on next AI-assistant invocation.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1098",
+          "cve_ref": "MAL-2026-SHAI-HULUD-OSS",
+          "false_positive_checks_required": [
+            "Confirm the mutation is not the operator's own intentional config edit (recent legitimate add of an MCP server, hook update). Check timestamp against the operator's change record.",
+            "Confirm the mutation actually invokes a non-allowlisted binary or unexpected MCP server. Allowlisted org-internal MCP servers / hooks are not findings even when added recently."
+          ]
+        },
+        {
+          "id": "credential-store-touched-during-window",
+          "type": "log_pattern",
+          "value": "Per host that ran a compromised install: read access timestamps + audit logs for ~/.aws/credentials, ~/.config/gcloud, ~/.kube, ~/.ssh, ~/.npmrc, ~/.pypirc, ~/.cursor, ~/.codeium, ~/.claude. Any access within 5 minutes of a compromised postinstall execution timestamp is a positive hit.",
+          "description": "Credential-store read access during compromise window = exfil-plausible. Drives rotation scope.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1552.001",
+          "false_positive_checks_required": [
+            "Confirm the access wasn't an operator-driven action concurrent with the install (e.g. operator runs `aws sts get-caller-identity` for an unrelated reason at the same moment). Cross-reference shell history + operator's stated actions.",
+            "Confirm the access wasn't a legitimate side effect of the npm/pip toolchain itself (e.g. npm reads ~/.npmrc to determine registry URL on every install). Distinguish toolchain reads from postinstall-script reads where possible."
+          ]
+        },
+        {
+          "id": "outbound-exfil-during-window",
+          "type": "network_pattern",
+          "value": "Within lateral-exfil-network-evidence: host that ran a compromised install made outbound connections during the install window to (a) IPs/domains documented as Shai-Hulud-family C2, (b) pastebin / paste-rs / gist (anonymous-paste services), (c) Discord/Slack/Telegram webhook endpoints not in operator allowlist, (d) attacker-controlled GitHub gists or repos.",
+          "description": "Confirmed exfil — credentials are gone, not just exposed.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1567",
+          "false_positive_checks_required": [
+            "Confirm the destination isn't on the operator's legitimate dependency / telemetry allowlist. The operator's own error-tracker, observability provider, or build-cache mirror is not exfil.",
+            "Confirm the outbound traffic isn't a side effect of the package's legitimate functionality. Some packages legitimately call out (telemetry, version-check). Distinguish destination patterns against the package's documented network footprint."
+          ]
+        },
+        {
+          "id": "operator-published-package-republish",
+          "type": "log_pattern",
+          "value": "Within outbound-publish-surface × ecosystem-publish-log (npm publish log, PyPI upload history, GitHub Packages publish event): the operator's package has a version published during the compromise window that the operator's release process does NOT correspond to (no matching CI run, no maintainer-acknowledged push).",
+          "description": "Operator's own package was republished by the worm. Downstream-consumer notification is now mandatory; Art.14 binds the operator as manufacturer.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1195.002",
+          "cve_ref": "MAL-2026-SHAI-HULUD-OSS",
+          "false_positive_checks_required": [
+            "Confirm the publish isn't from a legitimate maintainer not in the standard CI release process (some teams have manual publish from one maintainer's workstation). Cross-reference the publish-user identity + the maintainer's stated activity.",
+            "Confirm the publish version is non-deprecated. A republish followed by immediate yanking by the maintainer themselves is part of recovery, not the compromise."
+          ]
+        },
+        {
+          "id": "ir-plan-missing-supply-chain-recovery",
+          "type": "log_pattern",
+          "value": "Within incident-response-plan: no named scenario for ecosystem-package compromise OR recovery primitives (maintainer-credential rotation, install-window audit, AI-assistant config exfil scope, downstream-consumer notification) are absent.",
+          "description": "Operator's IR plan does not contemplate this incident class. Recovery proceeds ad-hoc — high risk of incomplete primitives.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the missing primitive isn't documented in a separate runbook (e.g. a 'supply-chain incident runbook' standalone). Search for the primitive across the runbook archive before concluding absence.",
+            "Confirm the plan's named scenarios don't generalise to ecosystem-package compromise (e.g. a 'malicious code execution' scenario that covers the recovery primitives even if not labelled 'supply-chain'). Read the scenario contents, not just the title."
+          ]
+        },
+        {
+          "id": "long-lived-token-in-compromised-ci-log",
+          "type": "log_pattern",
+          "value": "Within install-history-per-host (CI subset) × maintainer-credential-inventory: a long-lived token (OAuth refresh, GitHub Apps installation, npm token, PyPI token, cloud STS session token) appears in a CI log artefact retained > 7 days AND the log corresponds to a job that ran a compromised install.",
+          "description": "Snowflake-class pattern compounded with worm: token in long-retained CI log was reachable by the postinstall.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1552.004"
+        },
+        {
+          "id": "no-provenance-revocation-filed",
+          "type": "behavioral_signal",
+          "value": "Within provenance-revocation-state: for operator-published packages that were republished by the worm (operator-published-package-republish == fired): no advisory has been filed on OpenSSF MAL / GHSA / npm-advisory / PyPI-advisory naming the affected version.",
+          "description": "Downstream consumers still install the compromised version because no provenance-revocation advisory exists.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "Confirm the advisory hasn't been filed under a different identifier (vendor-specific advisory ID, organisation-internal CVE). Search the OpenSSF MAL feed + GHSA + ecosystem-specific advisory archives by the package name + version.",
+            "If the affected version has been yanked from the registry, the immediate risk is mitigated even without an advisory — but the advisory is still required for retrospective consumer notification."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "compromised-install-on-host",
+          "benign_pattern": "Throwaway container in CI that doesn't mount any credentials and is destroyed at end of job.",
+          "distinguishing_test": "Confirm the container has no credentials mounted (no /run/secrets, no env vars containing tokens, no .npmrc with token, no AWS_* env vars) AND the container's network egress is restricted. If all three hold, demote to monitor — the postinstall ran but had nothing to exfil and nowhere to send it."
+        },
+        {
+          "indicator_id": "ai-assistant-config-mutated",
+          "benign_pattern": "Operator legitimately added an MCP server config or modified Claude Code settings during a non-compromise activity.",
+          "distinguishing_test": "Cross-reference the mutation timestamp against operator's stated activity log. Confirm the new MCP server or hook is on the org's allowlist. If both conditions hold, demote."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one of {compromised-install-on-host, ai-assistant-config-mutated, outbound-exfil-during-window, operator-published-package-republish} fires — recovery scope established.",
+        "inconclusive": "Compromised-package-inventory exists but install-history-per-host or maintainer-credential-inventory cannot be reconciled (logs pruned, credential stores inaccessible). Cannot bound recovery scope.",
+        "not_detected": "Compromised-package-inventory has 0 hits against install-history-per-host, AI-assistant configs match baseline, no credential-store read access during the window, no outbound exfil, no operator-published-package republish."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "compromised-install-on-host",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Wormable supply-chain compromise — confirmed in-the-wild exploitation across the Shai-Hulud family."
+        },
+        {
+          "signal_id": "compromised-install-on-host",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Per-host blast radius scales with credential surface + outbound network reach."
+        },
+        {
+          "signal_id": "ai-assistant-config-mutated",
+          "rwep_factor": "ai_weaponization",
+          "weight": 15,
+          "notes": "AI-assistant persistence pattern — the operator's own AI assistant becomes a re-execution vector."
+        },
+        {
+          "signal_id": "ai-assistant-config-mutated",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Shai-Hulud family operationally targets AI-assistant configs."
+        },
+        {
+          "signal_id": "outbound-exfil-during-window",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Confirmed exfil — credentials reachable to attacker collector."
+        },
+        {
+          "signal_id": "outbound-exfil-during-window",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Blast radius spans every credential reachable from the exfil host."
+        },
+        {
+          "signal_id": "operator-published-package-republish",
+          "rwep_factor": "active_exploitation",
+          "weight": 20,
+          "notes": "Worm has propagated through operator's publish surface — downstream consumers actively at risk."
+        },
+        {
+          "signal_id": "operator-published-package-republish",
+          "rwep_factor": "blast_radius",
+          "weight": 25,
+          "notes": "Downstream blast radius = every consumer of the operator's package set."
+        },
+        {
+          "signal_id": "long-lived-token-in-compromised-ci-log",
+          "rwep_factor": "cisa_kev",
+          "weight": 25,
+          "notes": "Snowflake-class is on CISA KEV in operational form (CVE-2024-1709 included)."
+        },
+        {
+          "signal_id": "no-provenance-revocation-filed",
+          "rwep_factor": "ai_weaponization",
+          "weight": 5,
+          "notes": "Absence of advisory amplifies downstream-consumer compromise window."
+        },
+        {
+          "signal_id": "ir-plan-missing-supply-chain-recovery",
+          "rwep_factor": "patch_available",
+          "weight": -5,
+          "notes": "Plan-gap is a programme-level issue; modest mitigation via ad-hoc execution."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If a supply-chain compromise is incompletely recovered, what scope of downstream compromise does the operator's residual exposure deliver to attacker C2 + downstream consumer + AI-assistant re-execution paths?",
+        "scoring_rubric": [
+          {
+            "condition": "Single host ran compromised install in throwaway container with no credentials + no network egress + no AI assistant.",
+            "blast_radius_score": 1,
+            "description": "Postinstall ran but had nothing to exfil + nowhere to send it. Recovery = destroy container, rotate any unused-but-present tokens out of caution."
+          },
+          {
+            "condition": "Developer workstation with personal git creds + npm token + AWS dev credentials.",
+            "blast_radius_score": 2,
+            "description": "Personal credential exfil. Recovery = rotate developer creds, audit any commits / publishes from the workstation since compromise."
+          },
+          {
+            "condition": "CI runner host with org GITHUB_TOKEN + cloud STS session + npm publish token for one operator package.",
+            "blast_radius_score": 3,
+            "description": "Org-scoped credential exfil. Recovery = rotate every CI-scoped token, audit publishes during window."
+          },
+          {
+            "condition": "Multiple CI hosts with publish rights across multiple operator packages + AI-assistant configs on developer workstations.",
+            "blast_radius_score": 4,
+            "description": "Multi-asset publish surface compromise + AI-assistant persistence — downstream-consumer notification required, AI-assistant re-execution scope to clean."
+          },
+          {
+            "condition": "Compromise reached identity-plane (SSO admin token exfil, org-admin GitHub Apps installation token, cloud-org-admin STS), OR operator's published packages already republished by worm AND no advisory yet filed.",
+            "blast_radius_score": 5,
+            "description": "Full identity-plane / supply-chain propagation. Org-wide rotation + downstream-consumer notification + Art.14 manufacturer disclosure required."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Incident response is operating per NIST IR-4 + IR-6 + IR-8, ISO A.5.24 + A.5.26 + A.5.27, NIS2 Art.21(2)(f), DORA Art.17-20, SOC 2 CC7.4 — IR plan is documented, IR runbook is in flight, IR-team is engaged.",
+        "audit_evidence": "Documented IR plan, IR runbook, IR-team activation record, incident ticket with timeline, regulator notification filings.",
+        "reality_test": "For the active incident: confirm (a) maintainer credentials across every ecosystem (npm + PyPI + GitHub + cloud + AI-assistant config + secret store) are rotated within 4 hours of detection, (b) install-window audit completed for every host that may have run a compromised install, (c) AI-assistant config exfil scope is documented and persistence hooks removed from every affected workstation, (d) downstream-consumer notification is filed via OpenSSF MAL + GHSA + npm-advisory / PyPI-advisory if the operator publishes packages, (e) provenance-revocation entries are filed for every affected package version. Theater verdict if any of (a)-(e) miss or are not in the IR runbook as named primitives.",
+        "theater_verdict_if_gap": "Operator demonstrates an audit-clean IR programme that processes the supply-chain compromise as an ad-hoc incident without named primitives for ecosystem-package recovery. Either (a) update the IR plan + runbook to name maintainer-credential rotation + install-window audit + AI-assistant config exfil + downstream-consumer notification as scenario primitives, (b) deploy tooling for each primitive (rotation runbook automation, install-window audit tooling, AI-assistant config monitoring, advisory-filing pipeline), (c) train the IR team on Shai-Hulud-family pattern, (d) integrate the OpenSSF MAL feed + GHSA into the detection pipeline so the next compromise has zero-lag detection, OR (e) generate a defensible policy exception via policy-exception-gen acknowledging the framework-coverage gap + interim compensating-control posture."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "IR-4 — Incident Handling",
+          "actual_gap": "Operator-incident framing; ecosystem-package compromise lacks named sub-procedure.",
+          "required_control": "Add IR-4 sub-procedure for ecosystem-package compromise with named primitives: maintainer-credential rotation across npm/PyPI/GitHub/cloud/AI-assistant/secret-store, install-window audit, AI-assistant config exfil scope, downstream-consumer notification, provenance-revocation filing."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "IR-6 — Incident Reporting",
+          "actual_gap": "External-reporting language omits downstream-consumer audience.",
+          "required_control": "Extend IR-6 reporting targets to include OpenSSF MAL feed + GHSA + npm-advisory + PyPI-advisory + ecosystem-specific advisories when operator publishes packages affected by the compromise."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "IR-8 — Incident Response Plan",
+          "actual_gap": "Plans rarely name ecosystem-package compromise scenarios; AI-assistant config exfil not addressed.",
+          "required_control": "Mandate IR-8 plans name supply-chain-recovery as scenario with AI-assistant config exfil scope explicit."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "nist-800-53",
+          "claimed_control": "SR-3 — Supply Chain Controls and Processes",
+          "actual_gap": "Pre-incident framing; no bridge to IR-4 for post-incident recovery.",
+          "required_control": "Define SR-3 → IR-4 bridge: pre-incident supply-chain controls trigger documented post-incident recovery playbook."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.24 — Information security incident management planning and preparation",
+          "actual_gap": "Operator-owned-incident framing; ecosystem-package compromise sub-process absent.",
+          "required_control": "Amendment requiring ecosystem-package compromise as named scenario with documented recovery primitives."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.26 — Response to information security incidents",
+          "actual_gap": "Response workflows omit cross-ecosystem rotation, install-window audit, downstream notification.",
+          "required_control": "Amend A.5.26 implementation guidance: response workflows must include cross-ecosystem rotation matrix + install-window audit tooling + downstream-consumer notification path for supply-chain class."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.27 — Learning from information security incidents",
+          "actual_gap": "Operator-internal lessons; cross-ecosystem lessons unanchored.",
+          "required_control": "Bind A.5.27 to ecosystem-wide learning channels: OpenSSF MAL feed contribution, GHSA advisory authoring, post-incident community publication."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2)(f) — Crisis management",
+          "actual_gap": "Crisis-management measures do not specify supply-chain-recovery primitives.",
+          "required_control": "Implementing act binding essential-entity crisis-management plans to include ecosystem-package compromise recovery playbook with named primitives."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "dora",
+          "claimed_control": "Art.17-20 — ICT-related incident management",
+          "actual_gap": "Classification anchored on operator-side impact; upstream-source compromise misses early-detection window.",
+          "required_control": "RTS/ITS adding ecosystem-package compromise as classification axis triggering DORA Art.19 4h notification when financial-entity packages are affected."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "eu-cra",
+          "claimed_control": "Art.14 — Coordinated vulnerability disclosure / actively-exploited reporting",
+          "actual_gap": "Binds manufacturer; consumer-only operators have inbound disclosure but no recovery primitive.",
+          "required_control": "Implementing act extending Art.14 with consumer-side recovery guidance: ecosystem-package compromise triggers documented consumer recovery workflow including credential rotation + install-window audit."
+        },
+        {
+          "finding_id": "supply-chain-recovery-framework-gap",
+          "framework": "soc2",
+          "claimed_control": "CC7.4 — Incident response",
+          "actual_gap": "Operator-incident framing inherits NIST gap.",
+          "required_control": "Trust-services-criteria update: CC7.4 evidence must include ecosystem-package compromise scenario in IR plan + named recovery primitives."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "operator-published-package-republish == fired",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "blast_radius_score >= 4",
+          "action": "page_on_call"
+        },
+        {
+          "condition": "ai-assistant-config-mutated == fired",
+          "action": "trigger_playbook",
+          "target_playbook": "mcp"
+        },
+        {
+          "condition": "any_credential_class_exfil'd_includes_sso_admin == true",
+          "action": "trigger_playbook",
+          "target_playbook": "idp-incident"
+        },
+        {
+          "condition": "credential-store-touched-during-window == fired",
+          "action": "trigger_playbook",
+          "target_playbook": "cred-stores"
+        },
+        {
+          "condition": "operator-published-package-republish == fired",
+          "action": "trigger_playbook",
+          "target_playbook": "sbom"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater'",
+          "action": "notify_legal"
+        },
+        {
+          "condition": "operator-published-package-republish == fired AND jurisdiction_obligations contains 'EU'",
+          "action": "notify_legal"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "exhaustive-maintainer-credential-rotation",
+          "description": "NEW-CTRL-050: Rotate every credential across every ecosystem the worm could have exfil'd. Per ecosystem: npm tokens (npm token revoke + recreate), PyPI tokens (PyPI account → token revoke + recreate), GitHub PATs + Apps installation tokens (gh auth refresh + revoke), cloud SDK credentials (aws iam delete-access-key + recreate / gcloud auth revoke + login / az login --use-device-code), SSH private keys (revoke from authorized_keys on every endpoint + regenerate), AI-assistant config tokens (claude logout + relogin, codeium auth + relogin, cursor auth + relogin), secret-store CLI sessions (gh auth logout / vault token revoke / doctl auth init / gcloud auth revoke). Confirm rotation propagated with synthetic test per credential.",
+          "preconditions": [
+            "operator_holds_rotation_authority == true",
+            "rotation_runbook_documented == true OR ad_hoc_rotation_acceptable_within_4h == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "rotation_recorded_in_secret_store_audit_log",
+            "synthetic_test_validates_new_credential",
+            "old_token_rejection_confirmed"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "install-window-audit-and-remediation",
+          "description": "NEW-CTRL-051: For every host that may have run a compromised install: (a) enumerate the install via npm + pip + lock-file diff, (b) identify the postinstall execution timestamp, (c) audit credential-store access timestamps + network egress in the 5-minute window post-install, (d) for hits, treat the host as compromised and follow the operator's host-isolation + re-imaging procedure, (e) for non-hits, document the audit as evidence the host is clean.",
+          "preconditions": [
+            "install-history-per-host_obtainable == true",
+            "host_isolation_authority == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "host_isolation_during_audit",
+            "fresh_workstation_provisioning_for_affected_developers"
+          ],
+          "estimated_time_hours": 24
+        },
+        {
+          "id": "ai-assistant-config-cleanup",
+          "description": "NEW-CTRL-052: For every host with AI-assistant installs that ran a compromised postinstall: (a) snapshot the current AI-assistant config files, (b) restore from pre-compromise baseline OR remove all non-allowlisted MCP servers + startup hooks, (c) re-authenticate the AI assistant with rotated credentials, (d) verify no persistence remains by restarting the AI assistant and confirming clean startup. AI-assistant config cleanup is first-class — Shai-Hulud-family explicitly persists here.",
+          "preconditions": [
+            "ai_assistant_config_baseline_or_allowlist_available == true",
+            "operator_can_re_authenticate_ai_assistant == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "ai_assistant_baseline_attestation",
+            "weekly_ai_assistant_config_drift_scan"
+          ],
+          "estimated_time_hours": 6
+        },
+        {
+          "id": "downstream-consumer-notification",
+          "description": "If operator-published-package-republish fired: file advisories on OpenSSF MAL feed + GHSA + npm-advisory / PyPI-advisory naming the affected package + malicious version + recovery guidance for consumers. Yank or deprecate the affected version. Push notification to known downstream consumers via the operator's published contact channels.",
+          "preconditions": [
+            "operator_publishes_packages == true",
+            "operator_can_file_advisories == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "advisory_filed_within_24h",
+            "yank_or_deprecate_within_4h",
+            "consumer_contact_archive_updated"
+          ],
+          "estimated_time_hours": 12
+        },
+        {
+          "id": "provenance-revocation-and-re-establishment",
+          "description": "For every affected operator-published version: file sigstore revocation entries, npm provenance revocation, GHSA security advisory. Re-establish provenance for the clean version: ensure new release goes through SLSA-L3-conformant pipeline with the rotated signing key.",
+          "preconditions": [
+            "operator_holds_provenance_filing_authority == true",
+            "slsa_l3_pipeline_operational == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "provenance_revocation_filed",
+            "clean_release_provenance_attested"
+          ],
+          "estimated_time_hours": 8
+        },
+        {
+          "id": "ir-plan-update-supply-chain-scenario",
+          "description": "Update the operator's IR plan + IR runbook to name supply-chain-recovery as a scenario with the four NEW-CTRL primitives. Train the IR team. Add the OpenSSF MAL feed + GHSA + npm-advisory pipeline to detection.",
+          "preconditions": [
+            "ir_plan_ownership_attested == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "ir_team_training_recorded",
+            "feed_ingestion_attested"
+          ],
+          "estimated_time_hours": 24
+        },
+        {
+          "id": "policy-exception",
+          "description": "For recovery primitives that cannot be completed within the jurisdiction's window: generate auditor-ready policy exception with compensating controls, time-bound risk acceptance, and remediation milestones. Typical blockers: legacy host without re-imaging window, vendor refuses to rotate a shared maintainer credential, downstream-consumer notification depends on third-party advisory pipeline outside operator control.",
+          "preconditions": [
+            "remediation_paths[1..6] partially blocked",
+            "ciso_acceptance_obtainable == true"
+          ],
+          "priority": 7,
+          "compensating_controls": [
+            "enhanced_endpoint_monitoring",
+            "compensating_network_segmentation",
+            "weekly_exception_register_review"
+          ],
+          "estimated_time_hours": 6
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "rotated-credential-rejection",
+          "test": "Post-rotation: attempt to use the OLD credential against each ecosystem (npm publish with old token, gh auth with old PAT, aws sts get-caller-identity with old keys, claude login with old session token). Confirm rejection.",
+          "expected_result": "Every old credential rejected across every ecosystem.",
+          "test_type": "negative"
+        },
+        {
+          "id": "install-window-audit-completeness",
+          "test": "For each host enumerated in install-history-per-host: confirm an audit record exists with (a) install timestamp, (b) postinstall execution result, (c) credential-store access scan, (d) network egress scan, (e) host disposition (clean / compromised + isolated / compromised + re-imaged).",
+          "expected_result": "100% of in-scope hosts have a complete audit record.",
+          "test_type": "functional"
+        },
+        {
+          "id": "ai-assistant-config-clean",
+          "test": "Post-cleanup: snapshot each AI-assistant config and confirm match to baseline OR allowlist. Restart the AI assistant; confirm no unexpected MCP server connection, no unexpected startup-hook execution.",
+          "expected_result": "Config snapshot matches baseline / allowlist; AI assistant starts cleanly.",
+          "test_type": "functional"
+        },
+        {
+          "id": "downstream-advisory-filed",
+          "test": "If operator publishes packages: confirm OpenSSF MAL + GHSA + npm-advisory / PyPI-advisory entries exist naming the affected package + version + recovery guidance.",
+          "expected_result": "Advisory entries filed across all applicable channels.",
+          "test_type": "functional"
+        },
+        {
+          "id": "yank-or-deprecation-confirmed",
+          "test": "For each affected version: confirm `npm view <pkg>@<ver> deprecated` returns deprecation reason OR `pip download <pkg>==<ver>` reports yanked / withdrawn.",
+          "expected_result": "Every affected version yanked / deprecated.",
+          "test_type": "functional"
+        },
+        {
+          "id": "provenance-re-established",
+          "test": "For the clean (post-incident) release of each affected operator-published package: confirm SLSA-L3 provenance attestation + sigstore signature with the rotated key.",
+          "expected_result": "Provenance attestation valid; signature traces to rotated key.",
+          "test_type": "functional"
+        },
+        {
+          "id": "ir-plan-supply-chain-scenario-present",
+          "test": "Read the updated IR plan + IR runbook. Assert supply-chain-recovery scenario is named with the four NEW-CTRL primitives (rotation + install-window audit + AI-assistant config cleanup + downstream-consumer notification).",
+          "expected_result": "IR plan / runbook has named supply-chain-recovery scenario with all four primitives.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-regression-postinstall-execution",
+          "test": "On a fresh canary host, attempt `npm install <compromised-package>@<malicious-version>` (against a local mirror that still holds the version for testing). Confirm the host's endpoint controls (allowlisting, egress filtering, postinstall script restriction) prevent execution OR cleanly contain it.",
+          "expected_result": "Endpoint controls prevent or contain execution; the canary host is unaffected.",
+          "test_type": "exploit_replay"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Operator retains residual risk from supply-chain compromise across (a) credentials that may have been exfil'd before rotation completed, (b) downstream consumers who installed the compromised version before advisories landed, (c) AI-assistant persistence on hosts not yet audited, (d) future-iteration of the Shai-Hulud family targeting yet-unenumerated config files.",
+        "why_remains": "Rotation closes future-publish + future-auth windows but cannot retract credential exposure during the compromise window. Downstream consumers install at their own cadence; some will install before yanking propagates. AI-assistant config exfil scope expands as new AI assistants ship config files. The Shai-Hulud family is actively maintained by TeamPCP + copycats; recovery primitives encoded today may need extension within the next cycle.",
+        "acceptance_level": "ciso",
+        "compensating_controls_in_place": [
+          "exhaustive_credential_rotation_completed",
+          "install_window_audit_documented",
+          "ai_assistant_config_cleanup_completed",
+          "downstream_advisory_filed",
+          "provenance_re_established",
+          "ir_plan_updated_with_supply_chain_scenario",
+          "enhanced_monitoring_post_incident"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "attestation",
+          "description": "Credential rotation completion record across every ecosystem with old-token rejection confirmed via synthetic test; signed.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-4",
+            "iso-27001-2022-A.5.26",
+            "nis2-art21-2f",
+            "soc2-CC7.4"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Install-window audit record per in-scope host with disposition + audit timestamps.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-4",
+            "nist-800-53-IR-5",
+            "iso-27001-2022-A.5.26",
+            "dora-art17"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "AI-assistant config cleanup attestation per affected host with baseline-match confirmation.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-4",
+            "iso-27001-2022-A.5.26"
+          ]
+        },
+        {
+          "evidence_type": "scan_report",
+          "description": "Downstream-consumer advisory filing records across OpenSSF MAL + GHSA + ecosystem-specific advisories.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-IR-6",
+            "iso-27001-2022-A.5.27",
+            "eu-cra-art-14"
+          ]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "IR plan + IR runbook diff showing addition of supply-chain-recovery scenario with the four NEW-CTRL primitives.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "nist-800-53-IR-8",
+            "iso-27001-2022-A.5.24",
+            "nis2-art21-2f",
+            "soc2-CC7.4"
+          ]
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Canary-host install-of-malicious-version test confirming endpoint controls prevent or contain execution.",
+          "retention_period": "1_year",
+          "framework_satisfied": [
+            "soc2-CC7.4",
+            "iso-27001-2022-A.5.26"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Signed exceptd attestation file with evidence_hash, affected-package inventory, host disposition summary, credential rotation summary, downstream advisory filing summary, residual risk acceptance.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "nist-800-53-CA-7",
+            "iso-27001-2022-A.5.36",
+            "nis2-art21-2f"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_shai_hulud_family_advisory_published",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_compromised_version_for_inventoried_dependency",
+          "interval": "on_event"
+        },
+        {
+          "condition": "ai_assistant_config_drift_detected",
+          "interval": "on_event"
+        },
+        {
+          "condition": "new_maintainer_credential_issued",
+          "interval": "on_event"
+        },
+        {
+          "condition": "weekly_post_incident",
+          "interval": "7d"
+        },
+        {
+          "condition": "monthly_steady_state",
+          "interval": "30d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "all_validation_tests_passed",
+          "credential_rotation_completion_record",
+          "install_window_audit_report",
+          "ai_assistant_config_cleanup_attestation",
+          "downstream_advisory_filing_records",
+          "provenance_re_establishment_record",
+          "ir_plan_diff",
+          "exploit_replay_negative",
+          "framework_gap_mapping",
+          "compliance_theater_verdict",
+          "residual_risk_statement",
+          "attestation"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Ecosystem-package compromise (Shai-Hulud family or successor) — malicious version published under compromised maintainer credentials, postinstall harvests credentials across npm + cloud + AI-assistant config + secret store, republishes through operator's publish surface, persists via AI-assistant startup hooks.",
+          "control_gap": "Incident-response controls do not name supply-chain-recovery as a scenario with the NEW-CTRL-050 / 051 / 052 primitives. AI-assistant config exfil is not first-class in any framework. Downstream-consumer notification is undefined as an external-reporting target.",
+          "framework_gap": "NIST IR-4 + IR-6 + IR-8 + SR-3, ISO A.5.24 + A.5.26 + A.5.27, NIS2 Art.21(2)(f), DORA Art.17-20, EU CRA Art.14, SOC 2 CC7.4, UK CAF D1 all permit IR programmes that omit supply-chain-recovery primitives as compliant. Framework cadence ~270 days behind operational pattern establishment.",
+          "new_control_requirement": "Add 'supply-chain-recovery' as named scenario across the eleven framework controls requiring: (a) exhaustive maintainer-credential rotation across npm + PyPI + GitHub + cloud + AI-assistant + secret-store (NEW-CTRL-050), (b) install-window audit across every host that may have run a compromised install (NEW-CTRL-051), (c) AI-assistant config exfil scope as first-class recovery primitive (NEW-CTRL-052), (d) downstream-consumer notification via OpenSSF MAL + GHSA + ecosystem-specific advisories, (e) provenance revocation + re-establishment with rotated keys."
+        },
+        "feeds_back_to_skills": [
+          "supply-chain-integrity",
+          "incident-response-playbook",
+          "ransomware-response",
+          "coordinated-vuln-disclosure",
+          "framework-gap-analysis",
+          "compliance-theater",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "compromised_maintainer_account_inventory",
+            "affected_install_window_estimate",
+            "downstream_blast_radius_estimate",
+            "containment_record"
+          ],
+          "draft_notification": "Initial NIS2 Art.23 24-hour early-warning notification: Supply-chain compromise affecting ${affected_package_count} package(s) (${shai_hulud_family_name} family). Compromise window: ${compromise_window_start} to ${compromise_window_end}. Affected operator hosts: ${affected_host_count}. Operator-published packages republished: ${republished_count}. Containment in place: ${containment_record}. Full incident assessment to follow within 72 hours per Art.23(4)."
+        },
+        {
+          "obligation_ref": "EU/DORA Art.19 4h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "ict_critical_function_impact",
+            "ict_third_party_dependencies_affected",
+            "containment_record"
+          ],
+          "draft_notification": "DORA Art.19 initial notification: Major ICT-related incident — supply-chain compromise affecting ICT services supporting ${critical_or_important_functions}. Affected ICT third-party dependencies: ${affected_dependencies}. Containment posture: ${containment_record}. Full classification + impact assessment to follow within statutory windows."
+        },
+        {
+          "obligation_ref": "EU/EU CRA Art.14 24h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "actively_exploited_assessment",
+            "user_notification_draft",
+            "affected_product_inventory"
+          ],
+          "draft_notification": "EU CRA Art.14 notification: actively-exploited vulnerability in ${affected_product_inventory} arising from supply-chain compromise. ${manufacturer_name} attests the affected version(s) are yanked/deprecated and downstream advisories filed. User-notification draft attached for review."
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "data_subject_impact_assessment",
+            "exfiltration_window_estimate"
+          ],
+          "draft_notification": "GDPR Art.33 notification: personal data breach potentially affecting ${data_subjects_estimate} data subjects via supply-chain credential exfil on operator hosts. Exfil window: ${exfil_window}. Notification to data subjects: ${data_subject_notification_status}."
+        },
+        {
+          "obligation_ref": "US-Federal/SEC Item 1.05 (8-K) 96h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "material_impact_determination",
+            "incident_description"
+          ],
+          "draft_notification": "SEC Item 1.05 8-K disclosure draft: Material cybersecurity incident — supply-chain compromise affecting ${affected_systems}. Materiality determination: ${materiality_justification}. Remediation status: ${remediation_status}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR (provider_does_not_expose_required_primitive == true AND alternative_provider_migration_eta > jurisdiction_window)",
+        "exception_template": {
+          "scope": "Supply-chain-recovery residual risk across ${affected_host_count} host(s) + ${affected_package_count} affected package(s). Remediation paths 1-6 partially blocked by ${blocking_factors}.",
+          "duration": "until_remediation_complete_or_30d",
+          "compensating_controls": [
+            "enhanced_endpoint_monitoring_for_affected_hosts",
+            "network_segmentation_for_unisolatable_hosts",
+            "weekly_credential_rotation_audit",
+            "weekly_ai_assistant_config_drift_scan",
+            "downstream_consumer_advisory_pipeline_monitored",
+            "openssf_mal_feed_ingestion_attested"
+          ],
+          "risk_acceptance_owner": "ciso",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id}, the organisation documents a time-bound risk acceptance for supply-chain-recovery residual risk across ${affected_host_count} host(s) + ${affected_package_count} affected package(s). Compromise family: ${shai_hulud_family_or_successor}. Blocking factors: ${blocking_factors}. The organisation acknowledges that current framework controls do not specify ecosystem-package compromise as a named IR scenario with NEW-CTRL-050 / NEW-CTRL-051 / NEW-CTRL-052 primitives and that this gap is documented in ${exceptd_framework_gap_mapping_ref}. Compensating controls in place: ${compensating_controls}. Remediation milestones: ${remediation_milestones}. Risk accepted by ${ciso_name} on ${acceptance_date}. Time-bound until ${duration_expiry}. The exception will be re-evaluated on (a) remediation completion, (b) new Shai-Hulud-family advisory affecting the operator, (c) scheduled expiry, OR (d) framework amendment landing the missing controls — whichever is first."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "full-recovery-sequence",
+      "title": "Full post-compromise recovery — credential rotation + install-window audit + AI-assistant config cleanup + downstream notification + provenance re-establishment",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "shai-hulud-family-active-incident",
+      "title": "Active Shai-Hulud-family incident response (MAL-2026-SHAI-HULUD-OSS / Mini Shai-Hulud / TanStack-mini)",
+      "applies_to": {
+        "cve": "MAL-2026-SHAI-HULUD-OSS"
+      },
+      "phase_overrides": {
+        "direct": {
+          "rwep_threshold": {
+            "escalate": 90,
+            "monitor": 70,
+            "close": 30
+          }
+        }
+      }
+    },
+    {
+      "id": "tanstack-mini-incident",
+      "title": "TanStack-mini variant recovery (MAL-2026-TANSTACK-MINI / 42 @tanstack/* packages)",
+      "applies_to": {
+        "cve": "MAL-2026-TANSTACK-MINI"
+      }
+    },
+    {
+      "id": "node-ipc-stealer-incident",
+      "title": "node-ipc-stealer variant recovery (MAL-2026-NODE-IPC-STEALER)",
+      "applies_to": {
+        "cve": "MAL-2026-NODE-IPC-STEALER"
+      }
+    },
+    {
+      "id": "worm-via-github-actions",
+      "title": "Worm-via-GitHub-Actions class recovery (CVE-2026-45321)",
+      "applies_to": {
+        "cve": "CVE-2026-45321"
+      }
+    }
+  ]
+}
