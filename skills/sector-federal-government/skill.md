@@ -61,6 +61,7 @@ forward_watch:
   - EU Cybersecurity Certification Scheme on Common Criteria (EUCC) operational — first certificates issued 2024; high-assurance level for government use cases ramping
   - Australia PSPF 2024 revision and ISM quarterly updates — track for Essential Eight Maturity Level requirements for federal entities
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-federal-government` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Federal Government and Defense Contractor Cybersecurity

@@ -34,6 +34,7 @@ forward_watch:
   - Framework publication updates (NIST SP updates, ISO amendments, NIS2 implementing acts)
   - IETF RFC publications and draft status changes (datatracker.ietf.org, rfc-editor.org); run `npm run validate-rfcs` quarterly
 last_threat_review: "2026-05-15"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief skill-update-loop` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Skill Update Loop

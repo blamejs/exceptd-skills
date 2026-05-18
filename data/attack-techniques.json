@@ -99,8 +99,10 @@
       "DS0017"
     ],
     "cve_refs": [
+      "CVE-2025-11837",
       "CVE-2025-53773",
       "CVE-2026-30615",
+      "CVE-2026-30623",
       "CVE-2026-32202",
       "CVE-2026-39884",
       "CVE-2026-39987",
@@ -133,6 +135,7 @@
     "name": "Exploitation for Privilege Escalation",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-62849",
       "CVE-2026-0300",
       "CVE-2026-31431",
       "CVE-2026-33825",
@@ -151,6 +154,9 @@
     "name": "Valid Accounts",
     "version": "v19",
     "cve_refs": [
+      "CVE-2020-10148",
+      "CVE-2024-1709",
+      "CVE-2026-20182",
       "CVE-2026-33825",
       "CVE-2026-39884",
       "CVE-2026-42897",
@@ -223,8 +229,16 @@
     "name": "Exploit Public-Facing Application",
     "version": "v19",
     "cve_refs": [
+      "CVE-2020-10148",
+      "CVE-2023-3519",
+      "CVE-2024-1709",
+      "CVE-2025-12686",
       "CVE-2025-53773",
+      "CVE-2025-59389",
+      "CVE-2025-62847",
+      "CVE-2025-62848",
       "CVE-2026-0300",
+      "CVE-2026-20182",
       "CVE-2026-32202",
       "CVE-2026-39987",
       "CVE-2026-42208",
@@ -300,7 +314,10 @@
   },
   "T1525": {
     "name": "Implant Internal Image",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2024-40635"
+    ]
   },
   "T1528": {
     "name": "Steal Application Access Token",
@@ -364,7 +381,8 @@
     "name": "Compromise Host Software Binary",
     "version": "v19",
     "cve_refs": [
-      "CVE-2024-3094"
+      "CVE-2024-3094",
+      "CVE-2025-11837"
     ]
   },
   "T1555": {
@@ -493,7 +511,8 @@
       "DS0029"
     ],
     "cve_refs": [
-      "CVE-2024-21626"
+      "CVE-2024-21626",
+      "CVE-2024-3154"
     ]
   },
   "T1613": {

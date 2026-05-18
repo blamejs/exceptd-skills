@@ -1236,7 +1236,14 @@ function dispatchPlaybook(cmd, argv) {
     // `--mode garbage` was silently accepted.
     const VALID_MODES = ["self_service", "authorized_pentest", "ir_response", "ctf", "research", "compliance_audit"];
     if (!VALID_MODES.includes(args.mode)) {
-      return emitError(`run: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.`, { provided: args.mode }, pretty);
+      // v0.13.2: did-you-mean on flag-value typos (Levenshtein ≤ 2).
+      const dym = suggestFlag(String(args.mode), VALID_MODES);
+      const hint = dym ? ` Did you mean "${dym}"?` : '';
+      return emitError(
+        `run: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.${hint}`,
+        { provided: args.mode, accepted: VALID_MODES, did_you_mean: dym ? [dym] : [] },
+        pretty,
+      );
     }
     runOpts.mode = args.mode;
   }
@@ -2268,7 +2275,13 @@ function cmdBrief(runner, args, runOpts, pretty) {
   if (onlyPhase != null) {
     const ACCEPTED_PHASES = ["govern", "direct", "look"];
     if (!ACCEPTED_PHASES.includes(onlyPhase)) {
-      return emitError(`brief: --phase "${onlyPhase}" not in accepted set ${JSON.stringify(ACCEPTED_PHASES)}.`, { verb: "brief", provided: onlyPhase }, pretty);
+      const dym = suggestFlag(String(onlyPhase), ACCEPTED_PHASES);
+      const hint = dym ? ` Did you mean "${dym}"?` : '';
+      return emitError(
+        `brief: --phase "${onlyPhase}" not in accepted set ${JSON.stringify(ACCEPTED_PHASES)}.${hint}`,
+        { verb: "brief", provided: onlyPhase, accepted: ACCEPTED_PHASES, did_you_mean: dym ? [dym] : [] },
+        pretty,
+      );
     }
   }
 
@@ -2998,7 +3011,13 @@ function cmdRun(runner, args, runOpts, pretty) {
     const requested = Array.isArray(args.format) ? args.format[0] : args.format;
     const VALID = ["summary", "markdown", "csaf-2.0", "csaf", "sarif", "openvex", "json"];
     if (!VALID.includes(requested)) {
-      return emitError(`run: --format "${requested}" not in accepted set ${JSON.stringify(VALID)}.`, null, pretty);
+      const dym = suggestFlag(String(requested), VALID);
+      const hint = dym ? ` Did you mean "${dym}"?` : '';
+      return emitError(
+        `run: --format "${requested}" not in accepted set ${JSON.stringify(VALID)}.${hint}`,
+        { verb: "run", provided: requested, accepted: VALID, did_you_mean: dym ? [dym] : [] },
+        pretty,
+      );
     }
     if (requested === "summary") {
       const cls = result.phases?.detect?.classification;
@@ -4788,7 +4807,13 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // accepting any value the operator passed.
     const VALID_EXPORT_FORMATS = ["json", "csaf", "csaf-2.0"];
     if (!VALID_EXPORT_FORMATS.includes(formatRaw)) {
-      return emitError(`attest export: --format "${formatRaw}" not in accepted set ${JSON.stringify(VALID_EXPORT_FORMATS)}.`, null, pretty);
+      const dym = suggestFlag(String(formatRaw), VALID_EXPORT_FORMATS);
+      const hint = dym ? ` Did you mean "${dym}"?` : '';
+      return emitError(
+        `attest export: --format "${formatRaw}" not in accepted set ${JSON.stringify(VALID_EXPORT_FORMATS)}.${hint}`,
+        { verb: "attest export", provided: formatRaw, accepted: VALID_EXPORT_FORMATS, did_you_mean: dym ? [dym] : [] },
+        pretty,
+      );
     }
     const redacted = attestations.map(a => ({
       session_id: a.session_id,
@@ -6551,9 +6576,13 @@ function cmdCi(runner, args, runOpts, pretty) {
     // Route through emitError so the body propagates exit codes via the
     // emit() ok:false contract. ci-format-typo is operator-decision class
     // (GENERIC_FAILURE), not DETECTED_ESCALATE.
+    // v0.13.2: did-you-mean on the unknown format value (Levenshtein ≤ 2).
+    const CI_FORMATS = ["summary", "markdown", "csaf-2.0", "sarif", "openvex", "json"];
+    const dym = suggestFlag(String(fmt), CI_FORMATS);
+    const hint = dym ? ` Did you mean "${dym}"?` : '';
     emitError(
-      `ci: --format "${fmt}" not in accepted set ["summary","markdown","csaf-2.0","sarif","openvex","json"].`,
-      { verb: "ci" },
+      `ci: --format "${fmt}" not in accepted set ${JSON.stringify(CI_FORMATS)}.${hint}`,
+      { verb: "ci", provided: fmt, accepted: CI_FORMATS, did_you_mean: dym ? [dym] : [] },
       pretty
     );
     return;

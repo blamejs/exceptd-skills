@@ -45,6 +45,7 @@ d3fend_refs:
   - D3-IOPR
   - D3-PSEP
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief fuzz-testing-strategy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Fuzz Testing Strategy

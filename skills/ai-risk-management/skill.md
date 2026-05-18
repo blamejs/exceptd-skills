@@ -45,6 +45,7 @@ cwe_refs:
 d3fend_refs:
   - D3-IOPR
 last_threat_review: "2026-05-15"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # AI Risk Management (Governance Layer)

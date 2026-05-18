@@ -87,15 +87,16 @@ test("predeploy.js exports a non-empty ordered GATES list", () => {
   }
 });
 
-test("predeploy.js exports exactly 14 gates as of v0.12.14", () => {
+test("predeploy.js exports exactly 15 gates as of v0.13.2", () => {
   // v0.12.14 (Audit G F13) removed the two `validate-cves --offline --no-fail`
-  // / `validate-rfcs --offline --no-fail` gates: both were enumeration-only
-  // no-ops (`--no-fail` forced them to always exit 0). 16 - 2 = 14.
+  // / `validate-rfcs --offline --no-fail` gates: 16 - 2 = 14.
+  // v0.13.2 added "Test-count baseline (no silent shrinkage)" via
+  // scripts/check-test-count.js: 14 + 1 = 15.
   const gates = loadGates();
   assert.equal(
     gates.length,
-    14,
-    `expected 14 gates in v0.12.14 (16 pre-existing - 2 removed no-op offline catalog gates), got ${gates.length}`,
+    15,
+    `expected 15 gates in v0.13.2 (14 pre-existing + 1 added test-count baseline), got ${gates.length}`,
   );
 });
 

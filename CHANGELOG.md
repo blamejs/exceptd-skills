@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.13.2 — 2026-05-18
+
+Audit close-out: the remaining v0.13 deferrals from the original 6-domain audit + the v0.13.1 post-mortem follow-ups. Patch-class — additive across CI hardening, lint enforcement, CLI UX, predeploy gates, catalog data cleanup, and skill metadata.
+
+### Security
+
+**`release.yml` publish job split: `publish-npm` (id-token:write only) + `publish-github-release` (contents:write only).** Pre-v0.13.2 a single `publish` job carried BOTH permissions at once — a compromise of any step in that job (leaked NODE_AUTH_TOKEN, malicious dependency in the runner image, third-party action with elevated trust) had access to the npm provenance signing identity AND repo-write simultaneously. The new shape isolates each permission to the minimum surface that needs it. `publish-github-release` depends on `publish-npm` so the GitHub Release only fires when npm publish succeeded — releases pointing at a tag whose npm publish failed are operator-confusing.
+
+### Features
+
+**`exceptd watchlist --alerts` 5 patterns now stable.** No change in v0.13.2; documenting that the v0.13.1 patterns are now operationally proven against the post-mortem seeds (`CVE-2026-46333` ssh-keysign-pwn surfacing under `kernel_lpe_with_poc`; `MAL-2026-SHAI-HULUD-OSS` under `supply_chain_family`).
+
+**Flag-value did-you-mean across 6 sites.** `run --mode`, `brief --phase`, `run --format`, `attest export --format`, `ci --format`, and orchestrator `report <format>` now surface a Levenshtein-≤2 typo suggestion in the structured error body alongside the accepted-set list. JSON shape: `{ok:false, error, provided, accepted, did_you_mean:["..."]}`. Example: `brief library-author --phase goven` → `did_you_mean: ["govern"]`.
+
+**`lib/lint-skills.js` Hard Rule #1 body-scan.** Every `CVE-* / MAL-*` reference in skill prose is now resolved against the canonical catalog. Missing-from-catalog surfaces as a WARNING in v0.13.2 (will hard-fail in v0.14.0); `_draft:true` references surface as WARNING. The forcing function lands; pre-existing violations on `ransomware-response` (CVE-2024-21762) and `cloud-iam-incident` (CVE-2026-21370) don't block the release but are now visible in every lint run.
+
+**`scripts/check-test-count.js` — new 15th predeploy gate.** Static-counts `test(` declarations across `tests/*.test.js` and refuses shrinkage beyond the configured tolerance (default 1). Baseline pinned in `tests/.test-count-baseline.json`. Catches accidentally-deleted test files / mass-skip mistakes that the lint + diff-coverage gates wouldn't surface. Initial baseline 924 declarations across 94 files; bump with `--update-baseline` on releases that legitimately add many tests.
+
+**Skill `discovery_mode: standalone` frontmatter field.** 16 skills that are intentionally reached via `exceptd brief <name>` or `exceptd ask` rather than playbook `skill_chain` now carry the explicit marker. Closes the v0.12 audit gap that flagged these as "unreferenced" — operator intent now explicit. Affected: `age-gates-child-safety`, `ai-risk-management`, `defensive-countermeasure-mapping`, `email-security-anti-phishing`, `fuzz-testing-strategy`, `mlops-security`, `ot-ics-security`, `researcher`, `sector-energy`, `sector-federal-government`, `sector-telecom`, `skill-update-loop`, `threat-model-currency`, `threat-modeling-methodology`, `webapp-security`, `zeroday-gap-learn`.
+
+### Bugs
+
+**14 still-draft CVEs flipped to verified.** Each got a matching `zeroday-lessons.json` entry (the AGENTS.md rule #6 requirement) and had `_draft` removed: `CVE-2024-3154` (CRI-O kernel-module load), `CVE-2023-43472` (MLflow path-traversal), `CVE-2020-10148` (SUNBURST), `CVE-2023-3519` (Citrix NetScaler unauth RCE), `CVE-2024-1709` (ConnectWise ScreenConnect), `CVE-2026-20182` (Cisco SD-WAN), `CVE-2024-40635` (containerd integer overflow), `CVE-2026-30623` (Anthropic MCP SDK stdio injection), `CVE-2025-12686` (Synology BeeStation Pwn2Own), `CVE-2025-62847` / `CVE-2025-62848` / `CVE-2025-62849` (QNAP QTS DEVCORE chain), `CVE-2025-59389` (QNAP Hyper Data Protector), `CVE-2025-11837` (QNAP Malware Remover). Three new control requirements introduced where the CVE surfaced a novel class: `NEW-CTRL-053` MCP-SERVER-CONFIG-ALLOWLIST, `NEW-CTRL-054` BACKUP-TIER-NETWORK-ISOLATION, `NEW-CTRL-055` SECURITY-TOOL-INTEGRITY-VERIFICATION. Catalog now 37/39 entries verified; 2 remaining drafts are quarantined / embargoed placeholders.
+
+**8 framework-gap forward-orphan refs cleaned up.** The v0.13.0 Hard Rule #5 backfill surfaced 8 framework-control gap IDs cited by CVE entries' `framework_control_gaps` field but missing from `framework-control-gaps.json`. All 8 added with theater_test blocks per Hard Rule #6: `NIST-800-53-SC-39` (Process Isolation), `ISO-27001-2022-A.8.22` (Segregation of networks), `CIS-Kubernetes-Benchmark-5.7` (Network Policies), `NIST-800-218-SSDF-PW.4` (Reuse Existing, Well-Secured Software), `NIST-800-53-SR-3` (Supply Chain Controls), `SLSA-v1.0-Source-L3`, `NIST-AI-RMF-MAP-3.4`, `OWASP-Top-10-2021-A06`. Gap catalog 122 → 130 entries.
+
+**`release.yml` CHANGELOG-extraction fallback now emits `::warning::`.** Surfaces the parse failure on the run page rather than silently shipping a generic body.
+
+### Internal
+
+- 11 new tests in `tests/v0_13_2-fixes.test.js`. Test count baseline 924 (initial pin).
+- Predeploy gate count 14 → 15.
+- `refresh.yml` split-checkout pattern (persist-credentials hardening) deferred to v0.14 — needs peter-evans/create-pull-request auth-mode research first.
+
 ## 0.13.1 — 2026-05-17
 
 Threat-intake gap closure. Driven by the post-mortem on CVE-2026-46333 (ssh-keysign-pwn) — disclosed 2026-05-14 by Qualys, missed by the toolkit at T+0 through T+3 because the existing source set (KEV, EPSS, NVD, RFC, PINS, GHSA, OSV) sits at the END of the disclosure pipeline. Adds primary-source polling, CVE-class alert surfacing, and seeds two retroactive catalog entries for the disclosures the toolkit should have caught.

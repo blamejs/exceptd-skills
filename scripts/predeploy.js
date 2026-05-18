@@ -177,6 +177,22 @@ const GATES = [
     args: [path.join(ROOT, "lib", "validate-playbooks.js")],
     ciJobName: "Validate playbooks",
   },
+  {
+    // v0.13.2: refuse silent test-set shrinkage. Static-counts `test(`
+    // declarations across tests/*.test.js and compares to the pinned
+    // baseline in tests/.test-count-baseline.json. Catches the class
+    // of regression where a test file gets accidentally deleted, a
+    // skip-all lands without review, or a misnamed file slips through
+    // the glob. The baseline is operator-refreshed on releases that
+    // intentionally add many new tests; --update-baseline rewrites it.
+    name: "Test-count baseline (no silent shrinkage)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-test-count.js")],
+    // Folds under the existing Data integrity CI job rather than a
+    // dedicated job — the check is fast (~70ms) static analysis and
+    // shares the integrity-tier framing with manifest-snapshot etc.
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

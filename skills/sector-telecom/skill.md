@@ -67,6 +67,7 @@ forward_watch:
   - "3GPP TS 33.501 updates (5G security architecture rebaseline)"
   - "O-RAN SFG / WG11 security specifications"
 last_threat_review: 2026-05-15
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 ## Threat Context (mid-2026)

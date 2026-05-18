@@ -379,11 +379,18 @@ async function runReport(format) {
     // (GENERIC_FAILURE) not 2 (DETECTED_ESCALATE). Pre-v0.13 the
     // body went to stderr and exit was 2; both broke CI consumers
     // that expected the dispatch-error vs verb-finding distinction.
+    // v0.13.2: did-you-mean on the unknown format value (reuses
+    // lib/flag-suggest.js for Levenshtein-≤2 typo correction).
+    const { suggestFlag } = require('../lib/flag-suggest');
+    const dym = suggestFlag(String(format), VALID_REPORT_FORMATS);
+    const hint = dym ? ` Did you mean "${dym}"?` : '';
     process.stdout.write(JSON.stringify({
       ok: false,
       verb: 'report',
-      error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.`,
+      error: `report: format "${format}" not in accepted set ${JSON.stringify(VALID_REPORT_FORMATS)}.${hint}`,
+      provided: format,
       accepted_formats: VALID_REPORT_FORMATS,
+      did_you_mean: dym ? [dym] : [],
     }) + '\n');
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;

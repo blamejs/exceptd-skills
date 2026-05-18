@@ -66,6 +66,7 @@ d3fend_refs:
 forward_watch:
   - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory affecting front-door web app deployments
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief webapp-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Web Application Security Assessment
