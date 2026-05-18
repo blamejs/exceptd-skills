@@ -198,6 +198,46 @@ test('check-sbom-currency: every file component carries BOTH SHA-256 and SHA3-51
   }
 });
 
+test('check-sbom-currency: SHA3-512 absence (downgrade attack) fails the gate', () => {
+  // Codex P1 on PR #52: the dual-hash contract requires SHA3-512 to be
+  // present on every file: component. An attacker that strips the
+  // SHA3-512 column from sbom.cdx.json would have silently passed the
+  // earlier optional-check implementation. This pin stages an SBOM with
+  // SHA3-512 entries removed and confirms the gate refuses with the
+  // canonical "dual-hash contract" error.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-sha3-absence-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    for (const c of sbom.components || []) {
+      if (typeof c['bom-ref'] === 'string' && c['bom-ref'].startsWith('file:')) {
+        c.hashes = (c.hashes || []).filter((h) => h.alg !== 'SHA3-512');
+      }
+    }
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    function bring(rel) {
+      const src = path.join(ROOT, rel);
+      const dst = path.join(tmp, rel);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file'); }
+      catch { fs.cpSync(src, dst, { recursive: true }); }
+    }
+    for (const rel of ['manifest.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator', 'scripts',
+                       'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
+                       'AGENTS.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CONTEXT.md',
+                       'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md']) {
+      try { bring(rel); } catch { /* tolerated */ }
+    }
+    const result = checkSbomCurrency(tmp);
+    const absenceErr = result.errors.find((e) => e.includes('manifest.json') && e.includes('lacks a SHA3-512'));
+    assert.ok(absenceErr, `expected SHA3-512-absence rejection error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.match(absenceErr, /dual-hash contract/,
+      'absence error must name the dual-hash contract');
+    assert.equal(result.ok, false);
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 test('check-sbom-currency: SHA3-512 drift fails the gate (not just SHA-256)', () => {
   // Stage an SBOM where SHA-256 is correct but SHA3-512 has been
   // deliberately changed. The gate must still refuse — a partial

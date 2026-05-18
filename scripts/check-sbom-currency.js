@@ -188,18 +188,22 @@ function checkSbomCurrency(root) {
         `SBOM file component "${relPath}" SHA-256 drift: recorded ${sha256Entry.content.slice(0, 12)}…, live ${liveSha256.slice(0, 12)}… — re-sign skills (\`node $(exceptd path)/lib/sign.js sign-all\` from a contributor checkout) and then \`npm run refresh-sbom\`, in that order (sbom must regenerate AFTER the final sign).`,
       );
     }
-    if (sha3Entry) {
-      if (typeof sha3Entry.content !== "string") {
+    // Codex P1 on PR #52: the dual-hash contract requires SHA3-512 to be
+    // PRESENT, not just verified when present. An attacker (or a careless
+    // sbom-generator regression) that strips the SHA3-512 column would
+    // silently pass the gate under an `if (sha3Entry)` guard, defeating
+    // the downgrade defense the dual-hash design is supposed to provide.
+    // Refuse absence as a hard error.
+    if (!sha3Entry || typeof sha3Entry.content !== "string") {
+      errors.push(
+        `SBOM file component "${relPath}" lacks a SHA3-512 hash entry — the dual-hash contract (SHA-256 + SHA3-512) requires both algorithms on every file: component. Regenerate via \`npm run refresh-sbom\` (v0.13.12+).`
+      );
+    } else {
+      const liveSha3 = crypto.createHash("sha3-512").update(fileBytes).digest("hex");
+      if (liveSha3 !== sha3Entry.content) {
         errors.push(
-          `SBOM file component "${relPath}" SHA3-512 entry present but content is not a string`
+          `SBOM file component "${relPath}" SHA3-512 drift: recorded ${sha3Entry.content.slice(0, 12)}…, live ${liveSha3.slice(0, 12)}… — same remediation as SHA-256 drift (re-sign then refresh-sbom).`,
         );
-      } else {
-        const liveSha3 = crypto.createHash("sha3-512").update(fileBytes).digest("hex");
-        if (liveSha3 !== sha3Entry.content) {
-          errors.push(
-            `SBOM file component "${relPath}" SHA3-512 drift: recorded ${sha3Entry.content.slice(0, 12)}…, live ${liveSha3.slice(0, 12)}… — same remediation as SHA-256 drift (re-sign then refresh-sbom).`,
-          );
-        }
       }
     }
     fileComponentsChecked++;
