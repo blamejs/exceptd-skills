@@ -6,6 +6,22 @@
   },
   "events": [
     {
+      "date": "2026-05-18",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 67
+    },
+    {
+      "date": "2026-05-18",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 67
+    },
+    {
       "date": "2026-05-15",
       "type": "skill_review",
       "artifact": "sector-telecom",
@@ -39,7 +55,7 @@
       "artifact": "data/atlas-ttps.json",
       "path": "data/atlas-ttps.json",
       "schema_version": "1.0.0",
-      "entry_count": 30
+      "entry_count": 33
     },
     {
       "date": "2026-05-15",
@@ -47,7 +63,7 @@
       "artifact": "data/attack-techniques.json",
       "path": "data/attack-techniques.json",
       "schema_version": "1.0.0",
-      "entry_count": 98
+      "entry_count": 106
     },
     {
       "date": "2026-05-15",
@@ -83,26 +99,10 @@
     },
     {
       "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 38
-    },
-    {
-      "date": "2026-05-15",
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
       "note": "manifest threat_review_date — 42 skills, 11 catalogs"
-    },
-    {
-      "date": "2026-05-13",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 38
     },
     {
       "date": "2026-05-13",

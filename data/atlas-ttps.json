@@ -85,6 +85,7 @@
     "maturity": "high",
     "last_verified": "2026-05-15",
     "cve_refs": [
+      "CVE-2025-68664",
       "CVE-2026-30623",
       "CVE-2026-42945"
     ]
@@ -127,11 +128,14 @@
     "maturity": "high",
     "last_verified": "2026-05-15",
     "cve_refs": [
+      "CVE-2026-22778",
       "CVE-2026-30615",
       "CVE-2026-39987",
       "CVE-2026-45321",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ]
@@ -307,7 +311,13 @@
     "exceptd_skills": [],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-15"
+    "last_verified": "2026-05-15",
+    "cve_refs": [
+      "CVE-2025-10725",
+      "CVE-2025-53767",
+      "CVE-2025-6965",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ]
   },
   "AML.T0043": {
     "id": "AML.T0043",
@@ -405,6 +415,7 @@
     "maturity": "moderate",
     "last_verified": "2026-05-15",
     "cve_refs": [
+      "CVE-2026-22778",
       "CVE-2026-45321"
     ]
   },
@@ -450,6 +461,8 @@
     "last_verified": "2026-05-15",
     "cve_refs": [
       "CVE-2025-53773",
+      "CVE-2025-55319",
+      "CVE-2025-68664",
       "CVE-2026-30615",
       "CVE-2026-39884",
       "CVE-2026-39987"
@@ -986,5 +999,65 @@
     "secure_ai_v2_layer": true,
     "maturity": "moderate",
     "last_verified": "2026-05-15"
+  },
+  "AML.T0007": {
+    "id": "AML.T0007",
+    "name": "Discover ML Artifacts",
+    "tactic": "Reconnaissance",
+    "description": "Adversary enumerates ML artifacts available locally or remotely after gaining initial access — model files, training datasets, model registries, tokenizer files, configuration. Distinct from AML.T0001 (Victim Research, pre-access) — this is post-access enumeration of the ML attack surface to plan downstream actions like poisoning, theft, or evasion.",
+    "subtechniques": [],
+    "real_world_instances": [],
+    "framework_gap": true,
+    "framework_gap_detail": "ML artifact enumeration is rarely covered by data-loss-prevention controls — operators treat model files as code, not data.",
+    "controls_that_partially_help": [],
+    "controls_that_dont_help": [],
+    "detection": "File-access auditing on model registries + tokenizer / weights paths; anomalous read patterns from non-training service accounts.",
+    "exceptd_skills": [],
+    "last_verified": "2026-05-18",
+    "cve_refs": [
+      "CVE-2026-7482"
+    ]
+  },
+  "AML.T0011": {
+    "id": "AML.T0011",
+    "name": "User Execution",
+    "tactic": "Initial Access",
+    "description": "Adversary relies on a user to execute malicious ML artifacts — a poisoned model, a malicious pickle file, a typosquatted ML library — to gain code execution in the user context. Bridges traditional supply-chain TTPs into the ML domain where unpickling a model file is a code-execution vector.",
+    "subtechniques": [],
+    "real_world_instances": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG — operators executing a typosquatted AI library imported a crypto-miner payload alongside genuine vision-model inference code."
+    ],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework requires AI/ML library install-time integrity verification.",
+    "controls_that_partially_help": [
+      "NIST-800-53-SI-7"
+    ],
+    "controls_that_dont_help": [],
+    "detection": "Install-time package-integrity verification with vendor allowlist; runtime sandbox on first-time-loaded model files.",
+    "exceptd_skills": [],
+    "last_verified": "2026-05-18",
+    "cve_refs": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
+    ]
+  },
+  "AML.T0047": {
+    "id": "AML.T0047",
+    "name": "LLM Meta Prompt Extraction",
+    "tactic": "Credential Access",
+    "description": "Adversary extracts a system prompt, tool definitions, or hidden instructions from an LLM-backed application via prompt-injection that coerces the model into revealing its meta-configuration. Recovered prompts feed downstream attacks (impersonation, jailbreak refinement, sensitive-tool discovery).",
+    "subtechniques": [],
+    "real_world_instances": [
+      "CVE-2025-53767 — Azure OpenAI Service SSRF chained with prompt-injection to extract meta-prompt + tool registration."
+    ],
+    "framework_gap": true,
+    "framework_gap_detail": "No framework treats LLM meta-prompt as a credential class; rotation, scoping, and exposure-detection controls are absent.",
+    "controls_that_partially_help": [],
+    "controls_that_dont_help": [],
+    "detection": "Output-side filtering for system-prompt fingerprints; query-side anomaly detection on injection-class inputs targeting <system>, <SYS>, role:system patterns.",
+    "exceptd_skills": [],
+    "last_verified": "2026-05-18",
+    "cve_refs": [
+      "CVE-2025-53767"
+    ]
   }
 }

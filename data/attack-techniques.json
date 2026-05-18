@@ -99,8 +99,12 @@
       "DS0017"
     ],
     "cve_refs": [
+      "CVE-2025-1094",
       "CVE-2025-11837",
       "CVE-2025-53773",
+      "CVE-2025-55319",
+      "CVE-2025-68664",
+      "CVE-2026-22778",
       "CVE-2026-30615",
       "CVE-2026-30623",
       "CVE-2026-32202",
@@ -120,6 +124,7 @@
     "name": "Command and Scripting Interpreter: Python",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-49844",
       "MAL-2026-3083"
     ]
   },
@@ -127,6 +132,7 @@
     "name": "Command and Scripting Interpreter: JavaScript",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-0133",
       "CVE-2026-45321",
       "MAL-2026-NODE-IPC-STEALER"
     ]
@@ -135,6 +141,12 @@
     "name": "Exploitation for Privilege Escalation",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-10725",
+      "CVE-2025-22224",
+      "CVE-2025-22225",
+      "CVE-2025-24201",
+      "CVE-2025-38352",
+      "CVE-2025-43300",
       "CVE-2025-62849",
       "CVE-2026-0300",
       "CVE-2026-31431",
@@ -156,6 +168,7 @@
     "cve_refs": [
       "CVE-2020-10148",
       "CVE-2024-1709",
+      "CVE-2025-21085",
       "CVE-2026-20182",
       "CVE-2026-33825",
       "CVE-2026-39884",
@@ -184,13 +197,19 @@
     "name": "Valid Accounts: Cloud Accounts",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-53767",
+      "CVE-2025-55241",
       "CVE-2026-45321",
-      "MAL-2026-3083"
+      "MAL-2026-3083",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
     ]
   },
   "T1098": {
     "name": "Account Manipulation",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-55241"
+    ]
   },
   "T1098.001": {
     "name": "Account Manipulation: Additional Cloud Credentials",
@@ -234,19 +253,27 @@
       "CVE-2023-3519",
       "CVE-2024-1709",
       "CVE-2024-21762",
+      "CVE-2025-1094",
       "CVE-2025-12686",
+      "CVE-2025-14847",
+      "CVE-2025-49844",
+      "CVE-2025-53767",
       "CVE-2025-53773",
       "CVE-2025-59389",
       "CVE-2025-62847",
       "CVE-2025-62848",
+      "CVE-2025-6965",
       "CVE-2026-0300",
       "CVE-2026-20182",
+      "CVE-2026-22778",
       "CVE-2026-32202",
       "CVE-2026-39987",
       "CVE-2026-42208",
       "CVE-2026-42897",
       "CVE-2026-42945",
-      "CVE-2026-6973"
+      "CVE-2026-6973",
+      "CVE-2026-7482",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ]
   },
   "T1195": {
@@ -269,8 +296,11 @@
     "cve_refs": [
       "CVE-2024-3094",
       "CVE-2026-45321",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS"
     ]
   },
@@ -280,11 +310,23 @@
   },
   "T1203": {
     "name": "Exploitation for Client Execution",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-10585",
+      "CVE-2025-14174",
+      "CVE-2025-24201",
+      "CVE-2025-43300",
+      "CVE-2025-43529",
+      "CVE-2025-4919",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ]
   },
   "T1212": {
     "name": "Exploitation for Credential Access",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-14174"
+    ]
   },
   "T1213": {
     "name": "Data from Information Repositories",
@@ -355,12 +397,18 @@
   },
   "T1552": {
     "name": "Unsecured Credentials",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-68664",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ]
   },
   "T1552.001": {
     "name": "Unsecured Credentials: Credentials In Files",
     "version": "v19",
     "cve_refs": [
+      "CVE-2025-21085",
       "CVE-2026-30615",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
@@ -514,7 +562,11 @@
     ],
     "cve_refs": [
       "CVE-2024-21626",
-      "CVE-2024-3154"
+      "CVE-2024-3154",
+      "CVE-2025-22224",
+      "CVE-2025-22225",
+      "CVE-2025-22226",
+      "CVE-2025-38352"
     ]
   },
   "T1613": {
@@ -659,6 +711,71 @@
   },
   "T1098.003": {
     "name": "Account Manipulation: Additional Cloud Roles",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-10725"
+    ]
+  },
+  "T1005": {
+    "name": "Data from Local System",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-14847",
+      "CVE-2025-22226",
+      "CVE-2026-7482"
+    ]
+  },
+  "T1189": {
+    "name": "Drive-by Compromise",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-10585",
+      "CVE-2025-14174",
+      "CVE-2025-24201",
+      "CVE-2025-43529",
+      "CVE-2025-4919"
+    ]
+  },
+  "T1496": {
+    "name": "Resource Hijacking",
+    "version": "v19",
+    "cve_refs": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
+    ]
+  },
+  "T1498": {
+    "name": "Network Denial of Service",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-8671"
+    ]
+  },
+  "T1499.001": {
+    "name": "Endpoint Denial of Service: OS Exhaustion Flood",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-8671"
+    ]
+  },
+  "T1499.002": {
+    "name": "Endpoint Denial of Service: Service Exhaustion Flood",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-59529"
+    ]
+  },
+  "T1539": {
+    "name": "Steal Web Session Cookie",
+    "version": "v19",
+    "cve_refs": [
+      "CVE-2025-0133"
+    ]
+  },
+  "T1657": {
+    "name": "Financial Theft",
+    "version": "v19",
+    "cve_refs": [
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER"
+    ]
   }
 }

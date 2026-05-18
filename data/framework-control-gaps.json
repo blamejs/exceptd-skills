@@ -1140,6 +1140,9 @@
     "opened_date": "2026-01-01",
     "evidence_cves": [
       "CVE-2023-43472",
+      "CVE-2025-0133",
+      "CVE-2025-1094",
+      "CVE-2025-6965",
       "CVE-2026-30623"
     ],
     "atlas_refs": [
@@ -1174,7 +1177,8 @@
     "opened_date": "2026-04-01",
     "evidence_cves": [
       "CVE-2024-3094",
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "atlas_refs": [
       "AML.T0010"
@@ -1209,6 +1213,13 @@
     "opened_date": "2026-03-15",
     "evidence_cves": [
       "CVE-2024-21762",
+      "CVE-2025-10585",
+      "CVE-2025-14174",
+      "CVE-2025-24201",
+      "CVE-2025-38352",
+      "CVE-2025-43300",
+      "CVE-2025-43529",
+      "CVE-2025-4919",
       "CVE-2026-0300",
       "CVE-2026-31431",
       "CVE-2026-42945",
@@ -1388,6 +1399,11 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
+      "CVE-2025-10585",
+      "CVE-2025-1094",
+      "CVE-2025-14174",
+      "CVE-2025-38352",
+      "CVE-2025-43300",
       "CVE-2026-31431",
       "CVE-2026-39884",
       "CVE-2026-45321",
@@ -1574,6 +1590,7 @@
     "opened_date": "2026-04-01",
     "evidence_cves": [
       "CVE-2024-3154",
+      "CVE-2025-49844",
       "CVE-2025-53773",
       "CVE-2026-30615"
     ],
@@ -1644,6 +1661,8 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
+      "CVE-2025-14847",
+      "CVE-2025-22226",
       "CVE-2026-43284"
     ],
     "atlas_refs": [],
@@ -1675,7 +1694,9 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
-      "CVE-2024-21626"
+      "CVE-2024-21626",
+      "CVE-2025-22224",
+      "CVE-2025-22225"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1708,6 +1729,7 @@
     "opened_date": "2026-05-01",
     "evidence_cves": [
       "CVE-2024-40635",
+      "CVE-2025-53767",
       "CVE-2026-42897"
     ],
     "atlas_refs": [
@@ -1775,6 +1797,9 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
+      "CVE-2025-0133",
+      "CVE-2025-1094",
+      "CVE-2025-6965",
       "CVE-2026-39884",
       "CVE-2026-42208"
     ],
@@ -1845,7 +1870,14 @@
     "evidence_cves": [
       "CVE-2023-3519",
       "CVE-2024-21762",
+      "CVE-2025-10585",
       "CVE-2025-12686",
+      "CVE-2025-14174",
+      "CVE-2025-24201",
+      "CVE-2025-38352",
+      "CVE-2025-43300",
+      "CVE-2025-43529",
+      "CVE-2025-4919",
       "CVE-2025-59389",
       "CVE-2025-62847",
       "CVE-2025-62848",
@@ -1892,6 +1924,7 @@
     "opened_date": "2026-02-01",
     "evidence_cves": [
       "CVE-2025-11837",
+      "CVE-2026-22778",
       "CVE-2026-32202",
       "CVE-2026-33825"
     ],
@@ -2348,6 +2381,8 @@
     "evidence_cves": [
       "CVE-2023-3519",
       "CVE-2024-21762",
+      "CVE-2025-43300",
+      "CVE-2025-49844",
       "CVE-2026-31431"
     ],
     "atlas_refs": [],
@@ -4030,7 +4065,8 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [
       "CVE-2024-1709",
-      "CVE-2026-39987"
+      "CVE-2026-39987",
+      "CVE-2026-7482"
     ],
     "atlas_refs": [
       "AML.T0051"
@@ -4102,6 +4138,8 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2025-10725",
+      "CVE-2025-55241",
       "CVE-2026-33825",
       "CVE-2026-6973"
     ],
@@ -4375,6 +4413,7 @@
     "evidence_cves": [
       "CVE-2024-3154",
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ],
@@ -4508,7 +4547,8 @@
     "status": "open",
     "opened_date": "2026-05-18",
     "evidence_cves": [
-      "CVE-2020-10148"
+      "CVE-2020-10148",
+      "CVE-2025-55241"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -4608,6 +4648,8 @@
     "opened_date": "2026-05-18",
     "evidence_cves": [
       "CVE-2023-43472",
+      "CVE-2025-55319",
+      "CVE-2025-68664",
       "CVE-2026-30623"
     ],
     "atlas_refs": [
@@ -4713,6 +4755,7 @@
     "status": "open",
     "opened_date": "2026-05-18",
     "evidence_cves": [
+      "CVE-2025-22224",
       "CVE-2025-59389"
     ],
     "atlas_refs": [],
