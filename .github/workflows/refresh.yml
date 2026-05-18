@@ -19,37 +19,41 @@ on:
         required: false
         default: ''
 
-# HH P1-2: Scorecard TokenPermissionsID — top-level minimum-scope default
-# (`contents: read`). The job below opens an automated PR and so retains
-# the elevated `contents: write` + `pull-requests: write` + `issues: write`
-# scopes at the job level; this declaration only sets the default for any
-# future read-only job added to the workflow.
+# Top-level minimum-scope default. Per-job blocks below escalate as needed.
 permissions:
   contents: read
 
+# v0.13.3: split the prior single `refresh` job into two — `refresh-data`
+# does the work with NO write credentials, then `open-pr` runs only when
+# diffs exist and only has the elevated scopes for the PR / issue creation
+# step. Pre-split the long-running data-parse + prefetch + apply steps
+# carried contents:write + pull-requests:write + issues:write at once;
+# a compromise of any of those steps had repo-write access during the
+# entire run. The new shape scopes write capability to the few-second
+# PR-creation window.
+
 jobs:
-  refresh:
-    name: Refresh + open PR on diffs
+  refresh-data:
+    name: Refresh data (no write credentials)
     runs-on: ubuntu-latest
+    # No contents:write / pull-requests:write / issues:write here. The
+    # downstream open-pr job carries those scopes only at PR-creation time.
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
+    outputs:
+      upsert_diffs: ${{ steps.dry.outputs.upsert_diffs }}
+      total_diffs: ${{ steps.dry.outputs.total_diffs }}
+      pin_diffs: ${{ steps.dry.outputs.pin_diffs }}
+      pr_body: ${{ steps.prbody.outputs.body }}
 
     steps:
-      - name: Checkout repository
-        # NOTE: persist-credentials: true is intentional and differs from
-        # every other workflow in this repo (which use `false`). This job
-        # opens an automated PR via peter-evans/create-pull-request, which
-        # requires git push credentials to be persisted on the runner's
-        # checkout. The token is the workflow's GITHUB_TOKEN, scoped to
-        # `contents: write` + `pull-requests: write` at the job level
-        # above; it is not exposed to any third-party action other than
-        # the PR creator itself. Do not flip this to false without also
-        # removing the PR-open step.
+      - name: Checkout repository (no persisted credentials)
+        # v0.13.3: persist-credentials: false. The downstream `open-pr` job
+        # does a fresh checkout with credentials at PR-creation time; this
+        # data-refresh job has no write capability against the repo.
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          persist-credentials: true
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up Node.js 24
@@ -141,6 +145,9 @@ jobs:
 
       - name: Build PR body with new-entries / updates split
         id: prbody
+        if: |
+          steps.dry.outputs.upsert_diffs != '0' &&
+          (github.event_name == 'schedule' || inputs.apply == 'true')
         run: |
           node -e "
             const r = require('./refresh-report.json');
@@ -183,10 +190,97 @@ jobs:
             echo 'PRBODY_EOF'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Open auto-PR with applied diffs
+      - name: Bundle mutated data tree as artifact (for open-pr job)
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&
           (github.event_name == 'schedule' || inputs.apply == 'true')
+        # The downstream open-pr job does a fresh checkout against main +
+        # overlays this bundle to reproduce the apply step's mutations
+        # without re-running the apply. The bundle covers data/ +
+        # manifest.json + any other file refresh --apply may touch.
+        run: |
+          mkdir -p /tmp/refresh-bundle
+          # Capture every modified or new tracked file under data/ +
+          # the manifest. Use git's view (works because we own the
+          # checkout's working tree even though no creds are persisted).
+          git -c safe.directory='*' status --porcelain | awk '{print $2}' > /tmp/refresh-bundle/files.txt
+          if [ -s /tmp/refresh-bundle/files.txt ]; then
+            tar -czf /tmp/refresh-bundle/changes.tar.gz -T /tmp/refresh-bundle/files.txt
+          else
+            # Defensive: even with upsert_diffs > 0, if nothing landed
+            # on disk (e.g. apply was a no-op due to lock contention)
+            # surface an empty archive marker so open-pr can short-circuit.
+            : > /tmp/refresh-bundle/empty.marker
+          fi
+
+      - name: Upload data-mutation bundle for open-pr
+        if: |
+          steps.dry.outputs.upsert_diffs != '0' &&
+          (github.event_name == 'schedule' || inputs.apply == 'true')
+        uses: actions/upload-artifact@e6a3b3b56226e6c2f43c0a1cc8b6c1aaa12e57b8  # v5.0.0
+        with:
+          name: refresh-bundle-${{ github.run_id }}
+          path: /tmp/refresh-bundle/
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload refresh-report.json artifact (always — for operator debug)
+        if: always()
+        uses: actions/upload-artifact@e6a3b3b56226e6c2f43c0a1cc8b6c1aaa12e57b8  # v5.0.0
+        with:
+          name: refresh-report-${{ github.run_id }}
+          path: refresh-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  open-pr:
+    name: Open auto-PR + version-pin issue (write credentials scoped here)
+    runs-on: ubuntu-latest
+    needs: refresh-data
+    # Only run when the upstream refresh produced applied diffs OR a
+    # version-pin drift was detected. Skips entirely when there's
+    # nothing to push.
+    if: |
+      needs.refresh-data.outputs.upsert_diffs != '0' ||
+      needs.refresh-data.outputs.pin_diffs != '0'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository (credentials persisted only here)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Download refresh-data bundle
+        if: needs.refresh-data.outputs.upsert_diffs != '0'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v5.0.0
+        with:
+          name: refresh-bundle-${{ github.run_id }}
+          path: /tmp/refresh-bundle
+
+      - name: Download refresh-report.json
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v5.0.0
+        with:
+          name: refresh-report-${{ github.run_id }}
+          path: .
+
+      - name: Apply data mutations from the refresh-data bundle
+        if: needs.refresh-data.outputs.upsert_diffs != '0'
+        run: |
+          if [ -f /tmp/refresh-bundle/changes.tar.gz ]; then
+            tar -xzf /tmp/refresh-bundle/changes.tar.gz
+            echo "Applied data mutations:"
+            git status --porcelain
+          else
+            echo "::warning::refresh-bundle marker but no changes.tar.gz — refresh-data produced no on-disk mutations despite upsert_diffs != 0."
+          fi
+
+      - name: Open auto-PR with applied diffs
+        if: needs.refresh-data.outputs.upsert_diffs != '0'
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e  # v7.0.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -197,23 +291,14 @@ jobs:
 
             Auto-generated by .github/workflows/refresh.yml run ${{ github.run_id }}.
             See refresh-report.json artifact for the per-source diff breakdown.
-          body: ${{ steps.prbody.outputs.body }}
+          body: ${{ needs.refresh-data.outputs.pr_body }}
           labels: |
             data-refresh
             automation
             needs-curation
 
-      - name: Upload refresh-report.json artifact
-        if: always()
-        uses: actions/upload-artifact@e6a3b3b56226e6c2f43c0a1cc8b6c1aaa12e57b8  # v5.0.0
-        with:
-          name: refresh-report-${{ github.run_id }}
-          path: refresh-report.json
-          if-no-files-found: ignore
-          retention-days: 30
-
       - name: Open issue for version-pin drift
-        if: steps.dry.outputs.pin_diffs != '0'
+        if: needs.refresh-data.outputs.pin_diffs != '0'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         with:
           script: |
@@ -247,7 +332,6 @@ jobs:
               '- [ ] Update `data/atlas-ttps.json` / `data/cwe-catalog.json` / `data/d3fend-catalog.json` entries if the upstream renamed/removed any cited id',
               '- [ ] Bump `last_threat_review` on affected skills',
               '- [ ] Run `npm run build-indexes` then `npm run predeploy`',
-              '- [ ] Tag this as a **minor** version bump per project cadence',
               '',
               `Run: <https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}>`,
             ].join('\n');
@@ -273,6 +357,6 @@ jobs:
                 repo: context.repo.repo,
                 title,
                 body,
-                labels: ['version-pin', 'automation', 'minor-update'],
+                labels: ['version-pin', 'automation'],
               });
             }

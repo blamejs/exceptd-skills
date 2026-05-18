@@ -1,12 +1,16 @@
 {
   "_meta": {
     "fixture_for": "ADVISORIES_SOURCE (lib/source-advisories.js)",
-    "purpose": "Fixture-mode replay for the v0.13.1 primary-source poller. Tests pass this synthesized RSS / CSAF-index content through ctx.fixtures.advisories[<feed>] to exercise the parser + de-duplication + report shape without hitting upstream feeds.",
-    "feeds_covered": ["qualys", "rhsa", "usn", "zdi"],
-    "shape_note": "Each feed key carries either an RSS / Atom XML string (qualys, usn, zdi) or a CSAF-index newline-separated filename list (rhsa). Real fetchDiff branches on feed.kind to select the parser."
+    "purpose": "Fixture-mode replay for the v0.13.1+ primary-source poller. Tests pass this synthesized RSS / CSAF-index content through ctx.fixtures.advisories[<feed>] to exercise the parser + de-duplication + report shape without hitting upstream feeds.",
+    "feeds_covered": ["qualys", "rhsa", "usn", "zdi", "kernel-org", "oss-security", "jfrog", "cisa-current"],
+    "shape_note": "Each feed key carries either an RSS / Atom XML string (qualys, usn, zdi, kernel-org, oss-security, jfrog, cisa-current) or a CSAF-index newline-separated filename list (rhsa). Real fetchDiff branches on feed.kind to select the parser. v0.13.3 added kernel-org, oss-security, jfrog, cisa-current."
   },
   "qualys": "<rss><channel><item><title>CVE-2026-FIXTURE-001 sample disclosure</title><link>https://blog.qualys.com/fixture/cve-2026-fixture-001</link><pubDate>Wed, 14 May 2026 12:00:00 GMT</pubDate><description>Synthesized fixture entry for ADVISORIES_SOURCE round-trip testing</description></item></channel></rss>",
   "rhsa": "rhsa-2026_FIXTURE-CVE-2026-FIXTURE-002.json\nrhsa-2026_FIXTURE-CVE-2026-FIXTURE-003.json\n",
   "usn": "<rss><channel><item><title>USN-FIXTURE-1: CVE-2026-FIXTURE-001 backport (matches qualys for de-dup test)</title><link>https://ubuntu.com/security/notices/USN-FIXTURE-1</link><pubDate>Thu, 15 May 2026 12:00:00 GMT</pubDate><description>fixture</description></item></channel></rss>",
-  "zdi": "<rss><channel><item><title>ZDI-26-001: CVE-2026-FIXTURE-004 zero-day disclosure</title><link>https://www.zerodayinitiative.com/advisories/ZDI-26-001/</link><pubDate>Wed, 14 May 2026 18:00:00 GMT</pubDate><description>fixture</description></item></channel></rss>"
+  "zdi": "<rss><channel><item><title>ZDI-26-001: CVE-2026-FIXTURE-004 zero-day disclosure</title><link>https://www.zerodayinitiative.com/advisories/ZDI-26-001/</link><pubDate>Wed, 14 May 2026 18:00:00 GMT</pubDate><description>fixture</description></item></channel></rss>",
+  "kernel-org": "<feed xmlns=\"http://www.w3.org/2005/Atom\"><entry><title>ptrace: slightly saner get_dumpable() logic (CVE-2026-FIXTURE-005)</title><link href=\"https://git.kernel.org/fixture/abc123\"/><published>2026-05-14T12:00:00Z</published><summary>commit fixing CVE-2026-FIXTURE-005</summary></entry></feed>",
+  "oss-security": "<feed xmlns=\"http://www.w3.org/2005/Atom\"><entry><title>[oss-security] CVE-2026-FIXTURE-006: example vulnerability</title><link href=\"https://www.openwall.com/lists/oss-security/2026/05/15/example\"/><published>2026-05-15T08:00:00Z</published><summary>fixture</summary></entry></feed>",
+  "jfrog": "<rss><channel><item><title>JFrog discovers npm supply-chain compromise — MAL-2026-FIXTURE-NPMWORM-A</title><link>https://jfrog.com/blog/fixture/npm-worm</link><pubDate>Fri, 16 May 2026 10:00:00 GMT</pubDate><description>fixture supply-chain disclosure</description></item></channel></rss>",
+  "cisa-current": "<rss><channel><item><title>CISA Advisory AA26-FIXTURE: CVE-2026-FIXTURE-007 critical infrastructure exposure</title><link>https://www.cisa.gov/news-events/advisories/aa26-fixture</link><pubDate>Sat, 17 May 2026 09:00:00 GMT</pubDate><description>fixture</description></item></channel></rss>"
 }

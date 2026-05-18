@@ -5205,16 +5205,24 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   // Selective subchecks. If any of the four flags is passed, run only those.
   // If none are passed, run all four plus signing-status.
+  // v0.13.3: --ai-config audits AI-assistant config-file permissions per
+  // NEW-CTRL-050 (from the MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry).
+  // It's a separate flag because the check is opt-in — most operators
+  // don't want their AI-config state probed by default.
   const onlySigs = !!args.signatures;
   const onlyCurrency = !!args.currency;
   const onlyCves = !!args.cves;
   const onlyRfcs = !!args.rfcs;
-  const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs;
+  const onlyAiConfig = !!args["ai-config"];
+  const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs || onlyAiConfig;
   const runSigs = !anySelected || onlySigs;
   const runCurrency = !anySelected || onlyCurrency;
   const runCves = !anySelected || onlyCves;
   const runRfcs = !anySelected || onlyRfcs;
   const runSigning = !anySelected;
+  // --ai-config is opt-in — never runs as part of the default no-flag
+  // doctor pass. Operators ask for it explicitly.
+  const runAiConfig = onlyAiConfig;
 
   const checks = {};
   const issues = [];
@@ -5451,6 +5459,102 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       checks.registry = { ok: false, severity: "warn", error: e.message };
     }
     }
+  }
+
+  // v0.13.3 — AI-assistant config-file permission audit per NEW-CTRL-050
+  // (from the MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry). Walks
+  // ~/.claude/, ~/.cursor/, ~/.codeium/, ~/.aider/, ~/.continue/ for
+  // sensitive config files (settings.json, mcp.json, *.mcp_config.json,
+  // api_key*, *.token, *.credentials) and reports any not at mode 0600.
+  // The MAL-2026-SHAI-HULUD-OSS framework reads these files at
+  // unprivileged-process scope; tightening to 0600 forces npm/node-spawned
+  // processes that don't share UID to fail the read.
+  //
+  // Opt-in only — never runs as part of the default no-flag doctor pass.
+  // Operators request it via `exceptd doctor --ai-config`.
+  if (runAiConfig) {
+    const os = require('os');
+    const HOME = os.homedir();
+    const AI_CONFIG_DIRS = [
+      { dir: '.claude', display: '~/.claude' },
+      { dir: '.cursor', display: '~/.cursor' },
+      { dir: '.codeium', display: '~/.codeium' },
+      { dir: '.aider', display: '~/.aider' },
+      { dir: '.continue', display: '~/.continue' },
+    ];
+    // Files within those dirs that warrant the strict-mode check.
+    const SENSITIVE_PATTERNS = [
+      /^settings\.json$/,
+      /^mcp\.json$/,
+      /\.mcp_config\.json$/,
+      /^api_key/,
+      /\.token$/,
+      /\.credentials$/,
+    ];
+    const findings = [];
+    let scannedDirs = 0;
+    let scannedFiles = 0;
+    function walk(absDir, displayRoot, rel) {
+      if (!fs.existsSync(absDir)) return;
+      let entries;
+      try { entries = fs.readdirSync(absDir, { withFileTypes: true }); }
+      catch { return; }
+      for (const e of entries) {
+        const childAbs = path.join(absDir, e.name);
+        const childRel = rel ? rel + '/' + e.name : e.name;
+        if (e.isDirectory()) {
+          walk(childAbs, displayRoot, childRel);
+        } else if (e.isFile()) {
+          scannedFiles++;
+          if (!SENSITIVE_PATTERNS.some((re) => re.test(e.name))) continue;
+          let st;
+          try { st = fs.statSync(childAbs); } catch { continue; }
+          if (process.platform === 'win32') {
+            // Windows POSIX mode bits don't carry meaningful ACL info.
+            // Flag every sensitive file with a manual-review note rather
+            // than emit a noisy permission claim that's likely wrong.
+            findings.push({
+              path: `${displayRoot}/${childRel}`,
+              mode: null,
+              severity: 'info',
+              issue: 'win32_acl_check_not_implemented',
+              hint: 'On Windows the POSIX mode bits are not load-bearing. Use icacls to confirm only the current user has read access. Tracked for v0.14+.',
+            });
+            continue;
+          }
+          const mode = st.mode & 0o777;
+          if ((mode & 0o077) !== 0) {
+            findings.push({
+              path: `${displayRoot}/${childRel}`,
+              mode: '0' + mode.toString(8),
+              severity: 'warn',
+              issue: 'group_or_other_readable',
+              hint: `chmod 600 '${childAbs}'  # NEW-CTRL-050: AI-assistant configs holding MCP tokens / API keys must be 0600 to defeat unprivileged exfil`,
+            });
+          }
+        }
+      }
+    }
+    for (const d of AI_CONFIG_DIRS) {
+      const abs = path.join(HOME, d.dir);
+      if (fs.existsSync(abs)) {
+        scannedDirs++;
+        walk(abs, d.display, '');
+      }
+    }
+    const errorFindings = findings.filter((f) => f.severity === 'warn');
+    checks.ai_config = {
+      ok: errorFindings.length === 0,
+      severity: errorFindings.length > 0 ? 'warn' : 'info',
+      scanned_dirs: scannedDirs,
+      scanned_files: scannedFiles,
+      directories_inspected: AI_CONFIG_DIRS.map((d) => d.display),
+      sensitive_patterns: ['settings.json', 'mcp.json', '*.mcp_config.json', 'api_key*', '*.token', '*.credentials'],
+      findings,
+      platform: process.platform,
+      control_reference: 'NEW-CTRL-050 (MAL-2026-SHAI-HULUD-OSS lesson)',
+    };
+    if (errorFindings.length > 0) issues.push('ai_config');
   }
 
   // Walk every check and split: errors (severity error/missing/fail) vs warnings

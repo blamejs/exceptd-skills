@@ -17,7 +17,13 @@ triggers:
   - ai api security
   - mcp transport
   - openapi security
-data_deps: []
+data_deps:
+  - atlas-ttps.json
+  - attack-techniques.json
+  - cwe-catalog.json
+  - d3fend-catalog.json
+  - framework-control-gaps.json
+  - rfc-references.json
 atlas_refs:
   - AML.T0096
   - AML.T0017
@@ -61,7 +67,7 @@ forward_watch:
   - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; track for active-exploitation confirmation and patch advisory affecting API gateway / reverse-proxy deployments
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; LLM-proxy API surface; track upstream patch and CVE assignments
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-05-18"
 ---
 
 # API Security Assessment
@@ -130,7 +136,7 @@ APIs are now the integration substrate of every non-trivial system. The mid-2026
 | AML.T0096 | AI Service Exploitation (AI-API as covert C2) | LLM API used as a covert command-and-control / exfil channel — prompt content carries instructions; response carries staged data | CWE-77, CWE-200 | Missing in NIST/ISO; hand-off to `ai-c2-detection` |
 | AML.T0017 | Discover ML Model Ontology (inference-API probing for system-prompt, guardrail, model-family signal) | High-volume queries against a hosted model used to reconstruct behaviour, guardrail surface, or training-data signal | CWE-200 | Missing — detected only by per-identity rate-and-shape monitoring at egress |
 
-CWE root-causes referenced as a set (per `cwe_refs` in frontmatter): CWE-287 (Improper Authentication), CWE-862 (Missing Authorization — BFLA root cause), CWE-863 (Incorrect Authorization — BOLA root cause), CWE-918 (SSRF — API7), CWE-200 (Information Exposure — BOPLA contributor), CWE-352 (CSRF — cookie-auth APIs + WebSocket CSWSH), CWE-22 (Path Traversal — API parameter sinks), CWE-77 (Command Injection — API parameter to shell), CWE-1188 (Insecure Default Initialization — default-open API state).
+CWE root-causes referenced as a set (per `cwe_refs` in frontmatter, all resolved against `data/cwe-catalog.json`): CWE-287 (Improper Authentication), CWE-862 (Missing Authorization — BFLA root cause), CWE-863 (Incorrect Authorization — BOLA root cause), CWE-918 (SSRF — API7), CWE-200 (Information Exposure — BOPLA contributor), CWE-352 (CSRF — cookie-auth APIs + WebSocket CSWSH), CWE-22 (Path Traversal — API parameter sinks), CWE-77 (Command Injection — API parameter to shell), CWE-1188 (Insecure Default Initialization — default-open API state). ATT&CK Enterprise techniques (T1190, T1078, T1567) resolve against `data/attack-techniques.json`; the AML.T0096 (AI service exploitation) and AML.T0017 (model-ontology discovery) entries resolve against `data/atlas-ttps.json`. Cross-reference every BOLA / BFLA finding against the `CWE-863` / `CWE-862` entries in `data/cwe-catalog.json` for the canonical weakness description used in operator briefings.
 
 ---
 
@@ -157,6 +163,8 @@ CWE root-causes referenced as a set (per `cwe_refs` in frontmatter): CWE-287 (Im
 ## Analysis Procedure
 
 The procedure threads three foundational design principles. They are not optional.
+
+Wire-level RFC mappings cited below resolve against `data/rfc-references.json` (RFC-7519 JWT, RFC-8725 JWT BCP, RFC-6749 OAuth 2.0, RFC-9700 OAuth Security BCP, RFC-9421 HTTP Message Signatures, RFC-8446 TLS 1.3, RFC-9114 HTTP/3); framework-gap IDs cited throughout (OWASP-ASVS-v5.0-V14, NIST-800-53-AC-2, NIST-800-218-SSDF, ISO-27001-2022-A.8.28, NIS2-Art21-incident-handling, UK-CAF-B2, AU-Essential-8-App-Hardening) resolve against `data/framework-control-gaps.json`.
 
 **Defense in depth** — the API request lifecycle is layered. No single control is trusted to fail closed.
 
@@ -198,7 +206,7 @@ The procedure threads three foundational design principles. They are not optiona
 7. **GraphQL query-complexity limits.** Depth limit, breadth (alias) limit, complexity-cost calculator with budget per query, persisted-query allowlist for production clients. **Introspection disabled in production.**
 8. **gRPC reflection disabled in production.** mTLS for service-to-service; per-method authorisation (BFLA in gRPC terms is per-method); deadline propagation enforced; max-message-size bounded.
 9. **WebSocket origin validation at upgrade + CSRF / sender-constrained token thereafter.** Per-message authorisation if the channel multiplexes operations across resources; rate-limit per connection AND per identity (one identity cannot fan out across many connections to bypass).
-10. **MCP transport audit (hand-off to `mcp-agent-trust`) and AI-API egress map (hand-off to `ai-c2-detection`).** Document every MCP server and every AI-API destination. Per-destination quota with explicit USD cap; per-identity rate-and-shape baseline; D3-NTA egress monitoring fed to SIEM. AI-API keys treated as the most sensitive credential class — rotation cadence ≤ 30 days, automated key-leak scanning on commits.
+10. **MCP transport audit (hand-off to `mcp-agent-trust`) and AI-API egress map (hand-off to `ai-c2-detection`).** Document every MCP server and every AI-API destination. Per-destination quota with explicit USD cap; per-identity rate-and-shape baseline; D3-NTA egress monitoring fed to SIEM. AI-API keys treated as the most sensitive credential class — rotation cadence ≤ 30 days, automated key-leak scanning on commits. The egress map cross-references the AML.T0096 / AML.T0017 catalog entries in `data/atlas-ttps.json` so that egress-baseline rules can be authored against the canonical TTP IDs rather than ad-hoc local names.
 
 ---
 
@@ -280,6 +288,8 @@ Each D3FEND technique below maps an offensive API-security finding to a defensiv
 | D3-CSPP | Client-Server Payload Profiling | Handler entry — payload shape, header order, TLS fingerprint, MCP message framing anomalies | Per-route baseline; per-MCP-server baseline; no app-wide model | Anomalous payload shape suspicious even if syntactically valid (e.g., unexpected JSON field order, unusual Authorization header position, gRPC max-message-size approaching limit) | Applies to AI-fronted routes — adversarial payload shapes (repeated instruction tokens, very long context windows, Base64-encoded payloads in user-supplied fields) flagged |
 | D3-MFA | Multi-Factor Authentication (auth hardening at the API gateway) | Identity layer — phishing-resistant FIDO2 / WebAuthn passkeys for human-fronted APIs; service identities for machine-to-machine | Per-principal MFA enrolment; passkey-only for privileged routes | Every interactive authentication challenge is AiTM-resistant; TOTP / SMS insufficient for privileged API surfaces | Applies — AI-assisted phishing kits compress time-to-weaponise; passkey-mandatory for any human accessing AI-API management consoles (key rotation, budget setting) |
 | D3-CBAN | Certificate-Based Authentication | Service-to-service and high-value gateway boundaries — mTLS per RFC 8446 with appropriate cipher choice | Per-service workload identity (SPIFFE/SPIRE-class); no shared service certificate | Workload identity verified at every hop; certificate revocation honoured (OCSP stapling / short-lived certificates per ACME) | Applies to MCP transport — mTLS at the gateway-to-MCP-server boundary; AI-API consumption via signed-and-attested workload identity where the AI provider supports it |
+
+D3FEND technique IDs above resolve against `data/d3fend-catalog.json`; framework-gap rationales for each layer cross-walk to the matching entries in `data/framework-control-gaps.json` (notably `OWASP-ASVS-v5.0-V14`, `NIST-800-53-AC-2`, `NIST-800-218-SSDF`, `ISO-27001-2022-A.8.28`, `NIS2-Art21-incident-handling`, `UK-CAF-B2`, and `AU-Essential-8-App-Hardening`) so the defensive layer chosen for any finding can be cross-cited to both the offensive ATT&CK / ATLAS technique (`data/attack-techniques.json`, `data/atlas-ttps.json`) and the missing framework control in one operator pass.
 
 ---
 
