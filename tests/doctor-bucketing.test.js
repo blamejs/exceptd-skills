@@ -94,6 +94,21 @@ test("doctor-bucketing: tolerates null / non-object check values without throwin
   assert.deepEqual(errorList, []);
 });
 
+test("doctor-bucketing: severity:info with ok:false routes to neither bucket (informational-only)", () => {
+  // v0.13.13 pin. severity:info means "this check is informational, not
+  // a problem here." A consumer install of @blamejs/exceptd-skills sets
+  // signing.severity=info with ok:false (no private key) — that's not
+  // a warning or a failure, just a fact about the install shape.
+  const checks = {
+    signing: { ok: false, severity: "info", private_key_present: false, install_mode: "consumer" },
+  };
+  const { warnList, errorList } = bucketChecks(checks);
+  assert.deepEqual(warnList, [],
+    "severity:info must NOT route to warnList even with ok:false");
+  assert.deepEqual(errorList, [],
+    "severity:info must NOT route to errorList even with ok:false");
+});
+
 test("doctor-bucketing: empty input returns empty buckets (no exception)", () => {
   assert.deepEqual(bucketChecks({}), { warnList: [], errorList: [] });
   assert.deepEqual(bucketChecks(null), { warnList: [], errorList: [] });

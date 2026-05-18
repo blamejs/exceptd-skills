@@ -5470,18 +5470,44 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       // verify time.
       const keyPath = path.join(PKG_ROOT, ".keys", "private.pem");
       const present = fs.existsSync(keyPath);
-      // Bug #61 (v0.11.2): signing-status missing key is a real WARNING. The
-      // attestation pipeline writes unsigned files when this is absent, which
-      // operators reading the attestation later cannot verify for authenticity.
-      // The summary line must reflect this — pre-0.11.2 said "all checks green"
-      // directly above [!!] private key MISSING. Now: it's a warning that
-      // populates summary.warnings_count.
+      // v0.13.13: distinguish consumer-install (npm install -g) from
+      // contributor-checkout. Consumer installs live under node_modules/
+      // and have no business signing — the doctor warning "private key
+      // MISSING" reads as a problem on a fresh global install when it's
+      // actually expected.
+      //
+      // Codex P1 on PR #53: single-signal detection (PKG_ROOT contains
+      // "node_modules") is fragile against symlink-resolved paths
+      // (npm link, workspaces). Two-signal detection: either signal
+      // counts as consumer.
+      //   (a) PKG_ROOT path contains a "node_modules" path segment —
+      //       real `npm install -g` lays the package at
+      //       <prefix>/lib/node_modules/@blamejs/exceptd-skills/
+      //   (b) PKG_ROOT's parent directory is exactly "@blamejs" — the
+      //       canonical scoped-npm-install marker, robust to symlink
+      //       realpath() walks because the parent's basename of the
+      //       published-tarball layout always carries the npm scope.
+      // Contributor checkouts (PKG_ROOT outside node_modules AND
+      // parent != @blamejs) keep severity:warn — Bug #61 (v0.11.2):
+      // the attestation pipeline writes unsigned files when this is
+      // absent and contributors need the nudge.
+      const pkgRootSegments = PKG_ROOT.split(/[\\/]/);
+      const containsNodeModulesSegment = pkgRootSegments.includes("node_modules");
+      const parentIsBlamejsScope = path.basename(path.dirname(PKG_ROOT)) === "@blamejs";
+      const isConsumerInstall = containsNodeModulesSegment || parentIsBlamejsScope;
       checks.signing = {
-        ok: present, // not green if the key is missing — operators need the nudge
-        severity: present ? "info" : "warn",
+        ok: present, // not green if the key is missing on a contributor checkout
+        severity: present
+          ? "info"
+          : (isConsumerInstall ? "info" : "warn"),
         private_key_present: present,
         can_sign_attestations: present,
-        ...(present ? {} : { hint: "run `exceptd doctor --fix` to generate an Ed25519 keypair and sign skills (or `node $(exceptd path)/lib/sign.js generate-keypair` from a contributor checkout)" }),
+        install_mode: isConsumerInstall ? "consumer" : "contributor",
+        ...(present
+          ? {}
+          : isConsumerInstall
+            ? { hint: "consumer install — signing is intentionally not enabled. Set up a contributor checkout if you need to sign your own evidence bundles or skill bodies." }
+            : { hint: "run `exceptd doctor --fix` to generate an Ed25519 keypair and sign skills (or `node $(exceptd path)/lib/sign.js generate-keypair` from a contributor checkout)" }),
       };
     } catch (e) {
       checks.signing = { ok: false, error: e.message };

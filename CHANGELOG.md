@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.13 — 2026-05-18
+
+`exceptd doctor` now distinguishes consumer-install from contributor-checkout when reporting on signing.
+
+### Bugs
+
+**Fresh `npm install -g @blamejs/exceptd-skills` no longer prints a misleading `[!! warn] private key MISSING`.** Consumer installs (PKG_ROOT under `node_modules/`) consume signed artifacts; they never generate signatures. The nudge to "run `exceptd doctor --fix` to enable signing" only makes sense in a contributor checkout where the operator is expected to mint and use their own keypair. Doctor now detects the install shape and routes the absent-key state to `severity: info` with the explanatory hint `"consumer install — signing is intentionally not enabled"` on consumer installs, while keeping `severity: warn` (the existing v0.11.2 nudge) on contributor checkouts.
+
+Bucketing extended: `lib/doctor-bucketing.js` now treats `severity: info` as informational-only — neither warnings nor errors bucket pick up such checks, regardless of `ok`. A consumer install therefore reports `all_green: true`, `issues_count: 0`, `warnings_count: 0` instead of `warnings_count: 1`.
+
+### Internal
+
+- `tests/doctor-consumer-install-mode.test.js` pins both shapes: contributor checkout sets `install_mode=contributor`, contributor with key reports `severity:info` + empty buckets, and a staged-fixture consumer install (`tmp/node_modules/@blamejs/exceptd-skills/`) reports `install_mode=consumer` with severity:info + neither bucket populated.
+- `tests/doctor-bucketing.test.js` adds the severity:info skip case (`ok:false + severity:info` → neither bucket).
+
 ## 0.13.12 — 2026-05-18
 
 SBOM file-component integrity now dual-hashed (SHA-256 + SHA3-512).
