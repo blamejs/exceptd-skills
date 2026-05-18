@@ -20,6 +20,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 function resolveRoot(argv) {
   for (let i = 2; i < argv.length; i++) {
@@ -117,12 +118,51 @@ function checkSbomCurrency(root) {
     }
   }
 
+  // v0.13.9: per-file SHA-256 integrity check. For every CycloneDX
+  // component whose bom-ref begins with "file:", confirm the recorded
+  // SHA-256 hash matches the live bytes on disk. Catches the class of
+  // release-ordering bug where sbom.cdx.json was regenerated BEFORE the
+  // final sign-all pass — the recorded manifest.json hash drifted from
+  // the signed-and-committed bytes, but the count-based check above
+  // could not see it. Codex P2 flag on PR #48 surfaced one instance;
+  // this gate makes it unreachable.
+  let fileComponentsChecked = 0;
+  for (const comp of components) {
+    const bomRef = typeof comp["bom-ref"] === "string" ? comp["bom-ref"] : "";
+    if (!bomRef.startsWith("file:")) continue;
+    const relPath = bomRef.slice("file:".length);
+    const absPath = path.join(root, relPath);
+    if (!fs.existsSync(absPath)) {
+      errors.push(
+        `SBOM file component "${relPath}" recorded but file does not exist on disk`
+      );
+      continue;
+    }
+    const sha256Entry = (comp.hashes || []).find(
+      (h) => h && h.alg === "SHA-256",
+    );
+    if (!sha256Entry || typeof sha256Entry.content !== "string") {
+      errors.push(
+        `SBOM file component "${relPath}" lacks a SHA-256 hash entry`
+      );
+      continue;
+    }
+    const live = crypto.createHash("sha256").update(fs.readFileSync(absPath)).digest("hex");
+    if (live !== sha256Entry.content) {
+      errors.push(
+        `SBOM file component "${relPath}" hash drift: recorded ${sha256Entry.content.slice(0, 12)}…, live ${live.slice(0, 12)}… — re-sign skills (\`node $(exceptd path)/lib/sign.js sign-all\` from a contributor checkout) and then \`npm run refresh-sbom\`, in that order (sbom must regenerate AFTER the final sign).`,
+      );
+    }
+    fileComponentsChecked++;
+  }
+
   return {
     ok: errors.length === 0,
     errors,
     skills: sbomSkills,
     catalogs: sbomCatalogs,
     components_validated: components.length,
+    file_components_hash_checked: fileComponentsChecked,
   };
 }
 
@@ -140,7 +180,8 @@ function main() {
   }
   process.stdout.write(
     `SBOM current — ${result.skills} skills, ${result.catalogs} catalogs, ` +
-    `${result.components_validated} components validated.\n`
+    `${result.components_validated} components validated, ` +
+    `${result.file_components_hash_checked} file-hash entries verified.\n`
   );
 }
 
