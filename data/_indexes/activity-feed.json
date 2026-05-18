@@ -55,7 +55,7 @@
       "artifact": "data/exploit-availability.json",
       "path": "data/exploit-availability.json",
       "schema_version": "1.1.0",
-      "entry_count": 30
+      "entry_count": 28
     },
     {
       "date": "2026-05-15",
@@ -87,7 +87,7 @@
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 39
+      "entry_count": 38
     },
     {
       "date": "2026-05-15",
@@ -102,7 +102,7 @@
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 40
+      "entry_count": 38
     },
     {
       "date": "2026-05-13",

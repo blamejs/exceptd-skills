@@ -212,6 +212,8 @@ Verify-not-assume posture per M-22-09 and CISA ZTMM v2.0.
 
 ## Output Format
 
+The skill produces a Federal Government / DIB Cybersecurity Assessment covering FedRAMP Rev5 Moderate / High coverage, CMMC 2.0 Level 1/2/3 maturity, NIST 800-171 Rev 2/3 + 800-172 enhanced security requirements, M-22-09 zero-trust strategy progress, M-24-04 AI obligations, UK GovAssure, EU NIS2 public administration, AU PSPF / ISM Essential 8, and IL CDM v2.1. The shape below is consumed downstream by `incident-response-playbook` (for federal IR notification clocks), by `compliance-theater` (FedRAMP-vs-deployed comparison), and by `global-grc` (for cross-jurisdictional government rollup). Preserve the per-baseline maturity rows verbatim — they are the auditable evidence for ATO / continuous-ATO renewal.
+
 ```
 ## Federal Government / DIB Cybersecurity Assessment
 

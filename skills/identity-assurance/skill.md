@@ -191,6 +191,8 @@ NIST 800-207 ZTA posture, extended for agents:
 
 ## Output Format
 
+The skill produces an Identity Assurance Assessment covering per-IdP AAL/IAL/FAL posture, passkey / WebAuthn / FIDO2 deployment coverage, agent-identity scoping (workload, service-account, AI-agent principal), and the prioritized roadmap to close phishing-resistance gaps. The shape below is consumed downstream by `idp-incident-response` (which scopes IR on confirmed identity compromise), by `email-security-anti-phishing` (which inherits the phishing-resistant-MFA coverage), and by `compliance-theater` (which compares the deployed authenticator class against any AAL2 / AAL3 compliance claim). Preserve the per-IdP AAL / IAL / FAL rows verbatim — they are the auditable derivation of the phishing-resistance score.
+
 ```
 ## Identity Assurance Assessment
 

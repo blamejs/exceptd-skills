@@ -443,6 +443,8 @@ D3FEND v1.0+ references from `data/d3fend-catalog.json`. Maps the SesameOp / PRO
 
 ## Output Format
 
+The skill produces a structured AI C2 Detection Assessment covering per-host AI-API egress baselines, behavioral anomaly indicators, and SesameOp-class C2-pattern findings. The shape below is consumed downstream by `incident-response-playbook` (which scopes IR against confirmed C2 indicators), by `ai-attack-surface` (which integrates the detection-gap section into the broader AI surface report), and by `compliance-theater` (which compares the AI-API monitoring coverage against any SI-4 / CC7 anomaly-detection compliance claim). Preserve the per-host egress-baseline shape verbatim — it is the load-bearing detection artifact.
+
 ```
 ## AI C2 Detection Assessment
 

@@ -245,6 +245,8 @@ Containers are ephemeral by design: pods die, nodes are replaced, log file paths
 
 ## Output Format
 
+The skill produces a Container + Kubernetes Runtime Security Posture Assessment covering per-cluster CIS Kubernetes Benchmark coverage, NSA / CISA Kubernetes Hardening Guide alignment, admission-control (Kyverno / OPA / Gatekeeper) policy maturity, runtime detection (Falco / Tetragon) coverage, sandboxing (gVisor / Kata) deployment, and the prioritized remediation roadmap. The shape below is consumed downstream by `cloud-security` (for the cloud-tier IAM and KMS dependencies), by `supply-chain-integrity` (for image provenance), and by `compliance-theater` (which compares deployed admission-control coverage against PCI / FedRAMP claims). Preserve the per-cluster benchmark-coverage rows verbatim — they are the auditable evidence chain.
+
 Produce this structure verbatim:
 
 ```

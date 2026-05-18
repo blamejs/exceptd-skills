@@ -219,6 +219,8 @@ For each jurisdiction the operator is exposed to (EU, UK, AU, JP, IL, ID, TW, US
 
 ## Output Format
 
+The skill produces an OT / ICS Security Posture Assessment covering Purdue-model zone inventory, IEC 62443 zone-and-conduit posture, NERC CIP / TSA-pipeline coverage, AI-augmented threat exposure (NIST IR 8504 ICS-AI), and the prioritized roadmap for safety-system isolation. The shape below is consumed downstream by `sector-energy` (which inherits the NERC CIP rows), by `incident-response-playbook` (which scopes IR with the Purdue-zone affected-asset list), and by `compliance-theater` (which compares the deployed segmentation against IEC 62443 / NERC CIP claims). Preserve the per-zone safety-system field verbatim — it is the auditable safety-isolation evidence.
+
 Produce this structure verbatim:
 
 ```

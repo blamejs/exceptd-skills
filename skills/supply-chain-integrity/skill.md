@@ -252,6 +252,8 @@ Every artifact is untrusted until provenance is verified.
 
 ## Output Format
 
+The skill produces a Supply-Chain Integrity Assessment covering per-pipeline build provenance, SLSA / in-toto / sigstore attestation coverage, SBOM completeness, dependency-risk inventory, and the prioritized roadmap to close gaps against EU CRA, NIST 800-218, and the expanded global framework set. The shape below is consumed downstream by `mcp-agent-trust` (for AI-tool supply-chain rows), by `mlops-security` (for model-artifact provenance), and by `compliance-theater` (which compares the deployed attestation surface against EU CRA Annex I claims). Preserve the per-pipeline attestation rows verbatim — they are the auditable evidence chain.
+
 ```
 ## Supply-Chain Integrity Assessment
 

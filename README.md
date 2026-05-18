@@ -30,7 +30,7 @@ This platform surfaces what is actually happening right now. Every skill explici
 
 ## Status
 
-Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 35 jurisdictions, a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas into auto-PRs for editorial review.
+Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 35 jurisdictions, 20 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus primary-source advisories (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA) into auto-PRs for editorial review.
 
 ---
 
@@ -154,6 +154,16 @@ Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy
 
 Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0) / **OSV** (added in v0.12.10). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …; OSV aggregates the OSSF Malicious Packages dataset (`MAL-*` keys) + Snyk + RustSec + Mageia + Ubuntu USN + Go Vuln DB + PYSEC + UVI on top of GHSA — useful for malicious-package compromises that don't have CVEs yet (`exceptd refresh --advisory MAL-2026-3083`). New IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <ID>`. For "I want this advisory today, not tomorrow": `exceptd refresh --advisory <CVE-or-GHSA-or-MAL-or-SNYK-or-RUSTSEC-ID> --apply`.
 
+Primary-source advisory polling: `exceptd refresh --check-advisories` polls 8 vendor and coordinated-disclosure feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, Zero Day Initiative, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories) that publish CVE IDs at T+0 to T+1 — typically 3–14 days ahead of NVD enrichment. The command is report-only: it returns a structured `diffs[]` listing each newly-seen CVE ID with its source attributions and advisory URLs, but does not mutate the catalog. Operators triage the output and route promising IDs through `exceptd refresh --advisory <CVE-ID> --apply`. Pairs naturally with the daily scheduled remote agent below.
+
+CVE-class alert surfacing: `exceptd watchlist --alerts` matches the live `cve-catalog.json` against five operational patterns (`kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`) and returns the matches sorted critical-severity-first, then by RWEP. Use as a fast operational triage on a refreshed catalog without scanning every entry by hand.
+
+GitHub repo-pattern monitoring: `exceptd watchlist --org-scan --org <login>` probes GitHub Search for repositories matching known threat-actor naming patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP") scoped to one org. Custom patterns via repeatable `--pattern <s>`. Implements the canonical detection for the Shai-Hulud / TeamPCP supply-chain framework class — the attacker uses GitHub itself as the exfil channel. Set `GITHUB_TOKEN` for private-repo coverage and rate-limit headroom; public-repo search works without auth.
+
+AI-assistant config-file audit: `exceptd doctor --ai-config` walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, and `~/.continue`, flagging sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each finding is surfaced with an info-level "manual ACL review" note. Catches the AI-config-credential-exfil class that the Shai-Hulud framework targets. Opt-in — does not run as part of the default no-flag `doctor` pass.
+
+Daily scheduled threat intake: a `routine: exceptd-threat-intake` (claude.ai remote agent) runs daily at 14:00 UTC. Sequence: `npm install` → `refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new CVE IDs from the primary-source feeds → re-sign + rebuild-indexes if the catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with the full diff in the report. Closes the cadence gap that previously left fresh disclosures dependent on operator-triggered intake. Operator-managed at <https://claude.ai/code/routines>.
+
 Optional env vars for higher rate budgets:
 
 | Variable | Purpose |
@@ -270,6 +280,16 @@ exceptd doctor                        One-shot health check.
   --currency                          Only skill currency report.
   --cves                              Only CVE catalog drift check.
   --rfcs                              Only RFC catalog drift check.
+  --ai-config                         Audit AI-assistant config-file permissions
+                                      across ~/.claude, ~/.cursor, ~/.codeium,
+                                      ~/.aider, ~/.continue. Flags sensitive
+                                      files (settings.json, mcp.json,
+                                      *.mcp_config.json, api_key*, *.token,
+                                      *.credentials) not at mode 0600 on POSIX;
+                                      surfaces an info-level "manual ACL review"
+                                      note for each sensitive file on Windows.
+                                      Opt-in; not part of the default doctor
+                                      pass.
 
 exceptd ci                            One-shot CI gate. Exits 2 on detected or
                                       rwep ≥ rwep_threshold.escalate.
@@ -302,12 +322,56 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
   --curate <CVE-ID>                   (v0.12.0) Emit editorial questions + ranked
                                       candidates (ATLAS/ATT&CK/CWE/framework) for
                                       a draft catalog entry.
+  --check-advisories                  Poll 8 primary-source advisory feeds
+                                      (Qualys TRU, Red Hat RHSA, Ubuntu USN,
+                                      ZDI, kernel.org commits, oss-security
+                                      mailing list, JFrog SecOps, CISA current
+                                      advisories) for CVE IDs disclosed at T+0
+                                      to T+1 — days ahead of NVD enrichment.
+                                      Report-only: emits structured diffs[]
+                                      with {cve_id, sources[], advisory_urls[],
+                                      disclosed_at, title}; does NOT mutate the
+                                      catalog. Route promising IDs through
+                                      `refresh --advisory <CVE-ID>` to enrich.
   --indexes-only                      Rebuild data/_indexes/*.json only.
 
-Sources (default = all): kev | epss | nvd | rfc | pins | ghsa (v0.12.0).
-GHSA covers npm, PyPI, Maven, Go, NuGet, etc. New CVE IDs land as drafts
-that the catalog validator treats as warnings, not errors — editorial
-review (framework gaps, IoCs, ATLAS/ATT&CK refs) is still required.
+Sources (default = all): kev | epss | nvd | rfc | pins | ghsa | osv.
+GHSA covers npm, PyPI, Maven, Go, NuGet, etc.; OSV layers Snyk, RustSec,
+Mageia, Ubuntu USN, Go Vuln DB, PYSEC, UVI, plus the OSSF Malicious
+Packages dataset (`MAL-*` keys). New IDs land as drafts that the catalog
+validator treats as warnings, not errors — editorial review (framework
+gaps, IoCs, ATLAS/ATT&CK refs) is still required.
+
+exceptd watchlist                     Default mode: aggregate every skill's
+                                      forward_watch entries (upcoming standards,
+                                      RFC publications, new TTPs to monitor).
+                                      `--by-skill` inverts the grouping.
+  --alerts                            Switch to CVE-catalog pattern alerts.
+                                      Five patterns ship:
+                                        - kernel_lpe_with_poc (high) — kernel
+                                          LPE class with public PoC + blast
+                                          radius >= 25
+                                        - supply_chain_family (high) — MAL-*
+                                          entries or `type: malicious-*`
+                                        - ai_discovered_kev (high) — AI-
+                                          discovered AND CISA KEV-listed
+                                        - active_exploitation_unpatched
+                                          (critical) — confirmed in-the-wild
+                                          + no patch available
+                                        - recent_poc_no_kev_yet (medium) —
+                                          public PoC verified within 14 days,
+                                          not yet KEV-listed
+                                      Sorted critical-severity first, then by
+                                      RWEP descending. JSON or human output.
+  --org-scan --org <login>            Probe GitHub Search for repositories
+                                      matching known threat-actor naming
+                                      patterns ("A Gift From TeamPCP",
+                                      "Shai-Hulud", "TeamPCP") scoped to one
+                                      org. Custom patterns via repeatable
+                                      `--pattern <s>`. Set GITHUB_TOKEN for
+                                      private-repo coverage + higher rate
+                                      limit; without it, public-repo search
+                                      only.
 
 exceptd skill <name>                  Show context for one skill.
 exceptd framework-gap <FW> <ref>      One framework + one CVE/scenario, JSON
@@ -319,30 +383,32 @@ exceptd help                          This help.
 exceptd <verb> --help                 Per-verb usage with flag descriptions.
 ```
 
-### Legacy v0.10.x verbs (deprecated, scheduled for removal in v0.13)
+### Legacy v0.10.x verbs
 
-These still work but emit a one-time deprecation banner per process:
+Five verbs removed in v0.13.0 after deprecation since v0.11.0. Invoking any of these now returns a structured `ok:false` refusal pointing at the replacement; pre-v0.13 scripts must migrate.
 
-| Legacy verb | v0.11.0 replacement |
+| Removed verb | Replacement |
 |---|---|
 | `plan` | `brief --all` |
 | `govern <pb>` | `brief <pb> --phase govern` |
 | `direct <pb>` | `brief <pb> --phase direct` |
 | `look <pb>` | `brief <pb> --phase look` |
+| `ingest` | `run` |
+
+The remaining v0.10.x verbs are aliases — still functional, no banner, no removal scheduled:
+
+| Alias | Canonical |
+|---|---|
 | `scan` | `discover --scan-only` |
 | `dispatch` | `discover` |
 | `currency` | `doctor --currency` |
 | `verify` | `doctor --signatures` |
 | `validate-cves` | `doctor --cves` |
 | `validate-rfcs` | `doctor --rfcs` |
-| `ingest` | `run` |
 | `reattest <sid>` | `attest diff <sid>` |
 | `list-attestations` | `attest list` |
-| `watchlist` | (no replacement yet — kept) |
 | `prefetch` | `refresh --no-network` |
 | `build-indexes` | `refresh --indexes-only` |
-
-Suppress the deprecation banner: `EXCEPTD_DEPRECATION_SHOWN=1`.
 
 ## Invoking a skill from your AI assistant
 
@@ -399,7 +465,7 @@ The `agents/` directory ships markdown role cards documenting authoring conventi
 All skills pull from `data/`. Cross-validated against canonical upstream sources via `exceptd refresh` / `exceptd doctor --cves` / `exceptd doctor --rfcs`.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
-- `atlas-ttps.json` — MITRE ATLAS v5.4.0 TTPs with gap flags and exploitation examples
+- `atlas-ttps.json` — MITRE ATLAS v5.4.0 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
 - `framework-control-gaps.json` — Per-framework, per-control: what it was designed for vs. what it misses
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
 - `global-frameworks.json` — All major global compliance frameworks (35 jurisdictions) with control inventories and lag scores

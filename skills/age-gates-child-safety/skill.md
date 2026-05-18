@@ -287,6 +287,8 @@ Produce a single per-control mapping across all in-scope jurisdictions; disparat
 
 ## Output Format
 
+The skill produces an Age Gates and Child-Safeguarding Posture Assessment covering US COPPA / CIPA, California AADC, UK Children's Code (ICO), Ireland Fundamentals for a Child-Oriented Approach, EU DSA Art. 28 (online platforms), KOSA (US, where enacted), GDPR Art. 8, AU Online Safety Act + eSafety Basic Online Safety Expectations, and emerging KSA / SG / IN child-protection guidance. The shape below is consumed downstream by `dlp-gap-analysis` (for child-data flow detection), by `incident-response-playbook` (for child-data breach notification clocks), and by `global-grc` (for cross-jurisdictional rollup). Preserve the per-jurisdiction obligation rows verbatim — they are the auditable evidence for regulator inquiries.
+
 Produce this structure verbatim:
 
 ```

@@ -344,6 +344,8 @@ Year 1+:  Tier 3 — by domain, starting with highest-sensitivity data
 
 ## Output Format
 
+The skill produces a Security Maturity Roadmap that scores each in-scope domain against the published tier definitions and surfaces the next-tier upgrade path with budget bands and dependency ordering. The shape below is consumed downstream by `policy-exception-gen` (for domains where the operator chooses a lower tier than the threat model requires), by `compliance-theater` (which compares the claimed tier against deployed controls), and by `global-grc` (for cross-jurisdictional tier obligations). Preserve the per-domain tier rows verbatim — they are the auditable baseline for the upgrade plan.
+
 ```
 ## Security Maturity Roadmap
 

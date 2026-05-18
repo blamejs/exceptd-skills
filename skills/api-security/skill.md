@@ -212,6 +212,8 @@ Wire-level RFC mappings cited below resolve against `data/rfc-references.json` (
 
 ## Output Format
 
+The skill produces an API Security Assessment covering REST / GraphQL / gRPC / WebSocket / MCP per-surface coverage, OWASP API Top 10 2023 + OWASP API Sec for LLM Top 10 mapping, per-endpoint authentication / authorization / rate-limit / schema-validation evidence, and the prioritized remediation roadmap. The shape below is consumed downstream by `webapp-security` (for browser-facing APIs), by `mcp-agent-trust` (for MCP surfaces), and by `compliance-theater` (which compares the deployed API controls against PCI 4.0 6.2 / OWASP ASVS L2-L3 claims). Preserve the per-endpoint control-evidence rows verbatim — they are the auditable derivation of the API-surface risk score.
+
 ```
 ## API Security Assessment
 

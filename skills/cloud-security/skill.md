@@ -258,6 +258,8 @@ For each jurisdiction the operator is exposed to (US / EU / UK / AU / JP / SG / 
 
 ## Output Format
 
+The skill produces a Cloud Security Posture Assessment covering per-cloud (AWS / Azure / GCP / OCI / Alibaba) CIS Benchmark coverage, CSA CCM v4 control mapping, IAM least-privilege posture, IMDS / SSRF / metadata-service hardening, KMS / HSM key-management, and the prioritized remediation roadmap. The shape below is consumed downstream by `cloud-iam-incident` (which scopes IR with the IAM-finding list), by `container-runtime-security` (for workload-tier issues), and by `compliance-theater` (which compares the per-cloud control coverage against FedRAMP / IRAP / C5 / ENS / ISMAP claims). Preserve the per-control CIS Benchmark rows verbatim — they are the auditable evidence chain.
+
 Produce this structure verbatim:
 
 ```

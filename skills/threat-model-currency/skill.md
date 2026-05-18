@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-18"
 discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -374,6 +374,8 @@ For each gap, produce a specific, actionable update:
 
 ## Output Format
 
+The skill produces a structured Threat Model Currency Assessment that scores the threat model against each of the 14 threat classes, computes a currency percentage, and emits a priority update roadmap. The shape below is consumed downstream by `framework-gap-analysis` (which converts per-class gaps into Framework Lag Declarations), by `policy-exception-gen` (which generates defensible exceptions for any class the operator cannot remediate immediately), and by `global-grc` (which rolls up the currency score across EU/UK/AU/ISO jurisdictions per Hard Rule #5). Preserve the per-class scoring rows verbatim — they are the auditable derivation of the currency percentage.
+
 ```
 ## Threat Model Currency Assessment
 
@@ -409,3 +411,37 @@ Current reference: MITRE ATLAS v5.4.0 (February 2026)
 Threat model references: [version cited in document]
 Gap: [if different]
 ```
+
+---
+
+## Defensive Countermeasure Mapping
+
+A threat model is current only when each of the 14 threat classes above has a named defensive control. The mapping below converts each class to the D3FEND defensive technique that disrupts its offensive TTP. A currency assessment that scores a class as "addressed" without naming the corresponding D3FEND technique is under-specified — the threat model identifies the threat but does not commit to a defence.
+
+| Class | Offensive TTP | D3FEND ID | Defensive technique | Defense-in-depth layer |
+|---|---|---|---|---|
+| 1 — AI-discovered kernel LPE (Copy Fail) | T1068 | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control during the AI-compressed weaponization window |
+| 2 — Deterministic LPE | T1068 | `D3-SCA` | System Call Analysis | Endpoint — detect the deterministic primitive at syscall layer |
+| 3 — IPsec subsystem LPE (Dirty Frag / Fragnesia) | T1190 | `D3-NI` | Network Isolation (non-IPsec data path) | Network — segmentation independent of the compromised cryptographic subsystem |
+| 4 — Prompt injection RCE | AML.T0051, AML.T0054 | `D3-IOPR` | Input/Output Profiling | SDK / application — content-aware prompt+completion inspection |
+| 4 — Prompt injection RCE (gateway tier) | AML.T0051 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — when SDK-side instrumentation is not deployable |
+| 5 — MCP supply chain RCE | AML.T0010 | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute |
+| 5 — MCP supply chain RCE | AML.T0010 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP-server binaries |
+| 6 — AI-assisted weaponization | AML.T0016 | `D3-NTA` | Network Traffic Analysis | Network egress — detect attacker-side AI-API queries from compromised tooling |
+| 7 — AI as covert C2 (SesameOp) | AML.T0096 | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
+| 8 — AI-generated malware evasion (PROMPTFLUX) | AML.T0016 | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns |
+| 9 — RAG exfiltration | AML.T0043 | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus retrieval-pattern baselining |
+| 10 — Model poisoning | AML.T0020 | `D3-FAPA` | File Access Pattern Analysis | Data tier — training-corpus access-pattern baselining |
+| 11 — AI-speed reconnaissance | T1595 | `D3-NTA` | Network Traffic Analysis | Network ingress — recalibrated thresholds for AI-speed probe rates |
+| 12 — AI-generated phishing | T1566, AML.T0016 | `D3-MFA` | Multi-factor Authentication (passkey class) | Identity — remove the credential-disclosure win condition AI phishing optimizes for |
+| 12 — AI-generated phishing (gateway tier) | T1566 | `D3-CSPP` | Client-server Payload Profiling | Email gateway — stylometric drift detection for LLM-generated lures |
+| 13 — ATLAS coverage | All AML.T* | `D3-IOPR` + `D3-NTA` | Input/Output Profiling + Network Traffic Analysis | SDK + network — the two-layer minimum for AI TTP detection |
+| 14 — Post-quantum adversary | T1557 (harvest-now-decrypt-later) | `D3-MENCR` | Message Encryption (PQC-hybrid TLS) | Network — ML-KEM / X25519 hybrid key agreement for long-lived sensitive traffic |
+
+**Defense-in-depth posture:** the 14-class currency score (per the Scoring section above) is upgraded from "addressed" to "operationally addressed" only when each class names at least one deployed D3FEND technique from the table. A threat model that scores 28/28 on knowledge of threats but cites zero D3FEND techniques is paper-current — the document is updated, the defence is not.
+
+**Least-privilege scope:** the D3FEND techniques in this table are technique-level; their per-principal scoping is owned by the downstream skill cited in each class (e.g. `ai-attack-surface` owns `D3-IOPR` scoping for AI principals, `kernel-lpe-triage` owns `D3-KBPI` scoping for kernel-class assets). The threat-model currency assessment cites the technique by ID; the scoping document lives in the downstream skill.
+
+**Zero-trust posture:** every class above is verified in production before the currency score credits it. A class scored as "addressed" with a D3FEND technique that is policy-approved but not deployed, or deployed but not monitored, or monitored but not tested against the cited TTP, is over-credited. The Priority Update Roadmap field (per the Output Format) must list verification tests alongside the technique deployment plan.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** Classes 4, 5, 7, 8, 9, 10, 11, 12, 13 are AI-pipeline-applicable. `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. The currency assessment must record these degradations explicitly when scoring AI-pipeline classes.

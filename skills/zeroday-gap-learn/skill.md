@@ -23,7 +23,7 @@ forward_watch:
   - New ATLAS TTP additions in each ATLAS release
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-18"
 discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief zeroday-gap-learn` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -398,6 +398,8 @@ Format the output for addition to `data/zeroday-lessons.json`.
 
 ## Output Format
 
+The skill produces a Zero-Day Learning Loop entry per CVE, capturing attack-vector extraction, control-gap identification, framework coverage assessment, the new control requirement that closes the gap, and an exposure score for the org's environment. The shape below is consumed downstream by `framework-gap-analysis` (which converts the new control requirement into a Framework Lag Declaration), by `defensive-countermeasure-mapping` (which maps the requirement to D3FEND IDs), and by `data/zeroday-lessons.json` (which inherits the lesson entry as a persistent record). Preserve the attack-vector and control-gap fields verbatim — they are the auditable derivation of the new control requirement.
+
 ```
 ## Zero-Day Learning Loop: [CVE-ID / Vulnerability Name]
 
@@ -442,3 +444,33 @@ Run this check against any organization claiming a mature vulnerability-manageme
 > "Open `data/zeroday-lessons.json` (or the org's equivalent). Count the entries. Compare to the count of CVEs the org actually responded to in the same period. If the lesson-entry count is < CVE-response count, the loop is partial. Per AGENTS.md DR-8, partial is failure: every zero-day-in-scope must produce a lesson entry. The gap between CVEs-patched and lessons-learned is the size of the theater. The org's `Improve` function (NIST CSF 2.0) is not running."
 
 > "Ask: in the last 12 months, has a single internal control requirement been created or modified as a result of a public zero-day the org was NOT directly hit by? If no, the org's threat-intelligence control (ISO A.5.7) is consumption-only — collecting feeds, not changing controls. Threat-intel without control-system change is library subscription, not security capability."
+
+---
+
+## Defensive Countermeasure Mapping
+
+The learning loop's output is a new control requirement. The mapping below converts each of the lesson-class outputs this skill produces into the D3FEND defensive technique that codifies the requirement. A lesson entry that names a new control requirement without citing a D3FEND ID is incomplete — the requirement names the goal but not the implementation technique, which is exactly the framework-lag failure the learning loop is meant to close.
+
+| Lesson class | Offensive TTP class | D3FEND ID | Defensive technique | Defense-in-depth layer |
+|---|---|---|---|---|
+| Deterministic kernel LPE (Copy Fail class) | T1068 | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control during AI-compressed weaponization |
+| Deterministic kernel LPE | T1068 | `D3-SCA` | System Call Analysis | Endpoint — detect the LPE primitive at syscall layer |
+| Cryptographic subsystem compromise (Dirty Frag / Fragnesia) | T1190 | `D3-NI` | Network Isolation (non-IPsec data path) | Network — segmentation independent of the compromised subsystem |
+| Cryptographic subsystem compromise | T1068 (post-exploit) | `D3-PA` | Process Analysis | Endpoint — anomalous-uid / capability-set detection |
+| Prompt injection RCE (Copilot YOLO-mode class) | AML.T0051, AML.T0054 | `D3-IOPR` | Input/Output Profiling | SDK / application — content-aware prompt+completion inspection |
+| Prompt injection RCE (gateway tier) | AML.T0051 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — when SDK-side instrumentation is not deployable |
+| MCP supply chain RCE (Windsurf class) | AML.T0010 | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers execute |
+| MCP supply chain RCE | AML.T0010 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP-server binaries |
+| AI-as-C2 (SesameOp class) | AML.T0096 | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
+| AI-generated malware (PROMPTFLUX class) | AML.T0016 | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns |
+| RAG exfiltration | AML.T0043 | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus retrieval-pattern baselining |
+| Model poisoning | AML.T0020 | `D3-FAPA` | File Access Pattern Analysis | Data tier — training-corpus access-pattern baselining |
+| Identity-provider blast-radius (sigstore-class) | T1078 (Valid Accounts) | `D3-CBAN` | Certificate-based Authentication | Identity — short-lived workload certificates limit token-theft blast radius |
+
+**Defense-in-depth posture:** every lesson entry produced by this skill must cite at least one D3FEND technique from the table for the cited offensive TTP class. A lesson that names "we need better prompt-injection defence" without citing `D3-IOPR` or `D3-CSPP` is rhetorically complete but operationally vacant — the next variant lands against the same unchanged control surface because the lesson never named the technique that disrupts it.
+
+**Least-privilege scope:** the D3FEND techniques in this table are technique-level; the per-principal scoping is owned by the downstream skill named in the lesson's `feeds_into` field (e.g. `ai-attack-surface` for AML.T0051 lessons, `kernel-lpe-triage` for T1068 lessons). A lesson entry routes the new control requirement to the downstream skill, which carries the principal-class scoping.
+
+**Zero-trust posture:** a lesson entry closes only when the new control requirement is deployed and verified in production, not when the lesson is recorded. The Output Format's "Exposure Scoring" section must track lesson-deployment latency alongside lesson-creation latency — a lesson recorded but not deployed is the same operational state as no lesson at all.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** lessons targeting AML.T0010 (MCP / model-serving supply chain) must record AI-pipeline degradations explicitly. `D3-EAL` does not apply to serverless inference endpoints — the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. Lessons that omit these degradations propagate the framework-lag they were meant to close.

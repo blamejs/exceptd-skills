@@ -255,7 +255,7 @@ Per ISO 30111 §5 (continual improvement) and NIST 800-218 SSDF RV.2 (assess, pr
 
 ## Output Format
 
-The skill produces seven artifacts per program assessment:
+The skill produces seven artifacts per program assessment: an ISO 29147-shaped CVD policy text, a `security.txt` file, an ISO 30111-mapped triage workflow, a CSAF 2.0 advisory template, the safe-harbor language, the bug-bounty scope statement, and the jurisdiction-specific disclosure-clock table (EU CRA / NIS2, US, UK, AU, JP, SG). Each artifact is consumed by a different downstream operator: legal review for safe harbor, vendor PSIRT for CSAF, web ops for `security.txt`, executive risk owner for the disclosure-clock table.
 
 ### 1. CVD Policy Text (ISO 29147 template)
 

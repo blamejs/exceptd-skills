@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.13.4 — 2026-05-18
+
+Warning-cleanup pass + catalog hygiene + docs surfacing. The post-v0.13.3 state had ~43 skill lint warnings and 20 cosmetic playbook warnings that operators saw on every predeploy run; this release drives both to zero. README and AGENTS catch up with the v0.13.0 → v0.13.3 operator surface.
+
+### Bugs
+
+**Playbook `_meta.fed_by` is now schema-accepted.** v0.13.0 added the `_meta.fed_by[]` reverse-direction field to every playbook but never updated `lib/schemas/playbook.schema.json`; every playbook surfaced a cosmetic `unexpected property "fed_by"` warning. Schema now declares the field as an array of strings; warning count for `validate-playbooks` drops from 22 → 0. 20/20 playbooks now validate clean without warnings.
+
+**Skill lint cleanup: 43 warnings → 0.** Two categories addressed:
+
+- **Output Format section too short (32 skills):** the lint requires `## Output Format` carry ≥ 20 words of body text. Most skills had the section terminated early because H2 / H1 headings inside example-output code fences were detected as real headings by the lint's heading-finder. Each affected skill now carries 1-2 sentences of explanatory prose between the `## Output Format` heading and the first fenced code block — naming the report shape, the downstream consumers (compliance-theater, framework-gap-analysis, incident-response-playbook, global-grc, CSAF auditor bundles), and the load-bearing fields operators must preserve verbatim. Two skills (`mcp-agent-trust`, `fuzz-testing-strategy`) had analogous heading-collision issues in other sections; same fix pattern.
+
+- **Missing Defensive Countermeasure Mapping section (6 skills):** the section is required for skills with `last_threat_review >= 2026-05-11`. Added to `framework-gap-analysis`, `compliance-theater`, `exploit-scoring`, `policy-exception-gen`, `threat-model-currency`, `zeroday-gap-learn`. Each section ships a 5-10 row table mapping offensive TTPs (ATLAS / ATT&CK) to D3FEND defensive technique IDs (all verified against `data/d3fend-catalog.json`), plus defense-in-depth posture, least-privilege scope, zero-trust posture, and AI-pipeline applicability notes per AGENTS.md Hard Rule #9. Updated `last_threat_review` to `2026-05-18`.
+
+Final lint state: **42/42 skills passing, 0 warnings.**
+
+**2 stuck-draft CVEs removed from catalog.** `MAL-2026-ANTHROPIC-MCP-STDIO` was a `_quarantine: true` duplicate of the verified `CVE-2026-30623` (Anthropic MCP SDK stdio command-injection). `CVE-2026-GTIG-AI-2FA` was a `_draft: true` placeholder for an embargoed/un-assigned CVE id. Both removed. Cross-references updated in `data/exploit-availability.json`, `data/framework-control-gaps.json` (inline text in `NIST-AI-RMF-MEASURE-2.7`), `data/_indexes/chains.json` (regenerated), `data/zeroday-lessons.json`. Catalog state now **38/38 verified, 0 drafts**.
+
+### Features
+
+**README.md catches up with v0.13.0 → v0.13.3 operator surface.** New documentation for: `exceptd watchlist --alerts` (CVE-class pattern matcher; 5 patterns), `exceptd watchlist --org-scan` (GitHub repo-pattern monitoring per NEW-CTRL-052; `--org`, `--pattern`, `GITHUB_TOKEN` env var), `exceptd doctor --ai-config` (file-mode audit per NEW-CTRL-050; walks ~/.claude / ~/.cursor / ~/.codeium / ~/.aider / ~/.continue), `exceptd refresh --check-advisories` (8-feed primary-source poller: Qualys / RHSA / USN / ZDI / kernel-org / oss-security / JFrog / CISA), and the daily scheduled `exceptd-threat-intake` remote agent. Playbook count updated 16 → 20 with the 4 v0.13.0 additions named. Legacy verb table split into "Removed in v0.13.0" (5 verbs) vs "Aliases — still functional, no removal scheduled" (10 verbs). Watchlist now has a first-class CLI block instead of the prior "no replacement yet" stub.
+
+**AGENTS.md catches up.** Two new sections:
+- **New Control Requirements** — table documenting NEW-CTRL-048 through NEW-CTRL-055 with name, surfacing zero-day, and coverage gap closed. Skill bodies should cite the IDs rather than paraphrase the upstream description.
+- **Operational threat-intake cadence** — documents the daily `exceptd-threat-intake` routine, the sequence it runs (`refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new IDs → PR), and operator instructions for one-off triage.
+
+CLI reference table extended: `exceptd brief --all` row updated 16 → 20 playbooks; `exceptd attest diff <sid>` row updated to describe `reattest` as a preserved short-form alias; `exceptd doctor` row added `--ai-config`; two new rows added for `exceptd refresh --check-advisories` and `exceptd watchlist`. Quick Skill Reference table replaced legacy `node orchestrator/index.js watchlist` invocation with `exceptd watchlist`.
+
+### Internal
+
+- 18 new tests: `tests/v0_13_4-fixes.test.js` (13 pins covering Phases A / C / E), `tests/doctor-ai-config-substantive.test.js` (5 fixture-driven tests, POSIX-only), `tests/watchlist-org-scan-substantive.test.js` (5 envelope-shape tests).
+- Test-count baseline refreshed.
+- Predeploy: 15/15 gates green; both `validate-playbooks` and `lint-skills` now run warning-free.
+
 ## 0.13.3 — 2026-05-18
 
 Audit close-out continuation: the items the prior pass marked for follow-up. Workflow hardening, lint enforcement promoted from warning to hard error, two new operator-facing health checks for the Shai-Hulud lesson controls, and 4 more primary-source pollers covering kernel.org / oss-security / JFrog / CISA.

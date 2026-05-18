@@ -201,6 +201,8 @@ Zero-trust-compliant defense maps to controls that verify per request. Implicit-
 
 ## Output Format
 
+The skill produces a Defensive Countermeasure Map per input (CVE ID, ATLAS / ATT&CK TTP, threat-actor profile, or framework gap), pairing each offensive technique with the D3FEND defensive technique that disrupts it and the deployment layer that owns it. The shape below is consumed downstream by `framework-gap-analysis` (which wraps the map into Framework Lag Declarations), by `policy-exception-gen` (which converts the map into compensating-control language for defensible exceptions), and by every per-domain skill's own Defensive Countermeasure Mapping section. Preserve the D3FEND IDs verbatim — they are the auditable reference into `data/d3fend-catalog.json`.
+
 ```
 # Defensive Countermeasure Map — <input>
 

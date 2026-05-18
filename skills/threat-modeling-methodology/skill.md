@@ -234,6 +234,8 @@ Per Hard Rule AGENTS.md #12 (external data version pinning): when ATLAS, ATT&CK,
 
 ## Output Format
 
+The skill produces a structured Threat Model per system covering the chosen methodology composite (STRIDE-ML + LINDDUN + Diamond, or Unified Kill Chain v3.0, or a domain-specific composite), the data-flow diagram, identified threats with ATLAS / ATT&CK mapping, mitigations with D3FEND ID, and the currency-trigger list that schedules re-runs. The shape below is consumed downstream by `threat-model-currency` (which scores the model against the 14-class checklist), by `framework-gap-analysis` (which converts each unmitigated threat into a Framework Lag Declaration), and by `policy-exception-gen` (for any threat accepted as residual risk). Preserve the methodology-rationale field verbatim — it is the auditable justification for the chosen composite.
+
 ```
 ## Threat Model — <system name>
 **Date:** YYYY-MM-DD

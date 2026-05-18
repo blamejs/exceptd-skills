@@ -119,6 +119,11 @@
               "condition": { "type": "string", "examples": ["finding.severity == 'critical'", "theater_score < 60", "always"] }
             }
           }
+        },
+        "fed_by": {
+          "type": "array",
+          "description": "v0.13.0: reverse direction of feeds_into. Auto-populated by scripts/refresh-reverse-refs.js — operators reading this playbook see what chains INTO it without grepping every other playbook. Plain array of playbook ids; condition is recorded on the SOURCE playbook's feeds_into entry, not duplicated here.",
+          "items": { "type": "string" }
         }
       }
     },

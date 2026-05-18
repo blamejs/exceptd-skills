@@ -156,7 +156,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 16 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. Legacy alias: `exceptd plan` (deprecated, scheduled for removal in v0.13). |
+| `exceptd brief --all` | Grouped-by-scope summary of all 20 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
@@ -164,12 +164,14 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 | `exceptd ci` | Top-level CI gate for a single playbook with exit-code semantics. Preferred over `run --ci`. |
 | `exceptd discover` | Repo discovery — scans cwd and surfaces matching playbooks + collection hints. |
 | `exceptd ask <pb> <question>` | Read-only Q&A against a playbook's directives, indicators, and threat context. |
-| `exceptd attest diff <sid>` | Replay analyze against a stored evidence bundle for drift detection. `--against <other-sid>` compares two sessions. `--playbook <id>` + `--since <ISO>` accepted with `--latest`. Legacy alias: `exceptd reattest` (deprecated, scheduled for removal in v0.13). |
+| `exceptd attest diff <sid>` | Replay analyze against a stored evidence bundle for drift detection. `--against <other-sid>` compares two sessions. `--playbook <id>` + `--since <ISO>` accepted with `--latest`. `exceptd reattest` remains a short-form alias — preserved (no removal scheduled). |
 | `exceptd attest verify <sid>` | Verify a persisted attestation's signature + evidence hash. |
 | `exceptd attest list` | Inventory `.exceptd/attestations/` — newest first. `--playbook <id>` filters. |
 | `exceptd attest show <sid>` | Print the attestation body. |
-| `exceptd doctor` | Health checks. `--signatures` verifies Ed25519 chains; `--cves` / `--rfcs` check catalog currency; `--fix` repairs recoverable state. |
+| `exceptd doctor` | Health checks. `--signatures` verifies Ed25519 chains; `--cves` / `--rfcs` check catalog currency; `--fix` repairs recoverable state; `--ai-config` audits AI-assistant config-file permissions (`~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, `~/.continue`) and flags sensitive files not at mode `0o600` on POSIX (NEW-CTRL-050). |
 | `exceptd lint` | Skill format lint — frontmatter completeness, required body sections, signature presence. |
+| `exceptd refresh --check-advisories` | Poll 8 primary-source advisory feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories) for CVE IDs at T+0 to T+1 — typically 3-14 days ahead of NVD enrichment. Report-only; emits structured `diffs[]` without mutating the catalog. Route promising IDs through `refresh --advisory <CVE-ID> --apply` to enrich. |
+| `exceptd watchlist` | Default: aggregate every skill's `forward_watch` entries. `--by-skill` inverts grouping. `--alerts` switches to CVE-catalog pattern alerts (5 patterns: `kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`); sorts critical-first, then by RWEP. `--org-scan --org <login>` probes GitHub Search for repos matching threat-actor naming patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP"); custom patterns via repeatable `--pattern <s>`; set `GITHUB_TOKEN` for private-repo + rate-limit headroom (NEW-CTRL-052). |
 
 All verbs support `--help` for per-verb usage. JSON output by default; `--pretty` for indented.
 
@@ -207,6 +209,37 @@ Current pinned ATLAS version: **v5.4.0 (February 2026)** with the **CTID Secure 
 **DR-8: Missing zero-day learning loop**
 Wrong: adding a new entry to `data/cve-catalog.json` without running the learning loop.
 Right: every new CVE triggers a corresponding entry in `zeroday-lessons.json` mapping: attack vector → what control should have caught it → which framework covers that control → whether the control is adequate → what new control requirement the zero-day implies.
+
+---
+
+## New Control Requirements
+
+When a zero-day surfaces a control class no existing framework covers, the learning loop produces a `NEW-CTRL-*` entry under `data/zeroday-lessons.json[<CVE-ID>].new_control_requirements[]`. These are the operator-actionable controls the framework set is missing. The IDs are stable — cite them in skill bodies, in operator reports, and in framework-gap analyses.
+
+Recently added (use the IDs in skill prose and operator briefings; full text in `data/zeroday-lessons.json`):
+
+| ID | Name | Surfacing zero-day | Coverage gap closed |
+|---|---|---|---|
+| `NEW-CTRL-048` | NPM-MAINTAINER-MFA-ENFORCEMENT / KERNEL-EXIT-RACE-CVE-CLASS-MONITORING | `MAL-2026-NODE-IPC-STEALER`, `CVE-2026-46333` | NIST-800-218 SSDF, NIST-800-53 IA-5/AU-2/SI-4, NIS2 Art.21 supply-chain |
+| `NEW-CTRL-049` | LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT / SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES | `MAL-2026-NODE-IPC-STEALER`, `CVE-2026-46333` | NIST-800-218 SSDF, EU CRA Art.13, SLSA Build L3, NIST-800-53 CM-6/AC-3 |
+| `NEW-CTRL-050` | AI-ASSISTANT-CONFIG-FILE-PERMISSION-LOCKDOWN | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 AC-3/CM-6. Enforced operationally by `exceptd doctor --ai-config`. |
+| `NEW-CTRL-051` | NPM-PUBLISH-TOKEN-WORKSTATION-ISOLATION | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 IA-5, NIST-800-218 SSDF PW.4 |
+| `NEW-CTRL-052` | GITHUB-REPO-PATTERN-MONITORING-FOR-EXFIL-CHANNELS | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 SI-4. Enforced operationally by `exceptd watchlist --org-scan`. |
+| `NEW-CTRL-053` | MCP-SERVER-CONFIG-ALLOWLIST | `CVE-2026-30623` (Anthropic MCP SDK stdio injection) | NIST AI RMF MEASURE 2.7, OWASP LLM Top 10 2025 LLM05 |
+| `NEW-CTRL-054` | BACKUP-TIER-NETWORK-ISOLATION | `CVE-2025-59389` (QNAP Hyper Data Protector preauth RCE) | ISO-27001-2022 A.8.13, NIS2 Art.21 business-continuity |
+| `NEW-CTRL-055` | SECURITY-TOOL-INTEGRITY-VERIFICATION | `CVE-2025-11837` (QNAP Malware Remover code-injection) | NIST-800-53 SI-3, ISO-27001-2022 A.8.7, PCI-DSS 4.0 §5.1 |
+
+When you cite a `NEW-CTRL-*` ID in a skill body, the lint reads the upstream `zeroday-lessons.json` entry as the authoritative source for the requirement text — do not paraphrase the description in the skill body, link to the ID instead.
+
+---
+
+## Operational threat-intake cadence
+
+The toolkit ships with a `routine: exceptd-threat-intake` (claude.ai remote agent) that runs daily at 14:00 UTC. Sequence: `npm install` → `refresh --check-advisories` (poll the 8 primary-source feeds) → `watchlist --alerts` (5-pattern CVE-class scan) → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 newly-disclosed IDs from the primary-source diff → re-sign + rebuild-indexes if the catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with the full diff in the report.
+
+The routine is operator-managed at <https://claude.ai/code/routines>. Closes the cadence gap between vendor disclosure (T+0) and NVD enrichment (T+10) — operators no longer depend on manual intake to surface ssh-keysign-pwn-class or Shai-Hulud-class events.
+
+When working on a fresh checkout: do not invoke the daily routine ad-hoc — it commits + pushes a branch. For one-off triage, use `exceptd refresh --check-advisories` (report-only) followed by `exceptd refresh --advisory <CVE-ID>` for the specific IDs you want to enrich.
 
 ---
 
@@ -375,4 +408,8 @@ Maintainers convert approved requests into skill files. The contributor is credi
 | cloud iam incident, aws account takeover, gcp account takeover, azure account takeover, cross-account assume-role, imds, access key leak, snowflake breach, scim, workload identity | cloud-iam-incident |
 | email security, anti-phishing, dmarc, dkim, spf, bimi, arc, mta-sts, bec, vishing, deepfake phishing | email-security-anti-phishing |
 | age gate, age verification, coppa, cipa, california aadc, uk children's code, kosa, gdpr article 8, dsa article 28, parental consent, csam, child safety, children's online safety | age-gates-child-safety |
-| forward watch, watchlist, upcoming standards, horizon scan | `node orchestrator/index.js watchlist` (add `--by-skill` to invert) |
+| forward watch, watchlist, upcoming standards, horizon scan | `exceptd watchlist` (add `--by-skill` to invert) |
+| CVE alert triage, kernel LPE PoC, supply-chain MAL, active exploitation | `exceptd watchlist --alerts` |
+| github repo pattern scan, Shai-Hulud, TeamPCP, exfil-channel monitoring | `exceptd watchlist --org-scan --org <login>` |
+| AI-assistant config permission audit, ~/.cursor, ~/.claude, ~/.codeium, MCP config lockdown | `exceptd doctor --ai-config` |
+| primary-source advisory polling, Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA | `exceptd refresh --check-advisories` |

@@ -23,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-05-18"
 ---
 
 # Policy Exception Generation
@@ -449,3 +449,30 @@ Specific high-confidence theater signals for this skill's four exception categor
 | Critical Systems No-Reboot Kernel Patching | "Can't reboot, will catch up later" with no live patch, no eBPF rules, no maintenance window | `kpatch list` / `canonical-livepatch status` output, named eBPF / auditd rules for the exploitation pattern, scheduled maintenance date, escalation contact if missed |
 
 When this check fires on any exception, hand off to the compliance-theater skill to record the systemic finding (this is Pattern 3 / 4 / 5 / 6 territory depending on category) and to framework-gap-analysis to determine whether the framework lag warrants escalation to the global-grc skill for cross-jurisdictional review.
+
+---
+
+## Defensive Countermeasure Mapping
+
+Every defensible exception names the residual TTPs in scope and the compensating-control bundle that disrupts them. The mapping below converts the compensating-control language ("eBPF monitoring", "workload identity", "image-scanning") into the D3FEND technique IDs that audit reviewers can verify against `data/d3fend-catalog.json`. An exception template that cites vague compensating controls without a D3FEND ID fails the Compliance Theater Check above.
+
+| Exception category | Residual offensive TTP | D3FEND ID | Defensive technique (compensating control) | Defense-in-depth layer |
+|---|---|---|---|---|
+| Ephemeral Infrastructure (CM-8 / A.5.9) | T1610 (Deploy Container), T1525 (Implant Internal Image) | `D3-EFA` | Executable File Analysis (image-registry scanning, SBOM per image) | Build / registry — pre-deployment image integrity verification |
+| Ephemeral Infrastructure | T1525 | `D3-EAL` | Executable Allowlisting (signed-image-only deploy gate) | Cluster admission — only signed images reach the runtime |
+| AI Pipeline Change Management (CM-3 / A.8.32) | AML.T0018 (Backdoor ML Model), AML.T0020 (Poison Training Data) | `D3-FAPA` | File Access Pattern Analysis (training-data and model-artifact access baselining) | Data tier — detect anomalous access to corpora and weights |
+| AI Pipeline Change Management | AML.T0018 | `D3-IOPR` | Input/Output Profiling (behavioral regression suite, model-fingerprinting prompt set) | SDK / application — detect model substitution and drift |
+| Zero Trust Architecture Segmentation (SC-7 / A.8.22) | T1021 (Remote Services), T1570 (Lateral Tool Transfer) | `D3-NTPM` | Network Traffic Policy Mapping (SPIFFE / mTLS workload identity enforcement) | Network — per-workload-identity policy on east-west flows |
+| Zero Trust Architecture Segmentation | T1021 / T1570 | `D3-NTA` | Network Traffic Analysis (east-west behavioral analytics) | Network — detect lateral movement that policy alone cannot prevent |
+| Zero Trust Architecture Segmentation | T1078 (Valid Accounts) | `D3-CBAN` | Certificate-based Authentication (mTLS workload certificates) | Identity — workload identities are certificate-bound, not perimeter-bound |
+| No-Reboot Kernel Patching (SI-2 / A.8.8) | T1068 (Exploitation for Privilege Escalation) | `D3-SCA` | System Call Analysis (eBPF / auditd rules for the exploitation primitive) | Kernel — detect the LPE primitive while live-patch is in flight |
+| No-Reboot Kernel Patching | T1068 | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — reduce blast radius until the live patch deploys |
+| No-Reboot Kernel Patching | T1068 (post-exploit persistence) | `D3-PA` | Process Analysis (anomalous-uid / capability-set detection) | Endpoint — catch successful LPE before it persists |
+
+**Defense-in-depth posture:** an exception that names a single D3FEND technique is insufficient — the residual TTP set is multi-stage, and the compensating-control bundle must cover the chain. The Output Format's "Compensating Controls" field must enumerate at least two D3FEND techniques per residual TTP, drawn from different defense-in-depth layers (network + endpoint, build + admission, SDK + gateway). An exception with only one layer cited is theater for the multi-stage attack chain.
+
+**Least-privilege scope:** D3FEND technique deployment is scoped to the exception's affected asset class. `D3-EAL` admission rules are per-cluster (production ≠ staging ≠ developer). `D3-NTPM` workload-identity policies are per-namespace. `D3-FAPA` training-data baselines are per-corpus-per-principal. The exception document must record the scope alongside the technique ID — "we deploy `D3-EAL` cluster-wide" is too coarse; "we deploy `D3-EAL` on `prod-*` clusters with signed-image-only admission" is auditable.
+
+**Zero-trust posture:** the exception is defensible only when the cited D3FEND techniques are deployed, monitored, and tested against the residual TTPs at exception-grant time and re-verified at the documented review cadence. An exception with deployed techniques but no test evidence (chaos-engineering exercise, red-team result, detection-rule firing on a controlled trigger) is unverified. The "Review Cadence" field in the Output Format must specify the re-verification test, not just the calendar date.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** for AI Pipeline Change Management exceptions, `D3-EAL` and `D3-EFA` do not apply to serverless inference endpoints — the scoped alternative is `D3-CSPP` at the inference gateway plus provider-signed-image attestation in the model-card. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. These degradations must be enumerated in the exception's "Compensating Controls" field; an AI-pipeline exception that copies a non-AI exception template is incomplete.

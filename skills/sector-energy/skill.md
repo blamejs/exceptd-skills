@@ -273,6 +273,8 @@ For operators with material aggregate consumer-IoT or DER influence (TSOs, large
 
 ## Output Format
 
+The skill produces an Energy-Sector Cybersecurity Posture Assessment covering NERC CIP v6 / v7 coverage, TSA Pipeline Security Directives, IEC 62443 zone-and-conduit posture, ENISA EECSP, ASD Essential 8 + AESCSF (AU), CER NIS2 transposition (EU), and the AI-augmented OT threat exposure. The shape below is consumed downstream by `ot-ics-security` (which inherits the Purdue-zone analysis), by `incident-response-playbook` (for the FERC / NERC EOP-004 incident-classification clock), and by `global-grc` (for cross-jurisdictional energy rollup). Preserve the per-substation / per-pipeline asset rows verbatim — they are the auditable evidence for regulator reporting.
+
 Produce this structure verbatim:
 
 ```

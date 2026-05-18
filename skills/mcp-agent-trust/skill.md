@@ -190,6 +190,8 @@ Sourced from `data/cve-catalog.json` and `data/exploit-availability.json` as of 
 
 ## Analysis Procedure
 
+The procedure runs five sequential steps: inventory installed MCP servers per workstation, verify each server's package provenance against npm signatures and CISA KEV listings, assess trust configuration (auth, allowlist, scope), score the trust posture against the published CVE class, and generate remediation actions for any server scoring above the operator's risk threshold. Each step's output feeds the next; the inventory drives the provenance check, the provenance result drives the trust score, and the trust score drives the remediation list.
+
 ### Step 1: Inventory installed MCP servers
 
 For each developer workstation or shared AI system:
@@ -301,6 +303,8 @@ For each MCP client configuration, check:
 ---
 
 ## Output Format
+
+The skill produces a structured MCP Trust Assessment per workstation or fleet. The shape below is consumed downstream by `supply-chain-integrity` (which picks up the per-server hash and provenance fields), by `ai-attack-surface` (which integrates the MCP Trust posture into the broader AI surface report), and by `compliance-theater` (which compares the unallowlisted-server count against any vendor-management compliance claim). Operators feeding the output into MDM or endpoint-management policy should preserve the approved-server registry shape verbatim.
 
 ```
 ## MCP Trust Assessment

@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-14"
+last_threat_review: "2026-05-18"
 ---
 
 # Framework Gap Analysis
@@ -376,3 +376,30 @@ Specific high-confidence theater signals (each triggers a mandatory Framework La
 | Org removed the esp4 / esp6 / rxrpc module-blacklist mitigation once Dirty Frag was patched | CVE-2026-46300 (Fragnesia) is in the same primitive class, was introduced by the Dirty Frag patch, and is mitigated by the same blacklist |
 
 When this check fires, hand off to the compliance-theater skill for the theater-pattern detection test and to policy-exception-gen if the org needs to grant a defensible exception with concrete compensating controls.
+
+---
+
+## Defensive Countermeasure Mapping
+
+Every Framework Lag Declaration this skill produces names the missing control. The mapping below converts that absence into a concrete defensive-technique recommendation drawn from `data/d3fend-catalog.json`, paired with the offensive TTP class (ATLAS or ATT&CK) the gap exposes. Operators feeding this output into a remediation plan should chain: offensive TTP → failed framework control → D3FEND defensive technique → enforcement layer.
+
+| Offensive TTP | Framework gap exemplar | D3FEND ID | Defensive technique | Defense-in-depth layer |
+|---|---|---|---|---|
+| T1068 (Exploitation for Privilege Escalation) — Copy Fail / Fragnesia | SI-2 / A.8.8 / PCI 6.3.3 30-day patch SLA | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control while live-patch propagates; reduces blast radius when LPE primitive is reachable |
+| T1068 | SI-2 / A.8.8 patch SLA | `D3-SCA` | System Call Analysis | Endpoint — detects the deterministic LPE primitive at syscall layer before patch lands |
+| AML.T0051 (LLM Prompt Injection) — CVE-2025-53773 class | AC-2 / CC6 account-management as access control for AI agents | `D3-IOPR` | Input/Output Profiling Resource | SDK / application — content-aware inspection of prompt+completion at the model boundary |
+| AML.T0051 | AC-2 / CC6 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — gateway-layer inspection when SDK-side `D3-IOPR` is not deployable |
+| AML.T0010 (ML Supply Chain Compromise) — CVE-2026-30615 MCP class | A.5.19 / SA-12 vendor management as MCP trust boundary | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute on developer workstations |
+| AML.T0010 | A.5.19 / SA-12 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP server binaries and AI-assistant plugins |
+| AML.T0016 (Develop Capabilities — AI-generated payloads) — PROMPTFLUX class | SI-3 signature-based malware protection | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns that signature engines cannot see |
+| AML.T0096 (LLM Integration Abuse — C2) — SesameOp class | SI-4 / CC7 anomaly detection without AI-API baseline | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
+| T1190 (Exploit Public-Facing Application) — Dirty Frag IPsec | SC-8 / SC-28 cryptographic-control compensating-control claim | `D3-NI` | Network Isolation | Network — segmentation that does not depend on the compromised IPsec subsystem |
+| AML.T0020 (Poison Training Data) | NIS2 Art. 21 AI-pipeline integrity | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus and training-data access-pattern baselining |
+
+**Defense-in-depth posture:** every Framework Lag Declaration produced by this skill must propose at least one D3FEND technique per cited offensive TTP. A declaration that names the gap without recommending a defensive technique is incomplete — operators receive a finding with no remediation path. Where the framework gap is multi-jurisdictional (per Section 6 of the Output Format), the same D3FEND technique satisfies the equivalent obligation in each cross-walked framework — the defensive control is technique-level, not framework-level.
+
+**Least-privilege scope:** D3FEND recommendations are scoped to the principal class (human developer, agent identity, MCP server, model-serving process). `D3-EAL` and `D3-EFA` are per-host-class allowlists (developer ≠ production ≠ CI). `D3-IOPR` and `D3-CSPP` log the principal identity on every prompt/completion. `D3-FAPA` baselines are per-corpus-per-principal.
+
+**Zero-trust posture:** no control is claimed as compensating without verification that the defensive technique is deployed, monitored, and tested against the cited offensive TTP. "We have SC-8 IPsec" is not a compensating control for Dirty Frag — `D3-NI` over a non-IPsec data path is. The Framework Lag Declaration's "What a real control requires" field must name the D3FEND technique by ID.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. These degradations must be named explicitly in the declaration when the gap concerns an AI pipeline.
