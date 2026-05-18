@@ -44,6 +44,7 @@ forward_watch:
   - LINDDUN-GO and LINDDUN-PRO updates incorporating LLM privacy threats
   - PASTA v2 updates incorporating AI/ML application threats
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief threat-modeling-methodology` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Threat Modeling Methodology

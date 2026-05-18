@@ -48,6 +48,7 @@ d3fend_refs:
   - D3-RPA
   - D3-SCP
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Defensive Countermeasure Mapping — D3FEND as the Blue-Team Counterpart to ATT&CK / ATLAS

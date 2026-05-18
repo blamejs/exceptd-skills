@@ -23,6 +23,7 @@ forward_watch:
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
 last_threat_review: "2026-05-15"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Threat Model Currency Assessment

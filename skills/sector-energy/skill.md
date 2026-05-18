@@ -57,6 +57,7 @@ forward_watch:
   - MadIoT-class research on consumer-IoT-driven grid frequency manipulation moving from proof-of-concept to attributed campaigns
   - ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-energy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Sector — Energy (Electric Power, Oil & Gas, Water/Wastewater, Renewables) — mid-2026

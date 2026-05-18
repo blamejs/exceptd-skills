@@ -85,6 +85,7 @@
     "maturity": "high",
     "last_verified": "2026-05-15",
     "cve_refs": [
+      "CVE-2026-30623",
       "CVE-2026-42945"
     ]
   },
@@ -163,6 +164,7 @@
     "maturity": "moderate",
     "last_verified": "2026-05-15",
     "cve_refs": [
+      "CVE-2023-43472",
       "CVE-2026-30615"
     ]
   },

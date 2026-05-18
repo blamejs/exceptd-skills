@@ -48,6 +48,7 @@ d3fend_refs:
   - D3-IOPR
   - D3-MFA
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief email-security-anti-phishing` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Email Security and Anti-Phishing Assessment

@@ -188,11 +188,18 @@ jobs:
           FILE_COUNT="$(node -e 'const j=require("/tmp/pack.json"); console.log(Array.isArray(j)?j[0].files.length:j.files.length)')"
           echo "Tarball: $PACKED_SIZE bytes packed / $UNPACKED_SIZE bytes unpacked / $FILE_COUNT files"
 
-  publish:
-    name: Publish to npm + GitHub Release
+  # v0.13.2: split the original single `publish` job into two —
+  # `publish-npm` (id-token:write only) and `publish-github-release`
+  # (contents:write only). Pre-split the job carried BOTH permissions
+  # at once; a compromise of any step in the job (leaked NODE_AUTH_TOKEN,
+  # malicious dependency in the runner image, third-party action with
+  # elevated trust) had access to BOTH the npm provenance signing
+  # identity AND repo-write at the same time. Splitting scopes each
+  # permission to the minimum surface that needs it.
+  publish-npm:
+    name: Publish to npm (id-token:write isolated)
     runs-on: ubuntu-latest
     needs: validate
-    # Skip publish on dry-run dispatches — validate still ran.
     if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
     # Deployment-environment gate: `npm-publish` is restricted to tag refs
     # matching `v*.*.*` (configured in repo Settings → Environments).
@@ -202,8 +209,10 @@ jobs:
       name: npm-publish
       url: https://www.npmjs.com/package/@blamejs/exceptd-skills
     permissions:
-      contents: write
-      id-token: write          # required for npm provenance via GitHub OIDC
+      # id-token:write ONLY. No contents:write. The npm provenance
+      # signing identity cannot also write to the repo from this job.
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout
@@ -256,6 +265,30 @@ jobs:
           # this tarball to this GitHub workflow run.
           npm publish --access public --provenance
 
+  publish-github-release:
+    name: Create GitHub Release (contents:write isolated)
+    runs-on: ubuntu-latest
+    # Sequenced after publish-npm so the GitHub Release only fires when
+    # npm publish succeeded. Releases pointing at a tag whose npm publish
+    # failed are operator-confusing — "v0.13.2 is on GitHub Releases but
+    # `npm install @blamejs/exceptd-skills@0.13.2` fails" is a worse
+    # state than "the tag is out there but no release page exists yet."
+    needs: [validate, publish-npm]
+    if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
+    permissions:
+      # contents:write ONLY. No id-token:write. This job cannot sign an
+      # npm provenance attestation. Its blast radius is "create a
+      # GitHub Release" — visible but bounded.
+      contents: write
+
+    steps:
+      - name: Checkout (for CHANGELOG extraction only)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
+
       - name: Extract CHANGELOG section for this version
         id: changelog
         run: |
@@ -268,6 +301,10 @@ jobs:
             found { print }
           ' CHANGELOG.md > /tmp/release-notes.md
           if [ ! -s /tmp/release-notes.md ]; then
+            # v0.12.41: surface the fallback as a workflow warning so
+            # the run page makes the parse-failure visible to operators
+            # rather than silently shipping a generic body.
+            echo "::warning::CHANGELOG extraction returned empty for v$VERSION; falling back to generic body. Check CHANGELOG.md for a '## $VERSION ' heading."
             echo "Release of v$VERSION." > /tmp/release-notes.md
           fi
           {

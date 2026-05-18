@@ -25,6 +25,7 @@ atlas_refs: []
 attack_refs: []
 framework_gaps: []
 last_threat_review: "2026-05-11"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief researcher` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Researcher — Threat Intel Triage and Dispatch

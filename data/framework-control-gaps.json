@@ -269,6 +269,37 @@
       "verdict_when_failed": "compliance-theater"
     }
   },
+  "CIS-Kubernetes-Benchmark-5.7": {
+    "framework": "CIS Kubernetes Benchmark v1.10.0",
+    "control_id": "5.7",
+    "control_name": "Pod Security Standards and Network Policies",
+    "designed_for": "Section 5.7 of the CIS Kubernetes Benchmark — Pod Security Standards (replacing deprecated PodSecurityPolicy) and NetworkPolicy enforcement. Anchored on the assumption that pod-level isolation primitives (securityContext, seccomp, AppArmor, NetworkPolicy) constrain a compromised container to its declared boundary.",
+    "misses": [
+      "Pod-level isolation primitives presume runtime correctness — runc / containerd CVE classes (Leaky Vessels, file-descriptor leak, mount-namespace escape) bypass Pod Security Standards entirely because the escape happens below the pod boundary",
+      "No KEV-anchored patch SLA for container-runtime CVEs — section 5.7 governs workload configuration, not runtime-binary currency, leaving operators without a benchmark-driven response tier for container-escape KEV listings",
+      "Section 5.7 evidence collection is point-in-time (audit at install / annual review); does not enforce continuous runtime-binary version drift detection against the upstream CVE feed"
+    ],
+    "real_requirement": "Section 5.7 implementations must add a container-runtime currency tier: continuous runc / containerd / CRI-O version inventory cross-referenced against CISA KEV + the container-escape CVE class, with a documented 24h patch SLA when a runtime CVE lands on KEV and a 72h SLA for runtime CVEs with public PoC but no KEV listing. Pod Security Standards alone are insufficient; runtime currency is the load-bearing control.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2024-21626"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1611"
+    ],
+    "theater_test": {
+      "claim": "Our Kubernetes posture meets CIS Benchmark section 5.7 — Pod Security Standards and Network Policies are enforced across every cluster.",
+      "test": "Pull the most recent CIS Kubernetes Benchmark assessment for section 5.7. Confirm it includes a container-runtime currency check (runc / containerd / CRI-O version inventory) cross-referenced against the CISA KEV catalog. Pull the past 12 months of container-runtime CVE listings; measure time-to-mitigation per cluster. Theater verdict if the section-5.7 evidence pack stops at pod-spec audits without a runtime-currency tier, or if any KEV-listed container-runtime CVE exceeded a 24h mitigation SLA.",
+      "evidence_required": [
+        "CIS Kubernetes Benchmark section 5.7 assessment report",
+        "container-runtime version inventory per cluster",
+        "KEV-listed container-runtime CVE mitigation timeline"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
   "CMMC-2.0-Level-2": {
     "framework": "CMMC 2.0 (Cybersecurity Maturity Model Certification) Level 2",
     "control_id": "CMMC-2.0-Level-2",
@@ -726,6 +757,10 @@
     "opened_date": "2026-05-13",
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-12686",
+      "CVE-2025-62847",
+      "CVE-2025-62848",
+      "CVE-2025-62849",
       "CVE-2026-42897",
       "CVE-2026-42945",
       "CVE-2026-45321",
@@ -1058,6 +1093,37 @@
       "verdict_when_failed": "compliance-theater"
     }
   },
+  "ISO-27001-2022-A.8.22": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.22",
+    "control_name": "Segregation of networks",
+    "designed_for": "Network-level segregation between groups of information services, users, and information systems. Annex A.8.22 anchors on the assumption that VLAN / subnet / firewall-zone boundaries are the unit of isolation, and that workloads within the same network segment share an acceptable trust relationship.",
+    "misses": [
+      "Container-runtime escapes (Leaky Vessels, runc / containerd CVE class) cross workload boundaries WITHIN a single network segment — A.8.22 has no concept of intra-host workload segregation enforced by the container runtime",
+      "Multi-tenant Kubernetes namespaces / pod-level isolation are outside the network-segregation framing; a runtime escape grants host-level access regardless of how cleanly the network is segregated",
+      "Cloud-native segregation primitives (Pod Security Standards, NetworkPolicy, gVisor / Kata sandboxes, user-namespaced containers) are not enumerated as segregation mechanisms in the A.8.22 implementation guidance"
+    ],
+    "real_requirement": "A.8.22 implementations must add a workload-segregation tier alongside network segregation: container-runtime version currency against the KEV-listed container-escape CVE class, sandboxed runtime (gVisor / Kata / user namespaces) for untrusted tenants, and a documented control distinction between network-zone isolation (north-south) and intra-host workload isolation (east-west within the same kernel).",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2024-21626"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1611"
+    ],
+    "theater_test": {
+      "claim": "Our network and workload boundaries are segregated per ISO 27001:2022 A.8.22.",
+      "test": "Pull the A.8.22 segregation register. Confirm it enumerates BOTH network-zone segregation (VLAN / subnet / firewall) AND intra-host workload segregation (container-runtime version currency, sandboxed runtime for untrusted tenants). Sample the most recent multi-tenant cluster; trace whether a runc / containerd KEV-listed CVE would have been mitigated within the documented response window. Theater verdict if the register stops at network zones without intra-host workload segregation, or if no sandboxed-runtime control exists for untrusted multi-tenant workloads.",
+      "evidence_required": [
+        "A.8.22 segregation register covering network and workload tiers",
+        "container-runtime version inventory with KEV cross-reference",
+        "sandboxed-runtime evidence for multi-tenant workloads (or documented risk acceptance)"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
   "ISO-27001-2022-A.8.28": {
     "framework": "ISO/IEC 27001:2022",
     "control_id": "A.8.28",
@@ -1072,7 +1138,10 @@
     "real_requirement": "Separate AI system security controls are needed: prompt injection testing, model integrity verification, training pipeline security, RAG pipeline security. A.8.28 is not the right control family for AI system security.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-43472",
+      "CVE-2026-30623"
+    ],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -1416,6 +1485,43 @@
       "verdict_when_failed": "compliance-theater"
     }
   },
+  "NIST-800-218-SSDF-PW.4": {
+    "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+    "control_id": "PW.4",
+    "control_name": "Reuse Existing, Well-Secured Software",
+    "designed_for": "PW.4 practice of the SSDF — reusing existing, well-secured software components (third-party libraries, frameworks, OS distributions) instead of writing equivalent functionality from scratch. Anchored on the assumption that an externally-maintained component with an active maintainer is safer than a one-off internal implementation, and that maintainer-account integrity holds across the upgrade lifecycle.",
+    "misses": [
+      "PW.4 assumes upstream components ARE secure — xz-utils was an upstream that compromised itself across two years of patient maintainer-account takeover; the SSDF has no compensating practice for upstream-maintainer-becomes-hostile",
+      "Maintainer-account integrity is presumed; PW.4 does not require monitoring of registry-side MFA enforcement, maintainer-email-domain expiry, or post-publish freshness cooldowns on critical-path components",
+      "Compromised-maintainer-republish (Shai-Hulud worm class, MAL-2026-TANSTACK-MINI) ships through the legitimate update channel — PW.4 controls catch tampered upstream but not legitimately-authenticated malicious upstream",
+      "Tier-3 transitive dependencies (libsystemd → liblzma, package-A → package-B → package-C) routinely escape PW.4 reuse-inventory because the inventory stops at the direct dependency layer"
+    ],
+    "real_requirement": "PW.4 implementations must add a maintainer-integrity monitoring tier: (1) registry-side MFA enforcement evidence for every critical-path upstream maintainer, (2) post-publish cooldown periods on consumption of fresh releases from systemically-important upstreams, (3) lockfile audit against known-malicious version sets during the active exposure window, (4) transitive-dependency enumeration to at least tier-3, (5) documented response procedure for compromised-maintainer-republish that does not assume the upstream channel is trustworthy.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2024-3094",
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-TANSTACK-MINI"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001",
+      "T1195.002"
+    ],
+    "theater_test": {
+      "claim": "We reuse well-secured software per NIST SSDF PW.4 — third-party components are inventoried and managed.",
+      "test": "Pull the PW.4 reuse register. Confirm it enumerates BOTH direct AND tier-2/tier-3 transitive dependencies for critical-path components, with maintainer-integrity signals (registry-side MFA evidence, maintainer-email-domain expiry tracking, post-publish freshness cooldowns) for systemically-important upstreams. Sample the most recent maintainer-account-compromise incident (Shai-Hulud worm reference set); verify the documented response covered lockfile audit against the malicious version set during the exposure window. Theater verdict if the register stops at direct dependencies, if maintainer-integrity monitoring is undocumented, or if the response procedure assumes a clean upstream channel.",
+      "evidence_required": [
+        "PW.4 reuse register including transitive dependencies",
+        "maintainer-integrity monitoring records for critical-path upstreams",
+        "lockfile audit log from the reference maintainer-compromise incident"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
   "NIST-800-53-AC-2": {
     "framework": "NIST SP 800-53 Rev 5",
     "control_id": "AC-2",
@@ -1466,6 +1572,7 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
+      "CVE-2024-3154",
       "CVE-2025-53773",
       "CVE-2026-30615"
     ],
@@ -1553,6 +1660,37 @@
       "verdict_when_failed": "compliance-theater"
     }
   },
+  "NIST-800-53-SC-39": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-39",
+    "control_name": "Process Isolation",
+    "designed_for": "Maintain a separate execution domain for each executing system process. Original 2013 context, retained in Rev 5 (2020); anchored on the assumption that the operating system (or hypervisor / container runtime) provides a correct isolation primitive, and the security posture inherits that correctness.",
+    "misses": [
+      "Container-runtime escape CVE class (Leaky Vessels, runc / containerd / CRI-O file-descriptor leak and mount-namespace escape) defeats SC-39 by breaking the isolation primitive itself — the control assumes runtime correctness, the bug class invalidates the assumption",
+      "SC-39 has no companion patch-currency tier for the isolation-primitive code path; if the container runtime, hypervisor, or kernel namespace implementation has a KEV-listed escape, SC-39 evidence remains GREEN while the isolation guarantee is GONE",
+      "Speculative-execution and shared-cache side channels (Spectre / Meltdown / Downfall class) also defeat the SC-39 model on shared hardware, but the bug class moves slowly enough that SC-39 implementers can plausibly cite microcode updates as compensating control — container runtime escapes do not have that breathing room"
+    ],
+    "real_requirement": "SC-39 implementations must add a runtime-currency control alongside the isolation requirement: documented patch SLA (≤24h for KEV-listed isolation-primitive CVEs, ≤72h for public PoC without KEV) on the container runtime, hypervisor, and kernel namespace code path, plus a runtime-binary inventory cross-referenced against the CISA KEV catalog. SC-39 in isolation is necessary-but-insufficient when the isolation primitive itself is the attack surface.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2024-21626"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1611"
+    ],
+    "theater_test": {
+      "claim": "We maintain process isolation per NIST 800-53 SC-39.",
+      "test": "Pull the SC-39 control implementation evidence. Confirm it enumerates the isolation primitive (container runtime, hypervisor, kernel namespace) AND a patch-currency tier against the CISA KEV catalog for that primitive. Pull the past 12 months of isolation-primitive CVE listings (runc / containerd / Xen / KVM / kernel-namespace class); measure time-to-mitigation. Theater verdict if SC-39 evidence stops at workload configuration without runtime-binary currency, or if any KEV-listed isolation-primitive CVE exceeded a 24h mitigation SLA.",
+      "evidence_required": [
+        "SC-39 control implementation document",
+        "container-runtime / hypervisor / kernel-namespace version inventory",
+        "KEV-listed isolation-primitive CVE mitigation timeline"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
   "NIST-800-53-SC-7": {
     "framework": "NIST SP 800-53 Rev 5",
     "control_id": "SC-7",
@@ -1568,6 +1706,7 @@
     "status": "open",
     "opened_date": "2026-05-01",
     "evidence_cves": [
+      "CVE-2024-40635",
       "CVE-2026-42897"
     ],
     "atlas_refs": [
@@ -1703,6 +1842,12 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
+      "CVE-2023-3519",
+      "CVE-2025-12686",
+      "CVE-2025-59389",
+      "CVE-2025-62847",
+      "CVE-2025-62848",
+      "CVE-2025-62849",
       "CVE-2026-0300",
       "CVE-2026-31431",
       "CVE-2026-32202",
@@ -1744,6 +1889,7 @@
     "status": "open",
     "opened_date": "2026-02-01",
     "evidence_cves": [
+      "CVE-2025-11837",
       "CVE-2026-32202",
       "CVE-2026-33825"
     ],
@@ -1760,6 +1906,42 @@
         "SI-3 control description with AI extensions",
         "prompt-injection / RAG-poisoning detection rule export",
         "synthetic-input test results"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-SR-3": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SR-3",
+    "control_name": "Supply Chain Controls and Processes",
+    "designed_for": "Establish a process for identifying and addressing weaknesses or deficiencies in the supply chain elements and processes for system components, system services, and related supply chain elements. Anchored on a vendor-contract model — the organization has a direct contractual relationship with each supplier, and supply-chain risk is governed through that relationship.",
+    "misses": [
+      "Tier-3 transitive dependencies (libsystemd → liblzma class) routinely escape SR-3 inventory — the organization has no contract with the tier-3 upstream and no visibility into its maintainer-trust posture",
+      "Open-source maintainer compromise (xz-utils, Shai-Hulud worm class) sits outside the vendor-contract framing entirely — the SR-3 controls catch tampered upstream but not legitimately-authenticated malicious upstream where the maintainer account itself is the compromised principal",
+      "Registry-side controls (npm / PyPI / RubyGems / crates.io / GHCR maintainer-account integrity, registry-side MFA enforcement, post-publish freshness cooldowns) are not enumerated as supply-chain controls in SR-3 — the control class assumes B2B supplier relationships, not registry-mediated open-source distribution"
+    ],
+    "real_requirement": "SR-3 implementations must extend the supply-chain inventory to at least tier-3 transitive dependencies for critical-path components, with documented registry-side controls (maintainer MFA evidence, post-publish cooldowns on systemically-important upstreams, lockfile audit against known-malicious version sets) for registry-mediated supply chains. The vendor-contract model alone is insufficient; open-source maintainer-account integrity is a load-bearing supply-chain control that SR-3 does not currently enumerate.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2024-3094",
+      "MAL-2026-SHAI-HULUD-OSS"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195",
+      "T1195.001",
+      "T1195.002"
+    ],
+    "theater_test": {
+      "claim": "Our supply chain is governed per NIST 800-53 SR-3 — suppliers are inventoried and risk-managed.",
+      "test": "Pull the SR-3 supply-chain register. Confirm it extends to tier-3 transitive dependencies for critical-path components AND enumerates registry-side controls (maintainer MFA evidence, post-publish cooldowns, lockfile audit procedures) for registry-mediated open-source supply chains. Sample the most recent maintainer-account-compromise incident (xz-utils backdoor or Shai-Hulud worm reference case); verify the SR-3 response procedure covered lockfile audit against the malicious version set during the active exposure window. Theater verdict if the register stops at direct vendor relationships, if registry-side controls are absent, or if the response procedure assumes vendor-contract-based supply chain only.",
+      "evidence_required": [
+        "SR-3 supply-chain register including tier-3 transitive dependencies",
+        "registry-side maintainer-integrity monitoring records",
+        "lockfile audit log from the reference maintainer-compromise incident"
       ],
       "verdict_when_failed": "compliance-theater"
     }
@@ -1830,6 +2012,39 @@
         "OT asset inventory with AI subset",
         "monitoring rule export for AI-prompted operator actions",
         "engineering workstation MCP-server scan"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-AI-RMF-MAP-3.4": {
+    "framework": "NIST AI RMF 1.0",
+    "control_id": "MAP 3.4",
+    "control_name": "AI system risks identified, prioritized, and documented",
+    "designed_for": "MAP function 3.4 of the AI Risk Management Framework — identifying, prioritizing, and documenting risks associated with AI system development and deployment. Anchored on the assumption that risk identification is an organizational activity scoped to the AI system being deployed (the defender's system), and that the threat model is bounded by what the deployer knows about its own AI use case.",
+    "misses": [
+      "AI-as-research-tool / AI-as-vulnerability-discovery — Hard Rule #7 establishes that 41% of 2025 zero-days were AI-discovered, making AI-assisted offensive capability a current operational reality; MAP 3.4 risk taxonomies treat AI offensive use as emerging or future-state rather than active threat input",
+      "MAP 3.4 risk identification is scoped to risks OF the AI system, not risks FROM AI as an attacker capability — a CVE discovered by an autonomous AI analysis platform (depthfirst, etc.) is outside the MAP 3.4 frame because the deployer is not the one running the AI",
+      "Adversarial AI-discovery shortens time-to-weaponized-exploit; MAP 3.4 risk prioritization does not require an ai_discovered classifier on incoming vulnerability intel, so AI-discovered CVEs flow through the existing risk pipeline at human-discovery cadence"
+    ],
+    "real_requirement": "MAP 3.4 implementations must add an AI-as-attacker-capability risk class: incoming vulnerability intelligence is tagged with an ai_discovered flag, and AI-discovered vulnerabilities receive an expedited risk-prioritization tier reflecting the compressed weaponization window. The MAP 3.4 risk register must enumerate not only risks of the deployer's AI system but also risks from AI as an offensive capability against the deployer's non-AI attack surface.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2026-42945"
+    ],
+    "atlas_refs": [
+      "AML.T0040"
+    ],
+    "attack_refs": [
+      "T1190"
+    ],
+    "theater_test": {
+      "claim": "We identify, prioritize, and document AI system risks per NIST AI RMF MAP 3.4.",
+      "test": "Pull the MAP 3.4 risk register. Confirm it enumerates BOTH risks of the deployer's AI system AND risks from AI-as-attacker-capability (AI-discovered vulnerabilities, AI-assisted weaponization). Confirm the vulnerability-intelligence pipeline tags incoming CVEs with an ai_discovered flag, and that AI-discovered CVEs receive an expedited prioritization tier. Sample the response to the most recent AI-discovered CVE on a deployer-owned component (CVE-2026-42945 NGINX Rift reference case); verify the prioritization tier triggered the expedited response. Theater verdict if the register treats AI offensive capability as emerging / future-state, if vulnerability intel lacks the ai_discovered classifier, or if AI-discovered CVEs flow through at human-discovery cadence.",
+      "evidence_required": [
+        "MAP 3.4 risk register including AI-as-attacker-capability entries",
+        "vulnerability-intelligence pipeline schema showing the ai_discovered classifier",
+        "incident response record for the reference AI-discovered CVE with prioritization-tier timestamps"
       ],
       "verdict_when_failed": "compliance-theater"
     }
@@ -2080,6 +2295,40 @@
       "verdict_when_failed": "compliance-theater"
     }
   },
+  "OWASP-Top-10-2021-A06": {
+    "framework": "OWASP Top 10 (2021)",
+    "control_id": "A06:2021",
+    "control_name": "Vulnerable and Outdated Components",
+    "designed_for": "A06:2021 calls out applications that use components (libraries, frameworks, runtimes) with known vulnerabilities or out-of-date versions. The standard remediation guidance is to upgrade the vulnerable component to a fixed release through the normal patch-management process — vendor patch, dependency bump, redeploy.",
+    "misses": [
+      "Configuration-side mitigation paths are not enumerated — when a CVE is exploitable only when a specific configuration pattern is present (NGINX Rift requires unnamed PCRE captures in a rewrite directive), the operator-side fix (rewrite the directive to use named captures) is a faster mitigation than the vendor-patch path but A06 guidance defaults operators to vendor-patch waiting",
+      "Live-patch / no-restart mitigation paths (operator-side configuration edits that retire the vulnerable code path without requiring a vendor release or component restart) are not framed as A06 remediation options",
+      "A06 risk scoring inherits CVSS without recognising configuration-derived exposure — a CVE with a configuration prerequisite has lower real-world exposure than its CVSS suggests, and the configuration-prerequisite check is the real-world prioritization filter",
+      "AI-discovered components / AI-discovered vulnerabilities are not enumerated in A06 risk identification — Hard Rule #7 establishes AI-discovery as current operational reality, A06 still implicitly assumes human-discovery cadence"
+    ],
+    "real_requirement": "A06:2021 implementations must add a configuration-derived-exposure tier: vulnerability triage on a known-vulnerable component first checks whether the deployed configuration matches the exploit prerequisite, and surfaces operator-side mitigation paths (configuration edits, code-path retirement) alongside the vendor-patch path. The fastest available mitigation wins, not the default vendor-patch path. Risk scoring incorporates configuration-derived exposure, not just component-version-based CVSS.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "CVE-2026-42945"
+    ],
+    "atlas_refs": [
+      "AML.T0040"
+    ],
+    "attack_refs": [
+      "T1190"
+    ],
+    "theater_test": {
+      "claim": "We track and remediate vulnerable and outdated components per OWASP Top 10 A06:2021.",
+      "test": "Pull the A06 vulnerability-management procedure. Confirm it enumerates BOTH vendor-patch path AND configuration-side mitigation paths (operator-side configuration edits that retire the vulnerable code path without requiring a vendor release). Sample the most recent CVE on a deployed component where a configuration prerequisite governs exploitability (CVE-2026-42945 NGINX Rift reference case requires unnamed PCRE captures in a rewrite directive); verify the response surfaced the configuration-side mitigation before defaulting to vendor-patch waiting. Theater verdict if the procedure recognises only the vendor-patch path, if configuration-derived exposure is not in the prioritization filter, or if the sampled incident did not surface a faster mitigation path that was available.",
+      "evidence_required": [
+        "A06 vulnerability-management procedure document",
+        "configuration-prerequisite check procedure for at least the top-5 deployed components",
+        "incident record for the reference CVE showing mitigation-path selection and timestamps"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
   "PCI-DSS-4.0-6.3.3": {
     "framework": "PCI DSS 4.0",
     "control_id": "6.3.3",
@@ -2095,6 +2344,7 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
+      "CVE-2023-3519",
       "CVE-2026-31431"
     ],
     "atlas_refs": [],
@@ -2349,6 +2599,40 @@
         "SLSA provenance attestation for latest release",
         "AI-authorship attestation policy and recent merge sample",
         "model-track attestation if model artefacts shipped"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "SLSA-v1.0-Source-L3": {
+    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts)",
+    "control_id": "Source Track L3",
+    "control_name": "Source track level 3 — verified history and retained provenance",
+    "designed_for": "SLSA v1.0 source-track level 3 — source-control system retains verified version history (every revision is signed by an authenticated, identified actor) AND retains source-track provenance for a defined period. Anchored on the assumption that source-side integrity (signed commits + retained history) is achievable for projects whose source repositories are governed by the consuming organization or by a co-operative upstream.",
+    "misses": [
+      "Open-source packages distributed via npm / PyPI / RubyGems / crates.io with NO source-track provenance attestation are outside SLSA Source L3 coverage — the consuming organization has no source-track signal to verify against, and SLSA does not provide an alternative for the no-provenance-attestation case",
+      "Maintainer-account-compromise (Shai-Hulud worm class, MAL-2026-TANSTACK-MINI) can produce Source L3-compliant artifacts when the malicious commits are signed by the compromised legitimate maintainer's authenticated identity — Source L3 attests authenticity, not benignness",
+      "Freshness-of-published-version is not a Source L3 concern — a worm pivoting through a compromised maintainer can publish 84 malicious versions within hours, and Source L3 has no cooldown-period concept that would let the consumer wait out the active exposure window",
+      "Source L3 has no consumer-side workflow for the no-provenance-attestation case beyond 'do not consume' — operators who must consume packages without source-track provenance are left without a graduated control set"
+    ],
+    "real_requirement": "Source L3 implementations on the consumer side must add a freshness-cooldown control for packages without source-track provenance attestation (post-publish quarantine on systemically-important upstreams), plus a maintainer-account-integrity signal layered on top of the authentication-only Source L3 attestation (registry-side MFA evidence, lockfile audit against known-malicious version sets during the exposure window). Source L3 is necessary-but-insufficient when the threat is maintainer-account compromise rather than upstream tampering.",
+    "status": "open",
+    "opened_date": "2026-05-17",
+    "evidence_cves": [
+      "MAL-2026-TANSTACK-MINI"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.001"
+    ],
+    "theater_test": {
+      "claim": "Our supply chain consumes only SLSA Source L3-compliant packages — source-track integrity is verified.",
+      "test": "Pull the SLSA Source L3 consumption policy. Confirm it enumerates the no-provenance-attestation case for npm / PyPI / RubyGems / crates.io packages, with a documented freshness-cooldown control (post-publish quarantine) for systemically-important upstreams without source-track provenance. Sample the most recent maintainer-account-compromise incident (MAL-2026-TANSTACK-MINI reference case); verify the consumer-side response covered lockfile audit against the malicious version set within the active exposure window. Theater verdict if the policy treats Source L3 attestation as sufficient signal of benignness, if there is no freshness-cooldown control for no-provenance upstreams, or if the sampled incident response did not include lockfile audit within the exposure window.",
+      "evidence_required": [
+        "SLSA Source L3 consumption policy document",
+        "freshness-cooldown control evidence for systemically-important upstreams without source-track provenance",
+        "lockfile audit log from the reference maintainer-compromise incident"
       ],
       "verdict_when_failed": "compliance-theater"
     }
@@ -3666,6 +3950,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2023-3519",
       "CVE-2026-0300",
       "CVE-2026-42945"
     ],
@@ -3702,6 +3987,7 @@
     "opened_date": "2026-05-15",
     "evidence_cves": [
       "CVE-2026-0300",
+      "CVE-2026-20182",
       "CVE-2026-42897",
       "CVE-2026-42945",
       "CVE-2026-46300",
@@ -3739,6 +4025,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2024-1709",
       "CVE-2026-39987"
     ],
     "atlas_refs": [
@@ -3774,6 +4061,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2026-30623",
       "CVE-2026-39987"
     ],
     "atlas_refs": [
@@ -3877,6 +4165,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2025-11837",
       "CVE-2026-32202",
       "CVE-2026-33825",
       "CVE-2026-6973"
@@ -4078,6 +4367,7 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
+      "CVE-2024-3154",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"

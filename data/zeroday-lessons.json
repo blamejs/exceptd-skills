@@ -2119,5 +2119,823 @@
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "threat_actor_release",
     "ai_assist_factor": "high"
+  },
+  "CVE-2024-3154": {
+    "name": "CRI-O arbitrary kernel-module load",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Pod-spec attributes reach modprobe argument path in CRI-O without validation. An attacker with pod-create RBAC on a cluster using CRI-O can cause arbitrary kernel modules to load on the host node, achieving container-escape-equivalent capability.",
+      "privileges_required": "pod-create RBAC inside the cluster (namespace-scoped is sufficient)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — reported by the OpenShift/CRI-O upstream security team. Conventional argument-injection class."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to CRI-O 1.27.10 / 1.28.7 / 1.29.4. Pre-patch, AppArmor or SELinux deny-module-load profiles on the node block the exploit primitive without runtime change.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; AppArmor/SELinux deny-module-load is an effective live-patch for unpatched fleets."
+      },
+      "detection": {
+        "what_would_have_worked": "auditd rules on init_module / finit_module syscalls correlated with container PIDs; alert on any module load originating from a containerd/CRI-O managed process namespace.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "High-signal — module loads from container PIDs are essentially never legitimate."
+      },
+      "response": {
+        "what_would_have_worked": "Cordon and drain nodes that loaded an unexpected module; rotate node-bound credentials; treat the node as compromised pending forensic review.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective post-exploitation; relies on the detection above firing in time."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality control presumes node-level kernel-module policy is authoritative; cluster runtimes that broker module loads invert the trust direction without framework guidance to revoke that broker capability."
+      },
+      "CIS-Kubernetes-Benchmark-4.2.13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AppArmor profile guidance is generic and does not specifically require deny-module-load."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Container-runtime supply chain not differentiated from application-runtime supply chain."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "AppArmor/SELinux deny-module-load is rarely enforced on container hosts; CIS-K8s benchmark passes without it. Patch cadence on Kubernetes node runtimes typically lags behind application patches.",
+      "theater_pattern": "least_functionality"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2023-43472": {
+    "name": "MLflow path-traversal arbitrary file read",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "MLflow tracking-server artifact endpoint resolves user-controlled paths under the artifact root without normalization. An unauthenticated HTTP request with ../ traversal reads arbitrary files from the host filesystem.",
+      "privileges_required": "none (unauth network reachability to MLflow tracking server)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — disclosed via the Protect AI Huntr bug-bounty program by a named human researcher (Joseph Beeton, Contrast Security)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to MLflow 2.9.0+. Network-isolate tracking servers from untrusted networks until patched; MLflow shipped historically with no auth and operators routinely expose it on internal networks treating it as trusted.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is the only definitive fix; network isolation is a viable compensating control."
+      },
+      "detection": {
+        "what_would_have_worked": "WAF or reverse-proxy log review for ../ patterns in tracking-server artifact-fetch URLs; HTTP access-log alerts on traversal sequences.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective when an HTTP front-proxy is in place. Many MLflow deployments expose the Flask server directly with no front-proxy logging."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate any credentials, tokens or model-artifact contents the tracking server filesystem could have leaked; audit the MLflow artifact root for sensitive sibling files (.env, ~/.aws/credentials).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Reduces blast radius post-exploitation; necessary because MLflow processes typically run with broad filesystem read access."
+      }
+    },
+    "framework_coverage": {
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ML-pipeline asset confidentiality is referenced but no specific control on tracking-server path normalization or web-surface review."
+      },
+      "OWASP-ML-Top-10-2023-ML06": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Insufficient supply-chain controls in ML — MLflow tracking servers routinely expose model + experiment IO without auth."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding control does not anchor on ML-runtime web-surface review; ML platforms are treated as out-of-scope of conventional secure-coding programs."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "MLflow tracking servers are widely deployed without auth and without front-proxy logging; ML platforms typically fall outside the AppSec team's secure-coding-review remit.",
+      "theater_pattern": "secure_coding"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2020-10148": {
+    "name": "SolarWinds Orion API authentication bypass (SUNBURST chain component)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "URI pattern matching against SkipI18nStrings inside Orion's HTTP routing triggers an authentication bypass — an unauthenticated request that matches the pattern reaches API write endpoints. Used by SUNBURST operators to exercise API write access against compromised Orion installations.",
+      "privileges_required": "none (unauth network reachability to Orion)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — pre-AI-tooling era; surfaced during the SUNBURST incident-response investigation by Mandiant/FireEye and SolarWinds engineering."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Orion 2020.2.1 HF2+ and apply the documented WAF rule blocking the SkipI18nStrings URI pattern. Network-restrict Orion management surface to operator subnets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch + WAF rule together close the bypass; network restriction shrinks the unauth-reachable surface."
+      },
+      "detection": {
+        "what_would_have_worked": "Web-server log alerts on requests matching the SkipI18nStrings pattern from non-operator source addresses; outbound DNS / connection-pattern detection for SUNBURST C2 (the chain consumer).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "URI-pattern detection is high-signal post-disclosure; SUNBURST C2 detection was added to commercial EDR within weeks of the 2020-12 disclosure."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any Orion installation prior to HF2 as potentially compromised; isolate, snapshot, rotate every credential the SolarWinds service account could touch (it usually had broad domain access), rebuild from known-good media.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA ED 21-01",
+        "adequacy": "CISA Emergency Directive 21-01 mandated the response posture for US federal civilian agencies; private-sector equivalents (incident-response playbooks) varied widely."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Identification-and-Authentication control trusted the application's URI-matching layer; framework does not address pattern-bypass classes in vendor-supplied management software."
+      },
+      "ISO-27001-2022-A.5.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access control reviewed at organizational level; URI-pattern auth bypass is a code-level failure under app-vendor responsibility that the organizational control cannot detect."
+      },
+      "NIST-800-53-SA-12": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain protection control predates the SolarWinds incident; pre-2020 supply-chain controls did not contemplate a trusted vendor as the breach vector."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 40,
+      "basis": "Direct exposure to this specific CVE is low five years post-disclosure (Orion installations are largely patched), but the lessons-class — trusted-vendor-as-pivot — remains under-addressed by most supply-chain controls.",
+      "theater_pattern": "vendor_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2023-3519": {
+    "name": "Citrix NetScaler ADC/Gateway unauth RCE (CitrixBleed precursor)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Pre-auth stack buffer overflow in the NetScaler SAML processing path. An unauthenticated HTTP POST to /gwtest/formssso reaches the vulnerable nsppe parser; CISA AA23-201A documented in-wild exploitation by Chinese state-sponsored actors against US critical-infrastructure organizations within weeks of disclosure.",
+      "privileges_required": "none (unauth network reachability to NetScaler appliance)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — independent security researchers via Citrix coordinated disclosure (CTX561482, 2023-07-18)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to NetScaler 13.1-49.13 / 13.0-91.13 / 12.1-66.13. Treat any pre-patch appliance reachable from the public internet as already compromised once exploitation went public.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive but many operators missed the CISA KEV 21-day deadline; the same population was breached again two months later via the CitrixBleed (CVE-2023-4966) session-token vulnerability."
+      },
+      "detection": {
+        "what_would_have_worked": "Mandiant + CISA published IoCs including web-shell paths under /var/vpn/themes/imgs/ and unexpected nsppe core dumps. Webserver log alerts on POST to /gwtest/formssso from non-operator source addresses.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Post-exploitation IoC matching detected breached organizations weeks after compromise — many were already at session-token-theft + lateral-movement stage."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild appliance from known-good firmware; rotate all credentials, AD machine-account passwords, and SAML signing keys the appliance held; assume web-shell persistence until forensic review confirms otherwise.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA AA23-201A",
+        "adequacy": "CISA-recommended response posture; full credential rotation is operationally expensive and was inconsistently applied across the affected population."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day patch SLA is insufficient for unauth RCE on public-facing appliances. CISA BOD 22-01 KEV deadlines (21 days) override but apply only to US federal civilian agencies."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "1-month critical-patch window is a permission slip; mass exploitation began within 14 days of public PoC."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "EU NIS2 generic vulnerability-management requirement without unauth-RCE-specific SLA."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "PCI-DSS / NIS2 / SI-2 patch SLAs are wider than the actual exploitation window. Many organizations passing those audits remained exposed during the active mass-exploitation phase.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2024-1709": {
+    "name": "ConnectWise ScreenConnect auth-bypass",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Path-traversal in the auth filter — appending /SetupWizard.aspx/anything to a request URL bypasses authentication and reaches the admin setup endpoint. Attacker creates a new admin account via the setup endpoint and gains full ScreenConnect control, including the ability to push remote-control payloads to every endpoint the affected MSP manages.",
+      "privileges_required": "none (unauth network reachability to ScreenConnect web surface)",
+      "complexity": "low — single-request exploitation, no preconditions",
+      "ai_factor": "Not AI-discovered — vendor-internal discovery; externally observed via Huntress and GreyNoise telemetry within 24 hours of the 2024-02 Patch Tuesday."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to ScreenConnect 23.9.8+. Pre-patch, take the ScreenConnect web surface offline or front it with a WAF blocking the /SetupWizard.aspx/* pattern from unauthenticated sources.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation — added 2024-02-22 with 24h deadline)",
+        "adequacy": "Patch is definitive; CISA's compressed deadline reflected the live mass-exploitation observed within hours of disclosure."
+      },
+      "detection": {
+        "what_would_have_worked": "Webserver log alerts on /SetupWizard.aspx/* URI patterns; admin-user-creation audit alerts on any new privileged account; outbound connection alerts on managed endpoints to non-operator C2 destinations.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "High-signal — the URI pattern is essentially never legitimate post-installation. Most affected MSPs had no log review at this layer."
+      },
+      "response": {
+        "what_would_have_worked": "Treat the ScreenConnect server and every managed endpoint as compromised pending forensic review; rotate every managed-endpoint credential; rebuild ScreenConnect from a known-good install rather than patching in place.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive — many MSPs patched in place without forensic review, leaving residual attacker persistence on managed endpoints."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement assumed at the application layer; bypass occurred at the routing layer before AC-3 had any opportunity to evaluate."
+      },
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "MFA on admin accounts would not have prevented the breach — the bypass creates a new admin account that satisfies whatever MFA policy applies to fresh enrolment."
+      },
+      "CIS-Controls-v8-Control6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-control management does not require setup-endpoint hardening on production deployments; the ScreenConnect setup wizard was reachable post-install by design."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "MSP fleets passing SOC 2 / ISO 27001 audits routinely deploy remote-management tooling with default routing exposed; setup-endpoint hardening is not a benchmark requirement.",
+      "theater_pattern": "access_control"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-20182": {
+    "name": "Cisco SD-WAN authentication bypass to admin",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Authentication bypass in the Cisco SD-WAN controller management plane (vManage / vEdge). An unauthenticated attacker reaches admin-equivalent state on the controller, giving control over the SD-WAN fabric's policy plane.",
+      "privileges_required": "none (unauth network reachability to SD-WAN controller management surface)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — discovered by Rapid7 researchers Stephen Fewer and Jonah Burgess while researching the related CVE-2026-20127 vdaemon authentication-bypass."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco per-train fixed build per cisco-sa-sdwan-authbypass; network-restrict the SD-WAN controller management surface to operator subnets only — controllers should never be reachable from the data plane the fabric carries.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation — KEV-added 2026-05-14)",
+        "adequacy": "Patch requires controller reboot; network restriction is the appropriate compensating control during the maintenance window."
+      },
+      "detection": {
+        "what_would_have_worked": "Authentication-attempt logs from the controller plane; alerts on any successful admin authentication from non-operator source addresses; configuration-change audit on SD-WAN policy.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective once enabled; SD-WAN controller log forwarding to SIEM is inconsistently configured across operators."
+      },
+      "response": {
+        "what_would_have_worked": "Treat fabric policy as potentially altered; review all policy changes against a known-good baseline; rotate controller-plane credentials and certificates; force re-onboarding of any edge device whose trust anchors the controller could have rewritten.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive; necessary if the detection above did not have full coverage of the exposure window."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-fabric controller authentication depended on the bypassed surface; IA-2 was satisfied on paper while the implementation was bypassable."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "EU NIS2 critical-infrastructure rules treat SD-WAN controllers as essential service infrastructure but lack a CISA-KEV-style compressed remediation SLA."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT third-party risk — SD-WAN vendor risk concentrated in a single advisory cadence; DORA does not require dual-vendor fabric topology."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "SD-WAN controller management surfaces are frequently reachable beyond operator subnets in real-world deployments; NIS2 / DORA controls do not enforce management-plane isolation as a specific requirement.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2024-40635": {
+    "name": "containerd integer overflow IP mask leak",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Integer overflow in the containerd CNI IP-allocation path. A crafted CIDR specification overflows the uint32 mask conversion, causing the container to receive a spurious mask that allows traffic to leak across network namespaces.",
+      "privileges_required": "ability to influence a container's CNI configuration (typically requires pod-create RBAC or compromise of an in-cluster component that provisions pods)",
+      "complexity": "moderate",
+      "ai_factor": "Not AI-discovered — reported via the containerd security team and Snyk Labs; conventional integer-overflow class."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to containerd 1.6.34+ or 1.7.21+. Restrict who can create pods with custom CNI configuration via Kubernetes admission policy.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; admission policy reduces the exposed attack surface in the interim."
+      },
+      "detection": {
+        "what_would_have_worked": "Network-policy violation alerts on cross-namespace traffic; periodic audit of running pods' actual IP/mask versus their declared CNI configuration.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Cross-namespace leakage is detectable when egress between namespaces is otherwise denied by NetworkPolicy."
+      },
+      "response": {
+        "what_would_have_worked": "Roll affected pods; assume any data the affected container could reach via the spurious mask was potentially exfiltrated to the wrong network namespace.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Routine for clusters with strong network segmentation; rare in clusters that rely on namespace isolation as the only boundary."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection presumes network-namespace integrity; integer overflow in IPAM defeats it at a layer the boundary-protection control cannot observe."
+      },
+      "CIS-Kubernetes-Benchmark-5.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network policies don't address container-runtime IPAM correctness — NetworkPolicy assumes the IPAM layer is trusted."
+      },
+      "ISO-27001-2022-A.8.20": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Networks security control covers segmentation policy at organizational level but does not extend to container-runtime IPAM verification."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 50,
+      "basis": "Most clusters do not pair NetworkPolicy with IPAM-correctness audit. CIS-K8s benchmark passes without it.",
+      "theater_pattern": "network_segmentation"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2026-30623": {
+    "name": "Anthropic MCP SDK stdio command-injection",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Operator-supplied MCP server-spawn command string reaches subprocess exec without argv-array discipline. A maliciously-crafted MCP server config (delivered via supply-chain, social engineering, or a co-tenant tool) causes arbitrary command execution in the MCP client process context.",
+      "privileges_required": "ability to influence the MCP server configuration the client loads",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — disclosed by OX Security researchers Moshe Siman Tov Bustan, Mustafa Naamnih, and Nir Zadok as part of an April 2026 four-exploitation-family MCP advisory. Notable that the target is an AI SDK but the discovery methodology was conventional code review."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to the post-April-2026 Anthropic MCP SDK release. Pre-patch, pin MCP server commands to immutable absolute paths in operator-owned config and refuse user-supplied server configs.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch fixes the argv handling; operator-side allowlisting is the appropriate compensating control and matches the broader MCP-trust posture the mcp playbook recommends."
+      },
+      "detection": {
+        "what_would_have_worked": "Process-execution telemetry on the MCP-client host correlating spawned subprocess command lines with the configured allowlist; alert on any subprocess whose argv contains shell-metacharacter sequences from operator-config fields.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective when EDR is deployed on developer endpoints — coverage gap is the largest constraint."
+      },
+      "response": {
+        "what_would_have_worked": "Treat the MCP-client host as potentially compromised; rotate any credentials accessible in that user context (cloud CLI tokens, SSH keys, browser-stored credentials); audit MCP server configurations for unexpected entries.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because the MCP client typically runs in developer-laptop context with broad credential access."
+      }
+    },
+    "framework_coverage": {
+      "OWASP-LLM-Top-10-2025-LLM05": {
+        "covered": true,
+        "adequate": false,
+        "gap": "LLM05 addresses improper output handling; this is the symmetric upstream bug — improper INPUT handling on the transport side — which OWASP LLM Top-10 does not call out separately."
+      },
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "MCP transport trust boundary not specifically addressed; MEASURE 2.7 treats the AI subsystem as a single trust unit."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding control assumed in third-party SDKs without tooling to attest."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-053",
+        "name": "MCP-SERVER-CONFIG-ALLOWLIST",
+        "description": "MCP clients must pin server-spawn commands to immutable absolute paths in operator-owned config. User-supplied or per-project MCP server configs must be disallowed by default; any opt-in must go through operator review.",
+        "evidence": "CVE-2026-30623 — operator-config-as-input was treated as platform-trusted by the MCP client and reached subprocess exec without argv-array discipline.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "OWASP-LLM-Top-10-2025-LLM05"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "MCP adoption is widespread across developer endpoints; operator-side allowlisting of MCP server commands is rare. Existing AI-governance audits (NIST AI RMF, ISO 42001) do not enforce MCP transport trust posture as a specific requirement.",
+      "theater_pattern": "vendor_management_ai"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-12686": {
+    "name": "Synology BeeStation unauth RCE (Pwn2Own Ireland 2025)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Pre-auth RCE chain on the Synology BeeStation Manager web management surface. Demonstrated as a full chain on consumer NAS hardware at Pwn2Own Ireland 2025.",
+      "privileges_required": "none (unauth network reachability to BeeStation web surface)",
+      "complexity": "low (post-disclosure)",
+      "ai_factor": "Not AI-discovered — Synacktiv offensive-security researchers @Tek_7987 and @_Anyfun via attack-surface enumeration and manual code auditing per the published Pwn2Own writeup."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to BeeStation Manager 1.4.0-65374+. Do not expose consumer NAS web management to the public internet; restrict to LAN with VPN access for remote operators.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; network restriction is appropriate for consumer-IoT deployments that may delay the patch window."
+      },
+      "detection": {
+        "what_would_have_worked": "Webserver log alerts on the unauth attack patterns published in the Synacktiv writeup; outbound connection alerts from the NAS to non-vendor C2 destinations.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Consumer-NAS log forwarding is rarely deployed; detection-in-place coverage is low."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild appliance from known-good firmware; rotate any cloud-sync credentials and recovery codes the appliance held; treat data on the appliance as potentially read by the attacker.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive for consumer deployments; many operators skip the rebuild step."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Consumer-NAS patch SLA undefined; the SI-2 baseline targets enterprise systems."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "EU Cyber Resilience Act applies to consumer-IoT in scope but enforcement begins 2027; pre-enforcement compliance is voluntary."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Configuration-management control covers organizational assets; consumer NAS appliances at remote sites are commonly out of scope of the enterprise CMDB."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Consumer-NAS appliances are pervasive at branch / SMB / remote-worker sites and routinely fall outside enterprise patch and asset-management programs.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-62847": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 1/3)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Component 1/3 of the DEVCORE Research Team chain on the QNAP TS-453E appliance at Pwn2Own Ireland 2025. Chained injection + format-string bug demonstrated as part of the three-CVE chain that earned $40,000 + 4 Master of Pwn points.",
+      "privileges_required": "none (unauth network reachability to QTS / QuTS hero web management)",
+      "complexity": "moderate",
+      "ai_factor": "Not AI-discovered — DEVCORE Research Team via ZDI Pwn2Own attribution; conventional offensive-security research methodology."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to QTS 5.2.4.2950+ / QuTS hero h5.2.4.2950+. Pre-patch, do not expose QNAP web management to the public internet; restrict to LAN and require VPN for remote access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive but requires a reboot; network restriction is the appropriate compensating control during the maintenance window."
+      },
+      "detection": {
+        "what_would_have_worked": "Webserver log alerts on the published attack indicators; QNAP Malware Remover sweep; outbound connection alerts from the NAS.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "QNAP appliance log forwarding to SIEM is inconsistently deployed; appliance-local Malware Remover is itself a CVE target (see CVE-2025-11837)."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild appliance from known-good firmware; rotate any credentials and cloud-sync tokens the appliance held; treat appliance data as potentially read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive; necessary given the chain's full-RCE outcome."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NAS-appliance patch SLA undefined; SI-2 baseline targets enterprise systems and does not address appliance reboot windows."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Consumer-NAS coverage begins 2027 under the CRA enforcement timeline."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Configuration-management control covers organizational assets; SMB / branch NAS appliances are commonly out of CMDB scope."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "QNAP appliances are pervasive at SMB / prosumer scale and fall outside enterprise patch programs.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-62848": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 2/3)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Component 2/3 of the DEVCORE Research Team chain on the QNAP TS-453E appliance at Pwn2Own Ireland 2025. Code-injection (CWE-94) chained with CVE-2025-62847 and CVE-2025-62849.",
+      "privileges_required": "none (unauth as part of the chain) — standalone exploitation requires the chain pre-condition",
+      "complexity": "moderate",
+      "ai_factor": "Not AI-discovered — same DEVCORE Research Team attribution as CVE-2025-62847; ZDI live-blog credit."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to QTS 5.2.4.2950+ / QuTS hero h5.2.4.2950+. Same network-restriction posture as CVE-2025-62847.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; same maintenance-window considerations as the sibling chain components."
+      },
+      "detection": {
+        "what_would_have_worked": "Same indicator set as CVE-2025-62847; chain components are typically exploited together so any one of the chain's indicators firing implies the full chain has been attempted.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Same detection-coverage gap as CVE-2025-62847."
+      },
+      "response": {
+        "what_would_have_worked": "Same posture as CVE-2025-62847 — chain components share a single response posture because exploitation typically involves all three.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally identical to CVE-2025-62847 response."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NAS-appliance patch SLA undefined; chain-component CVEs share the patch window so partial patching is not a viable mitigation."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Consumer-NAS coverage begins 2027."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure-coding control assumed in vendor firmware; appliance vendors are out-of-band of the operator's secure-coding program."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Same population and coverage gap as CVE-2025-62847; chain components track together.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-62849": {
+    "name": "QNAP QTS/QuTS hero RCE (Pwn2Own Ireland 2025, chain 3/3)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Component 3/3 of the DEVCORE Research Team chain on the QNAP TS-453E appliance at Pwn2Own Ireland 2025 — post-auth elevation (CWE-269, T1068). Used by the chain to convert the unauth RCE foothold from CVE-2025-62847/62848 into appliance-level privileged execution.",
+      "privileges_required": "post-auth (achieved by the chain via CVE-2025-62847 / CVE-2025-62848)",
+      "complexity": "moderate",
+      "ai_factor": "Not AI-discovered — same DEVCORE Research Team attribution as the sibling chain components."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to QTS 5.2.4.2950+ / QuTS hero h5.2.4.2950+. Same network-restriction posture as the chain siblings.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; chain components must be patched together to close the full exploitation path."
+      },
+      "detection": {
+        "what_would_have_worked": "Privilege-elevation event telemetry on the appliance (if available via the QTS audit log); outbound C2 detection downstream of the elevation.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "QTS audit-log forwarding is inconsistently configured."
+      },
+      "response": {
+        "what_would_have_worked": "Same posture as CVE-2025-62847 — chain treated as a single incident scope.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Identical to the sibling chain components."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege control assumes the privilege boundary is enforced; CWE-269 exploits the boundary directly inside the appliance firmware."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same patch-SLA gap as the chain siblings."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Consumer-NAS coverage begins 2027."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Same population as the chain siblings.",
+      "theater_pattern": "least_privilege"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-59389": {
+    "name": "QNAP Hyper Data Protector critical RCE (Pwn2Own Ireland 2025)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Pre-auth RCE on QNAP Hyper Data Protector backup-orchestration appliance. Summoning Team researcher Sina Kheirkhah chained a hardcoded-credential issue with an injection flaw to achieve unauth RCE on the backup tier — turning the operator's recovery path into an attacker pivot.",
+      "privileges_required": "none (unauth network reachability to Hyper Data Protector management surface)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — Summoning Team via ZDI Pwn2Own credit; conventional offensive-security research."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Hyper Data Protector 2.1.4.0420+. Network-restrict backup-appliance management to backup-operator subnets only; backup appliances should never be reachable from the data-plane networks they protect.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; backup-tier network isolation is the appropriate compensating control and a long-standing backup-security best practice."
+      },
+      "detection": {
+        "what_would_have_worked": "Webserver log alerts on the unauth attack indicators; backup-job audit-log review for unauthorized job-creation or destination changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backup audit-log review is rare in practice; jobs that move backup data to attacker-controlled destinations often go undetected until recovery is attempted."
+      },
+      "response": {
+        "what_would_have_worked": "Treat backup appliance and all backup data it touched as potentially compromised; rebuild appliance; validate backup integrity from offline / immutable copies; rotate any production credentials the backup agent could have read from protected systems.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Critical — a compromised backup appliance inverts the recovery assumption; ransomware operators routinely target backup tiers first to deny recovery."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Backup-appliance patch SLA undefined; backup-tier compromise is a recovery-control failure that SI-2 doesn't differentiate from other systems."
+      },
+      "ISO-27001-2022-A.8.13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Backup integrity assumed — a vulnerable backup appliance becomes the attacker's pivot rather than the operator's recovery path. A.8.13 doesn't require backup-tier isolation."
+      },
+      "NIS2-Art21-business-continuity": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Backup-side resilience presumed; backup appliance compromise inverts recovery assumptions."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-054",
+        "name": "BACKUP-TIER-NETWORK-ISOLATION",
+        "description": "Backup-orchestration appliances and backup-data destinations must be network-isolated from the data-plane networks they protect. Management surfaces must be reachable only from operator subnets; backup-data paths must use unidirectional or pull-only patterns from the backup tier to the protected systems where possible.",
+        "evidence": "CVE-2025-59389 — pre-auth RCE on Hyper Data Protector demonstrates that backup-tier compromise via the management surface is a single-step path to recovery denial.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.13",
+          "NIS2-Art21-business-continuity"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Backup appliances commonly share the data-plane network they protect; ISO 27001 backup controls pass without enforcing network isolation of the backup tier.",
+      "theater_pattern": "business_continuity"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-11837": {
+    "name": "QNAP Malware Remover code-injection",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Code-injection in QNAP Malware Remover's malware-definition-handling path. An attacker who can deliver a crafted definition update or hijack the definition-fetch channel gains code execution as the security tool itself — a trust-anchor inversion where the AV/AM tool becomes the attack vector.",
+      "privileges_required": "ability to deliver a crafted definition file (supply-chain compromise, MITM on the definition-fetch channel, or local low-priv access)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered — Chumy Tsai of CyCraft Technology via Pwn2Own Ireland 2025 ZDI credit."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade QNAP Malware Remover to 6.6.8.20251023+. Verify that definition-fetch uses TLS with strict certificate validation against the vendor's published pin.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Patch is definitive; transport hardening reduces the MITM surface for future definition-update flaws."
+      },
+      "detection": {
+        "what_would_have_worked": "Behavioral telemetry on the Malware Remover process — alert on subprocess spawns or outbound connections outside the documented update pattern. Sandbox-execute the AV with a crafted definition file and confirm rejection (the compliance-theater test for the trust-anchor-inversion class).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective once instrumented; the AV-on-AV detection inversion is uncomfortable to operationalize and rarely deployed."
+      },
+      "response": {
+        "what_would_have_worked": "Treat the appliance running the affected AV as compromised; rebuild from known-good firmware; rotate any credentials the AV process context could touch.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because the compromised process typically runs with broad filesystem and network access."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code-protection control assumes the AV/AM tool is itself uncompromised. The compliance-theater test that distinguishes paper compliance from real security: run the AV with a crafted definition file in a sandbox and confirm rejection."
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-malware controls treated as trust anchors; CVE-2025-11837 demonstrates the trust-anchor-inversion class directly."
+      },
+      "PCI-DSS-4.0-5.1": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-malware deployment requirement satisfied on paper; deployed tool itself is the vulnerability."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-055",
+        "name": "SECURITY-TOOL-INTEGRITY-VERIFICATION",
+        "description": "Security tools (AV/AM, EDR, vulnerability scanners) must be treated as in-scope of vulnerability management with the same SLAs as other privileged software. Definition-update channels must use TLS with certificate pinning. Compliance audits must include a trust-anchor-inversion test: deliver a crafted input to the security tool in a sandbox and confirm rejection.",
+        "evidence": "CVE-2025-11837 — QNAP Malware Remover code-injection demonstrates that the security tool itself can be the attack vector when its input-handling is unsafe.",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "ISO-27001-2022-A.8.7",
+          "PCI-DSS-4.0-5.1"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Trust-anchor-inversion testing is essentially never part of compliance audits for SI-3 / A.8.7 / PCI 5.1. Operators pass these controls by deploying the tool, not by verifying the tool's input-handling.",
+      "theater_pattern": "antimalware_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
   }
 }

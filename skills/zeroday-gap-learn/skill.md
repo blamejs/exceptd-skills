@@ -24,6 +24,7 @@ forward_watch:
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
 last_threat_review: "2026-05-15"
+discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief zeroday-gap-learn` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Zero-Day Learning Loop

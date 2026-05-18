@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1610543,
-    "total_approx_tokens": 402643,
+    "total_chars": 1613380,
+    "total_approx_tokens": 403351,
     "skill_count": 42
   },
   "skills": {
@@ -555,10 +555,10 @@
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "bytes": 27330,
-      "chars": 27218,
-      "lines": 411,
-      "approx_tokens": 6805,
+      "bytes": 27509,
+      "chars": 27397,
+      "lines": 412,
+      "approx_tokens": 6849,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -680,10 +680,10 @@
     },
     "zeroday-gap-learn": {
       "path": "skills/zeroday-gap-learn/skill.md",
-      "bytes": 37609,
-      "chars": 37453,
-      "lines": 444,
-      "approx_tokens": 9363,
+      "bytes": 37784,
+      "chars": 37628,
+      "lines": 445,
+      "approx_tokens": 9407,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -820,10 +820,10 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "bytes": 47134,
-      "chars": 47002,
-      "lines": 519,
-      "approx_tokens": 11751,
+      "bytes": 47309,
+      "chars": 47177,
+      "lines": 520,
+      "approx_tokens": 11794,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -980,10 +980,10 @@
     },
     "researcher": {
       "path": "skills/researcher/skill.md",
-      "bytes": 32058,
-      "chars": 31886,
-      "lines": 335,
-      "approx_tokens": 7972,
+      "bytes": 32226,
+      "chars": 32054,
+      "lines": 336,
+      "approx_tokens": 8014,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -1085,10 +1085,10 @@
     },
     "fuzz-testing-strategy": {
       "path": "skills/fuzz-testing-strategy/skill.md",
-      "bytes": 30523,
-      "chars": 30382,
-      "lines": 313,
-      "approx_tokens": 7596,
+      "bytes": 30702,
+      "chars": 30561,
+      "lines": 314,
+      "approx_tokens": 7640,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1235,10 +1235,10 @@
     },
     "defensive-countermeasure-mapping": {
       "path": "skills/defensive-countermeasure-mapping/skill.md",
-      "bytes": 32601,
-      "chars": 32465,
-      "lines": 301,
-      "approx_tokens": 8116,
+      "bytes": 32791,
+      "chars": 32655,
+      "lines": 302,
+      "approx_tokens": 8164,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1340,10 +1340,10 @@
     },
     "ot-ics-security": {
       "path": "skills/ot-ics-security/skill.md",
-      "bytes": 36266,
-      "chars": 36070,
-      "lines": 341,
-      "approx_tokens": 9018,
+      "bytes": 36439,
+      "chars": 36243,
+      "lines": 342,
+      "approx_tokens": 9061,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1450,10 +1450,10 @@
     },
     "threat-modeling-methodology": {
       "path": "skills/threat-modeling-methodology/skill.md",
-      "bytes": 30617,
-      "chars": 30440,
-      "lines": 317,
-      "approx_tokens": 7610,
+      "bytes": 30802,
+      "chars": 30625,
+      "lines": 318,
+      "approx_tokens": 7656,
       "approx_chars_per_token": 4,
       "sections": {
         "purpose": {
@@ -1510,10 +1510,10 @@
     },
     "webapp-security": {
       "path": "skills/webapp-security/skill.md",
-      "bytes": 28963,
-      "chars": 28789,
-      "lines": 282,
-      "approx_tokens": 7197,
+      "bytes": 29136,
+      "chars": 28962,
+      "lines": 283,
+      "approx_tokens": 7241,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1565,10 +1565,10 @@
     },
     "ai-risk-management": {
       "path": "skills/ai-risk-management/skill.md",
-      "bytes": 34753,
-      "chars": 34571,
-      "lines": 320,
-      "approx_tokens": 8643,
+      "bytes": 34929,
+      "chars": 34747,
+      "lines": 321,
+      "approx_tokens": 8687,
       "approx_chars_per_token": 4,
       "sections": {
         "purpose": {
@@ -1735,10 +1735,10 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "bytes": 44140,
-      "chars": 43967,
-      "lines": 305,
-      "approx_tokens": 10992,
+      "bytes": 44323,
+      "chars": 44150,
+      "lines": 306,
+      "approx_tokens": 11038,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1790,10 +1790,10 @@
     },
     "sector-energy": {
       "path": "skills/sector-energy/skill.md",
-      "bytes": 53906,
-      "chars": 53698,
-      "lines": 409,
-      "approx_tokens": 13425,
+      "bytes": 54077,
+      "chars": 53869,
+      "lines": 410,
+      "approx_tokens": 13467,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1845,10 +1845,10 @@
     },
     "sector-telecom": {
       "path": "skills/sector-telecom/skill.md",
-      "bytes": 20690,
-      "chars": 20590,
-      "lines": 256,
-      "approx_tokens": 5148,
+      "bytes": 20862,
+      "chars": 20762,
+      "lines": 257,
+      "approx_tokens": 5191,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2065,10 +2065,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 45439,
-      "chars": 45147,
-      "lines": 329,
-      "approx_tokens": 11287,
+      "bytes": 45611,
+      "chars": 45319,
+      "lines": 330,
+      "approx_tokens": 11330,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2230,10 +2230,10 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 26370,
-      "chars": 26272,
-      "lines": 208,
-      "approx_tokens": 6568,
+      "bytes": 26556,
+      "chars": 26458,
+      "lines": 209,
+      "approx_tokens": 6615,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2285,10 +2285,10 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "bytes": 69560,
-      "chars": 69272,
-      "lines": 456,
-      "approx_tokens": 17318,
+      "bytes": 69740,
+      "chars": 69452,
+      "lines": 457,
+      "approx_tokens": 17363,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
