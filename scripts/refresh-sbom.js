@@ -185,6 +185,29 @@ function sha256File(absPath) {
     .digest('hex');
 }
 
+// v0.13.12 — emit SHA3-512 alongside SHA-256 for every file: component.
+// CycloneDX 1.6 supports multiple hash entries per component. Rationale
+// mirrors the existing key-fingerprint emission in lib/verify.js:
+//
+//   - SHA-256 stays as the universal-tool contract (Anchore / Trivy /
+//     Dependency-Track / GitHub Dependency Graph all parse it).
+//   - SHA3-512 is the SHA-3 family (Keccak / sponge), different
+//     mathematical foundation. Hedges against future SHA-2 weaknesses
+//     and aligns with the project's PQ posture (ML-KEM / ML-DSA both
+//     internally hash with SHA-3).
+//
+// check-sbom-currency.js verifies BOTH when present and refuses if a
+// SHA3-512 entry is recorded but its content drifts from the live
+// bytes — so a downgrade attack that drops SHA3-512 from the recorded
+// SBOM (leaving only SHA-256) is observable as a missing-hash error,
+// not a silent acceptance.
+function sha3_512File(absPath) {
+  return crypto
+    .createHash('sha3-512')
+    .update(fs.readFileSync(absPath))
+    .digest('hex');
+}
+
 function fileComponents(allowlist) {
   const rels = expandAllowlist(allowlist);
   const out = [];
@@ -194,7 +217,10 @@ function fileComponents(allowlist) {
       'bom-ref': `file:${rel}`,
       type: 'file',
       name: rel,
-      hashes: [{ alg: 'SHA-256', content: sha256File(abs) }],
+      hashes: [
+        { alg: 'SHA-256', content: sha256File(abs) },
+        { alg: 'SHA3-512', content: sha3_512File(abs) },
+      ],
     });
   }
   return out;

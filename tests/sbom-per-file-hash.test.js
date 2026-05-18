@@ -126,18 +126,25 @@ test('every file in package.json.files (recursively expanded) has a matching com
   assert.deepEqual(fileNames, expected,
     'components[type=file] names must equal the expanded files allowlist exactly');
 
-  // Per-file: SHA-256 present and matches the on-disk content.
+  // Per-file: SHA-256 + SHA3-512 both present and matching the on-disk content.
+  // v0.13.12: emission expanded to dual-hash (SHA-256 universal-tool
+  // contract + SHA3-512 PQ-aware hedge). The test now requires both.
   for (const comp of fileComps) {
     assert.equal(comp['bom-ref'], `file:${comp.name}`);
     assert.equal(Array.isArray(comp.hashes), true);
-    assert.equal(comp.hashes.length, 1);
-    assert.equal(comp.hashes[0].alg, 'SHA-256');
-    const onDisk = crypto
-      .createHash('sha256')
-      .update(fs.readFileSync(path.join(ROOT, comp.name)))
-      .digest('hex');
-    assert.equal(comp.hashes[0].content, onDisk,
-      `file component "${comp.name}" hash must match on-disk SHA-256`);
+    assert.equal(comp.hashes.length, 2,
+      `file component "${comp.name}" must carry exactly 2 hash entries (SHA-256 + SHA3-512)`);
+    const sha256Entry = comp.hashes.find((h) => h.alg === 'SHA-256');
+    const sha3Entry = comp.hashes.find((h) => h.alg === 'SHA3-512');
+    assert.ok(sha256Entry, `file component "${comp.name}" must include a SHA-256 hash`);
+    assert.ok(sha3Entry, `file component "${comp.name}" must include a SHA3-512 hash`);
+    const bytes = fs.readFileSync(path.join(ROOT, comp.name));
+    const liveSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+    const liveSha3 = crypto.createHash('sha3-512').update(bytes).digest('hex');
+    assert.equal(sha256Entry.content, liveSha256,
+      `file component "${comp.name}" SHA-256 must match on-disk bytes`);
+    assert.equal(sha3Entry.content, liveSha3,
+      `file component "${comp.name}" SHA3-512 must match on-disk bytes`);
   }
 });
 
@@ -147,7 +154,13 @@ test('bundle digest is reproducible from the per-file components[] entries', () 
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const hash = crypto.createHash('sha256');
   for (const c of fileComps) {
-    hash.update(c.hashes[0].content);
+    // v0.13.12: components now carry SHA-256 + SHA3-512. Bundle digest
+    // is reproducible from the SHA-256 column to preserve the existing
+    // contract; pick by alg rather than positional index in case future
+    // emission re-orders the hashes array.
+    const sha256Hash = (c.hashes || []).find((h) => h.alg === 'SHA-256');
+    assert.ok(sha256Hash, `component "${c.name}" must have a SHA-256 entry for bundle digest`);
+    hash.update(sha256Hash.content);
     hash.update('\t');
     hash.update(c.name);
     hash.update('\n');

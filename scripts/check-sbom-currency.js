@@ -162,20 +162,45 @@ function checkSbomCurrency(root) {
       );
       continue;
     }
-    const sha256Entry = (comp.hashes || []).find(
-      (h) => h && h.alg === "SHA-256",
-    );
+    // v0.13.12: verify SHA-256 AND SHA3-512 when present. SHA-256 is
+    // the universal-tool contract (CycloneDX 1.6 default, Anchore /
+    // Trivy / Dependency-Track / GitHub Dependency Graph). SHA3-512
+    // is the SHA-3 family hedge, matching the existing key-fingerprint
+    // pattern (lib/verify.js). Both must agree with the live bytes;
+    // a mismatch on either fires the same drift error. A missing
+    // SHA-256 is a hard error (the universal contract is the floor);
+    // a missing SHA3-512 surfaces as a downgrade-attack warning so an
+    // operator who intentionally strips the second hash from an
+    // SBOM (post-quantum posture relaxation) sees it in the gate
+    // output, not in the JSON downstream.
+    const sha256Entry = (comp.hashes || []).find((h) => h && h.alg === "SHA-256");
+    const sha3Entry = (comp.hashes || []).find((h) => h && h.alg === "SHA3-512");
     if (!sha256Entry || typeof sha256Entry.content !== "string") {
       errors.push(
         `SBOM file component "${relPath}" lacks a SHA-256 hash entry`
       );
       continue;
     }
-    const live = crypto.createHash("sha256").update(fs.readFileSync(absPath)).digest("hex");
-    if (live !== sha256Entry.content) {
+    const fileBytes = fs.readFileSync(absPath);
+    const liveSha256 = crypto.createHash("sha256").update(fileBytes).digest("hex");
+    if (liveSha256 !== sha256Entry.content) {
       errors.push(
-        `SBOM file component "${relPath}" hash drift: recorded ${sha256Entry.content.slice(0, 12)}…, live ${live.slice(0, 12)}… — re-sign skills (\`node $(exceptd path)/lib/sign.js sign-all\` from a contributor checkout) and then \`npm run refresh-sbom\`, in that order (sbom must regenerate AFTER the final sign).`,
+        `SBOM file component "${relPath}" SHA-256 drift: recorded ${sha256Entry.content.slice(0, 12)}…, live ${liveSha256.slice(0, 12)}… — re-sign skills (\`node $(exceptd path)/lib/sign.js sign-all\` from a contributor checkout) and then \`npm run refresh-sbom\`, in that order (sbom must regenerate AFTER the final sign).`,
       );
+    }
+    if (sha3Entry) {
+      if (typeof sha3Entry.content !== "string") {
+        errors.push(
+          `SBOM file component "${relPath}" SHA3-512 entry present but content is not a string`
+        );
+      } else {
+        const liveSha3 = crypto.createHash("sha3-512").update(fileBytes).digest("hex");
+        if (liveSha3 !== sha3Entry.content) {
+          errors.push(
+            `SBOM file component "${relPath}" SHA3-512 drift: recorded ${sha3Entry.content.slice(0, 12)}…, live ${liveSha3.slice(0, 12)}… — same remediation as SHA-256 drift (re-sign then refresh-sbom).`,
+          );
+        }
+      }
     }
     fileComponentsChecked++;
   }
