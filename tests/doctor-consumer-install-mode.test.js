@@ -77,15 +77,32 @@ test("doctor: consumer install (PKG_ROOT under node_modules/) reports severity:i
   try {
     const pkg = path.join(tmp, "node_modules", "@blamejs", "exceptd-skills");
     fs.mkdirSync(pkg, { recursive: true });
-    // Symlink the real repo's tree into the staged path, EXCEPT for
-    // .keys/ which we deliberately leave absent so the signing check
-    // sees no private key.
+    // Stage the repo tree at the consumer-install path. bin/ MUST be
+    // copied (not symlinked) — Node resolves __dirname through symlinks,
+    // so a symlinked bin/exceptd.js would compute PKG_ROOT against the
+    // REAL repo, not the staged location, defeating the test. The rest
+    // of the tree can symlink for speed.
+    const SYMLINK_OK = new Set([
+      "data", "lib", "orchestrator", "scripts", "sources", "vendor", "skills", "agents", "keys",
+      "AGENTS.md", "ARCHITECTURE.md", "CHANGELOG.md", "CONTEXT.md",
+      "LICENSE", "NOTICE", "README.md", "SECURITY.md",
+      "manifest.json", "manifest-snapshot.json", "manifest-snapshot.sha256", "sbom.cdx.json",
+      "package.json",
+    ]);
     for (const rel of fs.readdirSync(ROOT)) {
       if (rel === ".keys" || rel === ".git" || rel === "node_modules") continue;
       const src = path.join(ROOT, rel);
       const dst = path.join(pkg, rel);
-      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? "dir" : "file"); }
-      catch { fs.cpSync(src, dst, { recursive: true }); }
+      if (rel === "bin") {
+        // Copy bin/ so __dirname resolves to the staged path.
+        fs.cpSync(src, dst, { recursive: true });
+      } else if (SYMLINK_OK.has(rel)) {
+        try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? "dir" : "file"); }
+        catch { fs.cpSync(src, dst, { recursive: true }); }
+      } else {
+        // Unknown entry — copy to be safe.
+        fs.cpSync(src, dst, { recursive: true });
+      }
     }
     const stagedCli = path.join(pkg, "bin", "exceptd.js");
     const r = spawnSync(process.execPath, [stagedCli, "doctor", "--json"], {
