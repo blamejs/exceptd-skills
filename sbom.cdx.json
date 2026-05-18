@@ -1,22 +1,22 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:ab5bdf43-05b4-4789-88b5-16b9e69ff079",
+  "serialNumber": "urn:uuid:ec722dff-f410-46c9-8130-3c14513ae2e5",
   "version": 1,
   "metadata": {
-    "timestamp": "2117-02-07T14:14:27.000Z",
+    "timestamp": "2151-09-16T06:17:35.000Z",
     "tools": [
       {
         "vendor": "blamejs",
         "name": "scripts/refresh-sbom.js",
-        "version": "0.13.10"
+        "version": "0.13.11"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.10",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.11",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.13.10",
+      "version": "0.13.11",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
       "licenses": [
         {
@@ -25,17 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.10",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.11",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "8d910bf9187db8b6704a75645b1b0a12719759724fe1e757b02ed4558dfdb177"
+          "content": "db8f5f2931adbb329c4123473cd603e7241e144da8f3a24efb2c6acf504149bc"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.10"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.11"
         },
         {
           "type": "vcs",
@@ -108,7 +108,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b082962f2a0b5f3668921b1ab6840cabd1c99c5a9730116a25d101c86164e89e"
+          "content": "abf2c5443a107c636fd981f091b719bbaebedd15f71a7e25121241bb675bb267"
         }
       ]
     },
@@ -229,7 +229,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bf2cd9d69b91597c37bb28555ffea27081a36bd2044c1e58c5abb54529a1a304"
+          "content": "d0b8a896ff0f998a32c49ef99d37771c8f02fac86619dc81401f2cd711d4460a"
         }
       ]
     },
@@ -663,6 +663,17 @@
       ]
     },
     {
+      "bom-ref": "file:lib/doctor-bucketing.js",
+      "type": "file",
+      "name": "lib/doctor-bucketing.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1cd25cddfd23bf1e9e9f5e2a1bc97b9739fcc53f54e3759d8df8c5bda101d8b9"
+        }
+      ]
+    },
+    {
       "bom-ref": "file:lib/exit-codes.js",
       "type": "file",
       "name": "lib/exit-codes.js",
@@ -1021,7 +1032,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f98a153b182a39ce3f03b183222452d75f345fcf74e7c98547a35f79f19aee8c"
+          "content": "726b7139a05b734b42c8eaedd34f722ca2aaee6df89f1778485c3f6d68fb89c1"
         }
       ]
     },
