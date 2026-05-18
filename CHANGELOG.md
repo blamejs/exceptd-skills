@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.10 — 2026-05-18
+
+Documentation currency — `README.md` + `AGENTS.md` now reflect the 23-playbook catalog instead of the pre-v0.13.5 20-playbook claim, and a regression pin prevents the drift class from recurring.
+
+### Bugs
+
+**`README.md` + `AGENTS.md` no longer advertise 20 playbooks.** v0.13.5 added `post-quantum-migration`, `ai-discovered-cve-triage`, and `supply-chain-recovery`, bringing the canonical set to 23 — but two long-form prose lines still claimed "20 investigation playbooks" / "summary of all 20 playbooks". Both updated, and the new playbook names appear in the `README` synopsis list.
+
+### Internal
+
+- New regression test `tests/doc-playbook-count-currency.test.js` greps `README.md` + `AGENTS.md` for `<N>\s*(investigation\s+)?playbooks?` and asserts every claim (above the noise floor of N≥15) matches the live `data/playbooks/*.json` count. Adding a new playbook without bumping the doc claim now fires in CI.
+
 ## 0.13.9 — 2026-05-18
 
 Predeploy gate now refuses SBOM hash drift before a release branch can reach CI.
