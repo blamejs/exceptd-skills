@@ -85,6 +85,59 @@ test('check-sbom-currency: hash drift on manifest.json fails with remediation po
   }
 });
 
+test('check-sbom-currency: refuses bom-ref entries with ".." path-traversal segments', () => {
+  // Codex P2 on PR #49: a tampered or carelessly-edited sbom.cdx.json
+  // could declare `file:../outside.txt`. The earlier implementation
+  // resolved that verbatim via path.join, which would read + hash a
+  // file OUTSIDE the checkout — silently weakening the integrity
+  // guarantee. The gate now refuses any ".." segment OR absolute path
+  // in a bom-ref. Pin both rejection paths.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-traversal-'));
+  try {
+    // Build a minimal-but-valid SBOM with one ".." entry and one
+    // absolute-path entry. The gate's other contracts (skill counts,
+    // CycloneDX format) must still be satisfied, so steal the production
+    // skeleton and inject the traversal entries.
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    sbom.components.push({
+      'bom-ref': 'file:../escape-attempt.txt',
+      type: 'file',
+      name: '../escape-attempt.txt',
+      hashes: [{ alg: 'SHA-256', content: 'a'.repeat(64) }],
+    });
+    sbom.components.push({
+      'bom-ref': 'file:/etc/passwd',
+      type: 'file',
+      name: '/etc/passwd',
+      hashes: [{ alg: 'SHA-256', content: 'b'.repeat(64) }],
+    });
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    // Symlink everything else through to the real ROOT.
+    function bring(rel) {
+      const src = path.join(ROOT, rel);
+      const dst = path.join(tmp, rel);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file'); }
+      catch { fs.cpSync(src, dst, { recursive: true }); }
+    }
+    for (const rel of ['manifest.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator', 'scripts',
+                       'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
+                       'AGENTS.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CONTEXT.md',
+                       'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md']) {
+      try { bring(rel); } catch { /* tolerated */ }
+    }
+
+    const result = checkSbomCurrency(tmp);
+    const escapeErr = result.errors.find((e) => e.includes('../escape-attempt') && e.includes('path-traversal'));
+    assert.ok(escapeErr, `expected ".." rejection error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    const absErr = result.errors.find((e) => e.includes('/etc/passwd') && e.includes('path-traversal'));
+    assert.ok(absErr, `expected absolute-path rejection error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.equal(result.ok, false, 'gate must refuse SBOM containing path-traversal bom-ref entries');
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 test('check-sbom-currency: hashes use SHA-256 (no MD5 / SHA-1 silently accepted)', () => {
   // Schema enforcement: every file: bom-ref in sbom.cdx.json must carry
   // a SHA-256 hash entry. A future SBOM generator that emits only MD5

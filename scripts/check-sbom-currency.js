@@ -127,11 +127,35 @@ function checkSbomCurrency(root) {
   // could not see it. Codex P2 flag on PR #48 surfaced one instance;
   // this gate makes it unreachable.
   let fileComponentsChecked = 0;
+  const rootResolved = path.resolve(root);
   for (const comp of components) {
     const bomRef = typeof comp["bom-ref"] === "string" ? comp["bom-ref"] : "";
     if (!bomRef.startsWith("file:")) continue;
     const relPath = bomRef.slice("file:".length);
-    const absPath = path.join(root, relPath);
+    // Codex P2 on PR #49: refuse bom-ref entries that escape the repo
+    // root. The earlier implementation trusted `relPath` verbatim, so a
+    // tampered or carelessly-edited sbom.cdx.json with `file:../outside`
+    // would read + hash a path OUTSIDE the checkout — the gate would
+    // either report "exists, hash matches" (silently weakening the
+    // integrity guarantee) or "does not exist" without ever flagging the
+    // attempted escape. Refuse early.
+    if (relPath.includes("..") || path.isAbsolute(relPath)) {
+      errors.push(
+        `SBOM file component "${relPath}" rejected: path must be repo-relative without ".." segments (path-traversal guard)`
+      );
+      continue;
+    }
+    const absPath = path.resolve(rootResolved, relPath);
+    // Defense-in-depth: even if the textual check above passed, the
+    // resolved path must still live under the root. Symlinks or future
+    // changes to the textual filter would surface here.
+    const rel = path.relative(rootResolved, absPath);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      errors.push(
+        `SBOM file component "${relPath}" resolved outside repo root (${absPath}) — refused (path-traversal guard)`
+      );
+      continue;
+    }
     if (!fs.existsSync(absPath)) {
       errors.push(
         `SBOM file component "${relPath}" recorded but file does not exist on disk`
