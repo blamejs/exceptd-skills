@@ -388,7 +388,8 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
-      "CVE-2026-45321"
+      "CVE-2026-45321",
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -730,6 +731,7 @@
       "CVE-2026-45321",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ],
     "atlas_refs": [
@@ -1140,7 +1142,8 @@
       "CVE-2026-0300",
       "CVE-2026-31431",
       "CVE-2026-42945",
-      "CVE-2026-46300"
+      "CVE-2026-46300",
+      "CVE-2026-46333"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -1319,6 +1322,7 @@
       "CVE-2026-39884",
       "CVE-2026-45321",
       "CVE-2026-46300",
+      "CVE-2026-46333",
       "MAL-2026-3083"
     ],
     "atlas_refs": [],
@@ -1708,6 +1712,7 @@
       "CVE-2026-43284",
       "CVE-2026-43500",
       "CVE-2026-46300",
+      "CVE-2026-46333",
       "CVE-2026-6973"
     ],
     "atlas_refs": [],
@@ -2325,7 +2330,8 @@
       "CVE-2024-3094",
       "CVE-2026-45321",
       "MAL-2026-3083",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -3698,7 +3704,8 @@
       "CVE-2026-0300",
       "CVE-2026-42897",
       "CVE-2026-42945",
-      "CVE-2026-46300"
+      "CVE-2026-46300",
+      "CVE-2026-46333"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -3972,7 +3979,9 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
-      "CVE-2026-46300"
+      "CVE-2026-46300",
+      "CVE-2026-46333",
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -4003,7 +4012,8 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
-      "CVE-2026-46300"
+      "CVE-2026-46300",
+      "CVE-2026-46333"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -4034,7 +4044,8 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
-      "CVE-2026-46300"
+      "CVE-2026-46300",
+      "CVE-2026-46333"
     ],
     "atlas_refs": [
       "AML.T0010"
@@ -4068,6 +4079,7 @@
     "opened_date": "2026-05-17",
     "evidence_cves": [
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ],
     "atlas_refs": [

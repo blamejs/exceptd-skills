@@ -1085,8 +1085,19 @@ function runWatchlist(rawArgs = []) {
   const { parseFrontmatter, extractFrontmatterBlock } = require('../lib/lint-skills.js');
 
   const byskill = rawArgs.includes('--by-skill');
+  const alertsMode = rawArgs.includes('--alerts');
   const manifestPath = path.join(__dirname, '..', 'manifest.json');
   const repoRoot = path.join(__dirname, '..');
+
+  // v0.13.1: --alerts re-scopes watchlist from "skills forward_watch" to
+  // "CVE-class alert patterns" — surfaces catalog entries matching
+  // high-priority shape rules (kernel-LPE-with-PoC, supply-chain-family,
+  // AI-discovered-KEV, recently-disclosed-with-active-exploitation).
+  // The two modes are mutually exclusive; --alerts short-circuits the
+  // forward-watch aggregation.
+  if (alertsMode) {
+    return runWatchlistAlerts(rawArgs);
+  }
 
   let manifest;
   try {
@@ -1198,6 +1209,170 @@ function runWatchlist(rawArgs = []) {
 
   console.log(`\nTotal unique watch items: ${itemToSkills.size}  (across ${skills.length} skills)`);
   console.log(`Run with --by-skill to invert the view.`);
+}
+
+/**
+ * v0.13.1 — runWatchlistAlerts surfaces CVE catalog entries matching
+ * high-priority pattern rules. Closes the post-mortem gap from
+ * CVE-2026-46333 (ssh-keysign-pwn) where the toolkit shipped a CVE
+ * matching the kernel-LPE-with-public-PoC shape but had no programmatic
+ * way for an operator to ask "what just landed that needs attention?".
+ *
+ * Patterns are evaluated against every catalog entry; multiple patterns
+ * may fire on the same entry (the report carries the list). The age
+ * filter — pattern.fresh_days — bounds the "recently disclosed" patterns;
+ * older entries already had attention.
+ *
+ * Output (JSON mode):
+ *   {
+ *     ok: true,
+ *     verb: "watchlist",
+ *     mode: "alerts",
+ *     generated_at: "...",
+ *     patterns_evaluated: 5,
+ *     entries_scanned: 39,
+ *     alerts: [
+ *       { cve_id, name, rwep_score, patterns: ["kernel_lpe_class", ...],
+ *         disclosed: "...", source_verified: "...", links: [...] }
+ *     ]
+ *   }
+ */
+function runWatchlistAlerts(rawArgs = []) {
+  const fs = require('fs');
+  const path = require('path');
+  const jsonOut = rawArgs.includes('--json');
+  const cvePath = path.join(__dirname, '..', 'data', 'cve-catalog.json');
+  let catalog;
+  try {
+    catalog = JSON.parse(fs.readFileSync(cvePath, 'utf8'));
+  } catch (err) {
+    console.error(`[watchlist --alerts] cannot read ${cvePath}: ${err.message}`);
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
+
+  // Pattern definitions. Each pattern is a predicate against a single
+  // catalog entry plus a label + severity. Patterns are intentionally
+  // narrow — false-positive flood would defeat the alert purpose.
+  const today = new Date();
+  function daysSince(iso) {
+    if (typeof iso !== 'string') return Infinity;
+    const t = Date.parse(iso + 'T00:00:00Z');
+    if (Number.isNaN(t)) return Infinity;
+    return Math.floor((today - t) / (24 * 60 * 60 * 1000));
+  }
+  const PATTERNS = [
+    {
+      id: 'kernel_lpe_with_poc',
+      severity: 'high',
+      description: 'Linux kernel LPE class with public PoC. The CVE-2026-46333 (ssh-keysign-pwn) / CVE-2026-46300 (Fragnesia) / CVE-2026-31431 (Copy Fail) shape.',
+      match: (e) =>
+        e && typeof e.vector === 'string' &&
+        /kernel|linux|ptrace|pidfd/i.test(`${e.name || ''} ${e.vector}`) &&
+        e.poc_available === true &&
+        (e.rwep_factors?.blast_radius || 0) >= 25,
+    },
+    {
+      id: 'supply_chain_family',
+      severity: 'high',
+      description: 'Malicious package or framework family (npm / PyPI registry-pivot). The MAL- entries + Shai-Hulud class.',
+      match: (e, id) =>
+        id.startsWith('MAL-') ||
+        (typeof e?.type === 'string' && /malicious|supply.chain|registry-pivot/i.test(e.type)),
+    },
+    {
+      id: 'ai_discovered_kev',
+      severity: 'high',
+      description: 'AI-discovered CVE that also appears on CISA KEV — the operational-reality intersection Hard Rule #7 calls out.',
+      match: (e) => e?.ai_discovered === true && e?.cisa_kev === true,
+    },
+    {
+      id: 'active_exploitation_unpatched',
+      severity: 'critical',
+      description: 'Confirmed in-the-wild exploitation AND no patch available. Defensive-posture-only window.',
+      match: (e) => e?.active_exploitation === 'confirmed' && e?.patch_available !== true,
+    },
+    {
+      id: 'recent_poc_no_kev_yet',
+      severity: 'medium',
+      description: 'CVE with public PoC verified within the last 14 days but not yet on KEV. The "exploitation expected; KEV catch-up pending" window.',
+      match: (e) =>
+        e?.poc_available === true &&
+        e?.cisa_kev !== true &&
+        daysSince(e?.source_verified) <= 14,
+      fresh_only: true,
+    },
+  ];
+
+  const alerts = [];
+  let scanned = 0;
+  for (const [id, entry] of Object.entries(catalog)) {
+    if (id === '_meta') continue;
+    if (!entry || typeof entry !== 'object') continue;
+    scanned++;
+    const matched = [];
+    for (const p of PATTERNS) {
+      try {
+        if (p.match(entry, id)) matched.push({ id: p.id, severity: p.severity });
+      } catch { /* defensive: pattern matcher must not throw on malformed entries */ }
+    }
+    if (matched.length === 0) continue;
+    alerts.push({
+      cve_id: id,
+      name: entry.name || null,
+      rwep_score: entry.rwep_score ?? null,
+      cisa_kev: entry.cisa_kev ?? null,
+      poc_available: entry.poc_available ?? null,
+      active_exploitation: entry.active_exploitation ?? null,
+      patch_available: entry.patch_available ?? null,
+      source_verified: entry.source_verified || null,
+      patterns: matched,
+      links: Array.isArray(entry.verification_sources) ? entry.verification_sources.slice(0, 3) : [],
+    });
+  }
+
+  // Sort: critical-severity matches first, then high, then medium; within
+  // each band, highest RWEP first; finally CVE-id ascending for stability.
+  const severityWeight = { critical: 0, high: 1, medium: 2, low: 3 };
+  alerts.sort((a, b) => {
+    const sa = Math.min(...a.patterns.map((p) => severityWeight[p.severity] ?? 9));
+    const sb = Math.min(...b.patterns.map((p) => severityWeight[p.severity] ?? 9));
+    if (sa !== sb) return sa - sb;
+    const ra = a.rwep_score ?? -1;
+    const rb = b.rwep_score ?? -1;
+    if (ra !== rb) return rb - ra;
+    return a.cve_id.localeCompare(b.cve_id);
+  });
+
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify({
+      ok: true,
+      verb: 'watchlist',
+      mode: 'alerts',
+      generated_at: today.toISOString(),
+      patterns_evaluated: PATTERNS.length,
+      entries_scanned: scanned,
+      alert_count: alerts.length,
+      alerts,
+    }) + '\n');
+    return;
+  }
+
+  console.log(`\nCVE-class Alerts — ${today.toISOString()}`);
+  console.log(`Entries scanned: ${scanned}  patterns evaluated: ${PATTERNS.length}  alerts: ${alerts.length}\n`);
+  if (alerts.length === 0) {
+    console.log('No alert-pattern matches in current catalog.');
+    return;
+  }
+  for (const a of alerts) {
+    const labels = a.patterns.map((p) => `[${p.severity}] ${p.id}`).join(', ');
+    console.log(`${a.cve_id}  RWEP=${a.rwep_score ?? '?'}  KEV=${a.cisa_kev ? 'Y' : 'N'}  PoC=${a.poc_available ? 'Y' : 'N'}  patch=${a.patch_available ? 'Y' : 'N'}  active=${a.active_exploitation ?? '?'}`);
+    console.log(`  ${a.name || '(no name)'}`);
+    console.log(`  patterns: ${labels}`);
+    if (a.links.length > 0) console.log(`  ${a.links[0]}`);
+    console.log('');
+  }
+  console.log('Run with --json to consume programmatically.');
 }
 
 /**

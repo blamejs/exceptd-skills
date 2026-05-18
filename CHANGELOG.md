@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.13.1 — 2026-05-17
+
+Threat-intake gap closure. Driven by the post-mortem on CVE-2026-46333 (ssh-keysign-pwn) — disclosed 2026-05-14 by Qualys, missed by the toolkit at T+0 through T+3 because the existing source set (KEV, EPSS, NVD, RFC, PINS, GHSA, OSV) sits at the END of the disclosure pipeline. Adds primary-source polling, CVE-class alert surfacing, and seeds two retroactive catalog entries for the disclosures the toolkit should have caught.
+
+### Features
+
+**`refresh --check-advisories` polls 4 primary-source feeds.** New `ADVISORIES_SOURCE` in `lib/source-advisories.js` polls Qualys TRU RSS, Red Hat RHSA CSAF index, Ubuntu USN RSS, and Zero Day Initiative published-advisories RSS. Surfaces CVE IDs disclosed at T+0 to T+1 that lag NVD enrichment by 3-14 days. Report-only by design: the source emits structured `diffs[]` with `{cve_id, sources[], advisory_urls[], disclosed_at, title}` but does NOT auto-mutate the catalog. Operators route promising CVE IDs through the existing `refresh --advisory <CVE-ID>` enrichment path. Deduplicates across feeds (a CVE cited in both Qualys and USN collapses to one diff with two source attributions). Fixture-mode (`ctx.fixtures.advisories`) + cache-mode (`<cacheDir>/advisories/<feed>.xml`) for offline test reproducibility.
+
+**`exceptd watchlist --alerts` surfaces CVE-class pattern matches.** Re-scopes `watchlist` from "skills forward_watch aggregation" to "CVE catalog pattern alerts" when `--alerts` is passed. 5 patterns ship in v0.13.1:
+- `kernel_lpe_with_poc` (high) — Linux kernel LPE class with public PoC + `blast_radius >= 25`
+- `supply_chain_family` (high) — `MAL-*` entries or `type: malicious-*`
+- `ai_discovered_kev` (high) — AI-discovered AND on CISA KEV
+- `active_exploitation_unpatched` (critical) — confirmed in-the-wild + no patch available
+- `recent_poc_no_kev_yet` (medium) — public PoC verified within 14 days, not yet KEV-listed
+
+Output sorts critical-severity first, then by RWEP descending. JSON envelope shape matches the v0.13.0 harmonization contract `{ok, verb, mode, generated_at, patterns_evaluated, entries_scanned, alert_count, alerts[]}`.
+
+**Daily scheduled threat-intake routine.** A `routine: exceptd-threat-intake` (claude.ai remote agent) runs daily at 14:00 UTC (07:00 PDT). Sequence: `npm install` → `refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new CVE IDs from the primary-source feeds → re-sign + rebuild-indexes if catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with full diff in the report. Closes the cadence-gap that left the toolkit dependent on operator-triggered intake. Operator-managed at https://claude.ai/code/routines.
+
+### Bugs
+
+**Two retroactive catalog seeds for the post-mortem disclosures.**
+
+`CVE-2026-46333` (ssh-keysign-pwn) — Linux kernel ptrace exit-race. `exit_mm()` runs before `exit_files()` during privileged-process shutdown; the pre-fix `__ptrace_may_access()` skipped its `get_dumpable()` check when `task->mm == NULL`, leaving a microsecond window where an unprivileged attacker can race `ssh-keysign` or `chage` exit + use `pidfd_getfd(2)` to duplicate root-owned file descriptors and read `/etc/ssh/ssh_host_*_key` or `/etc/shadow`. Two public PoCs from `_SiCk` (2026-05-14). Upstream fix commit `31e62c2ebbfd` merged 2026-05-14; kernel point releases 2026-05-15. RWEP 30 (no KEV yet; +20 PoC, +25 blast_radius, -15 patch; reboot-required). 6-year dormant logic bug — originally surfaced in a 2020 Jann Horn patch proposal that was never merged. Yama `ptrace_scope` is NOT a compensating control (bypass is at the kernel access-check layer, not the LSM layer). Mitigation matrix: patch + reboot (preferred) | KernelCare livepatch when released | `sysctl kernel.user_ptrace=0` | SUID removal from `ssh-keysign` + `chage`. Matching `zeroday-lessons.json` entry adds two new control requirements: `NEW-CTRL-048` (kernel-exit-race-CVE-class audit monitoring) + `NEW-CTRL-049` (SUID minimization for kernel-LPE carrier binaries).
+
+`MAL-2026-SHAI-HULUD-OSS` — TeamPCP open-sourced the Shai-Hulud worm framework to GitHub on 2026-05-12 under MIT license, paired with a BreachForums $1,000 USD (Monero) bounty contest for downstream supply-chain impact. The September 2025 / November 2025 / May 2026 "Mini Shai-Hulud" waves are the in-the-wild adoption signal. Modular TypeScript / Bun toolkit for credential harvesting (AWS / GCP / Azure / GitHub / AI-assistant configs) + supply-chain poisoning + encrypted exfil; targets CI/CD pipelines and developer workstations. Self-replicates via maintainer-token-pivot: stolen npm token authenticates as compromised maintainer, enumerates other packages owned, publishes malicious versions. **Explicitly targets AI-coding-assistant config files** — reads `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, `~/.claude/settings.json`, and installs Claude Code startup hooks for persistence. IoC pattern: GitHub repos named "A Gift From TeamPCP", commit timestamps falsified to 2099-01-01, accounts `agwagwagwa` / `headdirt` / `tmechen`. RWEP 70 (active exploitation confirmed via Mini Shai-Hulud wave; copycat modifications observed within hours of release; AI-assist factor for the framework itself). Matching `zeroday-lessons.json` entry adds three new control requirements: `NEW-CTRL-050` (AI-assistant config-file permission lockdown to 0o600) + `NEW-CTRL-051` (npm publish token workstation isolation) + `NEW-CTRL-052` (GitHub repo-pattern monitoring for exfil channels). `MAL-2026-TANSTACK-MINI` cross-referenced as a Mini-Shai-Hulud-wave incident predating the public framework release by ~24h.
+
+### Internal
+
+- 24 new tests in `tests/source-advisories.test.js` (18 tests covering parsers + the SOURCE contract) + `tests/watchlist-alerts.test.js` (6 tests covering envelope shape, pattern coverage, sort order, anchor surfaces).
+- The schedule-agent setup is operational — no code change to ship; documented in this entry for operator awareness.
+- Phase A of the post-mortem fix landed in this release; primary-source polling and alert surfacing close the "T+0-to-T+3 disclosure → catalog" gap from the 3-source-set side. The remaining cadence-gap (operator-triggered intake) is closed by the scheduled remote agent.
+
 ## 0.13.0 — 2026-05-17
 
 Minor release. Breaking-change bundle for the v0.10.x legacy-verb removal that has been deprecation-bannered since v0.11.0; envelope harmonization across every JSON-emitting verb; 4 new playbooks expanding the canonical set to 20; engine hardening (factor-shape validation, cache invalidation, fsync-on-rename, deterministic SBOM); schema reverse fields on ATLAS, ATT&CK, and the playbook chain.
