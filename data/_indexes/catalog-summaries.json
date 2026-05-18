@@ -163,7 +163,7 @@
       "path": "data/framework-control-gaps.json",
       "purpose": "Per-control framework gap declarations: SI-2, A.8.8, PCI 6.3.3, etc. Each entry names the control, the lag, the evidence CVE, and remediation guidance.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-15",
+      "last_updated": "2026-05-18",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -172,7 +172,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 142,
+      "entry_count": 184,
       "sample_keys": [
         "ALL-AI-PIPELINE-INTEGRITY",
         "ALL-MCP-TOOL-TRUST",

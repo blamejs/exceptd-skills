@@ -5557,9 +5557,16 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       { dir: '.continue', display: '~/.continue' },
     ];
     // Files within those dirs that warrant the strict-mode check.
+    // v0.13.7: prior `/\.mcp_config\.json$/` regex required a literal `.`
+    // before `mcp_config.json`, so the real-world Windsurf install path
+    // (`~/.codeium/windsurf/mcp_config.json` — no leading dot) was
+    // silently missed by the audit. `^mcp_config\.json$` now matches the
+    // bare filename, and the trailing `.mcp_config.json` form is kept
+    // for vendor variants that prefix with a tag (e.g. `default.mcp_config.json`).
     const SENSITIVE_PATTERNS = [
       /^settings\.json$/,
       /^mcp\.json$/,
+      /^mcp_config\.json$/,
       /\.mcp_config\.json$/,
       /^api_key/,
       /\.token$/,

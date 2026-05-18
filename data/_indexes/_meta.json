@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-18T07:02:32.618Z",
+  "generated_at": "2026-05-18T14:18:03.242Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "fac154a4d63a13c1289d3498abab8d28433c30b79393e63f49c6a2ce21f7922e",
+    "manifest.json": "dc4472e1476028be9f69537ae5b19998b32eeaa6951bacf570898ed4abdef2d1",
     "data/atlas-ttps.json": "c2aee9c70ec24cf48f1ea4daf170aa6e7b93292888239c46a8ec9e522ee32119",
     "data/attack-techniques.json": "29cd5690040c7153dbf293b7e3a99b72fc897b0495478e369f7ce7004b8d64f4",
     "data/cve-catalog.json": "b3731361d298483648264215fd8dbfca36d0f4e2ead4aebf7c49718e12038e1f",
@@ -12,7 +12,7 @@
     "data/d3fend-catalog.json": "a1fc2827ceb344669e148d55197dbf1b0e5b20bcc618e90517639c17d67ee82d",
     "data/dlp-controls.json": "d2406c482dddd30e49203879999dc4b3a7fd4d0494d6a61d86b91ee76415df19",
     "data/exploit-availability.json": "ec2656f0d9a893610e27b43eb6035fe9b18e057c9f6dfaac7e7d4959bbcbb795",
-    "data/framework-control-gaps.json": "d49c75de55e6e1dabec46e6e975619489a2093b0be53c2a0b654e5c1826fbe46",
+    "data/framework-control-gaps.json": "a8bb654f6ed2fba5290dc6acac73ee423c1afcb2dca27bce3303adc3ee40f791",
     "data/global-frameworks.json": "9ba563a85f7f8d6c3c957de64945e20925a89d0ed6ea6fc561cf093811acf558",
     "data/rfc-references.json": "e253a548c8a829d178d5aea601e268724b85c936ccbfa51c2e5d80c5f8efe2b0",
     "data/zeroday-lessons.json": "bb3fec080f649a5968f8d0c6d69ca4d32fb120de0f7d07b1f5058184d4d3ff3a",
