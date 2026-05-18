@@ -5691,12 +5691,16 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   // Walk every check and split: errors (severity error/missing/fail) vs warnings
   // (severity warn). all_green is true ONLY when zero errors AND zero warnings.
-  const warnList = [];
-  const errorList = [];
-  for (const [k, v] of Object.entries(checks)) {
-    if (v.ok === false) errorList.push(k);
-    else if (v.severity === "warn") warnList.push(k);
-  }
+  // v0.13.11: bucketing logic extracted to lib/doctor-bucketing.js so the
+  // severity-first rule is testable in isolation. A check that sets
+  // `ok: false` but `severity: "warn"` (e.g. the signing-status check when
+  // .keys/private.pem is absent on a non-contributor install — a nudge, not
+  // a fail) must route to warning_checks, not failed_checks. Pre-v0.13.11,
+  // the prior order fired the `ok === false` branch first and a fresh
+  // global `npm install -g` reported `failed_checks: ["signing"]` with
+  // `warnings_count: 0`, contradicting the [!! warn] text-mode icon.
+  const { bucketChecks } = require(path.join(PKG_ROOT, "lib", "doctor-bucketing.js"));
+  const { warnList, errorList } = bucketChecks(checks);
   const allGreen = errorList.length === 0 && warnList.length === 0;
   const out = {
     verb: "doctor",

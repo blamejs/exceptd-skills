@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.11 — 2026-05-18
+
+`exceptd doctor` summary now agrees with itself.
+
+### Bugs
+
+**`doctor` no longer reports a missing private key as a failed check.** A fresh `npm install -g @blamejs/exceptd-skills` and `exceptd doctor` printed `[!! warn] attestation signing: private key MISSING` in human mode — correctly nudging the operator that signing is optional — but the JSON summary reported `all_green: false`, `issues_count: 1`, `failed_checks: ["signing"]`, `warnings_count: 0`. The bucketing branch fired on `ok === false` before noticing `severity === "warn"`, so a warning routed to the error list. Severity-first bucketing extracted to `lib/doctor-bucketing.js` and a seven-case test suite pins the rule. A missing private key on a non-contributor install now routes to `warning_checks`, the human icon and the JSON summary agree, and `issues_count` only counts genuine release-blocking checks.
+
 ## 0.13.10 — 2026-05-18
 
 Documentation currency — `README.md` + `AGENTS.md` now reflect the 23-playbook catalog instead of the pre-v0.13.5 20-playbook claim, and a regression pin prevents the drift class from recurring.
