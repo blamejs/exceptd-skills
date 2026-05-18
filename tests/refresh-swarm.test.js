@@ -100,10 +100,16 @@ test('refresh-external --from-fixture populates ctx.fixtures.advisories (no live
   // count. Pre-fix, the unfixturized run would hit live network (or
   // fail it on a sandboxed runner) and either count <8/8 reachable or
   // record errors. Post-fix, all 8 feeds resolve to frozen content.
+  // v0.13.14: count moved from 8 to 12 with the addition of
+  // microsoft-security-blog / sysdig-blog / trail-of-bits-blog /
+  // embrace-the-red. Assert by-N-equals-feed-count rather than a
+  // literal so future intake expansions don't require a test edit.
+  const SOURCE = require(path.join(ROOT, 'lib', 'source-advisories.js'));
+  const expectedFeedCount = SOURCE.FEEDS.length;
   assert.match(
     advisories.summary || '',
-    /8\/8 feeds reachable/,
-    `fixture-mode must report 8/8 feeds reachable (proves frozen content was used, not live fetch); got: ${advisories.summary}`,
+    new RegExp(expectedFeedCount + '/' + expectedFeedCount + ' feeds reachable'),
+    `fixture-mode must report ${expectedFeedCount}/${expectedFeedCount} feeds reachable (proves frozen content was used, not live fetch); got: ${advisories.summary}`,
   );
   assert.equal(advisories.errors, 0,
     'fixture-mode advisories must produce zero feed errors');

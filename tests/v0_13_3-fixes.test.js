@@ -143,12 +143,17 @@ test('F: watchlist --org-scan refuses without --org argument', () => {
 
 // ---------- G. 4 more primary-source pollers ----------
 
-test('G: ADVISORIES_SOURCE FEEDS grew to 8 (v0.13.1 4 + v0.13.3 4)', () => {
+test('G: ADVISORIES_SOURCE FEEDS includes all 8 v0.13.1+v0.13.3 entries (count >= 8)', () => {
+  // v0.13.14 expanded FEEDS to 12 (added 4 vendor security blogs to close
+  // the DirtyDecrypt-class intake gap). The original 8 must still be
+  // present; the exact-count assertion lives in
+  // tests/source-advisories.test.js where it tracks the live total.
   const { FEEDS } = require(path.join(ROOT, 'lib', 'source-advisories'));
-  assert.equal(FEEDS.length, 8);
-  const names = FEEDS.map((f) => f.name).sort();
-  assert.deepEqual(names,
-    ['cisa-current', 'jfrog', 'kernel-org', 'oss-security', 'qualys', 'rhsa', 'usn', 'zdi']);
+  assert.ok(FEEDS.length >= 8, `expected >= 8 feeds; got ${FEEDS.length}`);
+  const names = new Set(FEEDS.map((f) => f.name));
+  for (const required of ['cisa-current', 'jfrog', 'kernel-org', 'oss-security', 'qualys', 'rhsa', 'usn', 'zdi']) {
+    assert.ok(names.has(required), `original v0.13.3 feed "${required}" must still be present`);
+  }
 });
 
 test('G: every v0.13.3 feed URL uses HTTPS and matches a feed kind', () => {

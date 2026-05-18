@@ -244,6 +244,7 @@ Recently added (use the IDs in skill prose and operator briefings; full text in 
 | `NEW-CTRL-069` | ECOSYSTEM-PACKAGE-TEMPORAL-TRUST-DRIFT-DETECTION | `MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER` | NIST-800-218 SSDF PW.4, EU CRA Annex I §1(2)(b), SLSA Build L3 |
 | `NEW-CTRL-070` | TYPOSQUAT-INSTALL-TIME-NAME-CONFUSION-GUARD | `MAL-2025-PYPI-COLORAMA-SOLANA-STEALER` | NIST-800-218 SSDF PW.4, NIST-800-53 SI-7, EU CRA Annex I §1(2)(c) |
 | `NEW-CTRL-071` | AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE | `MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP` + `CVE-2025-6965` + `CVE-2025-0133` + ZeroPath quartet | NIST AI RMF MEASURE 2.7, ISO/IEC 42001 §6.1.4 (records of AI use), EU AI Act Art.12 (record-keeping) |
+| `NEW-CTRL-072` | PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE | `CVE-2026-31635` (DirtyDecrypt) | NIST-800-53 SI-5 (security alerts / advisories), ISO-27001-2022 A.5.7 (threat intelligence), CIS Controls v8 7.1 |
 
 When you cite a `NEW-CTRL-*` ID in a skill body, the lint reads the upstream `zeroday-lessons.json` entry as the authoritative source for the requirement text — do not paraphrase the description in the skill body, link to the ID instead.
 
