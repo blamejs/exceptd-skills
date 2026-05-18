@@ -70,7 +70,7 @@ test('check-sbom-currency: hash drift on manifest.json fails with remediation po
 
     const result = checkSbomCurrency(tmp);
     assert.equal(result.ok, false, 'gate must refuse staged drift');
-    const driftErr = result.errors.find((e) => e.includes('manifest.json') && e.includes('hash drift'));
+    const driftErr = result.errors.find((e) => e.includes('manifest.json') && (e.includes('SHA-256 drift') || e.includes('hash drift')));
     assert.ok(driftErr, `expected a manifest.json hash-drift error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
     // The error must point operators to the canonical remediation order
     // using the project's operator-safe phrasing (no bare `node lib/…`).
@@ -165,5 +165,110 @@ test('check-sbom-currency: hashes use SHA-256 (no MD5 / SHA-1 silently accepted)
     const live = crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'manifest.json'))).digest('hex');
     assert.equal(recorded, live,
       'manifest.json recorded SHA-256 must equal live file hash (predeploy gate would otherwise have caught this)');
+  }
+});
+
+test('check-sbom-currency: every file component carries BOTH SHA-256 and SHA3-512 (PQ-aware dual-hash)', () => {
+  // v0.13.12: SBOM emits SHA-256 (universal-tool contract) AND SHA3-512
+  // (PQ-aware hedge, matches the lib/verify.js key-fingerprint pattern).
+  // Both must be present on every file: component; a missing SHA3-512
+  // on any entry signals an unintended downgrade from the dual-hash
+  // baseline.
+  const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+  const fileComps = (sbom.components || []).filter(
+    (c) => typeof c['bom-ref'] === 'string' && c['bom-ref'].startsWith('file:'),
+  );
+  const missingSha3 = [];
+  for (const c of fileComps) {
+    const sha3 = (c.hashes || []).find((h) => h && h.alg === 'SHA3-512');
+    if (!sha3) missingSha3.push(c['bom-ref']);
+    else assert.match(sha3.content, /^[0-9a-f]{128}$/,
+      `${c['bom-ref']} SHA3-512 must be 64 lowercase hex chars`);
+  }
+  assert.deepEqual(missingSha3, [],
+    `every file: component must carry a SHA3-512 hash entry; missing on: ${missingSha3.slice(0, 5).join(', ')}`);
+
+  // Sanity: live-bytes round-trip for the manifest.json SHA3-512.
+  const manifestComp = fileComps.find((c) => c['bom-ref'] === 'file:manifest.json');
+  if (manifestComp) {
+    const recordedSha3 = (manifestComp.hashes || []).find((h) => h.alg === 'SHA3-512').content;
+    const liveSha3 = crypto.createHash('sha3-512').update(fs.readFileSync(path.join(ROOT, 'manifest.json'))).digest('hex');
+    assert.equal(recordedSha3, liveSha3,
+      'manifest.json recorded SHA3-512 must equal live file hash');
+  }
+});
+
+test('check-sbom-currency: SHA3-512 absence (downgrade attack) fails the gate', () => {
+  // Codex P1 on PR #52: the dual-hash contract requires SHA3-512 to be
+  // present on every file: component. An attacker that strips the
+  // SHA3-512 column from sbom.cdx.json would have silently passed the
+  // earlier optional-check implementation. This pin stages an SBOM with
+  // SHA3-512 entries removed and confirms the gate refuses with the
+  // canonical "dual-hash contract" error.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-sha3-absence-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    for (const c of sbom.components || []) {
+      if (typeof c['bom-ref'] === 'string' && c['bom-ref'].startsWith('file:')) {
+        c.hashes = (c.hashes || []).filter((h) => h.alg !== 'SHA3-512');
+      }
+    }
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    function bring(rel) {
+      const src = path.join(ROOT, rel);
+      const dst = path.join(tmp, rel);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file'); }
+      catch { fs.cpSync(src, dst, { recursive: true }); }
+    }
+    for (const rel of ['manifest.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator', 'scripts',
+                       'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
+                       'AGENTS.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CONTEXT.md',
+                       'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md']) {
+      try { bring(rel); } catch { /* tolerated */ }
+    }
+    const result = checkSbomCurrency(tmp);
+    const absenceErr = result.errors.find((e) => e.includes('manifest.json') && e.includes('lacks a SHA3-512'));
+    assert.ok(absenceErr, `expected SHA3-512-absence rejection error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.match(absenceErr, /dual-hash contract/,
+      'absence error must name the dual-hash contract');
+    assert.equal(result.ok, false);
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
+test('check-sbom-currency: SHA3-512 drift fails the gate (not just SHA-256)', () => {
+  // Stage an SBOM where SHA-256 is correct but SHA3-512 has been
+  // deliberately changed. The gate must still refuse — a partial
+  // downgrade attack (SHA-256 valid + SHA3-512 stale) is exactly the
+  // shape this dual-hash design defends against.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-sha3-drift-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    const manifestComp = sbom.components.find((c) => c['bom-ref'] === 'file:manifest.json');
+    const sha3Entry = manifestComp.hashes.find((h) => h.alg === 'SHA3-512');
+    // Flip one nibble of the SHA3-512 entry so it can't match the live hash.
+    sha3Entry.content = (sha3Entry.content[0] === '0' ? 'f' : '0') + sha3Entry.content.slice(1);
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    function bring(rel) {
+      const src = path.join(ROOT, rel);
+      const dst = path.join(tmp, rel);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file'); }
+      catch { fs.cpSync(src, dst, { recursive: true }); }
+    }
+    for (const rel of ['manifest.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator', 'scripts',
+                       'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
+                       'AGENTS.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CONTEXT.md',
+                       'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md']) {
+      try { bring(rel); } catch { /* tolerated */ }
+    }
+    const result = checkSbomCurrency(tmp);
+    const sha3Err = result.errors.find((e) => e.includes('manifest.json') && e.includes('SHA3-512 drift'));
+    assert.ok(sha3Err, `expected SHA3-512 drift error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.equal(result.ok, false);
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
   }
 });

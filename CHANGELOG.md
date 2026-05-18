@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.12 — 2026-05-18
+
+SBOM file-component integrity now dual-hashed (SHA-256 + SHA3-512).
+
+### Features
+
+**Every `file:` component in `sbom.cdx.json` now carries both SHA-256 and SHA3-512 hash entries.** The v0.13.9 per-file integrity gate emitted SHA-256 only, matching the CycloneDX 1.6 default. The dual-hash baseline mirrors the project's existing key-fingerprint posture (`lib/verify.js` already emits both for the Ed25519 public key on the same SHA-2 + SHA-3 reasoning): SHA-256 for universal-tool compatibility (Anchore, Trivy, Dependency-Track, GitHub Dependency Graph), SHA3-512 for a different mathematical foundation that hedges against future SHA-2 weaknesses and travels well with the project's post-quantum posture (ML-KEM and ML-DSA both hash internally with SHA-3). CycloneDX 1.6 supports both algorithms natively — downstream consumers that parse only SHA-256 are unaffected; consumers that verify SHA3-512 get a second integrity guarantee.
+
+`check-sbom-currency.js` verifies both algorithms when present. A SHA3-512 entry whose content drifts from the live bytes fires the same drift-class error as a SHA-256 drift (`SHA3-512 drift: recorded … live …`). Two new regression tests pin the dual-hash contract: (1) every file component must carry both SHA-256 and SHA3-512 entries (catches a downgrade where the SHA3-512 column gets dropped); (2) a stage-and-mutate test confirms SHA3-512 drift alone (with SHA-256 intact) refuses the gate (catches partial-downgrade tampering).
+
+The check-sbom-currency gate now reports `… N file-hash entries verified` where N counts file components, plus the dual-hash coverage is implicit in the gate's per-algorithm error surface.
+
 ## 0.13.11 — 2026-05-18
 
 `exceptd doctor` summary now agrees with itself.
