@@ -235,6 +235,8 @@ For each jurisdiction the operator is exposed to (US, EU, UK, AU, JP, IL, SG, IN
 
 ## Output Format
 
+The skill produces a Healthcare Sector Security Posture Assessment covering HIPAA Security Rule + 2025 NPRM coverage, HITRUST control maturity, NIS2 essential-entity obligations (where applicable), FDA pre/post-market cybersecurity for medical devices, and ambient-AI documentation-pilot risk. The shape below is consumed downstream by `incident-response-playbook` (for HIPAA Breach Notification timing), by `compliance-theater` (HITRUST-vs-deployed-control comparison), and by `global-grc` (for cross-jurisdictional healthcare rollup). Preserve the per-control HIPAA / HITRUST rows verbatim — they are the auditable evidence for breach-notification timing.
+
 Produce this structure verbatim:
 
 ```

@@ -431,6 +431,8 @@ For each required update: specific skill file, specific section, specific change
 
 ## Output Format
 
+The skill produces a Skill Update Loop Report covering per-skill `last_threat_review` currency, ATLAS / ATT&CK / D3FEND / CWE catalog version drift, CISA KEV additions since the last review, and the priority queue of skills requiring body updates before the next release. The shape below is consumed downstream by the release-cadence maintainer workflow, by `data/_meta` tracking, and by the predeploy `watchlist` gate. Preserve the per-skill drift columns verbatim — they are the auditable trigger for each forced body refresh.
+
 ```
 ## Skill Update Loop Report
 

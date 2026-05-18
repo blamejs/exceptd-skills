@@ -217,6 +217,8 @@ Internally discovered fuzz findings that map to a CWE class already in `data/cve
 
 ## Output Format
 
+The skill produces a Fuzz Posture Assessment covering fuzz-eligible interface inventory, harness coverage, crash inventory, and quarter-over-quarter CWE-class trend. The shape below is consumed downstream by `zeroday-gap-learn` (which appends internally found crashes as lesson entries), by `compliance-theater` (which compares the harness-coverage gap against SAMM / BSIMM / SDL compliance claims), and by the SBOM evidence chain (which inherits the per-component fuzz-instrumentation status). Preserve the per-interface CI-gated field verbatim — it distinguishes deployed fuzzing from one-shot security-team exercises.
+
 ```
 ## Fuzz Posture Assessment
 
@@ -262,8 +264,8 @@ Internally discovered fuzz findings that map to a CWE class already in `data/cve
 ### Framework Gap Declaration
 [Per-framework statement: which controls the org claims cover this domain, and where the absence of normative fuzz requirements creates a gap. Mandatory rows: NIST 800-218, NIST 800-115, NIST 800-53 SA-11, OWASP ASVS V14, PCI DSS 4.0 6.2, ISO 27001:2022 A.8.29, EU NIS2 Art. 21, EU CRA Annex I, UK CAF B4, ASD Essential 8 / ISM 1235, EU AI Act Art. 15 (if LLM in scope).]
 
-### Compliance Theater Check Result
-[See Compliance Theater Check section — answer the four questions, record the gap]
+### Theater Check Result
+[See the Compliance Theater Check section — answer the four questions, record the gap]
 
 ### Defensive Countermeasure Mapping
 | Fuzz Finding Class | D3FEND Countermeasure | Implementation |

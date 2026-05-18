@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-05-18"
 ---
 
 # Compliance Theater Detection
@@ -34,7 +34,7 @@ This skill identifies the specific, testable conditions where audit-passing cont
 
 ## Frontmatter Scope
 
-The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a meta-analysis that correlates findings *across* every other playbook and skill in the project — it has no native TTP attachment because its input is the existing TTP-to-control evidence base produced elsewhere. The `framework_gaps` array is populated because each theater pattern below points at specific named controls (FedRAMP-Rev5-Moderate, CMMC-2.0-Level-2, and the two ALL- gaps) whose mid-2026 inadequacy is the skill's primary subject. Defensive Countermeasure Mapping is not present as a body section because this skill produces a *coverage-gap* output, not a defensive-control prescription — the D3FEND mapping is the responsibility of the downstream skills the gap-findings route into.
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a meta-analysis that correlates findings *across* every other playbook and skill in the project — it has no native TTP attachment because its input is the existing TTP-to-control evidence base produced elsewhere. The `framework_gaps` array is populated because each theater pattern below points at specific named controls (FedRAMP-Rev5-Moderate, CMMC-2.0-Level-2, and the two ALL- gaps) whose mid-2026 inadequacy is the skill's primary subject. The Defensive Countermeasure Mapping below is a *routing table* rather than a defensive-control prescription — for each theater pattern, it names which downstream skill owns the canonical D3FEND mapping. This skill produces theater findings; the cited downstream skill produces the technique-level remediation.
 
 ---
 
@@ -325,6 +325,8 @@ For each relevant theater pattern:
 
 ## Output Format
 
+The skill produces a structured Compliance Theater Assessment that scores each of the seven theater patterns and surfaces the auditor-facing remediation language for any flagged pattern. The shape below is consumed downstream by `policy-exception-gen` (which converts theater flags into defensible exceptions with concrete compensating controls), by `framework-gap-analysis` (which escalates any newly discovered theater pattern into a Framework Lag Declaration), and by `global-grc` (which rolls up theater findings across EU/UK/AU/ISO jurisdictions per Hard Rule #5). Auditor-facing remediation language is the load-bearing field — preserve the wording so corrective-action plans can copy it verbatim.
+
 ```
 ## Compliance Theater Assessment
 
@@ -380,3 +382,27 @@ Applied at the level of the seven theater patterns:
 | 7 Security Awareness (AI phishing) | AI-generated content proportion in last 3 phishing simulations + phishing-resistant MFA deployment | Zero AI-generated simulation content or SMS/TOTP-only MFA |
 
 The output is consumed by policy-exception-gen (to convert theater flags into defensible exceptions with real compensating controls), framework-gap-analysis (to escalate any newly discovered theater pattern into a Framework Lag Declaration), and global-grc (to roll up theater findings across EU/UK/AU/ISO jurisdictions per Hard Rule #5).
+
+---
+
+## Defensive Countermeasure Mapping
+
+This skill produces theater findings, not control prescriptions. The mapping below routes each of the seven theater patterns to the D3FEND technique that closes the gap, and to the downstream skill that owns the canonical implementation guidance for that technique. Operators converting a theater flag into a remediation plan should consume the cited downstream skill rather than reading the D3FEND ID in isolation — the downstream skill carries the AI-pipeline applicability notes, least-privilege scoping, and zero-trust deployment posture for each technique.
+
+| Theater pattern | Offensive TTP class | D3FEND ID | Defensive technique | Owning downstream skill |
+|---|---|---|---|---|
+| 1 Patch Management (CISA KEV SLA breach) | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
+| 2 Network Segmentation (IPsec compromised subsystem) | T1190 (Exploit Public-Facing Application) | `D3-NI` | Network Isolation (non-IPsec data path) | `framework-gap-analysis` (SC-8 / SC-28 lag) |
+| 3 Access Control (AI agent prompt injection) | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
+| 4 Incident Response (AI-specific playbook absence) | AML.T0096 (LLM Integration Abuse — C2), AML.T0051 | `D3-NTA` + `D3-IOPR` | Network Traffic Analysis + Input/Output Profiling | `ai-c2-detection` + `incident-response-playbook` |
+| 5 Change Management (Model version drift) | AML.T0018 (Backdoor ML Model), AML.T0020 (Poison Training Data) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
+| 6 Vendor Management (AI APIs + MCP servers without DPA) | AML.T0010 (ML Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` + `supply-chain-integrity` |
+| 7 Security Awareness (AI-generated phishing absent from simulations) | AML.T0016 (Develop Capabilities — payload generation), T1566 (Phishing) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling (gateway) | `email-security-anti-phishing` + `identity-assurance` |
+
+**Defense-in-depth posture:** every theater finding produced by this skill must cite the downstream skill that owns the remediation. A theater finding with no routing target is incomplete — the operator receives a gap with no closure path. Where a theater pattern names multiple D3FEND techniques, the downstream skill is the authority on which combinations satisfy defence-in-depth for the operator's environment.
+
+**Least-privilege scope:** the downstream-skill citation is the boundary. This skill does not re-scope D3FEND techniques per principal class — that scoping is owned by the cited downstream skill's own Defensive Countermeasure Mapping section, which is authoritative for principal-class breakdowns (human developer ≠ agent identity ≠ MCP server ≠ model-serving process).
+
+**Zero-trust posture:** a theater flag closes only when the downstream skill's recommended D3FEND technique is deployed, monitored, and tested against the cited offensive TTP — not when a policy document is updated. The Compliance Theater Assessment output (per the Output Format section) must record both the theater finding and the downstream-skill remediation target; auditors converting the finding into a corrective action plan use the downstream skill's verification tests, not this skill's detection tests.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** AI-pipeline degradations for each technique (serverless inference endpoints, ephemeral RAG indices) are documented in the cited downstream skill, not duplicated here. This skill's theater-finding format is unchanged across AI and non-AI pipelines — the AI specificity lives in the routing target.

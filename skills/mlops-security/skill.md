@@ -227,6 +227,8 @@ Every artifact is untrusted until cryptographically verified.
 
 ## Output Format
 
+The skill produces an MLOps Pipeline Security Assessment covering training-pipeline integrity, model-registry trust posture, deployment-time signing / attestation, drift-detection coverage, and post-deployment behavioral-regression test cadence across MLflow / Kubeflow / Vertex AI / SageMaker / Azure ML / Hugging Face / DIY stacks. The shape below is consumed downstream by `supply-chain-integrity` (for model-artifact provenance), by `ai-attack-surface` (for the model-serving inventory), and by `compliance-theater` (which compares the deployed model-governance against ISO 42001 / NIST AI RMF claims). Preserve the per-model deployment-attestation rows verbatim — they are the auditable evidence chain for model-substitution detection.
+
 ```
 ## MLOps Pipeline Security Assessment
 

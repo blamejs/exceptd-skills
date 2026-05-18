@@ -221,6 +221,8 @@ Re-run cadence: per Hard Rule AGENTS.md #12, when ATLAS, EU AI Act implementing 
 
 ## Output Format
 
+The skill produces a structured AI Risk Management Programme assessment scoring the org against ISO/IEC 42001:2023, ISO/IEC 23894:2023, NIST AI RMF 1.0, EU AI Act (Regulation 2024/1689) high-risk-system obligations, and the jurisdiction-specific AI frameworks tracked in `data/global-frameworks.json`. The shape below is consumed downstream by `compliance-theater` (which compares the AI-RM policy against deployed controls), by `ai-attack-surface` (which inherits the AI-system inventory), and by `global-grc` (for cross-jurisdictional AI rollup). Preserve the per-standard control-coverage rows verbatim — they are the auditable derivation of the programme score.
+
 ```
 ## AI Risk Management Programme — <organisation / scope>
 **Assessment Date:** YYYY-MM-DD

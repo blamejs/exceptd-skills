@@ -243,6 +243,8 @@ Apply the three concrete tests in the Compliance Theater Check section. Any fail
 
 ## Output Format
 
+The skill produces a DLP Gap Analysis covering per-channel coverage (email, web, endpoint, cloud-storage, LLM-prompt, RAG-retrieval), policy enforcement evidence, and the prioritized roadmap to close LLM/RAG exfiltration channels that traditional DLP misses. The shape below is consumed downstream by `ai-attack-surface` (which integrates the LLM-prompt and RAG-retrieval gaps), by `email-security-anti-phishing` (which inherits the email-egress channel findings), and by `compliance-theater` (which compares the deployed DLP channels against the org's claimed data-protection compliance). Preserve the per-channel coverage rows verbatim — they are the auditable map of where DLP enforcement actually fires.
+
 ```
 ## DLP Gap Analysis
 

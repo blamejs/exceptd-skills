@@ -302,6 +302,8 @@ Flag: "Dirty Frag (CVE-2026-43284) exploits the IPsec implementation. Network co
 
 ## Output Format
 
+The triage produces a structured Kernel LPE Exposure Assessment per host or fleet snapshot. The shape below is consumed downstream by `exploit-scoring` (which converts the per-CVE exposure into RWEP bands), by `incident-response-playbook` (which uses the affected-host count to scope IR), and by `compliance-theater` (which compares the deployed-mitigation field against the org's claimed SI-2 / A.8.8 patch SLA). Operators surfacing the output to auditors should preserve the CISA KEV due-date field verbatim — federal due dates are the authoritative regulatory clock, not internal SLAs.
+
 Produce this structure:
 
 ```

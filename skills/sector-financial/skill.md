@@ -270,6 +270,8 @@ For NY-regulated entities:
 
 ## Output Format
 
+The skill produces a Financial Sector Cybersecurity Posture Assessment covering EU DORA Art. 6-15 + RTS coverage, UK FCA / PRA SS2/21, US NYDFS 23 NYCRR 500 (Nov 2025 amended), AU APRA CPS 234 + CPG 235, SG MAS TRM, HK HKMA SA-2 / TM-G-1, JP FISC, BR BCB, and the BEC / wire-fraud exposure. The shape below is consumed downstream by `incident-response-playbook` (for the DORA 4h initial-notification clock), by `email-security-anti-phishing` (for BEC exposure), and by `global-grc` (for cross-jurisdictional financial rollup). Preserve the per-regulator obligation rows verbatim — they are the auditable evidence for incident-classification timing.
+
 Produce this structure verbatim:
 
 ```

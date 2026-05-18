@@ -251,6 +251,8 @@ Produce the Output Format below. Keep it to one page. The point of the researche
 
 ## Output Format
 
+The skill produces a Researcher Triage Report that converts a free-form research query (CVE ID, threat-actor name, framework reference, RFC number, vendor advisory) into a structured triage: canonical identifier, threat-currency assessment, the skill(s) that own follow-on analysis, and the suggested next operator action. The shape below is consumed downstream by `exceptd dispatch` (which routes to matching skills) and by the operator's investigation queue. Preserve the canonical-reference field verbatim — it is the load-bearing field for downstream skill chaining.
+
 ```
 # Researcher Triage Report — <input>
 

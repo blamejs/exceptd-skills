@@ -185,6 +185,8 @@ The procedure threads three foundational design principles end-to-end. They are 
 
 ## Output Format
 
+The skill produces a Web Application Security Assessment covering OWASP ASVS-mapped per-control coverage, OWASP Top 10 + API Top 10 findings, AI/LLM Top 10 exposure for any LLM-integrated routes, dependency-risk inventory, and the prioritized remediation roadmap. The shape below is consumed downstream by `api-security` (for service-to-service routes), by `ai-attack-surface` (for any LLM-integrated component), and by `compliance-theater` (which compares the ASVS-claimed level against the deployed-control evidence). Preserve the per-control coverage rows verbatim — they are the auditable ASVS-level derivation.
+
 ```
 ## Web Application Security Assessment
 

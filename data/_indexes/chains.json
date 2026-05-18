@@ -4359,38 +4359,6 @@
       "rfc_refs": []
     }
   },
-  "MAL-2026-ANTHROPIC-MCP-STDIO": {
-    "name": "Anthropic SDK MCP STDIO command-injection (embargoed)",
-    "rwep": 25,
-    "cvss": 9,
-    "cisa_kev": false,
-    "epss_score": null,
-    "referencing_skills": [],
-    "chain": {
-      "cwes": [],
-      "atlas": [],
-      "d3fend": [],
-      "framework_gaps": [],
-      "attack_refs": [],
-      "rfc_refs": []
-    }
-  },
-  "CVE-2026-GTIG-AI-2FA": {
-    "name": "GTIG-tracked AI-built 2FA-bypass zero-day (placeholder)",
-    "rwep": 55,
-    "cvss": 8.1,
-    "cisa_kev": false,
-    "epss_score": null,
-    "referencing_skills": [],
-    "chain": {
-      "cwes": [],
-      "atlas": [],
-      "d3fend": [],
-      "framework_gaps": [],
-      "attack_refs": [],
-      "rfc_refs": []
-    }
-  },
   "CVE-2026-30623": {
     "name": "Anthropic MCP SDK stdio command-injection",
     "rwep": 30,

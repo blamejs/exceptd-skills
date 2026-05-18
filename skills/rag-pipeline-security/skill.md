@@ -260,6 +260,8 @@ Prioritize by: data classification of knowledge base content (higher classificat
 
 ## Output Format
 
+The skill produces a structured RAG Pipeline Security Assessment covering vector-store inventory, embedding-model trust posture, retrieval-policy coverage, and observed exfiltration risk per corpus. The shape below is consumed downstream by `ai-attack-surface` (which integrates the per-corpus risk band into the broader AI surface report), by `dlp-gap-analysis` (which picks up the retrieval-policy gaps as DLP-channel findings), and by `mlops-security` (which inherits the embedding-model trust assessment). Operators feeding the output into auditor evidence should preserve the per-corpus retrieval-baseline field — it is the test that distinguishes paper retrieval controls from monitored ones.
+
 ```
 ## RAG Pipeline Security Assessment
 

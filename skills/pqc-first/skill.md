@@ -514,6 +514,8 @@ Priority order:
 
 ## Output Format
 
+The skill produces a structured PQC Readiness Assessment that scores the org's post-quantum migration posture against the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204, SLH-DSA / FIPS 205), CNSA 2.0, and the BSI / ANSSI / NCSC migration guidance. The shape below is consumed downstream by `crypto` playbook runs (which feed the assessment into Phase 5 analyze), by `framework-gap-analysis` (for SC-8 / SC-13 / A.8.24 / A.10 lag declarations), and by `compliance-theater` (which compares the harvest-now-decrypt-later exposure against the org's data-classification claims). Preserve the per-protocol cryptographic-inventory rows verbatim — they are the auditable derivation of the migration roadmap.
+
 ```
 ## PQC Readiness Assessment
 

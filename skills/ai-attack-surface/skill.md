@@ -270,6 +270,8 @@ For each identified risk, declare the framework gap:
 
 ## Output Format
 
+The assessment produces a structured AI Attack Surface Assessment report. The shape below is consumed downstream by `mcp-agent-trust` (which converts the MCP Trust Assessment section into per-server policy), by `rag-pipeline-security` (which picks up any RAG-pipeline entries from the Surface Inventory), and by `incident-response-playbook` (which scopes IR against the prompt-injection and AI-C2 exposure bands). CSAF-style auditor evidence bundles consume the Framework Gaps and ATLAS TTP Coverage Gaps sections verbatim — preserve the framework-control IDs as cited.
+
 ```
 ## AI Attack Surface Assessment
 

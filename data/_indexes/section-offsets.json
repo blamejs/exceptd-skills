@@ -19,8 +19,8 @@
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "total_bytes": 30519,
-      "total_lines": 395,
+      "total_bytes": 31111,
+      "total_lines": 397,
       "frontmatter": {
         "line_start": 1,
         "line_end": 56,
@@ -87,34 +87,34 @@
           "normalized_name": "output-format",
           "line": 303,
           "byte_start": 21020,
-          "byte_end": 22816,
-          "bytes": 1796,
+          "byte_end": 23408,
+          "bytes": 2388,
           "h3_count": 7
         },
         {
           "name": "Detection Rules",
           "normalized_name": "detection-rules",
-          "line": 346,
-          "byte_start": 22816,
-          "byte_end": 23505,
+          "line": 348,
+          "byte_start": 23408,
+          "byte_end": 24097,
           "bytes": 689,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 369,
-          "byte_start": 23505,
-          "byte_end": 28250,
+          "line": 371,
+          "byte_start": 24097,
+          "byte_end": 28842,
           "bytes": 4745,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 386,
-          "byte_start": 28250,
-          "byte_end": 30519,
+          "line": 388,
+          "byte_start": 28842,
+          "byte_end": 31111,
           "bytes": 2269,
           "h3_count": 0
         }
@@ -122,8 +122,8 @@
     },
     "ai-attack-surface": {
       "path": "skills/ai-attack-surface/skill.md",
-      "total_bytes": 29104,
-      "total_lines": 335,
+      "total_bytes": 29677,
+      "total_lines": 337,
       "frontmatter": {
         "line_start": 1,
         "line_end": 63,
@@ -181,25 +181,25 @@
           "normalized_name": "output-format",
           "line": 271,
           "byte_start": 23183,
-          "byte_end": 24300,
-          "bytes": 1117,
+          "byte_end": 24873,
+          "bytes": 1690,
           "h3_count": 8
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 308,
-          "byte_start": 24300,
-          "byte_end": 28018,
+          "line": 310,
+          "byte_start": 24873,
+          "byte_end": 28591,
           "bytes": 3718,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 330,
-          "byte_start": 28018,
-          "byte_end": 29104,
+          "line": 332,
+          "byte_start": 28591,
+          "byte_end": 29677,
           "bytes": 1086,
           "h3_count": 0
         }
@@ -207,8 +207,8 @@
     },
     "mcp-agent-trust": {
       "path": "skills/mcp-agent-trust/skill.md",
-      "total_bytes": 30991,
-      "total_lines": 376,
+      "total_bytes": 32105,
+      "total_lines": 380,
       "frontmatter": {
         "line_start": 1,
         "line_end": 71,
@@ -257,43 +257,43 @@
           "normalized_name": "analysis-procedure",
           "line": 191,
           "byte_start": 19000,
-          "byte_end": 22859,
-          "bytes": 3859,
+          "byte_end": 23413,
+          "bytes": 4413,
           "h3_count": 5
         },
         {
           "name": "Output Format",
           "normalized_name": "output-format",
-          "line": 303,
-          "byte_start": 22859,
-          "byte_end": 23836,
-          "bytes": 977,
+          "line": 305,
+          "byte_start": 23413,
+          "byte_end": 24950,
+          "bytes": 1537,
           "h3_count": 7
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 336,
-          "byte_start": 23836,
-          "byte_end": 26277,
+          "line": 340,
+          "byte_start": 24950,
+          "byte_end": 27391,
           "bytes": 2441,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 350,
-          "byte_start": 26277,
-          "byte_end": 30478,
+          "line": 354,
+          "byte_start": 27391,
+          "byte_end": 31592,
           "bytes": 4201,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 373,
-          "byte_start": 30478,
-          "byte_end": 30991,
+          "line": 377,
+          "byte_start": 31592,
+          "byte_end": 32105,
           "bytes": 513,
           "h3_count": 0
         }
@@ -301,8 +301,8 @@
     },
     "framework-gap-analysis": {
       "path": "skills/framework-gap-analysis/skill.md",
-      "total_bytes": 27418,
-      "total_lines": 379,
+      "total_bytes": 32011,
+      "total_lines": 406,
       "frontmatter": {
         "line_start": 1,
         "line_end": 24,
@@ -387,16 +387,25 @@
           "normalized_name": "compliance-theater-check",
           "line": 356,
           "byte_start": 24957,
-          "byte_end": 27418,
-          "bytes": 2461,
+          "byte_end": 27424,
+          "bytes": 2467,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 382,
+          "byte_start": 27424,
+          "byte_end": 32011,
+          "bytes": 4587,
           "h3_count": 0
         }
       ]
     },
     "compliance-theater": {
       "path": "skills/compliance-theater/skill.md",
-      "total_bytes": 33923,
-      "total_lines": 383,
+      "total_bytes": 38664,
+      "total_lines": 409,
       "frontmatter": {
         "line_start": 1,
         "line_end": 25,
@@ -409,16 +418,16 @@
           "normalized_name": "frontmatter-scope",
           "line": 35,
           "byte_start": 1137,
-          "byte_end": 1948,
-          "bytes": 811,
+          "byte_end": 2006,
+          "bytes": 869,
           "h3_count": 0
         },
         {
           "name": "Threat Context (mid-2026)",
           "normalized_name": "threat-context",
           "line": 41,
-          "byte_start": 1948,
-          "byte_end": 3942,
+          "byte_start": 2006,
+          "byte_end": 4000,
           "bytes": 1994,
           "h3_count": 0
         },
@@ -426,8 +435,8 @@
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 53,
-          "byte_start": 3942,
-          "byte_end": 12048,
+          "byte_start": 4000,
+          "byte_end": 12106,
           "bytes": 8106,
           "h3_count": 0
         },
@@ -435,8 +444,8 @@
           "name": "TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 81,
-          "byte_start": 12048,
-          "byte_end": 14258,
+          "byte_start": 12106,
+          "byte_end": 14316,
           "bytes": 2210,
           "h3_count": 0
         },
@@ -444,8 +453,8 @@
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 99,
-          "byte_start": 14258,
-          "byte_end": 16264,
+          "byte_start": 14316,
+          "byte_end": 16322,
           "bytes": 2006,
           "h3_count": 0
         },
@@ -453,8 +462,8 @@
           "name": "Theater Pattern Library",
           "normalized_name": "theater-pattern-library",
           "line": 118,
-          "byte_start": 16264,
-          "byte_end": 29001,
+          "byte_start": 16322,
+          "byte_end": 29059,
           "bytes": 12737,
           "h3_count": 7
         },
@@ -462,8 +471,8 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 297,
-          "byte_start": 29001,
-          "byte_end": 29944,
+          "byte_start": 29059,
+          "byte_end": 30002,
           "bytes": 943,
           "h3_count": 4
         },
@@ -471,26 +480,35 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 326,
-          "byte_start": 29944,
-          "byte_end": 31207,
-          "bytes": 1263,
+          "byte_start": 30002,
+          "byte_end": 31972,
+          "bytes": 1970,
           "h3_count": 4
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 358,
-          "byte_start": 31207,
-          "byte_end": 33923,
-          "bytes": 2716,
+          "line": 360,
+          "byte_start": 31972,
+          "byte_end": 34694,
+          "bytes": 2722,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 388,
+          "byte_start": 34694,
+          "byte_end": 38664,
+          "bytes": 3970,
           "h3_count": 0
         }
       ]
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "total_bytes": 25424,
-      "total_lines": 362,
+      "total_bytes": 30273,
+      "total_lines": 391,
       "frontmatter": {
         "line_start": 1,
         "line_end": 25,
@@ -584,25 +602,34 @@
           "normalized_name": "output-format",
           "line": 315,
           "byte_start": 22341,
-          "byte_end": 23395,
-          "bytes": 1054,
+          "byte_end": 23986,
+          "bytes": 1645,
           "h3_count": 4
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 353,
-          "byte_start": 23395,
-          "byte_end": 25424,
-          "bytes": 2029,
+          "line": 355,
+          "byte_start": 23986,
+          "byte_end": 26021,
+          "bytes": 2035,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 367,
+          "byte_start": 26021,
+          "byte_end": 30273,
+          "bytes": 4252,
           "h3_count": 0
         }
       ]
     },
     "rag-pipeline-security": {
       "path": "skills/rag-pipeline-security/skill.md",
-      "total_bytes": 31249,
-      "total_lines": 332,
+      "total_bytes": 31951,
+      "total_lines": 334,
       "frontmatter": {
         "line_start": 1,
         "line_end": 45,
@@ -705,34 +732,34 @@
           "normalized_name": "output-format",
           "line": 261,
           "byte_start": 23244,
-          "byte_end": 24087,
-          "bytes": 843,
+          "byte_end": 24789,
+          "bytes": 1545,
           "h3_count": 5
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 293,
-          "byte_start": 24087,
-          "byte_end": 26726,
+          "line": 295,
+          "byte_start": 24789,
+          "byte_end": 27428,
           "bytes": 2639,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 307,
-          "byte_start": 26726,
-          "byte_end": 30605,
+          "line": 309,
+          "byte_start": 27428,
+          "byte_end": 31307,
           "bytes": 3879,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 329,
-          "byte_start": 30605,
-          "byte_end": 31249,
+          "line": 331,
+          "byte_start": 31307,
+          "byte_end": 31951,
           "bytes": 644,
           "h3_count": 0
         }
@@ -740,8 +767,8 @@
     },
     "ai-c2-detection": {
       "path": "skills/ai-c2-detection/skill.md",
-      "total_bytes": 39136,
-      "total_lines": 486,
+      "total_bytes": 39771,
+      "total_lines": 488,
       "frontmatter": {
         "line_start": 1,
         "line_end": 53,
@@ -844,16 +871,16 @@
           "normalized_name": "output-format",
           "line": 444,
           "byte_start": 35335,
-          "byte_end": 36193,
-          "bytes": 858,
+          "byte_end": 36828,
+          "bytes": 1493,
           "h3_count": 5
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 475,
-          "byte_start": 36193,
-          "byte_end": 39136,
+          "line": 477,
+          "byte_start": 36828,
+          "byte_end": 39771,
           "bytes": 2943,
           "h3_count": 0
         }
@@ -861,8 +888,8 @@
     },
     "policy-exception-gen": {
       "path": "skills/policy-exception-gen/skill.md",
-      "total_bytes": 31881,
-      "total_lines": 452,
+      "total_bytes": 36837,
+      "total_lines": 479,
       "frontmatter": {
         "line_start": 1,
         "line_end": 27,
@@ -947,16 +974,25 @@
           "normalized_name": "compliance-theater-check",
           "line": 427,
           "byte_start": 28699,
-          "byte_end": 31881,
-          "bytes": 3182,
+          "byte_end": 31887,
+          "bytes": 3188,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 455,
+          "byte_start": 31887,
+          "byte_end": 36837,
+          "bytes": 4950,
           "h3_count": 0
         }
       ]
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "total_bytes": 27509,
-      "total_lines": 412,
+      "total_bytes": 33321,
+      "total_lines": 448,
       "frontmatter": {
         "line_start": 1,
         "line_end": 27,
@@ -1059,16 +1095,25 @@
           "normalized_name": "output-format",
           "line": 375,
           "byte_start": 26214,
-          "byte_end": 27509,
-          "bytes": 1295,
+          "byte_end": 28192,
+          "bytes": 1978,
           "h3_count": 4
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 417,
+          "byte_start": 28192,
+          "byte_end": 33321,
+          "bytes": 5129,
+          "h3_count": 0
         }
       ]
     },
     "global-grc": {
       "path": "skills/global-grc/skill.md",
-      "total_bytes": 39911,
-      "total_lines": 567,
+      "total_bytes": 40604,
+      "total_lines": 569,
       "frontmatter": {
         "line_start": 1,
         "line_end": 28,
@@ -1162,16 +1207,16 @@
           "normalized_name": "output-format",
           "line": 539,
           "byte_start": 39097,
-          "byte_end": 39911,
-          "bytes": 814,
+          "byte_end": 40604,
+          "bytes": 1507,
           "h3_count": 6
         }
       ]
     },
     "zeroday-gap-learn": {
       "path": "skills/zeroday-gap-learn/skill.md",
-      "total_bytes": 37784,
-      "total_lines": 445,
+      "total_bytes": 42906,
+      "total_lines": 477,
       "frontmatter": {
         "line_start": 1,
         "line_end": 28,
@@ -1256,25 +1301,34 @@
           "normalized_name": "output-format",
           "line": 399,
           "byte_start": 35087,
-          "byte_end": 35946,
-          "bytes": 859,
+          "byte_end": 36649,
+          "bytes": 1562,
           "h3_count": 7
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 436,
-          "byte_start": 35946,
-          "byte_end": 37784,
-          "bytes": 1838,
+          "line": 438,
+          "byte_start": 36649,
+          "byte_end": 38493,
+          "bytes": 1844,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 450,
+          "byte_start": 38493,
+          "byte_end": 42906,
+          "bytes": 4413,
           "h3_count": 0
         }
       ]
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "total_bytes": 33405,
-      "total_lines": 549,
+      "total_bytes": 34118,
+      "total_lines": 551,
       "frontmatter": {
         "line_start": 1,
         "line_end": 57,
@@ -1395,16 +1449,16 @@
           "normalized_name": "output-format",
           "line": 515,
           "byte_start": 31981,
-          "byte_end": 32745,
-          "bytes": 764,
+          "byte_end": 33458,
+          "bytes": 1477,
           "h3_count": 6
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 546,
-          "byte_start": 32745,
-          "byte_end": 33405,
+          "line": 548,
+          "byte_start": 33458,
+          "byte_end": 34118,
           "bytes": 660,
           "h3_count": 0
         }
@@ -1412,8 +1466,8 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "total_bytes": 47309,
-      "total_lines": 520,
+      "total_bytes": 47841,
+      "total_lines": 522,
       "frontmatter": {
         "line_start": 1,
         "line_end": 38,
@@ -1498,43 +1552,43 @@
           "normalized_name": "output-format",
           "line": 432,
           "byte_start": 35571,
-          "byte_end": 36093,
-          "bytes": 522,
+          "byte_end": 36625,
+          "bytes": 1054,
           "h3_count": 4
         },
         {
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
-          "line": 457,
-          "byte_start": 36093,
-          "byte_end": 38896,
+          "line": 459,
+          "byte_start": 36625,
+          "byte_end": 39428,
           "bytes": 2803,
           "h3_count": 0
         },
         {
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
-          "line": 476,
-          "byte_start": 38896,
-          "byte_end": 41626,
+          "line": 478,
+          "byte_start": 39428,
+          "byte_end": 42158,
           "bytes": 2730,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 497,
-          "byte_start": 41626,
-          "byte_end": 43303,
+          "line": 499,
+          "byte_start": 42158,
+          "byte_end": 43835,
           "bytes": 1677,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 507,
-          "byte_start": 43303,
-          "byte_end": 47309,
+          "line": 509,
+          "byte_start": 43835,
+          "byte_end": 47841,
           "bytes": 4006,
           "h3_count": 0
         }
@@ -1542,8 +1596,8 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "total_bytes": 30213,
-      "total_lines": 488,
+      "total_bytes": 30818,
+      "total_lines": 490,
       "frontmatter": {
         "line_start": 1,
         "line_end": 30,
@@ -1628,61 +1682,61 @@
           "normalized_name": "output-format",
           "line": 345,
           "byte_start": 15155,
-          "byte_end": 16148,
-          "bytes": 993,
+          "byte_end": 16753,
+          "bytes": 1598,
           "h3_count": 3
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 381,
-          "byte_start": 16148,
-          "byte_end": 18465,
+          "line": 383,
+          "byte_start": 16753,
+          "byte_end": 19070,
           "bytes": 2317,
           "h3_count": 0
         },
         {
           "name": "The Anti-Pattern: Tier 3 Security Theater",
           "normalized_name": "the-anti-pattern-tier-3-security-theater",
-          "line": 399,
-          "byte_start": 18465,
-          "byte_end": 19109,
+          "line": 401,
+          "byte_start": 19070,
+          "byte_end": 19714,
           "bytes": 644,
           "h3_count": 0
         },
         {
           "name": "Threat Context",
           "normalized_name": "threat-context",
-          "line": 415,
-          "byte_start": 19109,
-          "byte_end": 21104,
+          "line": 417,
+          "byte_start": 19714,
+          "byte_end": 21709,
           "bytes": 1995,
           "h3_count": 0
         },
         {
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
-          "line": 427,
-          "byte_start": 21104,
-          "byte_end": 25015,
+          "line": 429,
+          "byte_start": 21709,
+          "byte_end": 25620,
           "bytes": 3911,
           "h3_count": 0
         },
         {
           "name": "TTP Mapping",
           "normalized_name": "ttp-mapping",
-          "line": 451,
-          "byte_start": 25015,
-          "byte_end": 27521,
+          "line": 453,
+          "byte_start": 25620,
+          "byte_end": 28126,
           "bytes": 2506,
           "h3_count": 0
         },
         {
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
-          "line": 473,
-          "byte_start": 27521,
-          "byte_end": 30213,
+          "line": 475,
+          "byte_start": 28126,
+          "byte_end": 30818,
           "bytes": 2692,
           "h3_count": 0
         }
@@ -1690,8 +1744,8 @@
     },
     "researcher": {
       "path": "skills/researcher/skill.md",
-      "total_bytes": 32226,
-      "total_lines": 336,
+      "total_bytes": 32800,
+      "total_lines": 338,
       "frontmatter": {
         "line_start": 1,
         "line_end": 29,
@@ -1758,25 +1812,25 @@
           "normalized_name": "output-format",
           "line": 252,
           "byte_start": 24819,
-          "byte_end": 27408,
-          "bytes": 2589,
+          "byte_end": 27982,
+          "bytes": 3163,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 309,
-          "byte_start": 27408,
-          "byte_end": 30113,
+          "line": 311,
+          "byte_start": 27982,
+          "byte_end": 30687,
           "bytes": 2705,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 325,
-          "byte_start": 30113,
-          "byte_end": 32226,
+          "line": 327,
+          "byte_start": 30687,
+          "byte_end": 32800,
           "bytes": 2113,
           "h3_count": 0
         }
@@ -1784,8 +1838,8 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "total_bytes": 32636,
-      "total_lines": 386,
+      "total_bytes": 33284,
+      "total_lines": 388,
       "frontmatter": {
         "line_start": 1,
         "line_end": 64,
@@ -1843,25 +1897,25 @@
           "normalized_name": "output-format",
           "line": 281,
           "byte_start": 25360,
-          "byte_end": 28709,
-          "bytes": 3349,
+          "byte_end": 29357,
+          "bytes": 3997,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 361,
-          "byte_start": 28709,
-          "byte_end": 31025,
+          "line": 363,
+          "byte_start": 29357,
+          "byte_end": 31673,
           "bytes": 2316,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping (D3FEND)",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 375,
-          "byte_start": 31025,
-          "byte_end": 32636,
+          "line": 377,
+          "byte_start": 31673,
+          "byte_end": 33284,
           "bytes": 1611,
           "h3_count": 0
         }
@@ -1869,8 +1923,8 @@
     },
     "fuzz-testing-strategy": {
       "path": "skills/fuzz-testing-strategy/skill.md",
-      "total_bytes": 30702,
-      "total_lines": 314,
+      "total_bytes": 31319,
+      "total_lines": 316,
       "frontmatter": {
         "line_start": 1,
         "line_end": 49,
@@ -1928,25 +1982,25 @@
           "normalized_name": "output-format",
           "line": 218,
           "byte_start": 21820,
-          "byte_end": 24997,
-          "bytes": 3177,
+          "byte_end": 25614,
+          "bytes": 3794,
           "h3_count": 10
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 281,
-          "byte_start": 24997,
-          "byte_end": 27934,
+          "line": 283,
+          "byte_start": 25614,
+          "byte_end": 28551,
           "bytes": 2937,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 301,
-          "byte_start": 27934,
-          "byte_end": 30702,
+          "line": 303,
+          "byte_start": 28551,
+          "byte_end": 31319,
           "bytes": 2768,
           "h3_count": 0
         }
@@ -1954,8 +2008,8 @@
     },
     "dlp-gap-analysis": {
       "path": "skills/dlp-gap-analysis/skill.md",
-      "total_bytes": 41698,
-      "total_lines": 344,
+      "total_bytes": 42409,
+      "total_lines": 346,
       "frontmatter": {
         "line_start": 1,
         "line_end": 65,
@@ -2013,25 +2067,25 @@
           "normalized_name": "output-format",
           "line": 244,
           "byte_start": 32754,
-          "byte_end": 35141,
-          "bytes": 2387,
+          "byte_end": 35852,
+          "bytes": 3098,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 299,
-          "byte_start": 35141,
-          "byte_end": 37743,
+          "line": 301,
+          "byte_start": 35852,
+          "byte_end": 38454,
           "bytes": 2602,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 317,
-          "byte_start": 37743,
-          "byte_end": 41698,
+          "line": 319,
+          "byte_start": 38454,
+          "byte_end": 42409,
           "bytes": 3955,
           "h3_count": 0
         }
@@ -2039,8 +2093,8 @@
     },
     "supply-chain-integrity": {
       "path": "skills/supply-chain-integrity/skill.md",
-      "total_bytes": 40287,
-      "total_lines": 326,
+      "total_bytes": 40938,
+      "total_lines": 328,
       "frontmatter": {
         "line_start": 1,
         "line_end": 71,
@@ -2098,25 +2152,25 @@
           "normalized_name": "output-format",
           "line": 253,
           "byte_start": 33480,
-          "byte_end": 35582,
-          "bytes": 2102,
+          "byte_end": 36233,
+          "bytes": 2753,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 293,
-          "byte_start": 35582,
-          "byte_end": 37870,
+          "line": 295,
+          "byte_start": 36233,
+          "byte_end": 38521,
           "bytes": 2288,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 309,
-          "byte_start": 37870,
-          "byte_end": 40287,
+          "line": 311,
+          "byte_start": 38521,
+          "byte_end": 40938,
           "bytes": 2417,
           "h3_count": 0
         }
@@ -2124,8 +2178,8 @@
     },
     "defensive-countermeasure-mapping": {
       "path": "skills/defensive-countermeasure-mapping/skill.md",
-      "total_bytes": 32791,
-      "total_lines": 302,
+      "total_bytes": 33463,
+      "total_lines": 304,
       "frontmatter": {
         "line_start": 1,
         "line_end": 52,
@@ -2183,25 +2237,25 @@
           "normalized_name": "output-format",
           "line": 202,
           "byte_start": 22079,
-          "byte_end": 26690,
-          "bytes": 4611,
+          "byte_end": 27362,
+          "bytes": 5283,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 267,
-          "byte_start": 26690,
-          "byte_end": 29470,
+          "line": 269,
+          "byte_start": 27362,
+          "byte_end": 30142,
           "bytes": 2780,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 285,
-          "byte_start": 29470,
-          "byte_end": 32791,
+          "line": 287,
+          "byte_start": 30142,
+          "byte_end": 33463,
           "bytes": 3321,
           "h3_count": 0
         }
@@ -2209,8 +2263,8 @@
     },
     "identity-assurance": {
       "path": "skills/identity-assurance/skill.md",
-      "total_bytes": 32885,
-      "total_lines": 276,
+      "total_bytes": 33608,
+      "total_lines": 278,
       "frontmatter": {
         "line_start": 1,
         "line_end": 60,
@@ -2268,34 +2322,34 @@
           "normalized_name": "output-format",
           "line": 192,
           "byte_start": 21723,
-          "byte_end": 24416,
-          "bytes": 2693,
+          "byte_end": 25139,
+          "bytes": 3416,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 238,
-          "byte_start": 24416,
-          "byte_end": 26473,
+          "line": 240,
+          "byte_start": 25139,
+          "byte_end": 27196,
           "bytes": 2057,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 252,
-          "byte_start": 26473,
-          "byte_end": 30094,
+          "line": 254,
+          "byte_start": 27196,
+          "byte_end": 30817,
           "bytes": 3621,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 265,
-          "byte_start": 30094,
-          "byte_end": 32885,
+          "line": 267,
+          "byte_start": 30817,
+          "byte_end": 33608,
           "bytes": 2791,
           "h3_count": 0
         }
@@ -2303,8 +2357,8 @@
     },
     "ot-ics-security": {
       "path": "skills/ot-ics-security/skill.md",
-      "total_bytes": 36439,
-      "total_lines": 342,
+      "total_bytes": 37112,
+      "total_lines": 344,
       "frontmatter": {
         "line_start": 1,
         "line_end": 48,
@@ -2362,34 +2416,34 @@
           "normalized_name": "output-format",
           "line": 220,
           "byte_start": 23868,
-          "byte_end": 25967,
-          "bytes": 2099,
+          "byte_end": 26640,
+          "bytes": 2772,
           "h3_count": 11
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 276,
-          "byte_start": 25967,
-          "byte_end": 29172,
+          "line": 278,
+          "byte_start": 26640,
+          "byte_end": 29845,
           "bytes": 3205,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 310,
-          "byte_start": 29172,
-          "byte_end": 32629,
+          "line": 312,
+          "byte_start": 29845,
+          "byte_end": 33302,
           "bytes": 3457,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 326,
-          "byte_start": 32629,
-          "byte_end": 36439,
+          "line": 328,
+          "byte_start": 33302,
+          "byte_end": 37112,
           "bytes": 3810,
           "h3_count": 0
         }
@@ -2397,7 +2451,7 @@
     },
     "coordinated-vuln-disclosure": {
       "path": "skills/coordinated-vuln-disclosure/skill.md",
-      "total_bytes": 46917,
+      "total_bytes": 47388,
       "total_lines": 481,
       "frontmatter": {
         "line_start": 1,
@@ -2456,16 +2510,16 @@
           "normalized_name": "output-format",
           "line": 256,
           "byte_start": 31307,
-          "byte_end": 37825,
-          "bytes": 6518,
+          "byte_end": 38296,
+          "bytes": 6989,
           "h3_count": 7
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 432,
-          "byte_start": 37825,
-          "byte_end": 40881,
+          "byte_start": 38296,
+          "byte_end": 41352,
           "bytes": 3056,
           "h3_count": 0
         },
@@ -2473,8 +2527,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 448,
-          "byte_start": 40881,
-          "byte_end": 44498,
+          "byte_start": 41352,
+          "byte_end": 44969,
           "bytes": 3617,
           "h3_count": 0
         },
@@ -2482,8 +2536,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 468,
-          "byte_start": 44498,
-          "byte_end": 46917,
+          "byte_start": 44969,
+          "byte_end": 47388,
           "bytes": 2419,
           "h3_count": 0
         }
@@ -2491,8 +2545,8 @@
     },
     "threat-modeling-methodology": {
       "path": "skills/threat-modeling-methodology/skill.md",
-      "total_bytes": 30802,
-      "total_lines": 318,
+      "total_bytes": 31561,
+      "total_lines": 320,
       "frontmatter": {
         "line_start": 1,
         "line_end": 48,
@@ -2559,34 +2613,34 @@
           "normalized_name": "output-format",
           "line": 235,
           "byte_start": 24067,
-          "byte_end": 25616,
-          "bytes": 1549,
+          "byte_end": 26375,
+          "bytes": 2308,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 277,
-          "byte_start": 25616,
-          "byte_end": 27540,
+          "line": 279,
+          "byte_start": 26375,
+          "byte_end": 28299,
           "bytes": 1924,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 295,
-          "byte_start": 27540,
-          "byte_end": 29244,
+          "line": 297,
+          "byte_start": 28299,
+          "byte_end": 30003,
           "bytes": 1704,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 308,
-          "byte_start": 29244,
-          "byte_end": 30802,
+          "line": 310,
+          "byte_start": 30003,
+          "byte_end": 31561,
           "bytes": 1558,
           "h3_count": 0
         }
@@ -2594,8 +2648,8 @@
     },
     "webapp-security": {
       "path": "skills/webapp-security/skill.md",
-      "total_bytes": 29136,
-      "total_lines": 283,
+      "total_bytes": 29755,
+      "total_lines": 285,
       "frontmatter": {
         "line_start": 1,
         "line_end": 70,
@@ -2653,34 +2707,34 @@
           "normalized_name": "output-format",
           "line": 186,
           "byte_start": 20303,
-          "byte_end": 23445,
-          "bytes": 3142,
+          "byte_end": 24064,
+          "bytes": 3761,
           "h3_count": 6
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 245,
-          "byte_start": 23445,
-          "byte_end": 25422,
+          "line": 247,
+          "byte_start": 24064,
+          "byte_end": 26041,
           "bytes": 1977,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 259,
-          "byte_start": 25422,
-          "byte_end": 27941,
+          "line": 261,
+          "byte_start": 26041,
+          "byte_end": 28560,
           "bytes": 2519,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 273,
-          "byte_start": 27941,
-          "byte_end": 29136,
+          "line": 275,
+          "byte_start": 28560,
+          "byte_end": 29755,
           "bytes": 1195,
           "h3_count": 0
         }
@@ -2688,8 +2742,8 @@
     },
     "ai-risk-management": {
       "path": "skills/ai-risk-management/skill.md",
-      "total_bytes": 34929,
-      "total_lines": 321,
+      "total_bytes": 35598,
+      "total_lines": 323,
       "frontmatter": {
         "line_start": 1,
         "line_end": 49,
@@ -2756,34 +2810,34 @@
           "normalized_name": "output-format",
           "line": 222,
           "byte_start": 25492,
-          "byte_end": 28352,
-          "bytes": 2860,
+          "byte_end": 29021,
+          "bytes": 3529,
           "h3_count": 10
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 276,
-          "byte_start": 28352,
-          "byte_end": 31151,
+          "line": 278,
+          "byte_start": 29021,
+          "byte_end": 31820,
           "bytes": 2799,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 294,
-          "byte_start": 31151,
-          "byte_end": 32938,
+          "line": 296,
+          "byte_start": 31820,
+          "byte_end": 33607,
           "bytes": 1787,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 308,
-          "byte_start": 32938,
-          "byte_end": 34929,
+          "line": 310,
+          "byte_start": 33607,
+          "byte_end": 35598,
           "bytes": 1991,
           "h3_count": 0
         }
@@ -2791,8 +2845,8 @@
     },
     "sector-healthcare": {
       "path": "skills/sector-healthcare/skill.md",
-      "total_bytes": 47633,
-      "total_lines": 372,
+      "total_bytes": 48294,
+      "total_lines": 374,
       "frontmatter": {
         "line_start": 1,
         "line_end": 51,
@@ -2850,34 +2904,34 @@
           "normalized_name": "output-format",
           "line": 236,
           "byte_start": 33901,
-          "byte_end": 36792,
-          "bytes": 2891,
+          "byte_end": 37453,
+          "bytes": 3552,
           "h3_count": 14
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 305,
-          "byte_start": 36792,
-          "byte_end": 40360,
+          "line": 307,
+          "byte_start": 37453,
+          "byte_end": 41021,
           "bytes": 3568,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 340,
-          "byte_start": 40360,
-          "byte_end": 43774,
+          "line": 342,
+          "byte_start": 41021,
+          "byte_end": 44435,
           "bytes": 3414,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 354,
-          "byte_start": 43774,
-          "byte_end": 47633,
+          "line": 356,
+          "byte_start": 44435,
+          "byte_end": 48294,
           "bytes": 3859,
           "h3_count": 0
         }
@@ -2885,8 +2939,8 @@
     },
     "sector-financial": {
       "path": "skills/sector-financial/skill.md",
-      "total_bytes": 49779,
-      "total_lines": 399,
+      "total_bytes": 50431,
+      "total_lines": 401,
       "frontmatter": {
         "line_start": 1,
         "line_end": 74,
@@ -2944,34 +2998,34 @@
           "normalized_name": "output-format",
           "line": 271,
           "byte_start": 35089,
-          "byte_end": 37844,
-          "bytes": 2755,
+          "byte_end": 38496,
+          "bytes": 3407,
           "h3_count": 15
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 333,
-          "byte_start": 37844,
-          "byte_end": 42182,
+          "line": 335,
+          "byte_start": 38496,
+          "byte_end": 42834,
           "bytes": 4338,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 368,
-          "byte_start": 42182,
-          "byte_end": 46026,
+          "line": 370,
+          "byte_start": 42834,
+          "byte_end": 46678,
           "bytes": 3844,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 383,
-          "byte_start": 46026,
-          "byte_end": 49779,
+          "line": 385,
+          "byte_start": 46678,
+          "byte_end": 50431,
           "bytes": 3753,
           "h3_count": 0
         }
@@ -2979,8 +3033,8 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "total_bytes": 44323,
-      "total_lines": 306,
+      "total_bytes": 45040,
+      "total_lines": 308,
       "frontmatter": {
         "line_start": 1,
         "line_end": 65,
@@ -3038,34 +3092,34 @@
           "normalized_name": "output-format",
           "line": 213,
           "byte_start": 34506,
-          "byte_end": 36994,
-          "bytes": 2488,
+          "byte_end": 37711,
+          "bytes": 3205,
           "h3_count": 10
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 267,
-          "byte_start": 36994,
-          "byte_end": 39862,
+          "line": 269,
+          "byte_start": 37711,
+          "byte_end": 40579,
           "bytes": 2868,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 281,
-          "byte_start": 39862,
-          "byte_end": 42862,
+          "line": 283,
+          "byte_start": 40579,
+          "byte_end": 43579,
           "bytes": 3000,
           "h3_count": 0
         },
         {
           "name": "Hand-Off",
           "normalized_name": "hand-off",
-          "line": 295,
-          "byte_start": 42862,
-          "byte_end": 44323,
+          "line": 297,
+          "byte_start": 43579,
+          "byte_end": 45040,
           "bytes": 1461,
           "h3_count": 0
         }
@@ -3073,8 +3127,8 @@
     },
     "sector-energy": {
       "path": "skills/sector-energy/skill.md",
-      "total_bytes": 54077,
-      "total_lines": 410,
+      "total_bytes": 54749,
+      "total_lines": 412,
       "frontmatter": {
         "line_start": 1,
         "line_end": 61,
@@ -3132,34 +3186,34 @@
           "normalized_name": "output-format",
           "line": 274,
           "byte_start": 38372,
-          "byte_end": 41160,
-          "bytes": 2788,
+          "byte_end": 41832,
+          "bytes": 3460,
           "h3_count": 13
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 339,
-          "byte_start": 41160,
-          "byte_end": 46151,
+          "line": 341,
+          "byte_start": 41832,
+          "byte_end": 46823,
           "bytes": 4991,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 377,
-          "byte_start": 46151,
-          "byte_end": 50702,
+          "line": 379,
+          "byte_start": 46823,
+          "byte_end": 51374,
           "bytes": 4551,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 393,
-          "byte_start": 50702,
-          "byte_end": 54077,
+          "line": 395,
+          "byte_start": 51374,
+          "byte_end": 54749,
           "bytes": 3375,
           "h3_count": 0
         }
@@ -3261,8 +3315,8 @@
     },
     "api-security": {
       "path": "skills/api-security/skill.md",
-      "total_bytes": 39261,
-      "total_lines": 304,
+      "total_bytes": 39941,
+      "total_lines": 306,
       "frontmatter": {
         "line_start": 1,
         "line_end": 71,
@@ -3320,34 +3374,34 @@
           "normalized_name": "output-format",
           "line": 213,
           "byte_start": 28154,
-          "byte_end": 31872,
-          "bytes": 3718,
+          "byte_end": 32552,
+          "bytes": 4398,
           "h3_count": 9
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 266,
-          "byte_start": 31872,
-          "byte_end": 34230,
+          "line": 268,
+          "byte_start": 32552,
+          "byte_end": 34910,
           "bytes": 2358,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 280,
-          "byte_start": 34230,
-          "byte_end": 38056,
+          "line": 282,
+          "byte_start": 34910,
+          "byte_end": 38736,
           "bytes": 3826,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 296,
-          "byte_start": 38056,
-          "byte_end": 39261,
+          "line": 298,
+          "byte_start": 38736,
+          "byte_end": 39941,
           "bytes": 1205,
           "h3_count": 0
         }
@@ -3355,8 +3409,8 @@
     },
     "cloud-security": {
       "path": "skills/cloud-security/skill.md",
-      "total_bytes": 55635,
-      "total_lines": 384,
+      "total_bytes": 56326,
+      "total_lines": 386,
       "frontmatter": {
         "line_start": 1,
         "line_end": 74,
@@ -3414,34 +3468,34 @@
           "normalized_name": "output-format",
           "line": 259,
           "byte_start": 40376,
-          "byte_end": 42639,
-          "bytes": 2263,
+          "byte_end": 43330,
+          "bytes": 2954,
           "h3_count": 13
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 316,
-          "byte_start": 42639,
-          "byte_end": 46860,
+          "line": 318,
+          "byte_start": 43330,
+          "byte_end": 47551,
           "bytes": 4221,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 350,
-          "byte_start": 46860,
-          "byte_end": 51602,
+          "line": 352,
+          "byte_start": 47551,
+          "byte_end": 52293,
           "bytes": 4742,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 366,
-          "byte_start": 51602,
-          "byte_end": 55635,
+          "line": 368,
+          "byte_start": 52293,
+          "byte_end": 56326,
           "bytes": 4033,
           "h3_count": 0
         }
@@ -3449,8 +3503,8 @@
     },
     "container-runtime-security": {
       "path": "skills/container-runtime-security/skill.md",
-      "total_bytes": 49060,
-      "total_lines": 383,
+      "total_bytes": 49807,
+      "total_lines": 385,
       "frontmatter": {
         "line_start": 1,
         "line_end": 61,
@@ -3508,34 +3562,34 @@
           "normalized_name": "output-format",
           "line": 246,
           "byte_start": 32778,
-          "byte_end": 35697,
-          "bytes": 2919,
+          "byte_end": 36444,
+          "bytes": 3666,
           "h3_count": 12
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 312,
-          "byte_start": 35697,
-          "byte_end": 39194,
+          "line": 314,
+          "byte_start": 36444,
+          "byte_end": 39941,
           "bytes": 3497,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 348,
-          "byte_start": 39194,
-          "byte_end": 44466,
+          "line": 350,
+          "byte_start": 39941,
+          "byte_end": 45213,
           "bytes": 5272,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 365,
-          "byte_start": 44466,
-          "byte_end": 49060,
+          "line": 367,
+          "byte_start": 45213,
+          "byte_end": 49807,
           "bytes": 4594,
           "h3_count": 0
         }
@@ -3543,8 +3597,8 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "total_bytes": 45611,
-      "total_lines": 330,
+      "total_bytes": 46355,
+      "total_lines": 332,
       "frontmatter": {
         "line_start": 1,
         "line_end": 66,
@@ -3602,34 +3656,34 @@
           "normalized_name": "output-format",
           "line": 228,
           "byte_start": 33152,
-          "byte_end": 35830,
-          "bytes": 2678,
+          "byte_end": 36574,
+          "bytes": 3422,
           "h3_count": 10
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 281,
-          "byte_start": 35830,
-          "byte_end": 38761,
+          "line": 283,
+          "byte_start": 36574,
+          "byte_end": 39505,
           "bytes": 2931,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 297,
-          "byte_start": 38761,
-          "byte_end": 42681,
+          "line": 299,
+          "byte_start": 39505,
+          "byte_end": 43425,
           "bytes": 3920,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 317,
-          "byte_start": 42681,
-          "byte_end": 45611,
+          "line": 319,
+          "byte_start": 43425,
+          "byte_end": 46355,
           "bytes": 2930,
           "h3_count": 0
         }
@@ -3919,8 +3973,8 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "total_bytes": 69740,
-      "total_lines": 457,
+      "total_bytes": 70471,
+      "total_lines": 459,
       "frontmatter": {
         "line_start": 1,
         "line_end": 63,
@@ -3978,34 +4032,34 @@
           "normalized_name": "output-format",
           "line": 288,
           "byte_start": 49577,
-          "byte_end": 54180,
-          "bytes": 4603,
+          "byte_end": 54911,
+          "bytes": 5334,
           "h3_count": 14
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 369,
-          "byte_start": 54180,
-          "byte_end": 60265,
+          "line": 371,
+          "byte_start": 54911,
+          "byte_end": 60996,
           "bytes": 6085,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 419,
-          "byte_start": 60265,
-          "byte_end": 65407,
+          "line": 421,
+          "byte_start": 60996,
+          "byte_end": 66138,
           "bytes": 5142,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
-          "line": 439,
-          "byte_start": 65407,
-          "byte_end": 69740,
+          "line": 441,
+          "byte_start": 66138,
+          "byte_end": 70471,
           "bytes": 4333,
           "h3_count": 0
         }

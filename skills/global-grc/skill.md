@@ -538,6 +538,8 @@ Produce a matrix of: threat class × jurisdiction framework × requirement adequ
 
 ## Output Format
 
+The skill produces a structured Global GRC Assessment that rolls compliance findings across the org's jurisdictional footprint — EU (NIS2, DORA, EU AI Act, CRA), UK (CAF, Cyber Essentials), AU (ISM, Essential 8, APRA CPS 234), ISO 27001:2022 / 42001:2023, NIST, and the expanded set tracked in `data/global-frameworks.json`. The shape below is consumed downstream by `framework-gap-analysis` (which produces per-jurisdiction Framework Lag Declarations), by `policy-exception-gen` (for cross-jurisdictional exception language), and by CSAF-style auditor evidence bundles. Preserve the per-jurisdiction control-mapping rows verbatim — they are the load-bearing cross-walk per Hard Rule #5.
+
 ```
 ## Global GRC Assessment
 
