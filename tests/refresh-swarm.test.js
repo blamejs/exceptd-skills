@@ -76,6 +76,39 @@ test('refresh-external --from-cache reads kev/epss/nvd/rfc/pins from a cache dir
   }
 });
 
+test('refresh-external --from-fixture populates ctx.fixtures.advisories (no live-RSS fall-through)', () => {
+  // v0.13.7 regression pin. Before this fix, --from-fixture loaded payloads
+  // for kev / epss / nvd / rfc / pins / ghsa / osv but left the advisories
+  // poller unfixturized — it fell through to live RSS feeds (Qualys / RHSA /
+  // USN / ZDI / kernel.org / oss-security / JFrog / CISA). Two back-to-back
+  // fixture-mode runs hit moving upstream data and diverged on freshly
+  // published advisories, surfacing as a CI flake. The pin verifies that
+  // the advisories diffs come from the frozen fixture, not from the network.
+  const reportPath = mkReport();
+  const r = spawnSync(
+    process.execPath,
+    [path.join(ROOT, 'lib', 'refresh-external.js'), '--from-fixture', FIX, '--source', 'advisories', '--quiet', '--report-out', reportPath],
+    { encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' } }
+  );
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  const advisories = report.sources && report.sources.advisories;
+  assert.ok(advisories, 'advisories source must appear in report');
+  assert.equal(advisories.status, 'ok',
+    `advisories status must be ok in fixture mode; got ${advisories.status}`);
+  // The fixture covers 8 feeds; the summary line states reachable
+  // count. Pre-fix, the unfixturized run would hit live network (or
+  // fail it on a sandboxed runner) and either count <8/8 reachable or
+  // record errors. Post-fix, all 8 feeds resolve to frozen content.
+  assert.match(
+    advisories.summary || '',
+    /8\/8 feeds reachable/,
+    `fixture-mode must report 8/8 feeds reachable (proves frozen content was used, not live fetch); got: ${advisories.summary}`,
+  );
+  assert.equal(advisories.errors, 0,
+    'fixture-mode advisories must produce zero feed errors');
+});
+
 test('refresh-external --from-cache <nonexistent> exits 2 (generic hint refusal)', () => {
   // The missing-cache branch in lib/refresh-external.js throws a hint
   // error without setting _exceptd_exit_code, so the top-level handler

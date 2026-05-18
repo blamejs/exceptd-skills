@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-15",
+    "last_updated": "2026-05-18",
     "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history.",
     "tlp": "CLEAR",
     "source_confidence": {
@@ -15,7 +15,8 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "last_threat_review": "2026-05-15"
+    "last_threat_review": "2026-05-15",
+    "entry_count": 184
   },
   "ALL-AI-PIPELINE-INTEGRITY": {
     "framework": "ALL",
@@ -4839,6 +4840,1211 @@
         "operator-side SBOM reconciliation cadence document",
         "maintainer-account-integrity monitoring records for critical-path packages",
         "worm-class incident-response playbook + execution record for sampled incident"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "CIS-Controls-v8-7.4": {
+    "framework": "CIS Controls v8",
+    "control_id": "7.4",
+    "control_name": "Perform Automated Application Patch Management",
+    "designed_for": "Safeguard 7.4 — automated patching of third-party applications on enterprise assets at a frequency that the organization defines, with the assumption that an automatic-update channel from the vendor is sufficient to bound exposure.",
+    "misses": [
+      "Auto-update presumes the vendor's release reaches endpoints quickly; enterprise managed-update tooling (Intune, JAMF, Group Policy WSUS-mirroring) routinely defers browser updates 7-30 days for QA, which is incompatible with a KEV-listed V8 zero-day exploited within hours of disclosure",
+      "Safeguard 7.4 does not distinguish renderer-class CVEs (V8, SpiderMonkey, JavaScriptCore) from generic application patches — the same monthly cadence is applied to a font-rendering CVE and an in-the-wild type-confusion exploit",
+      "Browser silent-update enablement is not measurable from the safeguard's audit shape; an operator can claim Safeguard 7.4 compliance with a managed-update tool that has all browser updates queued for the next maintenance window"
+    ],
+    "real_requirement": "Safeguard 7.4 implementations must split application patching into KEV-class and non-KEV-class tiers. Browser renderer CVEs with CISA KEV listing OR public exploit require a 24h endpoint-applied SLA measured from KEV-add, not from internal change-window scheduling. Managed-update tooling must surface per-host time-to-patch metrics, and silent-update channels must be enabled by default on browsers in scope unless an explicit exception is filed.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-10585"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 7.4 (Perform Automated Application Patch Management) because we follow the documented requirement: Safeguard 7.4 — automated patching of third-party applications on enterprise assets at a frequency that the organization defines, with the assumption that an automatic-update channel from the vendor i",
+      "test": "Pull the operational evidence supporting 7.4 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-10585: Auto-update presumes the vendor's release reaches endpoints quickly; enterprise managed-update tooling (Intune, JAMF, Group Policy WSUS-mirroring) routinely defers browser updates 7-30 days for QA, which is incompatible with a KEV-listed V8 zero-day exploited within hours of disclosure. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Safeguard 7.4 implementations must split application patching into KEV-class and non-KEV-class tiers. Browser renderer CVEs with CISA KEV listing OR public exploit require a 24h endpoint-applied SLA measured from KEV-add), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-10585)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ENISA-mobile-secure-baseline": {
+    "framework": "ENISA",
+    "control_id": "mobile-secure-baseline",
+    "control_name": "ENISA Mobile Secure Baseline / Secure Use of Mobile Devices",
+    "designed_for": "ENISA's published baseline for securing enterprise mobile estates — covers MDM enrolment, screen-lock policy, app vetting, and OS update advisories. Assumes operator-managed MDM is the enforcement layer for OS-level vulnerability response.",
+    "misses": [
+      "Baseline does not bind a KEV-class iOS / Android update SLA — guidance is qualitative ('keep devices up to date') with no time-to-patch obligation tied to in-the-wild exploitation",
+      "Default vendor MDM profile sets (Apple Business Manager, Android Enterprise) do not enforce a KEV-deadline update push; operators must hand-roll a forced-update policy and most don't",
+      "Zero-click WebKit / ImageIO chains exploited against journalists and dissidents land within hours of disclosure; the baseline's vetting and screen-lock controls are irrelevant to a remote zero-click exploit chain",
+      "The baseline is silent on the BYOD case where the operator does not control update timing at all — those devices are effectively unpatched until the user complies"
+    ],
+    "real_requirement": "ENISA mobile-baseline implementations must enforce a 24h time-to-patch SLA for KEV-listed mobile-OS CVEs, pushed via MDM forced-update commands. Devices that fail to apply the update inside the window must be moved into a restricted-network posture (no corporate-data sync) until compliant. BYOD devices outside MDM enforcement must be enumerated and either onboarded or excluded from any data class with non-trivial residual-risk acceptance.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-24201"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with mobile-secure-baseline (ENISA Mobile Secure Baseline / Secure Use of Mobile Devices) because we follow the documented requirement: ENISA's published baseline for securing enterprise mobile estates — covers MDM enrolment, screen-lock policy, app vetting, and OS update advisories. Assumes operator-managed MDM is the enforcement lay",
+      "test": "Pull the operational evidence supporting mobile-secure-baseline for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-24201: Baseline does not bind a KEV-class iOS / Android update SLA — guidance is qualitative ('keep devices up to date') with no time-to-patch obligation tied to in-the-wild exploitation. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (ENISA mobile-baseline implementations must enforce a 24h time-to-patch SLA for KEV-listed mobile-OS CVEs, pushed via MDM forced-update commands. Devices that fail to apply the update inside the window must be moved into ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-24201)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-IA-8": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "IA-8",
+    "control_name": "Identification and Authentication (Non-Organizational Users)",
+    "designed_for": "Identifying and authenticating non-organizational users (federation partners, external collaborators, third-party identity providers) accessing organizational systems. Presumes that federation trust is a property the operator can validate at the assertion boundary.",
+    "misses": [
+      "IA-8 assumes the federation IdP's actor-token issuance is sound — Entra ID's cross-tenant actor-token impersonation (CVE-2025-55241) bypasses every IA-8 control at the operator side because the assertion the operator validates was already forged by the IdP itself",
+      "Operator-side validation of a SAML / OIDC assertion cannot detect IdP-side token-forgery; IA-8 evidence packs do not include continuous monitoring of the IdP for cross-tenant-trust anomalies",
+      "Recovery posture after an IdP-side compromise is not enumerated — IA-8 controls describe re-authentication but not 'rotate the IdP-side signing material' or 'force re-consent across all federations'",
+      "IA-8 enhancements (-1, -2, -4 PIV-I, etc.) are about credential strength, not about IdP-tenant-isolation defects"
+    ],
+    "real_requirement": "IA-8 implementations must declare an IdP-side compromise response posture: continuous anomaly detection on federated assertions (out-of-pattern tenant pairs, actor-token claim shapes that historically did not appear), explicit IdP-vendor breach-notification SLA at contract level (no greater than 24h from IdP-side awareness), and a documented 'revoke all federation, force reconsent' playbook that can be executed inside one business day. IA-8 evidence must include the most recent IdP-side anomaly review and the time since last federation-trust attestation refresh.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-55241"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with IA-8 (Identification and Authentication (Non-Organizational Users)) because we follow the documented requirement: Identifying and authenticating non-organizational users (federation partners, external collaborators, third-party identity providers) accessing organizational systems. Presumes that federation trust i",
+      "test": "Pull the operational evidence supporting IA-8 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-55241: IA-8 assumes the federation IdP's actor-token issuance is sound — Entra ID's cross-tenant actor-token impersonation (CVE-2025-55241) bypasses every IA-8 control at the operator side because the assertion the operator validates was already forged by the IdP itself. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (IA-8 implementations must declare an IdP-side compromise response posture: continuous anomaly detection on federated assertions (out-of-pattern tenant pairs, actor-token claim shapes that historically did not appear), ex), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-55241)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "EU-AI-Act-Art15": {
+    "framework": "EU AI Act (Regulation (EU) 2024/1689)",
+    "control_id": "Art-15",
+    "control_name": "Accuracy, robustness, and cybersecurity of high-risk AI systems",
+    "designed_for": "Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption that 'robustness' covers adversarial-input resilience at the model boundary.",
+    "misses": [
+      "Article 15 robustness language treats the model as the attack surface; multimodal-decoder host-RCE (vLLM JPEG2000 / FFmpeg / OpenCV via CVE-2026-22778) is an inference-server CVE that the model never sees — the boundary the Article protects is below the bug",
+      "Bundled-library memory-safety regressions inside inference servers, AI-platform overlays (Red Hat OpenShift AI), and managed-AI control planes (Azure OpenAI SSRF, Ollama 'Bleeding Llama') are infrastructure CVEs that the Article does not enumerate",
+      "AI-as-defender contribution credit is absent — when an AI-assisted discovery (SQLite via Big Sleep, Avahi DoS via ZeroPath, Palo Alto XSS via XBOW) prevents an attack, Article 15 has no concept of how to weight that against AI-as-attacker risk",
+      "IdP-side and cloud-identity primitives underpinning agentic systems (Entra ID cross-tenant actor-token) are outside Article 15's scope despite being load-bearing for any agentic system's robustness story",
+      "Serialization-injection chains in agent frameworks (LangChain LangGrinch) and MCP-style agentic-IDE primitives (VS Code agentic-AI command injection) are not enumerated as a robustness control category"
+    ],
+    "real_requirement": "Article 15 robustness controls must extend below the model boundary to enumerate (1) inference-server bundled-library currency (multimodal decoders, codec libraries) with KEV-grade patch SLAs, (2) AI-platform overlay CVEs (managed-AI control planes, IDE agentic integrations, serialization-chain primitives) as in-scope robustness defects, (3) cloud-identity primitives the AI system depends on (federation, actor-token isolation) as Article-15-coupled supply-chain dependencies, (4) an AI-defender contribution attestation — operators state which classes of Article-15 evidence were collected with AI assistance and how that AI tooling is itself robust. A high-risk-AI compliance pack that documents only model-boundary robustness is non-compliant with the spirit of Article 15.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-0133",
+      "CVE-2025-10725",
+      "CVE-2025-53767",
+      "CVE-2025-55241",
+      "CVE-2025-55319",
+      "CVE-2025-59529",
+      "CVE-2025-68664",
+      "CVE-2025-6965",
+      "CVE-2026-22778",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Art-15 (Accuracy, robustness, and cybersecurity of high-risk AI systems) because we follow the documented requirement: Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption",
+      "test": "Pull the operational evidence supporting Art-15 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-0133, CVE-2025-10725, CVE-2025-53767: Article 15 robustness language treats the model as the attack surface; multimodal-decoder host-RCE (vLLM JPEG2000 / FFmpeg / OpenCV via CVE-2026-22778) is an inference-server CVE that the model never sees — the boundary the Article protects is below the bug. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Article 15 robustness controls must extend below the model boundary to enumerate (1) inference-server bundled-library currency (multimodal decoders, codec libraries) with KEV-grade patch SLAs, (2) AI-platform overlay CVE), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-0133, CVE-2025-10725, CVE-2025-53767)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-AU-9": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "AU-9",
+    "control_name": "Protection of Audit Information",
+    "designed_for": "Protecting audit information and audit logging tools from unauthorized access, modification, and deletion. Anchored on the threat model that the adversary is trying to tamper with logs after the fact.",
+    "misses": [
+      "AU-9 protects logs from tampering but does not classify what should never enter the log in the first place — credential disclosure inside log records (Cisco Duo Authentication Proxy CVE-2025-21085) is invisible to AU-9's audit-integrity controls because the log file is genuinely intact",
+      "Log-content classification (PII, secrets, authenticators) is operator-defined and absent from most AU-9 evidence packs; identity-middleware vendors regularly ship code paths that emit cleartext credentials into otherwise-protected log streams",
+      "AU-9 enhancements (-2 audit backup, -3 cryptographic protection, -4 access by subset) all assume the log content itself is non-sensitive — none address the scenario where the log IS the leak vector",
+      "Downstream log aggregators (SIEM, log-management SaaS) inherit AU-9 protections but operator-side scrubbing of secret content before log shipment is not required by the control"
+    ],
+    "real_requirement": "AU-9 implementations must add a log-content-classification gate: every code path producing a log record is reviewed against a sensitive-content denylist (authenticator material, session tokens, KMS keys, PII), with automated regex-based scrubbing as a backstop and CI tests that fail on detection. AU-9 evidence packs must include the denylist version, last-review date, and a sampled scrubbing-effectiveness test from the previous quarter. Vendor identity-middleware in scope must declare in writing what its log-emission policy is for authenticator material — silence on this point is a control gap.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-21085"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with AU-9 (Protection of Audit Information) because we follow the documented requirement: Protecting audit information and audit logging tools from unauthorized access, modification, and deletion. Anchored on the threat model that the adversary is trying to tamper with logs after the fact.",
+      "test": "Pull the operational evidence supporting AU-9 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-21085: AU-9 protects logs from tampering but does not classify what should never enter the log in the first place — credential disclosure inside log records (Cisco Duo Authentication Proxy CVE-2025-21085) is invisible to AU-9's audit-integrity controls because the log file is genuinely intact. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (AU-9 implementations must add a log-content-classification gate: every code path producing a log record is reviewed against a sensitive-content denylist (authenticator material, session tokens, KMS keys, PII), with autom), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-21085)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.15": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.15",
+    "control_name": "Logging",
+    "designed_for": "Annex A.8.15 — producing, storing, protecting, and analysing logs that record activities, exceptions, faults, and other relevant events on information systems. Implementation guidance focuses on log completeness, retention, and integrity.",
+    "misses": [
+      "A.8.15 emphasises log production and protection but does not specify a content-classification regime — sensitive-data-in-logs (Cisco Duo Authentication Proxy credential disclosure CVE-2025-21085) is a recurring pattern in identity middleware that A.8.15 does not name",
+      "Logging-integrity guidance is about the file/stream, not about what's allowed inside the record — credentials, session tokens, KMS materials, and PII routinely appear in logs that meet every A.8.15 integrity assertion",
+      "Cross-control interaction with A.5.34 (PII protection) is not enumerated — operators implement A.8.15 with one team and A.5.34 with another, and the failure mode (PII inside a protected log) is precisely the seam where they meet",
+      "Vendor-supplied logging defaults inside identity middleware are presumed safe; A.8.15 does not require operator-side review of what the vendor's log emitter writes"
+    ],
+    "real_requirement": "A.8.15 implementations must couple logging integrity with logging content classification. A documented sensitive-content denylist (authenticator material, session tokens, encryption keys, PII categories) must be enforced via vendor-side configuration where supported and via operator-side scrubbing in the log pipeline as a backstop. Identity-middleware deployments must pass a log-emission review against the denylist before production rollout, re-reviewed on every vendor minor-version upgrade. A.8.15 evidence packs must include the most recent denylist-effectiveness sample.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-21085"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A.8.15 (Logging) because we follow the documented requirement: Annex A.8.15 — producing, storing, protecting, and analysing logs that record activities, exceptions, faults, and other relevant events on information systems. Implementation guidance focuses on log c",
+      "test": "Pull the operational evidence supporting A.8.15 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-21085: A.8.15 emphasises log production and protection but does not specify a content-classification regime — sensitive-data-in-logs (Cisco Duo Authentication Proxy credential disclosure CVE-2025-21085) is a recurring pattern in identity middleware that A.8.15 does not name. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A.8.15 implementations must couple logging integrity with logging content classification. A documented sensitive-content denylist (authenticator material, session tokens, encryption keys, PII categories) must be enforced), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-21085)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-10.5": {
+    "framework": "PCI DSS v4.0.1",
+    "control_id": "10.5",
+    "control_name": "Audit log history is retained and available for analysis",
+    "designed_for": "Requirement 10.5 — retain audit logs for at least 12 months with the most recent 3 months immediately available. Anchored on detecting and reconstructing cardholder-data-environment activity.",
+    "misses": [
+      "10.5 ensures logs are retained and protected but does not prohibit log records that contain authenticators themselves — Cisco Duo Authentication Proxy (CVE-2025-21085) wrote cleartext credentials into structured logs that met every 10.5 retention and integrity assertion",
+      "Logs containing authentication secrets are in-scope cardholder-data-environment systems by extension — they have the authenticators that gate access to in-scope systems, so they inherit scope without inheriting the scrubbing rigor of in-scope data classes",
+      "Requirement 10's logging coverage is about what gets logged; 10.5 is about retention. The seam between them — what must never be logged — is not enumerated as a Requirement-10 control",
+      "Vendor-supplied identity middleware sits inside the CDE perimeter; 10.5 does not require operator-side validation of the vendor's log-emission code paths before in-scope deployment"
+    ],
+    "real_requirement": "Requirement 10.5 implementations must classify log destinations that ingest CDE-system logs as in-scope cardholder-data systems. Every identity-middleware vendor in CDE-scope must have its log-emission code paths reviewed against an authenticator-material denylist before production deployment, re-reviewed on every vendor minor upgrade. Log records that contain credentials, session tokens, or KMS material must trigger a controlled-rotation incident within 24h regardless of whether the log destination's retention controls are sound.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-21085"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 10.5 (Audit log history is retained and available for analysis) because we follow the documented requirement: Requirement 10.5 — retain audit logs for at least 12 months with the most recent 3 months immediately available. Anchored on detecting and reconstructing cardholder-data-environment activity.",
+      "test": "Pull the operational evidence supporting 10.5 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-21085: 10.5 ensures logs are retained and protected but does not prohibit log records that contain authenticators themselves — Cisco Duo Authentication Proxy (CVE-2025-21085) wrote cleartext credentials into structured logs that met every 10.5 retention and integrity assertion. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Requirement 10.5 implementations must classify log destinations that ingest CDE-system logs as in-scope cardholder-data systems. Every identity-middleware vendor in CDE-scope must have its log-emission code paths reviewe), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-21085)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-6.2.4": {
+    "framework": "PCI DSS v4.0.1",
+    "control_id": "6.2.4",
+    "control_name": "Software engineering techniques or other methods are defined and used by personnel to prevent or mitigate common software attacks",
+    "designed_for": "Requirement 6.2.4 — software engineering practices that prevent injection, buffer overflow, insecure cryptographic storage, insecure communications, and similar canonical attack classes from reaching bespoke or custom software the entity develops. Anchored on developer-side prevention through coding practice.",
+    "misses": [
+      "6.2.4 targets bespoke/custom software the entity develops; third-party-library injection paths inside the CDE (PostgreSQL psql invalid-UTF-8 SQL injection → ACE CVE-2025-1094) are governed by 6.3.3 patch SLAs, not 6.2.4 — and the 30-day critical-class patch window is incompatible with a KEV-listed +ACE +public-PoC vulnerability",
+      "Injection-class flaws in client tooling (psql, mongo shell, redis-cli) are not enumerated as a CDE attack surface — Requirement 6.2.4 presumes the in-scope code is the entity's, not the database vendor's interactive shell",
+      "Input-validation guidance assumes the operator can author the validator; byte-level malformation (invalid UTF-8) is a class most developer training does not name, even when 6.2.4 is otherwise rigorously implemented",
+      "The seam between 6.2.4 (software practice) and 6.3.3 (patch SLA) leaves third-party-library KEV-class injection CVEs in a 30-day window when the operational reality is hours"
+    ],
+    "real_requirement": "Requirement 6.2.4 implementations must extend defensive-engineering practice to third-party CDE-tooling components — database client shells, ORM libraries, encoding/decoding utilities — with KEV-grade patch SLAs that override the 6.3.3 baseline. KEV-listed injection CVEs in the CDE software stack require a 72h applied-patch SLA, not 30 days. Input-validation review must enumerate byte-level malformation (invalid UTF-8, embedded null, BOM injection) as a named attack class. Evidence packs must include the most recent third-party-tooling injection-CVE response timeline.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-1094"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 6.2.4 (Software engineering techniques or other methods are defined and used by personnel to prevent or mitigate common software attacks) because we follow the documented requirement: Requirement 6.2.4 — software engineering practices that prevent injection, buffer overflow, insecure cryptographic storage, insecure communications, and similar canonical attack classes from reaching",
+      "test": "Pull the operational evidence supporting 6.2.4 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-1094: 6.2.4 targets bespoke/custom software the entity develops; third-party-library injection paths inside the CDE (PostgreSQL psql invalid-UTF-8 SQL injection → ACE CVE-2025-1094) are governed by 6.3.3 patch SLAs, not 6.2.4 — and the 30-day critical-class patch window is incompatible with a KEV-listed +ACE +public-PoC vulnerability. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Requirement 6.2.4 implementations must extend defensive-engineering practice to third-party CDE-tooling components — database client shells, ORM libraries, encoding/decoding utilities — with KEV-grade patch SLAs that ove), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-1094)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.9": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.9",
+    "control_name": "Configuration management",
+    "designed_for": "Annex A.8.9 — establishing, documenting, implementing, monitoring, and reviewing configurations of hardware, software, services, and networks. Anchored on a documented baseline and continuous monitoring for drift.",
+    "misses": [
+      "Vendor-default configuration baselines for in-memory data stores ship with high-risk features enabled — Redis EVAL / Lua scripting is on by default (RediShell CVE-2025-49844 reference case); A.8.9's drift-detection has nothing to drift from if the baseline itself is the problem",
+      "Protocol-implementation differences (HTTP/2 'MadeYouReset' stream-reset bypass CVE-2025-8671) are below the configuration baseline's abstraction layer — the operator declares 'HTTP/2 enabled' as a config item without enumerating the implementation's stream-handling characteristics",
+      "Business-logic configuration limits (Avahi connection-limit DoS CVE-2025-59529) presume the implementation respects the declared limit; A.8.9 does not require validation that configured limits are actually enforced by the running code",
+      "Vendor-default-enabled high-risk features (scripting engines, debugging endpoints, anonymous bindings) are not enumerated as a default-deny baseline class — A.8.9 is implementation-agnostic about what 'secure' baseline looks like for any specific product"
+    ],
+    "real_requirement": "A.8.9 implementations must declare a default-deny configuration posture for high-risk vendor defaults: in-memory stores ship with scripting disabled, debugging endpoints unbound, anonymous access disabled, until an operator explicitly enables with documented justification. Configuration baselines must include a runtime-validation sample — confirm the deployed instance actually behaves to the declared limits (rate limits, connection limits, protocol-level resource caps) under load test. Evidence packs must include the per-product baseline-justification log and the most recent runtime-validation sample for a representative service in each product class.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-49844",
+      "CVE-2025-59529",
+      "CVE-2025-8671"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A.8.9 (Configuration management) because we follow the documented requirement: Annex A.8.9 — establishing, documenting, implementing, monitoring, and reviewing configurations of hardware, software, services, and networks. Anchored on a documented baseline and continuous monitori",
+      "test": "Pull the operational evidence supporting A.8.9 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-49844, CVE-2025-59529, CVE-2025-8671: Vendor-default configuration baselines for in-memory data stores ship with high-risk features enabled — Redis EVAL / Lua scripting is on by default (RediShell CVE-2025-49844 reference case); A.8.9's drift-detection has nothing to drift from if the baseline itself is the problem. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A.8.9 implementations must declare a default-deny configuration posture for high-risk vendor defaults: in-memory stores ship with scripting disabled, debugging endpoints unbound, anonymous access disabled, until an opera), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-49844, CVE-2025-59529, CVE-2025-8671)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-API-Security-Top-10-API8:2023": {
+    "framework": "OWASP API Security Top 10:2023",
+    "control_id": "API8:2023",
+    "control_name": "Security Misconfiguration",
+    "designed_for": "API8:2023 — security misconfiguration class covering unnecessary features enabled, default credentials, error messages disclosing internals, and missing security headers. Anchored on the operator's responsibility to harden the API surface beyond vendor defaults.",
+    "misses": [
+      "API8:2023 names default credentials and unnecessary features but does not enumerate server-side scripting engines as the canonical instance — Redis EVAL / Lua (CVE-2025-49844 RediShell) is server-side-script-execution as a data primitive, exposed by default for 13 years",
+      "Server-side script execution inside data primitives (in-memory caches, document stores, search engines) crosses from 'feature' to 'arbitrary code execution from a data-plane query' — the API8 hardening checklist treats this as one knob among many rather than a default-deny class",
+      "API-fronting middleware that proxies to a data store with scripting enabled inherits the RCE surface; API8:2023 does not require the operator to validate the back-end's scripting posture as part of API hardening",
+      "Vendor-default-on scripting is not a 'misconfiguration' in the colloquial sense — it's the documented default, which makes the failure mode invisible to misconfiguration scanners that flag deviations from vendor defaults"
+    ],
+    "real_requirement": "API8:2023 implementations must enumerate server-side scripting engines (Redis EVAL, MongoDB $where, Elasticsearch script-fields, OpenSearch Painless dynamic scripts) as default-deny across data stores backing any API surface. Operators must produce a per-data-store scripting-posture attestation as part of API hardening evidence. API-fronting middleware must validate the back-end's scripting-disabled status at startup and refuse to serve traffic if the back-end ships an enabled-by-default scripting engine without explicit operator override.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-49844"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with API8:2023 (Security Misconfiguration) because we follow the documented requirement: API8:2023 — security misconfiguration class covering unnecessary features enabled, default credentials, error messages disclosing internals, and missing security headers. Anchored on the operator's re",
+      "test": "Pull the operational evidence supporting API8:2023 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-49844: API8:2023 names default credentials and unnecessary features but does not enumerate server-side scripting engines as the canonical instance — Redis EVAL / Lua (CVE-2025-49844 RediShell) is server-side-script-execution as a data primitive, exposed by default for 13 years. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (API8:2023 implementations must enumerate server-side scripting engines (Redis EVAL, MongoDB $where, Elasticsearch script-fields, OpenSearch Painless dynamic scripts) as default-deny across data stores backing any API sur), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-49844)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.24": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.24",
+    "control_name": "Use of cryptography",
+    "designed_for": "Annex A.8.24 — defining and implementing rules for the effective use of cryptography, including key management. Anchored on the assumption that correctly-applied transport and at-rest encryption preserves confidentiality across the data lifecycle.",
+    "misses": [
+      "A.8.24 controls protect data in transit and at rest; in-memory disclosure via heap-leak (MongoDB 'MongoBleed' CVE-2025-14847, VMware ESXi HGFS memory leak CVE-2025-22226) escapes both control surfaces because the data is exfiltrated from RAM before encryption boundaries apply",
+      "Memory-disclosure CVEs in cryptographic subsystem dependencies (zlib, OpenSSL, bundled compression libraries) are not enumerated as a use-of-cryptography control gap — A.8.24 reads as if the crypto library is correct and the memory it touches is safe",
+      "Hypervisor-layer memory-protection assumptions (process isolation, guest-host boundary) are presumed by A.8.24 but invalidated by VM-escape chain helpers like CVE-2025-22226",
+      "Evidence packs for A.8.24 typically show key-management hygiene and TLS configuration; they rarely include 'what unencrypted data is reachable from a process-memory-disclosure primitive in this stack' as an enumerated risk"
+    ],
+    "real_requirement": "A.8.24 implementations must extend the cryptography control surface to include in-memory data-handling: bundled-library currency for compression / encoding / parsing libraries touched by cryptographic data paths, with a KEV-grade patch SLA. Hypervisor and container-runtime CVEs that produce memory-disclosure primitives must be tracked as cryptographic-control compensating-control failures. Evidence packs must enumerate process-memory disclosure as a risk to the data classes A.8.24 protects, with a documented response plan when memory-leak CVEs land against components in scope.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-14847",
+      "CVE-2025-22226"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A.8.24 (Use of cryptography) because we follow the documented requirement: Annex A.8.24 — defining and implementing rules for the effective use of cryptography, including key management. Anchored on the assumption that correctly-applied transport and at-rest encryption prese",
+      "test": "Pull the operational evidence supporting A.8.24 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-14847, CVE-2025-22226: A.8.24 controls protect data in transit and at rest; in-memory disclosure via heap-leak (MongoDB 'MongoBleed' CVE-2025-14847, VMware ESXi HGFS memory leak CVE-2025-22226) escapes both control surfaces because the data is exfiltrated from RAM before encryption boundaries apply. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A.8.24 implementations must extend the cryptography control surface to include in-memory data-handling: bundled-library currency for compression / encoding / parsing libraries touched by cryptographic data paths, with a ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-14847, CVE-2025-22226)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-3.5": {
+    "framework": "PCI DSS v4.0.1",
+    "control_id": "3.5",
+    "control_name": "Primary account number (PAN) is secured wherever it is stored",
+    "designed_for": "Requirement 3.5 — render PAN unreadable wherever stored using strong cryptography, with documented key management. Anchored on the storage-encryption-at-rest threat model.",
+    "misses": [
+      "3.5 protects PAN at rest; in-memory disclosure (MongoDB 'MongoBleed' CVE-2025-14847) exposes cardholder data in the cleartext form it takes while being processed, after the storage-encryption boundary",
+      "Heap-disclosure CVEs in database server processes leak whatever was recently in memory — frequently includes PAN values mid-query, mid-update, or mid-index-build that 3.5's at-rest encryption assumed were never exposed",
+      "Tokenization / format-preserving encryption mitigates 3.5 risk for at-rest data; in-memory disclosure of the un-tokenized PAN during the brief moment of decryption-for-use is not covered",
+      "3.5 evidence packs document key management and at-rest crypto strength; they rarely enumerate 'process-memory disclosure CVEs in the data tier' as a compensating-control failure mode"
+    ],
+    "real_requirement": "Requirement 3.5 implementations must add a process-memory-disclosure response posture: KEV-listed memory-disclosure CVEs in any process that handles PAN in cleartext form (database server, application server, cache layer) require a 24h applied-patch SLA. Operators must enumerate which processes handle PAN in cleartext and which bundled libraries those processes load. Evidence packs must document the most recent process-memory-leak CVE in scope and the time-to-patch.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-14847"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 3.5 (Primary account number (PAN) is secured wherever it is stored) because we follow the documented requirement: Requirement 3.5 — render PAN unreadable wherever stored using strong cryptography, with documented key management. Anchored on the storage-encryption-at-rest threat model.",
+      "test": "Pull the operational evidence supporting 3.5 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-14847: 3.5 protects PAN at rest; in-memory disclosure (MongoDB 'MongoBleed' CVE-2025-14847) exposes cardholder data in the cleartext form it takes while being processed, after the storage-encryption boundary. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Requirement 3.5 implementations must add a process-memory-disclosure response posture: KEV-listed memory-disclosure CVEs in any process that handles PAN in cleartext form (database server, application server, cache layer), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-14847)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "GDPR-Art32": {
+    "framework": "EU GDPR",
+    "control_id": "Art-32",
+    "control_name": "Security of processing",
+    "designed_for": "Article 32 — appropriate technical and organisational measures to ensure a level of security appropriate to the risk, including pseudonymisation and encryption of personal data, ability to ensure ongoing confidentiality, integrity, availability and resilience, and a process for regularly testing those measures.",
+    "misses": [
+      "Article 32(1)(a) names pseudonymisation and encryption — both address at-rest and in-transit data classes; in-memory disclosure (MongoDB 'MongoBleed' CVE-2025-14847) escapes both",
+      "Confidentiality-by-design language is qualitative; operators interpret 'appropriate' against established practice, and established practice for database tier does not include process-memory-disclosure CVE response as a confidentiality control",
+      "Developer-endpoint compromise from typosquat credential stealers (MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) exfiltrates personal data the developer is processing — Article 32 controls inside production do not address developer-endpoint as a confidentiality surface",
+      "Supplier-chain breach pathways (typosquat, sleeper-package) defeat the 'process for regularly testing' clause because the breach is upstream of the operator's testing scope"
+    ],
+    "real_requirement": "Article 32 implementations must enumerate developer-endpoint personal-data exposure (source code with embedded PII for testing, local production-data copies, developer-accessible secret stores) as in-scope confidentiality surface, with corresponding measures: ephemeral credential issuance, deploy-time secret injection rather than developer-resident secrets, endpoint EDR with telemetry for unexpected outbound connections from package-install processes. Process-memory-disclosure CVEs in data-tier components must trigger an Article-32 risk reassessment within 24h.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-14847",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Art-32 (Security of processing) because we follow the documented requirement: Article 32 — appropriate technical and organisational measures to ensure a level of security appropriate to the risk, including pseudonymisation and encryption of personal data, ability to ensure ongo",
+      "test": "Pull the operational evidence supporting Art-32 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-14847, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER: Article 32(1)(a) names pseudonymisation and encryption — both address at-rest and in-transit data classes; in-memory disclosure (MongoDB 'MongoBleed' CVE-2025-14847) escapes both. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Article 32 implementations must enumerate developer-endpoint personal-data exposure (source code with embedded PII for testing, local production-data copies, developer-accessible secret stores) as in-scope confidentialit), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-14847, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-SC-5": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SC-5",
+    "control_name": "Denial of Service Protection",
+    "designed_for": "Protecting against, detecting, and mitigating denial-of-service attacks through network-edge controls (rate limiting, scrubbing, geo-fencing) and capacity planning. Anchored on volumetric and connection-flood threat models at the network edge.",
+    "misses": [
+      "SC-5 controls operate at network-edge granularity; protocol-implementation defects (HTTP/2 'MadeYouReset' CVE-2025-8671) produce per-connection stream amplification that looks like normal traffic at the edge",
+      "Business-logic DoS via configured-limit bypass (Avahi connection-limit CVE-2025-59529 'configured limit isn't enforced') escapes SC-5 entirely — the edge controls have nothing wrong with them; the back-end implementation just doesn't honour its own limits",
+      "SC-5 enhancements (-1 absorb attack, -2 capacity, -3 mitigation) emphasise volumetric absorption; protocol-level amplification and business-logic limit-bypass need code-side fixes, not edge-side scaling",
+      "DoS-protection evidence packs focus on absorption capacity and scrubbing partner SLAs; they rarely require runtime validation that configured per-connection / per-process resource limits are actually enforced under load"
+    ],
+    "real_requirement": "SC-5 implementations must extend DoS-protection from network-edge volumetric controls to include (1) protocol-implementation currency for HTTP/2, HTTP/3, QUIC, gRPC, with KEV-grade patch SLAs for stream-handling CVEs, (2) runtime load-tests that validate configured per-connection / per-process / per-tenant resource limits are honoured by the running implementation, (3) enumeration of business-logic DoS surfaces (auth retry counters, search-query depth, regex backtracking) with a documented test that asserts the limit fires before exhaustion. SC-5 evidence packs must include the most recent runtime-limit-enforcement test result.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-59529",
+      "CVE-2025-8671"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with SC-5 (Denial of Service Protection) because we follow the documented requirement: Protecting against, detecting, and mitigating denial-of-service attacks through network-edge controls (rate limiting, scrubbing, geo-fencing) and capacity planning. Anchored on volumetric and connecti",
+      "test": "Pull the operational evidence supporting SC-5 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-59529, CVE-2025-8671: SC-5 controls operate at network-edge granularity; protocol-implementation defects (HTTP/2 'MadeYouReset' CVE-2025-8671) produce per-connection stream amplification that looks like normal traffic at the edge. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (SC-5 implementations must extend DoS-protection from network-edge volumetric controls to include (1) protocol-implementation currency for HTTP/2, HTTP/3, QUIC, gRPC, with KEV-grade patch SLAs for stream-handling CVEs, (2), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-59529, CVE-2025-8671)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-API-Security-Top-10-API4:2023": {
+    "framework": "OWASP API Security Top 10:2023",
+    "control_id": "API4:2023",
+    "control_name": "Unrestricted Resource Consumption",
+    "designed_for": "API4:2023 — APIs must enforce limits on resource consumption (rate, bandwidth, compute, memory, file uploads) so that a single client cannot exhaust shared infrastructure. Anchored on per-client HTTP-request rate limiting at the API gateway.",
+    "misses": [
+      "API4:2023 rate-limiting is HTTP-request-granularity; HTTP/2 protocol-level stream amplification ('MadeYouReset' CVE-2025-8671) produces enormous server-side work per legitimate-looking client connection — the rate-limit counter increments by one while the back-end services hundreds of stream-reset events",
+      "Per-connection HTTP/2 stream amplification defeats per-client rate limiting because the work is amplified after the rate-limit check; the gateway sees one allowed request and the back-end services the amplified pattern",
+      "API4:2023 implementations rarely include HTTP/2 stream-tracking metrics (streams-per-connection, reset-rate, RST_STREAM bursts) as a measured resource axis — the threat model stops at HTTP-request granularity",
+      "Edge-side mitigation guidance is HTTP-semantic; protocol-stack-level mitigation requires the gateway's HTTP/2 implementation itself to be current against the stream-handling CVE class"
+    ],
+    "real_requirement": "API4:2023 implementations must add HTTP/2 / HTTP/3 protocol-level resource-consumption controls: per-connection stream-rate limits, RST_STREAM rate limits, max-concurrent-streams per connection, and explicit currency monitoring of the gateway's HTTP/2 implementation against stream-handling CVEs with a 72h applied-patch SLA. Evidence packs must include the protocol-implementation version inventory and the per-connection-stream-burst metric from the gateway.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-8671"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with API4:2023 (Unrestricted Resource Consumption) because we follow the documented requirement: API4:2023 — APIs must enforce limits on resource consumption (rate, bandwidth, compute, memory, file uploads) so that a single client cannot exhaust shared infrastructure. Anchored on per-client HTTP-",
+      "test": "Pull the operational evidence supporting API4:2023 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-8671: API4:2023 rate-limiting is HTTP-request-granularity; HTTP/2 protocol-level stream amplification ('MadeYouReset' CVE-2025-8671) produces enormous server-side work per legitimate-looking client connection — the rate-limit counter increments by one while the back-end services hundreds of stream-reset events. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (API4:2023 implementations must add HTTP/2 / HTTP/3 protocol-level resource-consumption controls: per-connection stream-rate limits, RST_STREAM rate limits, max-concurrent-streams per connection, and explicit currency mon), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-8671)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-availability": {
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
+    "control_id": "Art-21-availability",
+    "control_name": "Availability and resilience risk-management measures",
+    "designed_for": "Article 21(2)(c-f) — measures for business continuity, supply-chain security, vulnerability handling, and the effectiveness of cybersecurity risk-management measures. The availability angle covers backup management, disaster recovery, and crisis-management to ensure continuity of essential and important services.",
+    "misses": [
+      "Availability controls in Article 21 are framed around business continuity (backup, DR, crisis-management) rather than protocol-implementation DoS bypass — HTTP/2 'MadeYouReset' (CVE-2025-8671) defeats availability via the network-protocol stack, which is not enumerated as a NIS2 availability surface",
+      "OES filings typically demonstrate backup cadence and DR-test currency; they rarely include protocol-implementation patch-cadence as an availability control",
+      "The 'effectiveness of measures' clause is evaluated periodically — protocol-implementation CVEs land between assessments and the prevailing OES evidence pack would not flag a pending HTTP/2 patch as a NIS2 availability deficiency",
+      "Availability risk classification typically uses downtime hours; a stream-amplification DoS produces gray availability degradation (intermittent failure, partial slowdown) that doesn't trip the same thresholds as a full outage"
+    ],
+    "real_requirement": "NIS2 Art. 21 availability measures must enumerate protocol-implementation currency as an availability control: HTTP/2, HTTP/3, QUIC, gRPC, TCP keep-alive handler currency with a 72h applied-patch SLA for KEV-listed protocol-handling CVEs. Availability risk classification must include partial-degradation modes (stream amplification, connection-pool exhaustion, regex-backtracking DoS) alongside full-outage modes. OES evidence packs must include the protocol-stack version inventory and the most recent runtime resource-limit validation.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-8671"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Art-21-availability (Availability and resilience risk-management measures) because we follow the documented requirement: Article 21(2)(c-f) — measures for business continuity, supply-chain security, vulnerability handling, and the effectiveness of cybersecurity risk-management measures. The availability angle covers bac",
+      "test": "Pull the operational evidence supporting Art-21-availability for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-8671: Availability controls in Article 21 are framed around business continuity (backup, DR, crisis-management) rather than protocol-implementation DoS bypass — HTTP/2 'MadeYouReset' (CVE-2025-8671) defeats availability via the network-protocol stack, which is not enumerated as a NIS2 availability surface. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (NIS2 Art. 21 availability measures must enumerate protocol-implementation currency as an availability control: HTTP/2, HTTP/3, QUIC, gRPC, TCP keep-alive handler currency with a 72h applied-patch SLA for KEV-listed proto), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-8671)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-IEC-42001-AIMS": {
+    "framework": "ISO/IEC 42001:2023",
+    "control_id": "AIMS",
+    "control_name": "AI Management System — overall requirements",
+    "designed_for": "ISO/IEC 42001:2023 establishes the management-system requirements for an organisation's AI activities (governance, risk, lifecycle, stakeholder communication). Anchored on a management-system view: policies, roles, monitoring, continual improvement.",
+    "misses": [
+      "AIMS clauses address governance and lifecycle of the AI product/service; they do not enumerate inference-server-host CVEs as an AI management surface (vLLM multimodal-decoder host RCE via CVE-2026-22778, Ollama 'Bleeding Llama' memory disclosure via CVE-2026-7482)",
+      "Managed-AI-platform overlays (Azure OpenAI SSRF CVE-2025-53767, Red Hat OpenShift AI privesc) introduce vendor control planes between the operator and the model — AIMS does not require the operator to enumerate or monitor these overlay surfaces as part of AI risk",
+      "AI-as-defender contribution credit is absent — when AI tooling discovers vulnerabilities (Big Sleep AI open-source disclosure tranche), AIMS has no concept of how to incorporate AI-defender contribution into the management-system's continual-improvement output",
+      "The standard is implementation-agnostic about what 'controlling AI risk' means at the host / network / process level — it speaks management-system, not infrastructure"
+    ],
+    "real_requirement": "ISO/IEC 42001 AIMS implementations must extend the management-system scope to include AI-infrastructure surfaces: inference-server bundled-library currency (multimodal decoders, codec libraries, model runtimes), managed-AI-platform overlay-vendor breach-notification SLAs at contract level, and host-network exposure posture for local-model servers (default-deny network binding on Ollama-class runtimes). The AIMS evidence pack must include an AI-defender contribution register — which Annex-A controls were validated with AI assistance, and how that AI tooling is itself governed under the same AIMS.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-53767",
+      "CVE-2026-22778",
+      "CVE-2026-7482",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with AIMS (AI Management System — overall requirements) because we follow the documented requirement: ISO/IEC 42001:2023 establishes the management-system requirements for an organisation's AI activities (governance, risk, lifecycle, stakeholder communication). Anchored on a management-system view: po",
+      "test": "Pull the operational evidence supporting AIMS for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-53767, CVE-2026-22778, CVE-2026-7482: AIMS clauses address governance and lifecycle of the AI product/service; they do not enumerate inference-server-host CVEs as an AI management surface (vLLM multimodal-decoder host RCE via CVE-2026-22778, Ollama 'Bleeding Llama' memory disclosure via CVE-2026-7482). Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (ISO/IEC 42001 AIMS implementations must extend the management-system scope to include AI-infrastructure surfaces: inference-server bundled-library currency (multimodal decoders, codec libraries, model runtimes), managed-), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-53767, CVE-2026-22778, CVE-2026-7482)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ATLAS-AML.T0048": {
+    "framework": "MITRE ATLAS v5.1.0",
+    "control_id": "AML.T0048",
+    "control_name": "External Harms — ML Supply Chain Compromise (bundled-codec / inference-server class)",
+    "designed_for": "ATLAS AML.T0048 catalogues external harms from ML supply-chain compromise, including malicious model weights, poisoned training data, and compromised ML libraries. The technique-level guidance covers detection and mitigation at the model-artifact and library-consumption layer.",
+    "misses": [
+      "AML.T0048 enumerates supply-chain compromise at the model and ML-library granularity; bundled-codec attack surfaces inside inference servers (vLLM multimodal heap overflow via JPEG2000 / FFmpeg / OpenCV CVE-2026-22778) sit a layer below — the codec is not 'an ML library' in the classical taxonomy sense",
+      "Multimodal inference servers bundle decoder libraries with very different security maturity than core ML frameworks; the supply-chain risk is concentrated in the codec dependency chain, which AML.T0048 mitigations do not specifically address",
+      "Operator-side defences enumerated for AML.T0048 (model provenance, hash-pinning, weight integrity) do not transfer to bundled-codec currency — a hash-pinned model running on a vulnerable JPEG2000 decoder is still exploitable",
+      "Detection guidance focuses on model-behaviour anomalies; host-side RCE from a malformed multimodal input bypasses model-behaviour observability entirely"
+    ],
+    "real_requirement": "AML.T0048 mitigations must enumerate bundled-codec / decoder libraries inside inference servers as an in-scope supply-chain surface with its own currency posture: KEV-grade patch SLA for multimodal-decoder CVEs, an SBOM-level inventory of every decoder bundled into the inference server, and runtime detection for inference-process crashes / unexpected child-process spawns as the host-RCE telemetry that model-behaviour monitoring lacks.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2026-22778"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with AML.T0048 (External Harms — ML Supply Chain Compromise (bundled-codec / inference-server class)) because we follow the documented requirement: ATLAS AML.T0048 catalogues external harms from ML supply-chain compromise, including malicious model weights, poisoned training data, and compromised ML libraries. The technique-level guidance covers",
+      "test": "Pull the operational evidence supporting AML.T0048 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2026-22778: AML.T0048 enumerates supply-chain compromise at the model and ML-library granularity; bundled-codec attack surfaces inside inference servers (vLLM multimodal heap overflow via JPEG2000 / FFmpeg / OpenCV CVE-2026-22778) sit a layer below — the codec is not 'an ML library' in the classical taxonomy sense. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (AML.T0048 mitigations must enumerate bundled-codec / decoder libraries inside inference servers as an in-scope supply-chain surface with its own currency posture: KEV-grade patch SLA for multimodal-decoder CVEs, an SBOM-), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2026-22778)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "EU-AI-Act-Art10": {
+    "framework": "EU AI Act (Regulation (EU) 2024/1689)",
+    "control_id": "Art-10",
+    "control_name": "Data and data governance (high-risk AI systems)",
+    "designed_for": "Article 10 — high-risk AI systems must be trained, validated, and tested on data sets meeting quality criteria (relevance, representativeness, freedom from errors and bias) under appropriate data-governance practices. Anchored on training-data integrity and provenance.",
+    "misses": [
+      "Article 10 governs training-data quality and provenance; downstream compromised ML libraries that ship inside the AI system (ultralytics PyPI compromise → XMRig MAL-2024-PYPI-ULTRALYTICS-XMRIG, with 60M+ downloads) are not enumerated as a data-governance failure even though they directly contaminate the AI system's runtime trust posture",
+      "Model-server memory-disclosure (Ollama 'Bleeding Llama' CVE-2026-7482) leaks data that passed through the data-governance pipeline — Article 10 controls do not extend to runtime-leak vectors",
+      "Data-governance evidence packs focus on training-time provenance; runtime-stage data leakage and library-supply-chain compromise are out of scope",
+      "Float-version installs of AI libraries (`pip install ultralytics` without pin) propagate compromise instantly across the consumer base — Article 10 does not require hash-pinning as a data-governance practice"
+    ],
+    "real_requirement": "Article 10 data-governance implementations must extend governance to the AI-library supply chain that processes the data: hash-pinned installs of ML libraries (no `latest` / float-version installs), SBOM coverage including ML-library transitive dependencies, build-environment hardening attestations (SLSA-3 grade) from upstream maintainers of high-share AI libraries. Runtime data leakage via model-server memory-disclosure must trigger an Article-10 data-governance reassessment. Evidence packs must include the AI-library pin posture and the most recent supply-chain incident response timeline.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2026-7482",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Art-10 (Data and data governance (high-risk AI systems)) because we follow the documented requirement: Article 10 — high-risk AI systems must be trained, validated, and tested on data sets meeting quality criteria (relevance, representativeness, freedom from errors and bias) under appropriate data-gove",
+      "test": "Pull the operational evidence supporting Art-10 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2026-7482, MAL-2024-PYPI-ULTRALYTICS-XMRIG: Article 10 governs training-data quality and provenance; downstream compromised ML libraries that ship inside the AI system (ultralytics PyPI compromise → XMRig MAL-2024-PYPI-ULTRALYTICS-XMRIG, with 60M+ downloads) are not enumerated as a data-governance failure even though they directly contaminate the AI system's runtime trust posture. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Article 10 data-governance implementations must extend governance to the AI-library supply chain that processes the data: hash-pinned installs of ML libraries (no `latest` / float-version installs), SBOM coverage includi), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2026-7482, MAL-2024-PYPI-ULTRALYTICS-XMRIG)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-LLM06": {
+    "framework": "OWASP LLM Top 10 (2023 edition)",
+    "control_id": "LLM06",
+    "control_name": "Sensitive Information Disclosure (2023 edition)",
+    "designed_for": "LLM06:2023 — preventing unauthorised disclosure of sensitive information through LLM responses, including PII, proprietary algorithms, and confidential data. Anchored on output-filtering and prompt-level controls.",
+    "misses": [
+      "LLM06:2023 framing addresses model-output disclosure; host-process memory disclosure from the inference server itself (Ollama 'Bleeding Llama' CVE-2026-7482) leaks data that never reached an output filter — the leak is in the server process, not the model output",
+      "Local-model runtimes (Ollama, llama.cpp server, vLLM standalone) ship with no default authentication and no default network restriction; LLM06's prompt / output controls don't address the case where the runtime API is reachable to arbitrary network peers",
+      "Memory-disclosure CVEs in inference runtimes leak whatever was recently in memory — prior prompts, system prompts, embedded credentials in environment variables — that LLM06's output-side defences are irrelevant to",
+      "Sensitive-information-disclosure controls assume the leak channel is the model response; host-side leak channels (memory disclosure, process listing, log files) are out of frame"
+    ],
+    "real_requirement": "LLM06 implementations must extend sensitive-information-disclosure controls to inference-runtime host posture: default-deny network exposure on local-model runtimes (Ollama-class), explicit authentication on the runtime API even on localhost, KEV-grade patch SLA on inference-runtime CVEs that produce memory-disclosure primitives, and environment-variable hygiene (no credentials in the runtime's environment unless required, scrubbed from any debug / introspection endpoint).",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2026-7482"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with LLM06 (Sensitive Information Disclosure (2023 edition)) because we follow the documented requirement: LLM06:2023 — preventing unauthorised disclosure of sensitive information through LLM responses, including PII, proprietary algorithms, and confidential data. Anchored on output-filtering and prompt-le",
+      "test": "Pull the operational evidence supporting LLM06 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2026-7482: LLM06:2023 framing addresses model-output disclosure; host-process memory disclosure from the inference server itself (Ollama 'Bleeding Llama' CVE-2026-7482) leaks data that never reached an output filter — the leak is in the server process, not the model output. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (LLM06 implementations must extend sensitive-information-disclosure controls to inference-runtime host posture: default-deny network exposure on local-model runtimes (Ollama-class), explicit authentication on the runtime ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2026-7482)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-IEC-42001-AIMS-A.6.2.5": {
+    "framework": "ISO/IEC 42001:2023",
+    "control_id": "Annex A.6.2.5",
+    "control_name": "AI system lifecycle — verification and validation",
+    "designed_for": "Annex A.6.2.5 — verification and validation across the AI system lifecycle, ensuring intended behaviour is preserved across design, training, deployment, and operations. Anchored on lifecycle-stage gates with evidence at each transition.",
+    "misses": [
+      "A.6.2.5 lifecycle stages are AI-product-centric (design → train → deploy → operate); LLM-output trust-zone separation (LangChain LangGrinch serialization-injection CVE-2025-68664) is a runtime trust-boundary control that the lifecycle framing does not name",
+      "IDE-resident agentic primitives (VS Code agentic-AI command injection CVE-2025-55319) operate inside the operator's developer workstations — the AI-lifecycle controls do not address the workstation as an in-scope AI deployment surface",
+      "Managed-AI-platform tenant isolation (Red Hat OpenShift AI privesc CVE-2025-10725) is a deployment-platform control; A.6.2.5 verifies the AI system but not the AI platform underneath it",
+      "Output-handling trust-boundary violations are runtime properties not validated by the standard's lifecycle verification gates, which are typically applied at training and deployment transitions"
+    ],
+    "real_requirement": "Annex A.6.2.5 implementations must add a runtime-trust-boundary verification stage to the AI lifecycle: every code path that consumes LLM output and produces system-level effects (deserialization, code execution, shell commands, file writes, network calls) must be enumerated and gated by a trust-boundary check. IDE-resident agentic-AI primitives and managed-AI-platform overlays must be in-scope deployment surfaces with their own A.6.2.5 verification evidence. Lifecycle gates must include runtime trust-boundary tests, not just training/deployment validation.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-10725",
+      "CVE-2025-55319",
+      "CVE-2025-68664"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Annex A.6.2.5 (AI system lifecycle — verification and validation) because we follow the documented requirement: Annex A.6.2.5 — verification and validation across the AI system lifecycle, ensuring intended behaviour is preserved across design, training, deployment, and operations. Anchored on lifecycle-stage ga",
+      "test": "Pull the operational evidence supporting Annex A.6.2.5 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-10725, CVE-2025-55319, CVE-2025-68664: A.6.2.5 lifecycle stages are AI-product-centric (design → train → deploy → operate); LLM-output trust-zone separation (LangChain LangGrinch serialization-injection CVE-2025-68664) is a runtime trust-boundary control that the lifecycle framing does not name. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Annex A.6.2.5 implementations must add a runtime-trust-boundary verification stage to the AI lifecycle: every code path that consumes LLM output and produces system-level effects (deserialization, code execution, shell c), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-10725, CVE-2025-55319, CVE-2025-68664)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-LLM01": {
+    "framework": "OWASP LLM Top 10 (2023 edition)",
+    "control_id": "LLM01",
+    "control_name": "Prompt Injection (2023 edition)",
+    "designed_for": "LLM01:2023 — preventing prompt injection where user-controlled input or third-party content overrides the developer's instructions to the LLM. Anchored on input-sanitisation, prompt-template hardening, and output validation.",
+    "misses": [
+      "LLM01:2023 framing treats prompt injection as a model-output integrity issue; LangChain LangGrinch (CVE-2025-68664) chains prompt injection into a serialization-deserialization round-trip that extracts secrets — the injection's purpose is host-side compromise, not output manipulation",
+      "VS Code agentic-AI command injection (CVE-2025-55319) treats the LLM response as trusted shell input; LLM01's input-side controls don't address the case where the IDE's agentic harness consumes the LLM output as a privileged action stream",
+      "Prompt-template hardening is a development-time control; runtime trust-boundary violations between the LLM and the host execution context (shell, deserializer, file system) are below the prompt-template layer",
+      "The output-validation guidance assumes the validator can recognise malicious output; agentic-flow output that drives shell commands or deserialization is not pattern-matchable as 'malicious' without runtime sandboxing"
+    ],
+    "real_requirement": "LLM01 implementations must require a runtime trust-boundary between LLM output and any host-side effect: shell commands, deserializers, code-eval, file writes, and network actions invoked from LLM output must run inside a sandbox with explicit per-action operator confirmation when crossing privilege boundaries. Agentic frameworks (LangChain, AutoGPT, IDE agentic harnesses) must declare their privilege-promotion paths and be evaluated as LLM01 attack surfaces in their own right, not merely as consumers of LLM output.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-55319",
+      "CVE-2025-68664"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with LLM01 (Prompt Injection (2023 edition)) because we follow the documented requirement: LLM01:2023 — preventing prompt injection where user-controlled input or third-party content overrides the developer's instructions to the LLM. Anchored on input-sanitisation, prompt-template hardening",
+      "test": "Pull the operational evidence supporting LLM01 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-55319, CVE-2025-68664: LLM01:2023 framing treats prompt injection as a model-output integrity issue; LangChain LangGrinch (CVE-2025-68664) chains prompt injection into a serialization-deserialization round-trip that extracts secrets — the injection's purpose is host-side compromise, not output manipulation. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (LLM01 implementations must require a runtime trust-boundary between LLM output and any host-side effect: shell commands, deserializers, code-eval, file writes, and network actions invoked from LLM output must run inside ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-55319, CVE-2025-68664)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-LLM02": {
+    "framework": "OWASP LLM Top 10 (2023 edition)",
+    "control_id": "LLM02",
+    "control_name": "Insecure Output Handling (2023 edition)",
+    "designed_for": "LLM02:2023 — preventing downstream systems from blindly trusting LLM output where it can produce XSS, SSRF, privilege escalation, or remote code execution. Anchored on treating LLM output as untrusted user input at the consumption boundary.",
+    "misses": [
+      "LLM02:2023 names downstream-system trust as the issue but does not enumerate serialization-deserialization as a canonical attack class — LangChain LangGrinch (CVE-2025-68664) demonstrates that prompt-injection-induced serialization round-trips exfiltrate secrets via class-construction side effects, which the 'sanitise output' guidance does not address",
+      "Output-handling sanitisation typically targets HTML escaping, SQL parameterisation, command-argument quoting; serialization payloads (Python object-graph deserializers, Java ObjectInputStream, custom AST nodes) require type-allowlisting that LLM02 does not specifically prescribe",
+      "Agentic frameworks that deserialize LLM-produced tool outputs into typed objects expand the LLM02 surface to library-internal trust boundaries that operator-side sanitisation cannot reach",
+      "Trust-zone separation between LLM output and execution context is not a named LLM02 implementation pattern — operators reach for input/output sanitisation rather than sandboxing"
+    ],
+    "real_requirement": "LLM02 implementations must enumerate serialization-deserialization paths as a top-tier output-handling surface: every LLM output consumed by an object-graph deserializer or custom AST evaluator must pass through a type-allowlist sandbox. Agentic-framework dependencies (LangChain, LlamaIndex, Haystack) must be reviewed for serialization-via-LLM-output paths and patched within a KEV-grade SLA. Evidence packs must include a serialization-surface inventory and the patch-currency timeline for agentic-framework dependencies in scope.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-68664"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with LLM02 (Insecure Output Handling (2023 edition)) because we follow the documented requirement: LLM02:2023 — preventing downstream systems from blindly trusting LLM output where it can produce XSS, SSRF, privilege escalation, or remote code execution. Anchored on treating LLM output as untrusted",
+      "test": "Pull the operational evidence supporting LLM02 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-68664: LLM02:2023 names downstream-system trust as the issue but does not enumerate serialization-deserialization as a canonical attack class — LangChain LangGrinch (CVE-2025-68664) demonstrates that prompt-injection-induced serialization round-trips exfiltrate secrets via class-construction side effects, which the 'sanitise output' guidance does not address. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (LLM02 implementations must enumerate serialization-deserialization paths as a top-tier output-handling surface: every LLM output consumed by an object-graph deserializer or custom AST evaluator must pass through a type-a), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-68664)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.21": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.21",
+    "control_name": "Security of network services",
+    "designed_for": "Annex A.8.21 — identifying, implementing, and monitoring security mechanisms, service levels, and management requirements for network services. Anchored on segmentation, secure protocols, and service-level controls between network zones.",
+    "misses": [
+      "A.8.21 network segregation is enforced at the virtualization layer in most modern deployments; VM-escape chains (VMware ESXi VMCI TOCTOU CVE-2025-22224, ESXi arbitrary-kernel-write CVE-2025-22225) sidestep network segregation by compromising the host the segmentation runs on",
+      "Network-services controls presume the hypervisor is a trust anchor; once a guest VM escapes to the VMX process, every network zone the host's VMs participate in is compromised simultaneously",
+      "A.8.21 evidence packs document network ACLs, firewall rules, and segmentation diagrams; they rarely include hypervisor patch-currency as a load-bearing dependency of every network-segregation control above it",
+      "Ransomware-active VM-escape CVEs (CVE-2025-22225) demonstrate that the blast radius of a network-services control failure extends to every tenant on the host, not just the compromised guest"
+    ],
+    "real_requirement": "A.8.21 network-services controls must declare hypervisor patch-currency as a load-bearing dependency: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SLA, with evidence including per-host patch timeline. Network-segregation diagrams must label hypervisor trust-anchor dependencies — every segment that crosses a shared-hypervisor boundary inherits the hypervisor's residual risk. Evidence packs must include the hypervisor-CVE response timeline for the past 12 months.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-22224",
+      "CVE-2025-22225"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A.8.21 (Security of network services) because we follow the documented requirement: Annex A.8.21 — identifying, implementing, and monitoring security mechanisms, service levels, and management requirements for network services. Anchored on segmentation, secure protocols, and service-",
+      "test": "Pull the operational evidence supporting A.8.21 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-22224, CVE-2025-22225: A.8.21 network segregation is enforced at the virtualization layer in most modern deployments; VM-escape chains (VMware ESXi VMCI TOCTOU CVE-2025-22224, ESXi arbitrary-kernel-write CVE-2025-22225) sidestep network segregation by compromising the host the segmentation runs on. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A.8.21 network-services controls must declare hypervisor patch-currency as a load-bearing dependency: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SLA, with evidence including per-host patch timeline.), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-22224, CVE-2025-22225)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-2.2.3": {
+    "framework": "PCI DSS v4.0.1",
+    "control_id": "2.2.3",
+    "control_name": "Primary functions requiring different security levels are managed",
+    "designed_for": "Requirement 2.2.3 — primary functions requiring different security levels (e.g., web server, database server) are isolated, or compensating controls are in place. Anchored on segmenting workloads at the host or virtualization boundary to contain compromise blast radius.",
+    "misses": [
+      "2.2.3 isolation via virtualization assumes the hypervisor is a sound isolation boundary — VMware ESXi VMCI TOCTOU (CVE-2025-22224) and ESXi arbitrary-kernel-write (CVE-2025-22225) break the boundary at the VMX process level, collapsing the multi-tenant segmentation premise",
+      "Compensating-controls guidance does not require the operator to enumerate hypervisor-CVE patch-currency as a 2.2.3 dependency; assessors check the VLAN-segmentation diagram, not the ESXi patch timeline",
+      "Ransomware-active VM-escape exploitation demonstrates that 2.2.3's risk model — function-level segmentation — is invalidated when the hypervisor is the compromised component",
+      "QSA evidence packs typically include host inventory and segmentation diagrams; they rarely include the hypervisor-CVE-to-applied-patch timeline for the past 12 months"
+    ],
+    "real_requirement": "Requirement 2.2.3 implementations must declare hypervisor patch-currency as a load-bearing dependency of any virtualization-based function segmentation: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SLA. Operators must enumerate which CDE-scoped workloads share a hypervisor with non-CDE workloads and document the residual risk. Compensating-controls evidence must include the hypervisor-CVE response timeline and the most recent ESXi / Hyper-V / KVM patch attestation.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-22224",
+      "CVE-2025-22225"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 2.2.3 (Primary functions requiring different security levels are managed) because we follow the documented requirement: Requirement 2.2.3 — primary functions requiring different security levels (e.g., web server, database server) are isolated, or compensating controls are in place. Anchored on segmenting workloads at t",
+      "test": "Pull the operational evidence supporting 2.2.3 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-22224, CVE-2025-22225: 2.2.3 isolation via virtualization assumes the hypervisor is a sound isolation boundary — VMware ESXi VMCI TOCTOU (CVE-2025-22224) and ESXi arbitrary-kernel-write (CVE-2025-22225) break the boundary at the VMX process level, collapsing the multi-tenant segmentation premise. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Requirement 2.2.3 implementations must declare hypervisor patch-currency as a load-bearing dependency of any virtualization-based function segmentation: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SL), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-22224, CVE-2025-22225)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "FedRAMP-SC-7": {
+    "framework": "FedRAMP (NIST 800-53 Rev 5 baseline)",
+    "control_id": "SC-7",
+    "control_name": "Boundary Protection",
+    "designed_for": "SC-7 — monitoring and controlling communications at the external boundary and key internal boundaries of the system. FedRAMP-tailored across Low / Moderate / High baselines for cloud-hosted federal information systems.",
+    "misses": [
+      "SC-7 boundary protection assumes the hypervisor underneath the cloud-host is the trust anchor for tenant isolation — VMware ESXi VMCI TOCTOU (CVE-2025-22224) breaks the boundary between guest VMs and the host VMX process, defeating tenant-isolation controls beneath the SC-7 boundary",
+      "FedRAMP boundary-protection evidence focuses on edge firewalls and VPC-level network policy; hypervisor CVE-currency is not enumerated as a boundary-protection dependency",
+      "Multi-tenant CSP environments that depend on shared-hypervisor tenancy inherit every hypervisor CVE as a boundary-protection compensating-control failure mode",
+      "Continuous-monitoring (ConMon) evidence packs typically include vulnerability-scan timelines but not hypervisor-CVE-to-applied-patch reconciliation across the tenancy fleet"
+    ],
+    "real_requirement": "SC-7 implementations on shared-tenancy cloud infrastructure must declare hypervisor patch-currency as a boundary-protection dependency: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SLA across the tenancy fleet, with per-host patch timeline available to the AO. FedRAMP ConMon packages must include a hypervisor-CVE response register and an enumeration of which agency workloads share hypervisor tenancy with non-agency workloads.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-22224"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with SC-7 (Boundary Protection) because we follow the documented requirement: SC-7 — monitoring and controlling communications at the external boundary and key internal boundaries of the system. FedRAMP-tailored across Low / Moderate / High baselines for cloud-hosted federal in",
+      "test": "Pull the operational evidence supporting SC-7 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-22224: SC-7 boundary protection assumes the hypervisor underneath the cloud-host is the trust anchor for tenant isolation — VMware ESXi VMCI TOCTOU (CVE-2025-22224) breaks the boundary between guest VMs and the host VMX process, defeating tenant-isolation controls beneath the SC-7 boundary. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (SC-7 implementations on shared-tenancy cloud infrastructure must declare hypervisor patch-currency as a boundary-protection dependency: KEV-listed hypervisor VM-escape CVEs require a 24h applied-patch SLA across the tena), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-22224)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "DORA-Art10": {
+    "framework": "EU DORA (Regulation (EU) 2022/2554)",
+    "control_id": "Art-10",
+    "control_name": "Detection of anomalous activities and ICT-related incidents",
+    "designed_for": "Article 10 — financial entities must have mechanisms to promptly detect anomalous activities, including network performance issues and ICT-related incidents, and identify potential single points of failure. Anchored on detection coverage across the ICT estate.",
+    "misses": [
+      "Article 10 detection mechanisms are oriented to anomaly classes the financial entity can observe — VM-escape exploitation (VMware ESXi CVE-2025-22225, ransomware-active) succeeds inside the hypervisor's trust boundary, producing no anomaly signature at the entity's network or application layer until ransomware payload activates",
+      "ICT third-party concentration risk (Article 28) and Article-10 detection collide at the shared-hypervisor boundary — a single hypervisor CVE compromises every entity sharing that hypervisor simultaneously, which Article-10 single-point-of-failure analysis rarely names",
+      "Detection coverage assumes the entity has telemetry from the layer under attack; hypervisor-layer compromise produces telemetry only the cloud provider can see, and provider-side breach-notification SLAs are not standardised in Article-10-coupled contracts",
+      "Ransomware-confirmed VM-escape chains demonstrate that Article 10's 'promptly detect' clause is operating on detection signals that arrive after blast radius is already realised"
+    ],
+    "real_requirement": "Article 10 implementations must enumerate shared-hypervisor tenancy as an ICT single-point-of-failure with its own detection posture: contractual hypervisor-CVE response timeline from the CSP (24h applied-patch SLA for KEV-listed VM-escape CVEs), provider-side anomaly-telemetry sharing for hypervisor-layer events, and pre-arranged playbooks for entity response when a hypervisor CVE is disclosed against the provider's substrate. Evidence packs must include the hypervisor-CVE response register from the provider's ConMon outputs.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-22225"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Art-10 (Detection of anomalous activities and ICT-related incidents) because we follow the documented requirement: Article 10 — financial entities must have mechanisms to promptly detect anomalous activities, including network performance issues and ICT-related incidents, and identify potential single points of fa",
+      "test": "Pull the operational evidence supporting Art-10 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-22225: Article 10 detection mechanisms are oriented to anomaly classes the financial entity can observe — VM-escape exploitation (VMware ESXi CVE-2025-22225, ransomware-active) succeeds inside the hypervisor's trust boundary, producing no anomaly signature at the entity's network or application layer until ransomware payload activates. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Article 10 implementations must enumerate shared-hypervisor tenancy as an ICT single-point-of-failure with its own detection posture: contractual hypervisor-CVE response timeline from the CSP (24h applied-patch SLA for K), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-22225)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "FedRAMP-SC-4": {
+    "framework": "FedRAMP (NIST 800-53 Rev 5 baseline)",
+    "control_id": "SC-4",
+    "control_name": "Information in Shared System Resources",
+    "designed_for": "SC-4 — preventing unauthorized and unintended information transfer via shared system resources, including memory, storage caches, and CPU caches that may retain residual data from prior use.",
+    "misses": [
+      "SC-4 names shared-resource information leakage but does not enumerate hypervisor-process memory leaks as a canonical instance — VMware ESXi HGFS memory leak (CVE-2025-22226) exposes guest-VM data via host-side memory disclosure, which is SC-4's threat model realised at the hypervisor",
+      "Memory-leak CVEs in hypervisor processes produce SC-4 violations that the agency-side controls cannot detect — the leak is in the CSP's substrate, observable only to the provider",
+      "FedRAMP SC-4 evidence is typically architectural (memory-wipe-on-deallocation attestations, cache-flush attestations) rather than vulnerability-currency-driven; KEV-listed hypervisor memory-disclosure CVEs are an SC-4 compensating-control failure that the architectural evidence does not flag",
+      "Multi-tenant CSP environments inherit hypervisor memory-disclosure CVEs as SC-4 control gaps across the entire tenancy fleet"
+    ],
+    "real_requirement": "SC-4 implementations on shared-tenancy infrastructure must enumerate hypervisor memory-disclosure CVEs as an in-scope shared-resource leak class: KEV-listed hypervisor memory-leak CVEs require a 24h applied-patch SLA, with provider-side ConMon evidence available to the AO. SC-4 evidence packs must include the hypervisor memory-disclosure CVE response register for the past 12 months and the cross-tenant blast-radius analysis from any incident in scope.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-22226"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with SC-4 (Information in Shared System Resources) because we follow the documented requirement: SC-4 — preventing unauthorized and unintended information transfer via shared system resources, including memory, storage caches, and CPU caches that may retain residual data from prior use.",
+      "test": "Pull the operational evidence supporting SC-4 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-22226: SC-4 names shared-resource information leakage but does not enumerate hypervisor-process memory leaks as a canonical instance — VMware ESXi HGFS memory leak (CVE-2025-22226) exposes guest-VM data via host-side memory disclosure, which is SC-4's threat model realised at the hypervisor. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (SC-4 implementations on shared-tenancy infrastructure must enumerate hypervisor memory-disclosure CVEs as an in-scope shared-resource leak class: KEV-listed hypervisor memory-leak CVEs require a 24h applied-patch SLA, wi), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-22226)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-218-SSDF-PO.4.2": {
+    "framework": "NIST SP 800-218 (SSDF v1.1)",
+    "control_id": "PO.4.2",
+    "control_name": "Implement supporting toolchains for secure software development",
+    "designed_for": "PO.4.2 — implementing tools and toolchain configurations that automate technical SSDF practices and support secure software development across the SDLC. Anchored on developer-tool selection, configuration, and integration.",
+    "misses": [
+      "PO.4.2 guidance is generic about toolchain hardening — build-environment compromise classes (GitHub Actions script-injection that compromised ultralytics MAL-2024-PYPI-ULTRALYTICS-XMRIG, sleeper-package patterns in BufferZoneCorp RubyGems campaign MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER, typosquat credential stealers MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) require specific defences that PO.4.2's qualitative language does not name",
+      "Sleeper patterns defeat one-time package-audit workflows — PO.4.2 build-tool integration assumes that an SCA scan at build time bounds package risk, but a maintainer flips good-to-bad after the initial vetting succeeded",
+      "Typosquat detection requires registry-side telemetry or pre-install resolution; PO.4.2 does not enumerate install-time typosquat-screening as a toolchain control",
+      "Build-environment GitHub Actions script-injection (workflow `${{ github.event.* }}` interpolation into shell) is a specific class with a specific defence (no interpolation of attacker-controlled fields into shell context) that PO.4.2's generic language does not prescribe"
+    ],
+    "real_requirement": "PO.4.2 implementations must enumerate three specific toolchain-hardening controls as required practice: (1) GitHub Actions / CI workflow injection prevention — no untrusted-field interpolation into shell context, enforced by lint, (2) install-time typosquat-screening against name-confusion datasets (PyPI guard, npm name-similarity scoring), enforced as a pre-install gate, (3) sleeper-detection via temporal trust monitoring — package-version reputation that updates over time, with quarantine on maintainer-account anomalies. PO.4.2 evidence must include the most recent injection-lint report, typosquat-gate hit count, and maintainer-account anomaly review.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with PO.4.2 (Implement supporting toolchains for secure software development) because we follow the documented requirement: PO.4.2 — implementing tools and toolchain configurations that automate technical SSDF practices and support secure software development across the SDLC. Anchored on developer-tool selection, configura",
+      "test": "Pull the operational evidence supporting PO.4.2 for the last audit cycle. Confirm the program addresses the gap proven by MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER: PO.4.2 guidance is generic about toolchain hardening — build-environment compromise classes (GitHub Actions script-injection that compromised ultralytics MAL-2024-PYPI-ULTRALYTICS-XMRIG, sleeper-package patterns in BufferZoneCorp RubyGems campaign MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER, typosquat credential stealers MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) require specific defences that PO.4.2's qualitative language does not name. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (PO.4.2 implementations must enumerate three specific toolchain-hardening controls as required practice: (1) GitHub Actions / CI workflow injection prevention — no untrusted-field interpolation into shell context, enforce), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "SLSA-3": {
+    "framework": "SLSA v1.0",
+    "control_id": "Build L3",
+    "control_name": "SLSA Build Level 3",
+    "designed_for": "SLSA Build L3 — hosted build platform with hardened workers producing non-forgeable provenance. Provenance is signed, points to immutable source, and the build is isolated. Anchored on the threat model that a compromised builder cannot tamper with provenance after the fact.",
+    "misses": [
+      "Build L3 protects provenance integrity from build-time tampering; sleeper-package patterns (BufferZoneCorp RubyGems campaign MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) accrue legitimate provenance through dozens of versions, then turn malicious — provenance remains correctly signed by the legitimate maintainer",
+      "Build L3 attestation says 'the build that produced this artefact came from this source, on this builder, at this time' — it says nothing about whether the maintainer's intent at the time was benign",
+      "Account-takeover scenarios where the maintainer's credentials are stolen produce SLSA-3-correct provenance for malicious builds; consumer-side verification passes",
+      "Consumer-side defences SLSA L3 enables (verify provenance, pin source repo, audit builder) do not detect post-trust-accrual malicious updates — the provenance is structurally correct for the bad version too"
+    ],
+    "real_requirement": "SLSA L3 consumer-side verification must be paired with temporal trust signals that L3 itself does not provide: maintainer-account integrity attestation (last MFA reset, last credential rotation, last anomalous-access event from the registry side), version-publish anomaly detection (sudden release cadence shifts, scope expansion in postinstall/main-module, transitive-dependency additions), and post-publish cooldown periods before consumption of fresh releases from high-impact upstreams. L3 provenance is necessary but insufficient against sleeper-pattern and account-takeover supply-chain compromise.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Build L3 (SLSA Build Level 3) because we follow the documented requirement: SLSA Build L3 — hosted build platform with hardened workers producing non-forgeable provenance. Provenance is signed, points to immutable source, and the build is isolated. Anchored on the threat mode",
+      "test": "Pull the operational evidence supporting Build L3 for the last audit cycle. Confirm the program addresses the gap proven by MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER: Build L3 protects provenance integrity from build-time tampering; sleeper-package patterns (BufferZoneCorp RubyGems campaign MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) accrue legitimate provenance through dozens of versions, then turn malicious — provenance remains correctly signed by the legitimate maintainer. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (SLSA L3 consumer-side verification must be paired with temporal trust signals that L3 itself does not provide: maintainer-account integrity attestation (last MFA reset, last credential rotation, last anomalous-access eve), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OpenSSF-Scorecard-PinnedDependenciesID": {
+    "framework": "OpenSSF Scorecard",
+    "control_id": "PinnedDependenciesID",
+    "control_name": "Pinned-Dependencies check",
+    "designed_for": "OpenSSF Scorecard's Pinned-Dependencies check — verifying that a project pins its dependencies to specific versions (and ideally specific hashes) rather than floating against `latest`. Anchored on reducing exposure to unexpected upstream changes.",
+    "misses": [
+      "Version-pinning mitigates against accidental drift but not against intentional compromise of a pinned version's underlying artifact — a typosquat (MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) is installed at a pinned version too, with attacker-controlled content at that pinned name",
+      "Hash-pinning mitigates pinned-name compromise at deploy time but not at install-time on developer workstations doing `pip install <name>` without lockfile",
+      "Float-version installs of high-share AI libraries (ultralytics, MAL-2024-PYPI-ULTRALYTICS-XMRIG class) propagate compromise instantly because consumers ran `pip install ultralytics` without pin — the check correctly flags this, but consumer adoption of the check is low",
+      "Sleeper-package patterns defeat pinning regardless — the consumer pins to v3.4.7, and v3.4.8 (when the consumer eventually upgrades) is malicious"
+    ],
+    "real_requirement": "OpenSSF Scorecard Pinned-Dependencies implementations must be extended with three downstream controls: (1) hash-pinning enforced in lockfiles (Pipfile.lock, package-lock.json, Cargo.lock with `--locked`), not just version-pinning, (2) install-time typosquat screening against name-confusion datasets before any `pip install` / `npm install` proceeds, (3) post-publish cooldown periods (e.g., 7 days) before consumption of a new release from a high-impact upstream maintainer. Pinned-Dependencies as currently scored is a necessary baseline, not a sufficient supply-chain defence.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with PinnedDependenciesID (Pinned-Dependencies check) because we follow the documented requirement: OpenSSF Scorecard's Pinned-Dependencies check — verifying that a project pins its dependencies to specific versions (and ideally specific hashes) rather than floating against `latest`. Anchored on red",
+      "test": "Pull the operational evidence supporting PinnedDependenciesID for the last audit cycle. Confirm the program addresses the gap proven by MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER: Version-pinning mitigates against accidental drift but not against intentional compromise of a pinned version's underlying artifact — a typosquat (MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) is installed at a pinned version too, with attacker-controlled content at that pinned name. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (OpenSSF Scorecard Pinned-Dependencies implementations must be extended with three downstream controls: (1) hash-pinning enforced in lockfiles (Pipfile.lock, package-lock.json, Cargo.lock with `--locked`), not just versio), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2024-PYPI-ULTRALYTICS-XMRIG, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.5.21": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.5.21",
+    "control_name": "Managing information security in the ICT supply chain",
+    "designed_for": "Annex A.5.21 — processes and procedures to manage information security risks associated with the ICT supply chain. Anchored on initial vendor / supplier assessment, contractual security clauses, and ongoing supplier-relationship management.",
+    "misses": [
+      "A.5.21 governs supplier assessment as a periodic event — sleeper-package patterns (BufferZoneCorp RubyGems MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) defeat periodic assessment because the supplier was genuinely benign at assessment time and turned malicious afterwards",
+      "Ecosystem-name-confusion (typosquats, MAL-2025-PYPI-COLORAMA-SOLANA-STEALER) is not a 'supplier' in the A.5.21 sense — the operator never intended to procure from that supplier; the install pulled a different package than intended",
+      "Initial vetting bias: A.5.21 implementations focus rigour on the moment a supplier is added to the register; ongoing temporal trust monitoring (maintainer-email-domain expiry, registry-side MFA enforcement, maintainer-account anomaly detection) is not enumerated",
+      "Transitive dependencies the operator did not directly select are inherited suppliers — A.5.21 evidence packs rarely include transitive-supplier reviews at the same depth as direct suppliers"
+    ],
+    "real_requirement": "A.5.21 supply-chain controls must add temporal trust monitoring to periodic assessment: maintainer-account integrity tracking (email-domain expiry, MFA enforcement, anomalous-access events at the registry side) for critical-path direct AND transitive dependencies, install-time typosquat screening as a pre-install gate, and post-publish cooldown on fresh releases from high-impact upstreams. A.5.21 evidence packs must include the most recent maintainer-account anomaly review and the typosquat-gate hit log.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A.5.21 (Managing information security in the ICT supply chain) because we follow the documented requirement: Annex A.5.21 — processes and procedures to manage information security risks associated with the ICT supply chain. Anchored on initial vendor / supplier assessment, contractual security clauses, and o",
+      "test": "Pull the operational evidence supporting A.5.21 for the last audit cycle. Confirm the program addresses the gap proven by MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER: A.5.21 governs supplier assessment as a periodic event — sleeper-package patterns (BufferZoneCorp RubyGems MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) defeat periodic assessment because the supplier was genuinely benign at assessment time and turned malicious afterwards. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A.5.21 supply-chain controls must add temporal trust monitoring to periodic assessment: maintainer-account integrity tracking (email-domain expiry, MFA enforcement, anomalous-access events at the registry side) for criti), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2025-PYPI-COLORAMA-SOLANA-STEALER, MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-6.3.2": {
+    "framework": "PCI DSS v4.0.1",
+    "control_id": "6.3.2",
+    "control_name": "Inventory of bespoke and custom software, and third-party software components incorporated into bespoke and custom software, is maintained",
+    "designed_for": "Requirement 6.3.2 — maintaining an inventory of bespoke/custom software including the third-party components incorporated into it, to facilitate vulnerability management. Anchored on direct-dependency tracking at code-review or build-manifest granularity.",
+    "misses": [
+      "6.3.2 inventories typically capture direct dependencies the developer chose; transitive dependencies pulled by the package manager are often absent or stale — sleeper-package compromise (BufferZoneCorp RubyGems + Go module MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) lands inside transitive dependencies that 6.3.2 inventories do not track",
+      "Inventory snapshots at release time miss post-release upstream changes — once a malicious version is published upstream, a future `bundle update` / `go get -u` pulls it without re-running the 6.3.2 inventory process",
+      "Bespoke/custom software inventory scope does not include developer-workstation tooling (Bundler, npm, pip, go.mod) that performs the dependency resolution — the workstation pulls compromised upstreams before the 6.3.2 inventory ever sees the result",
+      "Maintainer-account integrity at the upstream registry is not enumerated as a 6.3.2 inventory attribute"
+    ],
+    "real_requirement": "Requirement 6.3.2 inventories must include full transitive-dependency lockfile output (Gemfile.lock, go.sum, package-lock.json, Pipfile.lock) and be regenerated on every release. Each transitive dependency must carry an upstream-maintainer-integrity attestation (registry-side MFA confirmed, email-domain not expired, no anomalous-access flag) updated at inventory regeneration time. Sleeper-package detection (temporal trust monitoring, post-publish cooldown) must be enumerated as a 6.3.2 supporting control rather than an optional add-on.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with 6.3.2 (Inventory of bespoke and custom software, and third-party software components incorporated into bespoke and custom software, is maintained) because we follow the documented requirement: Requirement 6.3.2 — maintaining an inventory of bespoke/custom software including the third-party components incorporated into it, to facilitate vulnerability management. Anchored on direct-dependency",
+      "test": "Pull the operational evidence supporting 6.3.2 for the last audit cycle. Confirm the program addresses the gap proven by MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER: 6.3.2 inventories typically capture direct dependencies the developer chose; transitive dependencies pulled by the package manager are often absent or stale — sleeper-package compromise (BufferZoneCorp RubyGems + Go module MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER) lands inside transitive dependencies that 6.3.2 inventories do not track. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (Requirement 6.3.2 inventories must include full transitive-dependency lockfile output (Gemfile.lock, go.sum, package-lock.json, Pipfile.lock) and be regenerated on every release. Each transitive dependency must carry an ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-Top-10-2021-A03": {
+    "framework": "OWASP Top 10:2021",
+    "control_id": "A03",
+    "control_name": "Injection",
+    "designed_for": "A03:2021 — injection class covering SQL, NoSQL, OS command, LDAP, and other injection where user input is interpreted as part of a command or query. Cross-site scripting (XSS) moved into A03 in 2021. Anchored on input-validation and parameterised queries.",
+    "misses": [
+      "A03:2021 framing is developer-centric — input-validation training and parameterised-query enforcement assume the codebase is reachable to remediation; security-control-plane software (Palo Alto Networks GlobalProtect reflected XSS CVE-2025-0133) ships from a vendor and the operator's A03 controls cannot apply to vendor code",
+      "AI-assisted discovery (XBOW finding the GlobalProtect XSS) is not framed as a positive defensive modality in A03 guidance — the standard treats injection as a thing developers prevent, not as a thing AI defenders discover at scale",
+      "Static-analysis tooling A03 implementations rely on missed the GlobalProtect XSS; AI-assisted discovery surfaced it. A03 implementations do not enumerate AI-assisted discovery as a coverage gap-filler",
+      "Vendor-product XSS in security-control-plane software is particularly dangerous (admins authenticate to it, often from privileged sessions) — A03's mitigation guidance does not differentiate this risk class"
+    ],
+    "real_requirement": "A03 implementations must extend injection-class defence beyond first-party code: vendor security-control-plane software requires a vendor-side A03 attestation at procurement, KEV-grade patch SLA for any injection-class CVE landing against it, and an operator-side review of which products in scope are themselves admin-facing such that an injection-class flaw is amplified by privileged session context. AI-assisted discovery should be enumerated as a coverage modality — operators document which classes of A03 review were AI-augmented and what the AI tooling's false-positive / false-negative posture looks like.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-0133"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A03 (Injection) because we follow the documented requirement: A03:2021 — injection class covering SQL, NoSQL, OS command, LDAP, and other injection where user input is interpreted as part of a command or query. Cross-site scripting (XSS) moved into A03 in 2021.",
+      "test": "Pull the operational evidence supporting A03 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-0133: A03:2021 framing is developer-centric — input-validation training and parameterised-query enforcement assume the codebase is reachable to remediation; security-control-plane software (Palo Alto Networks GlobalProtect reflected XSS CVE-2025-0133) ships from a vendor and the operator's A03 controls cannot apply to vendor code. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A03 implementations must extend injection-class defence beyond first-party code: vendor security-control-plane software requires a vendor-side A03 attestation at procurement, KEV-grade patch SLA for any injection-class C), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-0133)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ENISA-IoT-security-baseline": {
+    "framework": "ENISA",
+    "control_id": "IoT-security-baseline",
+    "control_name": "ENISA IoT Security Baseline / Good Practices for Security of IoT",
+    "designed_for": "ENISA's published baseline for IoT security — covers device hardening, secure boot, network exposure minimisation, and lifecycle support. Anchored on the operator's ability to harden a device they manage.",
+    "misses": [
+      "Baseline assumes the operator manages device-side service exposure (mDNS, SSDP, UPnP, Bonjour) — bundled service-discovery daemons (Avahi connection-limit DoS CVE-2025-59529, ZeroPath AI-discovered) ship with vendor defaults that the operator rarely audits",
+      "Business-logic configuration limits inside service-discovery daemons (configured connection caps that the implementation doesn't actually enforce) are below the baseline's audit shape — the operator sees 'mDNS is configured' without per-implementation behaviour validation",
+      "AI-assisted discovery of service-discovery business-logic bugs is not credited as a defensive contribution in the baseline; the operator's baseline-compliance posture would not change in response to the discovery without an explicit patch advisory",
+      "IoT-fleet patch cadence is OEM-dependent; the baseline does not require a KEV-deadline-aligned patch SLA for service-discovery daemon CVEs"
+    ],
+    "real_requirement": "ENISA IoT baseline implementations must enumerate bundled service-discovery daemons (Avahi, mDNSResponder, miniupnpd) as in-scope hardened components with KEV-grade patch SLAs. Operators must validate at runtime that configured limits (connection caps, query-rate caps) are actually enforced by the running daemon — not just present in config. Evidence packs must include the OEM-supplied service-discovery-daemon version inventory and the most recent runtime-limit-validation sample.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-59529"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with IoT-security-baseline (ENISA IoT Security Baseline / Good Practices for Security of IoT) because we follow the documented requirement: ENISA's published baseline for IoT security — covers device hardening, secure boot, network exposure minimisation, and lifecycle support. Anchored on the operator's ability to harden a device they man",
+      "test": "Pull the operational evidence supporting IoT-security-baseline for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-59529: Baseline assumes the operator manages device-side service exposure (mDNS, SSDP, UPnP, Bonjour) — bundled service-discovery daemons (Avahi connection-limit DoS CVE-2025-59529, ZeroPath AI-discovered) ship with vendor defaults that the operator rarely audits. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (ENISA IoT baseline implementations must enumerate bundled service-discovery daemons (Avahi, mDNSResponder, miniupnpd) as in-scope hardened components with KEV-grade patch SLAs. Operators must validate at runtime that con), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-59529)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-LLM05": {
+    "framework": "OWASP LLM Top 10 (2023 edition)",
+    "control_id": "LLM05",
+    "control_name": "Supply Chain Vulnerabilities (2023 edition)",
+    "designed_for": "LLM05:2023 — preventing supply-chain compromise of LLM components, including pre-trained models, training data, plugins, and integrations. Anchored on vendor-supplier vetting for model and dataset provenance.",
+    "misses": [
+      "LLM05:2023 framing focuses on model/dataset provenance; IDE-resident agentic-AI integrations (Visual Studio Code agentic-AI command injection CVE-2025-55319) are LLM-consuming components inside the developer's editor — the supply-chain risk is the editor extension itself, not the model",
+      "Editor extensions that consume LLM output and produce shell-executable artefacts represent a new supply-chain surface — the vendor's extension-store vetting does not extend to LLM-output-handling correctness inside the extension",
+      "AI-assisted discovery (ZeroPath finding the VS Code command-injection) is not enumerated as a defensive supply-chain modality — LLM05 implementations rely on vendor disclosure, which lags AI-defender discovery",
+      "Plugin / extension marketplace compromise of LLM-integrating components is a sub-class of LLM05 that the original taxonomy does not name"
+    ],
+    "real_requirement": "LLM05 implementations must enumerate LLM-consuming developer tooling (IDE extensions, CLI plugins, IDE-resident agentic harnesses) as in-scope supply-chain components requiring their own provenance review: vendor attestation of LLM-output handling boundaries, KEV-grade patch SLA for injection-class CVEs in LLM-integrating extensions, and a default-deny posture on extension auto-update. Evidence packs must include the extension inventory across developer workstations and the patch-currency timeline for any LLM-integrating extension in scope.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-55319"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with LLM05 (Supply Chain Vulnerabilities (2023 edition)) because we follow the documented requirement: LLM05:2023 — preventing supply-chain compromise of LLM components, including pre-trained models, training data, plugins, and integrations. Anchored on vendor-supplier vetting for model and dataset pro",
+      "test": "Pull the operational evidence supporting LLM05 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-55319: LLM05:2023 framing focuses on model/dataset provenance; IDE-resident agentic-AI integrations (Visual Studio Code agentic-AI command injection CVE-2025-55319) are LLM-consuming components inside the developer's editor — the supply-chain risk is the editor extension itself, not the model. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (LLM05 implementations must enumerate LLM-consuming developer tooling (IDE extensions, CLI plugins, IDE-resident agentic harnesses) as in-scope supply-chain components requiring their own provenance review: vendor attesta), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-55319)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-LLM-Top-10-LLM07": {
+    "framework": "OWASP LLM Top 10 (2023 edition)",
+    "control_id": "LLM07",
+    "control_name": "Insecure Plugin Design (2023 edition)",
+    "designed_for": "LLM07:2023 — preventing insecure design of LLM plugins, including overly permissive plugin behaviour, lack of input validation between LLM and plugin, and excessive plugin privilege. Anchored on plugin-author responsibility for hardening the LLM-plugin boundary.",
+    "misses": [
+      "LLM07:2023 framing addresses plugin design but does not extend to IDE-resident MCP-style integrations where the 'plugin' is the IDE's agentic harness invoking shell commands suggested by the LLM (Visual Studio Code agentic-AI command injection CVE-2025-55319)",
+      "Plugin-design guidance presumes the plugin author chose to expose tools deliberately; IDE agentic primitives often default to expansive tool access (terminal, file system, debugger) without explicit per-tool grant prompts",
+      "Default-deny on tool grants is not enumerated as an LLM07 design pattern — most agentic IDEs ship with broad tool access enabled out of the box",
+      "MCP-style plugin ecosystems where the user installs additional servers (not just the vendor's first-party tools) compound the LLM07 surface; the standard does not specifically address user-installed extension of the tool boundary"
+    ],
+    "real_requirement": "LLM07 implementations must require default-deny on tool grants for any agentic LLM consumer: each tool capability is granted explicitly with a per-tool prompt, never auto-approved on installation. IDE agentic primitives and MCP-server installations must be inventoried as in-scope LLM07 surfaces with documented capability allowlists. KEV-grade patch SLA for injection-class CVEs in agentic IDE primitives. Evidence packs must include the tool-grant default-policy export and the per-developer agentic-harness configuration sample.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-55319"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with LLM07 (Insecure Plugin Design (2023 edition)) because we follow the documented requirement: LLM07:2023 — preventing insecure design of LLM plugins, including overly permissive plugin behaviour, lack of input validation between LLM and plugin, and excessive plugin privilege. Anchored on plugi",
+      "test": "Pull the operational evidence supporting LLM07 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-55319: LLM07:2023 framing addresses plugin design but does not extend to IDE-resident MCP-style integrations where the 'plugin' is the IDE's agentic harness invoking shell commands suggested by the LLM (Visual Studio Code agentic-AI command injection CVE-2025-55319). Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (LLM07 implementations must require default-deny on tool grants for any agentic LLM consumer: each tool capability is granted explicitly with a per-tool prompt, never auto-approved on installation. IDE agentic primitives ), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-55319)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "FedRAMP-AC-4": {
+    "framework": "FedRAMP (NIST 800-53 Rev 5 baseline)",
+    "control_id": "AC-4",
+    "control_name": "Information Flow Enforcement",
+    "designed_for": "AC-4 — enforcing approved authorizations for controlling the flow of information within the system and between connected systems based on information flow policies. FedRAMP-tailored for cloud-tenant boundary enforcement.",
+    "misses": [
+      "AC-4 information-flow controls assume tenant boundaries are sound — managed-AI-service SSRF (Azure OpenAI privilege escalation CVE-2025-53767, ZeroPath AI-discovered) crosses the cloud-tenant boundary by inducing the AI service's internal HTTP client to make calls inside the tenant's blast radius",
+      "Managed-AI-service control planes introduce east-west traffic that AC-4 baseline scoping rarely enumerates — the AI service's calls back into its own tenancy or adjacent tenancies escape AC-4 evidence packs that focus on north-south VPC boundaries",
+      "SSRF in AI service control planes is novel enough that AC-4 implementation guidance does not specifically address it as an information-flow attack class",
+      "AI-as-defender contribution credit (ZeroPath discovery of the Azure OpenAI SSRF) is not enumerated in AC-4 ConMon outputs"
+    ],
+    "real_requirement": "AC-4 implementations must extend information-flow enforcement to managed-AI-service east-west traffic: the AI service's internal HTTP client must be subject to explicit egress-allowlist policy (no metadata-service reachability, no in-tenant lateral reachability without policy), with provider-side attestation of allowlist enforcement available to the AO. AC-4 evidence packs must include the AI-service egress policy and the most recent SSRF-class CVE response timeline for any managed AI service in scope.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-53767"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with AC-4 (Information Flow Enforcement) because we follow the documented requirement: AC-4 — enforcing approved authorizations for controlling the flow of information within the system and between connected systems based on information flow policies. FedRAMP-tailored for cloud-tenant b",
+      "test": "Pull the operational evidence supporting AC-4 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-53767: AC-4 information-flow controls assume tenant boundaries are sound — managed-AI-service SSRF (Azure OpenAI privilege escalation CVE-2025-53767, ZeroPath AI-discovered) crosses the cloud-tenant boundary by inducing the AI service's internal HTTP client to make calls inside the tenant's blast radius. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (AC-4 implementations must extend information-flow enforcement to managed-AI-service east-west traffic: the AI service's internal HTTP client must be subject to explicit egress-allowlist policy (no metadata-service reacha), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-53767)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-Top-10-2021-A10": {
+    "framework": "OWASP Top 10:2021",
+    "control_id": "A10",
+    "control_name": "Server-Side Request Forgery (SSRF)",
+    "designed_for": "A10:2021 — preventing SSRF where attacker-controlled URLs cause server-side HTTP clients to make requests to unintended destinations. Anchored on URL-validation, egress-allowlisting, and metadata-service blocking.",
+    "misses": [
+      "A10:2021 mitigation guidance assumes the operator can audit and constrain server-side HTTP clients; managed-AI service control planes (Azure OpenAI SSRF CVE-2025-53767) introduce HTTP clients inside the vendor's control plane that the operator cannot reach to remediate",
+      "AI-service SSRF is amplified by the AI workflow — prompt injection induces the AI service to make HTTP calls based on user-supplied content, expanding the attack surface beyond classical SSRF where the attacker had to supply a URL field",
+      "AI-discovered SSRF (ZeroPath finding the Azure OpenAI flaw) demonstrates that AI-defender tooling scales coverage beyond static analysis; A10 implementations rarely include AI-assisted discovery as a coverage modality",
+      "Vendor-side SSRF in managed services requires contractual breach-notification SLAs that A10 implementation guidance does not enumerate"
+    ],
+    "real_requirement": "A10 implementations must enumerate managed-vendor-service SSRF as a contractual control surface: vendor attestation of egress allowlisting on managed-service HTTP clients, breach-notification SLA at contract level (no greater than 72h from vendor-side awareness), and KEV-grade patch SLA for SSRF-class CVEs landing against managed services in scope. AI-as-defender contribution should be documented in A10 coverage evidence — which classes of SSRF review were AI-augmented and what the AI tooling's residual-risk posture is.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-53767"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with A10 (Server-Side Request Forgery (SSRF)) because we follow the documented requirement: A10:2021 — preventing SSRF where attacker-controlled URLs cause server-side HTTP clients to make requests to unintended destinations. Anchored on URL-validation, egress-allowlisting, and metadata-serv",
+      "test": "Pull the operational evidence supporting A10 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-53767: A10:2021 mitigation guidance assumes the operator can audit and constrain server-side HTTP clients; managed-AI service control planes (Azure OpenAI SSRF CVE-2025-53767) introduce HTTP clients inside the vendor's control plane that the operator cannot reach to remediate. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (A10 implementations must enumerate managed-vendor-service SSRF as a contractual control surface: vendor attestation of egress allowlisting on managed-service HTTP clients, breach-notification SLA at contract level (no gr), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-53767)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "FedRAMP-AC-3": {
+    "framework": "FedRAMP (NIST 800-53 Rev 5 baseline)",
+    "control_id": "AC-3",
+    "control_name": "Access Enforcement",
+    "designed_for": "AC-3 — enforcing approved authorizations for logical access to information and system resources. FedRAMP-tailored across Low / Moderate / High baselines for cloud-hosted federal information systems.",
+    "misses": [
+      "AC-3 access enforcement is evaluated at the API-server / RBAC layer of the underlying platform; AI-platform overlays (Red Hat OpenShift AI privilege escalation CVE-2025-10725, ZeroPath AI-discovered) introduce additional control planes whose access enforcement is not the same code path as the underlying Kubernetes API server",
+      "Tenant-isolation evidence packs typically demonstrate Kubernetes RBAC and namespace boundaries; AI-platform overlay role-bindings, custom-resource-definition controllers, and AI-specific service-account scoping are out of frame",
+      "Multi-overlay deployments (Kubernetes + OpenShift + OpenShift AI + namespaced AI-platform tenant) compound AC-3 surfaces; access enforcement at one overlay does not guarantee enforcement at the next",
+      "AI-as-defender contribution credit (ZeroPath discovery of the OpenShift AI privesc) is not enumerated in AC-3 ConMon outputs"
+    ],
+    "real_requirement": "AC-3 implementations on platforms with AI-overlay layers must enumerate each overlay as a distinct access-enforcement surface requiring its own attestation: per-overlay RBAC mapping, service-account scoping, and KEV-grade patch SLA for privesc CVEs at any overlay layer. FedRAMP ConMon packages must include an AI-platform overlay inventory with the most recent CVE response timeline. AI-as-defender contribution should be documented in AC-3 coverage evidence.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-10725"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with AC-3 (Access Enforcement) because we follow the documented requirement: AC-3 — enforcing approved authorizations for logical access to information and system resources. FedRAMP-tailored across Low / Moderate / High baselines for cloud-hosted federal information systems.",
+      "test": "Pull the operational evidence supporting AC-3 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2025-10725: AC-3 access enforcement is evaluated at the API-server / RBAC layer of the underlying platform; AI-platform overlays (Red Hat OpenShift AI privilege escalation CVE-2025-10725, ZeroPath AI-discovered) introduce additional control planes whose access enforcement is not the same code path as the underlying Kubernetes API server. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (AC-3 implementations on platforms with AI-overlay layers must enumerate each overlay as a distinct access-enforcement surface requiring its own attestation: per-overlay RBAC mapping, service-account scoping, and KEV-grad), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (CVE-2025-10725)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-218-SSDF-PW.7.1": {
+    "framework": "NIST SP 800-218 (SSDF v1.1)",
+    "control_id": "PW.7.1",
+    "control_name": "Determine whether software meets security requirements through code review",
+    "designed_for": "PW.7.1 — determining whether software meets security requirements through code review, including peer review, static analysis, and other inspection methods. Anchored on human and tool-assisted review across the SDLC.",
+    "misses": [
+      "PW.7.1 enumerates peer review and static analysis as canonical modalities; AI-assisted code review at scale (Big Sleep AI open-source 20-vulnerability disclosure tranche against FFmpeg / ImageMagick) is a third modality with materially different coverage and cost characteristics that the SSDF does not name",
+      "AI-tooling false-positive / false-negative posture is not enumerated as a PW.7.1 evaluation criterion — operators have no SSDF-anchored guidance for how to integrate AI review tools alongside human review",
+      "AI-discovered vulnerabilities flow back to upstream maintainers via coordinated disclosure; PW.7.1 evidence packs do not enumerate operator-side response when an AI-found CVE lands against an in-scope dependency",
+      "The dichotomy of 'peer review vs automated tools' in PW.7.1 implementations does not capture AI tooling's behaviour, which sits between deterministic static analysis and judgment-driven human review"
+    ],
+    "real_requirement": "PW.7.1 implementations must enumerate AI-assisted code review as a distinct review modality with its own evaluation criteria: documented false-positive / false-negative posture, scope coverage attestation (what classes of bug the AI tooling finds vs misses), and integration plan with human reviewer time. Operator-side response to AI-discovered CVEs in upstream dependencies must include a KEV-grade patch SLA the moment the disclosure window opens, accelerated relative to traditional CVE response because AI-defender discovery accelerates attacker-side discovery on the same code.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with PW.7.1 (Determine whether software meets security requirements through code review) because we follow the documented requirement: PW.7.1 — determining whether software meets security requirements through code review, including peer review, static analysis, and other inspection methods. Anchored on human and tool-assisted review",
+      "test": "Pull the operational evidence supporting PW.7.1 for the last audit cycle. Confirm the program addresses the gap proven by MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP: PW.7.1 enumerates peer review and static analysis as canonical modalities; AI-assisted code review at scale (Big Sleep AI open-source 20-vulnerability disclosure tranche against FFmpeg / ImageMagick) is a third modality with materially different coverage and cost characteristics that the SSDF does not name. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (PW.7.1 implementations must enumerate AI-assisted code review as a distinct review modality with its own evaluation criteria: documented false-positive / false-negative posture, scope coverage attestation (what classes o), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-SAMM-Code-Review": {
+    "framework": "OWASP SAMM v2.0",
+    "control_id": "Code-Review",
+    "control_name": "Implementation — Secure Build / Code Review practice",
+    "designed_for": "OWASP SAMM Code Review practice — establishing code-review processes that catch security issues before deployment, scored across maturity levels (ad-hoc, repeatable, optimised). Anchored on human-led code review augmented by static-analysis tooling.",
+    "misses": [
+      "SAMM Code Review maturity scoring is calibrated against human reviewer effort and static-analysis tooling; AI-assisted code review (Big Sleep AI open-source 20-vulnerability disclosure tranche against FFmpeg / ImageMagick / others) is a third axis the maturity model does not enumerate",
+      "Maturity-level guidance does not address operator response when an AI-found CVE lands against an in-scope dependency — the disclosure timeline compresses because AI-defender discovery accelerates attacker-side discovery on the same code",
+      "AI-tooling false-positive / false-negative posture, evaluation criteria, and integration with human reviewer time are not enumerated in SAMM practice scoring",
+      "AI-defender contribution to SAMM Code Review maturity is undefined — operators cannot demonstrate maturity improvement by adopting AI-assisted review under the current scoring rubric"
+    ],
+    "real_requirement": "SAMM Code Review practice must add an AI-assisted-review maturity axis: documented selection criteria for AI tooling (false-positive / false-negative attestation, coverage scope), integration plan with human reviewer time, and operator-side response posture when AI-discovered CVEs land against in-scope dependencies (KEV-grade SLA from disclosure-window open). Maturity scoring should credit operator adoption of AI-augmented review as a distinct capability alongside human review and static analysis.",
+    "status": "open",
+    "opened_at": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+    ],
+    "theater_test": {
+      "claim": "We are compliant with Code-Review (Implementation — Secure Build / Code Review practice) because we follow the documented requirement: OWASP SAMM Code Review practice — establishing code-review processes that catch security issues before deployment, scored across maturity levels (ad-hoc, repeatable, optimised). Anchored on human-led",
+      "test": "Pull the operational evidence supporting Code-Review for the last audit cycle. Confirm the program addresses the gap proven by MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP: SAMM Code Review maturity scoring is calibrated against human reviewer effort and static-analysis tooling; AI-assisted code review (Big Sleep AI open-source 20-vulnerability disclosure tranche against FFmpeg / ImageMagick / others) is a third axis the maturity model does not enumerate. Theater verdict if the operator cannot produce evidence-of-execution for the real requirement (SAMM Code Review practice must add an AI-assisted-review maturity axis: documented selection criteria for AI tooling (false-positive / false-negative attestation, coverage scope), integration plan with human reviewer tim), or if the only artifact is a written policy with no execution log.",
+      "evidence_required": [
+        "operational execution log demonstrating the gap is closed in practice, not just on paper",
+        "date-stamped artifact corresponding to the CVE-evidence findings (MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP)",
+        "sign-off from the control owner that the real_requirement is operative, not aspirational"
       ],
       "verdict_when_failed": "compliance-theater"
     }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.7 — 2026-05-18
+
+Catalog cross-reference closure + two test-isolation fixes that surfaced after the v0.13.6 expansion.
+
+### Bugs
+
+**`exceptd doctor --ai-config` now matches the canonical Windsurf MCP config path.** The audit walker uses `SENSITIVE_PATTERNS` to identify files that need mode 0o600. Prior regex `/\.mcp_config\.json$/` required a literal `.` before `mcp_config.json` — so `~/.codeium/windsurf/mcp_config.json` (the real-world install path, no leading dot) was silently skipped. New regex `^mcp_config\.json$` covers the bare filename while `\.mcp_config\.json$` is kept for vendor-prefixed variants like `default.mcp_config.json`.
+
+**`refresh-external --from-fixture` no longer falls through to live RSS for the advisories source.** Fixture mode populated frozen payloads for kev / epss / nvd / rfc / pins / ghsa / osv but left the advisories poller (Qualys / RHSA / USN / ZDI / kernel.org / oss-security / JFrog / CISA) unfixturized — it called `fetch()` against the real RSS endpoints. Back-to-back fixture-mode runs (sequential vs `--swarm`) hit moving upstream data within the 10-15s test window and the `swarm and sequential reports diverge` assertion fired intermittently on macOS runners. The fixture loader now reads `tests/fixtures/refresh/advisories.json` into `ctx.fixtures.advisories` so all 8 feeds resolve to frozen content. New regression pin verifies `8/8 feeds reachable` from the fixture instead of any live count.
+
+### Features
+
+**42 new framework-control-gap entries** close every orphan forward reference introduced by the v0.13.6 catalog expansion. Coverage spans NIST 800-53 (IA-8, AU-9, SC-5), ISO 27001:2022 (A.5.21, A.8.9, A.8.15, A.8.21, A.8.24), PCI DSS 4.0 (2.2.3, 3.5, 6.2.4, 6.3.2, 10.5), OWASP LLM Top 10 (LLM01, LLM02, LLM05, LLM06, LLM07), OWASP API / Top 10 / SAMM, FedRAMP (AC-3, AC-4, SC-4, SC-7), EU AI Act Art.10 + Art.15, ISO/IEC 42001-AIMS (root + A.6.2.5), CIS Controls v8 7.4, ENISA mobile / IoT secure baselines, GDPR Art.32, NIS2 Art.21 availability, ATLAS AML.T0048, DORA Art.10, SLSA-3, OpenSSF Scorecard PinnedDependenciesID, NIST 800-218 SSDF (PO.4.2, PW.7.1). Each entry carries operator-facing `designed_for` / `misses[]` / `real_requirement` text and at least one evidence CVE from the v0.13.6 additions. `framework-control-gaps.json` total: 142 → 184.
+
+The high-leverage closures: `EU-AI-Act-Art15` (10 CVE anchors covering inference-server bundled-codec RCE, agentic-IDE command-injection, managed-AI-service SSRF, AI-platform overlay privesc, serialization-injection); `SLSA-3` (sleeper-package temporal-trust failure mode that L3-correct provenance alone does not catch); `ISO-IEC-42001-AIMS-A.6.2.5` (AIMS lifecycle gates extended to IDE-resident agentic primitives and managed-AI-platform overlays).
+
 ## 0.13.6 — 2026-05-18
 
 CVE catalog expansion (38 → 67 entries) covering threat classes the catalog previously did not address, plus a `doctor` undercount fix.
