@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.9 — 2026-05-18
+
+Predeploy gate now refuses SBOM hash drift before a release branch can reach CI.
+
+### Features
+
+**`scripts/check-sbom-currency.js` verifies per-file SHA-256 integrity.** The prior gate only checked counts (catalogs / skills) and per-skill versions, so a CycloneDX `components[]` entry whose `hashes[]` SHA-256 had drifted from the live file bytes passed silently — downstream consumers running per-file integrity verification would flag the package as tampered. The check now walks every `file:<path>` component in `sbom.cdx.json`, recomputes the live SHA-256, and refuses on mismatch with a remediation pointer naming the canonical re-sign-then-refresh-sbom sequence.
+
+The class of bug this catches: SBOM generated before the final `sign-all` pass. `manifest.json` gets re-signed at the end of the release sequence; if `sbom.cdx.json` was emitted earlier in the sequence, its recorded manifest.json hash drifts from the signed bytes. Predeploy now reports `... N file-hash entries verified` and refuses any drift before the commit lands.
+
+Three new tests in `tests/check-sbom-currency-file-hashes.test.js` pin the contract: baseline tree passes, staged drift on `manifest.json` triggers the exact error path including the canonical remediation phrasing, and every `file:` component must carry a SHA-256 hash (no MD5 / SHA-1 silently accepted).
+
 ## 0.13.8 — 2026-05-18
 
 Playbook schema extension to back the v0.13.5 CI-runner-context indicator.

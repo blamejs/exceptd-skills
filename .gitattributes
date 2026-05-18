@@ -29,3 +29,19 @@
 
 # Lockfiles — keep diff-friendly but never auto-rewrite.
 package-lock.json    text eol=lf -diff
+
+# Extension-less text files that ship in the tarball MUST stay LF —
+# sbom.cdx.json records SHA-256 of these by-byte, and a CRLF rewrite
+# on Windows checkout would flip the hash and trip the v0.13.9
+# check-sbom-currency per-file integrity gate. Same logic as the
+# manifest.json signing — operator-visible bytes must be platform-
+# stable.
+LICENSE              text eol=lf
+NOTICE               text eol=lf
+AUTHORS              text eol=lf
+CODEOWNERS           text eol=lf
+*.sha256             text eol=lf
+keys/EXPECTED_FINGERPRINT  text eol=lf
+vendor/**/LICENSE    text eol=lf
+vendor/**/NOTICE     text eol=lf
+vendor/**/AUTHORS    text eol=lf
