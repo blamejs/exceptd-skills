@@ -372,7 +372,7 @@
                   "id": { "type": "string" },
                   "type": {
                     "type": "string",
-                    "enum": ["file_hash", "file_path", "network_pattern", "behavioral_signal", "log_pattern", "process_name", "syscall_sequence", "prompt_pattern", "embedding_anomaly", "api_call_sequence", "kernel_module", "memory_signature"]
+                    "enum": ["file_hash", "file_path", "network_pattern", "behavioral_signal", "log_pattern", "process_name", "syscall_sequence", "prompt_pattern", "embedding_anomaly", "api_call_sequence", "kernel_module", "memory_signature", "env_var", "config_value", "registry_key"]
                   },
                   "value": { "type": "string" },
                   "description": { "type": "string" },

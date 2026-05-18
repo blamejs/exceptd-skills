@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.8 — 2026-05-18
+
+Playbook schema extension to back the v0.13.5 CI-runner-context indicator.
+
+### Bugs
+
+**`validate-playbooks` no longer warns on the `env_var` indicator type.** v0.13.5 added the `mcp-server-invoked-from-ci-pipeline` indicator with `type: "env_var"` (keying on `GITHUB_ACTIONS` / `GITLAB_CI` / `BUILDKITE` / `JENKINS_URL` / `CIRCLECI` / `RUNNER_OS`), but the playbook schema enum did not yet accept that value — the indicator surfaced as a `type "env_var" not in enum` warning on every predeploy run. Schema enum now accepts `env_var` alongside two near-neighbour IoC types: `config_value` (catalog / settings-file fact at a specific key path) and `registry_key` (Windows registry IoC class). A new regression pin in `tests/mcp-cicd-chain.substantive.test.js` ensures the three values cannot be silently dropped from the enum in a future schema edit. `validate-playbooks` is now `23/23 clean, 0 warnings`.
+
 ## 0.13.7 — 2026-05-18
 
 Catalog cross-reference closure + two test-isolation fixes that surfaced after the v0.13.6 expansion.

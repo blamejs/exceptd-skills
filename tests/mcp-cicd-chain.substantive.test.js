@@ -48,3 +48,27 @@ test('cicd-pipeline-compromise.fed_by includes mcp', () => {
   assert.ok(fedBy.includes('mcp'),
     'cicd-pipeline-compromise._meta.fed_by must include mcp (bidirectional chain)');
 });
+
+test('playbook schema indicator.type enum includes env_var (CI-runner-context indicator class)', () => {
+  // v0.13.8 regression pin. The `mcp-server-invoked-from-ci-pipeline`
+  // indicator is `type: "env_var"`. Prior schema enum rejected the value
+  // as a validate-playbooks warning. The schema now lists `env_var` plus
+  // two near-neighbour types (`config_value`, `registry_key`) that
+  // future indicators are likely to need. If any of these are dropped, an
+  // operator-visible IoC class regresses to silent failure.
+  const schema = JSON.parse(fs.readFileSync(
+    path.join(ROOT, 'lib', 'schemas', 'playbook.schema.json'),
+    'utf8',
+  ));
+  // Walk to the indicator.type enum.
+  const phases = schema.properties && schema.properties.phases;
+  const detect = phases && phases.properties && phases.properties.detect;
+  const indicators = detect && detect.properties && detect.properties.indicators;
+  const itemProps = indicators && indicators.items && indicators.items.properties;
+  const typeEnum = itemProps && itemProps.type && itemProps.type.enum;
+  assert.ok(Array.isArray(typeEnum), 'schema indicator.type.enum must be an array');
+  for (const required of ['env_var', 'config_value', 'registry_key']) {
+    assert.ok(typeEnum.includes(required),
+      `indicator.type.enum must include "${required}" (required by current IoC classes)`);
+  }
+});
