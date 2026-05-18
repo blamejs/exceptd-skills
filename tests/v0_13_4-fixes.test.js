@@ -72,9 +72,12 @@ test('C: README documents refresh --check-advisories', () => {
   assert.match(readme, /--check-advisories/, 'README must mention refresh --check-advisories');
 });
 
-test('C: README updated 20-playbook count + 4 new playbook names', () => {
+test('C: README updated playbook count + 4 v0.13.0 playbook names', () => {
+  // v0.13.10: the count pin moved to tests/doc-playbook-count-currency.test.js
+  // (which tracks the live catalog total and fires on drift). This test
+  // still pins that the 4 playbooks added in v0.13.0 are mentioned by name
+  // in the README synopsis, since they anchor the v0.13.0 surface.
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
-  assert.match(readme, /20\s+(investigation\s+)?playbooks?/i, 'README must declare 20 playbooks');
   for (const id of ['webhook-callback-abuse', 'cicd-pipeline-compromise', 'identity-sso-compromise', 'llm-tool-use-exfil']) {
     assert.match(readme, new RegExp(id), `README must name ${id}`);
   }
