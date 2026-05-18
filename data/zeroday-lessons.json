@@ -1941,5 +1941,183 @@
     "ai_discovery_source": "vendor_research",
     "ai_discovery_date": "2026-05-14",
     "ai_assist_factor": "low"
+  },
+  "CVE-2026-46333": {
+    "name": "ssh-keysign-pwn (Linux kernel ptrace exit-race)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Linux kernel ptrace exit-race: exit_mm() runs before exit_files() during privileged-process shutdown, leaving a microsecond window where task->mm == NULL but the fd table still holds privileged file handles. Pre-fix __ptrace_may_access() skipped its get_dumpable() check when mm == NULL, silently authorizing UID-matched access. Unprivileged attacker races ssh-keysign or chage exit, calls pidfd_getfd(2) to duplicate still-open fds, reads /etc/ssh/ssh_host_*_key or /etc/shadow as root.",
+      "privileges_required": "unprivileged local user with shell access",
+      "complexity": "race-condition with deterministic-on-loop primitive — 100-2000 attempts typically succeed",
+      "ai_factor": "Not AI-discovered. Qualys TRU human research. The underlying flaw was originally proposed in a 2020 Jann Horn patch that was never merged; 6-year dormant logic bug."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Merging the 2020 Jann Horn patch proposal. seccomp profiles blocking pidfd_getfd for unprivileged users. SUID removal from ssh-keysign + chage on hosts where host-based SSH auth + age-warn UX are not required. sysctl kernel.user_ptrace=0 to block unprivileged ptrace system-wide.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Yama ptrace_scope is NOT a compensating control — the bypass is at the kernel access-check layer, not the LSM layer. The 2020 Horn patch would have closed the class entirely."
+      },
+      "detection": {
+        "what_would_have_worked": "auditd rule on pidfd_getfd with auid>=1000 fires on unprivileged invocation. eBPF on tracepoint:syscalls:sys_enter_pidfd_getfd correlated with ssh-keysign / chage execution bursts surfaces the 100-2000-attempt race loop loudly.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection only; race is running by the time auditd fires. Mitigates post-exploitation cleanup, not exfil itself."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate SSH host keys + /etc/shadow on hosts with observed pidfd_getfd anomalies in disclosure window. Patch + reboot (kernel point releases 7.0.8 / 6.18.31 / 6.12.89 / 6.6.139 / 6.1.173 / 5.15.207 / 5.10.256). KernelCare livepatch when released.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Host-key rotation is non-trivial in fleet ops — SSH known_hosts trust graph fragments. Most operators patch + accept residual window between disclosure and reboot scheduling."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day critical patch SLA is an exploitation window for a kernel LPE with two public PoCs. Reboot-required nature breaks standard SI-2 maintenance assumptions."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement compliance assumes file-permission integrity. ssh-keysign-pwn defeats file permissions via kernel-level access-check skip — AC-3 mode-bit checks are not compensating controls."
+      },
+      "NIST-800-53-AU-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Audit event selection should include pidfd_getfd post-disclosure; pre-disclosure the syscall was rarely on default audit rule sets."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; same problem as CVE-2026-43284 / CVE-2026-46300 / CVE-2026-31431."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Art. 21(2)(c) measures undefined for fast-cycle kernel LPEs. No guidance on sysctl or SUID-removal as interim measures."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-048",
+        "name": "KERNEL-EXIT-RACE-CVE-CLASS-MONITORING",
+        "description": "When a CVE is disclosed in the kernel ptrace / pidfd / fd-table lifecycle class, audit rules SHOULD enable pidfd_getfd / pidfd_open / pidfd_send_signal tracking for auid>=1000 within 24h. The syscall is rare in normal operation; spike volume after a same-class disclosure is high-confidence exploitation signal.",
+        "evidence": "CVE-2026-46333: the 100-2000-attempt exploit loop is loud in audit but most default rule sets do not monitor pidfd_getfd.",
+        "gap_closes": [
+          "NIST-800-53-AU-2",
+          "NIST-800-53-SI-4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-049",
+        "name": "SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES",
+        "description": "Hosts that do not use SSH host-based authentication SHOULD have ssh-keysign de-suid-ed. Hosts that do not use age-warn login UX SHOULD have chage de-suid-ed. Removes the privileged-process carrier even before the kernel patch lands.",
+        "evidence": "CVE-2026-46333: ssh-keysign + chage are the canonical carriers; SUID-removal blocks the exploit at the carrier layer regardless of kernel patch state.",
+        "gap_closes": [
+          "NIST-800-53-CM-6",
+          "NIST-800-53-AC-3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 95,
+      "basis": "Every Linux fleet running OpenSSH + shadow-utils — every default install for the last 6 years. Audit-passing orgs are exposed because the bug is in default-shipped kernels.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "low"
+  },
+  "MAL-2026-SHAI-HULUD-OSS": {
+    "name": "Shai-Hulud worm framework open-source release (TeamPCP)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Threat-actor open-source release of an operational supply-chain worm under MIT license, paired with a BreachForums-hosted cash-bounty contest for downstream impact. Lowers barrier-to-entry from custom-tradecraft to clone-and-deploy. Framework targets AI-coding-assistant config files (~/.cursor, ~/.codeium, ~/.claude) alongside cloud + registry credentials; adds Claude Code startup hooks for persistence. Self-replicates via maintainer-token-pivot — stolen npm token authenticates as compromised maintainer, publishes malicious versions of other packages owned by the same maintainer.",
+      "privileges_required": "opportunistic — any developer workstation where the package is installed and post-install or require-time activation fires",
+      "complexity": "post-release: low. Pre-release: high (custom tradecraft).",
+      "ai_factor": "TeamPCP self-describes as \"vibe coded\" — AI-coding-assistant-mediated authoring. Defenders should expect rapid variant proliferation accelerated by AI coding assistants."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Maintainer-side: hardware-key-bound npm publish + MFA-required republish + npm-token isolation (publish tokens NOT on developer workstations). Consumer-side: package-pin hash verification, --ignore-scripts for postinstall, internal Verdaccio proxy with manual gating on version-bump risk-scoring. AI-assistant-side: file-permission restriction on ~/.claude/settings.json, ~/.cursor/mcp.json, ~/.codeium/windsurf/mcp_config.json (0600 on POSIX, ACL-restricted on Windows) so unprivileged processes cannot read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "No single control prevents the attack class. Defense-in-depth across maintainer + registry + consumer + AI-config layers reduces blast radius but does not eliminate."
+      },
+      "detection": {
+        "what_would_have_worked": "Anomaly detection on npm publish events from new IPs, unusual cadence, or unusual package selection per maintainer. Monitor GitHub for repos matching \"A Gift From TeamPCP\" naming pattern OR with commit timestamps in year 2099 OR with agwagwagwa / headdirt / tmechen account contributors. eBPF on file-read events for ~/.aws, ~/.ssh, ~/.cursor, ~/.codeium, ~/.claude from processes spawned by node / npm / yarn / pnpm.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection-side is operator-feasible but reactive. By the time anomaly fires, credentials may already be in the attacker-controlled GitHub repo."
+      },
+      "response": {
+        "what_would_have_worked": "Immediate npm token rotation across all developer workstations + maintainer accounts. Audit all published package versions in the disclosure window for any unauthorized publish under compromised credentials. Roll back malicious versions via npm registry security-team channel. Rotate all secrets referenced by AI-assistant config files (MCP server tokens, Anthropic API keys, OpenAI keys).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Response is unbounded — once credentials leak, blast radius is the union of every API the credential can reach."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PW.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Tooling-trust assumption invalid when maintainer workstation is compromised."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain-tampering controls do not address legitimately-authenticated malicious upstream."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerability-handling treats malicious upgrades as outside scope."
+      },
+      "SLSA-v1.0-Build-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "L3 provenance is valid for Shai-Hulud-poisoned packages — the build IS provenance-attested under the compromised maintainer identity."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-050",
+        "name": "AI-ASSISTANT-CONFIG-FILE-PERMISSION-LOCKDOWN",
+        "description": "AI-assistant configuration files (~/.claude/, ~/.cursor/, ~/.codeium/, ~/.aider/, ~/.continue/) that carry MCP server tokens or LLM API keys MUST be mode 0600 on POSIX and ACL-restricted to the workstation user on Windows. Default mode on these files is typically 0644; Shai-Hulud reads them at unprivileged process scope. exceptd v0.12.41 hardened attestation sidecars to 0o600 for the same reason; the workstation-config category needs the same defensive posture.",
+        "evidence": "MAL-2026-SHAI-HULUD-OSS framework explicitly reads ~/.cursor/mcp.json + ~/.codeium/windsurf/mcp_config.json + ~/.claude/settings.json as exfil targets.",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-CM-6"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-051",
+        "name": "NPM-PUBLISH-TOKEN-WORKSTATION-ISOLATION",
+        "description": "npm publish tokens MUST NOT reside on developer workstations. Publish should require a hardware-key-bound CI/CD pipeline gate (GitHub Actions with OIDC + npm provisioning, or equivalent). Workstation tokens scope to read-only registry pulls.",
+        "evidence": "MAL-2026-SHAI-HULUD-OSS pivot mechanism requires a write-scope npm token on the maintainer workstation.",
+        "gap_closes": [
+          "NIST-800-53-IA-5",
+          "NIST-800-218-SSDF-PW.4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-052",
+        "name": "GITHUB-REPO-PATTERN-MONITORING-FOR-EXFIL-CHANNELS",
+        "description": "Organizations SHOULD monitor GitHub for repository creation matching known threat-actor naming patterns (\"A Gift From TeamPCP\", \"Shai-Hulud\", future variants). The attacker uses GitHub itself as the exfil channel; the GitHub Search API + Code Search API are sufficient.",
+        "evidence": "MAL-2026-SHAI-HULUD-OSS pattern; pre-2026-05-12 Shai-Hulud waves used \"Shai-Hulud-*\" repo naming.",
+        "gap_closes": [
+          "NIST-800-53-SI-4"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Every npm-consuming engineering org. SLSA + SSDF + SR-3 compliance does not protect against legitimately-authenticated malicious-maintainer publishes.",
+      "theater_pattern": "sbom_and_provenance"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "threat_actor_release",
+    "ai_assist_factor": "high"
   }
 }

@@ -131,6 +131,7 @@
       "CVE-2026-45321",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ]
   },

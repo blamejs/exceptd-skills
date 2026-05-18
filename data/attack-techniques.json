@@ -139,6 +139,7 @@
       "CVE-2026-43284",
       "CVE-2026-43500",
       "CVE-2026-46300",
+      "CVE-2026-46333",
       "CVE-2026-6973"
     ]
   },
@@ -154,7 +155,8 @@
       "CVE-2026-39884",
       "CVE-2026-42897",
       "CVE-2026-6973",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS"
     ]
   },
   "T1078.001": {
@@ -252,7 +254,8 @@
       "CVE-2024-3094",
       "CVE-2026-45321",
       "MAL-2026-3083",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-SHAI-HULUD-OSS"
     ]
   },
   "T1199": {
@@ -273,7 +276,10 @@
   },
   "T1485": {
     "name": "Data Destruction",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "MAL-2026-SHAI-HULUD-OSS"
+    ]
   },
   "T1486": {
     "name": "Data Encrypted for Impact",
@@ -424,7 +430,10 @@
   },
   "T1567": {
     "name": "Exfiltration Over Web Service",
-    "version": "v19"
+    "version": "v19",
+    "cve_refs": [
+      "MAL-2026-SHAI-HULUD-OSS"
+    ]
   },
   "T1568": {
     "name": "Dynamic Resolution",
