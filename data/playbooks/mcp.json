@@ -1,10 +1,17 @@
 {
   "_meta": {
     "id": "mcp",
-    "version": "1.3.0",
-    "last_threat_review": "2026-05-13",
+    "version": "1.4.0",
+    "last_threat_review": "2026-05-17",
     "threat_currency_score": 98,
     "changelog": [
+      {
+        "version": "1.4.0",
+        "date": "2026-05-17",
+        "summary": "Skill-chain: adds `feeds_into` arc to `cicd-pipeline-compromise` so an MCP tool-poisoning finding inside a CI runner escalates to supply-chain handling (OIDC + signing-key + publish-channel scope). New deterministic indicator `mcp-server-invoked-from-ci-pipeline` keys on GITHUB_ACTIONS / GITLAB_CI / BUILDKITE / JENKINS_URL / CIRCLECI / RUNNER_OS and known runner workdirs (`/_work/`, `/builds/`, `/var/jenkins_home/workspace/`, `/var/lib/buildkite-agent/builds/`). Without this arc, MCP findings in CI got the local-dev close playbook only — under-counting publish-channel blast radius. The cicd-pipeline-compromise playbook gains a matching `fed_by: [\"sbom\", \"mcp\", \"cred-stores\"]` entry so the relationship is bidirectional.",
+        "cves_added": [],
+        "framework_gaps_updated": []
+      },
       {
         "version": "1.3.0",
         "date": "2026-05-13",
@@ -77,12 +84,17 @@
       {
         "playbook_id": "ai-api",
         "condition": "finding.includes_credential_exposure == true"
+      },
+      {
+        "playbook_id": "cicd-pipeline-compromise",
+        "condition": "finding.mcp_server_location matches '(github_actions|gitlab_runner|jenkins|buildkite|circleci)' OR finding.tool_invoked_from == 'ci_pipeline' OR analyze.blast_radius_score >= 4 AND finding.pipeline_credentials_in_scope == true"
       }
     ],
     "fed_by": [
       "ai-api",
       "llm-tool-use-exfil",
       "sbom",
+      "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
   },
@@ -643,6 +655,19 @@
           "confidence": "high",
           "deterministic": false,
           "attack_ref": "T1552.001"
+        },
+        {
+          "id": "mcp-server-invoked-from-ci-pipeline",
+          "type": "env_var",
+          "value": "MCP server process or its parent shell carries any of GITHUB_ACTIONS=true, CI=true with GITLAB_CI=true, BUILDKITE=true, JENKINS_URL set, CIRCLECI=true, or RUNNER_OS set; OR mcp-process-list artifact shows the MCP server's working directory under a known CI runner path (`/_work/`, `/builds/`, `/var/jenkins_home/workspace/`, `/var/lib/buildkite-agent/builds/`)",
+          "description": "MCP server invoked from inside a CI/CD pipeline runner has access to OIDC tokens, build secrets, signing keys, and the package-publish channel. A tool-poisoning compromise in this context escalates from local-dev exposure to supply-chain emission. Feeds the `cicd-pipeline-compromise` playbook when paired with any other high-confidence MCP indicator. Source: 2026-04 GitHub-blog runner-context MCP advisory + AGENTS.md Hard Rule #5 (blast-radius escalation when credentials in scope).",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "attack_ref": "T1078.004",
+          "false_positive_checks_required": [
+            "Local-dev environments may set CI=true via direnv / .envrc for matrix-test parity. Confirm at least one of GITHUB_ACTIONS / GITLAB_CI / BUILDKITE / JENKINS_URL / CIRCLECI is set (these are runner-emitted, not user-settable) before treating as a true positive.",
+            "Self-hosted runners on developer machines blur the boundary. Verify the runner has registered with the upstream control plane (gh api /repos/:owner/:repo/actions/runners) and is currently executing a job before flagging."
+          ]
         }
       ],
       "false_positive_profile": [

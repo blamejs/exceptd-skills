@@ -1621,6 +1621,28 @@ Examples:
  */
 async function runWatchlistOrgScan(rawArgs = []) {
   const jsonOut = rawArgs.includes('--json');
+  // v0.13.5: --output-format markdown emits a GitHub-flavored markdown
+  // table suitable for pasting into a PR / issue body for ops follow-up.
+  // Accepted values: json | markdown | human (default). --json is the
+  // legacy short form and remains accepted (treated as --output-format json).
+  let outputFormat = jsonOut ? 'json' : 'human';
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--output-format' && rawArgs[i + 1]) outputFormat = rawArgs[i + 1];
+    if (rawArgs[i].startsWith('--output-format=')) outputFormat = rawArgs[i].slice('--output-format='.length);
+  }
+  const VALID_FORMATS = ['json', 'markdown', 'human'];
+  if (!VALID_FORMATS.includes(outputFormat)) {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      verb: 'watchlist',
+      mode: 'org-scan',
+      error: `watchlist --org-scan: --output-format "${outputFormat}" not in accepted set ${JSON.stringify(VALID_FORMATS)}.`,
+      accepted: VALID_FORMATS,
+      provided: outputFormat,
+    }) + '\n');
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
   // Extract --org <login>. Accept --org=foo too.
   let org = null;
   for (let i = 0; i < rawArgs.length; i++) {
@@ -1703,7 +1725,7 @@ async function runWatchlistOrgScan(rawArgs = []) {
     } catch { /* network failure — best effort */ }
   }
   const generated_at = new Date().toISOString();
-  if (jsonOut) {
+  if (outputFormat === 'json') {
     process.stdout.write(JSON.stringify({
       ok: !rateLimited,
       verb: 'watchlist',
@@ -1719,6 +1741,41 @@ async function runWatchlistOrgScan(rawArgs = []) {
     }) + '\n');
     return;
   }
+  if (outputFormat === 'markdown') {
+    // GitHub-flavored markdown table — paste-friendly for PR / issue
+    // bodies and security advisories. Includes the control reference
+    // and the unauthenticated / rate-limit caveats so the operator
+    // who receives the paste knows how to validate the result.
+    const lines = [];
+    lines.push(`## GitHub Org-Scan: ${org}`);
+    lines.push('');
+    lines.push(`Generated at \`${generated_at}\`. ${patterns.length} threat-actor naming patterns evaluated. ${matches.length} match(es) found.`);
+    lines.push('');
+    if (unauth) {
+      lines.push('> **Note:** scan ran unauthenticated. Private-repo coverage is incomplete; rate-limit reduces query throughput. Set `GITHUB_TOKEN` env var for full coverage.');
+      lines.push('');
+    }
+    if (rateLimited) {
+      lines.push('> **Warning:** GitHub rate limit hit on at least one pattern query. Some matches may be missing. Re-run with `GITHUB_TOKEN` set to lift the limit.');
+      lines.push('');
+    }
+    if (matches.length === 0) {
+      lines.push('_No repositories matching threat-actor patterns found._');
+    } else {
+      lines.push('| Severity | Repo | Visibility | Created | Pattern | URL |');
+      lines.push('|---|---|---|---|---|---|');
+      for (const m of matches) {
+        const vis = m.private ? '🔒 private' : '🌐 public';
+        const created = (m.created_at || '').slice(0, 10);
+        lines.push(`| **${m.severity}** | \`${m.repo}\` | ${vis} | ${created} | ${m.pattern_id} | [link](${m.url}) |`);
+      }
+    }
+    lines.push('');
+    lines.push(`Control reference: NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS lesson — \`exceptd watchlist --org-scan\`).`);
+    process.stdout.write(lines.join('\n') + '\n');
+    return;
+  }
+  // human (default)
   console.log(`\nGitHub Org-Scan — ${generated_at}`);
   console.log(`Org: ${org}  patterns: ${patterns.length}  matches: ${matches.length}`);
   if (unauth) console.log('(unauthenticated — set GITHUB_TOKEN for private-repo coverage + higher rate limit)');

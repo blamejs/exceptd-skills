@@ -47,6 +47,7 @@
       "ransomware",
       "runtime",
       "secrets",
+      "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
   },

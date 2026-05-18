@@ -1,22 +1,22 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:2817019c-3f65-4bd2-9eb6-c1eb0d9baa45",
+  "serialNumber": "urn:uuid:dc4ea6d2-18bd-4318-b6d8-968947c4039e",
   "version": 1,
   "metadata": {
-    "timestamp": "2047-04-25T16:19:40.000Z",
+    "timestamp": "2143-02-16T10:07:14.000Z",
     "tools": [
       {
         "vendor": "blamejs",
         "name": "scripts/refresh-sbom.js",
-        "version": "0.13.4"
+        "version": "0.13.5"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.4",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.5",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.13.4",
+      "version": "0.13.5",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
       "licenses": [
         {
@@ -25,17 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.4",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.5",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c2bd3ae64e303b098088db047fecec1eab56cc2e3021d6c54f73dcf4c5772ab6"
+          "content": "641de38e430fc40e79e6ad487fc4cbde1b9ea15b667f9a7ecc49d3535fdf9b1b"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.4"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.5"
         },
         {
           "type": "vcs",
@@ -108,7 +108,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0f22625bf1e0c95e9b831b34ca7f74fa011f2c9c2a011efdabe4eab783b2c918"
+          "content": "6065b080b3c9b5b401927aef8fd16a1e64463845cc19b0ddd22844e532a2abca"
         }
       ]
     },
@@ -229,7 +229,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b3540a3296e5e901004d428351d40d3ac40b154da082071da2c00222c40b7b6e"
+          "content": "71b2af8a3677f2eeec9eacb79fc3a0d672fd3714f1cfcfd7695bb49bf588e490"
         }
       ]
     },
@@ -262,7 +262,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "68d4c20ee97ec90cb5f33f53df512788921b0920687c69fa50d8a83189fb98fa"
+          "content": "4b8c05074744f9e099c776e0f9c3afd2b978fc52d702bc8805c3b5bfecdbafcb"
         }
       ]
     },
@@ -344,13 +344,24 @@
       ]
     },
     {
+      "bom-ref": "file:data/playbooks/ai-discovered-cve-triage.json",
+      "type": "file",
+      "name": "data/playbooks/ai-discovered-cve-triage.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1f49d4b257eac755cfda0131583d7815c5a7cabf0fb776e2e478ef519900d77b"
+        }
+      ]
+    },
+    {
       "bom-ref": "file:data/playbooks/cicd-pipeline-compromise.json",
       "type": "file",
       "name": "data/playbooks/cicd-pipeline-compromise.json",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "e1e98bdef5bfc50aeeba4c6e02e13719de611b2072ec5f3a592358eb0ca842e9"
+          "content": "78e2d945e95a5de64d72b8ea16183d8a738dce0988ad092a8b1a86a59222b029"
         }
       ]
     },
@@ -383,7 +394,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "7b12d9c0544c44cf6bfaab49f4cd3010bd90c8e99899e70d098cadf328778ba9"
+          "content": "a34da63059b10b4c2887e8715aac60c1e9a3dadb0977615ee5cf02d8fda479b5"
         }
       ]
     },
@@ -405,7 +416,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1e5eae0f36d5300e0a24422b840902fdd6aac002eea65882bfe467150a8e755d"
+          "content": "c1d47ce98f77230f2d52527a1f4a4599b8ec93443fbe6afb83561f24d6b571ba"
         }
       ]
     },
@@ -416,7 +427,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "5e3c0ab4711e47351964a86bab72c27b35604ef24ec28dd166bf3916c4e6fb40"
+          "content": "62198e2c0d16c91da9357daf7c73c600b4987fe48d3b57938f4395ca5d901e27"
         }
       ]
     },
@@ -449,7 +460,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "527ca09fddb89fd98cc5600f786bf4c0b60589bc996051c3d0732680469e7850"
+          "content": "dfa6edcde573ebb4c4a68ddffe3f719f15ab49515fa17c310d34f783c085fbba"
         }
       ]
     },
@@ -460,7 +471,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bd435b1fbd825d1eb935a9d57489da57e024f47af2dcd8f5d572b9bcce96273e"
+          "content": "ed01d7a14ac6ac485569aea80cd58584f94da72b3227393a070c9098163b111f"
         }
       ]
     },
@@ -493,7 +504,18 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c7bfde2af268a7b1b19e16c8e08a62da5bf46928f68f6153c226c7f1f5cf4433"
+          "content": "91bbe085689c3569c9731f41b87c1ba61879220a67127b60f94f59045f0f82d9"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/post-quantum-migration.json",
+      "type": "file",
+      "name": "data/playbooks/post-quantum-migration.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59c58097750eff57414a308ede38e51a5cf789ec81c706cd7c58a113a163bba9"
         }
       ]
     },
@@ -515,7 +537,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bd6ddef602060ede72d1918ffd87bcf8e9ac6baefbc570439c81875c1904965a"
+          "content": "27607530186a6611e05f49597894a66611cf526f14eb401999facaf1ea82e89f"
         }
       ]
     },
@@ -526,7 +548,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "d6c779ae05401ac23d8ebcd41cc0d55475bd101ca01e6cc19d19bee9a09b0423"
+          "content": "e0128a312c3f44af858db3bb2eae225c264472fac4c2e63e63033dfdc376aed9"
         }
       ]
     },
@@ -538,6 +560,17 @@
         {
           "alg": "SHA-256",
           "content": "759145f734ac32353c02b923deb52bcf79ebcb78a253ecf7bfc02d94ee56ca40"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:data/playbooks/supply-chain-recovery.json",
+      "type": "file",
+      "name": "data/playbooks/supply-chain-recovery.json",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d0a13bab1eac5712f4dd910ab62f7c39920ee481534baa88ed6dd55134812cd0"
         }
       ]
     },
@@ -746,7 +779,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "cf346e2cdce845c9c3cc5d6f3ee793e07c95edb0dc5a5ca407f1a22e1dcab94d"
+          "content": "bb1ad0a64b9e05c39d4bc3bd31615938f77510fd61a0c48b735386043a9ace22"
         }
       ]
     },
@@ -889,7 +922,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "2254b4cf3cacb6dee684d5ab8feed6fdcd07c36c3e7861d98effe6dcf7f8fe36"
+          "content": "d98598a62974f8e0b01cce1120b54f5c117744b5bdb1a84d3a092556fc2f67d8"
         }
       ]
     },
@@ -988,7 +1021,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "821b61225c10b09eebad72fc94faf1a0627ad0be223427ba477c64704bc260b8"
+          "content": "6bbf4f4d9540c2539d6f2635b39ba42f963e3a2238e9e8b6569d0cc65719b813"
         }
       ]
     },
@@ -1032,7 +1065,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b827fb5d2a43409ba2c390b000e175c9357b86137d25d6647ff238b94922275b"
+          "content": "55ce6c144afe7bb0636fad89607a4dca5df0bd5e5803f9c502d305184b1db1e1"
         }
       ]
     },

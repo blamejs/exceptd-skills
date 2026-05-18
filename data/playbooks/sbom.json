@@ -83,6 +83,7 @@
     ],
     "fed_by": [
       "ai-api",
+      "ai-discovered-cve-triage",
       "cicd-pipeline-compromise",
       "cloud-iam-incident",
       "containers",
@@ -92,6 +93,8 @@
       "kernel",
       "library-author",
       "mcp",
+      "post-quantum-migration",
+      "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
   },

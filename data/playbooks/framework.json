@@ -47,6 +47,7 @@
     ],
     "fed_by": [
       "ai-api",
+      "ai-discovered-cve-triage",
       "cicd-pipeline-compromise",
       "cloud-iam-incident",
       "crypto",
@@ -57,8 +58,10 @@
       "library-author",
       "llm-tool-use-exfil",
       "mcp",
+      "post-quantum-migration",
       "ransomware",
       "sbom",
+      "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
   },
