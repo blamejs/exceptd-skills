@@ -104,10 +104,13 @@ test('A: publish-github-release depends on publish-npm (sequenced)', () => {
 test('B: lint-skills.js source carries the body-scan implementation', () => {
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'lint-skills.js'), 'utf8');
   assert.match(src, /Hard Rule #1/, 'body-scan must explicitly cite Hard Rule #1');
-  assert.match(src, /body cites/, 'body-scan must emit "body cites" warning text');
+  assert.match(src, /body cites/, 'body-scan must emit "body cites" text');
   assert.match(src, /ctx\.cveCatalog/, 'body-scan must consume ctx.cveCatalog');
   assert.match(src, /_draft\s*===\s*true/, 'body-scan must distinguish draft entries');
-  assert.match(src, /will hard-fail in v0\.14\.0/, 'v0.13.2 surfaces as warning; v0.14.0 will flip to hard error');
+  // v0.13.3 flipped missing-from-catalog from warning to hard error
+  // after the 2 pre-existing violations were triaged.
+  assert.match(src, /if \(!entry\) \{[\s\S]*?skillErrors\.push/,
+    'missing-from-catalog must push to skillErrors (v0.13.3 flip)');
 });
 
 test('B: validateFrontmatter accepts discovery_mode field (no "unknown field" error)', () => {

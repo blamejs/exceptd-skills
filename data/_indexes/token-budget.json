@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1613380,
-    "total_approx_tokens": 403351,
+    "total_chars": 1617909,
+    "total_approx_tokens": 404483,
     "skill_count": 42
   },
   "skills": {
@@ -1900,10 +1900,10 @@
     },
     "api-security": {
       "path": "skills/api-security/skill.md",
-      "bytes": 37397,
-      "chars": 37162,
-      "lines": 294,
-      "approx_tokens": 9291,
+      "bytes": 39261,
+      "chars": 39026,
+      "lines": 304,
+      "approx_tokens": 9757,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1917,9 +1917,9 @@
           "approx_tokens": 1320
         },
         "ttp-mapping": {
-          "bytes": 2299,
-          "chars": 2269,
-          "approx_tokens": 567
+          "bytes": 2750,
+          "chars": 2720,
+          "approx_tokens": 680
         },
         "exploit-availability-matrix": {
           "bytes": 4468,
@@ -1927,9 +1927,9 @@
           "approx_tokens": 1103
         },
         "analysis-procedure": {
-          "bytes": 7799,
-          "chars": 7756,
-          "approx_tokens": 1939
+          "bytes": 8479,
+          "chars": 8436,
+          "approx_tokens": 2109
         },
         "output-format": {
           "bytes": 3718,
@@ -1942,9 +1942,9 @@
           "approx_tokens": 587
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3238,
-          "chars": 3218,
-          "approx_tokens": 805
+          "bytes": 3826,
+          "chars": 3806,
+          "approx_tokens": 952
         },
         "hand-off": {
           "bytes": 1205,
@@ -2230,10 +2230,10 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 26556,
-      "chars": 26458,
-      "lines": 209,
-      "approx_tokens": 6615,
+      "bytes": 29232,
+      "chars": 29116,
+      "lines": 219,
+      "approx_tokens": 7279,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2242,14 +2242,14 @@
           "approx_tokens": 1104
         },
         "framework-lag-declaration": {
-          "bytes": 3683,
-          "chars": 3680,
-          "approx_tokens": 920
+          "bytes": 4082,
+          "chars": 4077,
+          "approx_tokens": 1019
         },
         "ttp-mapping": {
-          "bytes": 1420,
-          "chars": 1414,
-          "approx_tokens": 354
+          "bytes": 2092,
+          "chars": 2080,
+          "approx_tokens": 520
         },
         "exploit-availability-matrix": {
           "bytes": 1840,
@@ -2257,9 +2257,9 @@
           "approx_tokens": 460
         },
         "analysis-procedure": {
-          "bytes": 6759,
-          "chars": 6735,
-          "approx_tokens": 1684
+          "bytes": 7442,
+          "chars": 7416,
+          "approx_tokens": 1854
         },
         "output-format": {
           "bytes": 1821,
@@ -2272,9 +2272,9 @@
           "approx_tokens": 450
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 2431,
-          "chars": 2419,
-          "approx_tokens": 605
+          "bytes": 3207,
+          "chars": 3187,
+          "approx_tokens": 797
         },
         "hand-off": {
           "bytes": 1135,
@@ -2340,16 +2340,16 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "bytes": 44467,
-      "chars": 44309,
+      "bytes": 44474,
+      "chars": 44316,
       "lines": 416,
-      "approx_tokens": 11077,
+      "approx_tokens": 11079,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
-          "bytes": 5786,
-          "chars": 5772,
-          "approx_tokens": 1443
+          "bytes": 5793,
+          "chars": 5779,
+          "approx_tokens": 1445
         },
         "framework-lag-declaration": {
           "bytes": 6316,

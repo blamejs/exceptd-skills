@@ -2937,5 +2937,76 @@
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "low"
+  },
+  "CVE-2024-21762": {
+    "name": "Fortinet FortiOS / FortiProxy SSL-VPN out-of-bounds write (sslvpnd preauth RCE)",
+    "lesson_date": "2026-05-17",
+    "attack_vector": {
+      "description": "Out-of-bounds write in the sslvpnd daemon's HTTP request handling on FortiOS and FortiProxy. An unauthenticated attacker sends a specially crafted HTTP request to the SSL-VPN web surface and executes code on the appliance. Mass-scanning began within hours of the 2024-02-08 vendor disclosure; CISA KEV-listed the next day with a 7-day federal remediation deadline. Fortinet's 2025-04-11 follow-up advisory documented a post-exploitation technique where attackers who compromised the device before patching leave behind read-only symlinks in the SSL-VPN language-file directory that grant persistent filesystem read access on fully patched firmware — patch alone is insufficient.",
+      "privileges_required": "none (unauth network reach to the SSL-VPN web surface; SSL-VPN must be enabled on the FortiGate)",
+      "complexity": "low — single-request preauth RCE; public PoCs available within days",
+      "ai_factor": "Not AI-discovered — vendor-internal discovery by Fortinet PSIRT. No AI involvement on either the discovery or weaponization side."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to FortiOS 7.6.2 / 7.4.7 / 7.2.11 / 7.0.17 / 6.4.16 or FortiProxy 7.4.3 / 7.2.9 / 7.0.15 / 2.0.14. Pre-patch interim mitigation: disable SSL-VPN entirely (Fortinet's stated workaround). Front the SSL-VPN web surface with network ACLs restricting access to known operator IP ranges where the SSL-VPN tenancy model permits it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation — added 2024-02-09 with 7-day deadline)",
+        "adequacy": "Patch is definitive for the OOB-write itself but does not remediate post-exploitation persistence (symlink-based filesystem read access seeded before the patch). Operators who patched after compromise must additionally apply the FortiGuard 2025-04 cleanup steps to remove attacker-installed symlinks."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on sslvpnd process crashes (OOB-write often triggers segfaults during exploit development); webserver log alerts on unusual HTTP request patterns to /remote/* SSL-VPN endpoints; outbound connection alerts from FortiGate appliances to non-management destinations; filesystem-state baselining on the SSL-VPN language-file directory to detect symlink-persistence artifacts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection without prevention; in the case of a confirmed-in-wild preauth RCE with a 7-day KEV deadline, patching is the operative control. Filesystem-state detection is necessary to catch the post-exploitation symlink persistence on devices patched after compromise."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any internet-facing FortiGate with SSL-VPN enabled before 2024-02-08 as potentially compromised; capture device configuration and audit logs for forensic review; rotate every credential reachable from the device (admin credentials, VPN-user credentials, RADIUS shared secrets, LDAP bind credentials); reimage or factory-reset rather than upgrade-in-place where the compromise window is uncertain; apply the FortiGuard 2025-04 cleanup steps to remove attacker-installed symlinks even on devices that appear to be on current firmware.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive but necessary for any device with uncertain compromise status; many operators upgraded in place and missed the post-exploitation persistence."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day patch SLA is multiple orders of magnitude longer than the observed exploitation window (hours from disclosure to mass-scanning). Reboot-required nature breaks the standard maintenance-window assumption; many operators delayed patching until the next scheduled window, extending exposure."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; standard 30-day interpretation is unsafe for an unauthenticated preauth RCE on an internet-facing security appliance with public PoCs and confirmed in-wild exploitation."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "EU NIS2 treats VPN concentrators as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA. Operators in NIS2 sectors typically discovered the vulnerability via vendor advisory, not via the regulatory channel."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; the appliance-reboot requirement breaks the standard SLA assumption for financial-entity SSL-VPN concentrators."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System security principle is silent on the operational reality that fully patched FortiGates can carry attacker persistence (symlink-based filesystem read access) seeded before the patch was applied. Patch alone is insufficient; cleanup verification is required."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": "closest",
+        "gap": "Essential 8 patch-applications ML3 (48h) is closer to the operational reality than NIST SI-2 but still misses the mass-scanning window."
+      }
+    },
+    "new_control_requirements": [],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Internet-facing SSL-VPN concentrators are routinely deployed by SOC 2 / ISO 27001 / PCI-audited organisations without a documented compressed-SLA patching procedure for the appliance class; the standard 30-day patch SLA was active exposure for this CVE. Post-exploitation symlink cleanup is essentially never tested in compliance audits — operators who patched in place after compromise frequently retained attacker persistence.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "low"
   }
 }

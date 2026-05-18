@@ -1093,6 +1093,7 @@ function runWatchlist(rawArgs = []) {
 
   const byskill = rawArgs.includes('--by-skill');
   const alertsMode = rawArgs.includes('--alerts');
+  const orgScanMode = rawArgs.includes('--org-scan');
   const manifestPath = path.join(__dirname, '..', 'manifest.json');
   const repoRoot = path.join(__dirname, '..');
 
@@ -1100,10 +1101,20 @@ function runWatchlist(rawArgs = []) {
   // "CVE-class alert patterns" — surfaces catalog entries matching
   // high-priority shape rules (kernel-LPE-with-PoC, supply-chain-family,
   // AI-discovered-KEV, recently-disclosed-with-active-exploitation).
-  // The two modes are mutually exclusive; --alerts short-circuits the
-  // forward-watch aggregation.
+  // The modes are mutually exclusive; the first matching flag wins.
   if (alertsMode) {
     return runWatchlistAlerts(rawArgs);
+  }
+
+  // v0.13.3: --org-scan probes GitHub for repository naming patterns
+  // associated with known threat actors (per NEW-CTRL-052 from the
+  // MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry). The Shai-Hulud
+  // worm uses GitHub itself as the exfil channel — repos named
+  // "A Gift From TeamPCP", "Shai-Hulud-*", or with future variants
+  // hold the stolen credentials. Operators can run this against
+  // their own GitHub org to surface exfil staging in their tenant.
+  if (orgScanMode) {
+    return runWatchlistOrgScan(rawArgs);
   }
 
   let manifest;
@@ -1587,6 +1598,140 @@ Examples:
   exceptd report executive
   exceptd watch
 `);
+}
+
+/**
+ * v0.13.3 — runWatchlistOrgScan: GitHub repo-pattern monitoring per
+ * NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS zeroday-lessons). The Shai-Hulud
+ * worm uses GitHub itself as the exfil channel; the canonical naming
+ * pattern is "A Gift From TeamPCP", commit-timestamps falsified to
+ * 2099-01-01, and contributor accounts agwagwagwa / headdirt / tmechen.
+ *
+ * Operators run this against their GitHub org (--org <login> or
+ * GITHUB_ORG env var) to surface exfil staging within their tenant.
+ * Uses the GitHub Search API (unauthenticated for public-repo search;
+ * GITHUB_TOKEN env var lifts the rate limit + enables private-repo
+ * coverage). Report-only — never modifies repos.
+ *
+ * Flags / env:
+ *   --org <login>              GitHub org / user to scope the search to (required)
+ *   --pattern <s> (repeatable) additional naming-pattern strings (defaults below)
+ *   --json                     structured JSON output
+ *   GITHUB_TOKEN env var       lifts rate limit + private-repo search coverage
+ */
+async function runWatchlistOrgScan(rawArgs = []) {
+  const jsonOut = rawArgs.includes('--json');
+  // Extract --org <login>. Accept --org=foo too.
+  let org = null;
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--org' && rawArgs[i + 1]) { org = rawArgs[i + 1]; break; }
+    if (rawArgs[i].startsWith('--org=')) { org = rawArgs[i].slice('--org='.length); break; }
+  }
+  if (!org) org = process.env.GITHUB_ORG || null;
+  if (!org) {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      verb: 'watchlist',
+      mode: 'org-scan',
+      error: 'watchlist --org-scan requires --org <login> (or GITHUB_ORG env var). Example: exceptd watchlist --org-scan --org blamejs',
+    }) + '\n');
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
+  // Custom patterns via --pattern <s> (repeatable). Default set from
+  // the MAL-2026-SHAI-HULUD-OSS catalog entry + NEW-CTRL-052 evidence.
+  const customPatterns = [];
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--pattern' && rawArgs[i + 1]) customPatterns.push(rawArgs[i + 1]);
+    if (rawArgs[i].startsWith('--pattern=')) customPatterns.push(rawArgs[i].slice('--pattern='.length));
+  }
+  const DEFAULT_PATTERNS = [
+    { id: 'shai-hulud-classic', q: 'Shai-Hulud', severity: 'critical', source: 'MAL-2026-SHAI-HULUD-OSS (pre-source-release naming)' },
+    { id: 'teampcp-gift', q: 'A Gift From TeamPCP', severity: 'critical', source: 'MAL-2026-SHAI-HULUD-OSS (post-2026-05-12 release naming)' },
+    { id: 'teampcp-bare', q: 'TeamPCP', severity: 'high', source: 'MAL-2026-SHAI-HULUD-OSS threat actor reference' },
+  ];
+  const patterns = [
+    ...DEFAULT_PATTERNS,
+    ...customPatterns.map((q, i) => ({ id: `custom-${i + 1}`, q, severity: 'medium', source: 'operator --pattern' })),
+  ];
+
+  // GitHub Search API: GET /search/code?q=<query>+org:<login>
+  // and GET /search/repositories?q=<query>+org:<login>. Both return
+  // the same shape (items[] with name, html_url, owner, created_at).
+  const token = process.env.GITHUB_TOKEN || '';
+  const matches = [];
+  let rateLimited = false;
+  let unauth = !token;
+  if (typeof fetch !== 'function') {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      verb: 'watchlist',
+      mode: 'org-scan',
+      error: 'fetch() not available — Node 18+ required.',
+    }) + '\n');
+    safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
+  for (const p of patterns) {
+    const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(p.q + ' org:' + org)}&per_page=100`;
+    const headers = { 'User-Agent': 'exceptd-watchlist-org-scan/0.13.3 (+https://exceptd.com)', 'Accept': 'application/vnd.github+json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 10000);
+      const r = await fetch(url, { headers, signal: ac.signal });
+      clearTimeout(timer);
+      if (r.status === 403 || r.status === 429) {
+        rateLimited = true;
+        continue;
+      }
+      if (!r.ok) continue;
+      const body = await r.json();
+      for (const item of body.items || []) {
+        matches.push({
+          pattern_id: p.id,
+          severity: p.severity,
+          source: p.source,
+          repo: item.full_name,
+          url: item.html_url,
+          private: item.private,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          stars: item.stargazers_count || 0,
+        });
+      }
+    } catch { /* network failure — best effort */ }
+  }
+  const generated_at = new Date().toISOString();
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify({
+      ok: !rateLimited,
+      verb: 'watchlist',
+      mode: 'org-scan',
+      generated_at,
+      org,
+      patterns_evaluated: patterns.length,
+      match_count: matches.length,
+      matches,
+      rate_limited: rateLimited,
+      unauthenticated: unauth,
+      control_reference: 'NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS lesson)',
+    }) + '\n');
+    return;
+  }
+  console.log(`\nGitHub Org-Scan — ${generated_at}`);
+  console.log(`Org: ${org}  patterns: ${patterns.length}  matches: ${matches.length}`);
+  if (unauth) console.log('(unauthenticated — set GITHUB_TOKEN for private-repo coverage + higher rate limit)');
+  if (rateLimited) console.log('WARNING: GitHub rate limit hit on at least one query. Re-run with GITHUB_TOKEN set.');
+  if (matches.length === 0) {
+    console.log('No threat-actor-pattern repos found.');
+    return;
+  }
+  for (const m of matches) {
+    console.log(`[${m.severity}] ${m.repo}  ${m.private ? '(private)' : ''} created ${m.created_at}`);
+    console.log(`    pattern: ${m.pattern_id} (${m.source})`);
+    console.log(`    ${m.url}`);
+  }
 }
 
 // Only run the CLI when this file is executed directly. Earlier versions

@@ -20,7 +20,13 @@ triggers:
   - deepfake phishing
   - ai phishing
   - secure email gateway
-data_deps: []
+data_deps:
+  - atlas-ttps.json
+  - attack-techniques.json
+  - d3fend-catalog.json
+  - dlp-controls.json
+  - framework-control-gaps.json
+  - rfc-references.json
 atlas_refs: []
 attack_refs:
   - T1566
@@ -47,7 +53,7 @@ d3fend_refs:
   - D3-CSPP
   - D3-IOPR
   - D3-MFA
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-05-18"
 discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief email-security-anti-phishing` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -89,7 +95,7 @@ Phishing remained the #1 initial-access vector through 2025 (Verizon DBIR 2025) 
 | IN CERT-In | Phishing guidance and 6-hour incident reporting rule | Reporting requirement is firm; control specifications lag. |
 | NYDFS | 23 NYCRR 500.14 (training and monitoring) | Annual phishing-aware training required; does not specify FIDO2, DMARC `p=reject`, or deepfake-aware procedures. |
 
-Per AGENTS.md Rule #5, this analysis spans EU + UK + AU + JP + IL + SG + IN + NYDFS alongside NIST and ISO.
+Per AGENTS.md Rule #5, this analysis spans EU + UK + AU + JP + IL + SG + IN + NYDFS alongside NIST and ISO. Each framework-gap ID in `framework_gaps` (`NIST-800-53-SI-3`, `ISO-27001-2022-A.8.16`, `SOC2-CC7-anomaly-detection`, `NIS2-Art21-incident-handling`, `UK-CAF-C1`, `AU-Essential-8-App-Hardening`) resolves against `data/framework-control-gaps.json` — operators producing a per-control evidence pack should pull the canonical lag rationale from that catalog rather than transcribing the table above.
 
 ---
 
@@ -103,7 +109,7 @@ Per AGENTS.md Rule #5, this analysis spans EU + UK + AU + JP + IL + SG + IN + NY
 | T1566.003 | Spearphishing via Service | LinkedIn DMs, Teams chat, Slack DMs, SMS, WhatsApp — all email-adjacent channels that DMARC/DKIM/SPF do not protect. Voice-cloned vishing and deepfake video calls land here too. |
 | T1078 | Valid Accounts | Post-phish credential use. The success metric for the program is "no T1078 follow-on," because every successful T1566 that reaches `p=reject` and FIDO2 still has to traverse credential use. |
 
-Note: `atlas_refs` is intentionally empty — these are ATT&CK Enterprise TTPs against human/email channels, not ATLAS AI-system TTPs. The AI-augmentation angle is handled via cross-reference to `ai-attack-surface`.
+Note: `atlas_refs` is intentionally empty — these are ATT&CK Enterprise TTPs against human/email channels, not ATLAS AI-system TTPs. The AI-augmentation angle is handled via cross-reference to `ai-attack-surface`. The ATT&CK technique IDs above (`T1566`, `T1566.001`, `T1566.002`, `T1566.003`, `T1078`) resolve against `data/attack-techniques.json`; when an investigation crosses into AI-mediated phishing (LLM-generated lures, deepfake video confirmation, voice cloning), cross-reference `data/atlas-ttps.json` for `AML.T0051` (LLM Prompt Injection — relevant when phishing payloads target the LLM-as-classifier instead of the human), `AML.T0024` (Exfiltration via Cyber Means — applicable where compromised mailbox sessions egress data via the message channel itself), and `AML.T0016` (Develop Capabilities — adversary use of public LLM APIs to author hyperpersonalized lures).
 
 ---
 
@@ -137,6 +143,8 @@ The procedure threads three foundational principles per AGENTS.md:
 **Zero trust** — every email is hostile until verified (DMARC pass + sender reputation + intent classification at gateway). Every video call requesting a financial action requires a live verification challenge (callback to a known number; pre-arranged challenge phrase; in-person or known-good-channel confirmation for high-value transactions). Every voice call from a "known" executive requesting an out-of-policy action gets multi-channel verification before action.
 
 **Cloud-email canonical, on-prem exception** (Rule #9): default scoping assumes Microsoft 365 Exchange Online or Google Workspace Gmail. On-prem Exchange (legacy, regulated enclave, air-gapped) gets an explicit exception path noting which controls (cloud-native sandbox detonation, Microsoft Defender XDR signals, Google Workspace Security Sandbox) have on-prem equivalents and which require compensating controls.
+
+Email-authentication RFCs cited throughout the procedure (`RFC-7489` DMARC, `RFC-6376` DKIM, `RFC-7208` SPF, `RFC-8616` BIMI/AuthIndicators DNS encoding, `RFC-8461` MTA-STS, `RFC-8617` ARC, `RFC-8460` TLSRPT) resolve against `data/rfc-references.json`. The DLP exfil-channel mappings invoked by the gateway-and-egress sub-procedures (`DLP-CHAN-EMAIL-OUT` for outbound message exfil, `DLP-CHAN-LLM-PROMPT` for LLM-prompt-as-egress when users paste mailbox content into AI assistants, `DLP-ENFORCE-BLOCK` for hard-block enforcement on confirmed PHI/PCI patterns) resolve against `data/dlp-controls.json` — these are the canonical IDs to cite when handing off to `dlp-gap-analysis`.
 
 **Ten-step assessment:**
 
@@ -191,6 +199,8 @@ Per AGENTS.md, this skill ships on 2026-05-11 and includes the optional 8th sect
 | D3-CSPP (Client-server Payload Profiling) | Email content payload profiling at the gateway — attachment type, macro presence, embedded URL targeting, header anomalies, conversation-thread coherence checks | Pre-delivery and pre-render | Per-message risk scoring; quarantine vs. deliver with banner vs. deliver clean | Verify content properties match claimed sender's pattern; flag stylometric drift consistent with LLM-generated hyperpersonalized lures | Stylometric drift is the canonical detection signal for LLM-generated phishing |
 | D3-IOPR (Inbound Operation Restriction) | Restrict inbound operations the message can perform — URL rewriting, click-time re-evaluation, macro neutralization, container-format unpacking, sandbox detonation | Pre-delivery and at click-time | Per-user click policy (privileged users on stricter detonation tier) | No payload is allowed to act on the user's behalf without the gateway's verification | LLM-generated email detection sits here at the gateway-classification layer |
 | D3-MFA (Multi-factor Authentication) | Phishing-resistant authenticator class — FIDO2 / WebAuthn synced passkeys with proper relying-party verification | User authentication layer | Mandatory at 100% for privileged role classes; recovery flow hardened against helpdesk-vishing | Every authentication is verified by possession of the bound authenticator; session tokens are not transferable across origin | Canonical defense — passkeys remove the credential-disclosure win condition that AI-augmented phishing optimizes for |
+
+The D3FEND technique IDs above (`D3-NTA`, `D3-CSPP`, `D3-IOPR`, `D3-MFA`) resolve against `data/d3fend-catalog.json`. Operators producing a defence-in-depth map for an email-security finding should chain: offensive technique (`T1566.*` from `data/attack-techniques.json`, plus AI-augmentation context from `data/atlas-ttps.json`) → missing control (entry in `data/framework-control-gaps.json`) → defensive technique (entry in `data/d3fend-catalog.json`) → DLP enforcement channel (`DLP-CHAN-EMAIL-OUT` / `DLP-CHAN-LLM-PROMPT` from `data/dlp-controls.json`) → wire-level RFC anchor (entry in `data/rfc-references.json`). This is the cross-walk pattern the seven-phase playbook expects when packaging anti-phishing evidence for an auditor or jurisdiction notification.
 
 ---
 

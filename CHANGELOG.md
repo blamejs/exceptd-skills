@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.13.3 — 2026-05-18
+
+Audit close-out continuation: the items the prior pass marked for follow-up. Workflow hardening, lint enforcement promoted from warning to hard error, two new operator-facing health checks for the Shai-Hulud lesson controls, and 4 more primary-source pollers covering kernel.org / oss-security / JFrog / CISA.
+
+### Security
+
+**`refresh.yml` split into two jobs — `refresh-data` (no write credentials) + `open-pr` (contents:write + pull-requests:write + issues:write scoped to PR creation only).** Pre-split a single `refresh` job carried write capability against the repo throughout the long-running data-parse + prefetch + apply + predeploy sequence; a compromise of any of those steps had repo-write access during the whole run. The new shape scopes write capability to the few-second PR-creation window. Data mutations flow between jobs via an upload-artifact / download-artifact bundle. The `refresh-data` checkout now uses `persist-credentials: false`.
+
+**`lib/lint-skills.js` Hard Rule #1 body-scan flipped from warning to hard error.** v0.13.2 introduced the body-scan as a warning while the 2 pre-existing violations were triaged. Both are now resolved (`CVE-2024-21762` landed in the catalog with full Hard Rule #1 fields; the placeholder `CVE-2026-21370` reference was removed from `cloud-iam-incident`). The body-scan now errors when a skill cites a CVE not in the catalog. Draft references continue to surface as warnings.
+
+### Features
+
+**`exceptd doctor --ai-config` audits AI-assistant config-file permissions.** Implements NEW-CTRL-050 from the MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry. Walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, `~/.continue` for sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) and reports any not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each sensitive file is flagged with an info-level "manual ACL review" note. Opt-in via `--ai-config`; doesn't run as part of the default no-flag doctor pass.
+
+**`exceptd watchlist --org-scan` probes GitHub for threat-actor repo naming patterns.** Implements NEW-CTRL-052 from the MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry. Queries the GitHub Search API for repos matching the canonical Shai-Hulud / TeamPCP patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP") scoped to `--org <login>`. Custom patterns via repeatable `--pattern <s>`. Set `GITHUB_TOKEN` env var for private-repo coverage and higher rate limit; without it, public-repo search only.
+
+**4 more primary-source advisory pollers.** `lib/source-advisories.js` `FEEDS` grew 4 → 8:
+- `kernel-org` — torvalds/linux master commits atom feed. Catches the CVE-2026-46333 / ssh-keysign-pwn class at T+0, the moment the upstream fix lands. The v0.13.1 post-mortem identified this as the exact venue we missed.
+- `oss-security` — openwall.com `oss-security` mailing list atom feed. Coordinated-disclosure venue; many distro advisories announce CVEs here days before NVD enrichment.
+- `jfrog` — JFrog SecOps research blog feed. npm / PyPI / Maven supply-chain disclosures with CVE assignments (TanStack / Mini Shai-Hulud class).
+- `cisa-current` — CISA cybersecurity advisories feed (federal-vendor coordinated disclosures, separate from KEV which captures only exploited-in-the-wild items).
+
+### Bugs
+
+**`CVE-2024-21762` (Fortinet FortiOS SSL-VPN preauth RCE) added to catalog.** Was cited in skill prose without a backing catalog entry — surfaced by the v0.13.2 Hard Rule #1 body-scan. Full Hard Rule #1 fields (CVSS 9.8, CISA KEV 2024-02-09, public PoC, confirmed mass exploitation across multiple APT clusters, FortiOS patch versions 7.6.2 / 7.4.7 / 7.2.11 / 7.0.17 / 6.4.16). RWEP 85. Includes the 2025-04 follow-up advisory documenting symlink persistence that survives firmware patching.
+
+**`CVE-2026-21370` placeholder reference removed from `skills/cloud-iam-incident/skill.md`.** No record of CVE-2026-21370 in any source; was a class-marker parenthetical for the Azure managed-identity token-replay attack class. Rewritten as "design-class issue, not a single CVE" so the prose still accurately describes the IMDS-token-theft pattern without inventing threat intel.
+
+**12 framework-gap forward-orphan references closed.** Each pre-existing orphan got a real gap entry with theater_test per Hard Rule #6: `CIS-Kubernetes-Benchmark-4.2.13`, `CIS-Kubernetes-Benchmark-5.3`, `CIS-Controls-v8-Control6`, `ISO-27001-2022-A.5.15`, `ISO-27001-2022-A.8.13`, `NIST-800-53-IA-2`, `NIST-AI-RMF-MEASURE-2.7`, `OWASP-ML-Top-10-2023-ML06`, `NIS2-Art21-network-security`, `NIS2-Art21-business-continuity`, `PCI-DSS-4.0-5.1`, `AU-ISM-1808`. Gap catalog 130 → 142 entries; orphan count for `framework-control-gaps.json` is now 0.
+
+**2 empty-`data_deps` skills fixed.** `api-security` and `email-security-anti-phishing` previously had empty `data_deps` because the bodies referenced no catalog file by name. Each now carries 6 catalog references (atlas-ttps, attack-techniques, cwe-catalog / dlp-controls, d3fend-catalog, framework-control-gaps, rfc-references) threaded through the body in 4 new prose passages each. Every cited ID resolves to a real entry in its respective catalog. `last_threat_review` bumped to 2026-05-18.
+
+### Internal
+
+- 8 new tests in `tests/v0_13_3-fixes.test.js` covering all 5 phases.
+- Test-count baseline refreshed to match the new test surface.
+- ADVISORIES_SOURCE test-fixture extended to include the 4 new feeds.
+- `tests/source-advisories.test.js` `FEEDS: exactly N feeds` pin updated 4 → 8.
+
 ## 0.13.2 — 2026-05-18
 
 Audit close-out: the remaining v0.13 deferrals from the original 6-domain audit + the v0.13.1 post-mortem follow-ups. Patch-class — additive across CI hardening, lint enforcement, CLI UX, predeploy gates, catalog data cleanup, and skill metadata.

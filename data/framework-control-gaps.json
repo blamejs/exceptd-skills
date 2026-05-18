@@ -1208,6 +1208,7 @@
     "status": "open",
     "opened_date": "2026-03-15",
     "evidence_cves": [
+      "CVE-2024-21762",
       "CVE-2026-0300",
       "CVE-2026-31431",
       "CVE-2026-42945",
@@ -1843,6 +1844,7 @@
     "opened_date": "2026-03-15",
     "evidence_cves": [
       "CVE-2023-3519",
+      "CVE-2024-21762",
       "CVE-2025-12686",
       "CVE-2025-59389",
       "CVE-2025-62847",
@@ -2345,6 +2347,7 @@
     "opened_date": "2026-03-15",
     "evidence_cves": [
       "CVE-2023-3519",
+      "CVE-2024-21762",
       "CVE-2026-31431"
     ],
     "atlas_refs": [],
@@ -3986,6 +3989,7 @@
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [
+      "CVE-2024-21762",
       "CVE-2026-0300",
       "CVE-2026-20182",
       "CVE-2026-42897",
@@ -4268,6 +4272,7 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
+      "CVE-2024-21762",
       "CVE-2026-46300",
       "CVE-2026-46333",
       "MAL-2026-SHAI-HULUD-OSS"
@@ -4301,6 +4306,7 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
+      "CVE-2024-21762",
       "CVE-2026-46300",
       "CVE-2026-46333"
     ],
@@ -4387,6 +4393,409 @@
         "supply-chain register differentiating container runtime from application runtime",
         "maintainer-account integrity monitoring records for critical-path packages",
         "lockfile audit log from the reference registry account-recovery incident"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "CIS-Kubernetes-Benchmark-4.2.13": {
+    "framework": "CIS Kubernetes Benchmark v1.10.0",
+    "control_id": "4.2.13",
+    "control_name": "Minimize the admission of containers with capabilities assigned (Kubelet / AppArmor profile guidance)",
+    "designed_for": "Section 4.2.13 of the CIS Kubernetes Benchmark — restricting Linux capabilities and pairing pod admission with an AppArmor profile that constrains the workload's syscall surface. Anchored on the assumption that an AppArmor profile applied at admission time bounds the worst-case behavior of a compromised container to the profile's allow-list.",
+    "misses": [
+      "AppArmor profile guidance in section 4.2.13 does not specifically require a deny-rule for kernel-module loading (deny capability sys_module + deny mount of /proc/sys/kernel/modules_disabled writes), leaving an arbitrary-module-load primitive available to any container whose runtime brokers the load path (CRI-O CVE-2024-3154 reference case)",
+      "Profile authoring is operator-discretionary — the benchmark does not ship a reference AppArmor profile pinning kernel-module deny semantics, so a profile that meets section 4.2.13's letter can still permit kmod loading and full kernel-surface access",
+      "Section 4.2.13 is evaluated at admission, not continuously — runtime-binary CVEs that brokeR module-load behavior outside the profile boundary (handler in the runtime itself rather than the workload) are out of section 4.2.13's frame entirely"
+    ],
+    "real_requirement": "Section 4.2.13 implementations must require an AppArmor reference profile that explicitly denies kernel-module load (deny capability sys_module, deny owner /sys/module/** rw, deny @{PROC}/sys/kernel/modules_disabled w), and pair the admission check with continuous runtime-binary currency monitoring against the container-escape CVE class. A pod-admission AppArmor profile that omits the module-load deny clause must be treated as section 4.2.13 non-compliant even when the rest of the capability allow-list is minimal.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2024-3154"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1611",
+      "T1547.006"
+    ],
+    "theater_test": {
+      "claim": "Our Kubernetes posture meets CIS Benchmark section 4.2.13 — admitted pods carry minimal Linux capabilities and an AppArmor profile is enforced.",
+      "test": "Sample the AppArmor profiles applied to admitted pods across production clusters. For each profile, confirm explicit deny rules for capability sys_module, /sys/module/** writes, and /proc/sys/kernel/modules_disabled writes. Cross-reference the container runtime (runc / containerd / CRI-O) inventory against the CISA KEV catalog for the past 12 months. Theater verdict if any admitted profile lacks the kernel-module deny clause, or if any KEV-listed container-runtime CVE exceeded a 24h mitigation SLA.",
+      "evidence_required": [
+        "AppArmor profile inventory with kernel-module deny-rule audit",
+        "container-runtime version inventory per cluster",
+        "KEV-listed container-runtime CVE mitigation timeline"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "CIS-Kubernetes-Benchmark-5.3": {
+    "framework": "CIS Kubernetes Benchmark v1.10.0",
+    "control_id": "5.3",
+    "control_name": "Network Policies and CNI",
+    "designed_for": "Section 5.3 of the CIS Kubernetes Benchmark — enforcing NetworkPolicy objects through a CNI plugin that supports them, with the assumption that pod-to-pod and pod-to-external traffic is constrained to declared flows. Anchored on the assumption that the CNI's IPAM allocations are correct and that declared CIDR boundaries match the CNI's actual filtering behavior.",
+    "misses": [
+      "Section 5.3 governs NetworkPolicy authoring and CNI feature support but does not require validation of the CNI's IPAM correctness — a container-runtime IPAM bug (containerd CVE-2024-40635 integer overflow leaking IP mask) silently broadens declared CIDR boundaries below the NetworkPolicy abstraction layer, invisible to the section's audit shape",
+      "NetworkPolicy effectiveness presumes the CNI's filtering decisions match the policy author's mental model; runtime IPAM defects invalidate that assumption without surfacing as a policy violation",
+      "Section 5.3 evidence collection is point-in-time policy audit; does not require continuous reconciliation of CNI / runtime-binary versions against the container-runtime networking CVE class"
+    ],
+    "real_requirement": "Section 5.3 implementations must add CNI / container-runtime IPAM correctness verification: continuous version inventory of containerd / runc / CRI-O / CNI plugin against CISA KEV + the container-runtime networking CVE class, with a 24h mitigation SLA for KEV-listed runtime CVEs and a 72h SLA for runtime CVEs with public PoC affecting IPAM or network-namespace handling. NetworkPolicy audit alone is insufficient; runtime IPAM correctness is the load-bearing control.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2024-40635"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1525",
+      "T1190"
+    ],
+    "theater_test": {
+      "claim": "Our Kubernetes posture meets CIS Benchmark section 5.3 — NetworkPolicy is enforced through a supporting CNI and pod-to-pod traffic is constrained to declared flows.",
+      "test": "Pull the most recent CIS Kubernetes Benchmark assessment for section 5.3. Confirm it includes a container-runtime + CNI version inventory cross-referenced against the CISA KEV catalog and the container-runtime networking CVE class. Sample one declared NetworkPolicy and verify the CNI's actual filtering matches the policy's CIDR boundaries (no IPAM-side broadening). Theater verdict if the section-5.3 evidence pack stops at NetworkPolicy audits without a runtime-currency tier, if any KEV-listed runtime CVE exceeded a 24h mitigation SLA, or if the sampled NetworkPolicy's CIDR boundary is broader on the wire than in the declared policy.",
+      "evidence_required": [
+        "CIS Kubernetes Benchmark section 5.3 assessment report",
+        "container-runtime + CNI version inventory per cluster",
+        "on-wire CIDR boundary verification for a sampled NetworkPolicy"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "CIS-Controls-v8-Control6": {
+    "framework": "CIS Controls v8",
+    "control_id": "Control 6",
+    "control_name": "Access Control Management",
+    "designed_for": "Establishing and maintaining access control across enterprise assets and software, including process and tooling for creating, assigning, managing, and revoking access credentials and privileges. IG1-IG3 maturity tiers cover MFA on remote access, role-based access, and centralized access control.",
+    "misses": [
+      "Control 6 governs credential lifecycle for legitimate users but does not require setup-endpoint hardening on production deployments — first-install / setup wizards (ConnectWise ScreenConnect SetupWizard.aspx CVE-2024-1709 reference case) remain reachable post-deployment, allowing unauthenticated account creation that satisfies whatever MFA policy applies to the newly-minted admin",
+      "MFA-on-admin requirements presume the admin account already exists in the directory; an auth-bypass that creates a new admin account does not encounter the MFA policy because the create-account step itself is the bypass",
+      "Control 6 does not enumerate setup-endpoint reachability as a measurable safeguard — IG1-IG3 evidence packs typically demonstrate MFA enrollment percentages and password-policy compliance without testing whether the deployed product exposes a privileged-account-bootstrap path to unauthenticated callers"
+    ],
+    "real_requirement": "CIS Control 6 implementations must add a setup-endpoint reachability safeguard: every production deployment of a third-party product is tested for reachable bootstrap / setup / install wizard endpoints from unauthenticated network positions, with explicit evidence that such endpoints are removed, gated by a deployment-time flag, or behind an authenticated proxy. MFA-on-admin coverage must be paired with admin-account-creation auditing so that a newly-minted admin from an unauthenticated path triggers an alert independent of the MFA policy.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2024-1709"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1078",
+      "T1136"
+    ],
+    "theater_test": {
+      "claim": "We meet CIS Control 6 for access control management — MFA enforced on admin accounts, centralized access control, least privilege applied.",
+      "test": "Pull the access-control evidence pack and inventory of third-party products in the production estate. For each product, test the deployed surface for reachable setup / install / bootstrap wizard endpoints from an unauthenticated network position. Sample admin-account creation events from the past 90 days; confirm each correlates with a documented HR / change-management ticket. Theater verdict if any production deployment exposes an unauthenticated setup endpoint, if any admin account was created without a corresponding ticket, or if the evidence pack stops at MFA enrollment percentages without setup-endpoint reachability testing.",
+      "evidence_required": [
+        "setup-endpoint reachability test results per production product",
+        "admin-account creation audit log for the past 90 days",
+        "MFA enrollment evidence paired with creation-event correlation"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.5.15": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.5.15",
+    "control_name": "Access control",
+    "designed_for": "Annex A.5.15 — establishing and implementing rules to control physical and logical access to information and other associated assets based on business and information security requirements. Anchored on the assumption that access control is an organizational-policy concern enforceable through identity, role, and entitlement management.",
+    "misses": [
+      "A.5.15 frames access control as an organizational policy concern; code-level authorization-bypass defects (URI-pattern matching flaws, path-canonicalization bugs, request-routing oversights such as the SUNBURST CVE-2020-10148 reference case) are below the policy abstraction and treated as application-vendor responsibility rather than in-scope for the ISMS",
+      "The control set does not require systematic evidence that the URI / route / endpoint matching layer in deployed third-party software has been tested for pattern-bypass classes (path traversal, double-decode, alternate path separators, request-smuggling normalization mismatches)",
+      "A.5.15's segregation-of-duties expectations presume the authorization layer is correct; a single-component auth-bypass collapses the role-based-access model without triggering an A.5.15 policy-evidence failure"
+    ],
+    "real_requirement": "A.5.15 implementations must extend access control evidence to the code-level authorization surface of deployed third-party software: documented URI/route-matching pattern-bypass testing in the vendor-risk assessment, continuous monitoring of vendor advisories for authorization-bypass CVE classes, and an explicit hand-off between the ISMS team and the application owner for authorization-layer integrity. The audit evidence pack must demonstrate that A.5.15 coverage does not stop at identity/role/entitlement and reaches the request-routing layer of in-scope software.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2020-10148"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1078"
+    ],
+    "theater_test": {
+      "claim": "Our ISMS satisfies ISO 27001:2022 A.5.15 for access control across in-scope information assets.",
+      "test": "Pull the A.5.15 evidence pack and the vendor-risk register. Sample one critical-path third-party product; confirm the evidence demonstrates URI/route-matching pattern-bypass testing has been performed (vendor-supplied or independent) and that authorization-bypass advisories are monitored on a defined cadence. Theater verdict if the evidence pack collapses to identity/role/entitlement evidence without reaching the request-routing layer, or if the sampled product has no documented authorization-layer integrity hand-off between the ISMS team and the application owner.",
+      "evidence_required": [
+        "vendor-risk register entry for the sampled product",
+        "URI/route-matching pattern-bypass testing evidence",
+        "authorization-bypass advisory monitoring cadence document"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.8.13": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.8.13",
+    "control_name": "Information backup",
+    "designed_for": "Annex A.8.13 — maintaining backup copies of information, software, and systems with regular testing in accordance with an agreed backup policy. Anchored on the assumption that the backup appliance itself is a trustworthy operator-controlled component whose role is to hold a known-good copy of production state.",
+    "misses": [
+      "A.8.13 presumes backup-system integrity as a given; a vulnerable backup appliance (QNAP Hyper Data Protector CVE-2025-59389 reference case, Pwn2Own Ireland 2025) inverts the recovery assumption — the appliance becomes the attacker's pivot rather than the operator's recovery path",
+      "Backup-restore testing under A.8.13 typically validates data fidelity; it does not validate that the backup-appliance management plane has not been compromised between snapshots, leaving a window where the appliance hosts attacker tooling while still passing restore tests",
+      "The control does not require KEV-tied patch SLAs on the backup appliance fleet — backup infrastructure is often excluded from the production patch programme because it is treated as out-of-band, even though its compromise is a direct path to data loss + ransomware double-extortion"
+    ],
+    "real_requirement": "A.8.13 implementations must add backup-appliance integrity controls: KEV-tied patch SLA for backup appliances (4h for KEV+PoC, 24h for KEV-only, 72h for public-PoC without KEV) treated identically to production hosts, management-plane integrity attestation between snapshots, and an explicit threat-model entry covering the backup appliance as a compromise pivot. Restore tests must include a management-plane attestation step, not only a data-fidelity check.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-59389"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1490"
+    ],
+    "theater_test": {
+      "claim": "We maintain information backups per ISO 27001:2022 A.8.13 with regular restore testing.",
+      "test": "Pull the A.8.13 evidence pack. Confirm the backup-appliance inventory has a KEV-tied patch SLA equivalent to production hosts. Sample the most recent restore test; verify it included a management-plane integrity attestation in addition to the data-fidelity check. Cross-reference appliance versions against CISA KEV for the past 12 months. Theater verdict if backup appliances are excluded from the production patch programme, if any KEV-listed backup-appliance CVE exceeded the documented SLA, or if restore tests stop at data fidelity without management-plane attestation.",
+      "evidence_required": [
+        "backup-appliance inventory with KEV-tied patch SLA document",
+        "most-recent restore-test report with management-plane attestation step",
+        "KEV-listed backup-appliance CVE mitigation timeline"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-IA-2": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "IA-2",
+    "control_name": "Identification and Authentication (Organizational Users)",
+    "designed_for": "Uniquely identifying and authenticating organizational users and processes acting on behalf of those users. Anchored on the assumption that the authentication surface (login forms, API token exchange, SSO redirect chain) is a well-defined boundary the IA-2 control governs, and that authorization decisions downstream of IA-2 are made on identities the control has verified.",
+    "misses": [
+      "IA-2 governs the authentication exchange but not the integrity of the URI / route / endpoint matching layer that decides which requests reach the authenticator — pattern-bypass classes (SolarWinds Orion CVE-2020-10148 URI-matching bypass, ConnectWise ScreenConnect CVE-2024-1709 setup-wizard reachability, Cisco SD-WAN CVE-2026-20182 auth-bypass) sidestep IA-2 entirely because the bypass happens before the control fires",
+      "IA-2(1) MFA-on-privileged-accounts presumes the privileged-account creation path itself is gated by IA-2; an auth-bypass that creates a new privileged account satisfies whatever MFA policy applies because the bypass happened at the create-account step, not the login step",
+      "IA-2 does not require evidence that downstream authorization decisions verify the IA-2 outcome at every request — single-component bypasses propagate through the application as 'satisfied IA-2' for the duration of the session/token lifetime"
+    ],
+    "real_requirement": "IA-2 implementations must add URI/route-matching integrity evidence: documented testing of the request-routing layer for pattern-bypass classes (path traversal, double-decode, alternate separators, request-smuggling, setup-endpoint reachability) on every in-scope deployed product, plus continuous monitoring for authentication-bypass CVE classes against the deployed software inventory. Privileged-account creation must be audited independent of the MFA policy so that newly-minted privileged accounts from non-standard paths trigger alerts.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2020-10148",
+      "CVE-2024-1709",
+      "CVE-2026-20182"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1078",
+      "T1136"
+    ],
+    "theater_test": {
+      "claim": "Organizational users are uniquely identified and authenticated per NIST 800-53 IA-2 across all in-scope systems.",
+      "test": "Pull the IA-2 evidence pack and the in-scope software inventory. Sample three critical-path products; confirm evidence of URI/route-matching pattern-bypass testing for each and continuous monitoring of authentication-bypass advisories on a defined cadence. Pull the past 90 days of privileged-account creation events; confirm each correlates with a documented ticket. Theater verdict if any sampled product has no URI/route-matching integrity evidence, if any privileged account was created without a corresponding ticket, or if IA-2 evidence stops at MFA enrollment without reaching the request-routing layer.",
+      "evidence_required": [
+        "URI/route-matching pattern-bypass testing evidence per sampled product",
+        "authentication-bypass advisory monitoring cadence document",
+        "privileged-account creation audit log for the past 90 days"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-AI-RMF-MEASURE-2.7": {
+    "framework": "NIST AI RMF 1.0",
+    "control_id": "MEASURE 2.7",
+    "control_name": "AI system security and resilience evaluation",
+    "designed_for": "MEASURE function 2.7 — evaluating AI system security and resilience including assessment of risks from adversarial inputs, data poisoning, model extraction, and supply chain compromise. Anchored on the assumption that AI-system security is a measurable property of the deployed system within the boundaries the deployer controls (the model, the training corpus, the inference endpoint).",
+    "misses": [
+      "MEASURE 2.7 scopes security evaluation to the AI system itself and does not enumerate the ML-pipeline asset chain (tracking servers, experiment registries, artifact stores like MLflow CVE-2023-43472) as in-scope measurement surface, leaving the path-traversal / unauthenticated-access exposure class outside the framework's measurement frame",
+      "MCP-client trust boundary is not specifically addressed — MEASURE 2.7 does not require evaluation of operator-supplied MCP configuration as adversarial input, even though MCP STDIO command-injection (CVE-2026-30623, MAL-2026-ANTHROPIC-MCP-STDIO reference cases) demonstrates operator-config-as-input is an exploitable surface",
+      "AI-discovered + AI-built exploit classes (GTIG-tracked AI-built 2FA bypass reference case) are not anchored in any MEASURE 2.7 evaluation methodology — the framework treats AI offensive capability as out-of-scope rather than as a category requiring continuous threat-model refresh against the deployed AI system's defensive measurements"
+    ],
+    "real_requirement": "MEASURE 2.7 implementations must extend the security-evaluation scope to: (1) the complete ML-pipeline asset chain including tracking servers, experiment registries, and artifact stores with explicit authentication-and-path-canonicalization testing, (2) MCP-client trust-boundary evaluation treating operator-supplied configuration as adversarial input with command-injection testing on the STDIO / SSE transports, (3) continuous threat-model refresh against AI-discovered and AI-built exploit classes with a defined cadence for refreshing measurement methodology when GTIG / Project Zero / equivalent surface AI-offensive-capability advances.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2023-43472",
+      "CVE-2026-30623"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016",
+      "AML.T0040",
+      "AML.T0051"
+    ],
+    "attack_refs": [
+      "T1059",
+      "T1190"
+    ],
+    "theater_test": {
+      "claim": "We evaluate AI system security and resilience per NIST AI RMF MEASURE 2.7 across all deployed AI systems.",
+      "test": "Pull the MEASURE 2.7 evaluation plan and supporting evidence. Confirm scope explicitly enumerates (a) ML-pipeline asset chain (tracking servers, experiment registries, artifact stores) with authentication + path-canonicalization testing evidence, (b) MCP-client trust-boundary testing treating operator config as adversarial input, (c) a defined cadence for refreshing measurement methodology against AI-discovered / AI-built exploit advances. Sample the most recent MLflow / MCP-server / AI-offensive-advance event; verify the evaluation plan triggered a measurement-refresh activity. Theater verdict if any of (a)-(c) is absent, or if the sampled event did not trigger a refresh.",
+      "evidence_required": [
+        "MEASURE 2.7 evaluation plan with ML-pipeline + MCP scope",
+        "authentication + path-canonicalization test evidence for ML-pipeline assets",
+        "measurement-methodology refresh log triggered by AI-offensive-capability advances"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-ML-Top-10-2023-ML06": {
+    "framework": "OWASP Machine Learning Security Top 10 (2023)",
+    "control_id": "ML06",
+    "control_name": "AI Supply Chain Attacks",
+    "designed_for": "OWASP ML Top 10 ML06 — protecting the machine-learning supply chain including model artifacts, training data, pre-trained models, and third-party ML components. Anchored on the assumption that the supply chain is the model-and-data ingest path and that hardening it covers provenance, integrity, and source authenticity of artifacts entering the ML system.",
+    "misses": [
+      "ML06 scopes supply-chain integrity to the model and training data; ML-pipeline tooling that hosts those artifacts (MLflow tracking servers, experiment registries, artifact stores — MLflow CVE-2023-43472 reference case) is in a coverage gap because it is operator infrastructure rather than a supplied artifact",
+      "ML06 does not enumerate ML-pipeline-tooling auth defaults as a supply-chain risk — MLflow tracking servers shipping with no-authentication defaults expose model + experiment IO without satisfying any of the ML06 'protect the supply chain' controls because the controls focus on what comes in, not on what holds it",
+      "Threat-model evidence under ML06 typically covers model-provenance and dataset-poisoning; it does not require evidence that the ML-pipeline tooling estate has been audited for authenticated-by-default configuration or that path-canonicalization / unauthenticated-access CVE classes against the tooling are continuously monitored"
+    ],
+    "real_requirement": "ML06 implementations must extend the supply-chain frame to the ML-pipeline tooling estate: documented authentication enforcement on MLflow / experiment-registry / artifact-store endpoints, continuous monitoring of CVE classes affecting that tooling (path traversal, unauthenticated access, deserialization), and a documented hardening baseline applied at deployment time rather than relying on the tool's default configuration. Threat-model evidence must demonstrate that ML06 coverage reaches the operator-controlled tooling that hosts supplied artifacts, not only the supply chain feeding into it.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2023-43472"
+    ],
+    "atlas_refs": [
+      "AML.T0010",
+      "AML.T0016"
+    ],
+    "attack_refs": [
+      "T1190",
+      "T1083"
+    ],
+    "theater_test": {
+      "claim": "Our ML supply chain is protected per OWASP ML Top 10 ML06 — provenance, integrity, and source authenticity validated.",
+      "test": "Pull the ML06 evidence pack and the ML-pipeline tooling inventory (MLflow, experiment registries, artifact stores). For each tool, confirm authentication is enforced (not the default no-auth configuration) and that a documented hardening baseline was applied at deployment. Cross-reference tooling versions against the CVE catalog for the past 12 months for path-traversal / unauthenticated-access / deserialization classes. Theater verdict if any ML-pipeline tool runs with default no-auth configuration, if any KEV-or-public-PoC tooling CVE exceeded a 72h mitigation SLA, or if ML06 evidence collapses to model-provenance and dataset-poisoning without reaching the tooling estate.",
+      "evidence_required": [
+        "ML-pipeline tooling inventory with authentication-enforcement evidence",
+        "deployment-time hardening baseline document",
+        "ML-pipeline-tooling CVE mitigation timeline for the past 12 months"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-network-security": {
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
+    "control_id": "Art-21-network-security",
+    "control_name": "Security of network and information systems",
+    "designed_for": "Article 21(2)(a) — policies on risk analysis and information system security, with Article 21(2)(e) covering security in network and information systems acquisition, development, and maintenance. Applies to essential and important entities operating critical infrastructure including telecom, energy, water, transport, and digital infrastructure providers operating SD-WAN / network-fabric controllers.",
+    "misses": [
+      "Article 21 requires 'appropriate and proportionate' measures but does not specify a CISA-KEV-tied response SLA for network-fabric controllers (Cisco SD-WAN CVE-2026-20182 auth-bypass reference case) even though such controllers are essential-service infrastructure under Annex I/II — operators can claim Article 21 compliance with a generic 30-day patch SLA on infrastructure where 4h is the threat-realistic window",
+      "The directive does not enumerate authentication-bypass CVE classes on network-fabric controllers as a distinct risk category requiring its own threat-modelling and incident-response treatment, leaving operators free to bucket SD-WAN / NMS controller CVEs alongside generic IT software in the risk register",
+      "Cross-jurisdiction notification obligations (NIS2 24h early-warning + 72h full report) are anchored on awareness of a significant incident, but the directive does not require that the awareness pipeline tag network-fabric controller compromises as automatically significant — leaving definition discretion to the operator at exactly the moment when the clock should be ticking"
+    ],
+    "real_requirement": "NIS2 Art. 21 implementations covering network-fabric infrastructure must add: (1) a CISA-KEV-tied response SLA of 24h for KEV-listed authentication-bypass CVEs on SD-WAN / NMS / network-fabric controllers, (2) explicit threat-model entry for the authentication-bypass CVE class on network-fabric controllers with documented compensating controls (management-plane segmentation, controller-to-controller mutual auth audit), (3) auto-significance tagging for any network-fabric controller compromise such that the 24h early-warning clock starts at detection rather than at operator-judged significance.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2024-21762",
+      "CVE-2026-20182"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1078"
+    ],
+    "theater_test": {
+      "claim": "Our NIS2 Art. 21 risk-management measures cover network-fabric infrastructure with proportionate controls.",
+      "test": "Pull the Art. 21 risk register and confirm an explicit entry for the authentication-bypass CVE class on SD-WAN / NMS / network-fabric controllers with a CISA-KEV-tied 24h mitigation SLA. Pull the past 12 months of KEV-listed network-fabric-controller CVEs; measure compliance with the documented SLA. Confirm the incident-classification policy auto-tags any network-fabric-controller compromise as significant for the 24h early-warning clock. Theater verdict if the risk register lacks the dedicated entry, if any KEV-listed CVE exceeded the documented SLA, or if significance tagging is operator-judgment rather than auto-significance for the asset class.",
+      "evidence_required": [
+        "Art. 21 risk register entry for network-fabric authentication-bypass class",
+        "KEV-listed network-fabric controller CVE mitigation timeline",
+        "incident-classification policy with auto-significance trigger for the asset class"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIS2-Art21-business-continuity": {
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
+    "control_id": "Art-21-business-continuity",
+    "control_name": "Business continuity and crisis management",
+    "designed_for": "Article 21(2)(c) — business continuity, such as backup management and disaster recovery, and crisis management. Applies to essential and important entities to ensure service continuity in the face of cyber incidents including ransomware, supply-chain compromise, and infrastructure failure.",
+    "misses": [
+      "Article 21(2)(c) presumes backup infrastructure is part of the continuity solution; backup-appliance compromise (QNAP Hyper Data Protector CVE-2025-59389 reference case) inverts the assumption — the backup infrastructure becomes the disruption pivot rather than the recovery path, breaking the continuity plan at exactly the moment it is supposed to engage",
+      "Crisis-management evidence under Art. 21(2)(c) typically validates that the continuity plan documents the backup-restore workflow; it does not validate that the backup infrastructure itself has been audited for integrity between snapshots, leaving a window where the recovery substrate is compromised but the continuity plan does not detect it",
+      "The directive does not require KEV-tied patch SLAs on backup infrastructure equivalent to production-system SLAs — backup appliances are often excluded from the essential-service patch programme because they are treated as out-of-band, even though their compromise is a direct path to continuity failure plus double-extortion ransomware"
+    ],
+    "real_requirement": "NIS2 Art. 21(2)(c) implementations must add backup-infrastructure resilience controls: KEV-tied patch SLA for backup appliances equivalent to production-system SLAs (4h for KEV+PoC, 24h for KEV-only, 72h for public-PoC without KEV), management-plane integrity attestation between snapshots, and an explicit continuity-plan threat-model entry covering the backup infrastructure as a compromise pivot. Tabletop exercises must include a scenario where the backup substrate is the disruption pivot, not only where the production system is the target.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-59389"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1490",
+      "T1491"
+    ],
+    "theater_test": {
+      "claim": "Our NIS2 Art. 21(2)(c) business-continuity programme covers backup management and crisis scenarios.",
+      "test": "Pull the Art. 21(2)(c) evidence pack and the continuity-plan threat-model. Confirm an explicit entry for backup-infrastructure compromise as a continuity-disruption pivot. Confirm backup appliances are in scope for the essential-service KEV-tied patch SLA. Pull the past 12 months of tabletop-exercise records; confirm at least one scenario exercised backup-substrate compromise (not only production-side ransomware). Theater verdict if backup infrastructure is excluded from the production patch programme, if any KEV-listed backup-appliance CVE exceeded the documented SLA, or if no tabletop in the past 12 months exercised the backup-as-pivot scenario.",
+      "evidence_required": [
+        "Art. 21(2)(c) continuity-plan threat-model including backup-as-pivot entry",
+        "backup-appliance KEV-tied patch SLA equivalent to production",
+        "tabletop-exercise record covering backup-substrate compromise scenario"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "PCI-DSS-4.0-5.1": {
+    "framework": "PCI DSS 4.0.1",
+    "control_id": "5.1",
+    "control_name": "Processes and mechanisms for protecting all systems and networks from malicious software",
+    "designed_for": "Section 5.1 of PCI DSS 4.0.1 — defining processes and mechanisms for protecting systems and networks from malicious software. Underpins the anti-malware requirements in 5.2 and 5.3. Anchored on the assumption that the deployed anti-malware tooling is itself a trusted component of the cardholder-data-environment defence-in-depth posture.",
+    "misses": [
+      "Section 5.1 frames anti-malware as a control surface; it does not require evidence that the deployed anti-malware tooling itself (QNAP Malware Remover CVE-2025-11837 code-injection reference case) has been audited for code-injection / privilege-escalation / arbitrary-code-execution CVE classes — the tool can satisfy the deployment-coverage metric while being the exploitable component",
+      "The control set does not enumerate 'deployed security tool is the vulnerability' as a recognized failure mode, leaving operators without a PCI-DSS-driven response tier when the anti-malware product itself appears on CISA KEV",
+      "PCI-DSS evidence collection under 5.1 typically demonstrates anti-malware deployment percentages and definition currency; it does not require continuous monitoring of CVE classes affecting the anti-malware product line itself with KEV-tied patch SLAs equivalent to or stricter than payment-application SLAs"
+    ],
+    "real_requirement": "PCI DSS 5.1 implementations must add anti-malware-tooling-as-target controls: continuous monitoring of CVE classes affecting deployed anti-malware products with KEV-tied patch SLAs equivalent to payment-application SLAs (72h for KEV+PoC, 1 month residual for non-exploited critical), documented compensating controls when an in-scope anti-malware product appears on KEV (isolation, removal, vendor escalation), and an explicit recognition that anti-malware deployment coverage is necessary but insufficient when the deployed tool itself is the vulnerability.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "CVE-2025-11837"
+    ],
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1059",
+      "T1554",
+      "T1562.001"
+    ],
+    "theater_test": {
+      "claim": "We protect all in-scope systems from malicious software per PCI DSS 5.1.",
+      "test": "Pull the PCI DSS 5.1 evidence pack and the anti-malware tooling inventory. Cross-reference each deployed anti-malware product against the CISA KEV catalog and the CVE-class catalog for the past 12 months (code injection, privilege escalation, arbitrary code execution). Confirm a documented KEV-tied patch SLA exists for anti-malware tooling equivalent to payment-application SLAs. Sample the most recent KEV-listed anti-malware CVE (CVE-2025-11837 reference case if applicable); verify the documented response. Theater verdict if anti-malware tooling has no KEV-tied SLA distinct from generic IT patching, if any KEV-listed anti-malware CVE exceeded a 72h mitigation SLA, or if PCI-DSS 5.1 evidence stops at deployment-coverage percentages without addressing the tool-as-target failure mode.",
+      "evidence_required": [
+        "anti-malware tooling inventory with KEV-tied patch SLA document",
+        "anti-malware product CVE mitigation timeline for the past 12 months",
+        "incident record for the sampled KEV-listed anti-malware CVE"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "AU-ISM-1808": {
+    "framework": "Australian Government Information Security Manual (ISM)",
+    "control_id": "ISM-1808",
+    "control_name": "Software supply chain risk management",
+    "designed_for": "ISM control 1808 — managing the risks associated with the software supply chain, including assessing the trustworthiness of software vendors, validating software integrity, and monitoring for supply-chain compromise indicators. Anchored on the assumption that vendor-side SBOM disclosures and maintainer identity are trustworthy inputs to the operator's supply-chain risk model.",
+    "misses": [
+      "ISM-1808 presumes maintainer identity is a reliable trust anchor; worm-class npm-registry compromises (Shai-Hulud MAL-2026-SHAI-HULUD-OSS reference case) publish malicious payloads under legitimate maintainer identity via credential theft + token replay, invalidating the maintainer-identity-as-trust-signal model that ISM-1808 evidence collection relies on",
+      "Vendor-side SBOM truth is treated as authoritative; ISM-1808 does not require independent operator-side SBOM-against-installed-artefact reconciliation, so a worm-injected dependency appears in installed-package telemetry while being absent from the vendor's published SBOM for the canonical version",
+      "ISM-1808 does not enumerate post-publish cooldown periods, maintainer-account-integrity monitoring (MFA enforcement, email-domain expiry tracking), or lockfile audit against known-malicious version sets during active exposure windows as standard controls — leaving operators without a baseline response posture when a worm-class incident is in progress"
+    ],
+    "real_requirement": "ISM-1808 implementations must add ecosystem-specific supply-chain controls: (1) operator-side SBOM-against-installed-artefact reconciliation independent of vendor-published SBOM, (2) maintainer-account-integrity monitoring on critical-path upstream packages (registry-side MFA enforcement evidence, maintainer-email-domain expiry tracking, anomalous-publish detection), (3) post-publish cooldown periods on consumption of fresh releases from systemically-important upstream maintainers, (4) lockfile audit against the known-malicious version set during the active exposure window of any worm-class incident, (5) documented response posture for the worm-class incident category distinct from the generic 'vulnerable dependency' response.",
+    "status": "open",
+    "opened_date": "2026-05-18",
+    "evidence_cves": [
+      "MAL-2026-SHAI-HULUD-OSS"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195.002",
+      "T1078",
+      "T1567"
+    ],
+    "theater_test": {
+      "claim": "Our software supply-chain risk management satisfies AU ISM control 1808.",
+      "test": "Pull the ISM-1808 evidence pack. Confirm operator-side SBOM-against-installed-artefact reconciliation runs on a defined cadence independent of vendor-published SBOM. Confirm maintainer-account-integrity monitoring is in place for critical-path upstream packages (registry MFA, email-domain expiry, anomalous-publish detection). Confirm a documented worm-class incident-response posture exists distinct from the generic vulnerable-dependency response. Sample the most recent worm-class incident in the past 12 months; verify the response included lockfile audit against the known-malicious version set within the exposure window. Theater verdict if SBOM evidence relies solely on vendor-side data, if maintainer-account-integrity monitoring is undocumented, or if the sampled incident response did not include lockfile audit within the exposure window.",
+      "evidence_required": [
+        "operator-side SBOM reconciliation cadence document",
+        "maintainer-account-integrity monitoring records for critical-path packages",
+        "worm-class incident-response playbook + execution record for sampled incident"
       ],
       "verdict_when_failed": "compliance-theater"
     }

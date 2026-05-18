@@ -143,10 +143,14 @@ test('ADVISORIES_SOURCE: name matches registry key + describes report-only contr
   assert.match(ADVISORIES_SOURCE.description, /ZDI/i);
 });
 
-test('FEEDS: exactly 4 feeds (Qualys, RHSA, USN, ZDI)', () => {
-  assert.equal(FEEDS.length, 4);
+test('FEEDS: exactly 8 feeds as of v0.13.3 (Qualys, RHSA, USN, ZDI, kernel.org, oss-security, JFrog, CISA)', () => {
+  // v0.13.1 shipped 4 (qualys, rhsa, usn, zdi). v0.13.3 added 4 more
+  // covering kernel.org commits (catches CVE-2026-46333-class at T+0),
+  // oss-security coordinated disclosure, JFrog supply-chain research,
+  // and CISA non-KEV advisories.
+  assert.equal(FEEDS.length, 8);
   const names = FEEDS.map((f) => f.name).sort();
-  assert.deepEqual(names, ['qualys', 'rhsa', 'usn', 'zdi']);
+  assert.deepEqual(names, ['cisa-current', 'jfrog', 'kernel-org', 'oss-security', 'qualys', 'rhsa', 'usn', 'zdi']);
 });
 
 test('FEEDS: every feed declares a URL + kind + description', () => {
@@ -173,6 +177,13 @@ test('fetchDiff: in fixture mode, surfaces CVE IDs not in catalog', async () => 
       </channel></rss>`,
       rhsa: 'rhsa-2026_0001.json\n',
       zdi: '<rss><channel></channel></rss>',
+      // v0.13.3: 4 additional feeds — provide empty fixture bodies so the
+      // de-dup test still anchors on the qualys + usn pair without
+      // unreachable-status contamination from the new feeds.
+      'kernel-org': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
+      'oss-security': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
+      'jfrog': '<rss><channel></channel></rss>',
+      'cisa-current': '<rss><channel></channel></rss>',
     },
   };
   const ctx = {
