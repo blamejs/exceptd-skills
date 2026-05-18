@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-05-15",
+    "last_updated": "2026-05-18",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -16,7 +16,8 @@
       "stale_after_days": 180,
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
-    }
+    },
+    "entry_count": 67
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -2919,5 +2920,1751 @@
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "low"
+  },
+  "CVE-2025-10585": {
+    "name": "Google Chrome V8 Type Confusion Zero-Day (TAG-disclosed)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Type confusion in V8's WebAssembly/JIT path reachable via a malicious web page; primitive yields renderer arbitrary read/write. Full-system compromise typically requires pairing with a Chromium sandbox escape.",
+      "privileges_required": "none (drive-by web rendering)",
+      "complexity": "low — exploit observed in the wild before disclosure",
+      "ai_factor": "Not AI-discovered. Google TAG human-researcher attribution; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SI-2 patch SLA is two orders of magnitude longer than the operational exploitation window for a KEV-listed in-wild V8 zero-day."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; enterprise managed-browser update deferral (7-30 days for QA) is exposure acceptance."
+      },
+      "CIS-Controls-v8-7.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Automated updates assumed in the control text but enterprise update-ring deferral defeats the spirit."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No explicit browser-zero-day SLA on endpoint estates."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies directly.",
+        "evidence": "CVE-2025-10585 — KEV-listed 2025-09-23 with confirmed in-wild exploitation pre-disclosure.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-057",
+        "name": "BROWSER-MANAGED-UPDATE-NO-DEFERRAL",
+        "description": "Enterprise update rings must not defer security-channel browser updates beyond 24h.",
+        "evidence": "CVE-2025-10585 — managed-update deferral kept renderers exposed during the hottest exploit window.",
+        "gap_closes": [
+          "CIS-Controls-v8-7.4",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Enterprise browser management commonly uses 7-day update rings; SOC 2 / ISO 27001 audits do not contradict that posture.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-09-16",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-14174": {
+    "name": "Apple WebKit Memory Corruption Zero-Day (Targeted Spyware)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Memory corruption in WebKit triggered by malicious web content; commonly chained with a kernel exploit for sandbox escape. Apple characterised the activity as 'extremely sophisticated' — commercial-spyware / nation-state tradecraft against specific individuals.",
+      "privileges_required": "none (rendered web content)",
+      "complexity": "high (commercial-spyware-grade chain; no public PoC)",
+      "ai_factor": "Not AI-discovered. Apple did not publish discovery credit; targeted-spyware operator activity rather than AI-assisted research."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Standard mobile patch baselines (often monthly) do not meet the operational reality of targeted-spyware deployment hours after exploit availability."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile endpoint patching commonly user-driven; no MDM-enforced KEV-class SLA prescribed."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile estates routinely out of scope of enterprise patch SLA in mid-market NIS2 filings."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies; reboot-required does not extend the SLA.",
+        "evidence": "CVE-2025-14174 — KEV-listed 2025-12-15 with confirmed targeted in-wild exploitation.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "iOS / iPadOS / macOS estates must enforce KEV-class updates within 24h via DDM; user-deferral disallowed.",
+        "evidence": "CVE-2025-14174 — default Apple MDM profiles do not enforce a KEV-deadline-bound update.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Mobile-endpoint patch enforcement via MDM is rare in audit-passing organisations; most allow user-deferral on OS updates.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-12-15",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-43529": {
+    "name": "Apple WebKit Use-After-Free (DarkSword 1-click chain)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Use-after-free in WebKit reachable via crafted web content; primary 1-click initial-access vector in the DarkSword commercial exploit kit. Pairs with sandbox-escape primitives for full chain.",
+      "privileges_required": "none (1-click web content)",
+      "complexity": "low (commercial exploit-kit primitive)",
+      "ai_factor": "Not AI-discovered. Commercial exploit kit (DarkSword) attribution; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same KEV+PoC class as CVE-2025-14174; mobile patch SLAs not calibrated to in-wild WebKit UAFs."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile-endpoint patch SLAs treat OS updates as user-pushed rather than enforced within KEV deadlines."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies.",
+        "evidence": "CVE-2025-43529 — KEV-listed 2025-12-15 with commercial-exploit-kit-confirmed in-wild use.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "DDM-enforced 24h KEV update on iOS/macOS estates.",
+        "evidence": "CVE-2025-43529 — same mobile-MDM gap as CVE-2025-14174; the DarkSword kit demonstrates the commercial monetization of that gap.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Mobile-endpoint MDM-enforced updates are rare; commercial exploit kits monetize the gap directly.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2025-12-15",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-4919": {
+    "name": "Firefox SpiderMonkey Type Confusion (Pwn2Own Berlin)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Type confusion in SpiderMonkey's WASM-GC code triggered by crafted JavaScript / WebAssembly; primitive grants renderer read/write. Sandbox NOT escaped in the disclosed Pwn2Own chain.",
+      "privileges_required": "none (web rendering)",
+      "complexity": "low (single-character & vs | typo in WASM-GC code path)",
+      "ai_factor": "Not AI-discovered. Pwn2Own Berlin 2025 contestant; same-day patch; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Enterprise 7-day patch SLAs for high-severity browser CVEs lag the same-day vendor turnaround expected for Pwn2Own-class flaws."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timescale unspecified; secondary-browser (Firefox) maintenance often deprioritised vs Chrome/Edge."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-057",
+        "name": "BROWSER-MANAGED-UPDATE-NO-DEFERRAL",
+        "description": "Secondary-browser updates must not lag primary-browser updates; Firefox ESR policy enforcement must commit within 24h of MFSA publication.",
+        "evidence": "CVE-2025-4919 — Firefox ESR estates routinely deprioritised vs Chrome/Edge.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Firefox / ESR estates commonly run behind Chrome update cadence in enterprise managed-browser programs.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2025-05-17",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-24201": {
+    "name": "Apple WebKit Out-of-Bounds Write (Glass Cage chain, iOS sandbox escape)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "WebKit OOB write reachable via crafted web content; zero-click via iMessage when chained with CVE-2025-43300 (ImageIO) and CVE-2025-24085 (Core Media). Public 'Glass Cage' chain on GitHub achieves sandbox escape + kernel access + device bricking on iOS 18.2.1.",
+      "privileges_required": "none (zero-click via iMessage in the documented chain)",
+      "complexity": "high for full chain; low for the WebKit primitive in isolation",
+      "ai_factor": "Not AI-discovered. Apple internal telemetry-driven discovery; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "KEV-listed with public chain; mobile patch SLAs (14-30 days) do not match the 4h exposure window for zero-click chains."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile-OS update timeliness user-driven; no enforced KEV-class SLA."
+      },
+      "ENISA-mobile-secure-baseline": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Operator MDM policy is the only enforcement layer; default Apple MDM profiles do not enforce KEV-deadline updates."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies to the mobile estate.",
+        "evidence": "CVE-2025-24201 — KEV-listed 2025-03-12 with public Glass Cage chain.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "DDM-enforced 24h KEV update on iOS / iPadOS estates.",
+        "evidence": "CVE-2025-24201 — zero-click iMessage chain shipped publicly; default MDM permits user-deferral.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "ENISA-mobile-secure-baseline"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Public sandbox-escape chains on iOS routinely outpace organisational MDM-enforced update cadence.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-03-11",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-43300": {
+    "name": "Apple ImageIO Out-of-Bounds Write (DNG/JPEG-lossless zero-click chain root)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "OOB write in ImageIO triggered when TIFF SamplesPerPixel conflicts with JPEG SOF3 component count in a crafted DNG / JPEG-lossless image. Zero-click via iMessage / WhatsApp / any auto-rendering image path. Initial-access primitive in the Glass Cage chain.",
+      "privileges_required": "none (zero-click image rendering)",
+      "complexity": "high for full chain; medium for the ImageIO primitive in isolation",
+      "ai_factor": "Not AI-discovered. Apple internal disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Zero-click image-processing CVE; default mobile patch SLAs assume user-driven update timing."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile endpoints commonly outside enterprise patch-management scope."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "1-month critical SLA insufficient for an in-wild zero-click chain."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies.",
+        "evidence": "CVE-2025-43300 — KEV-listed 2025-08-21 with confirmed in-wild zero-click exploitation.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "PCI-DSS-4.0-6.3.3"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "DDM-enforced 24h KEV update on mobile estates.",
+        "evidence": "CVE-2025-43300 — zero-click iMessage / WhatsApp delivery makes user-deferral untenable.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Zero-click image-processing chains require MDM-enforced update cadence; most audit-passing orgs do not enforce it.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-08-20",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-38352": {
+    "name": "Android / Linux Kernel POSIX CPU Timer Race (sandbox-escape LPE)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Race between handle_posix_cpu_timers() and posix_cpu_timer_del() when a task exits while CPU timers are being removed; improper exit_state handling opens an LPE window. Used as a zero-day to escape the Android application sandbox; public 'chronomaly' PoC targets vulnerable x86_64 Linux kernels.",
+      "privileges_required": "local unprivileged process (Android app / Linux user)",
+      "complexity": "moderate (race condition, but reliable PoC published)",
+      "ai_factor": "Not AI-discovered. Google Android Security Bulletin attribution; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Android device patch deployment varies wildly by OEM (often 30-90 days behind Google bulletin) — KEV deadline cannot realistically bind non-Pixel devices."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile firmware patching timescales undefined; OEM-controlled."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile-OS estate patch SLA is exception territory in most NIS2 OES filings."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA — operational constraint: OEM patch cadence breaks the SLA on non-Pixel Android.",
+        "evidence": "CVE-2025-38352 — KEV-listed 2025-09-04; OEM lag means many fleets miss the deadline structurally.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-002",
+        "name": "LIVE-PATCH-CAPABILITY",
+        "description": "Where live-patch is available (kpatch / canonical-livepatch on Linux servers), it must be deployed and tested quarterly.",
+        "evidence": "CVE-2025-38352 — Linux server estates can avoid reboot windows; Android cannot.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "Android Enterprise managed-update SLA must commit security patches within OEM-published cadence; OEMs lagging > 30 days behind the Google bulletin must be inventoried as KEV-non-conformant.",
+        "evidence": "CVE-2025-38352 — Android OEM patch cadence is the binding constraint on KEV compliance.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Android OEM patch lag is endemic; KEV deadline is structurally unachievable on most non-Pixel fleets.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-09-02",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-55241": {
+    "name": "Microsoft Entra ID Cross-Tenant Actor Token Impersonation",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Attacker requests an undocumented 'Actor' token from a benign tenant and presents it to the legacy Azure AD Graph endpoint in a target tenant. The API fails to validate the originating-tenant claim and authorises the impersonated identity, bypassing MFA, Conditional Access, and tenant-level audit. Demonstrated Global Admin impersonation across arbitrary tenants.",
+      "privileges_required": "low-privilege identity in any Entra tenant",
+      "complexity": "low once the Actor-token primitive is known",
+      "ai_factor": "Not AI-discovered. Researcher Dirk-Jan Mollema disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cross-tenant authority validation is not an enumerated control; least-privilege assumed within tenant boundary."
+      },
+      "NIST-800-53-IA-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Identity-provider-side flaw escapes federation trust boundary assumptions."
+      },
+      "ISO-27001-2022-A.5.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access control bound to tenant identity; cross-tenant trust validation undefined."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cloud-identity primitives underpinning agentic systems are not in scope; supply-chain identity validation gap."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-058",
+        "name": "CLOUD-CONTROL-PLANE-CROSS-TENANT-CLAIM-VALIDATION",
+        "description": "IdPs must validate originating-tenant claim on every cross-tenant token-bearing call and log it to a tenant-immutable channel. Customers must monitor for impossible-actor patterns.",
+        "evidence": "CVE-2025-55241 — Actor token impersonation bypassed every tenant-side control because the legacy API did not validate the originating-tenant claim.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "NIST-800-53-IA-8",
+          "ISO-27001-2022-A.5.15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 100,
+      "basis": "Pre-fix, every Entra tenant globally was exposed; no operator-side compensating control existed. Microsoft fixed server-side before public disclosure, so post-fix exposure is zero — the compliance story is about whether operators have telemetry to detect future control-plane bugs of this class.",
+      "theater_pattern": "vendor_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2025-07-14",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-21085": {
+    "name": "Cisco Duo Authentication Proxy Credential Disclosure in Logs",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Authproxy debug-level logging emits cleartext credentials during LDAP/AD password-change operations. Local authenticated attacker (or post-compromise lateral mover) reads authproxy.log to recover credentials.",
+      "privileges_required": "local authenticated read on the Duo Auth Proxy host with debug logging enabled",
+      "complexity": "low — read a file",
+      "ai_factor": "Not AI-discovered. Cisco PSIRT internal discovery; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AU-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Log-content classification is operator-defined; sensitive-data-in-logs is a recurring pattern across identity middleware."
+      },
+      "ISO-27001-2022-A.8.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Logging integrity vs sensitive-content separation underspecified."
+      },
+      "PCI-DSS-4.0-10.5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Logs containing authentication secrets violate scope-isolation assumptions."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-059",
+        "name": "SENSITIVE-DATA-IN-LOGS-LINT",
+        "description": "Identity middleware must lint log output for credential-shaped strings at every severity level; CI must reject builds whose log statements emit secret-tagged fields.",
+        "evidence": "CVE-2025-21085 — Duo Auth Proxy emitted cleartext credentials at debug level.",
+        "gap_closes": [
+          "NIST-800-53-AU-9",
+          "ISO-27001-2022-A.8.15",
+          "PCI-DSS-4.0-10.5"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Debug logging is commonly enabled during onboarding/troubleshooting and rarely re-disabled; log-content sensitivity audits seldom check identity middleware specifically.",
+      "theater_pattern": "detection_gap"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-09-04",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-1094": {
+    "name": "PostgreSQL psql SQL Injection via Invalid UTF-8 → ACE",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Invalid UTF-8 byte sequences interact with libpq string-escaping and psql meta-command processing to permit SQL injection escalated to arbitrary command execution. Exploited in the BeyondTrust and US Treasury breaches.",
+      "privileges_required": "none (network-reachable PostgreSQL with attacker-controlled input)",
+      "complexity": "moderate (Metasploit module published)",
+      "ai_factor": "Not AI-discovered. Rapid7 incident-triage disclosure during BeyondTrust investigation; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation control assumes UTF-8 well-formedness; invalid-byte handling is implementation-defined."
+      },
+      "PCI-DSS-4.0-6.2.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Critical-class injection patch SLA (30 days) insufficient for KEV + ACE + public PoC."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding for input validation; UTF-8 invalidity not enumerated."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day patch window inconsistent with KEV deadline."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA applies; breach-confirmed exploitation makes this load-bearing.",
+        "evidence": "CVE-2025-1094 — KEV-listed 2025-02-13; BeyondTrust + US Treasury breaches.",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "PCI-DSS-4.0-6.2.4",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "PostgreSQL is widely deployed across audit-passing organisations; the KEV-deadline patch window is rarely met for database servers due to maintenance-window scheduling.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-02-13",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-49844": {
+    "name": "Redis Lua Use-After-Free RCE (RediShell)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "13-year-old UAF in the Redis Lua interpreter. Post-auth attacker sends a crafted Lua EVAL script that escapes the sandbox and executes as the redis-server process. Default Redis deployments without auth enable unauthenticated exploitation.",
+      "privileges_required": "network-reachable EVAL access (no auth on default deployments)",
+      "complexity": "moderate (sandbox escape primitive published by Wiz Research)",
+      "ai_factor": "Not AI-discovered. Wiz Research human-led disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Default-deny on Lua scripting not enumerated; Redis ships with EVAL enabled."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Configuration baselines for in-memory stores rarely disable Lua scripting."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA insufficient for CVSS 10.0 + 13-year backdoor-class regression."
+      },
+      "OWASP-API-Security-Top-10-API8:2023": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Server-side script execution as data primitive is endemic to Redis defaults."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-060",
+        "name": "DATABASE-SERVER-SIDE-SCRIPTING-DEFAULT-DENY",
+        "description": "In-memory and document datastores must ship with server-side scripting disabled by default; re-enabling requires documented threat-model acceptance.",
+        "evidence": "CVE-2025-49844 — 13-year Lua UAF became unauthenticated RCE on default-deployed Redis because EVAL ships enabled.",
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "ISO-27001-2022-A.8.9",
+          "OWASP-API-Security-Top-10-API8:2023"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-061",
+        "name": "IN-MEMORY-DATASTORE-MEMORY-DISCLOSURE-NETWORK-EXPOSURE-AUDIT",
+        "description": "Quarterly inventory of Redis / KeyDB / Valkey direct-internet exposure.",
+        "evidence": "CVE-2025-49844 — internet-exposed Redis instances without auth are an unauthenticated RCE substrate.",
+        "gap_closes": [
+          "PCI-DSS-4.0-6.3.3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Default Redis configuration ships Lua scripting enabled; auditors do not typically test for it. Shodan-visible unauthenticated Redis populations remain high years into the disclosure cycle.",
+      "theater_pattern": "secure_coding_theater"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-10-06",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-14847": {
+    "name": "MongoDB Server zlib Heap-Memory Disclosure (MongoBleed)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Mismatched length fields in zlib-compressed wire-protocol headers cause MongoDB Server to return uninitialized heap memory to unauthenticated clients. Heap can contain prior request data, session keys, document fragments.",
+      "privileges_required": "none (unauthenticated network reach to MongoDB)",
+      "complexity": "low (public exploit code; opportunistic scanning observed)",
+      "ai_factor": "Not AI-discovered. Bitsight + MongoDB-coordinated disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Encryption-at-rest controls do not address in-memory leak."
+      },
+      "ISO-27001-2022-A.8.24": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cryptographic protection in transit assumed; heap-disclosure escapes both."
+      },
+      "PCI-DSS-4.0-3.5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cardholder data potentially exposed via uninitialised-memory leak even when at-rest encryption is correct."
+      },
+      "GDPR-Art32": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Confidentiality-by-design control insufficient for memory-disclosure class."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-061",
+        "name": "IN-MEMORY-DATASTORE-MEMORY-DISCLOSURE-NETWORK-EXPOSURE-AUDIT",
+        "description": "Memory-disclosure-class CVEs against datastores must be treated as data-exfiltration incidents; quarterly direct-internet exposure audit.",
+        "evidence": "CVE-2025-14847 (MongoBleed) — unauthenticated heap leak escapes both at-rest and in-transit encryption.",
+        "gap_closes": [
+          "NIST-800-53-SC-28",
+          "ISO-27001-2022-A.8.24",
+          "PCI-DSS-4.0-3.5",
+          "GDPR-Art32"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "MongoDB direct-internet exposure remains common; memory-disclosure-class CVEs rarely trigger the same response posture as RCE despite equivalent breach-notification implications.",
+      "theater_pattern": "detection_gap"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-11-19",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-8671": {
+    "name": "HTTP/2 MadeYouReset DoS (Rapid Reset successor)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Malformed WINDOW_UPDATE / PRIORITY / DATA frames trigger server-side stream resets while the backend continues processing, bypassing MAX_CONCURRENT_STREAMS and exhausting resources. Estimated 2.8M+ internet-facing instances vulnerable across Tomcat, Netty, Varnish, Fastly, F5.",
+      "privileges_required": "none (unauthenticated single connection)",
+      "complexity": "low (public PoC tooling)",
+      "ai_factor": "Not AI-discovered. Tel Aviv University academic protocol-fuzzing research paired with Imperva production traffic analysis. Specific AI-fuzzing tool credit was not published — proposal records the closest enum match as academic_ai_fuzzing but the published research did not attribute the discovery to a specific AI fuzzing system."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "DoS-protection controls do not enumerate HTTP/2 stream-reset bypass class."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Configuration baselines do not address HTTP/2 protocol-implementation differences across servers."
+      },
+      "OWASP-API-Security-Top-10-API4:2023": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Rate-limiting at HTTP layer ineffective against per-connection HTTP/2 stream amplification."
+      },
+      "NIS2-Art21-availability": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability-class threat under-specified for protocol-implementation bugs."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-062",
+        "name": "HTTP2-STREAM-RESET-ACCOUNTING",
+        "description": "HTTP/2 implementations must account in-flight backend work against MAX_CONCURRENT_STREAMS regardless of client-visible stream resets; per-connection completion budgets must survive stream-reset bypass patterns.",
+        "evidence": "CVE-2025-8671 — server-side stream resets bypassed MAX_CONCURRENT_STREAMS while backend continued processing.",
+        "gap_closes": [
+          "NIST-800-53-SC-5",
+          "OWASP-API-Security-Top-10-API4:2023",
+          "NIS2-Art21-availability"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "HTTP/2 implementations are widespread but rarely audited at protocol-implementation depth; the Rapid Reset → MadeYouReset → next-variant cadence suggests the protocol-fuzzing surface is far from exhausted.",
+      "theater_pattern": "detection_gap"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_date": "2025-08-13",
+    "ai_assist_factor": "low"
+  },
+  "CVE-2025-6965": {
+    "name": "SQLite Memory Corruption (Big Sleep AI pre-emptive discovery)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Integer overflow yielding out-of-bounds array read in SQLite. Attacker who can inject arbitrary SQL statements into an application triggers the overflow; memory disclosure / corruption depending on context. SQLite has extremely broad downstream footprint (embedded systems, mobile OS, browsers, AI/ML pipelines, every Python/Node/Go runtime).",
+      "privileges_required": "ability to inject arbitrary SQL into a SQLite-backed application",
+      "complexity": "moderate",
+      "ai_factor": "Big Sleep — Google DeepMind + Project Zero AI agent (Gemini-backed). First documented case of an AI agent foiling exploitation of an in-the-wild zero-day; Google publicly stated this was 'the first time an AI agent has been used to directly foil efforts to exploit a vulnerability in the wild.' AI surfaced the bug from threat-intelligence signals before any operator-observable exploit landed."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Application-layer SQL filtering assumed; embedded-SQLite attack surface often invisible to AppSec scope."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure-coding controls do not cover bundled-library memory-safety regressions."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI-system robustness — discovered by AI, prevented by AI; framework has no concept of AI-defender attribution credit."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-024",
+        "name": "AI-DISCOVERY-RESPONSE-SLA",
+        "description": "AI-discovered vulnerabilities must enter the patch program on the AI-discovery-date timestamp, not the public-disclosure timestamp.",
+        "evidence": "CVE-2025-6965 — Big Sleep discovery preceded the operator-visible disclosure cycle; orgs that wait for NVD publication miss the actual exposure window.",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "ISO-27001-2022-A.8.28"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Compliance evidence packs must record AI-tool contribution to vulnerability discovery as a distinct positive control modality.",
+        "evidence": "CVE-2025-6965 — Big Sleep AI-defender contribution has no attribution path under EU AI Act Art.15 or ISO/IEC 42001.",
+        "gap_closes": [
+          "EU-AI-Act-Art15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Bundled-SQLite inventory is rarely maintained; AI-discovery cadence outpaces operator patch-program cadence on most estates.",
+      "theater_pattern": "vulnerability_management_theater"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-07-15",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2026-22778": {
+    "name": "vLLM Multimodal Heap Overflow RCE via JPEG2000 / FFmpeg / OpenCV",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Unauthenticated network attacker submits a malicious video URL to a vLLM multimodal API endpoint; bundled FFmpeg JPEG2000 decoder inside OpenCV triggers a heap overflow yielding RCE as the vLLM service user (commonly running with GPU + model-weight + credential access). Earlier vLLM versions leaked a heap address via a PIL error message, supplying the ASLR-defeat primitive.",
+      "privileges_required": "none (unauthenticated network reach to the vLLM multimodal API)",
+      "complexity": "moderate (multimodal-input attack surface novel to most AppSec programs)",
+      "ai_factor": "Not AI-discovered. OX Security human research disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Inference-server input validation not enumerated; multimodal-input surface novel to most AppSec programs."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI-system robustness controls reference adversarial inputs but not host RCE via multimodal decoder."
+      },
+      "ISO-IEC-42001-AIMS": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI Management System lacks specific multimodal-input validation requirement."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-063",
+        "name": "MULTIMODAL-INFERENCE-INPUT-DECODER-ISOLATION",
+        "description": "Inference servers must isolate media-decoder stacks in a separate process / sandbox with no GPU / model-weight / credential access. Decoder-class CVEs trigger inference-server SLA, not generic library SLA.",
+        "evidence": "CVE-2026-22778 — FFmpeg 5.1.x JPEG2000 decoder bundled inside OpenCV led to RCE as the vLLM service.",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Multimodal inference servers are rarely architected with decoder-process isolation; bundled-codec inventory is essentially never maintained at AppSec depth.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-01-15",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2026-7482": {
+    "name": "Ollama Bleeding Llama Heap Memory Disclosure",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Crafted file upload to Ollama's model-quantization API causes out-of-bounds heap read; server process memory (potentially including model weights, conversation context, API keys) leaks to unauthenticated network clients. Ollama ships with no default authentication.",
+      "privileges_required": "none (unauthenticated network reach to the Ollama API)",
+      "complexity": "low (public PoC)",
+      "ai_factor": "Not AI-discovered. Coordinated disclosure to Ollama security team; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Ollama ships with no default authentication; control assumes operator hardens deployment."
+      },
+      "EU-AI-Act-Art10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Data-governance controls do not enumerate model-server memory-disclosure class."
+      },
+      "ISO-IEC-42001-AIMS": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI management system lacks default-deny network exposure expectation for local-model servers."
+      },
+      "OWASP-LLM-Top-10-LLM06": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Sensitive information disclosure — class applies but no implementation guidance for local-model servers."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-065",
+        "name": "AI-MODEL-SERVER-DEFAULT-AUTHENTICATION",
+        "description": "Local-model and inference servers must ship with authentication enabled by default and refuse non-loopback binding without explicit configuration.",
+        "evidence": "CVE-2026-7482 — heap disclosure to unauthenticated network clients because Ollama defaults are network-permissive.",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "EU-AI-Act-Art10",
+          "ISO-IEC-42001-AIMS",
+          "OWASP-LLM-Top-10-LLM06"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Ollama / local-model server inventory and network-exposure audits are rare; default-deploy posture is widely accepted as good enough.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-04-14",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-68664": {
+    "name": "LangChain Core LangGrinch Serialization Injection",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "dumps() / dumpd() do not escape free-form dictionaries containing the internal 'lc' key marker. Prompt-injection-controlled LLM response fields (additional_kwargs / response_metadata) survive a dumps/dumpd → loads round-trip and are rehydrated as legitimate LangChain objects, enabling secret extraction and downstream RCE in pipelines that further evaluate the deserialised object.",
+      "privileges_required": "ability to inject content into the LLM's response (prompt injection via tool result, RAG document, web search result, email, etc.)",
+      "complexity": "moderate (requires prompt-injection primitive plus pipeline that round-trips LLM output)",
+      "ai_factor": "Not AI-discovered. Cyata human research team disclosure via prompt-injection attack-surface analysis. AI is the weaponisation primitive (LLM emits the payload-shaped response) — ai_assisted_weaponization=true in source — but not the discovery side."
+    },
+    "framework_coverage": {
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Prompt-injection-driven serialisation round-trip not in published AI-risk taxonomy."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Robustness control does not enumerate serialisation-deserialisation chain as an attack surface."
+      },
+      "ISO-IEC-42001-AIMS-A.6.2.5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Lifecycle controls do not include LLM-output trust-zone separation."
+      },
+      "OWASP-LLM-Top-10-LLM01": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "Prompt injection enumerated; no implementation requirement for serialisation trust boundaries."
+      },
+      "OWASP-LLM-Top-10-LLM02": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "Insecure output handling enumerated; serialisation round-trip is the specific instance."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-064",
+        "name": "LLM-OUTPUT-DESERIALIZATION-TRUST-ZONE",
+        "description": "LLM responses must cross a serialisation trust boundary; frameworks must refuse to rehydrate framework-internal object markers from LLM-output-derived fields.",
+        "evidence": "CVE-2025-68664 — LangChain dumps()/dumpd() did not escape the 'lc' marker in attacker-controlled LLM response fields.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS-A.6.2.5",
+          "OWASP-LLM-Top-10-LLM02"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-005",
+        "name": "AI-TOOL-INPUT-SANITIZATION",
+        "description": "External-source content reaching the LLM must be treated as adversarial; pairs with NEW-CTRL-064 on the output side.",
+        "evidence": "CVE-2025-68664 — prompt-injection upstream is the trigger; output-side trust zone is the closure.",
+        "gap_closes": [
+          "OWASP-LLM-Top-10-LLM01"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 92,
+      "basis": "Production LangChain deployments commonly round-trip LLM responses through dumps/loads without any trust boundary; no compliance framework requires it.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-12-09",
+    "ai_assist_factor": "medium"
+  },
+  "CVE-2025-22224": {
+    "name": "VMware ESXi/Workstation VMCI TOCTOU → VMX Host Code Execution",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Local administrative privilege on a guest VM exploits a TOCTOU race in VMCI (Virtual Machine Communication Interface), leading to OOB write in the VMX host process — VM escape to hypervisor. Huntress PDB-path evidence ('2024_02_19' folder) suggests the exploit chain pre-dated disclosure by ~12 months. Used in ransomware operations per CISA February 2026 follow-up.",
+      "privileges_required": "local guest-admin in a VM on the host",
+      "complexity": "moderate (TOCTOU race; in-wild PoC predates disclosure)",
+      "ai_factor": "Not AI-discovered. Microsoft Threat Intelligence Center disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Hypervisor isolation control assumes guest-to-host boundary is intact; TOCTOU race breaks it."
+      },
+      "ISO-27001-2022-A.8.21": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network segregation assumed at the virtualization layer; VM-escape sidesteps."
+      },
+      "PCI-DSS-4.0-2.2.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Multi-tenant segmentation premise violated."
+      },
+      "NIS2-Art21-business-continuity": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Hypervisor compromise blast radius covers all tenants on the host."
+      },
+      "FedRAMP-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes hypervisor as trust anchor."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA on the hypervisor estate.",
+        "evidence": "CVE-2025-22224 — KEV-listed 2025-03-04; ransomware-confirmed in-wild use.",
+        "gap_closes": [
+          "NIST-800-53-SC-39"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-068",
+        "name": "HYPERVISOR-VM-ESCAPE-TENANCY-ASSUMPTION",
+        "description": "Multi-tenant virtualization must treat any guest-admin as a hypervisor adversary; KEV-listed hypervisor CVEs trigger 24h SLA regardless of tenancy.",
+        "evidence": "CVE-2025-22224 — ~12 months of pre-disclosure in-wild use blew through every tenancy assumption.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.21",
+          "PCI-DSS-4.0-2.2.3",
+          "NIS2-Art21-business-continuity",
+          "FedRAMP-SC-7"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Hypervisor patch cadence is structurally slow due to maintenance-window scheduling; ransomware operators target the window directly.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-03-04",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-22225": {
+    "name": "VMware ESXi Arbitrary Kernel Write (VM-escape chain, ransomware-active)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Arbitrary kernel-write primitive inside the VMX process used to write to ESXi kernel memory and execute as the hypervisor. Chained with CVE-2025-22224 (TOCTOU) and CVE-2025-22226 (memory leak) for full VM-escape → hypervisor-management access.",
+      "privileges_required": "code execution inside the VMX process (typically from CVE-2025-22224 chain step)",
+      "complexity": "moderate (chain component; ransomware-confirmed)",
+      "ai_factor": "Not AI-discovered. Microsoft Threat Intelligence Center co-disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Same hypervisor-isolation gap as CVE-2025-22224; ransomware-confirmed."
+      },
+      "PCI-DSS-4.0-2.2.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Multi-tenant assumption violated."
+      },
+      "ISO-27001-2022-A.8.21": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network segregation assumed at the virtualization layer; chain breaks it."
+      },
+      "DORA-Art10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT third-party concentration risk realised at the hypervisor layer."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA; same VMSA-2025-0004 cluster as CVE-2025-22224.",
+        "evidence": "CVE-2025-22225 — KEV-listed 2025-03-04; CISA Feb 2026 follow-up confirmed ransomware exploitation.",
+        "gap_closes": [
+          "NIST-800-53-SC-39",
+          "DORA-Art10"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-068",
+        "name": "HYPERVISOR-VM-ESCAPE-TENANCY-ASSUMPTION",
+        "description": "Same hypervisor tenancy posture as CVE-2025-22224.",
+        "evidence": "CVE-2025-22225 — chain component in the same ransomware-confirmed exploitation cluster.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.21",
+          "PCI-DSS-4.0-2.2.3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Same hypervisor patch-cadence gap as CVE-2025-22224.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-03-04",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-22226": {
+    "name": "VMware ESXi HGFS Memory Leak (VM-escape chain helper)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "HGFS (Host Guest File System) memory leak provides the heap-address oracle used to weaponise CVE-2025-22224 + CVE-2025-22225. Local guest-admin reads VMX-process memory via the leak primitive and supplies heap addresses for the TOCTOU + arbitrary-write CVEs in the same chain. Broadcom characterised as 'observed in attacks'.",
+      "privileges_required": "local guest-admin",
+      "complexity": "low (information-disclosure read primitive)",
+      "ai_factor": "Not AI-discovered. Microsoft Threat Intelligence Center co-disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Memory-protection control assumes process isolation; leak escapes."
+      },
+      "ISO-27001-2022-A.8.24": {
+        "covered": true,
+        "adequate": false,
+        "gap": "In-transit / at-rest crypto irrelevant to in-memory disclosure."
+      },
+      "FedRAMP-SC-4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Information in shared resources — direct violation."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "4h KEV-listing mitigation SLA; same VMSA-2025-0004 cluster.",
+        "evidence": "CVE-2025-22226 — KEV-listed 2025-03-04; the heap-address oracle that makes the chain reliable.",
+        "gap_closes": [
+          "NIST-800-53-SC-28",
+          "FedRAMP-SC-4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-068",
+        "name": "HYPERVISOR-VM-ESCAPE-TENANCY-ASSUMPTION",
+        "description": "Same hypervisor tenancy posture as CVE-2025-22224.",
+        "evidence": "CVE-2025-22226 — without this leak the rest of the chain is unreliable; chain-component classification still triggers the tenancy-assumption control.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.24"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Memory-leak-class CVEs on hypervisors are commonly downgraded by operator patch programs; chain-context elevates them.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-03-04",
+    "ai_assist_factor": "none"
+  },
+  "MAL-2024-PYPI-ULTRALYTICS-XMRIG": {
+    "name": "ultralytics PyPI Compromise → XMRig Cryptominer (60M-download AI library)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "GitHub Actions script-injection in the ultralytics build pipeline allowed openimbot to inject a post-install downloader after code review. Resulting wheel pulled XMRig from attacker infrastructure. ultralytics 8.3.41 and 8.3.42 (the first 'remediation' release inadvertently re-shipped the malicious code) — clean release 8.3.43. ~60M monthly downloads; the package powers many production CV / model-training pipelines.",
+      "privileges_required": "none (any developer / CI runs `pip install ultralytics`)",
+      "complexity": "low for downstream consumers; build-pipeline injection required upstream",
+      "ai_factor": "Not AI-discovered. ReversingLabs + Wiz + HiddenLayer concurrent ecosystem-telemetry detection; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PO.4.2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Build-environment hardening guidance generic; GitHub Actions script-injection class persists."
+      },
+      "SLSA-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Build provenance attestation gap — the injected code shipped with valid attestation paths."
+      },
+      "ISO-27001-2022-A.8.30": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Outsourced development control does not address ecosystem-package build-pipeline injection."
+      },
+      "EU-AI-Act-Art10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Data governance — compromised AI library is in scope but framework lacks supply-chain control prescription."
+      },
+      "OpenSSF-Scorecard-PinnedDependenciesID": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Float-version installs propagate compromise instantly; pin-by-hash mitigates only at deploy time."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-011",
+        "name": "GHA-WORKFLOW-SCRIPT-INJECTION-SINK-BAN",
+        "description": "GitHub Actions workflows must ban dangerous expression sinks (run: with `${{ github.event.* }}` interpolation, etc.); CI must lint workflows for the injection class.",
+        "evidence": "MAL-2024-PYPI-ULTRALYTICS-XMRIG — the original injection vector was a GHA expression-injection sink.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PO.4.2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-026",
+        "name": "NPM-CI-IGNORE-SCRIPTS-DEFAULT",
+        "description": "Equivalent posture for pip: `pip install --no-binary` / cached wheel review; reject post-install code execution by default in CI.",
+        "evidence": "MAL-2024-PYPI-ULTRALYTICS-XMRIG — the malicious payload activated via post-install downloader.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.30"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-027",
+        "name": "MAINTAINER-TOKEN-COMPROMISE-RESPONSE-PLAYBOOK",
+        "description": "Maintainer-token compromise must have a 24h response playbook; 8.3.42 re-shipped the malicious code because the response was rushed.",
+        "evidence": "MAL-2024-PYPI-ULTRALYTICS-XMRIG — the inadvertent re-ship of malicious code in 8.3.42 demonstrates the absent playbook.",
+        "gap_closes": [
+          "SLSA-3",
+          "EU-AI-Act-Art10"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "AI-library supply chain is essentially unmanaged at SLSA-3 depth across audit-passing organisations; ~60M-download package compromise demonstrates the blast radius.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2024-12-05",
+    "ai_assist_factor": "none"
+  },
+  "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER": {
+    "name": "BufferZoneCorp RubyGems + Go Module Sleeper-to-Payload Credential Theft Campaign",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Sleeper-to-payload supply chain attack: packages published with clean README + minimal functionality, silently updated to malicious payload after trust accrual. Ruby gems harvested env vars + SSH keys + AWS credentials + .npmrc + .netrc + GitHub CLI config + RubyGems credentials to a hidden C2 endpoint. Go modules modified GITHUB_ENV, poisoned GOPROXY, weakened checksum protections, tampered with go.sum, and planted fake `go` wrappers in workflow execution paths.",
+      "privileges_required": "none (any CI / dev runs `bundle install` / `go get`)",
+      "complexity": "low for downstream; sustained over time upstream",
+      "ai_factor": "Not AI-discovered. Socket.dev human research disclosure; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PO.4.2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Sleeper pattern defeats one-time package audit."
+      },
+      "SLSA-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Build provenance ineffective against post-trust-accrual malicious update."
+      },
+      "ISO-27001-2022-A.5.21": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supplier security control depends on initial assessment; does not address temporal trust drift."
+      },
+      "OpenSSF-Scorecard-PinnedDependenciesID": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Pinned dependency mitigates only if hash-pinned, not version-pinned."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain control assumes initial vetting; sleeper pattern not enumerated."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-069",
+        "name": "ECOSYSTEM-PACKAGE-TEMPORAL-TRUST-DRIFT-DETECTION",
+        "description": "Pin by content hash; monitor for behaviour deltas (new network egress, new postinstall scripts, new permissions); treat publisher-account churn as leading indicator.",
+        "evidence": "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER — sleeper pattern defeated audit and version-pinning.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PO.4.2",
+          "SLSA-3",
+          "ISO-27001-2022-A.5.21",
+          "OpenSSF-Scorecard-PinnedDependenciesID",
+          "NIS2-Art21-supply-chain"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-026",
+        "name": "NPM-CI-IGNORE-SCRIPTS-DEFAULT",
+        "description": "Equivalent posture for Bundler / Go: refuse postinstall / init-hook execution from new or recently-updated dependencies by default in CI.",
+        "evidence": "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER — Go module init hooks rewrote GOPROXY and go.sum.",
+        "gap_closes": []
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Temporal trust drift detection is essentially never deployed in audit-passing organisations; one-time supplier vetting is the norm.",
+      "theater_pattern": "vendor_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-12",
+    "ai_assist_factor": "none"
+  },
+  "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER": {
+    "name": "PyPI Colorama Typosquat Campaign → Solana Credential / Crypto Stealer",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "11 PyPI typosquats of `colorama` (>150M downloads/month) and `colorizr` published 2025-05-04 to 2025-05-24, split across four payload variants targeting the Solana ecosystem. Install-time code exfiltrates browser credentials, crypto wallets, Facebook/Telegram/Roblox session material, and Solana wallet artifacts.",
+      "privileges_required": "none (developer typo / autocomplete on `pip install`)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered. Imperva + Checkmarx + Check Point ecosystem-telemetry detection; no AI tool credit."
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PO.4.2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Typosquat detection not enumerated in standard SSDF practices."
+      },
+      "ISO-27001-2022-A.5.21": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supplier control does not address ecosystem-name-confusion class."
+      },
+      "OpenSSF-Scorecard-PinnedDependenciesID": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Pin-by-hash mitigates only at deploy time; install-time typosquat persists."
+      },
+      "GDPR-Art32": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Confidentiality breach via developer-endpoint compromise underspecified."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-070",
+        "name": "TYPOSQUAT-INSTALL-TIME-NAME-CONFUSION-GUARD",
+        "description": "CI + developer workstations must run install-time typosquat guards (Levenshtein-distance check against top-N ecosystem packages, install-time prompt on first-seen package names).",
+        "evidence": "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER — 11 typosquats exfiltrated browser credentials and Solana wallets at install time.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PO.4.2",
+          "ISO-27001-2022-A.5.21",
+          "OpenSSF-Scorecard-PinnedDependenciesID",
+          "GDPR-Art32"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Install-time typosquat guards are essentially never deployed at workstation depth; supplier-list controls do not enumerate the class.",
+      "theater_pattern": "vendor_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-05-25",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-0133": {
+    "name": "Palo Alto Networks GlobalProtect Reflected XSS (XBOW AI-discovered)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Reflected XSS triggered via a crafted link processed by the GlobalProtect captive-portal. Executes JavaScript in the authenticated user's browser context, enabling credential-phishing originating from the legitimate VPN portal hostname. Affected over 2,000 internet-facing hosts at disclosure.",
+      "privileges_required": "user interaction (click on crafted link to the legitimate portal)",
+      "complexity": "low",
+      "ai_factor": "XBOW autonomous-pentest AI discovered the bug during a HackerOne VDP engagement scoped to GlobalProtect. Notable because XBOW reached #1 on the HackerOne US Q2 2025 leaderboard ahead of every human researcher in the same program ranking — first publicly-attributed AI-tool CVE against Palo Alto."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation assumes static-analysis coverage; AI-discovery surfaced bugs missed by conventional tooling."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding controls do not enumerate AI-assisted discovery as a positive defence modality."
+      },
+      "OWASP-Top-10-2021-A03": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Injection class — XSS in security-control-plane software."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Robustness control does not address AI-assisted-discovery contribution credit."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-024",
+        "name": "AI-DISCOVERY-RESPONSE-SLA",
+        "description": "AI-discovered vulnerabilities enter the patch program on the AI-discovery-date timestamp.",
+        "evidence": "CVE-2025-0133 — XBOW disclosure cadence outpaces conventional bug-bounty triage.",
+        "gap_closes": [
+          "NIST-800-53-SI-10"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Perimeter devices (VPN concentrators, gateways) require a separate compressed-SLA tier; XSS on the captive-portal hostname enables credential-phishing from the legitimate brand.",
+        "evidence": "CVE-2025-0133 — over 2,000 internet-facing GlobalProtect hosts exposed at disclosure.",
+        "gap_closes": [
+          "OWASP-Top-10-2021-A03"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Compliance evidence packs must record AI-tool contribution.",
+        "evidence": "CVE-2025-0133 — XBOW topped the HackerOne leaderboard; no compliance attribution path exists for this contribution.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.28",
+          "EU-AI-Act-Art15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Perimeter-device XSS is commonly out of scope of organisational threat models for VPN concentrators; AI-discovery outpaces patch programs.",
+      "theater_pattern": "vulnerability_management_theater"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": "2025-05-14",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2025-59529": {
+    "name": "Avahi Simple Protocol Server Connection-Limit DoS (ZeroPath AI-discovered)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "avahi-daemon Simple Protocol Server continues accepting clients after the configured connection limit should have engaged. Local or network-reachable attacker opens repeated connections; daemon ignores connection-cap configuration and exhausts file descriptors / memory, denying service-discovery on the host.",
+      "privileges_required": "local or network-reachable (where avahi-daemon is exposed)",
+      "complexity": "low",
+      "ai_factor": "ZeroPath AI-SAST during code analysis of the Avahi project. Notable as a business-logic-class detection — the category most resistant to conventional pattern-based SAST and most accelerated by LLM-driven analysis."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Default-allow connection acceptance behaviour escapes generic DoS-protection control."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Configuration baseline assumes configured-limit-enforced; business-logic bypass not enumerated."
+      },
+      "ENISA-IoT-security-baseline": {
+        "covered": true,
+        "adequate": false,
+        "gap": "IoT-device service-discovery hardening unspecified for business-logic class."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Framework does not credit AI-assisted-defender finding."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-024",
+        "name": "AI-DISCOVERY-RESPONSE-SLA",
+        "description": "AI-discovered vulnerabilities enter the patch program on the AI-discovery-date timestamp.",
+        "evidence": "CVE-2025-59529 — ZeroPath disclosure cadence outpaces conventional SAST triage.",
+        "gap_closes": [
+          "NIST-800-53-SC-5",
+          "ISO-27001-2022-A.8.9"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Compliance evidence packs must record AI-tool contribution; business-logic-class detection is the AI-defender comparative advantage.",
+        "evidence": "CVE-2025-59529 — ZeroPath business-logic-class detection has no SAMM / SSDF attribution.",
+        "gap_closes": [
+          "ENISA-IoT-security-baseline",
+          "EU-AI-Act-Art15"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Avahi is ubiquitous on Linux desktops / IoT; business-logic-class DoS is commonly downgraded by patch programs.",
+      "theater_pattern": "vulnerability_management_theater"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": "2025-09-23",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2025-55319": {
+    "name": "Visual Studio Code Agentic-AI Command Injection (ZeroPath AI-discovered)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Adversarial content in an AI tool response or external MCP server message reaches a shell-execution primitive inside VS Code's agentic integration, executing attacker-controlled commands as the developer.",
+      "privileges_required": "ability to deliver adversarial content into the agent's tool / MCP response surface",
+      "complexity": "moderate (high-AC per CVSS but trivial once the primitive is known)",
+      "ai_factor": "ZeroPath AI-SAST analysing the VS Code agentic-AI surface. Doubly relevant: AI defender finding a bug in an AI-assistant surface; AI agent is also the weaponisation primitive (it transforms a crafted tool response into a shell command). Qualifies under both limbs of AGENTS.md Hard Rule #7."
+    },
+    "framework_coverage": {
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Prompt-injection-to-shell pathway underspecified in AI-RMF measurement guidance."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Agentic-AI host-execution boundary not enumerated as a robustness control."
+      },
+      "ISO-IEC-42001-AIMS-A.6.2.5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI lifecycle controls do not address IDE-resident agentic primitives."
+      },
+      "OWASP-LLM-Top-10-LLM01": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "Prompt injection enumerated; no IDE-host-execution requirement."
+      },
+      "OWASP-LLM-Top-10-LLM07": {
+        "covered": true,
+        "adequate": "reference only",
+        "gap": "Insecure Plugin Design directly applicable to MCP integration class."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-066",
+        "name": "AGENTIC-IDE-HOST-EXECUTION-SANDBOX",
+        "description": "Agentic AI in IDEs must route shell-execution through per-invocation confirmation or a sandbox isolated from developer credentials.",
+        "evidence": "CVE-2025-55319 — adversarial tool / MCP content reached a shell primitive directly.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS-A.6.2.5",
+          "OWASP-LLM-Top-10-LLM07"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-004",
+        "name": "AI-TOOL-ACTION-AUTHORIZATION",
+        "description": "AI tools must have explicitly scoped permissions; implied authorisation from context is insufficient.",
+        "evidence": "CVE-2025-55319 — agent acted on adversarial content without explicit authorisation.",
+        "gap_closes": [
+          "OWASP-LLM-Top-10-LLM01"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-053",
+        "name": "MCP-SERVER-CONFIG-ALLOWLIST",
+        "description": "MCP server inventory + allowlist limits the adversarial-content surface that can reach the IDE agent.",
+        "evidence": "CVE-2025-55319 — external MCP server messages were a documented delivery path.",
+        "gap_closes": []
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Record AI-defender contribution.",
+        "evidence": "CVE-2025-55319 — ZeroPath disclosure; framework attribution gap.",
+        "gap_closes": []
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 95,
+      "basis": "Developer-workstation agentic-AI host-execution sandboxes are essentially non-existent across audit-passing organisations; the agentic IDE class is widely deployed without per-invocation auth gates.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": "2025-09-09",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2025-53767": {
+    "name": "Azure OpenAI SSRF Privilege Escalation (ZeroPath AI-discovered)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Authenticated low-privilege tenant user issues SSRF request that crosses the cloud-tenant boundary, escalating into administrative or cross-tenant context within the Azure OpenAI control plane. Microsoft fixed server-side before any public PoC.",
+      "privileges_required": "low-privilege authenticated tenant identity",
+      "complexity": "moderate",
+      "ai_factor": "ZeroPath AI agent analysing Azure OpenAI control-plane attack surface. AI-defender against AI-service control plane."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes east-west traffic within cloud-tenant boundary is filtered; SSRF crosses it."
+      },
+      "FedRAMP-AC-4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Information flow control assumed tenant-isolated."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Robustness control does not enumerate AI-service control-plane SSRF."
+      },
+      "ISO-IEC-42001-AIMS": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI Management System silent on managed-AI-service supply chain risk."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-058",
+        "name": "CLOUD-CONTROL-PLANE-CROSS-TENANT-CLAIM-VALIDATION",
+        "description": "Cloud control planes must validate cross-tenant authority; managed-AI services inherit the same posture.",
+        "evidence": "CVE-2025-53767 — SSRF crossed the Azure OpenAI tenant boundary into administrative context.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "FedRAMP-AC-4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Record AI-defender contribution to managed-AI-service security.",
+        "evidence": "CVE-2025-53767 — ZeroPath against Azure OpenAI control plane; no compliance attribution path.",
+        "gap_closes": [
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 100,
+      "basis": "Pre-fix, every Azure OpenAI tenant globally was exposed; no operator-side compensating control existed. Post-fix exposure is zero — the compliance story is about telemetry coverage for future managed-AI control-plane bugs.",
+      "theater_pattern": "vendor_management_ai"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": "2025-08-19",
+    "ai_assist_factor": "very_high"
+  },
+  "CVE-2025-10725": {
+    "name": "Red Hat OpenShift AI Privilege Escalation (ZeroPath AI-discovered)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Authenticated low-privilege tenant user leverages an RBAC primitive in the OpenShift AI platform overlay to escalate privileges across the control-plane boundary. The platform extends the conventional Kubernetes RBAC surface; tenant-isolation tests against the underlying API server miss the overlay.",
+      "privileges_required": "low-privilege authenticated tenant identity in OpenShift AI",
+      "complexity": "high",
+      "ai_factor": "ZeroPath AI agent analysing OpenShift AI integration surface. AI defender finding bugs in AI-deployment platform — class anchor for AGENTS.md Hard Rule #7."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege enforced at conventional Kubernetes RBAC layer; AI-platform overlay extends attack surface."
+      },
+      "FedRAMP-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement at API server assumed; OpenShift AI overlay introduces additional control plane."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI-platform deployment surface not enumerated in robustness controls."
+      },
+      "ISO-IEC-42001-AIMS-A.6.2.5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI lifecycle controls do not address managed-AI-platform tenant isolation."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-067",
+        "name": "AI-PLATFORM-CONTROL-PLANE-RBAC-OVERLAY-AUDIT",
+        "description": "Tenant-isolation tests must exercise the AI-platform overlay control plane, not just the underlying Kubernetes RBAC.",
+        "evidence": "CVE-2025-10725 — low-privilege user escalated via the platform overlay beyond what Kubernetes-RBAC tests would surface.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "FedRAMP-AC-3"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Record AI-defender contribution against AI-deployment platforms.",
+        "evidence": "CVE-2025-10725 — ZeroPath against Red Hat OpenShift AI.",
+        "gap_closes": [
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS-A.6.2.5"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "AI-platform overlay RBAC audits are essentially never performed; tenant-isolation evidence stops at Kubernetes RBAC depth.",
+      "theater_pattern": "access_control_theater"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": "2025-09-29",
+    "ai_assist_factor": "very_high"
+  },
+  "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP": {
+    "name": "Big Sleep AI Open-Source 20-Vulnerability Disclosure Tranche (FFmpeg + ImageMagick + others)",
+    "lesson_date": "2026-05-18",
+    "attack_vector": {
+      "description": "Pre-emptive AI-agent discovery tranche covering FFmpeg, ImageMagick, and other open-source media / utility libraries. Bugs reported through standard upstream-vendor responsible-disclosure with patches landing before public PoC. Composite entry — per-CVE detail is being published by Google as the tranche disclosure unfolds. Representative path: memory-corruption in a media-decoder triggered by crafted file processed via library API.",
+      "privileges_required": "varies per CVE in the tranche",
+      "complexity": "varies per CVE",
+      "ai_factor": "Big Sleep — Google DeepMind + Project Zero AI agent (Gemini-backed). First 20 vulnerabilities Big Sleep found, disclosed by Heather Adkins on 2025-08-04. Both targets (FFmpeg, ImageMagick) have massive downstream redistribution surface."
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF-PW.7.1": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Code review by automated tools — frameworks lack specific AI-discovery attribution model."
+      },
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Framework does not enumerate AI-as-defender contribution to robustness control."
+      },
+      "ISO-IEC-42001-AIMS": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI Management System silent on AI-vulnerability-discovery as a positive control surface."
+      },
+      "OWASP-SAMM-Code-Review": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI-tooling not enumerated as a SAMM code-review modality."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-024",
+        "name": "AI-DISCOVERY-RESPONSE-SLA",
+        "description": "AI-discovered vulnerabilities enter the patch program on the AI-discovery-date timestamp; downstream consumers of bundled FFmpeg / ImageMagick must monitor the Big Sleep disclosure cadence directly, not wait for NVD.",
+        "evidence": "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP — tranche cadence outpaces NVD publication.",
+        "gap_closes": [
+          "NIST-800-218-SSDF-PW.7.1"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-071",
+        "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
+        "description": "Compliance evidence packs must record AI-tool contribution as a distinct positive control modality.",
+        "evidence": "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP — Big Sleep tranche has no SSDF / SAMM / 42001 attribution path.",
+        "gap_closes": [
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS",
+          "OWASP-SAMM-Code-Review"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Bundled-FFmpeg / ImageMagick inventory across consuming projects is rare; AI-discovery cadence outpaces operator patch programs. Composite-entry rating — refine when per-CVE detail lands.",
+      "theater_pattern": "vulnerability_management_theater"
+    },
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2025-08-04",
+    "ai_assist_factor": "very_high"
   }
 }

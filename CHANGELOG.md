@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.13.6 — 2026-05-18
+
+CVE catalog expansion (38 → 67 entries) covering threat classes the catalog previously did not address, plus a `doctor` undercount fix.
+
+### Features
+
+**29 new catalog entries** across the under-represented classes:
+
+- **Browsers (4)** — Chrome V8 TAG-disclosed zero-day `CVE-2025-10585`, WebKit DarkSword chain `CVE-2025-14174` + `CVE-2025-43529`, Firefox SpiderMonkey Pwn2Own `CVE-2025-4919`.
+- **Mobile OS (3)** — WebKit Glass Cage iOS chain `CVE-2025-24201`, ImageIO zero-click root `CVE-2025-43300`, Android POSIX-CPU-timer race `CVE-2025-38352`.
+- **Identity providers (2)** — Entra ID cross-tenant Actor-token impersonation `CVE-2025-55241` (CVSS 10.0), Cisco Duo log credential disclosure `CVE-2025-21085`.
+- **Database engines (3)** — PostgreSQL psql ACE `CVE-2025-1094` (BeyondTrust / Treasury breaches), Redis RediShell Lua UAF `CVE-2025-49844` (CVSS 10.0), MongoBleed memory disclosure `CVE-2025-14847`.
+- **HTTP/2 (1)** — MadeYouReset stream-reset DoS `CVE-2025-8671` (Rapid Reset successor, 2.8M+ vulnerable instances).
+- **AI model serving (4)** — vLLM heap-overflow RCE `CVE-2026-22778`, Ollama Bleeding Llama `CVE-2026-7482`, LangChain LangGrinch `CVE-2025-68664`, Big Sleep SQLite zero-day `CVE-2025-6965`.
+- **VMware ESXi (3)** — `CVE-2025-22224` / `CVE-2025-22225` / `CVE-2025-22226` (VMSA-2025-0004, ransomware-active VM-escape chain).
+- **Malicious packages (3)** — ultralytics XMRig `MAL-2024-PYPI-ULTRALYTICS-XMRIG` (60M-download AI library), RubyGems + Go sleeper `MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER`, PyPI colorama Solana stealer `MAL-2025-PYPI-COLORAMA-SOLANA-STEALER`.
+- **AI-discovery anchors (6)** — XBOW Palo Alto GlobalProtect `CVE-2025-0133` (HackerOne #1 Q2 2025), ZeroPath cluster (`CVE-2025-59529` / `CVE-2025-55319` / `CVE-2025-53767` / `CVE-2025-10725`), Big Sleep FFmpeg + ImageMagick tranche `MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP`.
+
+Every entry carries the full RWEP factor set, named verification sources, vendor advisory references, and a matching `data/zeroday-lessons.json` lesson. AI-discovered rate climbs 5/38 (0.132) → 12/67 (0.179), clearing the next ladder rung toward the Hard Rule #7 target of 0.40.
+
+**16 new control requirements** mint `NEW-CTRL-056` through `NEW-CTRL-071`, named in `AGENTS.md` with the surfacing zero-day and gap-closed framework controls. Coverage spans mobile MDM SLA enforcement, browser managed-update no-deferral, cloud-control-plane cross-tenant claim validation, sensitive-data-in-logs lint, database server-side scripting default-deny, in-memory datastore memory-disclosure exposure audit, HTTP/2 stream-reset accounting, multimodal inference decoder isolation, LLM-output deserialization trust zone, AI-model-server default auth, agentic-IDE host-execution sandbox, AI-platform control-plane RBAC overlay, hypervisor tenancy assumption, ecosystem-package temporal trust drift, typosquat install-time guard, and AI-discovery credit in compliance evidence.
+
+**ATT&CK + ATLAS catalogs extended** to back the new entries: 8 new ATT&CK techniques (T1005, T1189, T1496, T1498, T1499.001, T1499.002, T1539, T1657) and 3 new ATLAS TTPs (AML.T0007 Discover ML Artifacts, AML.T0011 User Execution, AML.T0047 LLM Meta Prompt Extraction).
+
+### Bugs
+
+**`exceptd doctor` no longer undercounts the catalog.** The prior implementation parsed `validate-cves` text output, which only counts `CVE-*` prefixes — `MAL-*` (malicious-package) entries were silently dropped from the total. An operator reading `CVE catalog: 34 entries` on a 38-entry catalog would conclude that the Shai-Hulud / TanStack worm intelligence had been removed when it was present all along. The check now reads `data/cve-catalog.json` directly and reports the combined total with the per-prefix breakdown: `CVE catalog: 67 entries (60 CVE + 7 MAL), drift 0`. The `validate-cves` text output gains a clarifying suffix noting that the count is CVE-IDs queued for NVD validation and that the combined catalog total lives under `exceptd doctor`.
+
 ## 0.13.5 — 2026-05-18
 
 Three new playbooks, two cross-cutting CLI behaviours, and a deterministic schema gate on `active_exploitation` vocabulary.

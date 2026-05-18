@@ -5395,19 +5395,36 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   if (runCves) {
     try {
       const orchPath = path.join(PKG_ROOT, "orchestrator", "index.js");
-      // validate-cves doesn't emit JSON; parse text for row count + drift.
+      // validate-cves doesn't emit JSON; parse text for drift signal.
       const res = spawnSync(process.execPath, [orchPath, "validate-cves", "--offline"], {
         encoding: "utf8",
         cwd: PKG_ROOT,
         timeout: 30000,
       });
       const text = (res.stdout || "") + (res.stderr || "");
-      const totalMatch = text.match(/(\d+)\s+CVEs?\s+in\s+catalog/i);
       const driftMatch = text.match(/drift[:\s]+(\d+)/i);
       const ok = res.status === 0;
+      // v0.13.6: total comes from the catalog file directly. The
+      // validate-cves text-scrape only ever counted CVE-* prefixes, so
+      // MAL-* (malicious package) entries silently dropped from the
+      // doctor report — operators reading "34 entries" assumed the
+      // Shai-Hulud / TanStack worm intel had been removed when it was
+      // present all along. Read the catalog and report both totals.
+      let total = null;
+      let cve_count = null;
+      let mal_count = null;
+      try {
+        const catalog = require(path.join(PKG_ROOT, "data", "cve-catalog.json"));
+        const keys = Object.keys(catalog).filter((k) => !k.startsWith("_"));
+        cve_count = keys.filter((k) => k.startsWith("CVE-")).length;
+        mal_count = keys.filter((k) => k.startsWith("MAL-")).length;
+        total = keys.length;
+      } catch { /* fall through with nulls */ }
       checks.cves = {
         ok,
-        total: totalMatch ? Number(totalMatch[1]) : null,
+        total,
+        cve_count,
+        mal_count,
         drift: driftMatch ? Number(driftMatch[1]) : 0,
         ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
       };
@@ -5793,11 +5810,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       ? `skill currency: all green (${c.total_skills ?? "?"} skills)`
       : `skill currency: ${c.stale_skills?.length || "?"} stale, ${c.critical_count ?? 0} critical`
   );
-  mark(checks.cves, c =>
-    c.ok
-      ? `CVE catalog: ${c.total ?? "?"} entries, drift ${c.drift ?? 0}`
-      : `CVE catalog FAILED (exit=${c.exit_code ?? "?"})`
-  );
+  mark(checks.cves, c => {
+    if (!c.ok) return `CVE catalog FAILED (exit=${c.exit_code ?? "?"})`;
+    const total = c.total ?? "?";
+    const breakdown = (c.cve_count != null && c.mal_count != null)
+      ? ` (${c.cve_count} CVE + ${c.mal_count} MAL)`
+      : "";
+    return `CVE catalog: ${total} entries${breakdown}, drift ${c.drift ?? 0}`;
+  });
   mark(checks.rfcs, c =>
     c.ok
       ? `RFC catalog: ${c.total ?? "?"} entries, drift ${c.drift ?? 0}`

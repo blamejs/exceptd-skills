@@ -743,7 +743,17 @@ async function runValidateCves(rawArgs = []) {
   const modeStr = offline
     ? 'offline (local view only)'
     : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (NVD + CISA KEV)');
-  console.log(`${cveIds.length} CVEs in catalog. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
+  // v0.13.6: clarify that this count is CVE-* IDs validated against NVD,
+  // not the full catalog. MAL-* (malicious package) entries are listed in
+  // data/cve-catalog.json but are out of scope for NVD validation — they
+  // do not have CVE IDs by design. `exceptd doctor` reports the combined
+  // catalog total separately to avoid the "where did MAL-* go?" misread.
+  const allKeys = Object.keys(catalog).filter((k) => !k.startsWith('_'));
+  const nonCveCount = allKeys.length - cveIds.length;
+  const totalNote = nonCveCount > 0
+    ? ` (catalog has ${nonCveCount} additional non-CVE entries excluded from NVD validation; see \`exceptd doctor\` for the combined catalog total)`
+    : '';
+  console.log(`${cveIds.length} CVE IDs queued for NVD validation${totalNote}. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   // --- Header (fixed-width; works with the existing currency command's style)

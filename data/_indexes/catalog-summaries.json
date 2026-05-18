@@ -18,7 +18,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 30,
+      "entry_count": 33,
       "sample_keys": [
         "AML.T0001",
         "AML.T0040",
@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
       },
-      "entry_count": 98,
+      "entry_count": 106,
       "sample_keys": [
         "T0001",
         "T0017",
@@ -53,7 +53,7 @@
       "path": "data/cve-catalog.json",
       "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-13",
+      "last_updated": "2026-05-18",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 38,
+      "entry_count": 67,
       "sample_keys": [
         "CVE-2025-53773",
         "CVE-2026-30615",
@@ -229,7 +229,7 @@
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
       "schema_version": "1.1.0",
-      "last_updated": "2026-05-15",
+      "last_updated": "2026-05-18",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 38,
+      "entry_count": 67,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",
