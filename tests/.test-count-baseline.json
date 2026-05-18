@@ -1,0 +1,7 @@
+{
+  "baseline": 935,
+  "tolerance": 1,
+  "update_baseline_when_growth_exceeds": 20,
+  "notes": "Operator-pinned canonical test count. Bump when new test files land in a release. See scripts/check-test-count.js for the contract.",
+  "recorded_at": "2026-05-18"
+}
