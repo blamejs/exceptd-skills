@@ -261,6 +261,26 @@ test("unused-orphan: auto-populated skill/playbook refs prevent false positives 
     "CWE-79 must be picked up by the skill/playbook reference scan (it's cited in multiple skill bodies)");
 });
 
+test("REFERENCE_TOKEN_RE: matches canonical catalog ID shapes", () => {
+  // Pins the permissive regex used by buildExternalRefs to scan skill
+  // bodies + playbook JSON for catalog ID references. Each canonical
+  // shape must match; tokens that look ID-ish but aren't must not.
+  const RE = D.REFERENCE_TOKEN_RE;
+  const positive = ["CWE-79", "T1190", "T1574.012", "AML.T0001", "AML.T0001.001", "D3-EAL", "D3-NTA-NTA", "RFC-8446"];
+  for (const tok of positive) {
+    assert.ok(new RegExp(RE.source).test(tok),
+      `REFERENCE_TOKEN_RE must match canonical ID shape "${tok}"`);
+  }
+  // Negative cases — tokens that LOOK similar but aren't catalog IDs.
+  const negative = ["CWE-", "T123", "AML.X0001", "D3-", "RFC8446"];
+  for (const tok of negative) {
+    const m = tok.match(new RegExp(RE.source));
+    if (m && m[0] === tok) {
+      assert.fail(`REFERENCE_TOKEN_RE must NOT match "${tok}" as a complete token`);
+    }
+  }
+});
+
 test("DETECTOR_CLASSES: canonical class list matches runAllDetectors output (codex P2 fail-closed contract)", () => {
   // The budget gate asserts class-set equality against this list. A
   // future PR adding a detector without updating DETECTOR_CLASSES (or
