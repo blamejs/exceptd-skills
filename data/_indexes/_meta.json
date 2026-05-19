@@ -1,12 +1,12 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-19T17:32:13.024Z",
+  "generated_at": "2026-05-19T20:58:49.735Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "d9f9002ad675655e952674403fb030798e7ad0c98c65e6ad586960d7d7915af9",
+    "manifest.json": "b8676a67b642f623974dccf3ba0f1df95836541b7c1dcd0c63cef2b71fa1a88a",
     "data/atlas-ttps.json": "d296c1d3e71807c9279b731f047e57796e85137f186586743a8cdad214b408f9",
-    "data/attack-techniques.json": "09bd917fe13c23d8a33f6a04978f5c89ea56ee53c8002ad357bd89cfb9ba8981",
+    "data/attack-techniques.json": "49b6010b317edd219def135171ea8f3b1bbf1e00e9c5a08bf7237215ff54e2c3",
     "data/cve-catalog.json": "a09c83af3f9679a7ea73935726a1ff9de2cab94b4ab6321fc017fc147747d7c3",
     "data/cwe-catalog.json": "c56e74b8c9290583b1d6fdd21b54bd65a254c58890c5f683379788ca7b080e9d",
     "data/d3fend-catalog.json": "4271102f8c38999444bcd981c1cf5feb4ad09f8c0b1d9b79df3f1a82f4fb50f0",

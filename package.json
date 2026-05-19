@@ -1,7 +1,7 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.13.20",
-  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, real XML parser + canonical-form diff comparison + content-pattern regression detection, Ed25519-signed.",
+  "version": "0.13.21",
+  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
   "keywords": [
     "ai-security",
     "ai-skills",
@@ -128,7 +128,8 @@
     "refresh:from-cache": "node lib/refresh-external.js --from-cache .cache/upstream",
     "refresh:swarm": "node lib/refresh-external.js --swarm",
     "prefetch": "node lib/prefetch.js",
-    "prefetch:dry": "node lib/prefetch.js --no-network"
+    "prefetch:dry": "node lib/prefetch.js --no-network",
+    "audit-catalog-gap-budget": "node scripts/check-catalog-gap-budget.js"
   },
   "dependencies": {},
   "devDependencies": {}

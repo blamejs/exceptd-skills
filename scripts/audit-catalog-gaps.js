@@ -278,13 +278,42 @@ function emitPretty(report) {
     const pct = r.entries === 0 ? 0 : ((r.auto_imported / r.entries) * 100).toFixed(1);
     lines.push(`  ${r.catalog.padEnd(28)} ${r.auto_imported} / ${r.entries}  (${pct}%)`);
   }
+  // v0.13.21 extended findings sections.
+  const ext = report.extended_findings || {};
+  const extClasses = Object.keys(ext).sort();
+  if (extClasses.length > 0) {
+    lines.push("\nExtended findings (v0.13.21):");
+    for (const cls of extClasses) {
+      const arr = ext[cls];
+      lines.push(`\n  [${cls}] ${arr.length} finding(s)`);
+      for (const f of arr.slice(0, 5)) {
+        const id = f.id || f.target_id || "(no id)";
+        const ctx = f.catalog ? `${f.catalog} ${id}` : id;
+        lines.push(`    ${ctx} — ${f.reason || f.rule || "(no reason)"}`);
+      }
+      if (arr.length > 5) lines.push(`    ... +${arr.length - 5} more`);
+    }
+  }
   return lines.join("\n");
 }
 
-// Valid finding-class names for the `--class` filter. The pretty + JSON
-// emitters always include every section, but counts and strict-exit
-// gating respect the active filter.
-const VALID_CLASSES = new Set(["missing-context", "dangling-ref", "draft-debt"]);
+// Valid finding-class names for the `--class` filter. v0.13.21 added 7
+// extended detection classes for gaps the v0.13.19 detector did not
+// surface (content-quality / temporal-staleness / logical-consistency /
+// cross-ref-completeness / schema-evolution / operator-action-sla /
+// unused-orphan). Each is implemented in lib/gap-detectors.js.
+const VALID_CLASSES = new Set([
+  "missing-context", "dangling-ref", "draft-debt",
+  "content-quality", "temporal-staleness", "logical-consistency",
+  "cross-ref-completeness", "schema-evolution", "operator-action-sla",
+  "unused-orphan"
+]);
+const EXTENDED_CLASS_NAMES = new Set([
+  "content-quality", "temporal-staleness", "logical-consistency",
+  "cross-ref-completeness", "schema-evolution", "operator-action-sla",
+  "unused-orphan"
+]);
+const EXTENDED_DETECTORS = require("../lib/gap-detectors.js");
 
 function main() {
   const opts = parseArgs(process.argv);
@@ -309,27 +338,47 @@ function main() {
   for (const k of Object.keys(SPEC)) if (!allLoaded[k]) allLoaded[k] = loadCatalog(SPEC[k].file);
   const dangling = opts.catalog && opts.catalog !== "cve-catalog" ? [] : inspectRefs(allLoaded);
 
+  // v0.13.21 extended detectors. --catalog scoping mutes them (they're
+  // cross-catalog by nature); --class scoping filters down to one.
+  const extendedFindings = opts.catalog
+    ? []
+    : EXTENDED_DETECTORS.runAllDetectors(allLoaded, {});
+
   // Apply the --class filter before counts + strict-exit gating.
-  // Missing-context findings on per_catalog and dangling_refs are the
-  // two policed classes; draft-debt is informational-only (the audit
-  // surfaces draft-debt but it does not fail strict mode by design).
-  const filteredPerCatalog = opts.klass === "dangling-ref" || opts.klass === "draft-debt"
+  const filteredPerCatalog = (opts.klass === "dangling-ref" || opts.klass === "draft-debt" ||
+                              EXTENDED_CLASS_NAMES.has(opts.klass))
     ? perCatalog.map((r) => ({ ...r, missing_context: [] }))
     : perCatalog;
-  const filteredDangling = opts.klass === "missing-context" || opts.klass === "draft-debt"
+  const filteredDangling = (opts.klass === "missing-context" || opts.klass === "draft-debt" ||
+                            EXTENDED_CLASS_NAMES.has(opts.klass))
     ? []
     : dangling;
+  const filteredExtended = opts.klass
+    ? (EXTENDED_CLASS_NAMES.has(opts.klass)
+        ? extendedFindings.filter((f) => f.class === opts.klass)
+        : [])
+    : extendedFindings;
+
+  const extendedByClass = {};
+  for (const f of filteredExtended) {
+    if (!extendedByClass[f.class]) extendedByClass[f.class] = [];
+    extendedByClass[f.class].push(f);
+  }
 
   const report = {
     generated_at: TODAY,
     class_filter: opts.klass || null,
     per_catalog: filteredPerCatalog,
     dangling_refs: filteredDangling,
+    extended_findings: extendedByClass,
     totals: {
       catalogs: filteredPerCatalog.length,
       entries: filteredPerCatalog.reduce((n, r) => n + r.entries, 0),
       missing_context: filteredPerCatalog.reduce((n, r) => n + r.missing_context.length, 0),
-      dangling_refs: filteredDangling.length
+      dangling_refs: filteredDangling.length,
+      extended: Object.fromEntries(
+        Object.entries(extendedByClass).map(([cls, arr]) => [cls, arr.length])
+      )
     }
   };
   if (opts.pretty) {
@@ -337,7 +386,10 @@ function main() {
   } else {
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   }
-  if (opts.strict && (report.totals.missing_context > 0 || report.totals.dangling_refs > 0)) {
+  const extendedTotal = Object.values(report.totals.extended || {}).reduce((n, v) => n + v, 0);
+  if (opts.strict && (report.totals.missing_context > 0 ||
+                      report.totals.dangling_refs > 0 ||
+                      extendedTotal > 0)) {
     process.exitCode = 1;
   }
 }
