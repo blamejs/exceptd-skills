@@ -160,7 +160,15 @@ function fileDiff(opts, file, cwd, ignoreWs, resolvedBase) {
 }
 
 function fileAtRef(file, ref, cwd) {
-  const r = childProc.spawnSync("git", ["show", ref + ":" + file], { cwd, encoding: "utf8" });
+  // v0.13.18: bumped maxBuffer from the Node default (1 MiB on Windows)
+  // to 64 MiB so large catalog files (data/rfc-references.json is ~3 MiB;
+  // data/cve-catalog.json is ~600 KiB) don't ENOBUFS-truncate. A null
+  // return is the documented "missing" sentinel — silent truncation
+  // would make every entry in the live file appear as a fresh add and
+  // generate hundreds of bogus diff-coverage findings.
+  const r = childProc.spawnSync("git", ["show", ref + ":" + file], {
+    cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024
+  });
   if (r.status !== 0) return null;
   return r.stdout;
 }
@@ -328,6 +336,16 @@ function extractCveIocChanges(beforeStr, afterStr) {
   const ids = new Set([...Object.keys(before), ...Object.keys(after)]);
   for (const id of ids) {
     if (!/^CVE-\d{4}-\d+/.test(id)) continue;
+    // v0.13.18: skip bulk-imported entries. Auto-imported rows carry stub
+    // IoCs by design ("Refer to vendor advisory for IOC list — bulk-
+    // imported KEV entry, IOCs not extracted at intake time."); their
+    // per-entry IoCs are not the operator-curated surface the diff-
+    // coverage gate is designed to police. When an operator later
+    // curates the row, the next run will see the diff against the
+    // curated form and route through the normal coverage path.
+    const beforeAuto = !!(before[id] && before[id]._auto_imported);
+    const afterAuto  = !!(after[id]  && after[id]._auto_imported);
+    if (beforeAuto && afterAuto) continue;
     const b = JSON.stringify((before[id] && before[id].iocs) || null);
     const a = JSON.stringify((after[id] && after[id].iocs) || null);
     if (b !== a) changed.add(id);
