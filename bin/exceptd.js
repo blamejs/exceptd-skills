@@ -1624,7 +1624,7 @@ function buildSkillToPlaybookHint(runner, wanted) {
     if (matches.length > 0) {
       return `That is a SKILL (read-only knowledge unit), not a PLAYBOOK (executable). Skill "${wanted}" is loaded by playbook${matches.length === 1 ? "" : "s"}: ${matches.join(", ")}. ` +
              `To execute: \`exceptd run ${matches[0]}\`. To read the skill: \`exceptd skill ${wanted}\`. ` +
-             `Tip: \`exceptd brief --all\` lists all 13 playbooks; \`exceptd watch\` lists skills.`;
+             `Tip: \`exceptd brief --all\` lists all ${ids.length} playbooks; \`exceptd watch\` lists skills.`;
     }
     // No matching skill either — provide nearest-playbook suggestions.
     // v0.12.9 (P3 #9 from production smoke): substring fallback first (cheap),
@@ -1638,7 +1638,7 @@ function buildSkillToPlaybookHint(runner, wanted) {
     if (near.length > 0) {
       return `Did you mean: ${near.join(", ")}? Run \`exceptd brief --all\` for the full list.`;
     }
-    return `Run \`exceptd brief --all\` to list the 13 playbooks.`;
+    return `Run \`exceptd brief --all\` to list the ${ids.length} playbooks.`;
   } catch { return null; }
 }
 
@@ -2928,6 +2928,12 @@ function cmdRun(runner, args, runOpts, pretty) {
       result.prior_session_id = persistResult.prior_session_id;
       result.overwrote_at = persistResult.overwrote_at;
     }
+    // v0.13.23 — surface the attestation file path so the human renderer
+    // can echo it and the next-step guidance (attest verify <sid>) lands
+    // on an artifact the operator can actually find.
+    if (persistResult.attestation_path) {
+      result.attestation_path = persistResult.attestation_path;
+    }
   }
 
   if (result && result.ok === false) {
@@ -3151,6 +3157,21 @@ function cmdRun(runner, args, runOpts, pretty) {
     const top = rwep?.threshold?.escalate ?? "n/a";
     const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
     lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
+    // v0.13.23 — surface evidence_completeness on the verdict line so
+    // operators distinguish "ran every indicator and found nothing"
+    // (evidence=complete) from "couldn't evaluate, no evidence supplied"
+    // (evidence=missing). Pre-v0.13.23 the two states printed identically
+    // — a not_detected run with zero evidence looked the same as one
+    // with a fully-populated submission.
+    if (obj.evidence_completeness && obj.indicators_known != null) {
+      const ev = obj.evidence_completeness;
+      const ke = obj.indicators_evaluated ?? 0;
+      const kn = obj.indicators_known;
+      lines.push(`  evidence: ${ev}  (${ke}/${kn} indicators evaluated)`);
+      if (ev === "missing" || ev === "partial") {
+        lines.push(`  → next: exceptd lint ${obj.playbook_id} -    # paste {} on stdin, see exact JSON paths to populate`);
+      }
+    }
     // F11: surface --diff-from-latest verdict in the human renderer so
     // operators see whether the run drifted from the previous attestation
     // without adding --json. One summary line follows the classification.
@@ -3189,9 +3210,20 @@ function cmdRun(runner, args, runOpts, pretty) {
       lines.push(`\nIndicators that fired (${hits.length}):`);
       for (const i of hits.slice(0, 8)) lines.push(`  ${i.id}  (${i.confidence}${i.deterministic ? "/deterministic" : ""})`);
     }
+    // v0.13.23 — selected_remediation is informational on non-detect
+    // runs (validate() always picks the highest-priority remediation
+    // path as a "what would you do IF you found something" anchor).
+    // Rendering it as "Recommended remediation:" on a not_detected /
+    // inconclusive verdict misleads operators into thinking action is
+    // required. Tag it conditionally so the operator-facing prose
+    // matches the verdict.
     const rem = obj.phases?.validate?.selected_remediation;
     if (rem) {
-      lines.push(`\nRecommended remediation: ${rem.id} (priority ${rem.priority})`);
+      if (cls === "detected") {
+        lines.push(`\nRecommended remediation: ${rem.id} (priority ${rem.priority})`);
+      } else {
+        lines.push(`\nRemediation path (informational — verdict=${cls}, no action required now): ${rem.id} (priority ${rem.priority})`);
+      }
       lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
     }
     const notif = (obj.phases?.close?.notification_actions || []).filter(n => n.clock_started_at);
@@ -3201,6 +3233,18 @@ function cmdRun(runner, args, runOpts, pretty) {
     }
     const feeds = obj.phases?.close?.feeds_into || [];
     if (feeds.length) lines.push(`\nNext playbooks suggested: ${feeds.join(", ")}`);
+
+    // v0.13.23 — tell the operator WHERE the attestation went and HOW
+    // to verify/diff it. Pre-v0.13.23 a successful run silently wrote
+    // ~/.exceptd/attestations/<repo>@<branch>/<sid>/attestation.json
+    // with zero indication to the operator. The next-time-they-asked-
+    // about-this-run lookup ("attest verify <sid>") then failed with
+    // "no session dir" because they were in a different cwd.
+    if (obj.attestation_path) {
+      lines.push(`\nAttestation written: ${obj.attestation_path}`);
+      lines.push(`  exceptd attest verify ${obj.session_id}     # tamper check`);
+      lines.push(`  exceptd attest diff ${obj.session_id}       # vs. most-recent prior for this playbook`);
+    }
     const issues = obj.preflight_issues || [];
     if (issues.length) {
       lines.push(`\nPreflight warnings (${issues.length}):`);
@@ -3757,7 +3801,12 @@ function persistAttestation(args) {
 
     try {
       writeAttestation(null, null, "wx");
-      return { ok: true, prior_session_id: null, overwrote_at: null };
+      // v0.13.23 — surface the absolute path so the caller can echo it
+      // in the human renderer. Pre-v0.13.23 the attestation was silently
+      // written to ~/.exceptd/attestations/<repo>@<branch>/<session-id>/
+      // and the operator had no way to find it short of grepping the
+      // filesystem.
+      return { ok: true, prior_session_id: null, overwrote_at: null, attestation_path: filePath };
     } catch (eExcl) {
       if (eExcl.code !== "EEXIST") throw eExcl;
       // Slot already taken — read prior to chain audit trail, then decide.
@@ -3874,6 +3923,7 @@ function persistAttestation(args) {
           ok: true,
           prior_session_id: lockedPrior ? sessionId : null,
           overwrote_at: lockedPrior ? lockedPrior.captured_at : null,
+          attestation_path: filePath,
         };
       } finally {
         try { fs.unlinkSync(lockPath); } catch {}
@@ -6991,6 +7041,40 @@ function cmdCi(runner, args, runOpts, pretty) {
       if (s.fail_reasons && s.fail_reasons.length) {
         lines.push(`\nFail reasons:`);
         for (const r of s.fail_reasons) lines.push(`  - ${r}`);
+      }
+
+      // v0.13.23 — Next-step guidance. An operator (or an AI walking the
+      // workflow cold) reading the ci output should never have to ask
+      // "what do I do now?" The verdict dictates the next move:
+      //   BLOCKED        → operator must supply evidence asserting the
+      //                    halted preconditions; `exceptd lint <pb> -`
+      //                    emits the exact JSON paths to fill in.
+      //   NO_EVIDENCE    → no --evidence was supplied and every playbook
+      //                    returned inconclusive; same lint -> run loop.
+      //   FAIL/detected  → look at the matched_cves + recommended
+      //                    remediation in the per-playbook results.
+      //   CLOCK_STARTED  → notification clock running; see deadline above.
+      //   PASS           → nothing to do.
+      const blockedRows = (obj.results || []).filter(r => r && r.ok === false);
+      const lintCmd = (id) => `  exceptd lint ${id} -                          # paste {} on stdin, get exact JSON paths`;
+      if (s.verdict === "BLOCKED" && blockedRows.length) {
+        lines.push(`\nNext steps (unblock the ${blockedRows.length} halted playbook(s)):`);
+        for (const row of blockedRows.slice(0, 4)) {
+          lines.push(lintCmd(row.playbook_id || "?"));
+        }
+        lines.push(`  exceptd run <playbook> --evidence <file>     # re-run after filling in evidence`);
+      } else if (s.verdict === "NO_EVIDENCE") {
+        const firstId = (obj.results[0] && obj.results[0].playbook_id) || (obj.playbooks_run[0]) || "<playbook>";
+        lines.push(`\nNext steps (every playbook ran inconclusive — no evidence supplied):`);
+        lines.push(lintCmd(firstId));
+        lines.push(`  exceptd ci --scope <type> --evidence-dir <dir>  # gate again with real submissions`);
+      } else if (s.verdict === "FAIL" && s.detected > 0) {
+        lines.push(`\nNext steps (review the ${s.detected} detected finding(s)):`);
+        lines.push(`  exceptd run <playbook> --format markdown    # operator-readable digest`);
+        lines.push(`  exceptd run <playbook> --format csaf-2.0    # advisory bundle for downstream`);
+      } else if (s.verdict === "CLOCK_STARTED") {
+        lines.push(`\nNext steps (jurisdiction clock running — notification deadlines above):`);
+        lines.push(`  exceptd run <playbook> --format csaf-2.0    # draft the operator-of-record advisory`);
       }
 
       lines.push(`\nFull structured result: --json (or --pretty for indented JSON).`);
