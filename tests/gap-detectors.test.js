@@ -265,3 +265,41 @@ test("daysSince computes day-delta from ISO-8601 dates", () => {
   assert.equal(D.daysSince("not-a-date", now), null);
   assert.equal(D.daysSince(null, now), null);
 });
+
+test("REQUIRED_SINCE: every entry has a since-version + check predicate", () => {
+  // Pins the schema-evolution table shape — adding a new
+  // required-since-version field needs the same three properties
+  // (field / since / check) so the schema-evolution detector
+  // processes it correctly.
+  for (const [catalog, rules] of Object.entries(D.REQUIRED_SINCE)) {
+    assert.ok(Array.isArray(rules), `REQUIRED_SINCE.${catalog} must be an array`);
+    for (const r of rules) {
+      assert.ok(r.field, `REQUIRED_SINCE.${catalog} rule must declare a field name`);
+      assert.match(r.since, /^\d+\.\d+\.\d+$/,
+        `REQUIRED_SINCE.${catalog}.${r.field}.since must be a semver string`);
+      assert.equal(typeof r.check, "function",
+        `REQUIRED_SINCE.${catalog}.${r.field}.check must be a predicate function`);
+    }
+  }
+});
+
+test("PLACEHOLDER_SENTINELS: every pattern is a regex and matches its canonical example", () => {
+  // Pins the sentinel set — each regex must match the example that
+  // motivated adding it, so a future operator who adds a sentinel can
+  // immediately verify it fires on the right input.
+  const examples = [
+    "Pending operator curation",
+    "Refer to vendor advisory for IOC list",
+    "bulk-imported KEV entry, IOCs not extracted",
+    "TBD",
+    "TKTK",
+    "Coming soon",
+    "[]",
+    "placeholder"
+  ];
+  for (const re of D.PLACEHOLDER_SENTINELS) {
+    assert.ok(re instanceof RegExp, "every PLACEHOLDER_SENTINELS entry must be a regex");
+    const matched = examples.some((ex) => re.test(ex));
+    assert.ok(matched, `regex ${re} must match at least one canonical example string`);
+  }
+});
