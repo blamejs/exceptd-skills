@@ -6814,6 +6814,46 @@ function cmdCi(runner, args, runOpts, pretty) {
     clock_started_reasons: clockStartedReasons,
   };
 
+  // v0.13.22 B5: Each `run()` call independently surfaces session-level
+  // runtime conditions (e.g. bundle_publisher_unclaimed) into its own
+  // phases.analyze.runtime_errors. On a ci run that spans 9 playbooks, the
+  // operator saw the same warning 9 times. Dedupe across results by
+  // (kind, reason) so a session-level condition surfaces once at the ci
+  // summary level — operators read one row, not N copies.
+  const warningSeen = new Set();
+  const runtimeWarningsDedup = [];
+  for (const r of results) {
+    const errs = r?.phases?.analyze?.runtime_errors || [];
+    for (const e of errs) {
+      const key = `${e.kind || ""}::${e.reason || ""}`;
+      if (warningSeen.has(key)) continue;
+      warningSeen.add(key);
+      runtimeWarningsDedup.push({
+        kind: e.kind || null,
+        reason: e.reason || null,
+        remediation: e.remediation || null,
+      });
+    }
+  }
+  summary.runtime_warnings = runtimeWarningsDedup;
+  summary.runtime_warnings_count = runtimeWarningsDedup.length;
+
+  // v0.13.22 B8 (transparency): document why each playbook was selected.
+  // --scope <s> always adds cross-cutting; --scope code on a repo with a
+  // lockfile also adds sbom. The selection rule was buried in code; surface
+  // it in the summary so operators reading the JSON / pretty trailer can
+  // see what was scoped vs. auto-included.
+  if (scope) {
+    summary.scope_request = scope;
+    summary.scope_inclusion_rules = [
+      `--scope ${scope} selected playbooks with _meta.scope === "${scope}"`,
+      `cross-cutting playbooks are always added (apply to every scope by design)`,
+    ];
+    if (scope === "code") {
+      summary.scope_inclusion_rules.push("--scope code also adds sbom when the cwd is a git repo with a lockfile");
+    }
+  }
+
   // v0.11.4 (#72): ci --format <fmt> previously emitted the full bundle
   // regardless of flag. Now honors the same shortcuts as `run --format`:
   //   summary  → one-line JSON of session + verdict + counts
@@ -6856,7 +6896,106 @@ function cmdCi(runner, args, runOpts, pretty) {
     );
     return;
   } else {
-    emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty);
+    // v0.13.22 B3+B4+B6: human renderer for `ci` default output. Pre-0.13.22
+    // the only output was indented JSON (or compact JSON when not TTY) —
+    // operators running `exceptd ci` at the terminal saw 1000+ lines of JSON
+    // for a 9-playbook scan and had to grep for the verdict by hand.
+    //
+    // Renderer shape (one screen for a typical 9-playbook scope):
+    //   - one verdict line (PASS/FAIL/BLOCKED + counts)
+    //   - per-playbook row: id | verdict | rwep | evidence | top_finding
+    //   - deduped session-level runtime warnings (B5)
+    //   - scope inclusion rules (B8 transparency) when --scope was used
+    //   - footer pointing at --json / --format for the structured body
+    emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty, (obj) => {
+      const s = obj.summary;
+      const lines = [];
+      lines.push(`ci: ${obj.playbooks_run.length} playbook(s)  session-id: ${obj.session_id}`);
+      const verdictIcon = s.verdict === "PASS"
+        ? "[ok]"
+        : s.verdict === "BLOCKED"
+          ? "[!! BLOCKED]"
+          : s.verdict === "CLOCK_STARTED"
+            ? "[!! CLOCK]"
+            : s.verdict === "NO_EVIDENCE"
+              ? "[i  NO_EVIDENCE]"
+              : "[!! FAIL]";
+      lines.push(`\n${verdictIcon}  verdict=${s.verdict}  detected=${s.detected}  inconclusive=${s.inconclusive}  clean=${s.not_detected}  blocked=${s.blocked}  max_rwep=${s.max_rwep_observed}`);
+
+      // Per-playbook table.
+      const rows = (obj.results || []).map(r => {
+        if (r && r.ok === false) {
+          return {
+            id: r.playbook_id || "?",
+            verdict: "blocked",
+            rwep: "-",
+            evidence: r.evidence_completeness || "not-evaluated",
+            top: r.blocked_by || r.reason || r.error || "",
+          };
+        }
+        const cls = r?.phases?.detect?.classification || r?.verdict || "?";
+        return {
+          id: r.playbook_id || "?",
+          verdict: cls,
+          rwep: (r?.rwep_score != null) ? String(r.rwep_score) : "-",
+          evidence: r?.evidence_completeness || "unknown",
+          top: r?.top_finding || "",
+        };
+      });
+      const wId = Math.max(8, ...rows.map(r => r.id.length));
+      const wV = Math.max(8, ...rows.map(r => r.verdict.length));
+      const wR = Math.max(4, ...rows.map(r => r.rwep.length));
+      const wE = Math.max(8, ...rows.map(r => r.evidence.length));
+      const pad = (s, w) => (s + " ".repeat(w)).slice(0, w);
+      lines.push("");
+      lines.push(`  ${pad("playbook", wId)}  ${pad("verdict", wV)}  ${pad("rwep", wR)}  ${pad("evidence", wE)}  finding`);
+      lines.push(`  ${"-".repeat(wId)}  ${"-".repeat(wV)}  ${"-".repeat(wR)}  ${"-".repeat(wE)}  -------`);
+      for (const row of rows) {
+        const finding = row.top.length > 80 ? row.top.slice(0, 77) + "..." : row.top;
+        lines.push(`  ${pad(row.id, wId)}  ${pad(row.verdict, wV)}  ${pad(row.rwep, wR)}  ${pad(row.evidence, wE)}  ${finding}`);
+      }
+
+      // Session-level deduped runtime warnings (B5).
+      if (s.runtime_warnings && s.runtime_warnings.length) {
+        lines.push(`\nSession warnings (${s.runtime_warnings_count}):`);
+        for (const w of s.runtime_warnings) {
+          const reason = (w.reason || "").length > 200 ? (w.reason || "").slice(0, 197) + "..." : (w.reason || "");
+          lines.push(`  [${w.kind || "warning"}] ${reason}`);
+          if (w.remediation) lines.push(`    → ${w.remediation}`);
+        }
+      }
+
+      // Scope inclusion (B8 transparency).
+      if (s.scope_inclusion_rules && s.scope_inclusion_rules.length) {
+        lines.push(`\nScope selection (${s.scope_request}):`);
+        for (const rule of s.scope_inclusion_rules) lines.push(`  - ${rule}`);
+      }
+
+      // Jurisdiction clocks.
+      if (s.jurisdiction_clocks_started > 0) {
+        lines.push(`\nJurisdiction clocks started: ${s.jurisdiction_clocks_started}`);
+        for (const n of (s.jurisdiction_clock_rollup || []).slice(0, 5)) {
+          lines.push(`  ${n.jurisdiction || "?"}/${n.regulation || "?"} → deadline ${n.deadline || "?"}`);
+        }
+      }
+
+      // Framework gap rollup.
+      if (s.framework_gap_count > 0) {
+        lines.push(`\nFramework gaps (${s.framework_gap_count}):`);
+        for (const g of (s.framework_gap_rollup || []).slice(0, 5)) {
+          lines.push(`  ${g.framework || "?"} :: ${g.claimed_control || "?"}  (${g.playbooks.length} playbook(s))`);
+        }
+      }
+
+      // Fail reasons.
+      if (s.fail_reasons && s.fail_reasons.length) {
+        lines.push(`\nFail reasons:`);
+        for (const r of s.fail_reasons) lines.push(`  - ${r}`);
+      }
+
+      lines.push(`\nFull structured result: --json (or --pretty for indented JSON).`);
+      return lines.join("\n");
+    });
   }
   // v0.11.14 (#134): exit-code matrix with BLOCKED before FAIL.
   // Pre-0.11.14 the `if (fail)` check fired first for blocked runs (because

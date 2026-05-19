@@ -38,14 +38,15 @@ function tryJson(s) {
 }
 
 test('ci <playbook> runs exactly the named playbook, not the cwd-autodetected set', () => {
-  const r = cli(['ci', 'kernel']);
+  // v0.13.22 B3+B4: ci default uses human renderer; pass --json for shape tests.
+  const r = cli(['ci', 'kernel', '--json']);
   const body = tryJson(r.stdout);
   assert.ok(body, `ci kernel must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
   assert.deepEqual(body.playbooks_run, ['kernel'], 'ci kernel must run exactly [kernel] and not the autodetected set');
 });
 
 test('ci <multiple-playbooks> runs every named playbook', () => {
-  const r = cli(['ci', 'kernel', 'cred-stores']);
+  const r = cli(['ci', 'kernel', 'cred-stores', '--json']);
   const body = tryJson(r.stdout);
   assert.ok(body, `ci kernel cred-stores must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
   assert.deepEqual(body.playbooks_run.sort(), ['cred-stores', 'kernel']);
@@ -85,7 +86,7 @@ test('ci <playbook> + --scope/--all/--required refuses as ambiguous (codex P1 v0
 });
 
 test('ci --required <list> still works (existing contract preserved)', () => {
-  const r = cli(['ci', '--required', 'kernel,cred-stores']);
+  const r = cli(['ci', '--required', 'kernel,cred-stores', '--json']);
   const body = tryJson(r.stdout);
   assert.ok(body, `ci --required must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
   assert.deepEqual(body.playbooks_run.sort(), ['cred-stores', 'kernel']);
