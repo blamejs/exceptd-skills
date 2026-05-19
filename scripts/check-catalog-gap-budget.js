@@ -64,6 +64,28 @@ function main() {
   const byClass = {};
   for (const f of all) byClass[f.class] = (byClass[f.class] || 0) + 1;
   const regressions = [];
+
+  // Fail-closed contract (codex P2 PR #61): every class actually
+  // emitted by the detector must have a budget entry. If a future
+  // 8th detector lands without a budget update, the gate fires with
+  // an unbudgeted-class error instead of silently passing.
+  const unbudgeted = [];
+  for (const cls of Object.keys(byClass)) {
+    if (!(cls in BUDGET)) {
+      unbudgeted.push({ class: cls, count: byClass[cls] });
+    }
+  }
+  // Inverse check: every class declared by the detector module's
+  // canonical class list must appear in BUDGET (covers the case where
+  // a new class produces zero findings on this run but still needs
+  // an explicit budget so a future regression caps fail-closed).
+  const missingBudget = [];
+  if (Array.isArray(D.DETECTOR_CLASSES)) {
+    for (const cls of D.DETECTOR_CLASSES) {
+      if (!(cls in BUDGET)) missingBudget.push(cls);
+    }
+  }
+
   for (const cls of Object.keys(BUDGET)) {
     const actual = byClass[cls] || 0;
     const allowed = BUDGET[cls];
@@ -79,6 +101,22 @@ function main() {
   }).join("\n");
   console.log("[check-catalog-gap-budget] extended detection classes:");
   console.log(summary);
+
+  if (unbudgeted.length > 0) {
+    console.error("\n[check-catalog-gap-budget] UNBUDGETED detector classes — fail-closed:");
+    for (const u of unbudgeted) {
+      console.error(`  ${u.class}: ${u.count} finding(s), no BUDGET entry`);
+    }
+    console.error("Add an explicit budget entry in both:");
+    console.error("  scripts/check-catalog-gap-budget.js");
+    console.error("  tests/shipped-catalog-integrity.test.js");
+    process.exit(1);
+  }
+  if (missingBudget.length > 0) {
+    console.error("\n[check-catalog-gap-budget] BUDGET missing entries for declared classes:");
+    for (const c of missingBudget) console.error(`  ${c}: declared by lib/gap-detectors.js DETECTOR_CLASSES, no BUDGET entry`);
+    process.exit(1);
+  }
   if (regressions.length > 0) {
     console.error("\n[check-catalog-gap-budget] REGRESSION beyond budget:");
     for (const r of regressions) {
@@ -89,7 +127,7 @@ function main() {
     console.error("  tests/shipped-catalog-integrity.test.js");
     process.exit(1);
   }
-  console.log("[check-catalog-gap-budget] all classes within budget.");
+  console.log("[check-catalog-gap-budget] all classes within budget; every class is budgeted.");
 }
 
 main();
