@@ -46,6 +46,16 @@ test("getAllPins exposes the full pin surface", () => {
   }
 });
 
+test("getAtlasReleaseDate + getAttackVersionDate match the underlying _meta blocks", () => {
+  // Pinning the per-field accessors so downstream consumers don't have
+  // to call getAllPins() just to grab a release date.
+  const all = PINS.getAllPins();
+  assert.equal(PINS.getAtlasReleaseDate(), all.atlas_release_date,
+    "getAtlasReleaseDate must return the same value as getAllPins().atlas_release_date");
+  assert.equal(PINS.getAttackVersionDate(), all.attack_version_date,
+    "getAttackVersionDate must return the same value as getAllPins().attack_version_date");
+});
+
 test("clearCache + reload picks up an in-process version change (hermetic refresh)", () => {
   // Simulates a refresh pulling a new ATLAS version mid-process. Real
   // operators run sign-all / refresh-sbom which reloads in a subshell;

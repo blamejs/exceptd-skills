@@ -141,6 +141,15 @@ test("parseFeed: empty input returns empty array, not undefined", () => {
   assert.deepEqual(T.parseFeed("<empty/>"), []);
 });
 
+test("stripHtml: strips HTML tags + collapses whitespace", () => {
+  // Public export — pinned so a future regression (e.g. switching to
+  // a different tag-stripping strategy that breaks the contract) fires.
+  assert.equal(T.stripHtml("<p>hello <b>bold</b>   world</p>"), "hello bold world");
+  assert.equal(T.stripHtml("plain text\nwith\nnewlines"), "plain text with newlines");
+  assert.equal(T.stripHtml(""), "");
+  assert.equal(T.stripHtml(null), "");
+});
+
 test("tokenize: streaming handlers fire in document order", () => {
   const events = [];
   T.tokenize("<a><b>text</b></a>", {
