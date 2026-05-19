@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.15 — 2026-05-18
+
+Doc currency for v0.13.14 — README + AGENTS now reflect the 12-feed intake.
+
+### Bugs
+
+**`README.md` + `AGENTS.md` no longer advertise 8 advisory feeds.** v0.13.14 expanded `lib/source-advisories.js#FEEDS` from 8 to 12 (added Microsoft Security Blog / Sysdig / Trail of Bits / Embrace the Red), but four prose lines and one CLI-help excerpt still claimed "8 primary-source advisory feeds" / "8 vendor and coordinated-disclosure feeds". All updated to reflect the 12-feed total, with the v0.13.14 additions named in the operator-facing copy. The daily threat-intake routine doc string in `AGENTS.md` likewise updated.
+
+### Internal
+
+- New regression test `tests/doc-feed-count-currency.test.js` greps `README.md` + `AGENTS.md` for `<N> (primary-source|vendor and coordinated-disclosure|advisory venues) feeds?` claims and asserts at least one claim per doc matches the live `FEEDS.length`. Adding a new feed without bumping the doc claim now fires in CI. Same pattern as `tests/doc-playbook-count-currency.test.js`.
+
 ## 0.13.14 — 2026-05-18
 
 DirtyDecrypt catalog entry + intake-pipeline coverage fix for the silent-kernel-patch + delayed-research-disclosure class.
