@@ -19,7 +19,7 @@
       "artifact": "data/attack-techniques.json",
       "path": "data/attack-techniques.json",
       "schema_version": "1.0.0",
-      "entry_count": 711
+      "entry_count": 805
     },
     {
       "date": "2026-05-19",
@@ -27,7 +27,7 @@
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 170
+      "entry_count": 171
     },
     {
       "date": "2026-05-19",

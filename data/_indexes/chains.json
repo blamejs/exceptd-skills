@@ -51120,5 +51120,19 @@
       "rfc_refs": []
     },
     "related_cves": []
+  },
+  "CWE-668": {
+    "name": "Exposure of Resource to Wrong Sphere",
+    "category": "Access Control",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
   }
 }

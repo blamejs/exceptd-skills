@@ -142,6 +142,7 @@
       "CVE-2025-29635",
       "CVE-2025-4008",
       "CVE-2025-53773",
+      "CVE-2025-55319",
       "CVE-2025-59689",
       "CVE-2026-22719",
       "MAL-2026-3083"
@@ -366,6 +367,7 @@
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-20045",
+      "CVE-2026-30615",
       "CVE-2026-33017",
       "CVE-2026-34197",
       "CVE-2026-6973",
@@ -470,6 +472,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2024-40635",
       "CVE-2025-31125",
       "CVE-2026-20133",
       "CVE-2026-20805"
@@ -569,6 +572,7 @@
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2021-43226",
+      "CVE-2024-21626",
       "CVE-2024-8068",
       "CVE-2025-48543",
       "CVE-2025-48572",
@@ -657,6 +661,7 @@
       "CVE-2020-10148",
       "CVE-2021-32030",
       "CVE-2023-27351",
+      "CVE-2024-1709",
       "CVE-2025-32975",
       "CVE-2025-3935",
       "CVE-2025-49706",
@@ -1129,6 +1134,8 @@
       "CVE-2025-27038",
       "CVE-2025-32701",
       "CVE-2025-32709",
+      "CVE-2025-43529",
+      "CVE-2025-49844",
       "CVE-2025-62221",
       "CVE-2026-2441",
       "CVE-2026-5281"
@@ -1278,6 +1285,7 @@
       "CVE-2025-53690",
       "CVE-2025-53770",
       "CVE-2025-59287",
+      "CVE-2025-68664",
       "CVE-2026-20131",
       "CVE-2026-20963"
     ],
@@ -1312,6 +1320,7 @@
       "CVE-2025-54313",
       "CVE-2025-59374",
       "CVE-2026-33634",
+      "CVE-2026-45321",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
@@ -1546,12 +1555,15 @@
       "CVE-2023-3519",
       "CVE-2024-21762",
       "CVE-2024-37079",
+      "CVE-2025-14174",
       "CVE-2025-14733",
       "CVE-2025-21042",
       "CVE-2025-21043",
       "CVE-2025-5419",
+      "CVE-2025-6965",
       "CVE-2025-9242",
       "CVE-2026-0300",
+      "CVE-2026-22778",
       "CVE-2026-3909",
       "CVE-2026-42945",
       "CVE-2026-43500",
@@ -1888,6 +1900,8 @@
     ],
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2026-30615",
+      "CVE-2026-45321",
       "MAL-2026-NODE-IPC-STEALER"
     ],
     "framework_controls_partially_addressing": [
@@ -1921,6 +1935,26 @@
       "supply-chain-integrity"
     ],
     "evidence_cves": [
+      "CVE-2025-0133",
+      "CVE-2025-10725",
+      "CVE-2025-1094",
+      "CVE-2025-14847",
+      "CVE-2025-21085",
+      "CVE-2025-22224",
+      "CVE-2025-22225",
+      "CVE-2025-22226",
+      "CVE-2025-24201",
+      "CVE-2025-38352",
+      "CVE-2025-43300",
+      "CVE-2025-53767",
+      "CVE-2025-55241",
+      "CVE-2025-59529",
+      "CVE-2025-8671",
+      "CVE-2026-7482",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-TANSTACK-MINI"
     ],
     "framework_controls_partially_addressing": [
@@ -2172,8 +2206,10 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2014-3931",
+      "CVE-2025-14174",
       "CVE-2025-31277",
       "CVE-2025-6543",
+      "CVE-2025-6965",
       "CVE-2025-7775",
       "CVE-2026-20700",
       "CVE-2026-3910"
@@ -2334,6 +2370,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2024-1709",
       "CVE-2025-2746",
       "CVE-2025-2747",
       "CVE-2025-34026",
@@ -2535,8 +2572,10 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-10585",
       "CVE-2025-13223",
       "CVE-2025-30397",
+      "CVE-2025-4919",
       "CVE-2025-6554",
       "CVE-2026-21519"
     ],
@@ -2672,7 +2711,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2025-32706"
+      "CVE-2025-32706",
+      "CVE-2026-22778"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import round 2."
@@ -4197,5 +4237,24 @@
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+  },
+  "CWE-668": {
+    "id": "CWE-668",
+    "name": "Exposure of Resource to Wrong Sphere",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "The product exposes a resource to the wrong control sphere, providing unintended actors with inappropriate access to the resource. Bulk-cited in container-escape CVEs (runc / CRI-O / containerd). MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/668.html.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2024-21626"
+    ],
+    "last_verified": "2026-05-19",
+    "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry."
   }
 }
