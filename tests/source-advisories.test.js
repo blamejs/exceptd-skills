@@ -143,7 +143,7 @@ test('ADVISORIES_SOURCE: name matches registry key + describes report-only contr
   assert.match(ADVISORIES_SOURCE.description, /ZDI/i);
 });
 
-test('FEEDS: exactly 12 feeds as of v0.13.14 — advisories + vendor security blogs', () => {
+test('FEEDS: exactly 15 feeds as of v0.13.17 — advisories + vendor security blogs + tech-press + researcher-handle tracker', () => {
   // v0.13.1 shipped 4 (qualys, rhsa, usn, zdi). v0.13.3 added 4 more
   // covering kernel.org commits (catches CVE-2026-46333-class at T+0),
   // oss-security coordinated disclosure, JFrog supply-chain research,
@@ -151,19 +151,25 @@ test('FEEDS: exactly 12 feeds as of v0.13.14 — advisories + vendor security bl
   // (microsoft-security-blog, sysdig-blog, trail-of-bits-blog,
   // embrace-the-red) to close the DirtyDecrypt-class intake gap where a
   // silent kernel patch + delayed-research-disclosure on a vendor blog
-  // fell through the advisory-only feed set.
-  assert.equal(FEEDS.length, 12);
+  // fell through the advisory-only feed set. v0.13.17 added 3 more
+  // (bleepingcomputer-security, thehackernews, nightmare-eclipse-github)
+  // to close the researcher-GitHub-drop class anchored by MiniPlasma /
+  // YellowKey / GreenPlasma / UnDefend.
+  assert.equal(FEEDS.length, 15);
   const names = FEEDS.map((f) => f.name).sort();
   assert.deepEqual(names, [
+    'bleepingcomputer-security',
     'cisa-current',
     'embrace-the-red',
     'jfrog',
     'kernel-org',
     'microsoft-security-blog',
+    'nightmare-eclipse-github',
     'oss-security',
     'qualys',
     'rhsa',
     'sysdig-blog',
+    'thehackernews',
     'trail-of-bits-blog',
     'usn',
     'zdi',
@@ -174,7 +180,7 @@ test('FEEDS: every feed declares a URL + kind + description', () => {
   for (const f of FEEDS) {
     assert.equal(typeof f.url, 'string');
     assert.match(f.url, /^https:\/\//);
-    assert.ok(['rss', 'csaf-index'].includes(f.kind), `feed ${f.name}: kind must be rss or csaf-index`);
+    assert.ok(['rss', 'csaf-index', 'github-events'].includes(f.kind), `feed ${f.name}: kind must be rss, csaf-index, or github-events`);
     assert.equal(typeof f.description, 'string');
     assert.ok(f.description.length > 0);
   }
@@ -208,6 +214,15 @@ test('fetchDiff: in fixture mode, surfaces CVE IDs not in catalog', async () => 
       'sysdig-blog': '<rss><channel></channel></rss>',
       'trail-of-bits-blog': '<rss><channel></channel></rss>',
       'embrace-the-red': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
+      // v0.13.17: 3 more — bleepingcomputer-security + thehackernews
+      // (tech-press RSS) and nightmare-eclipse-github (github-events JSON).
+      // Empty fixtures keep this dedup-anchor test isolated from the
+      // new feeds; tests/intake-nightmare-eclipse-coverage.test.js +
+      // tests/intake-handle-tracker.test.js exercise the v0.13.17
+      // intake-path end-to-end against the live fixture file.
+      'bleepingcomputer-security': '<rss><channel></channel></rss>',
+      'thehackernews': '<rss><channel></channel></rss>',
+      'nightmare-eclipse-github': '[]',
     },
   };
   const ctx = {
