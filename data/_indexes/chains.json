@@ -18722,5 +18722,19 @@
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS"
     ]
+  },
+  "CWE-264": {
+    "name": "Permissions, Privileges, and Access Controls (deprecated)",
+    "category": "Access Control",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
   }
 }

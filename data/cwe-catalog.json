@@ -1757,5 +1757,27 @@
     "real_requirement": "Output validation pipelines that match the action class of the output: tool-call outputs require argv allowlist plus capability scoping; code outputs require sandbox execution plus static analysis; natural-language outputs to users require PII and secret redaction. For high-impact actions, human-in-the-loop confirmation. Validation must be on the output channel, not (only) on the input.",
     "lag_notes": "NIST AI RMF MEASURE 2.5 (validity and reliability) treats AI output quality as a model-evaluation problem (accuracy metrics). It does not treat malicious output (jailbroken code, exfiltration, harmful content) as a CWE class requiring output-side controls.",
     "last_verified": "2026-05-11"
+  },
+  "CWE-264": {
+    "id": "CWE-264",
+    "name": "Permissions, Privileges, and Access Controls (deprecated)",
+    "abstraction": "Category",
+    "category": "Access Control",
+    "description": "Weaknesses involving the management of permissions, privileges, and access controls. Deprecated as a category in CWE 4.x in favor of more specific child weaknesses (CWE-269 Improper Privilege Management, CWE-285 Improper Authorization, CWE-732 Incorrect Permission Assignment for Critical Resource). Retained for legacy CVE mapping where the upstream MITRE record still cites CWE-264 verbatim.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-2000"
+    ],
+    "related_weaknesses": [
+      "CWE-269",
+      "CWE-285",
+      "CWE-732"
+    ],
+    "evidence_cves": [
+      "CVE-2026-31635"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.16 to back the DirtyDecrypt (CVE-2026-31635) cwe_refs entry. MITRE deprecated this as a category in CWE 4.x but the rxgk-kernel-LPE CWE assignment in the published advisory cited CWE-264 directly, so the local catalog must accept the legacy reference."
   }
 }
