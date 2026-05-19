@@ -6,7 +6,7 @@
  * Cycle 14 docs-accuracy fix (v0.12.34): operator-facing README.md +
  * ARCHITECTURE.md were pinning ATLAS v5.1.0 / ATT&CK v17 / 38 skills /
  * 28 D3FEND entries — nine releases after cycle 9 corrected the manifest
- * pin (v5.4.0 / v19.0). The CHANGELOG advertised v5.4.0 but the README's
+ * pin (v5.6.0 / v19.0). The CHANGELOG advertised v5.6.0 but the README's
  * badge still said v5.1.0; operators reading "which catalog version does
  * this skill set track" saw a 6-month-stale answer.
  *

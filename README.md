@@ -15,7 +15,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Skills](https://img.shields.io/badge/skills-42-d946ef)](#skill-inventory)
-[![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.4.0-d946ef)](https://atlas.mitre.org)
+[![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.6.0-d946ef)](https://atlas.mitre.org)
 [![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v19.0-d946ef)](https://attack.mitre.org)
 [![Ed25519-signed](https://img.shields.io/badge/skills-Ed25519--signed-2ea043)](AGENTS.md)
 [![Jurisdictions](https://img.shields.io/badge/jurisdictions-35-blue)](data/global-frameworks.json)
@@ -49,7 +49,7 @@ Assess Linux kernel local privilege escalation exposure. Covers Copy Fail (CVE-2
 ### AI-Specific Attack Surface
 
 **[ai-attack-surface](skills/ai-attack-surface/skill.md)**
-Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.4.0 with explicit gap flags. Covers prompt injection as enterprise RCE (CVE-2025-53773 CVSS 7.8, 85%+ bypass rate against SOTA defenses), MCP supply chain RCE (CVE-2026-30615, zero user interaction, 150M+ downloads), RAG exfiltration, model poisoning, AI-assisted exploit development (41% of 2025 zero-days), credential theft acceleration (160% increase).
+Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with explicit gap flags. Covers prompt injection as enterprise RCE (CVE-2025-53773 CVSS 7.8, 85%+ bypass rate against SOTA defenses), MCP supply chain RCE (CVE-2026-30615, zero user interaction, 150M+ downloads), RAG exfiltration, model poisoning, AI-assisted exploit development (41% of 2025 zero-days), credential theft acceleration (160% increase).
 
 **[mcp-agent-trust](skills/mcp-agent-trust/skill.md)**
 Enumerate MCP (Model Context Protocol) trust boundary failures. Covers tool allowlisting gaps, unsigned server manifests, prompt injection via tool responses, supply chain compromise. CVE-2026-30615 (Windsurf, zero-interaction RCE). Generates: tool allowlist policy, server signing requirements, bearer auth config, output sanitization requirements.
@@ -467,7 +467,7 @@ The `agents/` directory ships markdown role cards documenting authoring conventi
 All skills pull from `data/`. Cross-validated against canonical upstream sources via `exceptd refresh` / `exceptd doctor --cves` / `exceptd doctor --rfcs`.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
-- `atlas-ttps.json` — MITRE ATLAS v5.4.0 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
+- `atlas-ttps.json` — MITRE ATLAS v5.6.0 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
 - `framework-control-gaps.json` — Per-framework, per-control: what it was designed for vs. what it misses
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
 - `global-frameworks.json` — All major global compliance frameworks (35 jurisdictions) with control inventories and lag scores
@@ -483,7 +483,7 @@ All skills pull from `data/`. Cross-validated against canonical upstream sources
 
 **Compliance is not security.** A SOC 2 Type II report confirms that controls existed and operated effectively during the audit period. It says nothing about whether those controls are adequate for current attack patterns. When NIST 800-53 SI-2 says "apply security patches in a timely manner" and Copy Fail is a 732-byte deterministic root with a public PoC and no race condition, "timely" is the wrong frame entirely.
 
-**Framework lag is measured in months.** MITRE ATLAS v5.4.0 (February 2026) is the most current AI threat framework available. It still lags real exploitation by 3-6 months. NIST AI RMF lags by years. ISO 27001:2022 has no AI-specific controls. These skills explicitly flag every place where framework coverage ends and real attacker capability begins.
+**Framework lag is measured in months.** MITRE ATLAS v5.6.0 (May 2026) is the most current AI threat framework available. It still lags real exploitation by 3-6 months. NIST AI RMF lags by years. ISO 27001:2022 has no AI-specific controls. These skills explicitly flag every place where framework coverage ends and real attacker capability begins.
 
 **AI changed the exploit development timeline.** Copy Fail was discovered by an AI system in approximately one hour. 41% of 2025 zero-days involved AI-assisted reverse engineering on the attacker side. The time between vulnerability introduction and reliable exploitation is compressing faster than patch management processes can adapt. Risk scoring must reflect this.
 

@@ -1,0 +1,697 @@
+#!/usr/bin/env node
+"use strict";
+/**
+ * scripts/refresh-upstream-catalogs.js
+ *
+ * Unified entrypoint + library for refreshing the four canonical upstream
+ * catalogs from their official sources. Each refresher is idempotent and
+ * never overwrites operator-curated entries (rows that lack the
+ * `_auto_imported: true` flag are preserved verbatim).
+ *
+ *   rfc      ietf-rfc-index            data/rfc-references.json
+ *   attack   mitre-attack-stix         data/attack-techniques.json
+ *   atlas    mitre-atlas-stix          data/atlas-ttps.json
+ *   d3fend   mitre-d3fend-owl          data/d3fend-catalog.json
+ *
+ * CLI usage:
+ *
+ *   node scripts/refresh-upstream-catalogs.js                      # all four
+ *   node scripts/refresh-upstream-catalogs.js --source rfc         # one
+ *   node scripts/refresh-upstream-catalogs.js --source rfc,atlas   # two
+ *   node scripts/refresh-upstream-catalogs.js --dry-run            # report only
+ *   CAP=200 node scripts/refresh-upstream-catalogs.js --source attack
+ *
+ * Module usage (per-type wrappers under scripts/refresh-{rfc,attack,atlas,
+ * d3fend}.js import the corresponding refreshX function from this file):
+ *
+ *   const { refreshRfc } = require("./refresh-upstream-catalogs.js");
+ *   await refreshRfc({ dry: false });
+ *
+ * npm aliases (package.json scripts):
+ *   refresh-upstream-catalogs  runs all four
+ *   refresh-rfc-index          --source rfc
+ *   refresh-mitre-attack       --source attack
+ *   refresh-mitre-atlas        --source atlas
+ *   refresh-mitre-d3fend       --source d3fend
+ */
+
+const fs = require("fs");
+const https = require("https");
+const path = require("path");
+
+const ROOT = path.join(__dirname, "..");
+const TODAY = new Date().toISOString().slice(0, 10);
+
+function fetchUrl(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { "User-Agent": "exceptd-refresh-upstream-catalogs" } }, (r) => {
+      if (r.statusCode >= 300 && r.statusCode < 400) return fetchUrl(r.headers.location).then(resolve, reject);
+      let b = "";
+      r.on("data", (c) => (b += c));
+      r.on("end", () => resolve(b));
+    }).on("error", reject);
+  });
+}
+
+function loadCatalog(rel) {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, "data", rel), "utf8"));
+}
+
+function writeCatalog(rel, obj) {
+  fs.writeFileSync(path.join(ROOT, "data", rel), JSON.stringify(obj, null, 2) + "\n");
+}
+
+function getTag(blk, tag) {
+  const re = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
+  const m = blk.match(re);
+  return m ? m[1].trim() : null;
+}
+
+// ---------------- RFC ----------------
+
+const RFC_SRC = "https://www.rfc-editor.org/rfc-index.xml";
+const RFC_STATUS_MAP = {
+  "INTERNET STANDARD": "Internet Standard",
+  "PROPOSED STANDARD": "Proposed Standard",
+  "DRAFT STANDARD": "Draft Standard",
+  "BEST CURRENT PRACTICE": "Best Current Practice",
+  "INFORMATIONAL": "Informational",
+  "EXPERIMENTAL": "Experimental",
+  "HISTORIC": "Historic",
+  "UNKNOWN": "Unknown"
+};
+const RFC_MONTHS = {
+  January: "01", February: "02", March: "03", April: "04",
+  May: "05", June: "06", July: "07", August: "08",
+  September: "09", October: "10", November: "11", December: "12"
+};
+
+// Extract every doc-id reference inside a parent tag like
+// <obsoleted-by><doc-id>RFC123</doc-id><doc-id>RFC456</doc-id></obsoleted-by>.
+function getDocIdList(blk, parentTag) {
+  const re = new RegExp(`<${parentTag}>([\\s\\S]*?)<\\/${parentTag}>`);
+  const m = blk.match(re);
+  if (!m) return [];
+  const inner = m[1];
+  const ids = [];
+  const idRe = /<doc-id>([^<]+)<\/doc-id>/g;
+  let im;
+  while ((im = idRe.exec(inner)) !== null) {
+    ids.push(im[1].trim());
+  }
+  return ids;
+}
+
+// <abstract><p>line1</p><p>line2</p></abstract> → joined plain text.
+function getAbstract(blk) {
+  const m = blk.match(/<abstract>([\s\S]*?)<\/abstract>/);
+  if (!m) return null;
+  const inner = m[1];
+  const paras = [];
+  const pRe = /<p>([\s\S]*?)<\/p>/g;
+  let pm;
+  while ((pm = pRe.exec(inner)) !== null) {
+    paras.push(pm[1].replace(/\s+/g, " ").trim());
+  }
+  return paras.length ? paras.join(" ") : null;
+}
+
+// <keywords><kw>k1</kw><kw>k2</kw></keywords>
+function getKeywords(blk) {
+  const m = blk.match(/<keywords>([\s\S]*?)<\/keywords>/);
+  if (!m) return [];
+  const out = [];
+  const kRe = /<kw>([^<]+)<\/kw>/g;
+  let km;
+  while ((km = kRe.exec(m[1])) !== null) {
+    out.push(km[1].trim());
+  }
+  return out;
+}
+
+// <author><name>X</name><title>Editor</title><organization>Y</organization></author>
+function getAuthors(blk) {
+  const out = [];
+  const aRe = /<author>([\s\S]*?)<\/author>/g;
+  let am;
+  while ((am = aRe.exec(blk)) !== null) {
+    const inner = am[1];
+    const name = getTag(inner, "name");
+    const titleField = getTag(inner, "title");
+    const org = getTag(inner, "organization");
+    if (name) {
+      const role = titleField && titleField.toLowerCase() === "editor" ? " (Editor)" : "";
+      const aff = org ? `, ${org}` : "";
+      out.push(`${name}${role}${aff}`);
+    }
+  }
+  return out;
+}
+
+function parseRfcEntry(blk) {
+  const docId = getTag(blk, "doc-id");
+  if (!docId || !docId.startsWith("RFC")) return null;
+  const num = Number(docId.replace(/^RFC0*/, ""));
+  if (!Number.isFinite(num)) return null;
+  const title = (getTag(blk, "title") || "").replace(/\s+/g, " ").trim();
+  const status = (getTag(blk, "current-status") || "UNKNOWN").trim().toUpperCase();
+  const dateBlk = (blk.match(/<date>([\s\S]*?)<\/date>/) || [, ""])[1];
+  const month = RFC_MONTHS[(getTag(dateBlk, "month") || "").trim()] || null;
+  const year = (getTag(dateBlk, "year") || "").trim() || null;
+  const published = year && month ? `${year}-${month}` : (year || "unknown");
+  const hasErrata = /<errata-url>/.test(blk);
+  const obsoleted = /<obsoleted-by>/.test(blk);
+  // New context-search fields (v0.13.18+): the AI needs more than the
+  // title to locate an RFC by topic. abstract + keywords + area +
+  // wg_acronym + stream + authors + obsoletes/updates relationships are
+  // all present in the IETF index — we were only extracting title before.
+  const abstract = getAbstract(blk);
+  const keywords = getKeywords(blk);
+  const area = getTag(blk, "area");
+  const wg = getTag(blk, "wg_acronym");
+  const stream = getTag(blk, "stream");
+  const authors = getAuthors(blk);
+  const doi = getTag(blk, "doi");
+  const pageCount = Number(getTag(blk, "page-count")) || null;
+  const obsoletes = getDocIdList(blk, "obsoletes");
+  const updates = getDocIdList(blk, "updates");
+  const updatedBy = getDocIdList(blk, "updated-by");
+  const obsoletedBy = getDocIdList(blk, "obsoleted-by");
+  const isAlso = getDocIdList(blk, "is-also");
+  return {
+    num, title, status, published, hasErrata, obsoleted,
+    abstract, keywords, area, wg, stream, authors, doi, pageCount,
+    obsoletes, updates, updatedBy, obsoletedBy, isAlso
+  };
+}
+
+async function refreshRfc({ dry = false } = {}) {
+  console.log("[refresh-upstream:rfc] fetching IETF RFC index...");
+  const body = await fetchUrl(RFC_SRC);
+  console.log(`[refresh-upstream:rfc] index size: ${(body.length / 1e6).toFixed(2)} MB`);
+  const re = /<rfc-entry>([\s\S]*?)<\/rfc-entry>/g;
+  const entries = [];
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    const e = parseRfcEntry(m[1]);
+    if (!e) continue;
+    if (e.obsoleted || e.status === "HISTORIC" || e.status === "UNKNOWN") continue;
+    entries.push(e);
+  }
+  console.log(`[refresh-upstream:rfc] current entries: ${entries.length}`);
+  const cat = loadCatalog("rfc-references.json");
+  const existing = new Set(Object.keys(cat).filter((k) => k !== "_meta"));
+  let added = 0, statusBumped = 0;
+  for (const e of entries) {
+    const id = `RFC-${e.num}`;
+    if (existing.has(id)) {
+      const cur = cat[id];
+      let touched = false;
+      // Status bumps only on auto-imported rows — operator-curated rows
+      // may have a deliberately-different status (e.g. tracking the
+      // older standard while a successor is in Proposed Standard limbo).
+      if (cur && cur._auto_imported && cur.status !== RFC_STATUS_MAP[e.status]) {
+        cur.status = RFC_STATUS_MAP[e.status];
+        touched = true;
+        statusBumped++;
+      }
+      // Backfill context-search fields on ANY row (auto-imported or
+      // operator-curated) when the local field is absent. Backfill is
+      // additive — it never overwrites a value an operator chose, only
+      // fills holes left by the pre-v0.13.18 catalog shape that stored
+      // only title + status.
+      if (cur && !cur.abstract && e.abstract) { cur.abstract = e.abstract; touched = true; }
+      if (cur && (!cur.keywords || cur.keywords.length === 0) && e.keywords.length) { cur.keywords = e.keywords; touched = true; }
+      if (cur && !cur.area && e.area) { cur.area = e.area; touched = true; }
+      if (cur && !cur.working_group && e.wg) { cur.working_group = e.wg; touched = true; }
+      if (cur && !cur.stream && e.stream) { cur.stream = e.stream; touched = true; }
+      if (cur && (!cur.authors || cur.authors.length === 0) && e.authors.length) { cur.authors = e.authors; touched = true; }
+      if (cur && !cur.doi && e.doi) { cur.doi = e.doi; touched = true; }
+      if (cur && !cur.page_count && e.pageCount) { cur.page_count = e.pageCount; touched = true; }
+      if (cur && (!cur.obsoletes || cur.obsoletes.length === 0) && e.obsoletes.length) { cur.obsoletes = e.obsoletes; touched = true; }
+      if (cur && (!cur.updates || cur.updates.length === 0) && e.updates.length) { cur.updates = e.updates; touched = true; }
+      if (cur && (!cur.updated_by || cur.updated_by.length === 0) && e.updatedBy.length) { cur.updated_by = e.updatedBy; touched = true; }
+      if (cur && (!cur.is_also || cur.is_also.length === 0) && e.isAlso.length) { cur.is_also = e.isAlso; touched = true; }
+      if (cur && !cur.txt_url) { cur.txt_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.txt`; touched = true; }
+      if (cur && !cur.html_url) { cur.html_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.html`; touched = true; }
+      if (touched && cur) cur.last_verified = TODAY;
+      continue;
+    }
+    cat[id] = {
+      number: e.num,
+      title: e.title,
+      status: RFC_STATUS_MAP[e.status] || e.status,
+      published: e.published,
+      authors: e.authors,
+      stream: e.stream || null,
+      area: e.area || null,
+      working_group: e.wg || null,
+      abstract: e.abstract || null,
+      keywords: e.keywords,
+      page_count: e.pageCount,
+      doi: e.doi || null,
+      obsoletes: e.obsoletes,
+      updates: e.updates,
+      updated_by: e.updatedBy,
+      is_also: e.isAlso,
+      errata_count: e.hasErrata ? null : 0,
+      tracker: `https://www.rfc-editor.org/info/rfc${e.num}`,
+      txt_url: `https://www.rfc-editor.org/rfc/rfc${e.num}.txt`,
+      html_url: `https://www.rfc-editor.org/rfc/rfc${e.num}.html`,
+      relevance: "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
+      skills_referencing: [],
+      last_verified: TODAY,
+      _auto_imported: true,
+      _intake_method: "ietf-rfc-index"
+    };
+    existing.add(id);
+    added++;
+  }
+  if (cat._meta) {
+    cat._meta.last_updated = TODAY;
+    cat._meta.last_threat_review = TODAY;
+  }
+  if (dry) {
+    console.log(`[refresh-upstream:rfc] DRY-RUN: +${added} new, ${statusBumped} status bumps.`);
+    return { added, statusBumped };
+  }
+  writeCatalog("rfc-references.json", cat);
+  console.log(`[ok] rfc-references.json: +${added} entries, ${statusBumped} status bumps (now ${existing.size} total)`);
+  return { added, statusBumped };
+}
+
+// ---------------- ATT&CK ----------------
+
+const ATTACK_SRC = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json";
+const ATTACK_TACTIC_NAME = {
+  "reconnaissance": "Reconnaissance", "resource-development": "Resource Development",
+  "initial-access": "Initial Access", "execution": "Execution",
+  "persistence": "Persistence", "privilege-escalation": "Privilege Escalation",
+  "defense-evasion": "Defense Evasion", "stealth": "Stealth",
+  "defense-impairment": "Defense Impairment", "credential-access": "Credential Access",
+  "discovery": "Discovery", "lateral-movement": "Lateral Movement",
+  "collection": "Collection", "command-and-control": "Command and Control",
+  "exfiltration": "Exfiltration", "impact": "Impact"
+};
+
+// Extract the full STIX-bundle context fields the AI needs to find
+// techniques by topic (not just by ID). description_full preserves the
+// MITRE description; description (short) is the first-sentence
+// extractive summary used by token-budgeted consumers.
+function attackEntryFromStix(t, extRef) {
+  const id = extRef.external_id;
+  const tactics = (t.kill_chain_phases || [])
+    .filter((p) => p.kill_chain_name === "mitre-attack")
+    .map((p) => ATTACK_TACTIC_NAME[p.phase_name] || p.phase_name);
+  const fullDesc = String(t.description || "").replace(/\s+/g, " ").trim();
+  let shortDesc = fullDesc.split(/\.\s/)[0];
+  if (shortDesc.length > 500) shortDesc = shortDesc.slice(0, 497) + "...";
+  if (shortDesc && !shortDesc.endsWith(".")) shortDesc += ".";
+  return {
+    id,
+    name: t.name,
+    version: "v19",
+    tactic: tactics,
+    description: shortDesc || `MITRE ATT&CK Enterprise technique ${id}. Reference: ${extRef.url}`,
+    description_full: fullDesc || null,
+    platforms: Array.isArray(t.x_mitre_platforms) ? t.x_mitre_platforms : [],
+    data_sources: Array.isArray(t.x_mitre_data_sources) ? t.x_mitre_data_sources : [],
+    permissions_required: Array.isArray(t.x_mitre_permissions_required) ? t.x_mitre_permissions_required : [],
+    defense_bypassed: Array.isArray(t.x_mitre_defense_bypassed) ? t.x_mitre_defense_bypassed : [],
+    effective_permissions: Array.isArray(t.x_mitre_effective_permissions) ? t.x_mitre_effective_permissions : [],
+    detection: (t.x_mitre_detection || "").replace(/\s+/g, " ").trim() || null,
+    is_subtechnique: !!t.x_mitre_is_subtechnique,
+    mitre_version: t.x_mitre_version || null,
+    reference_url: extRef.url || `https://attack.mitre.org/techniques/${id.replace(".", "/")}/`,
+    stix_id: t.id || null,
+    last_verified: TODAY,
+    _auto_imported: true,
+    _intake_method: "mitre-attack-stix"
+  };
+}
+
+function backfillAttack(cur, fresh) {
+  let touched = false;
+  const fillIfEmpty = (key, val) => {
+    if (val == null) return;
+    if (Array.isArray(val)) {
+      if ((!cur[key] || cur[key].length === 0) && val.length) { cur[key] = val; touched = true; }
+    } else {
+      if (!cur[key] && val) { cur[key] = val; touched = true; }
+    }
+  };
+  fillIfEmpty("description_full", fresh.description_full);
+  fillIfEmpty("platforms", fresh.platforms);
+  fillIfEmpty("data_sources", fresh.data_sources);
+  fillIfEmpty("permissions_required", fresh.permissions_required);
+  fillIfEmpty("defense_bypassed", fresh.defense_bypassed);
+  fillIfEmpty("effective_permissions", fresh.effective_permissions);
+  fillIfEmpty("detection", fresh.detection);
+  fillIfEmpty("reference_url", fresh.reference_url);
+  fillIfEmpty("stix_id", fresh.stix_id);
+  if (cur.is_subtechnique === undefined && fresh.is_subtechnique != null) {
+    cur.is_subtechnique = fresh.is_subtechnique; touched = true;
+  }
+  return touched;
+}
+
+async function refreshAttack({ dry = false, cap = Infinity } = {}) {
+  console.log("[refresh-upstream:attack] fetching MITRE ATT&CK STIX...");
+  const body = await fetchUrl(ATTACK_SRC);
+  const stix = JSON.parse(body);
+  const techs = (stix.objects || []).filter(
+    (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
+  );
+  console.log(`[refresh-upstream:attack] STIX live techniques: ${techs.length}`);
+  const local = loadCatalog("attack-techniques.json");
+  const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
+  techs.sort((a, b) => {
+    const aSub = a.x_mitre_is_subtechnique ? 1 : 0;
+    const bSub = b.x_mitre_is_subtechnique ? 1 : 0;
+    if (aSub !== bSub) return aSub - bSub;
+    const aId = (a.external_references || []).find((r) => r.source_name === "mitre-attack");
+    const bId = (b.external_references || []).find((r) => r.source_name === "mitre-attack");
+    return ((aId && aId.external_id) || "").localeCompare((bId && bId.external_id) || "");
+  });
+  let added = 0;
+  let backfilled = 0;
+  for (const t of techs) {
+    const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-attack");
+    if (!extRef || !extRef.external_id) continue;
+    const id = extRef.external_id;
+    if (existing.has(id)) {
+      const fresh = attackEntryFromStix(t, extRef);
+      const cur = local[id];
+      if (backfillAttack(cur, fresh)) {
+        cur.last_verified = TODAY;
+        backfilled++;
+      }
+      continue;
+    }
+    if (added >= cap) continue;
+    local[id] = attackEntryFromStix(t, extRef);
+    existing.add(id);
+    added++;
+  }
+  if (dry) { console.log(`[refresh-upstream:attack] DRY-RUN: +${added} new, ${backfilled} context backfills`); return { added, backfilled }; }
+  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+  writeCatalog("attack-techniques.json", local);
+  console.log(`[ok] attack-techniques.json: +${added} entries, ${backfilled} context backfills (now ${existing.size} total)`);
+  return { added, backfilled };
+}
+
+// ---------------- ATLAS ----------------
+
+const ATLAS_SRC = "https://raw.githubusercontent.com/mitre-atlas/atlas-navigator-data/main/dist/stix-atlas.json";
+
+function atlasTactic(phases) {
+  const map = {
+    "reconnaissance": "Reconnaissance", "resource-development": "Resource Development",
+    "initial-access": "Initial Access", "ml-model-access": "AI Model Access",
+    "execution": "Execution", "persistence": "Persistence",
+    "privilege-escalation": "Privilege Escalation", "defense-evasion": "Defense Evasion",
+    "credential-access": "Credential Access", "discovery": "Discovery",
+    "collection": "Collection", "ml-attack-staging": "AI Attack Staging",
+    "command-and-control": "Command and Control", "exfiltration": "Exfiltration",
+    "impact": "Impact"
+  };
+  return (phases || [])
+    .filter((p) => (p.kill_chain_name || "").includes("atlas") || (p.kill_chain_name || "").includes("ml-"))
+    .map((p) => map[p.phase_name] || p.phase_name);
+}
+
+function atlasEntryFromStix(t, ext) {
+  const id = ext.external_id;
+  const tactics = atlasTactic(t.kill_chain_phases);
+  const fullDesc = String(t.description || "").replace(/\s+/g, " ").trim();
+  let shortDesc = fullDesc.split(/\.\s/)[0];
+  if (shortDesc.length > 500) shortDesc = shortDesc.slice(0, 497) + "...";
+  if (shortDesc && !shortDesc.endsWith(".")) shortDesc += ".";
+  return {
+    id,
+    name: t.name,
+    tactic: tactics.length === 1 ? tactics[0] : tactics,
+    description: shortDesc || `MITRE ATLAS technique ${id}. Reference: ${ext.url}`,
+    description_full: fullDesc || null,
+    platforms: Array.isArray(t.x_mitre_platforms) ? t.x_mitre_platforms : [],
+    detection: (t.x_mitre_detection || "").replace(/\s+/g, " ").trim() || null,
+    is_subtechnique: !!t.x_mitre_is_subtechnique,
+    mitre_version: t.x_mitre_version || null,
+    reference_url: ext.url || `https://atlas.mitre.org/techniques/${id}`,
+    stix_id: t.id || null,
+    last_verified: TODAY,
+    _auto_imported: true,
+    _intake_method: "mitre-atlas-stix"
+  };
+}
+
+function backfillAtlas(cur, fresh) {
+  let touched = false;
+  const fillIfEmpty = (key, val) => {
+    if (val == null) return;
+    if (Array.isArray(val)) {
+      if ((!cur[key] || cur[key].length === 0) && val.length) { cur[key] = val; touched = true; }
+    } else {
+      if (!cur[key] && val) { cur[key] = val; touched = true; }
+    }
+  };
+  fillIfEmpty("description_full", fresh.description_full);
+  fillIfEmpty("platforms", fresh.platforms);
+  fillIfEmpty("detection", fresh.detection);
+  fillIfEmpty("reference_url", fresh.reference_url);
+  fillIfEmpty("stix_id", fresh.stix_id);
+  if (cur.is_subtechnique === undefined && fresh.is_subtechnique != null) {
+    cur.is_subtechnique = fresh.is_subtechnique; touched = true;
+  }
+  return touched;
+}
+
+async function refreshAtlas({ dry = false } = {}) {
+  console.log("[refresh-upstream:atlas] fetching MITRE ATLAS STIX...");
+  const body = await fetchUrl(ATLAS_SRC);
+  const stix = JSON.parse(body);
+  const techs = (stix.objects || []).filter(
+    (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
+  );
+  const aml = techs.filter((t) => {
+    const ext = (t.external_references || []).find((r) => r.source_name === "mitre-atlas");
+    return ext && (ext.external_id || "").startsWith("AML.");
+  });
+  console.log(`[refresh-upstream:atlas] AML.* techniques: ${aml.length}`);
+  let atlasVersion = null;
+  for (const o of stix.objects || []) {
+    if (o.type === "x-mitre-matrix" && (o.name || "").toLowerCase().includes("atlas") && o.x_mitre_version) {
+      atlasVersion = o.x_mitre_version; break;
+    }
+  }
+  const local = loadCatalog("atlas-ttps.json");
+  const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
+  aml.sort((a, b) => {
+    const aSub = a.x_mitre_is_subtechnique ? 1 : 0;
+    const bSub = b.x_mitre_is_subtechnique ? 1 : 0;
+    if (aSub !== bSub) return aSub - bSub;
+    const aExt = (a.external_references || []).find((r) => r.source_name === "mitre-atlas");
+    const bExt = (b.external_references || []).find((r) => r.source_name === "mitre-atlas");
+    return ((aExt && aExt.external_id) || "").localeCompare((bExt && bExt.external_id) || "");
+  });
+  let added = 0, backfilled = 0;
+  for (const t of aml) {
+    const ext = (t.external_references || []).find((r) => r.source_name === "mitre-atlas");
+    if (!ext || !ext.external_id) continue;
+    const id = ext.external_id;
+    if (existing.has(id)) {
+      const fresh = atlasEntryFromStix(t, ext);
+      const cur = local[id];
+      if (backfillAtlas(cur, fresh)) { cur.last_verified = TODAY; backfilled++; }
+      continue;
+    }
+    local[id] = atlasEntryFromStix(t, ext);
+    existing.add(id);
+    added++;
+  }
+  if (dry) { console.log(`[refresh-upstream:atlas] DRY-RUN: +${added} new, ${backfilled} backfills${atlasVersion ? `, v${atlasVersion}` : ""}`); return { added, backfilled, atlasVersion }; }
+  if (local._meta) {
+    if (atlasVersion) local._meta.atlas_version = atlasVersion;
+    local._meta.last_updated = TODAY;
+    local._meta.last_threat_review = TODAY;
+  }
+  writeCatalog("atlas-ttps.json", local);
+  console.log(`[ok] atlas-ttps.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total${atlasVersion ? `, ATLAS v${atlasVersion}` : ""})`);
+  return { added, backfilled, atlasVersion };
+}
+
+// ---------------- D3FEND ----------------
+
+const D3FEND_SRC = "https://d3fend.mitre.org/ontologies/d3fend.json";
+
+function d3fendTactic(parent) {
+  const known = {
+    "Application Hardening": "Harden", "Credential Hardening": "Harden",
+    "Message Hardening": "Harden", "Platform Hardening": "Harden",
+    "File Analysis": "Detect", "Identifier Analysis": "Detect",
+    "Message Analysis": "Detect", "Network Traffic Analysis": "Detect",
+    "Platform Monitoring": "Detect", "Process Analysis": "Detect",
+    "User Behavior Analysis": "Detect",
+    "Execution Isolation": "Isolate", "Network Isolation": "Isolate",
+    "Decoy Environment": "Deceive", "Decoy Object": "Deceive",
+    "Credential Eviction": "Evict", "Process Eviction": "Evict"
+  };
+  if (parent && known[parent]) return known[parent];
+  return "Defensive";
+}
+
+function d3fendIdList(t, field) {
+  const v = t[field];
+  if (!v) return [];
+  const arr = Array.isArray(v) ? v : [v];
+  return arr.map((x) => (x && x["@id"]) ? String(x["@id"]).replace(/^d3f:/, "") : null).filter(Boolean);
+}
+
+function d3fendEntryFromOwl(t) {
+  const id = t["d3f:d3fend-id"];
+  const labelRaw = t["rdfs:label"];
+  const name = Array.isArray(labelRaw)
+    ? (typeof labelRaw[0] === "object" ? labelRaw[0]["@value"] : labelRaw[0])
+    : (typeof labelRaw === "object" ? labelRaw["@value"] : labelRaw);
+  const def = t["d3f:definition"];
+  const fullDesc = typeof def === "string" ? def : (def && def["@value"]) || "";
+  let desc = fullDesc.split(/\.\s/)[0];
+  if (desc.length > 500) desc = desc.slice(0, 497) + "...";
+  if (desc && !desc.endsWith(".")) desc += ".";
+  const syns = t["d3f:synonym"];
+  const synonyms = Array.isArray(syns) ? syns : (syns ? [syns] : []);
+  const kbRef = t["d3f:kb-reference"];
+  const kbRefId = kbRef && kbRef["@id"] ? String(kbRef["@id"]).replace(/^d3f:/, "") : null;
+  return {
+    id,
+    name: name || id,
+    tactic: d3fendTactic(name),
+    description: desc || `D3FEND defensive technique ${id}. Reference: https://d3fend.mitre.org/technique/${id}/`,
+    description_full: fullDesc || null,
+    synonyms,
+    // Relationship fields — what offensive techniques this counters,
+    // what defensive technique it enables / falls under, the parent
+    // narrower/broader classes for hierarchical lookup.
+    defends_against: d3fendIdList(t, "d3f:defends-against"),
+    counters: d3fendIdList(t, "d3f:counters"),
+    enables: d3fendIdList(t, "d3f:enables"),
+    broader_of: d3fendIdList(t, "d3f:broader"),
+    narrower_of: d3fendIdList(t, "d3f:narrower"),
+    requires: d3fendIdList(t, "d3f:requires"),
+    inventories: d3fendIdList(t, "d3f:inventories"),
+    kb_reference: kbRefId,
+    reference_url: `https://d3fend.mitre.org/technique/${id}/`,
+    last_verified: TODAY,
+    _auto_imported: true,
+    _intake_method: "mitre-d3fend-owl"
+  };
+}
+
+function backfillD3fend(cur, fresh) {
+  let touched = false;
+  const fillIfEmpty = (key, val) => {
+    if (val == null) return;
+    if (Array.isArray(val)) {
+      if ((!cur[key] || cur[key].length === 0) && val.length) { cur[key] = val; touched = true; }
+    } else {
+      if (!cur[key] && val) { cur[key] = val; touched = true; }
+    }
+  };
+  fillIfEmpty("description_full", fresh.description_full);
+  fillIfEmpty("synonyms", fresh.synonyms);
+  fillIfEmpty("defends_against", fresh.defends_against);
+  fillIfEmpty("counters", fresh.counters);
+  fillIfEmpty("enables", fresh.enables);
+  fillIfEmpty("broader_of", fresh.broader_of);
+  fillIfEmpty("narrower_of", fresh.narrower_of);
+  fillIfEmpty("requires", fresh.requires);
+  fillIfEmpty("inventories", fresh.inventories);
+  fillIfEmpty("kb_reference", fresh.kb_reference);
+  fillIfEmpty("reference_url", fresh.reference_url);
+  return touched;
+}
+
+async function refreshD3fend({ dry = false, cap = Infinity } = {}) {
+  console.log("[refresh-upstream:d3fend] fetching MITRE D3FEND ontology...");
+  const body = await fetchUrl(D3FEND_SRC);
+  const j = JSON.parse(body);
+  const graph = j["@graph"] || [];
+  const techs = graph.filter((o) => o["@id"] && o["d3f:d3fend-id"] && o["rdfs:label"]);
+  console.log(`[refresh-upstream:d3fend] ontology techniques: ${techs.length}`);
+  const local = loadCatalog("d3fend-catalog.json");
+  const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
+  techs.sort((a, b) => String(a["d3f:d3fend-id"]).localeCompare(String(b["d3f:d3fend-id"])));
+  let added = 0, backfilled = 0;
+  for (const t of techs) {
+    const id = t["d3f:d3fend-id"];
+    if (existing.has(id)) {
+      const fresh = d3fendEntryFromOwl(t);
+      const cur = local[id];
+      if (backfillD3fend(cur, fresh)) { cur.last_verified = TODAY; backfilled++; }
+      continue;
+    }
+    if (added >= cap) continue;
+    local[id] = d3fendEntryFromOwl(t);
+    existing.add(id);
+    added++;
+  }
+  if (dry) { console.log(`[refresh-upstream:d3fend] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled }; }
+  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+  writeCatalog("d3fend-catalog.json", local);
+  console.log(`[ok] d3fend-catalog.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total)`);
+  return { added, backfilled };
+}
+
+// ---------------- CLI dispatcher ----------------
+
+const SOURCES = {
+  rfc:    { name: "ietf-rfc-index",    run: refreshRfc },
+  attack: { name: "mitre-attack-stix", run: refreshAttack },
+  atlas:  { name: "mitre-atlas-stix",  run: refreshAtlas },
+  d3fend: { name: "mitre-d3fend-owl",  run: refreshD3fend }
+};
+
+function parseArgs(argv) {
+  const out = { source: null, dry: false };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--dry-run") out.dry = true;
+    else if (a === "--source") { out.source = argv[++i]; }
+    else if (a.startsWith("--source=")) out.source = a.slice("--source=".length);
+  }
+  return out;
+}
+
+async function runCli(argv = process.argv) {
+  const { source, dry } = parseArgs(argv);
+  const cap = Number(process.env.CAP || Infinity);
+  const wanted = source
+    ? source.split(",").map((s) => s.trim()).filter(Boolean)
+    : Object.keys(SOURCES);
+  for (const key of wanted) {
+    if (!SOURCES[key]) {
+      console.error(`[err] unknown source "${key}" — valid: ${Object.keys(SOURCES).join(", ")}`);
+      process.exitCode = 2;
+      continue;
+    }
+    try {
+      await SOURCES[key].run({ dry, cap });
+    } catch (e) {
+      console.error(`[err] ${key}: ${e.message}`);
+      process.exitCode = 1;
+    }
+  }
+}
+
+if (require.main === module) {
+  runCli();
+}
+
+module.exports = {
+  refreshRfc,
+  refreshAttack,
+  refreshAtlas,
+  refreshD3fend,
+  SOURCES,
+  runCli
+};

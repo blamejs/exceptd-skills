@@ -30,7 +30,7 @@ justification.
 - [ ] All new CVEs have complete `data/cve-catalog.json` entries
 - [ ] All new CVEs have `data/zeroday-lessons.json` entries
 - [ ] All skill `data_deps` resolve to existing files
-- [ ] All ATLAS refs are valid v5.4.0 IDs (current pinned version)
+- [ ] All ATLAS refs are valid v5.6.0 IDs (current pinned version)
 - [ ] All framework control IDs resolve in `data/framework-control-gaps.json`
 - [ ] No skill body contains placeholder language (TODO, TBD, coming soon, placeholder)
 - [ ] No skill uses CVSS as sole risk metric

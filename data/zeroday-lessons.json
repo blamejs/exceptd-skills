@@ -4783,10 +4783,10 @@
     "ai_assist_factor": "none"
   },
   "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY": {
-    "name": "YellowKey — Windows BitLocker TPM-Only Bypass",
+    "name": "YellowKey — Windows BitLocker TPM-Only Bypass via WinRE + USB Media (Nightmare-Eclipse)",
     "lesson_date": "2026-05-18",
     "attack_vector": {
-      "description": "BitLocker TPM-only-protector configurations (the Windows default for unmanaged devices) allow a SYSTEM command shell to inherit the TPM-unsealed VMK without ever prompting for recovery key or PIN. The attacker need not extract the TPM key — they inherit it from the unlocked-volume cache during a boot-flow bypass.",
+      "description": "YellowKey chains Windows Recovery Environment (WinRE) entry with USB-tooling load to inherit the TPM-unsealed BitLocker VMK on TPM-only-protector configurations. The TPM completes unsealing during pre-OS boot; WinRE inherits the unlocked-volume cache; an attacker-supplied USB stick supplies tooling that WinRE loads in a context with VMK access. Full read + write on the BitLocker-protected partition without recovery-key prompt or PIN entry. Physical-access vector (AV:P); operationally suitable for evil-maid / stolen-laptop scenarios.",
       "privileges_required": "physical access to a powered-off / sleep BitLocker-protected device",
       "complexity": "low — single-binary PoC",
       "ai_factor": "Not AI-discovered. The control gap is structural — BitLocker TPM-only is documented to trade convenience for evil-maid resistance; YellowKey demonstrates the practical cost of that trade is higher than the GPO default acknowledges."
@@ -4829,12 +4829,12 @@
     "ai_assist_factor": "none"
   },
   "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA": {
-    "name": "GreenPlasma — Windows Local Privilege Escalation",
+    "name": "GreenPlasma — Windows CTFMON Trust-Abuse Local Privilege Escalation (Nightmare-Eclipse)",
     "lesson_date": "2026-05-18",
     "attack_vector": {
-      "description": "Windows LPE released alongside MiniPlasma / YellowKey by the same researcher. Underlying component not publicly named at PoC release; learning-loop entry refined when Microsoft acknowledges via advisory.",
+      "description": "GreenPlasma chains arbitrary-memory-section-object creation in SYSTEM-writable directory paths (via registry + object-manager-permission primitives) with CTFMON's implicit-trust pathway to escalate from unprivileged user to SYSTEM. The trust assumption is architectural — CTFMON runs in SYSTEM context and interacts with object-manager paths under the assumption that only SYSTEM can write them. The publicly-released PoC is intentionally incomplete (no SYSTEM-shell wrapper) but the primitive is fully documented and operator-completable.",
       "privileges_required": "unprivileged local user",
-      "complexity": "low — single-binary PoC",
+      "complexity": "moderate (released PoC is incomplete; primitive is operator-completable in hours)",
       "ai_factor": "Not AI-discovered."
     },
     "framework_coverage": {

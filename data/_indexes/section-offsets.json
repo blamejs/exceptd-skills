@@ -150,7 +150,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0)",
           "normalized_name": "ttp-mapping",
           "line": 173,
           "byte_start": 17184,
@@ -329,7 +329,7 @@
           "h3_count": 1
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 70,
           "byte_start": 5906,
@@ -441,7 +441,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 81,
           "byte_start": 12106,
@@ -701,7 +701,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0)",
           "normalized_name": "ttp-mapping",
           "line": 185,
           "byte_start": 12544,
@@ -822,7 +822,7 @@
           "h3_count": 2
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 + MITRE ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 + MITRE ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 333,
           "byte_start": 17125,
@@ -925,7 +925,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 91,
           "byte_start": 9601,
@@ -991,7 +991,7 @@
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "total_bytes": 33321,
+      "total_bytes": 33306,
       "total_lines": 448,
       "frontmatter": {
         "line_start": 1,
@@ -1023,16 +1023,16 @@
           "normalized_name": "the-14-threat-class-checklist",
           "line": 43,
           "byte_start": 2189,
-          "byte_end": 13309,
-          "bytes": 11120,
+          "byte_end": 13299,
+          "bytes": 11110,
           "h3_count": 14
         },
         {
           "name": "Threat Context",
           "normalized_name": "threat-context",
           "line": 228,
-          "byte_start": 13309,
-          "byte_end": 15140,
+          "byte_start": 13299,
+          "byte_end": 15130,
           "bytes": 1831,
           "h3_count": 0
         },
@@ -1040,8 +1040,8 @@
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 242,
-          "byte_start": 15140,
-          "byte_end": 17728,
+          "byte_start": 15130,
+          "byte_end": 17718,
           "bytes": 2588,
           "h3_count": 0
         },
@@ -1049,8 +1049,8 @@
           "name": "TTP Mapping",
           "normalized_name": "ttp-mapping",
           "line": 264,
-          "byte_start": 17728,
-          "byte_end": 20825,
+          "byte_start": 17718,
+          "byte_end": 20815,
           "bytes": 3097,
           "h3_count": 0
         },
@@ -1058,8 +1058,8 @@
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 289,
-          "byte_start": 20825,
-          "byte_end": 23174,
+          "byte_start": 20815,
+          "byte_end": 23164,
           "bytes": 2349,
           "h3_count": 0
         },
@@ -1067,8 +1067,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 308,
-          "byte_start": 23174,
-          "byte_end": 24742,
+          "byte_start": 23164,
+          "byte_end": 24732,
           "bytes": 1568,
           "h3_count": 0
         },
@@ -1076,8 +1076,8 @@
           "name": "Scoring",
           "normalized_name": "scoring",
           "line": 324,
-          "byte_start": 24742,
-          "byte_end": 25284,
+          "byte_start": 24732,
+          "byte_end": 25274,
           "bytes": 542,
           "h3_count": 0
         },
@@ -1085,8 +1085,8 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 343,
-          "byte_start": 25284,
-          "byte_end": 26214,
+          "byte_start": 25274,
+          "byte_end": 26204,
           "bytes": 930,
           "h3_count": 4
         },
@@ -1094,17 +1094,17 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 375,
-          "byte_start": 26214,
-          "byte_end": 28192,
-          "bytes": 1978,
+          "byte_start": 26204,
+          "byte_end": 28177,
+          "bytes": 1973,
           "h3_count": 4
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 417,
-          "byte_start": 28192,
-          "byte_end": 33321,
+          "byte_start": 28177,
+          "byte_end": 33306,
           "bytes": 5129,
           "h3_count": 0
         }
@@ -1866,7 +1866,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 + MITRE ATT&CK v17)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 + MITRE ATT&CK v17)",
           "normalized_name": "ttp-mapping",
           "line": 124,
           "byte_start": 10971,
@@ -1951,7 +1951,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 + MITRE ATT&CK Enterprise)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 + MITRE ATT&CK Enterprise)",
           "normalized_name": "ttp-mapping",
           "line": 90,
           "byte_start": 9893,
@@ -2036,7 +2036,7 @@
           "h3_count": 1
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v5.4.0 + MITRE ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v5.6.0 + MITRE ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 127,
           "byte_start": 14981,
@@ -2676,7 +2676,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.4.0)",
+          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.6.0)",
           "normalized_name": "ttp-mapping",
           "line": 108,
           "byte_start": 8736,
@@ -3343,7 +3343,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.4.0)",
+          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.6.0)",
           "normalized_name": "ttp-mapping",
           "line": 129,
           "byte_start": 12457,

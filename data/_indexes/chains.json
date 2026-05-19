@@ -11445,7 +11445,7 @@
     }
   },
   "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY": {
-    "name": "YellowKey — Windows BitLocker TPM-Only Bypass (Nightmare-Eclipse)",
+    "name": "YellowKey — Windows BitLocker TPM-Only Bypass via WinRE + USB Media (Nightmare-Eclipse)",
     "rwep": 45,
     "cvss": 6.4,
     "cisa_kev": false,
@@ -11583,17 +11583,25 @@
     }
   },
   "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA": {
-    "name": "GreenPlasma — Windows Local Privilege Escalation (Nightmare-Eclipse)",
+    "name": "GreenPlasma — Windows CTFMON Trust-Abuse Local Privilege Escalation (Nightmare-Eclipse)",
     "rwep": 50,
     "cvss": 7.8,
     "cisa_kev": false,
     "epss_score": null,
     "referencing_skills": [
       "kernel-lpe-triage",
-      "coordinated-vuln-disclosure"
+      "mcp-agent-trust",
+      "coordinated-vuln-disclosure",
+      "cloud-security",
+      "container-runtime-security"
     ],
     "chain": {
       "cwes": [
+        {
+          "id": "CWE-1188",
+          "name": "Initialization of a Resource with an Insecure Default",
+          "category": "Configuration"
+        },
         {
           "id": "CWE-125",
           "name": "Out-of-bounds Read",
@@ -11603,6 +11611,41 @@
           "id": "CWE-1357",
           "name": "Reliance on Insufficiently Trustworthy Component",
           "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-1395",
+          "name": "Dependency on Vulnerable Third-Party Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-200",
+          "name": "Exposure of Sensitive Information to an Unauthorized Actor",
+          "category": "Information Exposure"
+        },
+        {
+          "id": "CWE-22",
+          "name": "Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)",
+          "category": "Path/Resource"
+        },
+        {
+          "id": "CWE-269",
+          "name": "Improper Privilege Management",
+          "category": "Authorization"
+        },
+        {
+          "id": "CWE-287",
+          "name": "Improper Authentication",
+          "category": "Authentication"
+        },
+        {
+          "id": "CWE-345",
+          "name": "Insufficient Verification of Data Authenticity",
+          "category": "Authenticity / Supply Chain"
+        },
+        {
+          "id": "CWE-352",
+          "name": "Cross-Site Request Forgery (CSRF)",
+          "category": "Session"
         },
         {
           "id": "CWE-362",
@@ -11615,17 +11658,78 @@
           "category": "Memory Safety"
         },
         {
+          "id": "CWE-434",
+          "name": "Unrestricted Upload of File with Dangerous Type",
+          "category": "File Handling"
+        },
+        {
+          "id": "CWE-494",
+          "name": "Download of Code Without Integrity Check",
+          "category": "Supply Chain"
+        },
+        {
           "id": "CWE-672",
           "name": "Operation on a Resource after Expiration or Release",
           "category": "Memory Safety"
         },
         {
+          "id": "CWE-732",
+          "name": "Incorrect Permission Assignment for Critical Resource",
+          "category": "Authorization"
+        },
+        {
+          "id": "CWE-77",
+          "name": "Improper Neutralization of Special Elements used in a Command (Command Injection)",
+          "category": "Injection"
+        },
+        {
           "id": "CWE-787",
           "name": "Out-of-bounds Write",
           "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-798",
+          "name": "Use of Hard-coded Credentials",
+          "category": "Credentials"
+        },
+        {
+          "id": "CWE-862",
+          "name": "Missing Authorization",
+          "category": "Authorization"
+        },
+        {
+          "id": "CWE-918",
+          "name": "Server-Side Request Forgery (SSRF)",
+          "category": "Network"
+        },
+        {
+          "id": "CWE-94",
+          "name": "Improper Control of Generation of Code (Code Injection)",
+          "category": "Injection"
         }
       ],
-      "atlas": [],
+      "atlas": [
+        {
+          "id": "AML.T0010",
+          "name": "ML Supply Chain Compromise",
+          "tactic": "Initial Access"
+        },
+        {
+          "id": "AML.T0016",
+          "name": "Obtain Capabilities: Develop Capabilities",
+          "tactic": "Resource Development"
+        },
+        {
+          "id": "AML.T0017",
+          "name": "Discover ML Model Ontology",
+          "tactic": "Discovery"
+        },
+        {
+          "id": "AML.T0096",
+          "name": "AI API as Covert C2 Channel",
+          "tactic": "Command and Control"
+        }
+      ],
       "d3fend": [
         {
           "id": "D3-ASLR",
@@ -11633,8 +11737,28 @@
           "tactic": "Harden"
         },
         {
+          "id": "D3-CBAN",
+          "name": "Certificate-based Authentication",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-CSPP",
+          "name": "Client-server Payload Profiling",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-EAL",
           "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EHB",
+          "name": "Executable Hashbased Allowlist",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-MFA",
+          "name": "Multi-factor Authentication",
           "tactic": "Harden"
         },
         {
@@ -11650,9 +11774,29 @@
       ],
       "framework_gaps": [
         {
+          "id": "ALL-MCP-TOOL-TRUST",
+          "framework": "ALL",
+          "control_name": "MCP/Agent Tool Trust Boundaries"
+        },
+        {
           "id": "CIS-Controls-v8-Control7",
           "framework": "CIS Controls v8",
           "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "FedRAMP-Rev5-Moderate",
+          "framework": "FedRAMP Rev 5 Moderate",
+          "control_name": "FedRAMP Moderate baseline (NIST 800-53 Rev 5 tailoring)"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.28",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Secure coding"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.30",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Outsourced development"
         },
         {
           "id": "ISO-27001-2022-A.8.8",
@@ -11670,6 +11814,16 @@
           "control_name": "Secure Software Development Framework"
         },
         {
+          "id": "NIST-800-53-CM-7",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Least Functionality"
+        },
+        {
+          "id": "NIST-800-53-SA-12",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Supply Chain Protection"
+        },
+        {
           "id": "NIST-800-53-SC-8",
           "framework": "NIST SP 800-53 Rev 5",
           "control_name": "Transmission Confidentiality and Integrity"
@@ -11680,24 +11834,56 @@
           "control_name": "Flaw Remediation"
         },
         {
+          "id": "OWASP-LLM-Top-10-2025-LLM06",
+          "framework": "OWASP Top 10 for LLM Applications 2025",
+          "control_name": "Excessive Agency"
+        },
+        {
           "id": "PCI-DSS-4.0-6.3.3",
           "framework": "PCI DSS 4.0",
           "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
         },
         {
+          "id": "SLSA-v1.0-Build-L3",
+          "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts) — Build Track",
+          "control_name": "Hardened build platform with non-falsifiable provenance"
+        },
+        {
           "id": "SOC2-CC9-vendor-management",
           "framework": "SOC 2 (AICPA Trust Services Criteria)",
           "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        },
+        {
+          "id": "SWIFT-CSCF-v2026-1.1",
+          "framework": "SWIFT Customer Security Controls Framework v2026",
+          "control_name": "SWIFT Environment Protection"
         }
       ],
       "attack_refs": [
+        "T1059",
         "T1068",
-        "T1548.001"
+        "T1078",
+        "T1190",
+        "T1195.001",
+        "T1530",
+        "T1548.001",
+        "T1552",
+        "T1610",
+        "T1611"
       ],
       "rfc_refs": [
         "RFC-4301",
         "RFC-4303",
-        "RFC-7296"
+        "RFC-6749",
+        "RFC-7296",
+        "RFC-7519",
+        "RFC-8032",
+        "RFC-8446",
+        "RFC-8725",
+        "RFC-9114",
+        "RFC-9180",
+        "RFC-9421",
+        "RFC-9700"
       ]
     }
   },
@@ -40718,6 +40904,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -40916,6 +41103,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -41596,6 +41784,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
       "CVE-2023-43472",
       "CVE-2024-3094",
@@ -42232,6 +42421,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
       "CVE-2023-43472",
       "CVE-2024-3094",
@@ -42588,6 +42778,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -43161,6 +43352,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -43781,6 +43973,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2024-3094",
       "CVE-2024-3154",
       "CVE-2025-49844",
@@ -44009,6 +44202,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -45035,6 +45229,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -45246,6 +45441,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2024-3094",
       "CVE-2024-3154",
       "CVE-2025-49844",
@@ -46286,6 +46482,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -47084,6 +47281,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2024-3094",
       "CVE-2024-3154",
       "CVE-2025-10585",
@@ -47396,6 +47594,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -47990,6 +48189,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -48369,6 +48569,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -49016,6 +49217,7 @@
       ]
     },
     "related_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2023-43472",
       "CVE-2024-3094",
       "CVE-2024-3154",
@@ -49900,6 +50102,1014 @@
   "CWE-528": {
     "name": "Exposure of Core Dump File to an Unauthorized Control Sphere",
     "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-400": {
+    "name": "Uncontrolled Resource Consumption",
+    "category": "Resource Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-285": {
+    "name": "Improper Authorization",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-334": {
+    "name": "Small Space of Random Values",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-335": {
+    "name": "Incorrect Usage of Seeds in Pseudo-Random Number Generator (PRNG)",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-346": {
+    "name": "Origin Validation Error",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-377": {
+    "name": "Insecure Temporary File",
+    "category": "Files and Directories",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-384": {
+    "name": "Session Fixation",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-385": {
+    "name": "Covert Timing Channel",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-427": {
+    "name": "Uncontrolled Search Path Element",
+    "category": "Path Traversal",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-428": {
+    "name": "Unquoted Search Path or Element",
+    "category": "Path Traversal",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-444": {
+    "name": "Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')",
+    "category": "Protocol Errors",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-451": {
+    "name": "User Interface (UI) Misrepresentation of Critical Information",
+    "category": "UI",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-470": {
+    "name": "Use of Externally-Controlled Input to Select Classes or Code ('Unsafe Reflection')",
+    "category": "Code Injection",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-501": {
+    "name": "Trust Boundary Violation",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-521": {
+    "name": "Weak Password Requirements",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-525": {
+    "name": "Use of Web Browser Cache Containing Sensitive Information",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-532": {
+    "name": "Insertion of Sensitive Information into Log File",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-539": {
+    "name": "Use of Persistent Cookies Containing Sensitive Information",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-540": {
+    "name": "Inclusion of Sensitive Information in Source Code",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-547": {
+    "name": "Use of Hard-coded, Security-relevant Constants",
+    "category": "Credentials Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-560": {
+    "name": "Use of umask() with chmod-style Argument",
+    "category": "Access Control",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-565": {
+    "name": "Reliance on Cookies without Validation and Integrity Checking",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-566": {
+    "name": "Authorization Bypass Through User-Controlled SQL Primary Key",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-601": {
+    "name": "URL Redirection to Untrusted Site ('Open Redirect')",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-613": {
+    "name": "Insufficient Session Expiration",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-614": {
+    "name": "Sensitive Cookie in HTTPS Session Without 'Secure' Attribute",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-639": {
+    "name": "Authorization Bypass Through User-Controlled Key",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-640": {
+    "name": "Weak Password Recovery Mechanism for Forgotten Password",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-641": {
+    "name": "Improper Restriction of Names for Files and Other Resources",
+    "category": "Validation",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-642": {
+    "name": "External Control of Critical State Data",
+    "category": "Authorization",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-643": {
+    "name": "Improper Neutralization of Data within XPath Expressions ('XPath Injection')",
+    "category": "Injection",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-680": {
+    "name": "Integer Overflow to Buffer Overflow",
+    "category": "Memory Safety",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-697": {
+    "name": "Incorrect Comparison",
+    "category": "Validation",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-749": {
+    "name": "Exposed Dangerous Method or Function",
+    "category": "Validation",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-754": {
+    "name": "Improper Check for Unusual or Exceptional Conditions",
+    "category": "Error Handling",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-755": {
+    "name": "Improper Handling of Exceptional Conditions",
+    "category": "Error Handling",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-770": {
+    "name": "Allocation of Resources Without Limits or Throttling",
+    "category": "Resource Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-772": {
+    "name": "Missing Release of Resource after Effective Lifetime",
+    "category": "Resource Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-776": {
+    "name": "Improper Restriction of Recursive Entity References in DTDs ('XML Entity Expansion')",
+    "category": "XML",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-778": {
+    "name": "Insufficient Logging",
+    "category": "Logging",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-779": {
+    "name": "Logging of Excessive Data",
+    "category": "Logging",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-834": {
+    "name": "Excessive Iteration",
+    "category": "Resource Management",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-835": {
+    "name": "Loop with Unreachable Exit Condition ('Infinite Loop')",
+    "category": "Control Flow",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-908": {
+    "name": "Use of Uninitialized Resource",
+    "category": "Memory Safety",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-909": {
+    "name": "Missing Initialization of Resource",
+    "category": "Memory Safety",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-915": {
+    "name": "Improperly Controlled Modification of Dynamically-Determined Object Attributes ('Mass Assignment')",
+    "category": "Injection",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-917": {
+    "name": "Improper Neutralization of Special Elements used in an Expression Language Statement ('Expression Language Injection')",
+    "category": "Injection",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-922": {
+    "name": "Insecure Storage of Sensitive Information",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-924": {
+    "name": "Improper Enforcement of Message Integrity During Transmission in a Communication Channel",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-941": {
+    "name": "Incorrectly Specified Destination in a Communication Channel",
+    "category": "Networking",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-942": {
+    "name": "Permissive Cross-domain Policy with Untrusted Domains",
+    "category": "Access Control",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1004": {
+    "name": "Sensitive Cookie Without 'HttpOnly' Flag",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1021": {
+    "name": "Improper Restriction of Rendered UI Layers or Frames ('Clickjacking')",
+    "category": "UI",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1230": {
+    "name": "Exposure of Sensitive Information Through Metadata",
+    "category": "Information Disclosure",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1240": {
+    "name": "Use of a Cryptographic Primitive with a Risky Implementation",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1241": {
+    "name": "Use of Predictable Algorithm in Random Number Generator",
+    "category": "Cryptography",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1248": {
+    "name": "Semiconductor Defects in Hardware Logic with Security-Sensitive Implications",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1254": {
+    "name": "Incorrect Comparison Logic Granularity",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1259": {
+    "name": "Improper Restriction of Security Token Assignment",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1261": {
+    "name": "Improper Handling of Single Event Upsets",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1262": {
+    "name": "Improper Access Control for Register Interface",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1265": {
+    "name": "Unintended Reentrant Invocation of Non-reentrant Code Via Nested Calls",
+    "category": "Concurrency",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1270": {
+    "name": "Generation of Incorrect Security Tokens",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1275": {
+    "name": "Sensitive Cookie with Improper SameSite Attribute",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1284": {
+    "name": "Improper Validation of Specified Quantity in Input",
+    "category": "Validation",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1287": {
+    "name": "Improper Validation of Specified Type of Input",
+    "category": "Validation",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1299": {
+    "name": "Missing Protection Mechanism for Alternate Hardware Interface",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1305": {
+    "name": "Incorrect Operation Order Within a Hardware Logic Device",
+    "category": "Hardware",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1391": {
+    "name": "Use of Weak Credentials",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1392": {
+    "name": "Use of Default Credentials",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1393": {
+    "name": "Use of Default Password",
+    "category": "Authentication",
+    "referencing_skills": [],
+    "skill_count": 0,
+    "chain": {
+      "atlas": [],
+      "attack_refs": [],
+      "framework_gaps": [],
+      "d3fend": [],
+      "rfc_refs": []
+    },
+    "related_cves": []
+  },
+  "CWE-1394": {
+    "name": "Use of Default Cryptographic Key",
+    "category": "Cryptography",
     "referencing_skills": [],
     "skill_count": 0,
     "chain": {

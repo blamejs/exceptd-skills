@@ -1833,6 +1833,7 @@
     "status": "open",
     "opened_date": "2026-04-01",
     "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2024-3154",
       "CVE-2025-49844",
       "CVE-2025-53773",
@@ -5781,6 +5782,7 @@
     "status": "open",
     "opened_at": "2026-05-18",
     "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2025-49844",
       "CVE-2025-59529",
       "CVE-2025-8671"
@@ -6912,6 +6914,55 @@
         "SI-4 monitoring runbook",
         "independent control-plane query (cloud-telemetry / Intune / SCCM)",
         "alert configuration: signature/platform drift > 7 days"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-PE-3": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "PE-3",
+    "control_name": "Physical Access Control",
+    "designed_for": "Physical access control to facilities and systems.",
+    "misses": [
+      "YellowKey-class WinRE + USB bypass collapses the physical-access → unauthorized-data-access boundary when BitLocker is in default TPM-only mode."
+    ],
+    "real_requirement": "Pair PE-3 with TPM+PIN BitLocker enforcement so encryption is bound to user authentication, not platform-state attestation alone.",
+    "status": "open",
+    "opened_date": "2026-05-19",
+    "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY"
+    ],
+    "theater_test": {
+      "claim": "Physical access controls prevent unauthorized data access per NIST 800-53 PE-3.",
+      "test": "Sample devices; confirm BitLocker protector class is TPM+PIN (not TPM-only) per device class. Theater verdict if the only PE-3 evidence is door-badge + camera logs.",
+      "evidence_required": [
+        "device protector-class inventory",
+        "GPO startup-PIN policy",
+        "SCCM/Intune compliance check"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "ISO-27001-2022-A.7.1": {
+    "framework": "ISO/IEC 27001:2022",
+    "control_id": "A.7.1",
+    "control_name": "Physical security perimeters",
+    "designed_for": "Physical security perimeters around offices, rooms, facilities.",
+    "misses": [
+      "YellowKey: even a perimeter-breached attacker can extract data without bypassing the BitLocker encryption layer when WinRE inherits the unsealed VMK."
+    ],
+    "real_requirement": "A.7.1 evidence must include the encryption-key-binding posture (TPM+PIN vs TPM-only) as part of the perimeter-breach contingency.",
+    "status": "open",
+    "opened_date": "2026-05-19",
+    "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY"
+    ],
+    "theater_test": {
+      "claim": "Physical perimeter defines an encryption-protected boundary per ISO/IEC 27001:2022 A.7.1.",
+      "test": "Same evidence-shape as NIST-800-53-PE-3 plus perimeter-breach contingency assessment. Theater verdict if the A.7.1 evidence treats facility perimeter alone as sufficient and does not document the encryption-key-binding posture for portable devices.",
+      "evidence_required": [
+        "protector-class inventory",
+        "breach-contingency runbook"
       ],
       "verdict_when_failed": "compliance-theater"
     }
