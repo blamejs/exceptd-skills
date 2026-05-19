@@ -6,6 +6,46 @@
   },
   "events": [
     {
+      "date": "2026-05-19",
+      "type": "catalog_update",
+      "artifact": "data/atlas-ttps.json",
+      "path": "data/atlas-ttps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 170
+    },
+    {
+      "date": "2026-05-19",
+      "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 711
+    },
+    {
+      "date": "2026-05-19",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 170
+    },
+    {
+      "date": "2026-05-19",
+      "type": "catalog_update",
+      "artifact": "data/d3fend-catalog.json",
+      "path": "data/d3fend-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 468
+    },
+    {
+      "date": "2026-05-19",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 7476
+    },
+    {
       "date": "2026-05-18",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
@@ -19,7 +59,7 @@
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 190
+      "entry_count": 192
     },
     {
       "date": "2026-05-18",
@@ -60,22 +100,6 @@
     {
       "date": "2026-05-15",
       "type": "catalog_update",
-      "artifact": "data/atlas-ttps.json",
-      "path": "data/atlas-ttps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 33
-    },
-    {
-      "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/attack-techniques.json",
-      "path": "data/attack-techniques.json",
-      "schema_version": "1.0.0",
-      "entry_count": 110
-    },
-    {
-      "date": "2026-05-15",
-      "type": "catalog_update",
       "artifact": "data/exploit-availability.json",
       "path": "data/exploit-availability.json",
       "schema_version": "1.1.0",
@@ -91,34 +115,10 @@
     },
     {
       "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/rfc-references.json",
-      "path": "data/rfc-references.json",
-      "schema_version": "1.0.0",
-      "entry_count": 41
-    },
-    {
-      "date": "2026-05-15",
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
       "note": "manifest threat_review_date — 42 skills, 11 catalogs"
-    },
-    {
-      "date": "2026-05-13",
-      "type": "catalog_update",
-      "artifact": "data/cwe-catalog.json",
-      "path": "data/cwe-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 98
-    },
-    {
-      "date": "2026-05-13",
-      "type": "catalog_update",
-      "artifact": "data/d3fend-catalog.json",
-      "path": "data/d3fend-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 29
     },
     {
       "date": "2026-05-11",
@@ -301,7 +301,7 @@
       "type": "skill_review",
       "artifact": "ai-attack-surface",
       "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.4.0 with gap flags"
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with gap flags"
     },
     {
       "date": "2026-05-01",

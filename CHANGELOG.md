@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.13.18 — 2026-05-19
+
+Cross-catalog bulk expansion + GreenPlasma/YellowKey mechanism curation. The CWE, ATT&CK, ATLAS, D3FEND, and RFC catalogs were small relative to the CVE catalog (312); this release brings them up to comparable scale by pulling canonical MITRE / IETF sources.
+
+### Features
+
+**GreenPlasma + YellowKey mechanism detail published.** v0.13.17 shipped both as stubs with mechanism deferred ("underlying component not publicly named", "boot-flow bypass"). Within 24h of release the broader writeup ecosystem named both:
+
+- `BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA` is a **CTFMON trust-abuse LPE**. The exploit creates arbitrary memory-section objects under directory-object paths writable only by SYSTEM (via registry + object-manager-permission primitives), then tricks CTFMON (Windows Collaborative Translation Framework, SYSTEM-context) into interacting with the planted section. `type` updated to `LPE-via-CTFMON-trust-abuse`. `vector` + `iocs.behavioral` now name CTFMON / object-manager directory paths. `attack_refs` adds T1574.012 (Hijack Execution Flow: COR_PROFILER) as the closest sub-technique class. PoC is intentionally incomplete (no SYSTEM-shell wrapper) — primitive is operator-completable.
+
+- `BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY` is a **WinRE + USB BitLocker bypass**. Physical-access attacker boots into Windows Recovery Environment; on TPM-only BitLocker the VMK is already unsealed from pre-OS boot; WinRE inherits the unlocked-volume cache; attacker-supplied USB media supplies tooling WinRE loads in a context with VMK access. `vector` updated to name WinRE + USB-tooling-load chain. `iocs.behavioral` now references Microsoft-Windows-BitLocker/BitLocker Management auto-unlock event + USB attach + file-copy correlation. `framework_control_gaps` adds NIST-800-53-PE-3 and ISO-27001-2022-A.7.1 (both as new entries with `theater_test` blocks).
+
+**Catalog bulk-expansion across 5 catalogs.** All under the same `_auto_imported: true + _intake_method` provenance pattern as the v0.13.17 KEV bulk-import; operators curate detail per-entry as needed.
+
+- **ATT&CK techniques: 110 → 711.** Pulled the MITRE ATT&CK Enterprise STIX bundle (`github.com/mitre/cti`, enterprise-attack.json) and imported every non-deprecated, non-revoked technique. Each row now carries `name`, `tactic`, `description` (short), `description_full`, `platforms`, `permissions_required`, `defense_bypassed`, `effective_permissions`, `detection`, `is_subtechnique`, `reference_url`, `stix_id` — the full STIX context set the AI needs to find a technique by topic instead of by ID lookup.
+- **ATLAS TTPs: 33 → 170.** Pulled MITRE ATLAS STIX bundle (`github.com/mitre-atlas/atlas-navigator-data`, dist/stix-atlas.json). `_meta.atlas_version` bumped to **v5.6.0** (May 2026 release) — supersedes the v5.4.0 pin. Each row now carries `description_full`, `platforms`, `detection`, `is_subtechnique`, `mitre_version`, `reference_url`, `stix_id` alongside the existing operator-curated framework-gap fields.
+- **D3FEND techniques: 29 → 468.** Pulled MITRE D3FEND OWL/JSON-LD ontology (`d3fend.mitre.org/ontologies/d3fend.json`, 497 techniques) and imported the full set. Each row now carries `description_full`, `synonyms`, `defends_against`, `counters`, `enables`, `broader_of`, `narrower_of`, `requires`, `inventories`, `kb_reference`, `reference_url` — the relationship graph that lets the AI route from an offensive finding to the canonical defensive countermeasure.
+- **CWE classes: 98 → 170.** Curated against the MITRE CWE Top 25 (2024 + 2025) plus commonly-referenced base classes (cryptography, authentication, authorization, supply chain, hardware, AI security). Top-25 rank fields (`top_25_rank_2024` + `top_25_rank_2025`) populated where the entry is on the list.
+- **RFC references: 41 → 7,476.** Pulled the official IETF RFC index (`rfc-editor.org/rfc-index.xml`) and imported every current RFC (status != HISTORIC / != UNKNOWN, no obsoleted-by relation) across Internet Standard, Proposed Standard, Draft Standard, Best Current Practice, Informational, and Experimental. Each row carries `title`, `status`, `published`, `authors`, `stream`, `area`, `working_group`, `abstract`, `keywords`, `page_count`, `doi`, `obsoletes`, `updates`, `updated_by`, `is_also`, `errata_count`, `tracker`, `txt_url`, `html_url`. Pre-existing operator-curated entries (the original 41) were preserved verbatim and additively backfilled with the new context-search fields.
+
+### Bugs
+
+The v0.13.17 audit at T+1 day surfaced that GreenPlasma's CTFMON primitive and YellowKey's WinRE+USB mechanism were named publicly within hours of the v0.13.17 ship but the catalog entries still said "underlying component not publicly named". Both entries now reflect the published mechanism; `_curation_note` field records the v0.13.18 refinement timestamp.
+
+### Internal
+
+- Four permanent refresh scripts shipped under `scripts/`, idempotent against the live catalog and skipping operator-curated entries:
+  - `scripts/refresh-rfc-index.js` — pulls the IETF RFC index (rfc-editor.org/rfc-index.xml) and upserts every current RFC (status != HISTORIC/UNKNOWN, no obsoleted-by). Wired as `npm run refresh-rfc-index`. Initial bulk-import landed 7,380 RFCs; subsequent runs are diff-only.
+  - `scripts/refresh-mitre-attack.js` — pulls MITRE ATT&CK Enterprise STIX (github.com/mitre/cti) and upserts non-deprecated/non-revoked techniques. Wired as `npm run refresh-mitre-attack`.
+  - `scripts/refresh-mitre-atlas.js` — pulls MITRE ATLAS STIX (github.com/mitre-atlas/atlas-navigator-data) and upserts AML.* techniques. Auto-detects ATLAS version from the source manifest. Wired as `npm run refresh-mitre-atlas`.
+  - `scripts/refresh-mitre-d3fend.js` — pulls the MITRE D3FEND OWL ontology (d3fend.mitre.org). Wired as `npm run refresh-mitre-d3fend`.
+  - `npm run refresh-upstream-catalogs` chains all four in sequence for the operator-level daily refresh.
+- One-shot curation scripts (CWE Top-25 + the curated security-RFC list + the GreenPlasma/YellowKey re-curation) were used during staging and deleted from the shipped tarball — they hand-curate fixed lists rather than poll a live source. The four refresh scripts above ARE the permanent pull-from-upstream pipeline.
+- Orphan refs from the curation pass filled: `NIST-800-53-PE-3` + `ISO-27001-2022-A.7.1` added to framework-control-gaps; `T1574.012` added to attack-techniques.
+- `package.json.description` updated to surface the catalog-size baseline (312 / 170 / 240 / 170 / 139 / 7476).
+- RFC catalog: bulk import covered every current IETF RFC (7,469 entries from rfc-editor.org/rfc-index.xml; deduped against the 96 pre-existing curated entries → +7,380 new, 7,476 total). Auto-imported entries land with `_intake_method: ietf-rfc-index` and a placeholder `relevance` string that operators refine when the RFC becomes operationally cited.
+- All 15 predeploy gates pass.
+
 ## 0.13.17 — 2026-05-18
 
 Threat-intake gap closure for the Nightmare-Eclipse / Chaotic Eclipse researcher-handle cluster, a new CVE-regression detection method, and a substantial catalog expansion via CISA KEV bulk intake — the catalog grows from 68 to 312 entries (4.6× of the v0.13.16 baseline).

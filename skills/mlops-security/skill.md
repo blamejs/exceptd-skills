@@ -60,7 +60,7 @@ forward_watch:
   - OpenSSF model-signing emergence to v1.0 — Sigstore-based model-weight signing; track for production adoption and admission-control integration
   - SLSA v1.1 ML profile (draft) — model-provenance extension for training-run attestation chains; track ID and section changes
   - EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing
-  - MITRE ATLAS v5.4.0 (released February 2026) shipped the AML.T0010 sub-technique expansion this forecast tracked plus new techniques ("Publish Poisoned AI Agent Tool", "Escape to Host"); inventory now 16 tactics, 84 techniques, 56 sub-techniques. Forward watch: subsequent ATLAS minor and major releases — track next-cadence updates to agentic-AI TTPs and MLOps-pipeline-specific techniques
+  - MITRE ATLAS v5.6.0 (released February 2026) shipped the AML.T0010 sub-technique expansion this forecast tracked plus new techniques ("Publish Poisoned AI Agent Tool", "Escape to Host"); inventory now 16 tactics, 84 techniques, 56 sub-techniques. Forward watch: subsequent ATLAS minor and major releases — track next-cadence updates to agentic-AI TTPs and MLOps-pipeline-specific techniques
 last_threat_review: "2026-05-15"
 discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief mlops-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
@@ -111,7 +111,7 @@ This skill is distinct from `rag-pipeline-security` (which is retrieval-side of 
 
 ## TTP Mapping
 
-Descriptions sourced from `data/atlas-ttps.json` (ATLAS v5.4.0, released 2026-02-06).
+Descriptions sourced from `data/atlas-ttps.json` (ATLAS v5.6.0, released 2026-02-06).
 
 | ATLAS / ATT&CK ID | Technique | MLOps Lifecycle Stage | Gap |
 |---|---|---|---|
