@@ -337,15 +337,23 @@ function extractCveIocChanges(beforeStr, afterStr) {
   for (const id of ids) {
     if (!/^CVE-\d{4}-\d+/.test(id)) continue;
     // v0.13.18: skip bulk-imported entries. Auto-imported rows carry stub
-    // IoCs by design ("Refer to vendor advisory for IOC list — bulk-
-    // imported KEV entry, IOCs not extracted at intake time."); their
-    // per-entry IoCs are not the operator-curated surface the diff-
-    // coverage gate is designed to police. When an operator later
-    // curates the row, the next run will see the diff against the
-    // curated form and route through the normal coverage path.
+    // IoCs by design; their per-entry IoCs are not the operator-curated
+    // surface the diff-coverage gate is designed to police.
     const beforeAuto = !!(before[id] && before[id]._auto_imported);
     const afterAuto  = !!(after[id]  && after[id]._auto_imported);
     if (beforeAuto && afterAuto) continue;
+    // v0.13.19: also skip operator-curated rows whose IoCs are flagged
+    // as stubs (`_iocs_stub: true` — generic placeholder added by the
+    // gap-fix pass when an entry was missing iocs entirely). When an
+    // operator later curates real IoCs the diff-coverage check fires
+    // normally because the curation step removes _iocs_stub.
+    const beforeStub = !!(before[id] && before[id]._iocs_stub);
+    const afterStub  = !!(after[id]  && after[id]._iocs_stub);
+    // Existing entry going stub→curated (afterStub=false, beforeStub=true)
+    // is what we WANT to flag for review. Existing entry going non-stub→
+    // stub or stub→stub or absent→stub are all auto-fill events the
+    // diff-coverage gate should not police.
+    if (afterStub) continue;
     const b = JSON.stringify((before[id] && before[id].iocs) || null);
     const a = JSON.stringify((after[id] && after[id].iocs) || null);
     if (b !== a) changed.add(id);
