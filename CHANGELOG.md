@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.16 — 2026-05-18
+
+CWE-264 added to the local CWE catalog as a legacy-mapping entry.
+
+### Bugs
+
+**`validate-cve-catalog` no longer warns on `CWE-264` orphan.** v0.13.14 added the DirtyDecrypt (`CVE-2026-31635`) entry with `cwe_refs: ["CWE-362", "CWE-264"]`. CWE-264 was deprecated as a category in CWE 4.x (split into more specific child weaknesses: CWE-269 / CWE-285 / CWE-732), so the local 55-entry catalog didn't carry it — the validator surfaced an orphan warning on every predeploy run. Added CWE-264 as a deprecated-category retention entry with `notes` explaining the legacy-mapping rationale and `related_weaknesses` pointing at the non-deprecated children. The catalog now validates with zero warnings (`68/68 CVE entries validated`).
+
 ## 0.13.15 — 2026-05-18
 
 Doc currency for v0.13.14 — README + AGENTS now reflect the 12-feed intake.
