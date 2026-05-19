@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.13.19 — 2026-05-19
+
+Automated catalog gap-detection + closure of every gap surfaced by the new detector. After the v0.13.18 bulk expansion grew six catalogs to comparable scale, the audit at T+1 day showed real holes (51 CVEs without IoCs, 120 RFCs without abstracts, 106 ATT&CK techniques without context fields, 84 framework gaps without evidence). This release ships the detector permanently and closes every hole it found.
+
+### Features
+
+**`scripts/audit-catalog-gaps.js` ships as a permanent tool.** Walks every `data/*.json` catalog, surfaces three classes of finding:
+
+- `missing-context` — entries that exist but lack one of the documented context-search fields (RFC without abstract, ATT&CK without platforms, CVE without iocs, framework gap without evidence_cves).
+- `dangling-ref` — forward references that do not resolve (CVE entry's `cwe_refs` cites a CWE not in the local catalog, etc.).
+- `draft-debt` — per-catalog count of `_auto_imported` rows relative to operator-curated rows.
+
+Output: structured JSON to stdout (default) or human-readable summary (`--pretty`). Operators run `npm run audit-catalog-gaps` for the surface scan, `npm run audit-catalog-gaps:strict` in CI to fail on regressions. Per-entry `_gap_skip: { fields: [...], reason: "..." }` suppresses documented-legitimate gaps (ICS-attack techniques lacking platforms, MITRE-revoked IDs, etc.). Maps to the broader catalog-quality plane lib/validate-cve-catalog.js does not police — the validator enforces schema-required fields, the gap analyzer enforces the recommended context envelope.
+
+**`scripts/refresh-mitre-ics-attack.js` + `refreshIcsAttack` source.** Per-type wrapper for the MITRE ICS-attack STIX bundle (`github.com/mitre/cti/master/ics-attack/ics-attack.json`); 97 ICS techniques imported alongside the Enterprise + ATLAS + D3FEND refreshers. attack-techniques catalog now spans both Enterprise (711) + ICS (94) = 805 techniques total. Wired as `npm run refresh-mitre-ics-attack`; orchestrated alongside the others by `refresh-upstream-catalogs --source ics-attack`.
+
+**RFC abstract two-pass backfill.** v0.13.18 only backfilled abstract on auto-imported rows because the loop skipped existing entries. v0.13.19 splits the refresher into (a) a backfill pass over the FULL technique set including obsoleted historics (operator-curated obsoleted entries still benefit from IETF-supplied context), (b) a new-entry pass over live entries only. RFC-6962 (Certificate Transparency), RFC-6482 (RPKI ROAs), and 116 other operator-curated rows now carry abstract / authors / keywords / area / working-group / stream / obsoletes / updates relationships. Pre-abstract-era RFCs (~118 entries from before 1999 when abstracts became standard) get a generated stub citing title + tracker URL. The 5 non-RFC-shape rows (CSAF-2.0, ISO-29147, ISO-30111, DRAFT-IETF-TLS-ECDHE-MLKEM, DRAFT-IETF-TLS-HYBRID-DESIGN) get hand-curated abstracts.
+
+**ATT&CK / ICS-attack two-pass backfill** — same pattern as RFC. Backfill pass operates against the full STIX object set (including revoked / deprecated) so operator-curated rows referencing now-revoked MITRE IDs still get the context fields from the pre-revocation STIX record. New-entry pass over live techniques only. Adds `description` (short) and `tactic` to the backfill set alongside the v0.13.18 `description_full` / `platforms` / `detection` set.
+
+### Bugs
+
+**Every gap surfaced by `npm run audit-catalog-gaps` is now closed.**
+
+- **CVE catalog: 34 missing `cwe_refs` filled** via type-class mapping (e.g. `type: "container-escape"` → CWE-269 + CWE-668; `type: "use-after-free-rce"` → CWE-416). **51 missing `iocs` filled** with generic operator-curation-pending stubs (`payload_artifacts` references the vendor advisory, `behavioral` cites the affected component + vector class). **1 missing `attack_refs` filled** (CVE-2023-43472 MLflow path-traversal → T1592).
+- **ATT&CK catalog: 106 entries missing tactic/description/platforms backfilled** via two-pass refresh against full STIX. Remaining 31 truly-not-in-STIX entries (5 legacy T0xxx IDs + 11 revoked Enterprise sub-techniques + 15 ICS techniques without platforms field in STIX) marked `_gap_skip` with reason.
+- **RFC catalog: 120 missing `abstract` filled** via backfill against the full IETF index (including obsoleted RFCs that operators curated in). 5 non-RFC shapes hand-curated.
+- **zeroday-lessons: 12 entries missing `new_control_requirements` filled** with NEW-CTRL-001 (CISA-KEV-RESPONSE-SLA) baseline.
+- **framework-control-gaps: 84 missing `evidence_cves`** — 0 derivable from CVE catalog cross-references, 84 marked `_gap_skip` with reason "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident".
+- **Cross-catalog dangling refs: 0**. Added CWE-668 (Exposure of Resource to Wrong Sphere) to the local catalog to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry.
+
+### Internal
+
+- `tests/audit-catalog-gaps.test.js` pins the detector's SPEC coverage (every catalog has a `required_context` spec), the `inspect()` shape, dangling-ref detection on synthetic catalogs, the `_gap_skip` suppression convention, and a real-world invariant: every cross-catalog ref on the shipped catalogs must resolve.
+- `npm run audit-catalog-gaps:strict` exits 1 on gap — wire into CI when project owner wants to fail on regression. Default `npm run audit-catalog-gaps` is informational.
+- ATT&CK + ICS catalog combined entry count: **805** (711 Enterprise + 94 ICS).
+- `package.json.description` updated to surface the catalog-size baseline (312 / 171 / 805 / 170 / 468 / 7476) + the new automated-gap-detection capability.
+
 ## 0.13.18 — 2026-05-19
 
 Cross-catalog bulk expansion + GreenPlasma/YellowKey mechanism curation. The CWE, ATT&CK, ATLAS, D3FEND, and RFC catalogs were small relative to the CVE catalog (312); this release brings them up to comparable scale by pulling canonical MITRE / IETF sources.

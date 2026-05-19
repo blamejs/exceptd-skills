@@ -1,7 +1,7 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.13.18",
-  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 170 CWEs / 711 ATT&CK / 170 ATLAS / 468 D3FEND / 7476 RFCs — every catalog carries context-search fields, not just titles), 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
+  "version": "0.13.19",
+  "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, automated gap-detection, pre-computed indexes, Ed25519-signed.",
   "keywords": [
     "ai-security",
     "ai-skills",
@@ -94,9 +94,13 @@
     "refresh-reverse-refs": "node scripts/refresh-reverse-refs.js",
     "refresh-rfc-index": "node scripts/refresh-rfc-index.js",
     "refresh-mitre-attack": "node scripts/refresh-mitre-attack.js",
+    "refresh-mitre-ics-attack": "node scripts/refresh-mitre-ics-attack.js",
     "refresh-mitre-atlas": "node scripts/refresh-mitre-atlas.js",
     "refresh-mitre-d3fend": "node scripts/refresh-mitre-d3fend.js",
     "refresh-upstream-catalogs": "node scripts/refresh-upstream-catalogs.js",
+    "audit-catalog-gaps": "node scripts/audit-catalog-gaps.js --pretty",
+    "audit-catalog-gaps:json": "node scripts/audit-catalog-gaps.js",
+    "audit-catalog-gaps:strict": "node scripts/audit-catalog-gaps.js --pretty --strict",
     "predeploy": "node scripts/predeploy.js",
     "diff-coverage": "node scripts/check-test-coverage.js",
     "prepublishOnly": "node -e \"if(process.env.EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY!=='1'){const r=require('child_process').spawnSync(process.execPath,['scripts/predeploy.js'],{stdio:'inherit'});if(r.status){process.exit(r.status)}}\" && node lib/validate-package.js",

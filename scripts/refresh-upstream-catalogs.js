@@ -190,53 +190,56 @@ async function refreshRfc({ dry = false } = {}) {
   const body = await fetchUrl(RFC_SRC);
   console.log(`[refresh-upstream:rfc] index size: ${(body.length / 1e6).toFixed(2)} MB`);
   const re = /<rfc-entry>([\s\S]*?)<\/rfc-entry>/g;
-  const entries = [];
+  const entries = [];           // current — eligible for new-add
+  const backfillable = [];      // any-status — eligible for backfill on existing rows
   let m;
   while ((m = re.exec(body)) !== null) {
     const e = parseRfcEntry(m[1]);
     if (!e) continue;
+    backfillable.push(e);
     if (e.obsoleted || e.status === "HISTORIC" || e.status === "UNKNOWN") continue;
     entries.push(e);
   }
-  console.log(`[refresh-upstream:rfc] current entries: ${entries.length}`);
+  console.log(`[refresh-upstream:rfc] current entries: ${entries.length} (+ ${backfillable.length - entries.length} obsoleted/historic available for backfill on existing rows)`);
   const cat = loadCatalog("rfc-references.json");
   const existing = new Set(Object.keys(cat).filter((k) => k !== "_meta"));
-  let added = 0, statusBumped = 0;
+  let added = 0, statusBumped = 0, backfilledCount = 0;
+  // First pass: backfill ALL existing rows from the broader entry set
+  // (including obsoleted historics). Operator may have curated an
+  // obsoleted RFC in for documentation; we still want abstract/authors.
+  for (const e of backfillable) {
+    const id = `RFC-${e.num}`;
+    if (!existing.has(id)) continue;
+    const cur = cat[id];
+    if (!cur) continue;
+    let touched = false;
+    if (cur._auto_imported && cur.status !== RFC_STATUS_MAP[e.status]) {
+      cur.status = RFC_STATUS_MAP[e.status];
+      touched = true;
+      statusBumped++;
+    }
+    if (!cur.abstract && e.abstract) { cur.abstract = e.abstract; touched = true; }
+    if ((!cur.keywords || cur.keywords.length === 0) && e.keywords.length) { cur.keywords = e.keywords; touched = true; }
+    if (!cur.area && e.area) { cur.area = e.area; touched = true; }
+    if (!cur.working_group && e.wg) { cur.working_group = e.wg; touched = true; }
+    if (!cur.stream && e.stream) { cur.stream = e.stream; touched = true; }
+    if ((!cur.authors || cur.authors.length === 0) && e.authors.length) { cur.authors = e.authors; touched = true; }
+    if (!cur.doi && e.doi) { cur.doi = e.doi; touched = true; }
+    if (!cur.page_count && e.pageCount) { cur.page_count = e.pageCount; touched = true; }
+    if ((!cur.obsoletes || cur.obsoletes.length === 0) && e.obsoletes.length) { cur.obsoletes = e.obsoletes; touched = true; }
+    if ((!cur.updates || cur.updates.length === 0) && e.updates.length) { cur.updates = e.updates; touched = true; }
+    if ((!cur.updated_by || cur.updated_by.length === 0) && e.updatedBy.length) { cur.updated_by = e.updatedBy; touched = true; }
+    if ((!cur.obsoleted_by || cur.obsoleted_by.length === 0) && e.obsoletedBy.length) { cur.obsoleted_by = e.obsoletedBy; touched = true; }
+    if ((!cur.is_also || cur.is_also.length === 0) && e.isAlso.length) { cur.is_also = e.isAlso; touched = true; }
+    if (!cur.txt_url) { cur.txt_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.txt`; touched = true; }
+    if (!cur.html_url) { cur.html_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.html`; touched = true; }
+    if (touched) { cur.last_verified = TODAY; backfilledCount++; }
+  }
+  // Second pass: add new "current" entries that weren't in the catalog.
   for (const e of entries) {
     const id = `RFC-${e.num}`;
-    if (existing.has(id)) {
-      const cur = cat[id];
-      let touched = false;
-      // Status bumps only on auto-imported rows — operator-curated rows
-      // may have a deliberately-different status (e.g. tracking the
-      // older standard while a successor is in Proposed Standard limbo).
-      if (cur && cur._auto_imported && cur.status !== RFC_STATUS_MAP[e.status]) {
-        cur.status = RFC_STATUS_MAP[e.status];
-        touched = true;
-        statusBumped++;
-      }
-      // Backfill context-search fields on ANY row (auto-imported or
-      // operator-curated) when the local field is absent. Backfill is
-      // additive — it never overwrites a value an operator chose, only
-      // fills holes left by the pre-v0.13.18 catalog shape that stored
-      // only title + status.
-      if (cur && !cur.abstract && e.abstract) { cur.abstract = e.abstract; touched = true; }
-      if (cur && (!cur.keywords || cur.keywords.length === 0) && e.keywords.length) { cur.keywords = e.keywords; touched = true; }
-      if (cur && !cur.area && e.area) { cur.area = e.area; touched = true; }
-      if (cur && !cur.working_group && e.wg) { cur.working_group = e.wg; touched = true; }
-      if (cur && !cur.stream && e.stream) { cur.stream = e.stream; touched = true; }
-      if (cur && (!cur.authors || cur.authors.length === 0) && e.authors.length) { cur.authors = e.authors; touched = true; }
-      if (cur && !cur.doi && e.doi) { cur.doi = e.doi; touched = true; }
-      if (cur && !cur.page_count && e.pageCount) { cur.page_count = e.pageCount; touched = true; }
-      if (cur && (!cur.obsoletes || cur.obsoletes.length === 0) && e.obsoletes.length) { cur.obsoletes = e.obsoletes; touched = true; }
-      if (cur && (!cur.updates || cur.updates.length === 0) && e.updates.length) { cur.updates = e.updates; touched = true; }
-      if (cur && (!cur.updated_by || cur.updated_by.length === 0) && e.updatedBy.length) { cur.updated_by = e.updatedBy; touched = true; }
-      if (cur && (!cur.is_also || cur.is_also.length === 0) && e.isAlso.length) { cur.is_also = e.isAlso; touched = true; }
-      if (cur && !cur.txt_url) { cur.txt_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.txt`; touched = true; }
-      if (cur && !cur.html_url) { cur.html_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.html`; touched = true; }
-      if (touched && cur) cur.last_verified = TODAY;
-      continue;
-    }
+    // Existing rows handled in the first-pass backfill above.
+    if (existing.has(id)) continue;
     cat[id] = {
       number: e.num,
       title: e.title,
@@ -272,12 +275,12 @@ async function refreshRfc({ dry = false } = {}) {
     cat._meta.last_threat_review = TODAY;
   }
   if (dry) {
-    console.log(`[refresh-upstream:rfc] DRY-RUN: +${added} new, ${statusBumped} status bumps.`);
-    return { added, statusBumped };
+    console.log(`[refresh-upstream:rfc] DRY-RUN: +${added} new, ${backfilledCount} backfilled, ${statusBumped} status bumps.`);
+    return { added, statusBumped, backfilled: backfilledCount };
   }
   writeCatalog("rfc-references.json", cat);
-  console.log(`[ok] rfc-references.json: +${added} entries, ${statusBumped} status bumps (now ${existing.size} total)`);
-  return { added, statusBumped };
+  console.log(`[ok] rfc-references.json: +${added} entries, ${backfilledCount} backfilled, ${statusBumped} status bumps (now ${existing.size} total)`);
+  return { added, statusBumped, backfilled: backfilledCount };
 }
 
 // ---------------- ATT&CK ----------------
@@ -340,6 +343,17 @@ function backfillAttack(cur, fresh) {
       if (!cur[key] && val) { cur[key] = val; touched = true; }
     }
   };
+  // v0.13.19: include description (short) + tactic in the backfill set.
+  // Existing rows from the original 110-entry catalog often have only
+  // {name, version} — they need tactic + short-description too, not just
+  // the v0.13.18 description_full / platforms / detection additions.
+  fillIfEmpty("description", fresh.description);
+  // tactic: arrays only (existing rows may have a string tactic; do
+  // not overwrite a stringified tactic with an array form).
+  if ((!cur.tactic || (Array.isArray(cur.tactic) && cur.tactic.length === 0)) && Array.isArray(fresh.tactic) && fresh.tactic.length) {
+    cur.tactic = fresh.tactic;
+    touched = true;
+  }
   fillIfEmpty("description_full", fresh.description_full);
   fillIfEmpty("platforms", fresh.platforms);
   fillIfEmpty("data_sources", fresh.data_sources);
@@ -359,10 +373,20 @@ async function refreshAttack({ dry = false, cap = Infinity } = {}) {
   console.log("[refresh-upstream:attack] fetching MITRE ATT&CK STIX...");
   const body = await fetchUrl(ATTACK_SRC);
   const stix = JSON.parse(body);
-  const techs = (stix.objects || []).filter(
+  // For NEW adds: live techniques only (skip revoked / deprecated).
+  // For BACKFILL on existing rows: include revoked too — an operator-
+  // curated row that references a now-revoked MITRE ID may still want
+  // the context fields (name / description / platforms) from the
+  // pre-revocation STIX record. Same logic as the RFC obsoleted-but-
+  // backfillable two-pass design.
+  const liveTechs = (stix.objects || []).filter(
     (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
   );
-  console.log(`[refresh-upstream:attack] STIX live techniques: ${techs.length}`);
+  const backfillTechs = (stix.objects || []).filter(
+    (o) => o.type === "attack-pattern"
+  );
+  console.log(`[refresh-upstream:attack] STIX live techniques: ${liveTechs.length} (+ ${backfillTechs.length - liveTechs.length} revoked/deprecated available for backfill on existing rows)`);
+  const techs = liveTechs;
   const local = loadCatalog("attack-techniques.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   techs.sort((a, b) => {
@@ -375,19 +399,26 @@ async function refreshAttack({ dry = false, cap = Infinity } = {}) {
   });
   let added = 0;
   let backfilled = 0;
+  // First pass: backfill existing rows against the FULL technique set
+  // (including revoked) so operator-curated rows still get context.
+  for (const t of backfillTechs) {
+    const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-attack");
+    if (!extRef || !extRef.external_id) continue;
+    const id = extRef.external_id;
+    if (!existing.has(id)) continue;
+    const fresh = attackEntryFromStix(t, extRef);
+    const cur = local[id];
+    if (backfillAttack(cur, fresh)) {
+      cur.last_verified = TODAY;
+      backfilled++;
+    }
+  }
+  // Second pass: add new entries from live techniques only.
   for (const t of techs) {
     const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-attack");
     if (!extRef || !extRef.external_id) continue;
     const id = extRef.external_id;
-    if (existing.has(id)) {
-      const fresh = attackEntryFromStix(t, extRef);
-      const cur = local[id];
-      if (backfillAttack(cur, fresh)) {
-        cur.last_verified = TODAY;
-        backfilled++;
-      }
-      continue;
-    }
+    if (existing.has(id)) continue;
     if (added >= cap) continue;
     local[id] = attackEntryFromStix(t, extRef);
     existing.add(id);
@@ -397,6 +428,77 @@ async function refreshAttack({ dry = false, cap = Infinity } = {}) {
   if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
   writeCatalog("attack-techniques.json", local);
   console.log(`[ok] attack-techniques.json: +${added} entries, ${backfilled} context backfills (now ${existing.size} total)`);
+  return { added, backfilled };
+}
+
+// ---------------- ICS-ATT&CK ----------------
+
+const ICS_ATTACK_SRC = "https://raw.githubusercontent.com/mitre/cti/master/ics-attack/ics-attack.json";
+const ICS_TACTIC_NAME = {
+  "initial-access": "Initial Access (ICS)",
+  "execution": "Execution (ICS)",
+  "persistence": "Persistence (ICS)",
+  "privilege-escalation": "Privilege Escalation (ICS)",
+  "evasion": "Evasion (ICS)",
+  "discovery": "Discovery (ICS)",
+  "lateral-movement": "Lateral Movement (ICS)",
+  "collection": "Collection (ICS)",
+  "command-and-control": "Command and Control (ICS)",
+  "inhibit-response-function": "Inhibit Response Function",
+  "impair-process-control": "Impair Process Control",
+  "impact": "Impact (ICS)"
+};
+
+async function refreshIcsAttack({ dry = false, cap = Infinity } = {}) {
+  console.log("[refresh-upstream:ics-attack] fetching MITRE ICS-attack STIX...");
+  const body = await fetchUrl(ICS_ATTACK_SRC);
+  const stix = JSON.parse(body);
+  const techs = (stix.objects || []).filter(
+    (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
+  );
+  console.log(`[refresh-upstream:ics-attack] STIX live ICS techniques: ${techs.length}`);
+  const local = loadCatalog("attack-techniques.json");
+  const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
+  let added = 0, backfilled = 0;
+  for (const t of techs) {
+    const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-ics-attack" || r.source_name === "mitre-attack");
+    if (!extRef || !extRef.external_id) continue;
+    const id = extRef.external_id;
+    const tactics = (t.kill_chain_phases || [])
+      .filter((p) => (p.kill_chain_name || "").includes("ics"))
+      .map((p) => ICS_TACTIC_NAME[p.phase_name] || `${p.phase_name} (ICS)`);
+    const fullDesc = String(t.description || "").replace(/\s+/g, " ").trim();
+    let shortDesc = fullDesc.split(/\.\s/)[0];
+    if (shortDesc.length > 500) shortDesc = shortDesc.slice(0, 497) + "...";
+    if (shortDesc && !shortDesc.endsWith(".")) shortDesc += ".";
+    const fresh = {
+      id, name: t.name, version: "ics-attack-v15",
+      tactic: tactics,
+      description: shortDesc,
+      description_full: fullDesc,
+      platforms: Array.isArray(t.x_mitre_platforms) ? t.x_mitre_platforms : [],
+      detection: (t.x_mitre_detection || "").replace(/\s+/g, " ").trim() || null,
+      reference_url: extRef.url || `https://attack.mitre.org/techniques/${id}/`,
+      stix_id: t.id || null,
+      last_verified: TODAY,
+      _auto_imported: true,
+      _intake_method: "mitre-ics-attack-stix",
+      _matrix: "ics-attack"
+    };
+    if (existing.has(id)) {
+      const cur = local[id];
+      if (backfillAttack(cur, fresh)) { cur.last_verified = TODAY; backfilled++; }
+      continue;
+    }
+    if (added >= cap) continue;
+    local[id] = fresh;
+    existing.add(id);
+    added++;
+  }
+  if (dry) { console.log(`[refresh-upstream:ics-attack] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled }; }
+  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+  writeCatalog("attack-techniques.json", local);
+  console.log(`[ok] attack-techniques.json: +${added} ICS entries, ${backfilled} backfills (now ${existing.size} total)`);
   return { added, backfilled };
 }
 
@@ -645,10 +747,11 @@ async function refreshD3fend({ dry = false, cap = Infinity } = {}) {
 // ---------------- CLI dispatcher ----------------
 
 const SOURCES = {
-  rfc:    { name: "ietf-rfc-index",    run: refreshRfc },
-  attack: { name: "mitre-attack-stix", run: refreshAttack },
-  atlas:  { name: "mitre-atlas-stix",  run: refreshAtlas },
-  d3fend: { name: "mitre-d3fend-owl",  run: refreshD3fend }
+  rfc:        { name: "ietf-rfc-index",       run: refreshRfc },
+  attack:     { name: "mitre-attack-stix",    run: refreshAttack },
+  "ics-attack": { name: "mitre-ics-attack-stix", run: refreshIcsAttack },
+  atlas:      { name: "mitre-atlas-stix",     run: refreshAtlas },
+  d3fend:     { name: "mitre-d3fend-owl",     run: refreshD3fend }
 };
 
 function parseArgs(argv) {
@@ -690,6 +793,7 @@ if (require.main === module) {
 module.exports = {
   refreshRfc,
   refreshAttack,
+  refreshIcsAttack,
   refreshAtlas,
   refreshD3fend,
   SOURCES,
