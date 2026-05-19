@@ -49,12 +49,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ALL-MCP-TOOL-TRUST": {
     "framework": "ALL",
@@ -87,12 +83,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
     "framework": "ALL",
@@ -125,12 +117,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-Essential-8-App-Hardening": {
     "framework": "ASD Essential Eight (AU)",
@@ -163,12 +151,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-Essential-8-Backup": {
     "framework": "ASD Essential Eight (AU)",
@@ -200,12 +184,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-Essential-8-MFA": {
     "framework": "ASD Essential Eight (AU)",
@@ -238,12 +218,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-Essential-8-Patch": {
     "framework": "ASD Essential Eight (AU)",
@@ -273,12 +249,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "CIS-Controls-v8-Control7": {
     "framework": "CIS Controls v8",
@@ -379,12 +351,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "CWE-Top-25-2024-meta": {
     "framework": "CWE Top 25 Most Dangerous Software Weaknesses (2024 list)",
@@ -419,12 +387,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "CycloneDX-v1.6-SBOM": {
     "framework": "CycloneDX v1.6 (OWASP SBOM standard)",
@@ -459,12 +423,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-Art28": {
     "framework": "EU DORA (Regulation 2022/2554)",
@@ -533,12 +493,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-ITS-TLPT": {
     "framework": "EU DORA (Regulation 2022/2554) — ITS on threat-led penetration testing under Art. 26",
@@ -574,12 +530,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-RTS-Incident-Classification": {
     "framework": "EU DORA (Regulation 2022/2554) — RTS on classification of major ICT-related incidents under Art. 18(3)",
@@ -614,12 +566,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-IA-CTPP-Oversight": {
     "framework": "EU DORA (Regulation 2022/2554) — Implementing Acts for critical-third-party-provider (CTPP) oversight under Art. 31-44",
@@ -653,12 +601,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-AI-Act-Art-15": {
     "framework": "EU Artificial Intelligence Act (2024/1689)",
@@ -727,12 +671,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-AI-Act-Art-55-Systemic": {
     "framework": "EU Artificial Intelligence Act (2024/1689) — GPAI with systemic risk",
@@ -769,12 +709,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-AI-Act-Annex-IX-Conformity": {
     "framework": "EU Artificial Intelligence Act (2024/1689) — Annex IX conformity assessment",
@@ -806,12 +742,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-AI-Act-GPAI-CoP": {
     "framework": "EU Artificial Intelligence Act (2024/1689) — Code of Practice for GPAI",
@@ -844,12 +776,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-CRA-Art13": {
     "framework": "EU Cyber Resilience Act (2024/2847)",
@@ -930,12 +858,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HIPAA-Security-Rule-164.312(a)(1)": {
     "framework": "HIPAA Security Rule (45 CFR § 164.312)",
@@ -970,12 +894,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HIPAA-Security-Rule-2026-NPRM-164.308": {
     "framework": "HIPAA Security Rule (45 CFR § 164.308) — 2026 Notice of Proposed Rulemaking",
@@ -1010,12 +930,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HIPAA-Security-Rule-2026-NPRM-164.310": {
     "framework": "HIPAA Security Rule (45 CFR § 164.310) — 2026 Notice of Proposed Rulemaking",
@@ -1049,12 +965,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HIPAA-Security-Rule-2026-NPRM-164.312": {
     "framework": "HIPAA Security Rule (45 CFR § 164.312) — 2026 Notice of Proposed Rulemaking",
@@ -1091,12 +1003,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HIPAA-Security-Rule-2026-NPRM-164.314": {
     "framework": "HIPAA Security Rule (45 CFR § 164.314) — 2026 Notice of Proposed Rulemaking",
@@ -1130,12 +1038,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "HITRUST-CSF-v11.4-09.l": {
     "framework": "HITRUST CSF v11.4",
@@ -1169,12 +1073,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "IEC-62443-3-3": {
     "framework": "IEC 62443-3-3 (Industrial communication networks — security for IACS)",
@@ -1211,12 +1111,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ISO-27001-2022-A.8.16": {
     "framework": "ISO/IEC 27001:2022",
@@ -1249,12 +1145,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ISO-27001-2022-A.8.22": {
     "framework": "ISO/IEC 27001:2022",
@@ -1680,12 +1572,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ISO-IEC-42001-2023-clause-6.1.2": {
     "framework": "ISO/IEC 42001:2023 (AI Management System)",
@@ -1721,12 +1609,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NERC-CIP-007-6-R4": {
     "framework": "NERC CIP-007-6 (BES Cyber System Security Management)",
@@ -1763,12 +1647,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Art21-incident-handling": {
     "framework": "EU NIS2 Directive (2022/2555)",
@@ -1887,12 +1767,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-218-SSDF": {
     "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
@@ -2284,12 +2160,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-53-SI-2": {
     "framework": "NIST SP 800-53 Rev 5",
@@ -2696,12 +2568,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-82r3": {
     "framework": "NIST SP 800-82 Rev 3 (Guide to OT Security)",
@@ -2738,12 +2606,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-AI-RMF-MAP-3.4": {
     "framework": "NIST AI RMF 1.0",
@@ -2810,12 +2674,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-ASVS-v5.0-V14": {
     "framework": "OWASP ASVS v5.0",
@@ -2849,12 +2709,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-LLM-Top-10-2025-LLM01": {
     "framework": "OWASP Top 10 for LLM Applications 2025",
@@ -2926,12 +2782,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-LLM-Top-10-2025-LLM06": {
     "framework": "OWASP Top 10 for LLM Applications 2025",
@@ -2967,12 +2819,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-LLM-Top-10-2025-LLM08": {
     "framework": "OWASP Top 10 for LLM Applications 2025",
@@ -3009,12 +2857,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-Pen-Testing-Guide-v5": {
     "framework": "OWASP Web Security Testing Guide v5 (WSTG)",
@@ -3053,12 +2897,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-Top-10-2021-A06": {
     "framework": "OWASP Top 10 (2021)",
@@ -3163,12 +3003,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-11.6.1": {
     "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
@@ -3201,12 +3037,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-12.3.3": {
     "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
@@ -3238,12 +3070,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-12.10.7": {
     "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
@@ -3278,12 +3106,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PSD2-RTS-SCA": {
     "framework": "EU PSD2 Regulatory Technical Standards on Strong Customer Authentication (Commission Delegated Regulation (EU) 2018/389)",
@@ -3318,12 +3142,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PTES-Pre-engagement": {
     "framework": "Penetration Testing Execution Standard (PTES)",
@@ -3359,12 +3179,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SLSA-v1.0-Build-L3": {
     "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts) — Build Track",
@@ -3505,12 +3321,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SOC2-CC9-vendor-management": {
     "framework": "SOC 2 (AICPA Trust Services Criteria)",
@@ -3579,12 +3391,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SWIFT-CSCF-v2026-1.1": {
     "framework": "SWIFT Customer Security Controls Framework v2026",
@@ -3620,12 +3428,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-A1": {
     "framework": "UK NCSC Cyber Assessment Framework v3.2",
@@ -3655,12 +3459,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2": {
     "framework": "UK NCSC Cyber Assessment Framework v3.2",
@@ -3693,12 +3493,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-C1": {
     "framework": "UK NCSC Cyber Assessment Framework v3.2",
@@ -3732,12 +3528,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-D1": {
     "framework": "UK NCSC Cyber Assessment Framework v3.2",
@@ -3767,12 +3559,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "VEX-CSAF-v2.1": {
     "framework": "VEX via OASIS CSAF 2.1 (Common Security Advisory Framework)",
@@ -3806,12 +3594,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "FCC-CPNI-4.1": {
     "framework": "FCC-CPNI",
@@ -3846,12 +3630,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "FCC-Cyber-Incident-Notification-2024": {
     "framework": "FCC",
@@ -3883,12 +3663,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Annex-I-Telecom": {
     "framework": "NIS2",
@@ -3923,12 +3699,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-Art-21-Telecom-ICT": {
     "framework": "DORA",
@@ -3959,12 +3731,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B5": {
     "framework": "UK-CAF",
@@ -3996,12 +3764,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-ISM-1556": {
     "framework": "au-ism",
@@ -4033,12 +3797,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "GSMA-NESAS-Deployment": {
     "framework": "GSMA-NESAS",
@@ -4069,12 +3829,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "3GPP-TR-33.926": {
     "framework": "3GPP",
@@ -4105,12 +3861,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ITU-T-X.805": {
     "framework": "ITU-T",
@@ -4141,12 +3893,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-53-IA-5-Federated": {
     "framework": "NIST 800-53 Rev.5",
@@ -4210,12 +3958,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SOC2-CC6-OAuth-Consent": {
     "framework": "SOC 2 (AICPA Trust Services Criteria)",
@@ -4245,12 +3989,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-IdP-Tenant": {
     "framework": "UK NCSC CAF",
@@ -4282,12 +4022,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-ISM-1559-IdP": {
     "framework": "AU ISM",
@@ -4318,12 +4054,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Art-21-Federated-Identity": {
     "framework": "EU NIS2 Directive",
@@ -4355,12 +4087,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-Art-19-IdP-4h": {
     "framework": "EU DORA",
@@ -4391,12 +4119,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OFAC-Sanctions-Threat-Actor-Negotiation": {
     "framework": "US Treasury OFAC + EU sanctions overlay + UK OFSI",
@@ -4427,12 +4151,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "FedRAMP-IL5-IAM-Federated": {
     "framework": "FedRAMP (US)",
@@ -4467,12 +4187,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "CISA-Snowflake-AA24-IdP-Cloud": {
     "framework": "CISA (US) - Cross-framework advisory",
@@ -4507,12 +4223,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-53-AC-2-Cross-Account": {
     "framework": "NIST 800-53 Rev 5",
@@ -4547,12 +4259,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "ISO-27017-Cloud-IAM": {
     "framework": "ISO/IEC 27017:2015",
@@ -4585,12 +4293,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SOC2-CC6-Access-Key-Leak-Public-Repo": {
     "framework": "AICPA SOC 2 Trust Services Criteria",
@@ -4623,12 +4327,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AWS-Security-Hub-Coverage-Gap": {
     "framework": "AWS Security Hub Foundational Security Best Practices (also GCP SCC, Azure Defender for Cloud)",
@@ -4663,12 +4363,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-Cloud-IAM": {
     "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
@@ -4701,12 +4397,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "AU-ISM-1546-Cloud-Service-Account": {
     "framework": "ACSC ISM (Australian Government Information Security Manual)",
@@ -4739,12 +4431,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OFAC-SDN-Payment-Block": {
     "framework": "ALL",
@@ -4775,12 +4463,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "Insurance-Carrier-24h-Notification": {
     "framework": "ALL",
@@ -4812,12 +4496,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "EU-Sanctions-Reg-2014-833-Cyber": {
     "framework": "EU",
@@ -4848,12 +4528,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "Immutable-Backup-Recovery": {
     "framework": "ALL",
@@ -4885,12 +4561,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "Decryptor-Availability-Pre-Decision": {
     "framework": "ALL",
@@ -4922,12 +4594,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PHI-Exfil-Before-Encrypt-Breach-Class": {
     "framework": "ALL",
@@ -4960,12 +4628,8 @@
       ],
       "verdict_when_failed": "compliance-theater"
     },
-    "_gap_skip": {
-      "fields": [
-        "evidence_cves"
-      ],
-      "reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
-    }
+    "forward_looking": true,
+    "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Art21-vulnerability-management": {
     "framework": "EU NIS2 Directive (2022/2555)",

@@ -148,10 +148,26 @@ test("--class with unknown value exits 2 and prints valid options", () => {
     "stderr must enumerate the valid class names");
 });
 
-test("the cross-catalog reference plane is dangling-free on the shipped catalogs", () => {
-  // Real-world sanity: the live shipped catalogs must have zero
-  // dangling refs. If a future PR adds a CWE/ATT&CK/ATLAS/framework
-  // ref that does not resolve, this fires.
+// v0.13.20 audit-test split: the live-catalog assertion moved to
+// tests/shipped-catalog-integrity.test.js so the detector-logic tests
+// here run against synthetic inputs only. Bundling them led to
+// confusing failure messages when an unrelated catalog edit broke the
+// "shipped catalogs dangling-free" assertion. Pinned only the file
+// reference here so a tooling consumer can locate the live-data test.
+test("the live-catalog dangling-free invariant is asserted in shipped-catalog-integrity.test.js (v0.13.20 split)", () => {
+  const fs = require("node:fs");
+  const p = path.join(__dirname, "shipped-catalog-integrity.test.js");
+  assert.ok(fs.existsSync(p),
+    "tests/shipped-catalog-integrity.test.js must exist — it carries the live-catalog assertion the detector-test no longer mixes in");
+  const body = fs.readFileSync(p, "utf8");
+  assert.match(body, /inspectRefs/,
+    "the integrity test must exercise inspectRefs against the live catalog");
+});
+
+// Original test kept (renamed) as a compatibility hook so external
+// callers grep'ing for "dangling-free" still find a reference. The
+// real live-catalog check is in the integrity test now.
+test("legacy alias: detector returns zero dangling refs on the shipped catalogs (delegates to integrity test)", () => {
   const fs = require("node:fs");
   const data = path.join(__dirname, "..", "data");
   const loaded = {
