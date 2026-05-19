@@ -85,7 +85,18 @@ test("ci result carries top-level verdict / rwep_score / summary_line / evidence
       "blocked results report evidence_completeness=not-evaluated");
   } else {
     // Success path (B2 + B9).
+    // Codex P1 (PR #62): verdict MUST be derived from
+    // phases.detect.classification, NOT phases.validate.verdict (which
+    // doesn't exist — validate() returns selected_remediation +
+    // remediation_options_considered + regression schedule, never a
+    // `verdict` field). An earlier draft of the hoist read
+    // phases.validate.verdict and degraded every non-blocked result to
+    // "inconclusive". Pin the canonical source explicitly.
     assert.equal(typeof row.verdict, "string");
+    assert.equal(row.verdict, row.phases?.detect?.classification,
+      "hoisted verdict must equal phases.detect.classification — not phases.validate.verdict (codex P1 on PR #62)");
+    assert.ok(["detected", "not_detected", "inconclusive", "pending", "skipped"].includes(row.verdict),
+      `verdict must be one of the documented enum values; got ${row.verdict}`);
     assert.equal(typeof row.summary_line, "string");
     assert.ok(["complete", "partial", "missing", "unknown", "not-evaluated"]
       .includes(row.evidence_completeness),
