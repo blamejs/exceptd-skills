@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:2062224b-0aa7-40bb-937b-7bd00d5a961d",
+  "serialNumber": "urn:uuid:097a1403-c499-4926-b2f4-c9a3987bc7f5",
   "version": 1,
   "metadata": {
-    "timestamp": "2043-03-21T05:16:59.000Z",
+    "timestamp": "2031-01-15T05:24:19.000Z",
     "tools": [
       {
         "vendor": "blamejs",
@@ -17,7 +17,7 @@
       "type": "application",
       "name": "@blamejs/exceptd-skills",
       "version": "0.13.17",
-      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs, 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
+      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs), 34 jurisdictions, pre-computed indexes, Ed25519-signed.",
       "licenses": [
         {
           "license": {
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "02de545eae77d42bdaa3c35f3fd2b8af25c40fa98c38777218d71c33e0aad769"
+          "content": "e77ba6ea1b01351c88d993e695071a193ecb2d3834505f00a1273b3e9c978819"
         }
       ],
       "externalReferences": [
@@ -116,11 +116,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1ccdc3aec979f1089b2e98da3664928626b7b765312383cd5e95c2b134b8ed3d"
+          "content": "d1ce8b9f70e8cd805ac9d3ab501c832b8d6b87048289c6e35cda85035c57c92f"
         },
         {
           "alg": "SHA3-512",
-          "content": "b2babe05f3822047a493cd57bef8b3761bbe767b35c5530034fc911484b38b66bb4104b8a79e6fc50302a59d33b9de441544c3b2c9b0dc2cb0bc440cc24e645e"
+          "content": "6ec68730dc02f4a7879f1076fa09c174989989c52a9f0de47f4ceadb3458ad1eb5848eef1aca0d65a3466e28c217684ff96345c48154f935f39e75a3e4e65b4c"
         }
       ]
     },
@@ -176,11 +176,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1747e14b42ad947c93f8b3571ee0becf795bbce8a71a1ddbc952961f3cdfcd22"
+          "content": "3fef7f8133eef0fdbeeb5020cddf2e2b15dcb12485a551488d0762029c7d37cc"
         },
         {
           "alg": "SHA3-512",
-          "content": "97d5d38cdcfdc588aec7553bbd44bcae9e938a17ff500e62e3fe4434cb8f27a8f02a394cdcc77533e7bf7e2f0304c86592dd137a4d383d580076b2b139c33e24"
+          "content": "c5c029a8f2fdf583732fdfdb780d73a39dfaa892e94bbf86e73a32c92de48feb274e33836d1ba472a7dbbf3fc1115bd0db235b581fa09518b344138364878b80"
         }
       ]
     },
@@ -1391,11 +1391,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "35a3746cf73fa4687cea807b32f5e6aca875e00375f4382e847db4e7da3bddac"
+          "content": "d3dedd8d450eb6d545c6cff85b6bff38ef293bc6813027b88d90f6848901b985"
         },
         {
           "alg": "SHA3-512",
-          "content": "353d29ac9498147dc0920dc659def1e7c96da38cd43703e9e79ddc5e9805b03d19c33177055772b2613ed1ad2da4acb08df9cf1fb0a92d7b21354ac80f3419e7"
+          "content": "75fa0e32ccf1dcb449b1db70f1444749ab1dfa393de02b8db7645ea78b7ade3950816308c4c8f1d33b1737a99b8af2c36ed1626c4fa3baf1f2c923fd1f250e9c"
         }
       ]
     },
@@ -1501,126 +1501,6 @@
         {
           "alg": "SHA3-512",
           "content": "aeb8b196bcad9bea063d4f1b19fdf204cf7ddd44472c7346e7034b05a32c92df53263245f7e3bc70490cb5c73cae154f10085a0b983252dad68a32bd567035b4"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_catalog_merge.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_catalog_merge.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "9cdbbc5e0aef72cf439384daecafbc58b7218fa936288d9d59c6c8f0589d974e"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "84bc0990f0806f0ebd04e6edbbdb66ffc9ac414c4df0f1ef80caf30f62688d25ac8077beb822eab27c019de147ad237cabda4c177c5ca2cb0a3d35814e808b17"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_cwe_attack_merge.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_cwe_attack_merge.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "3168b233f85df86ea1fb3ea49c944db6a28c9bf08f637af0f5f38c3f5a82ad09"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "c7e302b7af426d3dcb993439e0fb4a46e2f9f992d418b453326d4fde3d6b5454e706cea79612e5e31f15b3cad943319b6b630d5890e73f119cd30d40d9e8bf11"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_fill_orphan_refs.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_fill_orphan_refs.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "8a46d221d8ed7e5b739050695cf042bb0dea717d452ba211f38d9bf8b123b725"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "64463f8db7b1f3696908d1b1f13acdeb85278210aa76996e8094e28ef5dcfc74606dd1541608d576a9e88dc01bf97be84ac6eadeffca11fa5a8ec7567c741ca0"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_fill_orphan_refs_round2.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_fill_orphan_refs_round2.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "dfe699d884e0badb21d21118a07725cd85d82f5857bedca4f95ebae14b652fc3"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "54dd3ddd74d8c8659842c3265edab0ce5845fbb13ad87bba8b8f2003f743acc2b80b91a8095b7c0b9f2bef7f75eb31762638434c6b677a6dd502b7e04c0026b0"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_fix_rwep.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_fix_rwep.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "016800999a67bea389012f9973b8af0b75d6d941888db50f809f155fcbedce03"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "d4d53a8470cfc6de8cb3bde504be19f47308a77d8a9e26cc8274fd1f2ccd9fbc98625ae2fc3ddda1786153322990808019d129f1325332422023f1e4f043b99f"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_framework_gaps.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_framework_gaps.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "ec3e8ce0d75ff8e095907c35bb47c145d1419d6dc4fd6fdd3089d78ea668a882"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "049c580c35d4eebf16a25855afd121e5ddb47b806916b6136087fa62746399679acc03f058a3ad4379bfd0f154d4eae2cb92887c825678a5f9ce698883c40ca8"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_kev_bulk_import.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_kev_bulk_import.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "0b9347a40b5e34cb7d907277ad43d3c40b0b3fb9cd26a4f774cf42f86c971a0f"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "b24a13d5fbe0d8d2afae256f80eab75aad9cc3e3223251402828bee06e91b0f7a043f017b8c3c6b4b72faa3e82c1e0c7871c08bcc2e8cd7de1adbbf6435ec658"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_v0_13_17_theater_tests.js",
-      "type": "file",
-      "name": "scripts/_v0_13_17_theater_tests.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "33df272f62ad879ffc42a25a9bb48b18989d56ef94c037d29311e578f6d50db6"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "1acbb6a2e81ab9dbfbcc3ceb33e5baab497006924cdc061abdc3b857abbefe4d0f1c04fb74f90aed2467104942379642521f9757ecf95b81987250baf0ccc581"
         }
       ]
     },
