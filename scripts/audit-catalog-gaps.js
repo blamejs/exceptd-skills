@@ -133,7 +133,12 @@ const SPEC = {
       { field: "control_name", check: (v) => typeof v === "string" && v.length > 0, label: "control_name" },
       { field: "real_requirement", check: (v) => typeof v === "string" && v.length > 20, label: "real_requirement (>20 chars)" },
       { field: "theater_test", check: (v) => v && typeof v.claim === "string" && typeof v.test === "string", label: "theater_test{claim,test}" },
-      { field: "evidence_cves", check: (v) => Array.isArray(v) && v.length > 0, label: "evidence_cves" }
+      // evidence_cves is required UNLESS the entry declares forward_looking:true.
+      // v0.13.19 used per-entry _gap_skip annotations on 84 framework gaps;
+      // v0.13.20 replaces that with a first-class schema field operators can
+      // see in the JSON. The check honors forward_looking via the entry
+      // parameter — see the SCHEMA_FORWARD_LOOKING block in inspect().
+      { field: "evidence_cves", check: (v, entry) => (entry && entry.forward_looking === true) || (Array.isArray(v) && v.length > 0), label: "evidence_cves (or forward_looking:true)" }
     ],
     refs: []
   },
@@ -175,7 +180,11 @@ function inspect(catalogKey) {
     const skip = e._gap_skip && Array.isArray(e._gap_skip.fields) ? new Set(e._gap_skip.fields) : new Set();
     for (const r of spec.required_context) {
       if (skip.has(r.field)) continue;
-      if (!r.check(e[r.field])) {
+      // Pass the entry as the second argument so per-field checks can
+      // inspect class-level schema flags (forward_looking, etc.). The
+      // legacy check-functions only consumed the value; new ones can
+      // opt into entry-aware evaluation.
+      if (!r.check(e[r.field], e)) {
         report.missing_context.push({ id, field: r.field, label: r.label });
       }
     }

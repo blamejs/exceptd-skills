@@ -42,6 +42,19 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const TODAY = new Date().toISOString().slice(0, 10);
 
+// v0.13.20 class-3.11 fix: refreshers read their required-context list
+// from the audit SPEC. Eliminates the parallel hardcoded field arrays
+// that v0.13.17→19 carried (and forgot to keep in sync — the v0.13.19
+// audit found 106 ATT&CK rows missing `description` + `tactic` because
+// the v0.13.18 backfill list omitted those fields). One source of truth
+// = the audit-catalog-gaps SPEC.
+const AUDIT_SPEC = require("./audit-catalog-gaps.js").SPEC;
+function specRequiredFields(catalogKey) {
+  const spec = AUDIT_SPEC[catalogKey];
+  if (!spec || !Array.isArray(spec.required_context)) return [];
+  return spec.required_context.map((r) => r.field);
+}
+
 function fetchUrl(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "User-Agent": "exceptd-refresh-upstream-catalogs" } }, (r) => {

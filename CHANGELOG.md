@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.13.20 — 2026-05-19
+
+Root-cause refactor addressing every audit class surfaced by the v0.13.17–v0.13.19 self-audit (no-MVP violations, regex-where-logic-is-required, symptom patches, coincidence-pinning tests, uncaught bugs). The audit found I had been patching symptoms instead of fixing root causes; v0.13.20 fixes the actual issues and lets the audit tell the truth about catalog state.
+
+### Features
+
+**Real XML tokenizer replaces the regex-based RSS/Atom parser.** `lib/xml-tokenizer.js` is a proper streaming parser with CDATA handling, XML-namespace support (local-name matching), self-closing element handling, HTML-entity + numeric-character-reference decoding, and observable parse errors (the old regex parser returned `[]` silently on malformed input). `lib/source-advisories.js#parseRssAtom` now delegates to the tokenizer; the upstream contract is preserved. Failure modes the regex parser silently dropped (namespaced Atom feeds, CDATA-wrapped HTML titles, multi-line content, unterminated elements at EOF) are now explicit test cases (`tests/xml-tokenizer.test.js`).
+
+**Canonical-form deep equality replaces JSON.stringify in diff-coverage.** `lib/canonical-eq.js` provides sorted-key recursive equality for catalog change detection. Pre-v0.13.20 the diff-coverage gate compared `JSON.stringify(before.iocs) !== JSON.stringify(after.iocs)` — non-canonical, false-positives on key-order rearrangement. The symptom was patched twice (`_auto_imported` skip in v0.13.17, `_iocs_stub` skip in v0.13.19). v0.13.20 fixes the comparator. The `_iocs_stub` skip rule is removed.
+
+**Content-pattern matching in `lib/cve-regression-watcher.js`.** Pre-v0.13.20 the watcher fired only when a poller diff carried an explicit `CVE-YYYY-NNN` identifier. If a researcher's writeup announced "the 2020 fix is silently reverted" without typing the CVE ID, the watcher missed entirely. v0.13.20 adds three signal layers: historical-regression language patterns (`silently reverted`, `re-exploitable`, `same primitive as`), named-researcher patterns (Nightmare-Eclipse / Project Zero / Big Sleep / Forshaw / Horn / Ormandy), and tracked-component tokens (`cldflt.sys`, `HsmOsBlockPlaceholderAccess`, `ssh-keysign`, `CTFMON`). Diffs that lack a historical CVE-ID but trip the signals surface as `action: "content-only-investigate"` for operator triage.
+
+**`forward_looking: true` schema field replaces blanket `_gap_skip` on framework-control-gaps.** v0.13.19 used per-entry `_gap_skip: { fields: ["evidence_cves"] }` on 84 framework gaps as a class-level exemption — opaque to operators reading the JSON. v0.13.20 promotes the exemption to a first-class schema field (`forward_looking: true` + `forward_looking_reason`) that the audit honors. The `_gap_skip` annotations on those 84 entries are removed in lockstep.
+
+**`lib/version-pins.js` — single source of truth for MITRE pinned versions.** Pre-v0.13.20 the ATLAS version pin lived in 33+ files in lockstep. A bump (v5.4.0 → v5.6.0) required a regex sweep that incidentally touched dates in unrelated paragraphs. v0.13.20 reads ATLAS + ATT&CK version from `data/atlas-ttps.json._meta.atlas_version` and `data/attack-techniques.json._meta.attack_version` via the new module. Downstream tests + doc-currency checks consume through it. Future bumps refresh one JSON field; the module propagates.
+
+**SPEC-driven refresher.** `scripts/refresh-upstream-catalogs.js` now imports the audit `SPEC.<catalog>.required_context` lists from `scripts/audit-catalog-gaps.js` instead of carrying parallel hardcoded field arrays. The v0.13.18→19 episode where the refresher backfilled `description_full` + `platforms` but forgot `description` + `tactic` (and the audit had to surface 106 ATT&CK rows still missing context) is structurally impossible now — one truth source.
+
+**`tests/shipped-catalog-integrity.test.js` — new test file.** Splits the live-catalog assertions out of `tests/audit-catalog-gaps.test.js` (which now exercises detector logic against synthetic inputs only). Live invariants policed here: zero dangling cross-catalog refs, no `_gap_skip` stragglers on framework gaps that should be `forward_looking`, and a budget-per-catalog for missing-context findings (per-catalog snapshot count; a future PR that worsens any catalog without acknowledgement fires the test).
+
+**`tests/refresher-fixture-roundtrip.test.js` — new test file.** Each upstream refresher gets a synthetic-fixture round-trip pin. Pre-v0.13.20 the only refresher coverage was a `typeof` check on the exported function; a refresher that regressed to "return early without writing" would have passed. Now CSAF index parsing, ATT&CK STIX shape, ICS-attack registry presence, RSS / Atom parse contract, and the canonical RFC-entry tag set are all pinned independently.
+
+### Bugs (every audit class addressed)
+
+**Class 1.1, 1.3 — stub fills stripped.** 291 CVE entries had stub IoCs (`"IOC list pending operator curation"`) auto-written by the v0.13.17 KEV bulk-import + v0.13.19 gap-fix passes; 252 zeroday-lessons entries had a generic `NEW-CTRL-001` baseline as their only `new_control_requirements`. Both fields stripped back to absent. The audit now reports the honest curation backlog instead of letting the catalog pass with placeholder content. Per-CVE IoC + per-primitive control curation is operator work going forward.
+
+**Class 1.2, 5.15 — forward-looking framework gaps use a schema field.** 84 entries with `_gap_skip` converted to `forward_looking: true` + a `forward_looking_reason` prose field. The audit SPEC honors the schema field. `tests/shipped-catalog-integrity.test.js` pins that no `_gap_skip.evidence_cves` stragglers remain.
+
+**Class 2.7 — CTFMON mapping corrected.** GreenPlasma's `attack_refs` was T1574.012 (Hijack Execution Flow: COR_PROFILER — .NET CLR profiler hijack, wrong primitive). v0.13.20 changes to T1574 base (Hijack Execution Flow) + T1068 (Exploitation for Privilege Escalation) with an `_attack_refs_correction_note` explaining the prior mapping was lazy.
+
+**Class 4.12 — audit-test split.** `tests/audit-catalog-gaps.test.js` exercises detector logic only (synthetic inputs); `tests/shipped-catalog-integrity.test.js` carries the live-catalog assertions. A future regression to detector logic vs a future change to catalog data are now distinguishable.
+
+**Class 5.14 — test-baseline drift investigated.** The 1028→1040 bump over 3 releases was driven by legitimate new test files (intake-coverage, regression-watcher, gap-detector, refresher-fixture, etc.), not by the gate being misused. Baseline grow-threshold convention preserved with an explanatory `notes` field in `tests/.test-count-baseline.json`.
+
+### Internal
+
+- `lib/canonical-eq.js`, `lib/xml-tokenizer.js`, `lib/version-pins.js` shipped under `lib/` (in the tarball file-allowlist).
+- 5 new test files: `canonical-eq.test.js`, `xml-tokenizer.test.js`, `version-pins.test.js`, `shipped-catalog-integrity.test.js`, `refresher-fixture-roundtrip.test.js`, `refresher-spec-coupling.test.js`.
+- `scripts/check-test-coverage.js#extractCveIocChanges` uses `canonicalEqual` for the iocs diff; the `_iocs_stub` skip rule is removed. `_auto_imported` skip rule retained (true positive — bulk-imported stub IoCs are intake-class events, not operator curation).
+- 1377 tests / 1364 passing in this commit; remaining failures are the version + path checks fixed in the next commit hash chain.
+
 ## 0.13.19 — 2026-05-19
 
 Automated catalog gap-detection + closure of every gap surfaced by the new detector. After the v0.13.18 bulk expansion grew six catalogs to comparable scale, the audit at T+1 day showed real holes (51 CVEs without IoCs, 120 RFCs without abstracts, 106 ATT&CK techniques without context fields, 84 framework gaps without evidence). This release ships the detector permanently and closes every hole it found.
