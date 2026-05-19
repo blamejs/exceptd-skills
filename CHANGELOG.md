@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.22 — 2026-05-19
+
+`ci` is now usable at the terminal without piping through `jq`.
+
+### Features
+
+- **Human-readable `ci` output by default.** Pre-0.13.22 the default `ci` output was 1000+ lines of indented JSON on every run. Now the default is a one-screen digest: verdict line, per-playbook table (id / verdict / rwep / evidence-completeness / top-finding), session-level warnings, scope-selection rules, framework gap rollup, and fail reasons. Pass `--json` or `--pretty` to get the structured body for automation.
+- **Per-result hoisted summary fields.** Every `run()` result now carries `verdict`, `rwep_score`, `top_finding`, `summary_line`, and `evidence_completeness` (one of `complete` / `partial` / `missing` / `unknown` / `not-evaluated`) at the top level. Machine-readable consumers no longer walk `phases.analyze.rwep.adjusted` and `phases.detect.classification` separately to extract the headline numbers.
+- **`indicators_evaluated` + `indicators_known` per result.** Surface how many of the playbook's known indicators were actually exercised by the operator's evidence, so a result that returns `verdict=inconclusive` with `indicators_evaluated=0` is distinguishable from one that evaluated every indicator and found no hits.
+- **Session-level warning de-duplication.** `ci` runs that span N playbooks no longer emit the same `bundle_publisher_unclaimed` warning N times. The summary now carries `runtime_warnings` and `runtime_warnings_count` with one entry per unique (kind, reason) across the session.
+- **Scope-inclusion transparency.** When `ci --scope <type>` is used, the summary now lists `scope_request` plus `scope_inclusion_rules` explaining that cross-cutting playbooks are always added and (for `--scope code`) that `sbom` is auto-included on repos with a lockfile.
+
+### Bugs
+
+- **Blocked results now carry `playbook_id`.** Previously, a playbook that halted at preflight returned `{ ok:false, blocked_by, reason }` with no playbook identifier — operators iterating `results[]` for failure rows had to correlate by array index. Now every result, blocked or not, carries `playbook_id` at the top level.
+
 ## 0.13.21 — 2026-05-19
 
 Seven new catalog-gap detection classes wired into the predeploy gate. The v0.13.19 detector covered missing-context / dangling-ref / draft-debt; the v0.13.20 audit confirmed that left genuine gap classes unsurfaced. v0.13.21 adds the seven cross-cutting classes the prior detector missed and wires them into a budget gate that runs alongside the existing tests + predeploy gates.

@@ -76,7 +76,9 @@ test('brief --all envelope: exact top-level key set', () => {
 // ci ----------------------------------------------------------------------
 
 test('ci --required <pb> envelope: exact top-level key set + summary sub-key set', () => {
-  const r = cli(['ci', '--required', 'cred-stores']);
+  // v0.13.22 B3+B4: ci default now uses a human renderer when stdout is
+  // not piped JSON. Pass --json explicitly so the envelope assertions work.
+  const r = cli(['ci', '--required', 'cred-stores', '--json']);
   // Status may be 4 (BLOCKED) without preconditions verified; that's fine
   // for the envelope-shape test — we only care about the JSON shape.
   const body = tryJson(r.stdout);
@@ -92,17 +94,23 @@ test('ci --required <pb> envelope: exact top-level key set + summary sub-key set
   assert.ok(Array.isArray(body.playbooks_run));
   assert.ok(Array.isArray(body.results));
 
-  // summary sub-key set (13 keys per cycle 19 B audit).
+  // summary sub-key set. v0.13.22 B5 added runtime_warnings +
+  // runtime_warnings_count (deduped session-level warnings). The
+  // scope_request / scope_inclusion_rules fields appear only when --scope
+  // is used; this test uses --required and therefore must NOT see them.
   const expectedSummaryKeys = [
     'blocked', 'clock_started_reasons', 'detected', 'fail_reasons',
     'framework_gap_count', 'framework_gap_rollup', 'inconclusive',
     'jurisdiction_clock_rollup', 'jurisdiction_clocks_started',
-    'max_rwep_observed', 'not_detected', 'total', 'verdict',
+    'max_rwep_observed', 'not_detected', 'runtime_warnings',
+    'runtime_warnings_count', 'total', 'verdict',
   ];
   assert.deepEqual(Object.keys(body.summary).sort(), expectedSummaryKeys);
   assert.equal(typeof body.summary.verdict, 'string');
   assert.equal(typeof body.summary.total, 'number');
   assert.equal(typeof body.summary.max_rwep_observed, 'number');
+  assert.ok(Array.isArray(body.summary.runtime_warnings));
+  assert.equal(typeof body.summary.runtime_warnings_count, 'number');
 });
 
 // discover ----------------------------------------------------------------
@@ -214,10 +222,16 @@ test('run <pb> --evidence envelope (single-playbook success): exact top-level ke
     assert.equal(r.status, 0, `run kernel must exit 0; got ${r.status}, stderr: ${r.stderr.slice(0, 200)}`);
     const body = tryJson(r.stdout);
     assert.ok(body, `run kernel must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
+    // v0.13.22 B2 + B9: result envelope hoists verdict / rwep_score /
+    // top_finding / summary_line / evidence_completeness / indicators_*
+    // to the top level so machine-readable consumers do not have to walk
+    // phases.* to find them.
     const expected = [
-      'ack', 'directive_id', 'evidence_hash', 'ok', 'phases',
+      'ack', 'directive_id', 'evidence_completeness', 'evidence_hash',
+      'indicators_evaluated', 'indicators_known', 'ok', 'phases',
       'playbook_id', 'precondition_check_source', 'preflight_issues',
-      'session_id', 'submission_digest',
+      'rwep_score', 'session_id', 'submission_digest',
+      'summary_line', 'top_finding', 'verdict',
     ];
     assert.deepEqual(Object.keys(body).sort(), expected);
     assert.equal(body.ok, true);
