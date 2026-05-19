@@ -104,6 +104,50 @@ test("entry-level _gap_skip honored: operators can suppress documented gaps", ()
     "audit-catalog-gaps.js must implement the _gap_skip suppression convention");
 });
 
+test("--class missing-context filter zeroes out dangling-refs from totals", () => {
+  // Verify the filter is wired by invoking the CLI directly. The actual
+  // filtering logic is private to main(); we test the externally-
+  // observable behavior: --class missing-context strict mode does NOT
+  // count dangling-refs against the exit code.
+  const { spawnSync } = require("node:child_process");
+  const r = spawnSync(
+    process.execPath,
+    [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"), "--class", "missing-context"],
+    { encoding: "utf8" }
+  );
+  const json = JSON.parse(r.stdout);
+  assert.equal(json.class_filter, "missing-context",
+    "class_filter must be echoed back in the report");
+  assert.equal(json.totals.dangling_refs, 0,
+    "--class missing-context must zero out dangling_refs in totals");
+});
+
+test("--class dangling-ref filter zeroes out missing-context from totals", () => {
+  const { spawnSync } = require("node:child_process");
+  const r = spawnSync(
+    process.execPath,
+    [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"), "--class", "dangling-ref"],
+    { encoding: "utf8" }
+  );
+  const json = JSON.parse(r.stdout);
+  assert.equal(json.class_filter, "dangling-ref");
+  assert.equal(json.totals.missing_context, 0,
+    "--class dangling-ref must zero out missing_context in totals");
+});
+
+test("--class with unknown value exits 2 and prints valid options", () => {
+  const { spawnSync } = require("node:child_process");
+  const r = spawnSync(
+    process.execPath,
+    [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"), "--class", "bogus-class"],
+    { encoding: "utf8" }
+  );
+  assert.equal(r.status, 2,
+    "unknown --class value must exit 2");
+  assert.match(r.stderr, /unknown class.*valid:/i,
+    "stderr must enumerate the valid class names");
+});
+
 test("the cross-catalog reference plane is dangling-free on the shipped catalogs", () => {
   // Real-world sanity: the live shipped catalogs must have zero
   // dangling refs. If a future PR adds a CWE/ATT&CK/ATLAS/framework

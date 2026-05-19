@@ -272,8 +272,18 @@ function emitPretty(report) {
   return lines.join("\n");
 }
 
+// Valid finding-class names for the `--class` filter. The pretty + JSON
+// emitters always include every section, but counts and strict-exit
+// gating respect the active filter.
+const VALID_CLASSES = new Set(["missing-context", "dangling-ref", "draft-debt"]);
+
 function main() {
   const opts = parseArgs(process.argv);
+  if (opts.klass && !VALID_CLASSES.has(opts.klass)) {
+    console.error(`unknown class: ${opts.klass}  valid: ${[...VALID_CLASSES].join(", ")}`);
+    process.exitCode = 2;
+    return;
+  }
   const catalogKeys = opts.catalog ? [opts.catalog] : Object.keys(SPEC);
   const perCatalog = [];
   const allLoaded = {};
@@ -289,15 +299,28 @@ function main() {
   // Load all needed catalogs for cross-ref pass even when --catalog scoped.
   for (const k of Object.keys(SPEC)) if (!allLoaded[k]) allLoaded[k] = loadCatalog(SPEC[k].file);
   const dangling = opts.catalog && opts.catalog !== "cve-catalog" ? [] : inspectRefs(allLoaded);
+
+  // Apply the --class filter before counts + strict-exit gating.
+  // Missing-context findings on per_catalog and dangling_refs are the
+  // two policed classes; draft-debt is informational-only (the audit
+  // surfaces draft-debt but it does not fail strict mode by design).
+  const filteredPerCatalog = opts.klass === "dangling-ref" || opts.klass === "draft-debt"
+    ? perCatalog.map((r) => ({ ...r, missing_context: [] }))
+    : perCatalog;
+  const filteredDangling = opts.klass === "missing-context" || opts.klass === "draft-debt"
+    ? []
+    : dangling;
+
   const report = {
     generated_at: TODAY,
-    per_catalog: perCatalog,
-    dangling_refs: dangling,
+    class_filter: opts.klass || null,
+    per_catalog: filteredPerCatalog,
+    dangling_refs: filteredDangling,
     totals: {
-      catalogs: perCatalog.length,
-      entries: perCatalog.reduce((n, r) => n + r.entries, 0),
-      missing_context: perCatalog.reduce((n, r) => n + r.missing_context.length, 0),
-      dangling_refs: dangling.length
+      catalogs: filteredPerCatalog.length,
+      entries: filteredPerCatalog.reduce((n, r) => n + r.entries, 0),
+      missing_context: filteredPerCatalog.reduce((n, r) => n + r.missing_context.length, 0),
+      dangling_refs: filteredDangling.length
     }
   };
   if (opts.pretty) {
