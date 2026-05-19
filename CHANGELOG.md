@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.13.21 — 2026-05-19
+
+Seven new catalog-gap detection classes wired into the predeploy gate. The v0.13.19 detector covered missing-context / dangling-ref / draft-debt; the v0.13.20 audit confirmed that left genuine gap classes unsurfaced. v0.13.21 adds the seven cross-cutting classes the prior detector missed and wires them into a budget gate that runs alongside the existing tests + predeploy gates.
+
+### Features
+
+**Seven new detection classes in `lib/gap-detectors.js`:**
+
+- **content-quality** — fields present but content weak. Catches: vector text < 50 chars (likely a stub), placeholder-language sentinels (TBD / TKTK / "pending operator curation" / "[]"), KEV-listed entries with empty vendor_advisories, name-repeated-as-description.
+- **temporal-staleness** — time-based decay. Catches: source_verified > 180d old, last_updated > 365d, CISA-KEV due-date passed without remediation status, epss_date > 90d.
+- **logical-consistency** — internal-state contradictions that pass schema validation but don't make sense. Catches: `cisa_kev:true + cisa_kev_date:null`, `live_patch_available:true + live_patch_tools:[]`, `ai_discovered:true + attribution_note < 30 chars`, `active_exploitation:"confirmed" + verification_sources.length < 2`, `rwep_score declared + rwep_factors empty`.
+- **cross-ref-completeness** — bidirectional reference checks. The v0.13.19 dangling-ref class only verified the forward direction (CVE→CWE resolves); v0.13.21 also verifies the back-reference is present (CWE.evidence_cves includes the citing CVE). Same logic for ATT&CK.cve_refs and framework-control-gaps.evidence_cves.
+- **schema-evolution** — required-since-version checks. Fields the schema requires today were optional on entries added in older releases. Surfaces pre-existing entries the operator should backfill (e.g. pre-v0.12.36 CVEs lacking the `ai_discovered` boolean).
+- **operator-action-sla** — un-curated auto-imports older than the SLA window. Defaults: 60d for `_auto_imported`, 90d for `_draft`.
+- **unused-orphan** — auto-imported catalog entries that no skill / playbook / CVE references. Operator-curated entries are exempt (intentional content); `forward_looking:true` entries are exempt (intentional forward-look content).
+
+**`scripts/check-catalog-gap-budget.js` + predeploy gate.** New predeploy gate runs the seven extended detectors and asserts every class is within its documented budget. Mirrors the budget enforced by `tests/shipped-catalog-integrity.test.js` so a regression surfaces in BOTH the gate-summary table AND the test output. Predeploy summary now reports 16 gates (was 15).
+
+**`tests/gap-detectors.test.js`** — 22 per-detector tests pin each of the seven classes against synthetic catalog inputs. Each pin asserts the detector fires on the shape it's designed to catch AND does NOT fire on the inverse shape (no false positives).
+
+### Bugs
+
+**T1574 ATT&CK back-ref synced.** v0.13.20's CTFMON-mapping fix added T1574 to `BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA.attack_refs[]`, but the reverse-refs pass didn't run before sign + sbom + commit, so `attack-techniques.T1574.cve_refs[]` didn't pick up the back-ref. The v0.13.21 cross-ref-completeness detector surfaced this on first run — fixed via `npm run refresh-reverse-refs`.
+
+### Internal
+
+- `scripts/audit-catalog-gaps.js` CLI extended: `--class <name>` accepts the seven new class names (`content-quality`, `temporal-staleness`, `logical-consistency`, `cross-ref-completeness`, `schema-evolution`, `operator-action-sla`, `unused-orphan`) for scoped audits. JSON + pretty output include an `extended_findings` section grouped by class, with `totals.extended` counts.
+- `tests/shipped-catalog-integrity.test.js` includes a new budget pin for the seven extended classes — a future PR that worsens any class beyond budget fires the test.
+- npm alias: `npm run audit-catalog-gap-budget` runs the budget gate standalone (operator-facing convenience).
+- Current shipped-catalog snapshot: content-quality=10, temporal-staleness=255, logical-consistency=0, cross-ref-completeness=0, schema-evolution=0, operator-action-sla=0, unused-orphan=1342. The non-zero classes are operator-curation work items surfaced honestly by the new detectors.
+
 ## 0.13.20 — 2026-05-19
 
 Root-cause refactor addressing every audit class surfaced by the v0.13.17–v0.13.19 self-audit (no-MVP violations, regex-where-logic-is-required, symptom patches, coincidence-pinning tests, uncaught bugs). The audit found I had been patching symptoms instead of fixing root causes; v0.13.20 fixes the actual issues and lets the audit tell the truth about catalog state.

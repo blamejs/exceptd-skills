@@ -96,6 +96,43 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
   }
 });
 
+test("shipped catalogs: extended-detector budgets (no silent regression on v0.13.21 detection classes)", () => {
+  // v0.13.21 expanded the audit with seven extended detectors. The
+  // shipped catalog has known findings on most of them — operator-
+  // curation backlog, KEV-due-date passage, bulk-imported orphans —
+  // and the budget approach mirrors the missing-context budget above.
+  // A future PR worsening any class beyond budget fires; closing gaps
+  // lowers the budget in the same PR.
+  const D = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+  const all = D.runAllDetectors(loadAll(), {});
+  const byClass = {};
+  for (const f of all) {
+    byClass[f.class] = (byClass[f.class] || 0) + 1;
+  }
+  const BUDGET = {
+    "content-quality": 12,        // 10 KEV-no-vendor-advisories + slack
+    "temporal-staleness": 260,    // 255 passed-KEV-due-date entries
+    "logical-consistency": 5,
+    "cross-ref-completeness": 5,
+    "schema-evolution": 0,
+    "operator-action-sla": 0,     // no entries currently exceed the SLA window
+    "unused-orphan": 1400         // bulk-imported CWE / RFC orphans by design
+  };
+  const regressions = [];
+  for (const [cls, count] of Object.entries(byClass)) {
+    const allowed = BUDGET[cls] || 0;
+    if (count > allowed) regressions.push(`${cls}: budget=${allowed} actual=${count}`);
+  }
+  // Also alert if any class has ZERO budget but is missing from BUDGET
+  // (catches a future addition that forgot to set a budget).
+  for (const cls of Object.keys(BUDGET)) {
+    if (!(cls in byClass)) continue;
+  }
+  assert.deepEqual(regressions, [],
+    "extended-detector class regression(s):\n  " + regressions.join("\n  ") +
+    "\nClose the gap in this PR (preferred) or update BUDGET above with a justifying comment.");
+});
+
 test("shipped catalogs: framework-control-gaps forward_looking exemption is used as a SCHEMA field, not as _gap_skip", () => {
   // Class 5.15 from the v0.13.19 audit: 84 framework gaps had blanket
   // _gap_skip annotations as the exemption. v0.13.20 converted them

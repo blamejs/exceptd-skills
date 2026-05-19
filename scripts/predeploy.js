@@ -193,6 +193,20 @@ const GATES = [
     // shares the integrity-tier framing with manifest-snapshot etc.
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // v0.13.21: catalog-gap budget gate. Runs the seven extended
+    // detection classes added in v0.13.21 (content-quality,
+    // temporal-staleness, logical-consistency, cross-ref-completeness,
+    // schema-evolution, operator-action-sla, unused-orphan) against
+    // the shipped catalog and fails if any class regresses beyond its
+    // documented budget. Mirrors the budget enforced by
+    // tests/shipped-catalog-integrity.test.js so the regression
+    // surfaces in BOTH the gate-summary table AND the test output.
+    name: "Catalog-gap budget (v0.13.21 extended detection classes)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-catalog-gap-budget.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {
