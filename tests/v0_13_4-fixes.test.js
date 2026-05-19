@@ -117,13 +117,22 @@ test('E: zeroday-lessons.json carries no orphan entries for the deleted CVEs', (
   assert.ok(!('CVE-2026-GTIG-AI-2FA' in l));
 });
 
-test('E: validate-cve-catalog reports 0 drafts after cleanup', () => {
+test('E: validate-cve-catalog cleanup state preserved (v0.13.4 era + v0.13.17 reintroduction)', () => {
+  // v0.13.4 cleanup removed the two stuck drafts (MAL-2026-ANTHROPIC-MCP-STDIO
+  // duplicate of CVE-2026-30623 + CVE-2026-GTIG-AI-2FA embargoed placeholder)
+  // and the original assertion was that the catalog reported 0 drafts. That
+  // assertion held through v0.13.16. v0.13.17 explicitly reintroduces
+  // auto-imports as a feature — the CISA KEV bulk-import path lands ~150
+  // entries with _auto_imported: true (which the validator counts as
+  // drafts pending editorial review). Asserting "0 drafts" globally would
+  // refuse the entire bulk-import class.
+  //
+  // The lasting v0.13.4 invariant is: the two specifically-removed CVE
+  // keys stay removed. Both `D` tests above pin that. This test now
+  // narrows to "validator exits 0 (no errors)" and keeps the original
+  // intent — drafts may exist but they must not fail the gate.
   const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'validate-cve-catalog.js')], {
     encoding: 'utf8', cwd: ROOT,
   });
   assert.equal(r.status, 0, `validator must pass; got ${r.status}. stderr: ${r.stderr.slice(0, 200)}`);
-  // Acceptable phrasing: "38/38 CVE entries validated" with no draft count
-  // OR "38/38, 0 drafts" — either way no draft segment greater than zero.
-  assert.ok(!/[1-9]\d*\s+draft/i.test(r.stdout),
-    `catalog must report 0 drafts post-cleanup; got: ${r.stdout.slice(0, 400)}`);
 });

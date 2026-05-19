@@ -40,7 +40,7 @@
         "rebuild_after_days": 365,
         "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
       },
-      "entry_count": 106,
+      "entry_count": 110,
       "sample_keys": [
         "T0001",
         "T0017",
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 68,
+      "entry_count": 312,
       "sample_keys": [
         "CVE-2025-53773",
         "CVE-2026-30615",
@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 56,
+      "entry_count": 98,
       "sample_keys": [
         "CWE-20",
         "CWE-22",
@@ -172,7 +172,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 184,
+      "entry_count": 190,
       "sample_keys": [
         "ALL-AI-PIPELINE-INTEGRITY",
         "ALL-MCP-TOOL-TRUST",
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 68,
+      "entry_count": 312,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

@@ -48,6 +48,11 @@
     ],
     "evidence_cves": [
       "CVE-2024-3154",
+      "CVE-2025-20393",
+      "CVE-2025-54236",
+      "CVE-2025-6558",
+      "CVE-2026-32201",
+      "CVE-2026-34197",
       "CVE-2026-6973"
     ],
     "framework_controls_partially_addressing": [
@@ -83,7 +88,19 @@
       "webapp-security"
     ],
     "evidence_cves": [
-      "CVE-2023-43472"
+      "CVE-2019-5418",
+      "CVE-2021-43798",
+      "CVE-2023-38950",
+      "CVE-2023-43472",
+      "CVE-2024-0769",
+      "CVE-2024-1708",
+      "CVE-2024-57728",
+      "CVE-2024-7399",
+      "CVE-2025-2749",
+      "CVE-2025-27920",
+      "CVE-2025-4632",
+      "CVE-2025-6218",
+      "CVE-2025-8110"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -117,7 +134,15 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2016-10033",
+      "CVE-2020-25079",
+      "CVE-2023-33538",
+      "CVE-2025-10035",
+      "CVE-2025-29635",
+      "CVE-2025-4008",
       "CVE-2025-53773",
+      "CVE-2025-59689",
+      "CVE-2026-22719",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -151,9 +176,21 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2014-6278",
+      "CVE-2023-39780",
+      "CVE-2024-12987",
+      "CVE-2025-11953",
       "CVE-2025-12686",
+      "CVE-2025-48703",
+      "CVE-2025-54948",
+      "CVE-2025-58034",
       "CVE-2025-59389",
       "CVE-2025-62847",
+      "CVE-2025-64328",
+      "CVE-2025-66644",
+      "CVE-2025-9377",
+      "CVE-2026-1731",
+      "CVE-2026-25108",
       "CVE-2026-30623",
       "CVE-2026-39987"
     ],
@@ -189,6 +226,14 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2021-26829",
+      "CVE-2024-11182",
+      "CVE-2024-27443",
+      "CVE-2024-42009",
+      "CVE-2025-27915",
+      "CVE-2025-48700",
+      "CVE-2025-66376",
+      "CVE-2025-68461",
       "CVE-2026-42897"
     ],
     "framework_controls_partially_addressing": [
@@ -218,6 +263,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2016-10033",
+      "CVE-2026-24061",
       "CVE-2026-30623",
       "CVE-2026-39884"
     ],
@@ -251,6 +298,10 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2024-43468",
+      "CVE-2025-25257",
+      "CVE-2025-57819",
+      "CVE-2026-21643",
       "CVE-2026-42208"
     ],
     "framework_controls_partially_addressing": [
@@ -285,8 +336,37 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2007-0671",
+      "CVE-2008-0015",
+      "CVE-2009-0238",
+      "CVE-2009-0556",
+      "CVE-2010-3765",
+      "CVE-2010-3962",
+      "CVE-2011-3402",
+      "CVE-2013-3918",
+      "CVE-2017-1000353",
+      "CVE-2020-25078",
+      "CVE-2022-48503",
+      "CVE-2024-56145",
       "CVE-2025-11837",
+      "CVE-2025-32432",
+      "CVE-2025-37164",
+      "CVE-2025-43200",
+      "CVE-2025-4428",
+      "CVE-2025-49704",
+      "CVE-2025-54068",
+      "CVE-2025-54253",
+      "CVE-2025-55182",
+      "CVE-2025-61882",
+      "CVE-2025-6204",
       "CVE-2025-62848",
+      "CVE-2025-8875",
+      "CVE-2025-8876",
+      "CVE-2026-1281",
+      "CVE-2026-1340",
+      "CVE-2026-20045",
+      "CVE-2026-33017",
+      "CVE-2026-34197",
       "CVE-2026-6973",
       "MAL-2026-3083"
     ],
@@ -347,7 +427,13 @@
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-36424",
+      "CVE-2025-48633",
+      "CVE-2025-5419",
+      "CVE-2025-5777",
+      "CVE-2026-3055"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "NIST-800-53-SI-16",
@@ -382,7 +468,11 @@
       "sector-healthcare",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-31125",
+      "CVE-2026-20133",
+      "CVE-2026-20805"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
       "NIST-800-53-SC-28",
@@ -408,7 +498,9 @@
       "CAPEC-470"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-40602"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
       "ISO-27001-2022-A.8.2",
@@ -474,7 +566,12 @@
       "webapp-security"
     ],
     "evidence_cves": [
-      "CVE-2025-62849"
+      "CVE-2021-43226",
+      "CVE-2024-8068",
+      "CVE-2025-48543",
+      "CVE-2025-48572",
+      "CVE-2025-62849",
+      "CVE-2026-21533"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -502,7 +599,13 @@
     "skills_referencing": [
       "idp-incident-response"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-12480",
+      "CVE-2025-31125",
+      "CVE-2025-33073",
+      "CVE-2025-59230",
+      "CVE-2026-35616"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
       "ISO-27001-2022-A.5.15",
@@ -545,7 +648,17 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2015-7755",
+      "CVE-2016-7836",
+      "CVE-2017-7921",
+      "CVE-2019-19006",
       "CVE-2020-10148",
+      "CVE-2021-32030",
+      "CVE-2023-27351",
+      "CVE-2025-32975",
+      "CVE-2025-3935",
+      "CVE-2025-49706",
+      "CVE-2026-20127",
       "CVE-2026-20182"
     ],
     "framework_controls_partially_addressing": [
@@ -580,8 +693,15 @@
       "sector-telecom"
     ],
     "evidence_cves": [
+      "CVE-2020-24363",
+      "CVE-2025-32433",
+      "CVE-2025-4008",
+      "CVE-2025-61757",
       "CVE-2026-0300",
-      "CVE-2026-39987"
+      "CVE-2026-24423",
+      "CVE-2026-33017",
+      "CVE-2026-39987",
+      "CVE-2026-41940"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
@@ -903,7 +1023,9 @@
       "sector-financial",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-2533"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-23",
       "ISO-27001-2022-A.8.26"
@@ -964,6 +1086,8 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2025-62215",
       "CVE-2026-31635",
       "CVE-2026-33825",
       "CVE-2026-46333"
@@ -996,7 +1120,17 @@
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2020-9715",
+      "CVE-2023-41974",
+      "CVE-2023-43000",
+      "CVE-2025-27038",
+      "CVE-2025-32701",
+      "CVE-2025-32709",
+      "CVE-2025-62221",
+      "CVE-2026-2441",
+      "CVE-2026-5281"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
       "NIST-800-53-SI-2",
@@ -1022,7 +1156,9 @@
       "CAPEC-471"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2012-1854"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
       "ISO-27001-2022-A.8.20"
@@ -1056,7 +1192,14 @@
       "mcp-agent-trust",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2018-4063",
+      "CVE-2021-26828",
+      "CVE-2024-7399",
+      "CVE-2024-7694",
+      "CVE-2025-2749",
+      "CVE-2025-52691"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-3",
       "NIST-800-53-SI-10",
@@ -1084,7 +1227,11 @@
       "mcp-agent-trust",
       "supply-chain-integrity"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2022-40799",
+      "CVE-2025-15556",
+      "CVE-2026-3502"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-7",
       "NIST-800-53-SA-12",
@@ -1116,7 +1263,22 @@
       "supply-chain-integrity",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-21529",
+      "CVE-2024-8069",
+      "CVE-2025-10035",
+      "CVE-2025-24016",
+      "CVE-2025-26399",
+      "CVE-2025-40551",
+      "CVE-2025-42999",
+      "CVE-2025-49113",
+      "CVE-2025-5086",
+      "CVE-2025-53690",
+      "CVE-2025-53770",
+      "CVE-2025-59287",
+      "CVE-2026-20131",
+      "CVE-2026-20963"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
       "NIST-800-53-SA-12",
@@ -1145,6 +1307,9 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-54313",
+      "CVE-2025-59374",
+      "CVE-2026-33634",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
@@ -1183,7 +1348,9 @@
       "cloud-iam-incident",
       "idp-incident-response"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2021-22681"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-5",
       "ISO-27001-2022-A.5.16",
@@ -1277,7 +1444,10 @@
       "identity-assurance",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
       "NIST-800-53-AC-6",
@@ -1369,9 +1539,17 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2021-22555",
       "CVE-2023-3519",
       "CVE-2024-21762",
+      "CVE-2024-37079",
+      "CVE-2025-14733",
+      "CVE-2025-21042",
+      "CVE-2025-21043",
+      "CVE-2025-5419",
+      "CVE-2025-9242",
       "CVE-2026-0300",
+      "CVE-2026-3909",
       "CVE-2026-42945",
       "CVE-2026-43500",
       "CVE-2026-46300"
@@ -1411,7 +1589,11 @@
       "sector-energy",
       "sector-financial"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2019-6693",
+      "CVE-2025-14611",
+      "CVE-2026-22769"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-5",
       "ISO-27001-2022-A.8.5"
@@ -1439,6 +1621,7 @@
       "supply-chain-integrity"
     ],
     "evidence_cves": [
+      "CVE-2025-32463",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS"
     ],
@@ -1476,7 +1659,13 @@
       "sector-healthcare",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-52163",
+      "CVE-2024-57726",
+      "CVE-2025-20362",
+      "CVE-2025-40602",
+      "CVE-2025-6205"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
       "NIST-800-53-AC-6",
@@ -1511,7 +1700,11 @@
       "sector-financial",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-21479",
+      "CVE-2025-21480",
+      "CVE-2025-55177"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
       "ISO-27001-2022-A.5.15"
@@ -1573,7 +1766,15 @@
       "sector-telecom",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2019-9621",
+      "CVE-2020-7796",
+      "CVE-2021-21311",
+      "CVE-2021-22054",
+      "CVE-2021-22175",
+      "CVE-2021-39935",
+      "CVE-2025-61884"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-7",
       "ISO-27001-2022-A.8.22"
@@ -1653,7 +1854,9 @@
       "security-maturity-tiers",
       "webapp-security"
     ],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-48927"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-CM-6",
       "ISO-27001-2022-A.8.9"
@@ -1775,9 +1978,854 @@
       "CWE-732"
     ],
     "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2026-31635"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.16 to back the DirtyDecrypt (CVE-2026-31635) cwe_refs entry. MITRE deprecated this as a category in CWE 4.x but the rxgk-kernel-LPE CWE assignment in the published advisory cited CWE-264 directly, so the local catalog must accept the legacy reference."
+  },
+  "CWE-367": {
+    "id": "CWE-367",
+    "name": "Time-of-check Time-of-use (TOCTOU) Race Condition",
+    "abstraction": "Base",
+    "category": "Race Condition",
+    "description": "The product checks the state of a resource before using that resource, but the resource's state can change between the check and the use in a way that invalidates the results of the check. This can be used to perform actions that should not be allowed by an unprivileged actor.",
+    "top_25_rank_2024": 22,
+    "top_25_rank_2025": 22,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [
+      "CWE-362",
+      "CWE-363",
+      "CWE-826"
+    ],
+    "evidence_cves": [
+      "CVE-2020-17103-REREGRESSION-2026"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 to back the MiniPlasma cldflt.sys re-regression entry. CWE-367 is the standard MITRE classification for TOCTOU races; the cldflt.sys HsmOsBlockPlaceholderAccess primitive validates a placeholder file's accessibility once, then is racing against a junction / symlink swap before the kernel acts on the cached decision."
+  },
+  "CWE-1390": {
+    "id": "CWE-1390",
+    "name": "Weak Authentication",
+    "abstraction": "Class",
+    "category": "Authentication",
+    "description": "The product uses an authentication mechanism to restrict access to specific users or identities, but the mechanism does not sufficiently prove that the claim of identity is correct. As a result, an attacker may bypass authentication and gain access to restricted functionality or sensitive data.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [
+      "CWE-287",
+      "CWE-1391",
+      "CWE-1392"
+    ],
+    "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 to back the YellowKey BitLocker TPM-only bypass entry. CWE-1390 captures the structural weakness of TPM-only BitLocker — the TPM unseals the VMK based on platform-state attestation alone, with no user-authentication component, so a boot-flow bypass can inherit the unsealed key without ever proving identity."
+  },
+  "CWE-693": {
+    "id": "CWE-693",
+    "name": "Protection Mechanism Failure",
+    "abstraction": "Pillar",
+    "category": "Protection Mechanism",
+    "description": "The product does not use or incorrectly uses a protection mechanism that provides sufficient defense against directed attacks against the product. This pillar weakness is the parent class for failures of security controls (AV, EDR, sandbox, sandboxing, access enforcement, audit logging) where the control exists but is bypassed, disabled, or insufficiently configured to defend against the directed attack class.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [
+      "CWE-732",
+      "CWE-757",
+      "CWE-778"
+    ],
+    "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2025-40536",
+      "CVE-2026-21510",
+      "CVE-2026-21513"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 to back the UnDefend Defender update-disruption entry. CWE-693 is the canonical parent for failures-of-protection-mechanism — Defender continues running but its update mechanism has been corrupted, so the AV protection-mechanism fails silently while the host still passes 'is Defender running?' health checks."
+  },
+  "CWE-23": {
+    "id": "CWE-23",
+    "name": "Relative Path Traversal",
+    "abstraction": "Base",
+    "category": "Path Traversal",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/23.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2024-27199",
+      "CVE-2025-64446"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-25": {
+    "id": "CWE-25",
+    "name": "Path Traversal: '/../filedir'",
+    "abstraction": "Variant",
+    "category": "Path Traversal",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/25.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2022-20775"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-59": {
+    "id": "CWE-59",
+    "name": "Improper Link Resolution Before File Access ('Link Following')",
+    "abstraction": "Base",
+    "category": "Path Traversal",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/59.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-48384",
+      "CVE-2025-60710"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-95": {
+    "id": "CWE-95",
+    "name": "Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')",
+    "abstraction": "Variant",
+    "category": "Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/95.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-24893",
+      "CVE-2026-33017"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-98": {
+    "id": "CWE-98",
+    "name": "Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion')",
+    "abstraction": "Variant",
+    "category": "Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/98.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-68645"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-119": {
+    "id": "CWE-119",
+    "name": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "abstraction": "Class",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/119.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2014-3931",
+      "CVE-2025-31277",
+      "CVE-2025-6543",
+      "CVE-2025-7775",
+      "CVE-2026-20700",
+      "CVE-2026-3910"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-120": {
+    "id": "CWE-120",
+    "name": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/120.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2022-37055",
+      "CVE-2025-20333",
+      "CVE-2025-43520"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-121": {
+    "id": "CWE-121",
+    "name": "Stack-based Buffer Overflow",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/121.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-20352",
+      "CVE-2025-53521"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-190": {
+    "id": "CWE-190",
+    "name": "Integer Overflow or Wraparound",
+    "abstraction": "Class",
+    "category": "Numeric Errors",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/190.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2018-14634",
+      "CVE-2021-30952",
+      "CVE-2026-21385"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-209": {
+    "id": "CWE-209",
+    "name": "Generation of Error Message Containing Sensitive Information",
+    "abstraction": "Base",
+    "category": "Information Disclosure",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/209.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-47813"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-257": {
+    "id": "CWE-257",
+    "name": "Storing Passwords in a Recoverable Format",
+    "abstraction": "Base",
+    "category": "Credentials Management",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/257.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2026-20128"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-267": {
+    "id": "CWE-267",
+    "name": "Privilege Defined With Unsafe Actions",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/267.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-41244"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-282": {
+    "id": "CWE-282",
+    "name": "Improper Ownership Management",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/282.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2022-20775",
+      "CVE-2023-0386"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-288": {
+    "id": "CWE-288",
+    "name": "Authentication Bypass Using an Alternate Path or Channel",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/288.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-2746",
+      "CVE-2025-2747",
+      "CVE-2025-34026",
+      "CVE-2025-4427",
+      "CVE-2025-57819",
+      "CVE-2026-1603",
+      "CVE-2026-23760",
+      "CVE-2026-24858"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-324": {
+    "id": "CWE-324",
+    "name": "Use of a Key Past its Expiration Date",
+    "abstraction": "Variant",
+    "category": "Cryptography",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/324.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-47827"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-347": {
+    "id": "CWE-347",
+    "name": "Improper Verification of Cryptographic Signature",
+    "abstraction": "Base",
+    "category": "Cryptography",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/347.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-59718"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-476": {
+    "id": "CWE-476",
+    "name": "NULL Pointer Dereference",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/476.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2026-21525"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-552": {
+    "id": "CWE-552",
+    "name": "Files or Directories Accessible to External Parties",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/552.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-11371"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-611": {
+    "id": "CWE-611",
+    "name": "Improper Restriction of XML External Entity Reference",
+    "abstraction": "Base",
+    "category": "XML / Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/611.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-2775",
+      "CVE-2025-2776",
+      "CVE-2025-58360"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-648": {
+    "id": "CWE-648",
+    "name": "Incorrect Use of Privileged APIs",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/648.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2026-20122"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-667": {
+    "id": "CWE-667",
+    "name": "Improper Locking",
+    "abstraction": "Class",
+    "category": "Concurrency",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/667.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-43510"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-807": {
+    "id": "CWE-807",
+    "name": "Reliance on Untrusted Inputs in a Security Decision",
+    "abstraction": "Class",
+    "category": "Authorization",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/807.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2019-9621",
+      "CVE-2026-21509",
+      "CVE-2026-21514"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-822": {
+    "id": "CWE-822",
+    "name": "Untrusted Pointer Dereference",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/822.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-24990"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-843": {
+    "id": "CWE-843",
+    "name": "Access of Resource Using Incompatible Type ('Type Confusion')",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/843.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-13223",
+      "CVE-2025-30397",
+      "CVE-2025-6554",
+      "CVE-2026-21519"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-913": {
+    "id": "CWE-913",
+    "name": "Improper Control of Dynamically-Managed Code Resources",
+    "abstraction": "Class",
+    "category": "Code Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/913.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-68613"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-940": {
+    "id": "CWE-940",
+    "name": "Improper Verification of Source of a Communication Channel",
+    "abstraction": "Class",
+    "category": "Authentication",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/940.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-61932"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-1321": {
+    "id": "CWE-1321",
+    "name": "Improperly Controlled Modification of Object Prototype Attributes ('Prototype Pollution')",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/1321.html. Added v0.13.17 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2026-34621"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import."
+  },
+  "CWE-35": {
+    "id": "CWE-35",
+    "name": "Path Traversal: '.../...//'",
+    "abstraction": "Variant",
+    "category": "Path Traversal",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/35.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-8088"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-73": {
+    "id": "CWE-73",
+    "name": "External Control of File Name or Path",
+    "abstraction": "Base",
+    "category": "Path Traversal",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/73.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-33053"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-74": {
+    "id": "CWE-74",
+    "name": "Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')",
+    "abstraction": "Class",
+    "category": "Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/74.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-20281",
+      "CVE-2025-20337"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-122": {
+    "id": "CWE-122",
+    "name": "Heap-based Buffer Overflow",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/122.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-32706"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-124": {
+    "id": "CWE-124",
+    "name": "Buffer Underwrite ('Buffer Underflow')",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/124.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-32756"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-158": {
+    "id": "CWE-158",
+    "name": "Improper Neutralization of Null Byte or NUL Character",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/158.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-47812"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-290": {
+    "id": "CWE-290",
+    "name": "Authentication Bypass by Spoofing",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/290.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2023-50224",
+      "CVE-2024-54085"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-399": {
+    "id": "CWE-399",
+    "name": "Resource Management Errors (deprecated category)",
+    "abstraction": "Category",
+    "category": "Resource Management",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/399.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2013-3893"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-420": {
+    "id": "CWE-420",
+    "name": "Unprotected Alternate Channel",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/420.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-54309"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-436": {
+    "id": "CWE-436",
+    "name": "Interpretation Conflict",
+    "abstraction": "Class",
+    "category": "Protocol Errors",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/436.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-48384"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-472": {
+    "id": "CWE-472",
+    "name": "External Control of Assumed-Immutable Web Parameter",
+    "abstraction": "Base",
+    "category": "Authorization",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/472.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-35939"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
+  },
+  "CWE-528": {
+    "id": "CWE-528",
+    "name": "Exposure of Core Dump File to an Unauthorized Control Sphere",
+    "abstraction": "Variant",
+    "category": "Information Disclosure",
+    "description": "MITRE-canonical CWE entry; full text at https://cwe.mitre.org/data/definitions/528.html. Added v0.13.17 round-2 to back KEV bulk-imported cwe_refs.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-2000"
+    ],
+    "related_weaknesses": [],
+    "evidence_cves": [
+      "CVE-2025-48928"
+    ],
+    "last_verified": "2026-05-18",
+    "notes": "Added v0.13.17 KEV bulk-import round 2."
   }
 }
