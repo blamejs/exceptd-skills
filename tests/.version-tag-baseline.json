@@ -135,7 +135,6 @@
     "tests/playbook-schema-validation.test.js": 4,
     "tests/predeploy-gate-coverage.test.js": 1,
     "tests/predeploy-gates.test.js": 8,
-    "tests/predeploy.test.js": 5,
     "tests/prefetch.test.js": 1,
     "tests/refresh-external.test.js": 2,
     "tests/refresh-swarm.test.js": 3,

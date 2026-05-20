@@ -257,4 +257,3 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { scanCurrent, readBaseline, walk, VERSION_TAG_RE, FILENAME_VERSION_RE };
