@@ -38,6 +38,39 @@ function cli(args, opts = {}) {
 
 function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 
+// Direct module imports so the diff-coverage gate sees the exports
+// are exercised by unit-level tests, not just via subprocess
+// invocation through the CLI.
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"));
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+
+test("collector modules export the contract: playbook_id + collect()", () => {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector]) {
+    assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
+    assert.ok(mod.playbook_id.length > 0);
+    assert.equal(typeof mod.collect, "function", "collect must be a function");
+  }
+  assert.equal(secretsCollector.playbook_id, "secrets");
+  assert.equal(kernelCollector.playbook_id, "kernel");
+  assert.equal(sbomCollector.playbook_id, "sbom");
+});
+
+test("collector.collect() returns the contract envelope when called directly", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-direct-"));
+  try {
+    const result = sbomCollector.collect({ cwd: tmp });
+    for (const k of ["precondition_checks", "artifacts", "signal_overrides", "collector_meta", "collector_errors"]) {
+      assert.ok(k in result, `direct collect() return must carry "${k}"`);
+    }
+    assert.equal(result.collector_meta.collector_id, "sbom");
+    // Empty tempdir has no lockfile and no SBOM → lockfile-absent hit.
+    assert.equal(result.signal_overrides["lockfile-absent"], "hit");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 const ENVELOPE_KEYS = [
   "precondition_checks", "artifacts", "signal_overrides",
   "collector_meta", "collector_errors",
