@@ -3177,15 +3177,27 @@ function cmdRun(runner, args, runOpts, pretty) {
     const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
     lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
     // Surface evidence_completeness on the verdict line so operators
-    // distinguish "ran every indicator and found nothing"
-    // (evidence=complete) from "couldn't evaluate, no evidence
-    // supplied" (evidence=missing) — without this they look identical
-    // at the terminal.
+    // distinguish "ran every indicator and found nothing" from
+    // "couldn't evaluate, no evidence supplied" — without this they
+    // look identical at the terminal. Also break out decisive vs.
+    // inconclusive indicator counts: a run where every indicator
+    // landed inconclusive is mathematically "complete" (engine ran
+    // them all) but operationally "no decision was made" — the prose
+    // must distinguish those, otherwise an inconclusive verdict with
+    // sparse signal_overrides reads as "complete coverage, no hits".
     if (obj.evidence_completeness && obj.indicators_known != null) {
       const ev = obj.evidence_completeness;
       const ke = obj.indicators_evaluated ?? 0;
       const kn = obj.indicators_known;
-      lines.push(`  evidence: ${ev}  (${ke}/${kn} indicators evaluated)`);
+      const indicators = obj.phases?.detect?.indicators || [];
+      const decisive = indicators.filter(i => i.verdict === "hit" || i.verdict === "miss").length;
+      const inconclusive = indicators.filter(i => i.verdict === "inconclusive").length;
+      const hasInconclusiveSubset = inconclusive > 0 && decisive > 0 && cls === "inconclusive";
+      if (hasInconclusiveSubset) {
+        lines.push(`  evidence: ${ev}  (${decisive}/${kn} decisive, ${inconclusive} inconclusive — add signal_overrides to drive a verdict)`);
+      } else {
+        lines.push(`  evidence: ${ev}  (${ke}/${kn} indicators evaluated)`);
+      }
       if (ev === "missing" || ev === "partial") {
         lines.push(`  → next: exceptd lint ${obj.playbook_id} -    # paste {} on stdin, see exact JSON paths to populate`);
       }

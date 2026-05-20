@@ -266,6 +266,64 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("run inconclusive with mixed coverage breaks out decisive vs inconclusive indicators", () => {
+  // A submission that supplies signal_overrides for only some
+  // indicators lands `classification=inconclusive`. The raw
+  // "evidence: complete (13/13 indicators evaluated)" wording is
+  // technically correct (the engine ran every indicator) but
+  // misleading — it sounds like full coverage. The renderer must
+  // distinguish decisive (hit/miss) from inconclusive verdicts when
+  // the classification itself is inconclusive AND there's a mix.
+  const evidence = JSON.stringify({
+    precondition_checks: { "repo-context": true, "regex-engine": true },
+    artifacts: { "repo-tree": { value: "tree dump", captured: true } },
+    signal_overrides: {
+      "aws-access-key-id": "miss",
+      "github-personal-access-token": "miss",
+    },
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "mixed-cov-"));
+  try {
+    const env = { EXCEPTD_HOME: tmpHome };
+    const r = cli(["run", "secrets", "--evidence", "-"], { input: evidence, env });
+    assert.equal(r.status, 0);
+    // 2 decisive / 13 known / 11 inconclusive — the breakdown must
+    // appear on the verdict line (decision IS load-bearing here).
+    assert.match(r.stdout, /classification=inconclusive/,
+      "scenario depends on the run landing inconclusive");
+    assert.match(r.stdout, /evidence: complete\s+\(2\/13 decisive, 11 inconclusive — add signal_overrides to drive a verdict\)/,
+      "verdict line must break out decisive vs inconclusive when both are present + verdict is inconclusive");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("run detected with all indicators decisive does NOT break out the count", () => {
+  // When classification is detected (or not_detected), the breakdown
+  // is noise — operators just want the verdict and indicator counter.
+  const evidence = JSON.stringify({
+    precondition_checks: { "repo-context": true, "regex-engine": true },
+    artifacts: { "repo-tree": { value: "tree", captured: true } },
+    signal_overrides: { "aws-access-key-id": "hit" },
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "decisive-"));
+  try {
+    const env = { EXCEPTD_HOME: tmpHome };
+    const r = cli(["run", "secrets", "--evidence", "-"], { input: evidence, env });
+    assert.equal(r.status, 0);
+    if (/classification=detected/.test(r.stdout)) {
+      // Detected runs use the plain (N/M indicators evaluated) form;
+      // the decisive-breakdown would be misleading here.
+      assert.match(r.stdout, /evidence: complete\s+\(\d+\/\d+ indicators evaluated\)/,
+        "detected runs use the plain N/M form, not the decisive breakdown");
+      assert.doesNotMatch(r.stdout, /decisive,/,
+        "detected runs must NOT show the decisive/inconclusive breakdown");
+    }
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("run surfaces runtime_errors in the human renderer (malformed signal_overrides is visible)", () => {
   // A malformed submission (e.g. signal_overrides as a string) used
   // to silently complete with `[ok] classification=not_detected`
