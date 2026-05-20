@@ -3222,6 +3222,22 @@ function cmdRun(runner, args, runOpts, pretty) {
         lines.push(`> drift vs prior: no prior attestation found for ${dfl.playbook_id || obj.playbook_id} — this run becomes the baseline`);
       }
     }
+    // --upstream-check fired a network call; surface the result so the
+    // operator who asked "am I current?" gets a one-line answer at the
+    // terminal without grepping the JSON envelope.
+    if (obj.upstream_check) {
+      const u = obj.upstream_check;
+      if (u.same) {
+        lines.push(`> upstream check: local v${u.local_version} == published v${u.latest_version} (current)`);
+      } else if (u.behind) {
+        const days = u.days_since_latest_publish != null ? `${u.days_since_latest_publish}d behind` : "behind";
+        lines.push(`> upstream check: local v${u.local_version} BEHIND published v${u.latest_version} (${days}) — run \`npm install -g @blamejs/exceptd-skills@latest\``);
+      } else if (u.ahead) {
+        lines.push(`> upstream check: local v${u.local_version} ahead of published v${u.latest_version} (unreleased / dev install)`);
+      } else if (!u.ok) {
+        lines.push(`> upstream check: skipped (${u.reason || u.hint || "registry unreachable"})`);
+      }
+    }
     const cves = obj.phases?.analyze?.matched_cves || [];
     const baseline = obj.phases?.analyze?.catalog_baseline_cves || [];
     if (cves.length) {
@@ -6090,6 +6106,22 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     } else {
       lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`exceptd doctor --fix\` to enable`);
     }
+  }
+  if (checks.ai_config) {
+    const c = checks.ai_config;
+    const findings = Array.isArray(c.findings) ? c.findings : [];
+    const icon = findings.length === 0 ? "[ok]" : "[!!]";
+    const dirCount = c.scanned_dirs ?? 0;
+    const fileCount = c.scanned_files ?? 0;
+    lines.push(`  ${icon} AI-assistant config audit: scanned ${fileCount} file(s) across ${dirCount} dir(s) of ${(c.directories_inspected || []).length} candidate root(s); ${findings.length} finding(s)`);
+    if (c.platform === "win32" && findings.length === 0 && fileCount > 0) {
+      lines.push(`       (on Windows, POSIX mode bits are not load-bearing — manual ACL review noted for any sensitive files found)`);
+    }
+    for (const f of findings.slice(0, 5)) {
+      const sev = f.severity === "error" ? "[!!]" : f.severity === "warn" ? "[warn]" : "[info]";
+      lines.push(`       ${sev} ${f.path || "?"}: ${f.reason || f.note || "(no detail)"}`);
+    }
+    if (findings.length > 5) lines.push(`       … and ${findings.length - 5} more (use --json for full list)`);
   }
   lines.push("");
   if (allGreen) {
