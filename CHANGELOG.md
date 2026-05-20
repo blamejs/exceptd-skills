@@ -14,6 +14,7 @@ Continuation of the v0.13.22 UX pass: stage-by-stage next-step guidance so an op
 ### Bugs
 
 - **Stale playbook count in error messages.** `exceptd run <unknown-id>` (and the lint-not-found path) said "Run \`exceptd brief --all\` to list the 13 playbooks." There are 23 playbooks shipped. Now uses the live `listPlaybooks().length`.
+- **`lint` did not warn on the artifact-only-no-signal_overrides path.** An operator following lint's per-artifact guidance for a nested submission populated every required artifact, ran the playbook, and got every indicator = inconclusive with no explanation. The detect phase needs `signal_overrides` (or a `verdict.classification` override) to mark indicators as hit / miss — artifact presence alone is not enough. The flat-shape path already surfaced this as `detect_will_be_inconclusive`; the nested-shape path was silent. Now lint emits `no_signal_overrides_supplied` with the exact JSON shape to add.
 
 ## 0.13.22 — 2026-05-19
 

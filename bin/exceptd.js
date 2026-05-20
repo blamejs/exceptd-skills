@@ -2288,6 +2288,27 @@ function cmdLint(runner, args, runOpts, pretty) {
         hint: `Flat submission with ${observationsCount} observation(s) but no indicator+result fields and no verdict.classification. detect() will return 'inconclusive'. Each observation needs { "indicator": "<id>", "result": "hit"|"miss"|"inconclusive" } to drive an indicator outcome. Run \`exceptd run ${playbookId} --signal-list\` for the indicator IDs.`,
       });
     }
+  } else {
+    // v0.13.23 — nested submission with artifacts but no signal_overrides
+    // also lands every indicator on inconclusive. The flat-shape branch
+    // already surfaced this; the nested-shape silence was the workflow gap
+    // operators hit: they fill in lint's per-artifact guidance, run, and
+    // get an opaque "every indicator inconclusive" result. Surface the
+    // signal_overrides shape explicitly so the operator/AI knows the
+    // next step is to set `signal_overrides[<indicator-id>] = "hit" |
+    // "miss" | "inconclusive"` per indicator they investigated.
+    const verdictClass = submission.verdict?.classification;
+    const verdictWillDrive = verdictClass === "clean" || verdictClass === "not_detected" || verdictClass === "detected" || verdictClass === "inconclusive";
+    const normalizedHasOverrides = Object.keys(normalized.signal_overrides || {}).length > 0;
+    const submissionHasArtifacts = Object.keys(submission.artifacts || {}).length > 0;
+    if (submissionHasArtifacts && !verdictWillDrive && !normalizedHasOverrides) {
+      const someIndicatorIds = [...knownIndicators].slice(0, 3).join('", "');
+      issues.push({
+        severity: "info",
+        kind: "no_signal_overrides_supplied",
+        hint: `Nested submission has artifacts but no signal_overrides — every indicator will return 'inconclusive' (verdict will be 'inconclusive', not 'detected' / 'not_detected'). To drive a concrete verdict, populate \`signal_overrides\` with the indicators you investigated: { "${someIndicatorIds}": "hit"|"miss" }. ${knownIndicators.size} indicator(s) known — see \`exceptd brief ${playbookId}\` for the full list. Alternatively, supply \`verdict.classification = "clean"|"not_detected"|"detected"\` to bypass indicator evaluation.`,
+      });
+    }
   }
 
   const ok = issues.every(i => i.severity !== "error");
@@ -7068,10 +7089,33 @@ function cmdCi(runner, args, runOpts, pretty) {
         lines.push(`\nNext steps (every playbook ran inconclusive — no evidence supplied):`);
         lines.push(lintCmd(firstId));
         lines.push(`  exceptd ci --scope <type> --evidence-dir <dir>  # gate again with real submissions`);
-      } else if (s.verdict === "FAIL" && s.detected > 0) {
-        lines.push(`\nNext steps (review the ${s.detected} detected finding(s)):`);
-        lines.push(`  exceptd run <playbook> --format markdown    # operator-readable digest`);
-        lines.push(`  exceptd run <playbook> --format csaf-2.0    # advisory bundle for downstream`);
+      } else if (s.verdict === "FAIL") {
+        // codex P2 (PR #63): FAIL can fire in two distinct shapes —
+        //   (a) at least one playbook classification=detected → s.detected > 0
+        //   (b) inconclusive playbook(s) whose rwep_delta (operator
+        //       evidence) crossed the cap → s.detected stays at 0
+        // Pre-fix this branch was keyed on `s.detected > 0`, so the
+        // shape-(b) FAIL exited with no "Next steps" footer at all,
+        // contradicting the v0.13.23 stage-by-stage promise.
+        if (s.detected > 0) {
+          lines.push(`\nNext steps (review the ${s.detected} detected finding(s)):`);
+          lines.push(`  exceptd run <playbook> --format markdown    # operator-readable digest`);
+          lines.push(`  exceptd run <playbook> --format csaf-2.0    # advisory bundle for downstream`);
+        } else {
+          // Operator evidence pushed RWEP across --max-rwep cap on an
+          // otherwise-inconclusive run. The fix is to review which
+          // signals moved the score and decide whether they warrant
+          // escalation or whether the cap is set too low for the
+          // current evidence quality.
+          const inconclusivePb = (obj.results || [])
+            .filter(r => r && r.ok !== false && r.phases?.detect?.classification === "inconclusive")
+            .map(r => r.playbook_id)
+            .filter(Boolean);
+          const exampleId = inconclusivePb[0] || (obj.playbooks_run && obj.playbooks_run[0]) || "<playbook>";
+          lines.push(`\nNext steps (RWEP-delta cap exceeded — no playbook hit "detected", but operator evidence raised at least one score past --max-rwep):`);
+          lines.push(`  exceptd run ${exampleId} --pretty           # inspect phases.analyze.rwep.base + adjusted to see which signal moved the score`);
+          lines.push(`  exceptd ci ... --max-rwep <higher>           # raise the cap if the evidence-driven escalation is acceptable for your gate`);
+        }
       } else if (s.verdict === "CLOCK_STARTED") {
         lines.push(`\nNext steps (jurisdiction clock running — notification deadlines above):`);
         lines.push(`  exceptd run <playbook> --format csaf-2.0    # draft the operator-of-record advisory`);

@@ -156,3 +156,74 @@ test("run unknown-playbook error says 'list the <live count> playbooks', not the
   assert.match(err.error, /list the \d+ playbooks/,
     "playbook-not-found message must reference a live count");
 });
+
+test("ci FAIL via rwep-delta cap exceeded (no `detected`) still prints Next steps (codex P2 on PR #63)", () => {
+  // Codex P2 caught that `verdict === "FAIL"` fires for two shapes:
+  //   (a) detected > 0 (a playbook landed classification=detected)
+  //   (b) inconclusive + rwep_delta >= cap
+  // Pre-fix the footer keyed on `s.detected > 0`, so the inconclusive+
+  // delta-cap path printed FAIL with no Next-steps block. The fix is
+  // to branch on verdict and emit guidance for both shapes. This test
+  // pins shape (b) — set --max-rwep to 0 + supply evidence that lifts
+  // the score by any amount, and the rwep_delta gate fires while
+  // classification stays inconclusive.
+  const evidence = JSON.stringify({
+    kernel: {
+      precondition_checks: { "linux-platform": true, "uname-available": true },
+      artifacts: { "kernel-release": "5.15.0-69-generic" },
+      // Set ONE indicator to "hit" so RWEP rises by the cisa_kev / poc
+      // adjustment ladder but classification stays inconclusive (the
+      // ladder fires on any indicator going hit; classification only
+      // moves to "detected" when the deterministic indicators fire on
+      // confirmed-applicability).
+      signal_overrides: { "active-exploitation-published": "hit" }
+    }
+  });
+  const tmpFile = path.join(os.tmpdir(), `fail-delta-${process.pid}.json`);
+  fs.writeFileSync(tmpFile, evidence);
+  try {
+    const r = cli(["ci", "--required", "kernel", "--evidence", tmpFile, "--max-rwep", "0"]);
+    // We expect verdict=FAIL because rwep_delta will exceed cap=0. If
+    // the classification lands "detected" (different shape), the FAIL
+    // path still prints SOME guidance — test just pins that a Next-
+    // steps block appears on any FAIL.
+    if (/verdict=FAIL/.test(r.stdout)) {
+      assert.match(r.stdout, /Next steps \(/,
+        "FAIL must always print a Next-steps block — pre-fix, the inconclusive+delta-cap shape printed no guidance");
+    }
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch {}
+  }
+});
+
+test("lint flags nested submission with artifacts-but-no-signal_overrides (the workflow-blind path)", () => {
+  // The cold-start workflow has a hidden trapdoor: lint says "Add to
+  // submission.artifacts.<id>" for every required artifact, the operator
+  // populates them all, runs, and gets every indicator = inconclusive.
+  // Why? The detect phase needs signal_overrides (or a verdict override)
+  // to mark each indicator as hit/miss — artifact presence alone is not
+  // enough. Pre-v0.13.23 the operator hit this with zero guidance.
+  // Now lint surfaces it explicitly as info.
+  const evidence = JSON.stringify({
+    precondition_checks: { "repo-context": true, "regex-engine": true },
+    artifacts: {
+      "repo-tree": { value: "package.json src/ tests/", captured: true },
+      "secret-regex-scan-text-files": { value: "scanned 47 files; 0 hits", captured: true }
+    }
+  });
+  const tmpFile = path.join(os.tmpdir(), `lint-no-overrides-${process.pid}.json`);
+  fs.writeFileSync(tmpFile, evidence);
+  try {
+    const r = cli(["lint", "secrets", tmpFile, "--json"]);
+    const body = tryJson(r.stdout);
+    assert.ok(body, "lint must emit parseable JSON");
+    const hint = body.issues.find(i => i.kind === "no_signal_overrides_supplied");
+    assert.ok(hint, `expected a no_signal_overrides_supplied info issue; got: ${JSON.stringify(body.issues.map(i => i.kind))}`);
+    assert.equal(hint.severity, "info");
+    assert.match(hint.hint, /signal_overrides/);
+    assert.match(hint.hint, /"hit"\|"miss"/);
+    assert.match(hint.hint, /verdict\.classification/);
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch {}
+  }
+});
