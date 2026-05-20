@@ -3208,16 +3208,19 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Marker text is grep-matched by tests/audit-i-l-m-fixes.test.js F11.
     // - unchanged: same evidence_hash as prior → reassuring single line.
     // - drifted: evidence differs → loud DRIFTED marker.
-    // - no_prior_attestation_for_playbook: no line — don't clutter the
-    //   output when there is nothing to compare against.
+    // - no_prior_attestation_for_playbook: explicit "no prior" line so
+    //   an operator who passed --diff-from-latest doesn't wonder
+    //   whether the flag took effect. Without this, a fresh attestation
+    //   directory produced no diff output — the flag looked broken.
     if (obj.diff_from_latest) {
       const dfl = obj.diff_from_latest;
       if (dfl.status === "unchanged") {
         lines.push(`> drift vs prior: unchanged (same evidence_hash as session ${dfl.prior_session_id})`);
       } else if (dfl.status === "drifted") {
         lines.push(`> drift vs prior: DRIFTED — evidence_hash differs from session ${dfl.prior_session_id}`);
+      } else if (dfl.status === "no_prior_attestation_for_playbook") {
+        lines.push(`> drift vs prior: no prior attestation found for ${dfl.playbook_id || obj.playbook_id} — this run becomes the baseline`);
       }
-      // no_prior_attestation_for_playbook intentionally produces no line.
     }
     const cves = obj.phases?.analyze?.matched_cves || [];
     const baseline = obj.phases?.analyze?.catalog_baseline_cves || [];
