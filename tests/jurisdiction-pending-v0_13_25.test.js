@@ -52,17 +52,22 @@ test("detected run prints 'Pending jurisdiction obligations' grouped by clock_st
     const env = { EXCEPTD_HOME: tmpHome };
     const r = cli(["run", "kernel", "--evidence", "-"], { input: evidence, env });
     assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
-    // Pin presence of the Pending block on a detected run.
-    if (/\[!! DETECTED\]/.test(r.stdout)) {
-      assert.match(r.stdout, /Pending jurisdiction obligations \(\d+\) — clock starts on operator action:/,
-        "detected run must surface pending jurisdiction obligations");
-      // At least one grouped event row. Format: `  on <event>:  <jur>/<reg> (Nh), ...`
-      assert.match(r.stdout, /\s+on \w+:\s+\w/,
-        "obligations must be grouped by clock_start_event");
-      // Next-step pointer.
-      assert.match(r.stdout, /→ next: exceptd run kernel --evidence <file> --format csaf-2\.0/,
-        "must point at csaf-2.0 format for draft advisory + notification bodies");
-    }
+    // Codex P2 on PR #65: pin the detected classification as a precondition
+    // BEFORE checking the pending-obligation output. If the deterministic
+    // hit indicator regresses and the run no longer classifies as detected,
+    // this assertion fires loudly. Pre-fix the test wrapped the pending-
+    // obligation checks in `if (/DETECTED/.test(...))` — a silent skip
+    // that would let the underlying feature break without alerting.
+    assert.match(r.stdout, /\[!! DETECTED\]/,
+      "kernel + kver-in-affected-range:hit must classify as detected — the test scenario depends on this");
+    assert.match(r.stdout, /Pending jurisdiction obligations \(\d+\) — clock starts on operator action:/,
+      "detected run must surface pending jurisdiction obligations");
+    // At least one grouped event row. Format: `  on <event>:  <jur>/<reg> (Nh), ...`
+    assert.match(r.stdout, /\s+on \w+:\s+\w/,
+      "obligations must be grouped by clock_start_event");
+    // Next-step pointer.
+    assert.match(r.stdout, /→ next: exceptd run kernel --evidence <file> --format csaf-2\.0/,
+      "must point at csaf-2.0 format for draft advisory + notification bodies");
   } finally {
     try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
   }
