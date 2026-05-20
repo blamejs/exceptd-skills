@@ -3247,10 +3247,33 @@ function cmdRun(runner, args, runOpts, pretty) {
       }
       lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
     }
-    const notif = (obj.phases?.close?.notification_actions || []).filter(n => n.clock_started_at);
-    if (notif.length) {
-      lines.push(`\nNotification clocks started (${notif.length}):`);
-      for (const n of notif) lines.push(`  ${n.obligation_ref} → deadline ${n.deadline}`);
+    // v0.13.25 — surface BOTH started and pending notification clocks.
+    // Pre-v0.13.25 the renderer hid pending obligations on detected
+    // runs, so an operator finishing a detected scan never saw that
+    // jurisdiction X / regulation Y was waiting on `detect_confirmed`
+    // or `analyze_complete` to start a 24h / 72h / 720h clock. That
+    // misses the entire reason regulators care about this tool.
+    const allNotif = obj.phases?.close?.notification_actions || [];
+    const startedNotif = allNotif.filter(n => n.clock_started_at);
+    const pendingNotif = allNotif.filter(n => !n.clock_started_at);
+    if (startedNotif.length) {
+      lines.push(`\nNotification clocks started (${startedNotif.length}):`);
+      for (const n of startedNotif) lines.push(`  ${n.obligation_ref} → deadline ${n.deadline}`);
+    }
+    if (pendingNotif.length && cls === "detected") {
+      lines.push(`\nPending jurisdiction obligations (${pendingNotif.length}) — clock starts on operator action:`);
+      // Group by clock_start_event so the operator sees what to do
+      // ONCE per event class, not once per regulation.
+      const byEvent = {};
+      for (const n of pendingNotif) {
+        const ev = n.clock_start_event || "unspecified";
+        if (!byEvent[ev]) byEvent[ev] = [];
+        byEvent[ev].push(`${n.jurisdiction || "?"}/${n.regulation || "?"} (${n.window_hours || "?"}h)`);
+      }
+      for (const [ev, refs] of Object.entries(byEvent)) {
+        lines.push(`  on ${ev}:  ${refs.join(", ")}`);
+      }
+      lines.push(`  → next: exceptd run ${obj.playbook_id} --evidence <file> --format csaf-2.0    # generate the draft advisory + notification bodies`);
     }
     const feeds = obj.phases?.close?.feeds_into || [];
     if (feeds.length) lines.push(`\nNext playbooks suggested: ${feeds.join(", ")}`);
