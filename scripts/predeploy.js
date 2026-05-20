@@ -207,6 +207,20 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-catalog-gap-budget.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Version-tag drift gate. Compares the tracked tree against a
+    // baseline snapshot of pre-existing `// vX.Y.Z` comments and
+    // `*-vX_Y_Z.test.js` filenames. Fails on NEW additions outside
+    // the authoritative version surfaces (package.json /
+    // manifest.json / CHANGELOG headings / git tags). The full rule
+    // is documented at the top of check-version-tags.js; refresh the
+    // baseline after an organic cleanup via
+    // `node scripts/check-version-tags.js --update-baseline`.
+    name: "Version-tag drift (no new phase residue)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-version-tags.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

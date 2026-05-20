@@ -1,29 +1,25 @@
 "use strict";
 
 /**
- * tests/ci-human-renderer-v0_13_22.test.js
+ * tests/ci-human-renderer.test.js
  *
- * v0.13.22: regression coverage for the operator-facing improvements
- * to `ci` and run-result envelopes. Pins:
+ * Pins the operator-facing surfaces of `ci`:
  *
- *   1. `ci` default emits human text (table) — not JSON — so an
- *      operator running `exceptd ci --scope code` at the terminal
- *      gets a one-screen digest. Pre-0.13.22 the default was 1000+
- *      lines of indented JSON.
- *   2. `ci --json` still emits parseable JSON with the documented
- *      envelope; the human path does not displace the machine path.
- *   3. Run results carry `playbook_id` on blocked entries (B7) and
- *      `verdict` / `rwep_score` / `summary_line` /
- *      `evidence_completeness` on success entries (B2 + B9).
- *   4. Session-level warnings are deduped (B5) — `ci` over N playbooks
- *      surfaces a publisher-unclaimed warning ONCE in summary, not N
- *      copies.
- *   5. Scope inclusion is transparent (B8) — `--scope code` summary
- *      lists the inclusion rule so operators know why sbom and
- *      cross-cutting playbooks appeared in their code-scope run.
+ *   1. Default output is a human digest (table), not JSON.
+ *   2. `--json` still emits the documented structured envelope.
+ *   3. Result envelope carries `verdict` / `rwep_score` / `top_finding`
+ *      / `summary_line` / `evidence_completeness` /
+ *      `indicators_evaluated` / `indicators_known` at the top level.
+ *   4. Blocked results carry `playbook_id` (same shape contract as
+ *      successful results).
+ *   5. Session-level warnings are deduped — N copies of the same
+ *      bundle_publisher_unclaimed entry collapse to one summary row.
+ *   6. `--scope <type>` summary surfaces the inclusion rule so
+ *      operators see why cross-cutting + sbom appear alongside the
+ *      requested scope.
  *
- * Per CLAUDE.md anti-coincidence rule: every assertion checks an
- * exact key/value, not "ok-truthy" / "non-zero" / etc.
+ * Per the anti-coincidence rule: every assertion checks an exact
+ * key/value, not "ok-truthy" / "non-zero" / etc.
  */
 
 const test = require("node:test");
@@ -65,36 +61,33 @@ test("ci --json still emits parseable JSON with documented envelope", () => {
   assert.ok(body, "ci --json must emit parseable JSON");
   assert.equal(body.verb, "ci");
   assert.equal(typeof body.summary, "object");
-  // Summary now carries deduped runtime warnings (B5).
+  // Summary carries deduped runtime warnings.
   assert.ok(Array.isArray(body.summary.runtime_warnings),
-    "summary.runtime_warnings must be an array (B5 dedup)");
+    "summary.runtime_warnings must be an array");
   assert.equal(typeof body.summary.runtime_warnings_count, "number");
 });
 
-test("ci result carries top-level verdict / rwep_score / summary_line / evidence_completeness (B2 + B9)", () => {
+test("ci result carries top-level verdict / rwep_score / summary_line / evidence_completeness", () => {
   const r = cli(["ci", "--required", "secrets", "--json"]);
   const body = tryJson(r.stdout);
   assert.ok(body, "ci --json must emit parseable JSON");
   const row = body.results.find(x => x.playbook_id === "secrets");
   assert.ok(row, "secrets result must be present");
   if (row.ok === false) {
-    // Blocked path (B7): playbook_id present at top-level.
+    // Blocked path: playbook_id MUST be at the top of the result
+    // envelope (same contract as the success path).
     assert.equal(row.playbook_id, "secrets",
-      "blocked results must carry playbook_id at top level (B7)");
+      "blocked results must carry playbook_id at top level");
     assert.equal(row.evidence_completeness, "not-evaluated",
       "blocked results report evidence_completeness=not-evaluated");
   } else {
-    // Success path (B2 + B9).
-    // Codex P1 (PR #62): verdict MUST be derived from
-    // phases.detect.classification, NOT phases.validate.verdict (which
-    // doesn't exist — validate() returns selected_remediation +
-    // remediation_options_considered + regression schedule, never a
-    // `verdict` field). An earlier draft of the hoist read
-    // phases.validate.verdict and degraded every non-blocked result to
-    // "inconclusive". Pin the canonical source explicitly.
+    // Verdict MUST be derived from phases.detect.classification.
+    // validate() does not carry a `verdict` field — sourcing the
+    // hoist from phases.validate.verdict would degrade every non-
+    // blocked result to the fallback "inconclusive".
     assert.equal(typeof row.verdict, "string");
     assert.equal(row.verdict, row.phases?.detect?.classification,
-      "hoisted verdict must equal phases.detect.classification — not phases.validate.verdict (codex P1 on PR #62)");
+      "hoisted verdict must equal phases.detect.classification — not phases.validate.verdict");
     assert.ok(["detected", "not_detected", "inconclusive", "pending", "skipped"].includes(row.verdict),
       `verdict must be one of the documented enum values; got ${row.verdict}`);
     assert.equal(typeof row.summary_line, "string");
@@ -110,7 +103,7 @@ test("ci result carries top-level verdict / rwep_score / summary_line / evidence
   }
 });
 
-test("ci --scope code surfaces scope_inclusion_rules in summary (B8 transparency)", () => {
+test("ci --scope code surfaces scope_inclusion_rules in summary", () => {
   const r = cli(["ci", "--scope", "code", "--json"]);
   const body = tryJson(r.stdout);
   assert.ok(body, "ci --scope code --json must emit parseable JSON");
@@ -126,13 +119,12 @@ test("ci --scope code surfaces scope_inclusion_rules in summary (B8 transparency
   assert.ok(sbomRule, "scope_inclusion_rules must mention sbom auto-inclusion on a lockfile repo");
 });
 
-test("ci --scope code dedupes session-level warnings across N playbooks (B5)", () => {
-  // ci --scope code runs 8 playbooks on this repo (4 code + 4 cross-cutting,
-  // sbom skipped because of mutex). Each successful playbook independently
-  // touches the CSAF bundle-build path, which surfaces the
-  // bundle_publisher_unclaimed warning when --publisher-namespace is not
-  // supplied. Pre-B5 the warning appeared N times in the body; now the
-  // summary carries one deduped entry.
+test("ci --scope code dedupes session-level warnings across N playbooks", () => {
+  // ci --scope code runs 8 playbooks on this repo (4 code + 4 cross-
+  // cutting, sbom skipped because of mutex). Each successful playbook
+  // independently touches the CSAF bundle-build path, which surfaces
+  // the bundle_publisher_unclaimed warning when --publisher-namespace
+  // is not supplied. The dedup folds N copies into one summary entry.
   const r = cli(["ci", "--scope", "code", "--json"]);
   const body = tryJson(r.stdout);
   assert.ok(body, "ci --scope code --json must emit parseable JSON");

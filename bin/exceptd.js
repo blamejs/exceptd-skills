@@ -2289,14 +2289,12 @@ function cmdLint(runner, args, runOpts, pretty) {
       });
     }
   } else {
-    // v0.13.23 — nested submission with artifacts but no signal_overrides
-    // also lands every indicator on inconclusive. The flat-shape branch
-    // already surfaced this; the nested-shape silence was the workflow gap
-    // operators hit: they fill in lint's per-artifact guidance, run, and
-    // get an opaque "every indicator inconclusive" result. Surface the
-    // signal_overrides shape explicitly so the operator/AI knows the
-    // next step is to set `signal_overrides[<indicator-id>] = "hit" |
-    // "miss" | "inconclusive"` per indicator they investigated.
+    // Nested submission with artifacts but no signal_overrides lands
+    // every indicator on inconclusive — same trapdoor the flat-shape
+    // branch above surfaces. Detect() needs signal_overrides (or a
+    // verdict override) to drive an indicator hit/miss; artifact
+    // presence alone is not enough. Surface the JSON shape explicitly
+    // so the operator/AI knows what to populate.
     const verdictClass = submission.verdict?.classification;
     const verdictWillDrive = verdictClass === "clean" || verdictClass === "not_detected" || verdictClass === "detected" || verdictClass === "inconclusive";
     const normalizedHasOverrides = Object.keys(normalized.signal_overrides || {}).length > 0;
@@ -2949,9 +2947,9 @@ function cmdRun(runner, args, runOpts, pretty) {
       result.prior_session_id = persistResult.prior_session_id;
       result.overwrote_at = persistResult.overwrote_at;
     }
-    // v0.13.23 — surface the attestation file path so the human renderer
-    // can echo it and the next-step guidance (attest verify <sid>) lands
-    // on an artifact the operator can actually find.
+    // Surface the persisted file path on the result so the human
+    // renderer can echo it and the attest verify / attest diff hint
+    // lands on an artifact the operator can actually find.
     if (persistResult.attestation_path) {
       result.attestation_path = persistResult.attestation_path;
     }
@@ -3178,12 +3176,11 @@ function cmdRun(runner, args, runOpts, pretty) {
     const top = rwep?.threshold?.escalate ?? "n/a";
     const verdictIcon = cls === "detected" ? "[!! DETECTED]" : cls === "inconclusive" ? "[i  INCONCLUSIVE]" : "[ok]";
     lines.push(`\n${verdictIcon}  classification=${cls}  RWEP ${adj}/${top}${adj !== base ? ` (Δ${adj - base} from operator evidence)` : " (catalog baseline)"}  blast_radius=${obj.phases?.analyze?.blast_radius_score ?? "n/a"}/5`);
-    // v0.13.23 — surface evidence_completeness on the verdict line so
-    // operators distinguish "ran every indicator and found nothing"
-    // (evidence=complete) from "couldn't evaluate, no evidence supplied"
-    // (evidence=missing). Pre-v0.13.23 the two states printed identically
-    // — a not_detected run with zero evidence looked the same as one
-    // with a fully-populated submission.
+    // Surface evidence_completeness on the verdict line so operators
+    // distinguish "ran every indicator and found nothing"
+    // (evidence=complete) from "couldn't evaluate, no evidence
+    // supplied" (evidence=missing) — without this they look identical
+    // at the terminal.
     if (obj.evidence_completeness && obj.indicators_known != null) {
       const ev = obj.evidence_completeness;
       const ke = obj.indicators_evaluated ?? 0;
@@ -3231,13 +3228,13 @@ function cmdRun(runner, args, runOpts, pretty) {
       lines.push(`\nIndicators that fired (${hits.length}):`);
       for (const i of hits.slice(0, 8)) lines.push(`  ${i.id}  (${i.confidence}${i.deterministic ? "/deterministic" : ""})`);
     }
-    // v0.13.23 — selected_remediation is informational on non-detect
-    // runs (validate() always picks the highest-priority remediation
-    // path as a "what would you do IF you found something" anchor).
-    // Rendering it as "Recommended remediation:" on a not_detected /
-    // inconclusive verdict misleads operators into thinking action is
-    // required. Tag it conditionally so the operator-facing prose
-    // matches the verdict.
+    // selected_remediation is informational on non-detect runs:
+    // validate() always picks the highest-priority remediation path
+    // as a "what you'd do IF you found something" anchor, even when
+    // classification is not_detected / inconclusive. Tag the prose
+    // conditionally so the label matches the verdict — labeling it
+    // "Recommended remediation:" on a not_detected run misleads
+    // operators into thinking action is required.
     const rem = obj.phases?.validate?.selected_remediation;
     if (rem) {
       if (cls === "detected") {
@@ -3247,12 +3244,11 @@ function cmdRun(runner, args, runOpts, pretty) {
       }
       lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
     }
-    // v0.13.25 — surface BOTH started and pending notification clocks.
-    // Pre-v0.13.25 the renderer hid pending obligations on detected
-    // runs, so an operator finishing a detected scan never saw that
-    // jurisdiction X / regulation Y was waiting on `detect_confirmed`
-    // or `analyze_complete` to start a 24h / 72h / 720h clock. That
-    // misses the entire reason regulators care about this tool.
+    // Surface BOTH started and pending notification clocks on detected
+    // runs. The detection IS the regulatory event for the obligations
+    // exceptd tracks — pending obligations waiting on detect_confirmed
+    // / analyze_complete are exactly what the operator needs to see
+    // before taking the action that starts the clock.
     const allNotif = obj.phases?.close?.notification_actions || [];
     const startedNotif = allNotif.filter(n => n.clock_started_at);
     const pendingNotif = allNotif.filter(n => !n.clock_started_at);
@@ -3278,12 +3274,11 @@ function cmdRun(runner, args, runOpts, pretty) {
     const feeds = obj.phases?.close?.feeds_into || [];
     if (feeds.length) lines.push(`\nNext playbooks suggested: ${feeds.join(", ")}`);
 
-    // v0.13.23 — tell the operator WHERE the attestation went and HOW
-    // to verify/diff it. Pre-v0.13.23 a successful run silently wrote
+    // Tell the operator WHERE the attestation went and HOW to verify
+    // / diff it. Without this, the attestation goes to
     // ~/.exceptd/attestations/<repo>@<branch>/<sid>/attestation.json
-    // with zero indication to the operator. The next-time-they-asked-
-    // about-this-run lookup ("attest verify <sid>") then failed with
-    // "no session dir" because they were in a different cwd.
+    // and a follow-up `attest verify <sid>` from a different cwd
+    // fails with "no session dir" because the lookup is cwd-tagged.
     if (obj.attestation_path) {
       lines.push(`\nAttestation written: ${obj.attestation_path}`);
       lines.push(`  exceptd attest verify ${obj.session_id}     # tamper check`);
@@ -3845,11 +3840,9 @@ function persistAttestation(args) {
 
     try {
       writeAttestation(null, null, "wx");
-      // v0.13.23 — surface the absolute path so the caller can echo it
-      // in the human renderer. Pre-v0.13.23 the attestation was silently
-      // written to ~/.exceptd/attestations/<repo>@<branch>/<session-id>/
-      // and the operator had no way to find it short of grepping the
-      // filesystem.
+      // Return the absolute path so the caller can echo it in the
+      // human renderer — operators need to know where the file went
+      // for follow-up `attest verify` / `attest diff` calls.
       return { ok: true, prior_session_id: null, overwrote_at: null, attestation_path: filePath };
     } catch (eExcl) {
       if (eExcl.code !== "EEXIST") throw eExcl;
@@ -4620,10 +4613,9 @@ function cmdReattest(runner, args, runOpts, pretty) {
     // on-disk artifact without re-deriving the filename.
     replay_persisted: replayPersisted,
   }, pretty, (obj) => {
-    // v0.13.24 — human renderer for `attest diff` (reattest path).
-    // Pre-v0.13.24 the only output was JSON, so an operator asking "did
-    // anything change since the last run?" had to parse the envelope to
-    // get the one-line answer they wanted.
+    // Human renderer for `attest diff` (reattest path) — one-screen
+    // answer to "did anything change since the last run?" so the
+    // operator doesn't have to parse the JSON envelope.
     const lines = [];
     lines.push(`attest diff: ${obj.session_id} (${obj.playbook_id})`);
     const icon = obj.status === "unchanged" ? "[ok]" : "[i  DRIFTED]";
@@ -4962,10 +4954,9 @@ function cmdAttest(runner, args, runOpts, pretty) {
       body.replay_tamper = true;
       body.warnings = ["one or more replay records failed Ed25519 verification — audit-trail corruption suspected, regenerate via reattest"];
     }
-    // v0.13.24 — human renderer for `attest verify`. Pre-v0.13.24 the
-    // only output was a JSON envelope, even at the terminal. The whole
-    // point of `attest verify` is "did anyone tamper with my evidence
-    // since I ran it?" — that question deserves a one-line answer.
+    // Human renderer for `attest verify` — one-line answer to "did
+    // anyone tamper with my evidence since I ran it?" so the operator
+    // doesn't have to parse the JSON envelope.
     emit(body, pretty, (obj) => {
       const lines = [];
       lines.push(`attest verify: ${obj.session_id}`);
@@ -6989,12 +6980,12 @@ function cmdCi(runner, args, runOpts, pretty) {
     clock_started_reasons: clockStartedReasons,
   };
 
-  // v0.13.22 B5: Each `run()` call independently surfaces session-level
-  // runtime conditions (e.g. bundle_publisher_unclaimed) into its own
-  // phases.analyze.runtime_errors. On a ci run that spans 9 playbooks, the
-  // operator saw the same warning 9 times. Dedupe across results by
-  // (kind, reason) so a session-level condition surfaces once at the ci
-  // summary level — operators read one row, not N copies.
+  // Each `run()` call independently surfaces session-level runtime
+  // conditions (e.g. bundle_publisher_unclaimed) into its own
+  // phases.analyze.runtime_errors. On a ci run spanning N playbooks
+  // the same warning would otherwise appear N times. Dedupe across
+  // results by (kind, reason) so session-level conditions surface
+  // once at the summary level, not once per playbook.
   const warningSeen = new Set();
   const runtimeWarningsDedup = [];
   for (const r of results) {
@@ -7013,11 +7004,11 @@ function cmdCi(runner, args, runOpts, pretty) {
   summary.runtime_warnings = runtimeWarningsDedup;
   summary.runtime_warnings_count = runtimeWarningsDedup.length;
 
-  // v0.13.22 B8 (transparency): document why each playbook was selected.
-  // --scope <s> always adds cross-cutting; --scope code on a repo with a
-  // lockfile also adds sbom. The selection rule was buried in code; surface
-  // it in the summary so operators reading the JSON / pretty trailer can
-  // see what was scoped vs. auto-included.
+  // Document why each playbook was selected. --scope <s> always adds
+  // cross-cutting; --scope code on a repo with a lockfile also adds
+  // sbom. The selection rule is otherwise buried in code; surface it
+  // in the summary so operators reading the output can see what was
+  // scoped vs. auto-included.
   if (scope) {
     summary.scope_request = scope;
     summary.scope_inclusion_rules = [
@@ -7071,16 +7062,14 @@ function cmdCi(runner, args, runOpts, pretty) {
     );
     return;
   } else {
-    // v0.13.22 B3+B4+B6: human renderer for `ci` default output. Pre-0.13.22
-    // the only output was indented JSON (or compact JSON when not TTY) —
-    // operators running `exceptd ci` at the terminal saw 1000+ lines of JSON
-    // for a 9-playbook scan and had to grep for the verdict by hand.
-    //
-    // Renderer shape (one screen for a typical 9-playbook scope):
-    //   - one verdict line (PASS/FAIL/BLOCKED + counts)
-    //   - per-playbook row: id | verdict | rwep | evidence | top_finding
-    //   - deduped session-level runtime warnings (B5)
-    //   - scope inclusion rules (B8 transparency) when --scope was used
+    // Human renderer for `ci` default output. Shape (one screen for a
+    // typical 9-playbook scope):
+    //   - verdict line (PASS / FAIL / BLOCKED / CLOCK_STARTED / NO_EVIDENCE + counts)
+    //   - per-playbook table (id | verdict | rwep | evidence | top_finding)
+    //   - session-level runtime warnings (deduped by kind+reason)
+    //   - scope inclusion rules when --scope was used
+    //   - jurisdiction-clock + framework-gap rollup
+    //   - fail reasons + per-verdict next-step block
     //   - footer pointing at --json / --format for the structured body
     emit({ verb: "ci", session_id: sessionId, playbooks_run: ids, summary, results }, pretty, (obj) => {
       const s = obj.summary;
@@ -7168,9 +7157,9 @@ function cmdCi(runner, args, runOpts, pretty) {
         for (const r of s.fail_reasons) lines.push(`  - ${r}`);
       }
 
-      // v0.13.23 — Next-step guidance. An operator (or an AI walking the
-      // workflow cold) reading the ci output should never have to ask
-      // "what do I do now?" The verdict dictates the next move:
+      // Next-step guidance, keyed on verdict. An operator reading ci
+      // output should never have to ask "what do I do now?" — the
+      // verdict dictates the next move:
       //   BLOCKED        → operator must supply evidence asserting the
       //                    halted preconditions; `exceptd lint <pb> -`
       //                    emits the exact JSON paths to fill in.
@@ -7194,13 +7183,12 @@ function cmdCi(runner, args, runOpts, pretty) {
         lines.push(lintCmd(firstId));
         lines.push(`  exceptd ci --scope <type> --evidence-dir <dir>  # gate again with real submissions`);
       } else if (s.verdict === "FAIL") {
-        // codex P2 (PR #63): FAIL can fire in two distinct shapes —
+        // FAIL fires in two distinct shapes:
         //   (a) at least one playbook classification=detected → s.detected > 0
         //   (b) inconclusive playbook(s) whose rwep_delta (operator
         //       evidence) crossed the cap → s.detected stays at 0
-        // Pre-fix this branch was keyed on `s.detected > 0`, so the
-        // shape-(b) FAIL exited with no "Next steps" footer at all,
-        // contradicting the v0.13.23 stage-by-stage promise.
+        // Both shapes need actionable Next-step guidance; key on the
+        // shape, not on `s.detected > 0` alone.
         if (s.detected > 0) {
           lines.push(`\nNext steps (review the ${s.detected} detected finding(s)):`);
           lines.push(`  exceptd run <playbook> --format markdown    # operator-readable digest`);

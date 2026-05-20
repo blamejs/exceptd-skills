@@ -1,14 +1,12 @@
 "use strict";
 
 /**
- * tests/ux-next-step-guidance-v0_13_23.test.js
+ * tests/ux-next-step-guidance.test.js
  *
- * v0.13.23: stage-by-stage next-step guidance. The fixes here are
- * operator-facing prose, so the regression coverage is grep-shaped
- * (a literal substring appears on stdout) rather than schema-shaped.
- * Each assertion pins the exact substring an operator searches for
- * when they ask "what do I do now?" Drift on any of these strings
- * means the operator-facing answer to that question has changed.
+ * Stage-by-stage next-step guidance surfaces. The behavior is
+ * operator-facing prose, so regression coverage is grep-shaped — each
+ * assertion pins the exact substring an operator searches for when
+ * they ask "what do I do now?"
  *
  * Surfaces pinned:
  *   1. ci BLOCKED prints "Next steps (unblock the N halted playbook(s)):"
@@ -21,10 +19,14 @@
  *      after persistence.
  *   5. run non-detect prose says "Remediation path (informational — verdict
  *      =<x>, no action required now):" — NOT "Recommended remediation:".
- *   6. run unknown-playbook error says "list the <count> playbooks"
- *      with the live ids.length, not the stale literal "13".
+ *   6. run unknown-playbook error references the live playbook count,
+ *      not a hardcoded literal.
+ *   7. ci FAIL fires guidance even when no playbook hit detected (delta-
+ *      cap path).
+ *   8. lint flags nested-shape submissions that supply artifacts but no
+ *      signal_overrides — the workflow trapdoor.
  *
- * Per CLAUDE.md anti-coincidence rule: assertions check exact substrings.
+ * Per the anti-coincidence rule: assertions check exact substrings.
  */
 
 const test = require("node:test");
@@ -93,7 +95,7 @@ test("run prints 'evidence: <state> (N/M indicators evaluated)' on the verdict l
     artifacts: { "kernel-release": "5.15.0-69-generic" },
     signal_overrides: { "kver-in-affected-range": "hit" },
   });
-  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "v0_13_23-evidence-"));
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "run-evidence-"));
   try {
     const r = cli(["run", "kernel", "--evidence", "-",
       "--attestation-root", path.join(tmpHome, "attestations")], { input: evidence });
@@ -112,7 +114,7 @@ test("run prints 'Attestation written: <path>' + verify/diff command pair after 
     artifacts: { "kernel-release": "5.15.0-69-generic" },
     signal_overrides: { "kver-in-affected-range": "hit" },
   });
-  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "v0_13_23-attest-"));
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "run-attest-"));
   try {
     const r = cli(["run", "kernel", "--evidence", "-",
       "--attestation-root", path.join(tmpHome, "attestations")], { input: evidence });
@@ -157,16 +159,14 @@ test("run unknown-playbook error says 'list the <live count> playbooks', not the
     "playbook-not-found message must reference a live count");
 });
 
-test("ci FAIL via rwep-delta cap exceeded (no `detected`) still prints Next steps (codex P2 on PR #63)", () => {
-  // Codex P2 caught that `verdict === "FAIL"` fires for two shapes:
+test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap path)", () => {
+  // `verdict === "FAIL"` fires in two shapes:
   //   (a) detected > 0 (a playbook landed classification=detected)
   //   (b) inconclusive + rwep_delta >= cap
-  // Pre-fix the footer keyed on `s.detected > 0`, so the inconclusive+
-  // delta-cap path printed FAIL with no Next-steps block. The fix is
-  // to branch on verdict and emit guidance for both shapes. This test
-  // pins shape (b) — set --max-rwep to 0 + supply evidence that lifts
-  // the score by any amount, and the rwep_delta gate fires while
-  // classification stays inconclusive.
+  // Both must print a Next-steps block. This test pins shape (b) —
+  // set --max-rwep to 0 + supply evidence that lifts the score by any
+  // amount, so the rwep_delta gate fires while classification stays
+  // inconclusive.
   const evidence = JSON.stringify({
     kernel: {
       precondition_checks: { "linux-platform": true, "uname-available": true },
@@ -189,7 +189,7 @@ test("ci FAIL via rwep-delta cap exceeded (no `detected`) still prints Next step
     // steps block appears on any FAIL.
     if (/verdict=FAIL/.test(r.stdout)) {
       assert.match(r.stdout, /Next steps \(/,
-        "FAIL must always print a Next-steps block — pre-fix, the inconclusive+delta-cap shape printed no guidance");
+        "FAIL must always print a Next-steps block — both the detected and the inconclusive+delta-cap shapes need actionable guidance");
     }
   } finally {
     try { fs.unlinkSync(tmpFile); } catch {}
@@ -198,12 +198,12 @@ test("ci FAIL via rwep-delta cap exceeded (no `detected`) still prints Next step
 
 test("lint flags nested submission with artifacts-but-no-signal_overrides (the workflow-blind path)", () => {
   // The cold-start workflow has a hidden trapdoor: lint says "Add to
-  // submission.artifacts.<id>" for every required artifact, the operator
-  // populates them all, runs, and gets every indicator = inconclusive.
-  // Why? The detect phase needs signal_overrides (or a verdict override)
-  // to mark each indicator as hit/miss — artifact presence alone is not
-  // enough. Pre-v0.13.23 the operator hit this with zero guidance.
-  // Now lint surfaces it explicitly as info.
+  // submission.artifacts.<id>" for every required artifact, the
+  // operator populates them all, runs, and gets every indicator =
+  // inconclusive. detect() needs signal_overrides (or a verdict
+  // override) to mark each indicator hit / miss — artifact presence
+  // alone is not enough. lint must surface this explicitly so the
+  // operator sees the JSON shape to populate next.
   const evidence = JSON.stringify({
     precondition_checks: { "repo-context": true, "regex-engine": true },
     artifacts: {
