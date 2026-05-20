@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.28 — 2026-05-20
+
+`run` human renderer now surfaces `runtime_errors[]` so a malformed submission can't silently land on a misleading clean verdict.
+
+### Features
+
+- **`run` Runtime warnings block.** When the engine accumulates entries in `phases.analyze.runtime_errors` (e.g. `signal_overrides_invalid` from a submission that passed `signal_overrides` as a string instead of an object, or `bundle_publisher_unclaimed` on a CSAF emit without `--publisher-namespace`), the human output now prints `Runtime warnings (N):` with one labeled row per entry plus the remediation hint. Previously, these entries lived only in the JSON envelope and operators saw `[ok] classification=not_detected` with no indication their submission was bogus.
+
 ## 0.13.27 — 2026-05-20
 
 `ci` next-step guidance now names the specific detected playbook(s) and surfaces pending jurisdiction obligations at the summary level — matching the regulatory-clock visibility a single `run` already gives.
