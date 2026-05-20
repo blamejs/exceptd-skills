@@ -4956,13 +4956,24 @@ function cmdAttest(runner, args, runOpts, pretty) {
       const allVerified = att.every(r => r.verified) && rep.every(r => r.verified);
       const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : "[ok]");
       lines.push(`\n${icon}  ${att.filter(r => r.verified).length}/${att.length} attestation(s) verified, ${rep.filter(r => r.verified).length}/${rep.length} replay record(s) verified`);
+      // Status icon precedence: verified → [ok]. tamper_class set →
+      // [!! <CLASS>] (real tamper signal). signed=false AND no
+      // tamper_class → [i UNSIGNED] (not a failure — the attestation
+      // was legitimately written without a key, e.g. on a CI runner
+      // without .keys/private.pem). signed=true but verified=false
+      // without a tamper_class indicates a verify error (missing pub
+      // key, read error) — [i  VERIFY-ERROR].
+      const statusFor = (r) => {
+        if (r.verified) return "[ok]";
+        if (r.tamper_class) return `[!! ${r.tamper_class.toUpperCase()}]`;
+        if (r.signed === false) return "[i  UNSIGNED]";
+        return "[i  VERIFY-ERROR]";
+      };
       for (const r of att) {
-        const status = r.verified ? "[ok]" : `[!! ${(r.tamper_class || "FAIL").toUpperCase()}]`;
-        lines.push(`  ${status}  ${r.file}  — ${r.reason || "(no reason)"}`);
+        lines.push(`  ${statusFor(r)}  ${r.file}  — ${r.reason || "(no reason)"}`);
       }
       for (const r of rep) {
-        const status = r.verified ? "[ok]" : "[!! TAMPER]";
-        lines.push(`  ${status}  ${r.file}  (replay)  — ${r.reason || "(no reason)"}`);
+        lines.push(`  ${statusFor(r)}  ${r.file}  (replay)  — ${r.reason || "(no reason)"}`);
       }
       if (obj.ok === false) {
         lines.push(`\n  → next: exceptd attest show ${obj.session_id} --pretty   # inspect the disputed file directly`);
