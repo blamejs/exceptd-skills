@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.29 — 2026-05-20
+
+`run` verdict line now distinguishes "every indicator evaluated AND most produced a decisive verdict" from "every indicator evaluated but most landed inconclusive" — important when classification itself is inconclusive.
+
+### Features
+
+- **`run` evidence line breaks out decisive vs inconclusive indicator counts on mixed coverage.** When `classification=inconclusive` AND the playbook has some decisive (hit/miss) signals plus some inconclusive ones, the verdict line now reads `evidence: complete (2/13 decisive, 11 inconclusive — add signal_overrides to drive a verdict)` instead of the literal `evidence: complete (13/13 indicators evaluated)`. The latter is mathematically correct (the engine ran every indicator) but misleading — it sounds like full coverage when most of the indicators couldn't be evaluated meaningfully. Detected and not_detected runs are unchanged; the breakdown only fires when it's load-bearing.
+
 ## 0.13.28 — 2026-05-20
 
 `run` human renderer now surfaces `runtime_errors[]` so a malformed submission can't silently land on a misleading clean verdict.
