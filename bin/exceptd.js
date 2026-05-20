@@ -4953,8 +4953,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
         lines.push(`\n  → next: exceptd attest list                  # browse persisted sessions`);
         return lines.join("\n");
       }
+      // "Clean enough to proceed" = no tamper signal. Explicitly-unsigned
+      // attestations are NOT a tamper (the operator's environment lacks
+      // .keys/private.pem; this is the default on CI runners and on hosts
+      // doing posture-only walks). Distinguish from real verification
+      // failures (tamper_class present) so the next-step block still fires.
+      const noTamper = att.every(r => !r.tamper_class) && rep.every(r => !r.tamper_class);
       const allVerified = att.every(r => r.verified) && rep.every(r => r.verified);
-      const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : "[ok]");
+      const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : (allVerified ? "[ok]" : "[i  UNSIGNED]"));
       lines.push(`\n${icon}  ${att.filter(r => r.verified).length}/${att.length} attestation(s) verified, ${rep.filter(r => r.verified).length}/${rep.length} replay record(s) verified`);
       // Status icon precedence: verified → [ok]. tamper_class set →
       // [!! <CLASS>] (real tamper signal). signed=false AND no
@@ -4980,7 +4986,11 @@ function cmdAttest(runner, args, runOpts, pretty) {
         lines.push(`         exceptd attest list --playbook <id>                # find a non-tampered prior session for the same playbook`);
       } else if (obj.replay_tamper) {
         lines.push(`\n  → next: exceptd attest diff ${obj.session_id} --force-replay   # regenerate the replay record`);
-      } else if (allVerified) {
+      } else if (allVerified || noTamper) {
+        // allVerified → signed + verified; noTamper → unsigned but not
+        // tampered (legitimate CI / posture-only state). Both states are
+        // safe to keep working with, so point at the same next-step
+        // commands.
         lines.push(`\n  → next: exceptd attest diff ${obj.session_id}            # compare against prior session for this playbook`);
         lines.push(`         exceptd attest show ${obj.session_id} --pretty     # inspect the persisted attestation`);
       }

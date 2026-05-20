@@ -109,7 +109,11 @@ test("attest verify --json still emits parseable structured envelope", () => {
 test("attest diff default output is human text with status row + next-step", () => {
   const { tmpHome, env, sessionId } = setupSession();
   try {
-    const r = cli(["attest", "diff", sessionId], { env });
+    // --force-replay is required on a CI runner where the setup `run`
+    // wrote an unsigned attestation (no .keys/private.pem available).
+    // The security-refusal-without-force-replay path is exercised in
+    // a separate test file; here we want to reach the human renderer.
+    const r = cli(["attest", "diff", sessionId, "--force-replay"], { env });
     // The replay re-runs the playbook. On CI without a private key the
     // overall exit code may be 0 but the human renderer still fires
     // for the diff. Pin output shape regardless of signing state.
