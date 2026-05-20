@@ -64,8 +64,10 @@ test("collector.collect() returns the contract envelope when called directly", (
       assert.ok(k in result, `direct collect() return must carry "${k}"`);
     }
     assert.equal(result.collector_meta.collector_id, "sbom");
-    // Empty tempdir has no lockfile and no SBOM → lockfile-absent hit.
-    assert.equal(result.signal_overrides["lockfile-absent"], "hit");
+    // Empty tempdir has no lockfile + no SBOM → artifacts carry the
+    // "none found" prose; the precondition reflects the absence.
+    assert.equal(result.precondition_checks["sbom-tool-available"], false);
+    assert.match(result.artifacts["lockfile-inventory"].value, /no lockfile found/);
   } finally {
     try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
   }
@@ -105,6 +107,49 @@ test("collect kernel emits the contract envelope shape", () => {
   assert.equal(typeof body.precondition_checks["linux-platform"], "boolean");
 });
 
+test("secrets collector permission predicates match the playbook indicator spec", { skip: process.platform === "win32" }, () => {
+  // The secrets playbook defines:
+  //   world-writable-env-file: env-files only, mode 0666 or 0664 (group/world writable)
+  //   ssh-key-bad-perms: ssh-private-keys only, mode != 0600
+  // Verify the collector implements those predicates, not loose proxies.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-perm-"));
+  try {
+    // env-file with group-write bit (mode 0664) → world-writable-env-file MUST hit.
+    const envPath = path.join(tmp, ".env");
+    fs.writeFileSync(envPath, "FOO=bar\n");
+    fs.chmodSync(envPath, 0o664);
+    // ssh-private-key with mode 0640 (group-read only) → ssh-key-bad-perms MUST hit because mode != 0600.
+    const sshPath = path.join(tmp, "id_rsa");
+    fs.writeFileSync(sshPath, "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    fs.chmodSync(sshPath, 0o640);
+
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["world-writable-env-file"], "hit",
+      "0664 .env must hit world-writable-env-file (group-writable bit set)");
+    assert.equal(r.signal_overrides["ssh-key-bad-perms"], "hit",
+      "0640 ssh private key must hit ssh-key-bad-perms (mode != 0600)");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("secrets collector world-writable-env-file does NOT fire on non-env carrier (codex P1 false-positive guard)", { skip: process.platform === "win32" }, () => {
+  // Pre-fix the collector flagged ANY world-writable carrier as
+  // world-writable-env-file. A world-writable .npmrc must NOT trigger
+  // that indicator — the playbook scopes the predicate to env files.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-perm-scope-"));
+  try {
+    const npmrcPath = path.join(tmp, ".npmrc");
+    fs.writeFileSync(npmrcPath, "registry=https://registry.npmjs.org/\n");
+    fs.chmodSync(npmrcPath, 0o666);
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["world-writable-env-file"], "miss",
+      "world-writable .npmrc is OUT of scope for world-writable-env-file (env-files only)");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("collect secrets pipes through to run --evidence - without schema errors", () => {
   // Use a synthetic tempdir as the collect target so the test is
   // deterministic + bounded.
@@ -140,21 +185,56 @@ test("collect --cwd <nonexistent> exits with structured error", () => {
   assert.match(err.error, /does not exist/);
 });
 
-test("collect sbom finds lockfile + sbom-document.absent indicator wiring", () => {
-  // Synthetic tempdir with a package-lock.json + no SBOM document
-  // should fire sbom-document-absent=hit.
+test("collect sbom emits only signal_overrides that exist in the playbook indicator set", () => {
+  // The sbom playbook's indicator set is owned by data/playbooks/sbom.json.
+  // The collector must NOT emit invented keys (those would be silently
+  // ignored by the runner). It MAY flip `lockfile-no-integrity` when it
+  // can decide deterministically from the lockfile contents.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-"));
   try {
-    fs.writeFileSync(path.join(tmp, "package-lock.json"),
-      JSON.stringify({ lockfileVersion: 3, packages: { "": {}, "node_modules/foo": {} } }));
+    // Lockfile with one integrity entry and one resolved-but-no-integrity entry.
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": {},
+        "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo-1.0.0.tgz", integrity: "sha512-abc" },
+        "node_modules/bar": { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" },
+      },
+    }));
     const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
     assert.equal(r.status, 0);
     const body = tryJson(r.stdout);
     assert.ok(body);
-    assert.equal(body.signal_overrides["sbom-document-absent"], "hit",
-      "sbom collector must flip sbom-document-absent to hit when only a lockfile is present");
-    assert.equal(body.signal_overrides["lockfile-absent"], "miss");
+    // The artifact carrying the lockfile inventory must be visible.
     assert.match(body.artifacts["lockfile-inventory"].value, /npm:package-lock\.json/);
+    // signal_overrides must NOT contain the previously-invented keys.
+    assert.equal(body.signal_overrides["sbom-document-absent"], undefined,
+      "collector must not emit invented indicator keys — they're silently ignored by the runner");
+    assert.equal(body.signal_overrides["lockfile-absent"], undefined,
+      "ditto for lockfile-absent");
+    // lockfile-no-integrity IS in the playbook indicator set and the
+    // collector can decide it deterministically.
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], "hit",
+      "collector must flip lockfile-no-integrity when an entry resolves without integrity");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("collect sbom does not flip lockfile-no-integrity when every entry carries integrity", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-clean-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": {},
+        "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" },
+      },
+    }));
+    const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+    assert.equal(r.status, 0);
+    const body = tryJson(r.stdout);
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], "miss");
   } finally {
     try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
   }
