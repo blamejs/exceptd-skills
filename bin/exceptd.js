@@ -3298,6 +3298,20 @@ function cmdRun(runner, args, runOpts, pretty) {
         lines.push(`  ${tag}${i.id}: ${detail}`);
       }
     }
+    // Surface runtime_errors at the operator level so a malformed
+    // submission (e.g. `signal_overrides: "not-an-object"`) doesn't
+    // silently complete with a misleading [ok] verdict. Pre-fix, these
+    // entries lived only in phases.analyze.runtime_errors and were
+    // invisible at the terminal.
+    const runtimeErrors = obj.phases?.analyze?.runtime_errors || [];
+    if (runtimeErrors.length) {
+      lines.push(`\nRuntime warnings (${runtimeErrors.length}):`);
+      for (const e of runtimeErrors) {
+        const reason = (e.reason || "").length > 180 ? (e.reason || "").slice(0, 177) + "..." : (e.reason || "");
+        lines.push(`  [${e.kind || "warning"}] ${reason}`);
+        if (e.remediation) lines.push(`    → ${e.remediation}`);
+      }
+    }
     lines.push(`\nFull structured result: --json (or --pretty for indented).`);
     return lines.join("\n");
   });

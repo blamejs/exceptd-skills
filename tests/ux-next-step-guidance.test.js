@@ -266,6 +266,33 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("run surfaces runtime_errors in the human renderer (malformed signal_overrides is visible)", () => {
+  // A malformed submission (e.g. signal_overrides as a string) used
+  // to silently complete with `[ok] classification=not_detected`
+  // because the runtime_errors[] entry lived only in
+  // phases.analyze.runtime_errors and the human renderer ignored
+  // them. The operator had no signal their submission was bogus.
+  const evidence = JSON.stringify({
+    precondition_checks: { "linux-platform": true, "uname-available": true },
+    artifacts: { "kernel-release": "5.15.0" },
+    signal_overrides: "not-an-object",
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-warn-"));
+  try {
+    const env = { EXCEPTD_HOME: tmpHome };
+    const r = cli(["run", "kernel", "--evidence", "-"], { input: evidence, env });
+    assert.equal(r.status, 0, `run must exit 0 even on malformed submission; stderr: ${r.stderr.slice(0, 200)}`);
+    assert.match(r.stdout, /Runtime warnings \(\d+\):/,
+      "Runtime warnings block must appear when runtime_errors[] is non-empty");
+    assert.match(r.stdout, /\[signal_overrides_invalid\]/,
+      "the signal_overrides_invalid kind must be surfaced as a labeled row");
+    assert.match(r.stdout, /signal_overrides must be a plain object/,
+      "the reason text must appear so the operator knows what to fix");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("lint flags nested submission with artifacts-but-no-signal_overrides (the workflow-blind path)", () => {
   // The cold-start workflow has a hidden trapdoor: lint says "Add to
   // submission.artifacts.<id>" for every required artifact, the
