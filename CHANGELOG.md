@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.24 — 2026-05-20
+
+`attest verify` and `attest diff` are now usable at the terminal without piping through `jq`.
+
+### Features
+
+- **Human renderer for `attest verify`.** One-screen answer to "did anyone tamper with my evidence since I ran it?" — verdict icon (`[ok]` / `[!! TAMPERED]` / `[i REPLAY_TAMPER]`), per-file row with reason, then a next-step block: `attest diff` + `attest show` on a clean run, `attest show --pretty` + `attest list --playbook` on a tamper. `--json` / `--pretty` reach the structured envelope unchanged.
+- **Human renderer for `attest diff`.** Status line (`[ok] status=unchanged` / `[i DRIFTED] status=drifted`), prior + replay evidence_hash + capture timestamps, replay classification + RWEP, sidecar-verify class, replay record path. When DRIFTED, points at `attest show` + a fresh `run --evidence <new>` capture.
+
 ## 0.13.23 — 2026-05-19
 
 Continuation of the v0.13.22 UX pass: stage-by-stage next-step guidance so an operator (or an AI walking the workflow cold) never has to ask "what do I do now?"
