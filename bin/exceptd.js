@@ -2504,7 +2504,85 @@ function cmdPlan(runner, args, runOpts, pretty) {
       });
     }
   }
-  emit(plan, pretty);
+  emit(plan, pretty, (obj) => {
+    // Human renderer for `brief` / `brief --all` / `plan`. Pre-fix this
+    // verb dumped 36+ KB of JSON to the terminal — operators running
+    // `exceptd brief` to explore had no scannable view.
+    const lines = [];
+    const summary = obj.scope_summary || {};
+    const totalScope = Object.values(summary).reduce((a, b) => a + b, 0);
+    const total = obj.playbooks?.length || 0;
+    lines.push(`brief: ${total} playbook(s)  session-id: ${obj.session_id}`);
+    if (totalScope > 0) {
+      const scopeLine = Object.entries(summary).map(([s, n]) => `${s}=${n}`).join("  ");
+      lines.push(`  ${scopeLine}`);
+    }
+    lines.push("");
+
+    // Group by scope when grouped output is available; else flat list.
+    // grouped_by_scope is `{ scope: [<playbook-id>, ...] }` — look up
+    // domain.name + threat_currency_score from the flat playbooks list.
+    const byId = {};
+    for (const pb of obj.playbooks || []) {
+      if (pb && pb.id) byId[pb.id] = pb;
+    }
+    // Render directive sub-bullets when each playbook entry carries a
+    // directives[] array (set by cmdPlan when --directives is on).
+    // Without this, the documented contract of --directives — expand
+    // directive metadata — is silently dropped in default human mode.
+    const renderDirectives = (pb) => {
+      const dirs = pb && Array.isArray(pb.directives) ? pb.directives : null;
+      if (!dirs || !dirs.length) return;
+      for (const d of dirs) {
+        const title = d.title || d.id || "?";
+        const truncTitle = title.length > 80 ? title.slice(0, 77) + "..." : title;
+        lines.push(`      → ${(d.id || "?").padEnd(48)}  ${truncTitle}`);
+        if (d.threat_context_preview) {
+          const ctx = d.threat_context_preview;
+          const truncCtx = ctx.length > 140 ? ctx.slice(0, 137) + "..." : ctx;
+          lines.push(`        ${truncCtx}`);
+        }
+      }
+    };
+
+    const grouped = obj.grouped_by_scope;
+    if (grouped) {
+      const scopeOrder = ["code", "system", "service", "cross-cutting"];
+      const otherScopes = Object.keys(grouped).filter(s => !scopeOrder.includes(s));
+      for (const scope of [...scopeOrder, ...otherScopes]) {
+        const list = grouped[scope];
+        if (!list || !list.length) continue;
+        lines.push(`[${scope}]  (${list.length})`);
+        for (const id of list) {
+          const pb = byId[id] || {};
+          const tcs = pb.threat_currency_score != null ? ` tcs=${pb.threat_currency_score}` : "";
+          const dom = pb.domain?.name || "";
+          const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
+          lines.push(`  ${(id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+          renderDirectives(pb);
+        }
+        lines.push("");
+      }
+    } else {
+      // Flat list (filtered or --flat). No scope buckets.
+      for (const pb of obj.playbooks || []) {
+        const tcs = pb.threat_currency_score != null ? ` tcs=${pb.threat_currency_score}` : "";
+        const sc = pb.scope ? `[${pb.scope}]` : "[?]";
+        const dom = pb.domain?.name || "";
+        const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
+        lines.push(`  ${sc.padEnd(16)} ${(pb.id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+        renderDirectives(pb);
+      }
+      lines.push("");
+    }
+
+    lines.push(`Next:`);
+    lines.push(`  exceptd brief <playbook>          # full info doc (jurisdictions + threat + indicators + artifacts)`);
+    lines.push(`  exceptd discover                  # cwd-aware playbook recommendations`);
+    lines.push(`  exceptd ci --scope <type>         # gate a cwd against every playbook in <type>`);
+    lines.push(`\nFull structured result: --json (or --pretty for indented JSON).`);
+    return lines.join("\n");
+  });
 }
 
 // v0.12.15: --scope must validate against the accepted

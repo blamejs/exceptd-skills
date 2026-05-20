@@ -51,7 +51,8 @@ function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 // brief --all -------------------------------------------------------------
 
 test('brief --all envelope: exact top-level key set', () => {
-  const r = cli(['brief', '--all']);
+  // brief default now uses a human renderer; pass --json for shape tests.
+  const r = cli(['brief', '--all', '--json']);
   assert.equal(r.status, 0);
   const body = tryJson(r.stdout);
   assert.ok(body, `brief --all must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);

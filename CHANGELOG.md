@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.33 — 2026-05-20
+
+### Features
+
+- **`brief` (no arg) renders a scannable per-scope table.** `exceptd brief` with no playbook positional and no `--all` flag now produces a one-screen human digest: header with playbook count + session id, per-scope summary (`service=9  cross-cutting=4  code=4  system=6`), then a bucketed list per scope showing `<id>  tcs=<score>  <domain.name (truncated to 80 chars)>`, then a `Next:` block pointing at `brief <playbook>` for the full info doc, `discover` for cwd-aware recommendations, and `ci --scope <type>` for gating. Previously the verb dumped 36+ KB of JSON to the terminal — exploration was unscannable. `--json` / `--pretty` reach the structured envelope when automating.
+
 ## 0.13.32 — 2026-05-20
 
 Two more JSON-only paths get human-renderer treatment.
