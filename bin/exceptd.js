@@ -217,7 +217,7 @@ function suggestVerb(cmd, known) {
 // remain operationally useful and have substantial test coverage.
 const PLAYBOOK_VERBS = new Set([
   "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
-  "verify-attestation", "run-all", "lint",
+  "verify-attestation", "run-all", "lint", "collect",
   "reattest", "list-attestations",
 ]);
 
@@ -1151,6 +1151,7 @@ function dispatchPlaybook(cmd, argv) {
     "evidence", "evidence-dir", "session-id", "operator", "csaf-status",
     "publisher-namespace", "mode", "scope", "playbook", "phase", "tlp",
     "against", "since", "bundle-epoch", "attestation-root", "format",
+    "cwd",  // exceptd collect <pb> --cwd <path>
   ]);
   const verbAllowlist = flagsFor(cmd);
   const allowlistSet = new Set(verbAllowlist);
@@ -1576,6 +1577,7 @@ function dispatchPlaybook(cmd, argv) {
       case "ai-run": return cmdAiRun(runner, args, runOpts, pretty);
       case "ask":    return cmdAsk(runner, args, runOpts, pretty);
       case "ci":     return cmdCi(runner, args, runOpts, pretty);
+      case "collect": return cmdCollect(runner, args, runOpts, pretty);
     }
   } catch (e) {
     // v0.11.14 (#131): when the operator typed a skill name (kernel-lpe-triage)
@@ -2181,6 +2183,119 @@ Flags (selected — see \`exceptd run --help\` for the full list):
  * its evidence JSON before going through phases 4-7. Returns a categorized
  * list: ok / missing_required / unknown_keys / type_mismatch / suggestions.
  */
+function cmdCollect(runner, args, runOpts, pretty) {
+  const playbookId = args._[0];
+  if (!playbookId) {
+    return emitError("collect: usage: exceptd collect <playbook>. See `lib/collectors/` for the list of playbooks with companion collectors.", null, pretty);
+  }
+  if (refuseInvalidPlaybookId("collect", playbookId, pretty)) return;
+
+  // Resolve the collector module under lib/collectors/<id>.js.
+  const collectorPath = path.join(PKG_ROOT, "lib", "collectors", `${playbookId}.js`);
+  if (!fs.existsSync(collectorPath)) {
+    const collectorsDir = path.join(PKG_ROOT, "lib", "collectors");
+    let available = [];
+    try {
+      available = fs.readdirSync(collectorsDir)
+        .filter(f => f.endsWith(".js"))
+        .map(f => f.replace(/\.js$/, ""));
+    } catch {}
+    return emitError(
+      `collect: no companion collector for "${playbookId}". The AI-evidence path remains: see \`exceptd lint ${playbookId} -\` for the submission shape and supply your own evidence to \`exceptd run ${playbookId} --evidence -\`.`,
+      {
+        verb: "collect",
+        playbook_id: playbookId,
+        collectors_available: available,
+        type: "collector_not_found",
+        exit_code: 1,
+      },
+      pretty
+    );
+  }
+
+  let mod;
+  try { mod = require(collectorPath); }
+  catch (e) {
+    return emitError(`collect: failed to load collector ${path.relative(PKG_ROOT, collectorPath)}: ${e.message}`, { verb: "collect", playbook_id: playbookId, exit_code: 2 }, pretty);
+  }
+  if (typeof mod.collect !== "function") {
+    return emitError(`collect: collector at ${path.relative(PKG_ROOT, collectorPath)} does not export a collect() function`, { verb: "collect", playbook_id: playbookId, exit_code: 2 }, pretty);
+  }
+
+  // --cwd <path> overrides process.cwd(). Validated as an existing
+  // directory; non-existent / non-directory cwd is operator error.
+  let cwd = process.cwd();
+  if (args.cwd) {
+    const resolved = path.resolve(String(args.cwd));
+    let stat;
+    try { stat = fs.statSync(resolved); }
+    catch (e) {
+      return emitError(`collect: --cwd "${args.cwd}" does not exist (${e.message})`, { verb: "collect", playbook_id: playbookId, provided_cwd: args.cwd }, pretty);
+    }
+    if (!stat.isDirectory()) {
+      return emitError(`collect: --cwd "${args.cwd}" is not a directory`, { verb: "collect", playbook_id: playbookId, provided_cwd: args.cwd }, pretty);
+    }
+    cwd = resolved;
+  }
+
+  let submission;
+  try {
+    submission = mod.collect({ cwd, env: process.env, args });
+  } catch (e) {
+    return emitError(
+      `collect: collector for "${playbookId}" threw an unhandled exception: ${e.message}. File a bug — collectors must catch their own errors and surface them via collector_errors[].`,
+      { verb: "collect", playbook_id: playbookId, stack: e.stack || null, exit_code: 2 },
+      pretty
+    );
+  }
+
+  // Emit the submission JSON to stdout. The operator pipes this into
+  // `exceptd run <playbook> --evidence -` to drive a real verdict.
+  // Human-rendered version is concise so an interactive operator can
+  // see what the collector found without parsing the JSON.
+  emit({ verb: "collect", playbook_id: playbookId, ...submission }, pretty, (obj) => {
+    const lines = [];
+    const meta = obj.collector_meta || {};
+    lines.push(`collect: ${obj.playbook_id}  (${meta.collector_version || "?"} on ${meta.platform || "?"})`);
+    if (meta.duration_ms != null) lines.push(`  duration: ${meta.duration_ms}ms`);
+    const pre = obj.precondition_checks || {};
+    if (Object.keys(pre).length) {
+      lines.push(`\nPreconditions:`);
+      for (const [k, v] of Object.entries(pre)) {
+        const icon = v ? "[ok]" : "[!!]";
+        lines.push(`  ${icon} ${k} = ${v}`);
+      }
+    }
+    const artifacts = obj.artifacts || {};
+    if (Object.keys(artifacts).length) {
+      lines.push(`\nArtifacts:`);
+      for (const [k, a] of Object.entries(artifacts)) {
+        const icon = a.captured ? "[ok]" : "[skip]";
+        const val = (a.value || "").length > 120 ? (a.value || "").slice(0, 117) + "..." : (a.value || "");
+        lines.push(`  ${icon} ${k}: ${val}`);
+        if (!a.captured && a.reason) lines.push(`         reason: ${a.reason}`);
+      }
+    }
+    const signals = obj.signal_overrides || {};
+    const hits = Object.entries(signals).filter(([, v]) => v === "hit");
+    if (hits.length) {
+      lines.push(`\nIndicators that fired (${hits.length}):`);
+      for (const [k] of hits) lines.push(`  [hit]  ${k}`);
+    }
+    const errs = obj.collector_errors || [];
+    if (errs.length) {
+      lines.push(`\nCollector warnings (${errs.length}):`);
+      for (const e of errs.slice(0, 5)) {
+        lines.push(`  [${e.kind || "warning"}] ${e.artifact_id ? e.artifact_id + ": " : ""}${e.reason || "(no detail)"}`);
+      }
+      if (errs.length > 5) lines.push(`  … ${errs.length - 5} more`);
+    }
+    lines.push(`\n→ next: exceptd collect ${obj.playbook_id} --json | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`Full structured result: --json (or --pretty for indented JSON).`);
+    return lines.join("\n");
+  });
+}
+
 function cmdLint(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   const evidencePath = args._[1] || args.evidence;

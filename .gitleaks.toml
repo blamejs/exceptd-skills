@@ -87,6 +87,17 @@ paths = [
 ]
 
 [[allowlists]]
+description = "Evidence-collector regex patterns — matcher source, not credentials"
+# lib/collectors/secrets.js declares the regex set the collector
+# applies against text files. Patterns like the PRIVATE-KEY-block
+# header (`-----BEGIN ... PRIVATE KEY-----`) are matcher source, not
+# embedded credentials. Allowlist by path so the collector library
+# can carry its own pattern set without tripping the secret scan.
+paths = [
+  '''lib/collectors/.*\.js''',
+]
+
+[[allowlists]]
 description = "Doc-string placeholder shapes"
 # Skill markdown, README, and CHANGELOG legitimately embed CVE IDs,
 # ATLAS TTP IDs, framework control IDs, and example RWEP factor lines.
