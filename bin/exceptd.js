@@ -2504,7 +2504,64 @@ function cmdPlan(runner, args, runOpts, pretty) {
       });
     }
   }
-  emit(plan, pretty);
+  emit(plan, pretty, (obj) => {
+    // Human renderer for `brief` / `brief --all` / `plan`. Pre-fix this
+    // verb dumped 36+ KB of JSON to the terminal — operators running
+    // `exceptd brief` to explore had no scannable view.
+    const lines = [];
+    const summary = obj.scope_summary || {};
+    const totalScope = Object.values(summary).reduce((a, b) => a + b, 0);
+    const total = obj.playbooks?.length || 0;
+    lines.push(`brief: ${total} playbook(s)  session-id: ${obj.session_id}`);
+    if (totalScope > 0) {
+      const scopeLine = Object.entries(summary).map(([s, n]) => `${s}=${n}`).join("  ");
+      lines.push(`  ${scopeLine}`);
+    }
+    lines.push("");
+
+    // Group by scope when grouped output is available; else flat list.
+    // grouped_by_scope is `{ scope: [<playbook-id>, ...] }` — look up
+    // domain.name + threat_currency_score from the flat playbooks list.
+    const byId = {};
+    for (const pb of obj.playbooks || []) {
+      if (pb && pb.id) byId[pb.id] = pb;
+    }
+    const grouped = obj.grouped_by_scope;
+    if (grouped) {
+      const scopeOrder = ["code", "system", "service", "cross-cutting"];
+      const otherScopes = Object.keys(grouped).filter(s => !scopeOrder.includes(s));
+      for (const scope of [...scopeOrder, ...otherScopes]) {
+        const list = grouped[scope];
+        if (!list || !list.length) continue;
+        lines.push(`[${scope}]  (${list.length})`);
+        for (const id of list) {
+          const pb = byId[id] || {};
+          const tcs = pb.threat_currency_score != null ? ` tcs=${pb.threat_currency_score}` : "";
+          const dom = pb.domain?.name || "";
+          const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
+          lines.push(`  ${(id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+        }
+        lines.push("");
+      }
+    } else {
+      // Flat list (filtered or --flat). No scope buckets.
+      for (const pb of obj.playbooks || []) {
+        const tcs = pb.threat_currency_score != null ? ` tcs=${pb.threat_currency_score}` : "";
+        const sc = pb.scope ? `[${pb.scope}]` : "[?]";
+        const dom = pb.domain?.name || "";
+        const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
+        lines.push(`  ${sc.padEnd(16)} ${(pb.id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+      }
+      lines.push("");
+    }
+
+    lines.push(`Next:`);
+    lines.push(`  exceptd brief <playbook>          # full info doc (jurisdictions + threat + indicators + artifacts)`);
+    lines.push(`  exceptd discover                  # cwd-aware playbook recommendations`);
+    lines.push(`  exceptd ci --scope <type>         # gate a cwd against every playbook in <type>`);
+    lines.push(`\nFull structured result: --json (or --pretty for indented JSON).`);
+    return lines.join("\n");
+  });
 }
 
 // v0.12.15: --scope must validate against the accepted

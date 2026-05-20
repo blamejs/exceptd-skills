@@ -266,6 +266,30 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("brief (no arg) renders a scannable per-scope table, not 36 KB of JSON", () => {
+  // Pre-fix `exceptd brief` with no playbook arg dumped 36+ KB of JSON
+  // to stdout (delegated to cmdPlan which had no human renderer).
+  // Operators running brief to explore the catalog had no scannable
+  // view. The renderer now groups by scope with a per-playbook line
+  // (id + threat_currency_score + domain.name truncated to 80 chars).
+  const r = cli(["brief"]);
+  assert.equal(r.status, 0);
+  // Header line + scope summary.
+  assert.match(r.stdout, /brief: \d+ playbook\(s\)\s+session-id: [0-9a-f]+/,
+    "header line must include playbook count + session-id");
+  assert.match(r.stdout, /(?:service|cross-cutting|code|system)=\d+/,
+    "scope-summary line must report counts per scope");
+  // Per-scope buckets with bracketed labels.
+  assert.match(r.stdout, /\[code\]\s+\(\d+\)/,
+    "must group playbooks by scope with bracketed labels");
+  // Per-playbook lines include domain prose, not just an id.
+  assert.match(r.stdout, /secrets\s+tcs=\d+\s+Repository-scoped secret/,
+    "per-playbook line must carry the domain.name prose");
+  // Next-step block.
+  assert.match(r.stdout, /Next:\s*\n\s+exceptd brief <playbook>/,
+    "Next-step block must point at single-playbook brief / discover / ci");
+});
+
 test("run --upstream-check surfaces version-currency result in human renderer", () => {
   // --upstream-check produces a useful `upstream_check` envelope but
   // the human renderer ignored it pre-fix — operators who passed the
