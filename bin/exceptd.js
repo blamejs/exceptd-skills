@@ -4596,7 +4596,32 @@ function cmdReattest(runner, args, runOpts, pretty) {
     // reason) so an auditor reading the CLI response can locate the
     // on-disk artifact without re-deriving the filename.
     replay_persisted: replayPersisted,
-  }, pretty);
+  }, pretty, (obj) => {
+    // v0.13.24 — human renderer for `attest diff` (reattest path).
+    // Pre-v0.13.24 the only output was JSON, so an operator asking "did
+    // anything change since the last run?" had to parse the envelope to
+    // get the one-line answer they wanted.
+    const lines = [];
+    lines.push(`attest diff: ${obj.session_id} (${obj.playbook_id})`);
+    const icon = obj.status === "unchanged" ? "[ok]" : "[i  DRIFTED]";
+    lines.push(`\n${icon}  status=${obj.status}`);
+    lines.push(`  prior:  ${obj.prior_evidence_hash}  (${obj.prior_captured_at})`);
+    lines.push(`  replay: ${obj.replay_evidence_hash}  (${obj.replayed_at})`);
+    if (obj.replay_classification) {
+      lines.push(`  replay classification: ${obj.replay_classification}  RWEP=${obj.replay_rwep_adjusted ?? 0}`);
+    }
+    if (obj.sidecar_verify_class) {
+      lines.push(`  sidecar verify: ${obj.sidecar_verify_class}`);
+    }
+    if (obj.replay_persisted && obj.replay_persisted.ok && obj.replay_persisted.path) {
+      lines.push(`  replay record: ${obj.replay_persisted.path}`);
+    }
+    if (obj.status === "drifted") {
+      lines.push(`\n  → next: exceptd attest show ${obj.session_id}            # inspect the prior submission`);
+      lines.push(`         exceptd run ${obj.playbook_id} --evidence <new>      # capture a fresh attestation against the new state`);
+    }
+    return lines.join("\n");
+  });
 }
 
 /**
@@ -4914,7 +4939,42 @@ function cmdAttest(runner, args, runOpts, pretty) {
       body.replay_tamper = true;
       body.warnings = ["one or more replay records failed Ed25519 verification — audit-trail corruption suspected, regenerate via reattest"];
     }
-    emit(body, pretty);
+    // v0.13.24 — human renderer for `attest verify`. Pre-v0.13.24 the
+    // only output was a JSON envelope, even at the terminal. The whole
+    // point of `attest verify` is "did anyone tamper with my evidence
+    // since I ran it?" — that question deserves a one-line answer.
+    emit(body, pretty, (obj) => {
+      const lines = [];
+      lines.push(`attest verify: ${obj.session_id}`);
+      const att = obj.results || [];
+      const rep = obj.replay_results || [];
+      if (att.length === 0 && rep.length === 0) {
+        lines.push(`  [!! NO_DATA] no attestation files found for session.`);
+        lines.push(`\n  → next: exceptd attest list                  # browse persisted sessions`);
+        return lines.join("\n");
+      }
+      const allVerified = att.every(r => r.verified) && rep.every(r => r.verified);
+      const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : "[ok]");
+      lines.push(`\n${icon}  ${att.filter(r => r.verified).length}/${att.length} attestation(s) verified, ${rep.filter(r => r.verified).length}/${rep.length} replay record(s) verified`);
+      for (const r of att) {
+        const status = r.verified ? "[ok]" : `[!! ${(r.tamper_class || "FAIL").toUpperCase()}]`;
+        lines.push(`  ${status}  ${r.file}  — ${r.reason || "(no reason)"}`);
+      }
+      for (const r of rep) {
+        const status = r.verified ? "[ok]" : "[!! TAMPER]";
+        lines.push(`  ${status}  ${r.file}  (replay)  — ${r.reason || "(no reason)"}`);
+      }
+      if (obj.ok === false) {
+        lines.push(`\n  → next: exceptd attest show ${obj.session_id} --pretty   # inspect the disputed file directly`);
+        lines.push(`         exceptd attest list --playbook <id>                # find a non-tampered prior session for the same playbook`);
+      } else if (obj.replay_tamper) {
+        lines.push(`\n  → next: exceptd attest diff ${obj.session_id} --force-replay   # regenerate the replay record`);
+      } else if (allVerified) {
+        lines.push(`\n  → next: exceptd attest diff ${obj.session_id}            # compare against prior session for this playbook`);
+        lines.push(`         exceptd attest show ${obj.session_id} --pretty     # inspect the persisted attestation`);
+      }
+      return lines.join("\n");
+    });
     return;
   }
 
