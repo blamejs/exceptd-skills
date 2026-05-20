@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.13.34 — 2026-05-20
+
+Evidence-collection layer (Option A from the cold-start workflow audit). New verb `exceptd collect <playbook>` runs a companion script per playbook that walks the cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. The operator pipes:
+
+```bash
+exceptd collect secrets | exceptd run secrets --evidence -
+```
+
+The collector library is small and grows as playbooks are touched.
+
+### Features
+
+- **New verb `exceptd collect <playbook>`.** Loads `lib/collectors/<playbook>.js`, runs `collect({ cwd, env, args })`, emits the submission JSON. `--cwd <path>` collects against a different repo / host. `--pretty` for indented JSON. Default output is a one-screen human digest (preconditions / artifacts / indicators-that-fired / collector warnings / next-step pipe pointer); `--json` for machine consumption. Exit codes: `0` ok, `1` collector-not-found (the AI-evidence path remains — `exceptd lint <pb> -` documents the submission shape), `2` collector threw unhandled.
+- **Three reference collectors ship.** `lib/collectors/secrets.js` walks the cwd tree (depth 6, exclude `node_modules`/`.git`/`dist`/`build`/etc.), runs the catalogued secret regex set against text files (with literal-redaction so the attestation doesn't become a leak vector), stats permission posture on secret-carrier files, and flips `signal_overrides` per indicator that fired. `lib/collectors/kernel.js` derives the `linux-platform` + `uname-available` preconditions, captures `uname -r` + `/proc/cmdline` + selected `/proc/sys/kernel/*` snapshots, and flips `kaslr-disabled` / `unpriv-userns-enabled` / `unpriv-bpf-allowed` from the sysctl values. `lib/collectors/sbom.js` recognises 10 lockfile types (npm / yarn / pnpm / pip / pipenv / poetry / cargo / go / rubygems / composer) plus CycloneDX / SPDX SBOM documents and flips `sbom-document-absent` / `lockfile-absent`.
+- **Collector contract codified at `lib/collectors/README.md`.** Pure stdlib + child_process only, synchronous, errors don't throw (surfaced via `collector_errors[]`), literal secret bytes redacted in artifact values, indicators win over artifacts when the collector can decide deterministically.
+
+### Internal
+
+- `AGENTS.md` § Evidence collection roadmap documents the WHY + the precision target for `look.artifacts[].source` strings (file globs + per-platform commands + artifact-id references — not prose) and the when-required policy for adding a collector with a new playbook.
+
 ## 0.13.33 — 2026-05-20
 
 ### Features

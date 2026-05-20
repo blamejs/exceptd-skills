@@ -362,6 +362,44 @@ Maintainers convert approved requests into skill files. The contributor is credi
 
 ---
 
+## Evidence collection roadmap
+
+Today every playbook declares **what** evidence its detect phase needs via `phases.look.artifacts[].source` — a prose-shaped string that an AI assistant (or operator) reads, interprets, and translates into a concrete filesystem walk / shell command / API call. exceptd ships the knowledge layer; evidence collection lives in the consumer.
+
+This split costs every consumer the same translation work on every invocation. CI is the most visible place that hurts (no human-in-loop), but every AI-driven workflow pays the cost on every run. The longer-term direction is **companion collector scripts** under `lib/collectors/<playbook-id>.js` that turn the prose into executable Node — pure stdlib walks + regex + child_process where needed — emitting the evidence JSON in the same shape `exceptd run --evidence -` accepts. The wrapper verb is `exceptd collect <playbook>`; the operator pipes:
+
+```bash
+exceptd collect secrets | exceptd run secrets --evidence -
+```
+
+The collector library is small and grows as playbooks are touched. Three reference collectors ship today (`lib/collectors/secrets.js`, `lib/collectors/kernel.js`, `lib/collectors/sbom.js`); the rest are written when each playbook needs them. Until a playbook has a collector, the AI/operator owns evidence collection as before.
+
+### Precision target for new `look.artifacts[].source` strings
+
+When adding or editing a playbook artifact, treat the `source` string as **the spec a future collector will implement against**. Write it precise enough that an attentive script author could turn it into Node code without guessing. Concretely:
+
+- **File-based artifacts** name explicit globs (`*.tf, *.tfvars, *.tfvars.json`) plus exclusion list when relevant (`exclude **/node_modules/**, **/.git/objects/**, **/dist/**, **/build/**`). Avoid open-ended phrasing like "common config files".
+- **Filesystem-walk artifacts** declare the walk root (cwd, `~`, an explicit path), depth limit if any, and the predicate shape (filename match, content match, permission check, symlink resolution policy).
+- **Command-driven artifacts** name the exact command per platform when the call varies (`AWS: aws iam ... ; GCP: gcloud ... ; Azure: az ...`). The current cloud-incident playbooks follow this pattern; copy that shape.
+- **Regex / content matching** — the canonical pattern lives in the detect phase's `indicators[].value` field, not in the artifact `source`. Reference it explicitly (`grep against the catalogued secret patterns — see detect.indicators for the regex set`) so the collector knows where to read the patterns from.
+- **Aggregations of other artifacts** name the input artifact IDs explicitly (`For every file matched by env-files OR auth-config-files OR ssh-private-keys: stat for ...`). The collector composes per-artifact outputs.
+
+When a `source` string would otherwise drift into prose ("the operator should consider…", "typically located in…"), the artifact is probably under-specified. Tighten it before merging.
+
+### When a collector is required vs optional
+
+For now, collectors are optional — every playbook still works through the AI-evidence path. A new playbook **must** carry a collector when:
+
+- It's a code-scope or system-scope playbook with a deterministic detect-phase regex / filesystem-walk shape (the kind a CI pipeline would gate on).
+- The cost of writing the collector is bounded (≤300 lines of Node, stdlib + child_process only).
+
+A new playbook **should not** ship a collector when:
+
+- The detect phase requires operator judgement (`framework`, `ransomware`, jurisdiction-specific incident playbooks where the inputs are interview-shaped).
+- Evidence collection requires credentials the tool shouldn't ask for (cloud API keys, identity-provider admin tokens). Those stay AI-driven for now.
+
+When in doubt, ship the playbook without a collector and open the gap as a follow-up.
+
 ## Pre-Ship Checklist
 
 - [ ] All new CVEs have complete `data/cve-catalog.json` entries
@@ -379,6 +417,8 @@ Maintainers convert approved requests into skill files. The contributor is credi
 - [ ] CHANGELOG.md updated with what changed, what CVEs were added, what gaps were closed or opened
 - [ ] No partial skills — if it can't be completed now, branch it, don't merge it
 - [ ] Global coverage: EU + UK + AU + ISO 27001 present in all framework gap analyses
+- [ ] `look.artifacts[].source` strings meet the precision target (see § Evidence collection roadmap). New artifacts ship globs / commands / artifact-id references — not prose like "typically located in" or "the operator should consider"
+- [ ] When the playbook is code-scope or system-scope with a deterministic detect shape: a companion collector exists at `lib/collectors/<playbook-id>.js` and runs clean via `exceptd collect <id> | exceptd run <id> --evidence -`
 
 ---
 
