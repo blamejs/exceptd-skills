@@ -158,27 +158,23 @@ test('P1-4: signing tooling regenerates a valid manifest_signature (smoke agains
 
 // --- L F11: --diff-from-latest renderer ---
 
-test('F11: diff_from_latest renderer formats unchanged with prior session id', () => {
+test('F11: diff_from_latest renderer formats all three status branches with prior session id', () => {
   // Exercise the renderer indirectly via the bin file source — assert that
-  // the new copy strings are present and the old generic format is gone.
+  // the spec copy strings are present.
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // Spec lines:
   assert.match(src, /unchanged \(same evidence_hash as session \$\{dfl\.prior_session_id\}\)/);
   assert.match(src, /DRIFTED — evidence_hash differs from session \$\{dfl\.prior_session_id\}/);
-  // Verify the no_prior_attestation_for_playbook branch produces no
-  // human-rendered line. Concretely: between the renderer-start marker
-  // and the close of the renderer's diff_from_latest if-block, there is
-  // no `lines.push(...)` referencing "no_prior_attestation_for_playbook".
+  // The no_prior_attestation_for_playbook branch now emits an explicit
+  // line (previously it intentionally produced no line, which left
+  // operators wondering whether --diff-from-latest took effect when
+  // run against a fresh attestation directory).
   const rendererIdx = src.indexOf('// F11: surface --diff-from-latest verdict in the human renderer');
   assert.ok(rendererIdx > 0, 'F11 renderer marker comment must be present');
-  // Slice up to the next blank-line-style block close — capture both
-  // status branches but stop before unrelated downstream code.
-  const block = src.slice(rendererIdx, rendererIdx + 1200);
-  // The renderer must not call lines.push() for the no_prior case.
-  assert.ok(!/lines\.push\([^)]*no_prior_attestation_for_playbook/.test(block),
-    'no_prior_attestation_for_playbook branch must not emit a human-rendered line');
-  // Comment in the renderer should explicitly call this out.
-  assert.match(block, /no_prior_attestation_for_playbook intentionally produces no line/);
+  const block = src.slice(rendererIdx, rendererIdx + 1500);
+  assert.match(block, /dfl\.status === "no_prior_attestation_for_playbook"/,
+    'renderer must branch on the no_prior status');
+  assert.match(block, /no prior attestation found for/,
+    'renderer must emit the no-prior baseline line so the flag is not silently a no-op');
 });
 
 test('F11: renderer block lists exactly the unchanged + drifted statuses', () => {

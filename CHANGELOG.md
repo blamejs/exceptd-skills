@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.30 — 2026-05-20
+
+`run --diff-from-latest` on a fresh attestation directory now prints an explicit "no prior — this run becomes the baseline" line. Previously the no-prior branch was silent; operators who passed the flag saw zero diff output and could not tell whether the flag took effect.
+
+### Features
+
+- **`run --diff-from-latest` explicit "no prior" output.** When no prior attestation exists for the playbook (e.g. first run on a clean attestation root), the human renderer now emits `> drift vs prior: no prior attestation found for <playbook> — this run becomes the baseline`. The `unchanged` and `DRIFTED` cases are unchanged.
+
 ## 0.13.29 — 2026-05-20
 
 `run` verdict line now distinguishes "every indicator evaluated AND most produced a decisive verdict" from "every indicator evaluated but most landed inconclusive" — important when classification itself is inconclusive.

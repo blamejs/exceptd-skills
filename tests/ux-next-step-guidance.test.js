@@ -266,6 +266,26 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("run --diff-from-latest with NO prior attestation prints 'no prior' line (not silent)", () => {
+  // Pre-fix the no_prior_attestation_for_playbook branch intentionally
+  // produced no line — but operators who passed --diff-from-latest
+  // then saw zero diff output and couldn't tell whether the flag took
+  // effect. The explicit "no prior" line tells them this run is the
+  // baseline.
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "no-prior-"));
+  try {
+    // cwd-the-tempdir to avoid the legacy `.exceptd/` fallback root
+    // picking up unrelated priors from the project tree.
+    const r = cli(["run", "secrets", "--evidence", "-", "--diff-from-latest"],
+      { input: "{}", env: { EXCEPTD_HOME: tmpHome }, cwd: tmpHome });
+    assert.equal(r.status, 0, `run must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
+    assert.match(r.stdout, /drift vs prior: no prior attestation found for secrets — this run becomes the baseline/,
+      "no-prior case must emit an explicit line so the operator knows --diff-from-latest took effect");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("run inconclusive with mixed coverage breaks out decisive vs inconclusive indicators", () => {
   // A submission that supplies signal_overrides for only some
   // indicators lands `classification=inconclusive`. The raw
