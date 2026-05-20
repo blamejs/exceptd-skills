@@ -8,8 +8,10 @@
 !.dockerignore
 !.npmrc
 !.github
-# v0.13.2: track the test-count baseline so CI can compare against it.
+# Track the test-count baseline so CI can compare against it.
 !tests/.test-count-baseline.json
+# Track the version-tag drift baseline so CI can compare against it.
+!tests/.version-tag-baseline.json
 
 # Node
 node_modules/
