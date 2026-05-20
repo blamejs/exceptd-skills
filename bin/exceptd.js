@@ -7190,9 +7190,40 @@ function cmdCi(runner, args, runOpts, pretty) {
         // Both shapes need actionable Next-step guidance; key on the
         // shape, not on `s.detected > 0` alone.
         if (s.detected > 0) {
-          lines.push(`\nNext steps (review the ${s.detected} detected finding(s)):`);
-          lines.push(`  exceptd run <playbook> --format markdown    # operator-readable digest`);
-          lines.push(`  exceptd run <playbook> --format csaf-2.0    # advisory bundle for downstream`);
+          // Name the specific detected playbook ids so the operator
+          // can copy-paste rather than substitute `<playbook>`.
+          const detectedIds = (obj.results || [])
+            .filter(r => r && r.ok !== false && r.phases?.detect?.classification === "detected")
+            .map(r => r.playbook_id)
+            .filter(Boolean);
+          const exampleId = detectedIds[0] || "<playbook>";
+          lines.push(`\nNext steps (review the ${s.detected} detected finding(s) in ${detectedIds.join(", ") || "<playbook>"}):`);
+          lines.push(`  exceptd run ${exampleId} --format markdown    # operator-readable digest`);
+          lines.push(`  exceptd run ${exampleId} --format csaf-2.0    # advisory bundle for downstream`);
+
+          // Surface pending jurisdiction obligations across all
+          // detected playbooks at the ci summary level — operators
+          // running ci to gate a PR / a release deserve the same
+          // regulatory-clock visibility a single `run` would give them.
+          const pendingByEvent = {};
+          let pendingTotal = 0;
+          for (const r of obj.results || []) {
+            if (r?.phases?.detect?.classification !== "detected") continue;
+            const notif = r?.phases?.close?.notification_actions || [];
+            for (const n of notif) {
+              if (n.clock_started_at) continue;
+              const ev = n.clock_start_event || "unspecified";
+              if (!pendingByEvent[ev]) pendingByEvent[ev] = new Set();
+              pendingByEvent[ev].add(`${n.jurisdiction || "?"}/${n.regulation || "?"} (${n.window_hours || "?"}h)`);
+              pendingTotal++;
+            }
+          }
+          if (pendingTotal > 0) {
+            lines.push(`\nPending jurisdiction obligations across detected playbook(s) (${pendingTotal}) — clock starts on operator action:`);
+            for (const [ev, refs] of Object.entries(pendingByEvent)) {
+              lines.push(`  on ${ev}:  ${[...refs].join(", ")}`);
+            }
+          }
         } else {
           // Operator evidence pushed RWEP across --max-rwep cap on an
           // otherwise-inconclusive run. The fix is to review which

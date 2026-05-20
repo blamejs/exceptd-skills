@@ -159,6 +159,41 @@ test("run unknown-playbook error says 'list the <live count> playbooks', not the
     "playbook-not-found message must reference a live count");
 });
 
+test("ci FAIL Next steps names the specific detected playbook + surfaces pending jurisdiction obligations", () => {
+  // Multi-playbook ci with one detected + one inconclusive. The
+  // Next-steps block must:
+  //   - say "in <playbook-id>" (not "<playbook>" placeholder)
+  //   - emit run commands with the actual playbook id
+  //   - surface pending jurisdiction obligations grouped by
+  //     clock_start_event across all detected playbooks
+  const evidenceDir = fs.mkdtempSync(path.join(os.tmpdir(), "multi-ev-"));
+  try {
+    fs.writeFileSync(path.join(evidenceDir, "kernel.json"), JSON.stringify({
+      precondition_checks: { "linux-platform": true, "uname-available": true },
+      artifacts: { "kernel-release": "5.15.0-69-generic" },
+      signal_overrides: { "kver-in-affected-range": "hit" },
+    }));
+    fs.writeFileSync(path.join(evidenceDir, "secrets.json"), JSON.stringify({
+      precondition_checks: { "repo-context": true, "regex-engine": true },
+      artifacts: { "repo-tree": { value: "clean", captured: true } },
+      signal_overrides: { "aws-access-key-id": "miss" },
+    }));
+    const r = cli(["ci", "--required", "kernel,secrets", "--evidence-dir", evidenceDir]);
+    assert.match(r.stdout, /verdict=FAIL/,
+      "kernel + kver-in-affected-range:hit must drive verdict=FAIL");
+    assert.match(r.stdout, /Next steps \(review the 1 detected finding\(s\) in kernel\):/,
+      "Next-steps header must name the specific detected playbook (not '<playbook>')");
+    assert.match(r.stdout, /exceptd run kernel --format markdown/,
+      "run command must use the actual playbook id, not '<playbook>' placeholder");
+    assert.match(r.stdout, /Pending jurisdiction obligations across detected playbook\(s\) \(\d+\) — clock starts on operator action:/,
+      "ci must surface pending jurisdiction obligations at the summary level for detected runs");
+    assert.match(r.stdout, /\s+on \w+:\s+\w/,
+      "obligations must be grouped by clock_start_event");
+  } finally {
+    try { fs.rmSync(evidenceDir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap path)", () => {
   // `verdict === "FAIL"` fires in two shapes:
   //   (a) detected > 0 (a playbook landed classification=detected)

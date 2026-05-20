@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.27 — 2026-05-20
+
+`ci` next-step guidance now names the specific detected playbook(s) and surfaces pending jurisdiction obligations at the summary level — matching the regulatory-clock visibility a single `run` already gives.
+
+### Features
+
+- **`ci` FAIL Next steps names the actual detected playbook id.** Multi-playbook ci runs now print `Next steps (review the N detected finding(s) in <playbook-id>, ...)` with the real ids, and the `exceptd run <id> --format markdown` / `--format csaf-2.0` commands underneath use that id directly. Previously the output substituted a `<playbook>` placeholder that operators had to manually resolve against the per-playbook table above.
+- **`ci` surfaces pending jurisdiction obligations across all detected playbooks.** When at least one playbook lands `classification=detected`, the ci summary now prints `Pending jurisdiction obligations across detected playbook(s) (N) — clock starts on operator action:` grouped by `clock_start_event` — the same shape `run` emits, but aggregated across every playbook in the ci session. Operators gating a release no longer have to re-run each detected playbook individually to see the regulatory landscape.
+
 ## 0.13.26 — 2026-05-20
 
 Internal hygiene. No operator-visible behavior change.
