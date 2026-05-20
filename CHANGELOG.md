@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.25 — 2026-05-20
+
+Detected runs now surface pending jurisdiction obligations alongside the started ones — operators see the regulatory clock landscape at the same moment they see the finding, not after they remember to inspect the JSON.
+
+### Features
+
+- **`run` human renderer surfaces pending jurisdiction obligations on detected runs.** Pre-v0.13.25 only `clock_started_at != null` obligations rendered; pending ones (waiting on `detect_confirmed` / `analyze_complete` / etc.) were invisible at the terminal even though the engine carried them in `phases.close.notification_actions`. Now a detected verdict prints `Pending jurisdiction obligations (N) — clock starts on operator action:` grouped by `clock_start_event`, then a `→ next: exceptd run <pb> --format csaf-2.0` pointer for the draft advisory + notification bodies. The grouping collapses one row per regulation into one row per clock-start event so the operator sees what action to take, not a wall of regulations.
+
 ## 0.13.24 — 2026-05-20
 
 `attest verify` and `attest diff` are now usable at the terminal without piping through `jq`.
