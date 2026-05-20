@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.23 — 2026-05-19
+
+Continuation of the v0.13.22 UX pass: stage-by-stage next-step guidance so an operator (or an AI walking the workflow cold) never has to ask "what do I do now?"
+
+### Features
+
+- **`ci` human renderer emits a "Next steps" block per verdict.** BLOCKED → one `exceptd lint <playbook> -` command per blocked playbook plus the `--evidence <file>` re-run. NO_EVIDENCE → lint the first playbook + `ci --evidence-dir <dir>`. FAIL/detected → `run <playbook> --format markdown` / `--format csaf-2.0`. CLOCK_STARTED → `--format csaf-2.0` for the advisory draft. Pre-0.13.23 a blocked or no-evidence run printed only the reason — operators saw *why* they were stuck without the concrete command to unblock.
+- **`run` verdict line surfaces evidence_completeness.** Every successful run now shows `evidence: complete (13/13 indicators evaluated)` (or `partial` / `missing`) under the classification line. Distinguishes "ran every indicator and found nothing" from "couldn't evaluate, no evidence supplied" — pre-0.13.23 both states printed identically. When evidence is partial or missing, a `→ next: exceptd lint <playbook> -` pointer is appended.
+- **`run` attestation persistence is now visible.** Successful runs print `Attestation written: <full path>` followed by `exceptd attest verify <session-id>` and `exceptd attest diff <session-id>` so the operator knows where the JSON lives and how to verify or diff it. The persisted file path is also hoisted to the result envelope as `attestation_path`. Pre-0.13.23 the attestation went to `~/.exceptd/attestations/<repo>@<branch>/<session-id>/attestation.json` with zero indication in any output.
+- **`run` remediation prose matches the verdict.** Pre-0.13.23 every classification printed `Recommended remediation: <id>` — misleading on `not_detected` and `inconclusive` runs, where there is nothing to remediate. Now non-detect runs print `Remediation path (informational — verdict=<x>, no action required now): <id>`; detected runs are unchanged.
+
+### Bugs
+
+- **Stale playbook count in error messages.** `exceptd run <unknown-id>` (and the lint-not-found path) said "Run \`exceptd brief --all\` to list the 13 playbooks." There are 23 playbooks shipped. Now uses the live `listPlaybooks().length`.
+- **`lint` did not warn on the artifact-only-no-signal_overrides path.** An operator following lint's per-artifact guidance for a nested submission populated every required artifact, ran the playbook, and got every indicator = inconclusive with no explanation. The detect phase needs `signal_overrides` (or a `verdict.classification` override) to mark indicators as hit / miss — artifact presence alone is not enough. The flat-shape path already surfaced this as `detect_will_be_inconclusive`; the nested-shape path was silent. Now lint emits `no_signal_overrides_supplied` with the exact JSON shape to add.
+
 ## 0.13.22 — 2026-05-19
 
 `ci` is now usable at the terminal without piping through `jq`.

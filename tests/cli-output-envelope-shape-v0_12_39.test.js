@@ -226,8 +226,10 @@ test('run <pb> --evidence envelope (single-playbook success): exact top-level ke
     // top_finding / summary_line / evidence_completeness / indicators_*
     // to the top level so machine-readable consumers do not have to walk
     // phases.* to find them.
+    // v0.13.23: attestation_path surfaces the persisted filesystem path
+    // so the operator can locate the JSON without grepping ~/.exceptd/.
     const expected = [
-      'ack', 'directive_id', 'evidence_completeness', 'evidence_hash',
+      'ack', 'attestation_path', 'directive_id', 'evidence_completeness', 'evidence_hash',
       'indicators_evaluated', 'indicators_known', 'ok', 'phases',
       'playbook_id', 'precondition_check_source', 'preflight_issues',
       'rwep_score', 'session_id', 'submission_digest',
