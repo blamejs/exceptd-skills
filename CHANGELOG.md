@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.31 — 2026-05-20
+
+Documentation refresh. No code change.
+
+### Internal
+
+- README gained a `Result envelope contract` table documenting the headline fields hoisted to the top of every `run` / per-playbook `ci` result (`verdict`, `rwep_score`, `top_finding`, `summary_line`, `evidence_completeness`, `indicators_evaluated`, `indicators_known`, `attestation_path`) so machine consumers do not need to walk `phases.*` to discover them. Also added a `Default terminal output vs --json / --pretty` section explaining the human-renderer path that fires by default on `ci` / `run` / `attest verify` / `attest diff` / `discover` and how to reach the structured envelope.
+- Corrected stale counts: `42/42` expected on `doctor --signatures` (was `38/38`); `38 jurisdictions` in the Status paragraph (was `35`).
+- Landing site (exceptd.com): bumped stale counts (23 playbooks / 42 skills / 18 indexes / 38 jurisdictions / 17 release-hygiene gates), added a `terminal-first output, no jq required` feature card covering the v0.13.22–0.13.30 UX work, bumped the JSON-LD `softwareVersion`.
+
 ## 0.13.30 — 2026-05-20
 
 `run --diff-from-latest` on a fresh attestation directory now prints an explicit "no prior — this run becomes the baseline" line. Previously the no-prior branch was silent; operators who passed the flag saw zero diff output and could not tell whether the flag took effect.

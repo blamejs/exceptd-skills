@@ -30,7 +30,7 @@ This platform surfaces what is actually happening right now. Every skill explici
 
 ## Status
 
-Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 35 jurisdictions — the CVE catalog grew from 68 to 312 entries in v0.13.17 via a CISA KEV bulk-intake of `dateAdded >= 2024-01-01` actively-exploited vulnerabilities. 23 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory + research-blog + tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073) into auto-PRs for editorial review. v0.13.17 also ships `lib/cve-regression-watcher.js` (NEW-CTRL-074) — a complementary detection method that surfaces poller-diff historical-CVE references as candidate silent-regression cases, the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned).
+Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 38 jurisdictions — the CVE catalog grew from 68 to 312 entries in v0.13.17 via a CISA KEV bulk-intake of `dateAdded >= 2024-01-01` actively-exploited vulnerabilities. 23 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory + research-blog + tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073) into auto-PRs for editorial review. v0.13.17 also ships `lib/cve-regression-watcher.js` (NEW-CTRL-074) — a complementary detection method that surfaces poller-diff historical-CVE references as candidate silent-regression cases, the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned).
 
 ---
 
@@ -144,7 +144,7 @@ exceptd help
 First run — verify the signing chain and pin the public-key fingerprint for out-of-band checks:
 
 ```bash
-exceptd doctor --signatures            # verify Ed25519 chains (38/38 expected)
+exceptd doctor --signatures            # verify Ed25519 chains (42/42 expected)
 cat $(exceptd path)/keys/EXPECTED_FINGERPRINT   # pin fingerprint for OOB verify
 ```
 
@@ -411,6 +411,38 @@ The remaining v0.10.x verbs are aliases — still functional, no banner, no remo
 | `list-attestations` | `attest list` |
 | `prefetch` | `refresh --no-network` |
 | `build-indexes` | `refresh --indexes-only` |
+
+### Result envelope contract
+
+Every `run` (and every per-playbook result inside a `ci` body) hoists the headline summary fields to the top of the JSON envelope so machine consumers do not have to walk `phases.*` to find them:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ok` | boolean | `true` on success, `false` on blocked-at-preflight or persistence failure |
+| `playbook_id` | string | Playbook id (present on blocked results too, so a `results[]` iterator can identify the row without joining against `playbooks_run[]` by index) |
+| `directive_id` | string | Directive within the playbook |
+| `session_id` | string | Run id (used by `attest verify <sid>` / `attest diff <sid>`) |
+| `verdict` | string | One of `detected` / `not_detected` / `inconclusive` / `pending` / `skipped` / `blocked` |
+| `rwep_score` | number \| null | `phases.analyze.rwep.adjusted`, or `null` on blocked / catalog-baseline-zero runs |
+| `top_finding` | string \| null | First matched CVE id, or the indicator classification when no CVE correlated |
+| `summary_line` | string | One-line human summary (~240 chars) — `<playbook>: <verdict> (rwep=<n>, <finding>, evidence=<state>)` |
+| `evidence_completeness` | string | One of `complete` / `partial` / `missing` / `unknown` / `not-evaluated` |
+| `indicators_evaluated` | number \| null | Indicators that produced a verdict |
+| `indicators_known` | number \| null | Indicators declared by the playbook |
+| `evidence_hash` | string | SHA-256 of the normalized submission |
+| `submission_digest` | string | SHA-256 of the structured envelope |
+| `attestation_path` | string | Absolute path to the persisted attestation JSON (success path only) |
+| `preflight_issues` | array | Preconditions evaluated, with per-precondition `on_fail` + `check` |
+| `precondition_check_source` | object | Per-precondition: `submission` / `runOpts` / `merged` |
+| `phases` | object | Full per-phase outputs — `govern`, `direct`, `look`, `detect`, `analyze`, `validate`, `close` |
+
+On a blocked result (preflight halt, missing precondition), `ok` is `false` and the envelope additionally carries `blocked_by` / `reason` / `remediation` / `phase: 'preflight'` / `verdict: 'blocked'`. `evidence_completeness` reports `not-evaluated`.
+
+### Default terminal output vs `--json` / `--pretty`
+
+By default `ci`, `run`, `attest verify`, `attest diff`, and `discover` emit a human-readable digest at the terminal — verdict line, per-playbook table (for `ci`), next-step block keyed on verdict (BLOCKED → `exceptd lint <pb> -`; NO_EVIDENCE → lint + `--evidence-dir`; FAIL → `--format markdown` / `--format csaf-2.0` per detected playbook; CLOCK_STARTED → CSAF advisory), pending jurisdiction obligations grouped by `clock_start_event`, deduped session warnings, framework-gap rollup.
+
+Pass `--json` (compact) or `--pretty` (indented) to reach the structured envelope when automating. Setting `EXCEPTD_RAW_JSON=1` in the environment has the same effect.
 
 ## Invoking a skill from your AI assistant
 
