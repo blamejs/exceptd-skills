@@ -194,6 +194,41 @@ test("ci FAIL Next steps names the specific detected playbook + surfaces pending
   }
 });
 
+test("ci FAIL with multiple detected playbooks emits run commands for EACH (not just detectedIds[0])", () => {
+  // When ci lands multiple playbooks at classification=detected,
+  // the Next-steps commands must enumerate ONE row per id for each
+  // format. Pre-fix only detectedIds[0] got rendered, so operators
+  // would miss the markdown / csaf-2.0 follow-up for every detected
+  // playbook beyond the first.
+  const evidenceDir = fs.mkdtempSync(path.join(os.tmpdir(), "multi-detected-"));
+  try {
+    // Two playbooks, both forced to detected via signal_overrides.
+    fs.writeFileSync(path.join(evidenceDir, "kernel.json"), JSON.stringify({
+      precondition_checks: { "linux-platform": true, "uname-available": true },
+      artifacts: { "kernel-release": "5.15.0-69-generic" },
+      signal_overrides: { "kver-in-affected-range": "hit" },
+    }));
+    fs.writeFileSync(path.join(evidenceDir, "secrets.json"), JSON.stringify({
+      precondition_checks: { "repo-context": true, "regex-engine": true },
+      artifacts: { "repo-tree": { value: "src/config.js contains AKIA...", captured: true } },
+      signal_overrides: { "aws-access-key-id": "hit" },
+    }));
+    const r = cli(["ci", "--required", "kernel,secrets", "--evidence-dir", evidenceDir]);
+    assert.match(r.stdout, /detected=2/,
+      "scenario depends on both playbooks landing detected");
+    assert.match(r.stdout, /exceptd run kernel --format markdown/,
+      "markdown command for kernel must be present");
+    assert.match(r.stdout, /exceptd run secrets --format markdown/,
+      "markdown command for secrets must ALSO be present (regression: was only emitted for detectedIds[0])");
+    assert.match(r.stdout, /exceptd run kernel --format csaf-2\.0/,
+      "csaf command for kernel must be present");
+    assert.match(r.stdout, /exceptd run secrets --format csaf-2\.0/,
+      "csaf command for secrets must ALSO be present");
+  } finally {
+    try { fs.rmSync(evidenceDir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap path)", () => {
   // `verdict === "FAIL"` fires in two shapes:
   //   (a) detected > 0 (a playbook landed classification=detected)

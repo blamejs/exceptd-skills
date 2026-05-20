@@ -7191,15 +7191,22 @@ function cmdCi(runner, args, runOpts, pretty) {
         // shape, not on `s.detected > 0` alone.
         if (s.detected > 0) {
           // Name the specific detected playbook ids so the operator
-          // can copy-paste rather than substitute `<playbook>`.
+          // can copy-paste rather than substitute `<playbook>`. When
+          // multiple playbooks land detected, emit one row per id
+          // for each format so operators don't miss follow-up for the
+          // playbooks beyond detectedIds[0].
           const detectedIds = (obj.results || [])
             .filter(r => r && r.ok !== false && r.phases?.detect?.classification === "detected")
             .map(r => r.playbook_id)
             .filter(Boolean);
-          const exampleId = detectedIds[0] || "<playbook>";
+          const ids = detectedIds.length ? detectedIds : ["<playbook>"];
           lines.push(`\nNext steps (review the ${s.detected} detected finding(s) in ${detectedIds.join(", ") || "<playbook>"}):`);
-          lines.push(`  exceptd run ${exampleId} --format markdown    # operator-readable digest`);
-          lines.push(`  exceptd run ${exampleId} --format csaf-2.0    # advisory bundle for downstream`);
+          for (const id of ids) {
+            lines.push(`  exceptd run ${id} --format markdown    # operator-readable digest`);
+          }
+          for (const id of ids) {
+            lines.push(`  exceptd run ${id} --format csaf-2.0    # advisory bundle for downstream`);
+          }
 
           // Surface pending jurisdiction obligations across all
           // detected playbooks at the ci summary level — operators
