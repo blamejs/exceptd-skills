@@ -1,12 +1,22 @@
 # Changelog
 
+## 0.13.26 — 2026-05-20
+
+Internal hygiene. No operator-visible behavior change.
+
+### Internal
+
+- Stripped phase-residue version tags (`// v0.13.22 B5:`, `Pre-v0.13.23 the renderer ...`, `-v0_13_2X.test.js`) from comments and test filenames added in the v0.13.22–0.13.25 series. Authoritative version surfaces (`package.json` / `manifest.json` / `CHANGELOG.md ## X.Y.Z` headings / git tags / the CLI `version` verb) carry the version identifier; nowhere else.
+- New predeploy gate `Version-tag drift (no new phase residue)` (`scripts/check-version-tags.js`) refuses new `// v0.X.Y` / `Pre-v0.X.Y` comments and `*-v0_X_Y.test.js` filenames outside the authoritative surfaces. Baseline snapshot at `tests/.version-tag-baseline.json` captures pre-existing drift; refresh after an organic cleanup with `npm run check-version-tags:update`.
+- Gate count is now 17 (was 16).
+
 ## 0.13.25 — 2026-05-20
 
 Detected runs now surface pending jurisdiction obligations alongside the started ones — operators see the regulatory clock landscape at the same moment they see the finding, not after they remember to inspect the JSON.
 
 ### Features
 
-- **`run` human renderer surfaces pending jurisdiction obligations on detected runs.** Pre-v0.13.25 only `clock_started_at != null` obligations rendered; pending ones (waiting on `detect_confirmed` / `analyze_complete` / etc.) were invisible at the terminal even though the engine carried them in `phases.close.notification_actions`. Now a detected verdict prints `Pending jurisdiction obligations (N) — clock starts on operator action:` grouped by `clock_start_event`, then a `→ next: exceptd run <pb> --format csaf-2.0` pointer for the draft advisory + notification bodies. The grouping collapses one row per regulation into one row per clock-start event so the operator sees what action to take, not a wall of regulations.
+- **`run` human renderer surfaces pending jurisdiction obligations on detected runs.** Detected verdicts now print `Pending jurisdiction obligations (N) — clock starts on operator action:` grouped by `clock_start_event`, then a `→ next: exceptd run <pb> --format csaf-2.0` pointer for the draft advisory + notification bodies. Previously, only obligations whose `clock_started_at` was non-null surfaced at the terminal — pending ones (waiting on `detect_confirmed` / `analyze_complete` / etc.) were invisible even though the engine carried them in `phases.close.notification_actions`. Grouping by clock-start event collapses one row per regulation into one row per action the operator must take.
 
 ## 0.13.24 — 2026-05-20
 
@@ -19,14 +29,14 @@ Detected runs now surface pending jurisdiction obligations alongside the started
 
 ## 0.13.23 — 2026-05-19
 
-Continuation of the v0.13.22 UX pass: stage-by-stage next-step guidance so an operator (or an AI walking the workflow cold) never has to ask "what do I do now?"
+Stage-by-stage next-step guidance so an operator (or an AI walking the workflow cold) never has to ask "what do I do now?"
 
 ### Features
 
-- **`ci` human renderer emits a "Next steps" block per verdict.** BLOCKED → one `exceptd lint <playbook> -` command per blocked playbook plus the `--evidence <file>` re-run. NO_EVIDENCE → lint the first playbook + `ci --evidence-dir <dir>`. FAIL/detected → `run <playbook> --format markdown` / `--format csaf-2.0`. CLOCK_STARTED → `--format csaf-2.0` for the advisory draft. Pre-0.13.23 a blocked or no-evidence run printed only the reason — operators saw *why* they were stuck without the concrete command to unblock.
-- **`run` verdict line surfaces evidence_completeness.** Every successful run now shows `evidence: complete (13/13 indicators evaluated)` (or `partial` / `missing`) under the classification line. Distinguishes "ran every indicator and found nothing" from "couldn't evaluate, no evidence supplied" — pre-0.13.23 both states printed identically. When evidence is partial or missing, a `→ next: exceptd lint <playbook> -` pointer is appended.
-- **`run` attestation persistence is now visible.** Successful runs print `Attestation written: <full path>` followed by `exceptd attest verify <session-id>` and `exceptd attest diff <session-id>` so the operator knows where the JSON lives and how to verify or diff it. The persisted file path is also hoisted to the result envelope as `attestation_path`. Pre-0.13.23 the attestation went to `~/.exceptd/attestations/<repo>@<branch>/<session-id>/attestation.json` with zero indication in any output.
-- **`run` remediation prose matches the verdict.** Pre-0.13.23 every classification printed `Recommended remediation: <id>` — misleading on `not_detected` and `inconclusive` runs, where there is nothing to remediate. Now non-detect runs print `Remediation path (informational — verdict=<x>, no action required now): <id>`; detected runs are unchanged.
+- **`ci` human renderer emits a "Next steps" block per verdict.** BLOCKED → one `exceptd lint <playbook> -` command per blocked playbook plus the `--evidence <file>` re-run. NO_EVIDENCE → lint the first playbook + `ci --evidence-dir <dir>`. FAIL/detected → `run <playbook> --format markdown` / `--format csaf-2.0`. CLOCK_STARTED → `--format csaf-2.0` for the advisory draft. Previously, a blocked or no-evidence run printed only the reason — operators saw *why* they were stuck without the concrete command to unblock.
+- **`run` verdict line surfaces evidence_completeness.** Every successful run now shows `evidence: complete (13/13 indicators evaluated)` (or `partial` / `missing`) under the classification line. Distinguishes "ran every indicator and found nothing" from "couldn't evaluate, no evidence supplied" — previously, both states printed identically. When evidence is partial or missing, a `→ next: exceptd lint <playbook> -` pointer is appended.
+- **`run` attestation persistence is now visible.** Successful runs print `Attestation written: <full path>` followed by `exceptd attest verify <session-id>` and `exceptd attest diff <session-id>` so the operator knows where the JSON lives and how to verify or diff it. The persisted file path is also hoisted to the result envelope as `attestation_path`. Previously, the attestation went to `~/.exceptd/attestations/<repo>@<branch>/<session-id>/attestation.json` with zero indication in any output.
+- **`run` remediation prose matches the verdict.** Non-detect runs now print `Remediation path (informational — verdict=<x>, no action required now): <id>` instead of the unconditional `Recommended remediation: <id>` that previously fired on every classification — misleading on `not_detected` and `inconclusive` runs, where there is nothing to remediate. Detected runs unchanged.
 
 ### Bugs
 
@@ -39,7 +49,7 @@ Continuation of the v0.13.22 UX pass: stage-by-stage next-step guidance so an op
 
 ### Features
 
-- **Human-readable `ci` output by default.** Pre-0.13.22 the default `ci` output was 1000+ lines of indented JSON on every run. Now the default is a one-screen digest: verdict line, per-playbook table (id / verdict / rwep / evidence-completeness / top-finding), session-level warnings, scope-selection rules, framework gap rollup, and fail reasons. Pass `--json` or `--pretty` to get the structured body for automation.
+- **Human-readable `ci` output by default.** The default `ci` output is now a one-screen digest: verdict line, per-playbook table (id / verdict / rwep / evidence-completeness / top-finding), session-level warnings, scope-selection rules, framework gap rollup, and fail reasons. Previously, the default was 1000+ lines of indented JSON on every run. Pass `--json` or `--pretty` to get the structured body for automation.
 - **Per-result hoisted summary fields.** Every `run()` result now carries `verdict`, `rwep_score`, `top_finding`, `summary_line`, and `evidence_completeness` (one of `complete` / `partial` / `missing` / `unknown` / `not-evaluated`) at the top level. Machine-readable consumers no longer walk `phases.analyze.rwep.adjusted` and `phases.detect.classification` separately to extract the headline numbers.
 - **`indicators_evaluated` + `indicators_known` per result.** Surface how many of the playbook's known indicators were actually exercised by the operator's evidence, so a result that returns `verdict=inconclusive` with `indicators_evaluated=0` is distinguishable from one that evaluated every indicator and found no hits.
 - **Session-level warning de-duplication.** `ci` runs that span N playbooks no longer emit the same `bundle_publisher_unclaimed` warning N times. The summary now carries `runtime_warnings` and `runtime_warnings_count` with one entry per unique (kind, reason) across the session.

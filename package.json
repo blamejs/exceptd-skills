@@ -1,6 +1,6 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.13.25",
+  "version": "0.13.26",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
   "keywords": [
     "ai-security",
@@ -101,6 +101,8 @@
     "audit-catalog-gaps": "node scripts/audit-catalog-gaps.js --pretty",
     "audit-catalog-gaps:json": "node scripts/audit-catalog-gaps.js",
     "audit-catalog-gaps:strict": "node scripts/audit-catalog-gaps.js --pretty --strict",
+    "check-version-tags": "node scripts/check-version-tags.js",
+    "check-version-tags:update": "node scripts/check-version-tags.js --update-baseline",
     "predeploy": "node scripts/predeploy.js",
     "diff-coverage": "node scripts/check-test-coverage.js",
     "prepublishOnly": "node -e \"if(process.env.EXCEPTD_SKIP_PREPUBLISH_PREDEPLOY!=='1'){const r=require('child_process').spawnSync(process.execPath,['scripts/predeploy.js'],{stdio:'inherit'});if(r.status){process.exit(r.status)}}\" && node lib/validate-package.js",

@@ -1,12 +1,12 @@
 "use strict";
 
 /**
- * tests/attest-human-renderers-v0_13_24.test.js
+ * tests/attest-human-renderers.test.js
  *
- * v0.13.24: human renderers for `attest verify` and `attest diff`.
- * Pre-0.13.24 both were JSON-only — operators asking the one-line
- * question those verbs exist to answer ("did anyone tamper?" /
- * "did anything change since the last run?") had to pipe through jq.
+ * Pins the human renderers for `attest verify` and `attest diff` —
+ * both answer one-line questions ("did anyone tamper?" / "did
+ * anything change since the last run?") that should not require
+ * piping through jq.
  *
  * Surfaces pinned:
  *   1. attest verify default output is human text (not JSON), prints
@@ -17,8 +17,8 @@
  *      prior + replay hash + capture timestamps, replay classification,
  *      and a "→ next: ..." line on DRIFTED.
  *
- * Tests run inside a tempdir + use --attestation-root so they don't
- * leak into the operator's real ~/.exceptd/ tree.
+ * Tests use an EXCEPTD_HOME tempdir so they don't leak into the
+ * operator's real ~/.exceptd/ tree.
  */
 
 const test = require("node:test");

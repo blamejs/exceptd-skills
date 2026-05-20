@@ -1,23 +1,23 @@
 "use strict";
 
 /**
- * tests/jurisdiction-pending-v0_13_25.test.js
+ * tests/jurisdiction-pending.test.js
  *
- * v0.13.25: surface pending notification obligations on detected runs.
+ * Pins the pending-notification-obligations surface on detected runs.
  * The detection IS the regulatory event in many jurisdictions — the
  * operator must see the obligation landscape at the same moment they
  * see the finding, not after they remember to grep
  * `phases.close.notification_actions` in the JSON.
  *
  * Test pins:
- *   - Detected run with no clocks started prints the "Pending
+ *   - Detected runs with no clocks started print the "Pending
  *     jurisdiction obligations (N)" block on the human renderer.
  *   - Obligations are grouped by `clock_start_event` (one row per
  *     start event, NOT one row per regulation).
  *   - The next-step pointer suggests `--format csaf-2.0` for the
  *     draft advisory + notification bodies.
  *   - Non-detect verdicts (not_detected / inconclusive) do NOT print
- *     the Pending block (irrelevant — no regulatory event).
+ *     the Pending block (no regulatory event to track).
  */
 
 const test = require("node:test");
@@ -52,12 +52,11 @@ test("detected run prints 'Pending jurisdiction obligations' grouped by clock_st
     const env = { EXCEPTD_HOME: tmpHome };
     const r = cli(["run", "kernel", "--evidence", "-"], { input: evidence, env });
     assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
-    // Codex P2 on PR #65: pin the detected classification as a precondition
-    // BEFORE checking the pending-obligation output. If the deterministic
-    // hit indicator regresses and the run no longer classifies as detected,
-    // this assertion fires loudly. Pre-fix the test wrapped the pending-
-    // obligation checks in `if (/DETECTED/.test(...))` — a silent skip
-    // that would let the underlying feature break without alerting.
+    // Assert the detected classification as a precondition BEFORE
+    // checking the pending-obligation output. Without this, a future
+    // regression in the deterministic hit indicator would silently
+    // skip the pending-obligation assertions (the test would still
+    // pass), and the feature could break without alerting.
     assert.match(r.stdout, /\[!! DETECTED\]/,
       "kernel + kver-in-affected-range:hit must classify as detected — the test scenario depends on this");
     assert.match(r.stdout, /Pending jurisdiction obligations \(\d+\) — clock starts on operator action:/,
