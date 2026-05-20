@@ -2526,6 +2526,25 @@ function cmdPlan(runner, args, runOpts, pretty) {
     for (const pb of obj.playbooks || []) {
       if (pb && pb.id) byId[pb.id] = pb;
     }
+    // Render directive sub-bullets when each playbook entry carries a
+    // directives[] array (set by cmdPlan when --directives is on).
+    // Without this, the documented contract of --directives — expand
+    // directive metadata — is silently dropped in default human mode.
+    const renderDirectives = (pb) => {
+      const dirs = pb && Array.isArray(pb.directives) ? pb.directives : null;
+      if (!dirs || !dirs.length) return;
+      for (const d of dirs) {
+        const title = d.title || d.id || "?";
+        const truncTitle = title.length > 80 ? title.slice(0, 77) + "..." : title;
+        lines.push(`      → ${(d.id || "?").padEnd(48)}  ${truncTitle}`);
+        if (d.threat_context_preview) {
+          const ctx = d.threat_context_preview;
+          const truncCtx = ctx.length > 140 ? ctx.slice(0, 137) + "..." : ctx;
+          lines.push(`        ${truncCtx}`);
+        }
+      }
+    };
+
     const grouped = obj.grouped_by_scope;
     if (grouped) {
       const scopeOrder = ["code", "system", "service", "cross-cutting"];
@@ -2540,6 +2559,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
           const dom = pb.domain?.name || "";
           const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
           lines.push(`  ${(id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+          renderDirectives(pb);
         }
         lines.push("");
       }
@@ -2551,6 +2571,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
         const dom = pb.domain?.name || "";
         const truncDom = dom.length > 80 ? dom.slice(0, 77) + "..." : dom;
         lines.push(`  ${sc.padEnd(16)} ${(pb.id || "?").padEnd(28)}${tcs.padEnd(8)}  ${truncDom}`);
+        renderDirectives(pb);
       }
       lines.push("");
     }

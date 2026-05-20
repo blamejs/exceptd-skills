@@ -266,6 +266,24 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("brief --directives expands directive metadata in the human renderer", () => {
+  // cmdPlan attaches directive metadata to each playbook when
+  // --directives is set. Pre-fix the human renderer ignored that
+  // metadata entirely — operators who passed --directives got the
+  // same flat table as without it, silently dropping the documented
+  // contract.
+  const r = cli(["brief", "--directives"]);
+  assert.equal(r.status, 0);
+  // Each playbook row must be followed by `→ <directive-id>` lines.
+  assert.match(r.stdout, /→ full-container-manifest-walk/,
+    "containers playbook must show its directive ids");
+  assert.match(r.stdout, /→ weak-primitive-inventory/,
+    "crypto-codebase playbook must show its directive ids");
+  // Threat-context preview should appear below the directive id.
+  assert.match(r.stdout, /Container escape attack class in 2025-2026/,
+    "directives must include the threat-context preview line");
+});
+
 test("brief (no arg) renders a scannable per-scope table, not 36 KB of JSON", () => {
   // Pre-fix `exceptd brief` with no playbook arg dumped 36+ KB of JSON
   // to stdout (delegated to cmdPlan which had no human renderer).
