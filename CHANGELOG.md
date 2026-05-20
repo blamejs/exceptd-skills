@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.32 — 2026-05-20
+
+Two more JSON-only paths get human-renderer treatment.
+
+### Features
+
+- **`run --upstream-check` surfaces version-currency in the human renderer.** The flag fired a registry check and recorded `upstream_check.{local_version, latest_version, behind, same, ahead, days_since_latest_publish}` in the JSON envelope but the human output was silent. Now the verdict block includes `> upstream check: local v<X> == published v<X> (current)` on match, `> upstream check: local v<X> BEHIND published v<Y> (Nd behind) — run \`npm install -g @blamejs/exceptd-skills@latest\`` on lag, and `> upstream check: local v<X> ahead ...` on dev installs.
+- **`doctor --ai-config` shows scanned counts + per-finding detail.** Previously `doctor --ai-config` ran a 46k-file walk across `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, `~/.continue` but the operator saw only `summary: all checks green` — no way to see what was scanned. The doctor renderer now prints `[ok] AI-assistant config audit: scanned N file(s) across M dir(s) of K candidate root(s); P finding(s)` plus a Windows-mode-bits note when applicable. Findings render with severity icon + path + reason; truncated past 5 (full list via `--json`).
+
 ## 0.13.31 — 2026-05-20
 
 Documentation refresh. No code change.

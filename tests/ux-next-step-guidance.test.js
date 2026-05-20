@@ -266,6 +266,34 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
   }
 });
 
+test("run --upstream-check surfaces version-currency result in human renderer", () => {
+  // --upstream-check produces a useful `upstream_check` envelope but
+  // the human renderer ignored it pre-fix — operators who passed the
+  // flag saw no answer to "am I current?" at the terminal.
+  // We can't reliably reach the network in CI, so the test instead
+  // simulates the upstream-check result by injecting the field via
+  // a separate code path is not feasible. Instead, just assert the
+  // human renderer code path exists by reading the source.
+  const src = fs.readFileSync(path.join(ROOT, "bin", "exceptd.js"), "utf8");
+  assert.match(src, /if \(obj\.upstream_check\) \{/,
+    "run renderer must branch on obj.upstream_check");
+  assert.match(src, /upstream check: local v\$\{u\.local_version\} == published/,
+    "renderer must emit a current-version line on same");
+  assert.match(src, /upstream check: local v\$\{u\.local_version\} BEHIND published/,
+    "renderer must emit a behind-version line + remediation");
+});
+
+test("doctor --ai-config surfaces scanned counts in human renderer", () => {
+  // Pre-fix doctor --ai-config emitted only "all checks green" with
+  // no detail on what was scanned. The operator running an audit
+  // wants to see "scanned N files across M dirs, K findings".
+  const r = cli(["doctor", "--ai-config"]);
+  assert.match(r.stdout, /AI-assistant config audit: scanned \d+ file\(s\)/,
+    "doctor --ai-config must report the scanned-file count");
+  assert.match(r.stdout, /\d+ finding\(s\)/,
+    "doctor --ai-config must report finding count");
+});
+
 test("run --diff-from-latest with NO prior attestation prints 'no prior' line (not silent)", () => {
   // Pre-fix the no_prior_attestation_for_playbook branch intentionally
   // produced no line — but operators who passed --diff-from-latest
