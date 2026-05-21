@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.40 — 2026-05-20
+
+Ninth reference collector.
+
+### Features
+
+- **`lib/collectors/runtime.js`** — Linux-only runtime-posture collector. Reads `/etc/sudoers` + `/etc/sudoers.d/*`, `/etc/passwd`, walks trusted-path directories (`/etc`, `/usr/local/bin`, `/usr/local/sbin`, `/opt`, `/usr/bin`, `/usr/sbin`) to depth 2 for world-writable files, and inspects `/proc/<pid>` for orphan-privileged processes. Flips four deterministic indicators: `sudoers-nopasswd-wildcard` (any non-root `NOPASSWD: ALL` or `NOPASSWD: /path/*` wildcard rule), `duplicate-uid-zero` (>1 entry in `/etc/passwd` with UID 0), `world-writable-in-trusted-path` (any file under a trusted root with mode bit `o+w`), `orphan-privileged-process` (UID 0 process with PPID 1, canonical-init parent, executable under `/tmp`, `/dev/shm`, `/var/tmp`, or `/home`). Same unflipped-when-unreadable semantics as the hardening collector — when `/etc/sudoers` / `/etc/passwd` / trusted paths / `/proc` are all unreadable, the indicator stays absent from `signal_overrides` so the runner returns inconclusive rather than asserting a clean posture without evidence. Path overrides via `args.paths` for synthetic-tempdir tests.
+
 ## 0.13.39 — 2026-05-20
 
 Eighth reference collector.

@@ -49,9 +49,10 @@ const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "lib
 const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
 const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
 const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
+const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -64,6 +65,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(cryptoCodebaseCollector.playbook_id, "crypto-codebase");
   assert.equal(credStoresCollector.playbook_id, "cred-stores");
   assert.equal(hardeningCollector.playbook_id, "hardening");
+  assert.equal(runtimeCollector.playbook_id, "runtime");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -1432,6 +1434,211 @@ test("hardening collector lockdown=integrity in cmdline counts kernel-lockdown a
   try {
     const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
     assert.equal(r.signal_overrides["kernel-lockdown-none"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+function fakeRuntimeRoot(prefix) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const write = (rel, content) => {
+    const full = path.join(tmp, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, content);
+    return full;
+  };
+  const mkdir = (rel) => { const full = path.join(tmp, rel); fs.mkdirSync(full, { recursive: true }); return full; };
+  return {
+    tmp, write, mkdir,
+    cleanup() { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} },
+  };
+}
+
+test("runtime collector skips with linux-platform=false on non-Linux", () => {
+  if (process.platform === "linux") return; // Linux host would actually flip
+  const r = runtimeCollector.collect({ cwd: ROOT });
+  assert.equal(r.precondition_checks["linux-platform"], false);
+  assert.deepEqual(r.signal_overrides, {});
+});
+
+test("runtime collector flips sudoers-nopasswd-wildcard on a wildcard rule", () => {
+  const h = fakeRuntimeRoot("runtime-sudo-wild-");
+  try {
+    const sudoers = h.write("etc/sudoers", "Defaults requiretty\nroot ALL=(ALL) ALL\n");
+    const sudoersD = h.mkdir("etc/sudoers.d");
+    h.write("etc/sudoers.d/10-bad", "deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart *\n");
+    h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers, sudoersD, passwd: path.join(h.tmp, "etc/passwd"), trustedPaths: [], procRoot: path.join(h.tmp, "nonexistent") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "hit");
+    assert.equal(r.signal_overrides["duplicate-uid-zero"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector skips root NOPASSWD ALL (tautological — not a finding)", () => {
+  const h = fakeRuntimeRoot("runtime-sudo-root-");
+  try {
+    const sudoers = h.write("etc/sudoers", "root ALL=(ALL) NOPASSWD: ALL\n");
+    const passwd = h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector flips duplicate-uid-zero on >1 UID-0 entries", () => {
+  const h = fakeRuntimeRoot("runtime-uid0-");
+  try {
+    const sudoers = h.write("etc/sudoers", "");
+    const passwd = h.write("etc/passwd",
+      "root:x:0:0:root:/root:/bin/bash\n" +
+      "toor:x:0:0:backdoor:/root:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["duplicate-uid-zero"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector duplicate-uid-zero miss on single UID 0", () => {
+  const h = fakeRuntimeRoot("runtime-uid0-single-");
+  try {
+    const passwd = h.write("etc/passwd",
+      "root:x:0:0:root:/root:/bin/bash\n" +
+      "alice:x:1000:1000:Alice:/home/alice:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers: path.join(h.tmp, "noexist"), sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["duplicate-uid-zero"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector world-writable-in-trusted-path: posix only", { skip: process.platform === "win32" }, () => {
+  const h = fakeRuntimeRoot("runtime-ww-");
+  try {
+    const trustedDir = h.mkdir("opt");
+    const bad = h.write("opt/payload.sh", "#!/bin/sh\necho pwn\n");
+    fs.chmodSync(bad, 0o777);
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: {
+          sudoers: path.join(h.tmp, "noexist"),
+          sudoersD: path.join(h.tmp, "nodir"),
+          passwd: path.join(h.tmp, "nopasswd"),
+          trustedPaths: [trustedDir],
+          procRoot: path.join(h.tmp, "nodir"),
+        },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["world-writable-in-trusted-path"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector mixed-user sudoers entry fires when non-root principal grants wildcard (codex P2 #80)", () => {
+  const h = fakeRuntimeRoot("runtime-mixed-sudo-");
+  try {
+    const sudoers = h.write("etc/sudoers", "root,deploy ALL=(ALL) NOPASSWD: ALL\n");
+    const passwd = h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "hit",
+      "root,deploy NOPASSWD: ALL grants wildcard to deploy — must fire");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector orphan-privileged stays unflipped when /proc/<pid>/exe unreadable (codex P1 #80)", () => {
+  // Synthesise /proc layout where every PID's status file exists
+  // but no exe symlink does — mirrors hidepid / ptrace-restrict on
+  // non-root scope. The collector must NOT report "miss" — that
+  // would mask real orphan-privileged implants.
+  const h = fakeRuntimeRoot("runtime-orphan-noexe-");
+  try {
+    const procRoot = h.mkdir("proc");
+    // PID 1 (no exe symlink readable)
+    h.write("proc/1/status", "Name:\tsystemd\nPPid:\t0\nUid:\t0\t0\t0\t0\n");
+    // PID 100, UID 0, PPID 1 — would look like an orphan, but exe
+    // symlink missing.
+    h.write("proc/100/status", "Name:\tsuspicious\nPPid:\t1\nUid:\t0\t0\t0\t0\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: {
+          sudoers: path.join(h.tmp, "nosudoers"),
+          sudoersD: path.join(h.tmp, "nodir"),
+          passwd: path.join(h.tmp, "nopasswd"),
+          trustedPaths: [],
+          procRoot,
+        },
+        forceLinux: true,
+      },
+    });
+    // exe links unreadable → indicator unflipped (codex P1 #80)
+    assert.equal(r.signal_overrides["orphan-privileged-process"], undefined,
+      "missing exe links must leave indicator unflipped, not assert clean");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector leaves indicators unflipped when sources unreadable", () => {
+  // All paths point at non-existent locations → no indicator should
+  // be set; runner returns inconclusive.
+  const h = fakeRuntimeRoot("runtime-empty-");
+  try {
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: {
+          sudoers: path.join(h.tmp, "noexist1"),
+          sudoersD: path.join(h.tmp, "noexist2"),
+          passwd: path.join(h.tmp, "noexist3"),
+          trustedPaths: [path.join(h.tmp, "noexist4")],
+          procRoot: path.join(h.tmp, "noexist5"),
+        },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], undefined);
+    assert.equal(r.signal_overrides["duplicate-uid-zero"], undefined);
+    assert.equal(r.signal_overrides["world-writable-in-trusted-path"], undefined);
+    assert.equal(r.signal_overrides["orphan-privileged-process"], undefined);
   } finally {
     h.cleanup();
   }
