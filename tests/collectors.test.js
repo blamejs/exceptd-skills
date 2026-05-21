@@ -636,6 +636,93 @@ test("library-author package-json-provenance-missing checks workflow --provenanc
   }
 });
 
+test("library-author publish-workflow heuristic demotes verify / test / e2e / kind / validate-named workflows", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "la-demote-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wf = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wf, { recursive: true });
+    // Verification workflow with id-token: write + cosign-installer
+    // — must NOT be classified as publish.
+    fs.writeFileSync(
+      path.join(wf, "kind-verify-attestation.yaml"),
+      [
+        "name: kind-verify-attestation",
+        "on: pull_request",
+        "jobs:",
+        "  verify:",
+        "    permissions:",
+        "      id-token: write",
+        "      contents: read",
+        "    steps:",
+        "      - uses: sigstore/cosign-installer@" + "a".repeat(40),
+        "      - uses: ko-build/setup-ko@" + "b".repeat(40),
+        "      - run: cosign verify-attestation example.com/img",
+        "",
+      ].join("\n"),
+    );
+    // validate-release.yml with no publish command — must NOT be
+    // classified as publish.
+    fs.writeFileSync(
+      path.join(wf, "validate-release.yml"),
+      [
+        "name: validate-release",
+        "on: push",
+        "jobs:",
+        "  validate:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - uses: actions/checkout@" + "c".repeat(40),
+        "",
+      ].join("\n"),
+    );
+    fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"x","version":"1.0.0"}');
+
+    const { collect } = require("../lib/collectors/library-author.js");
+    const r = collect({ cwd: tmp });
+    assert.deepEqual(r.collector_meta.publish_workflows, [],
+      `expected 0 publish workflows; got: ${JSON.stringify(r.collector_meta.publish_workflows)}`);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("library-author recognises a real publish workflow via docker/login-action (cosign build.yaml pattern)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "la-docker-login-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wf = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wf, { recursive: true });
+    // Opaque publish path: docker/login-action + Makefile invocation.
+    fs.writeFileSync(
+      path.join(wf, "build.yaml"),
+      [
+        "name: build",
+        "on: push",
+        "jobs:",
+        "  build:",
+        "    permissions:",
+        "      id-token: write",
+        "      contents: read",
+        "    steps:",
+        "      - uses: actions/checkout@" + "a".repeat(40),
+        "      - uses: docker/login-action@" + "b".repeat(40),
+        "      - run: make sign-ci-containers",
+        "",
+      ].join("\n"),
+    );
+    fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"x","version":"1.0.0"}');
+
+    const { collect } = require("../lib/collectors/library-author.js");
+    const r = collect({ cwd: tmp });
+    assert.ok(r.collector_meta.publish_workflows.includes("build.yaml"),
+      `expected build.yaml in publish_workflows; got: ${JSON.stringify(r.collector_meta.publish_workflows)}`);
+    assert.equal(r.signal_overrides["publish-workflow-no-id-token-write"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("library-author publish-workflow predicates miss on the clean OIDC + sha-pinned shape", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-lib-wf-clean-"));
   try {
@@ -2282,7 +2369,7 @@ test("secrets collector still fires when production code has a real secret (demo
   }
 });
 
-test("library-author recognises container-native publish workflows (cosign + ko + id-token: write)", () => {
+test("library-author recognises container-native publish workflows (cosign sign + ko publish + id-token: write)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "la-publish-"));
   try {
     fs.mkdirSync(path.join(tmp, ".git"));
@@ -2300,7 +2387,9 @@ test("library-author recognises container-native publish workflows (cosign + ko 
         "      contents: read",
         "    steps:",
         "      - uses: sigstore/cosign-installer@" + "a".repeat(40),
-        "      - run: cosign sign-blob ./artifact",
+        "      - uses: ko-build/setup-ko@" + "b".repeat(40),
+        "      - run: ko publish ./cmd/foo",
+        "      - run: cosign sign $IMAGE",
         "",
       ].join("\n"),
     );

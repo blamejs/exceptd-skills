@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.54 — 2026-05-21
+
+`library-author` publish-workflow heuristic re-tightens after the v0.13.48 broadening exposed verification / e2e workflows as false-positive publish.
+
+### Bugs
+
+- **`library-author` publish-workflow heuristic now demotes filename-prefix `test*` / `verify*` / `validate*` / `e2e*` / `kind*` / `check*` / `conformance*` / `coverage*` workflows** regardless of body content. The v0.13.48 broadening (`id-token: write` + `sigstore/cosign-installer` + `cosign sign-blob`) was too aggressive — those signals appear in verification + e2e tests that share signing infrastructure but do not publish. On `sigstore/cosign` the broadened heuristic recognized 6 workflows as publish-related; only 1 (`build.yaml`) actually publishes. The two that genuinely lack `id-token: write` (`kind-verify-attestation.yaml`, `validate-release.yml`) falsely flipped `publish-workflow-no-id-token-write` to `hit`.
+- **`cosign sign-blob` no longer counts as a publish-shape command** (matches now requires plain `cosign sign` followed by a non-hyphen — distinguishes container signing from arbitrary-blob signing). `cosign sign-blob` appears as often in e2e tests as it does in publishes; the broader `cosign sign $IMAGE` form remains a strong signal.
+- **`sigstore/cosign-installer` reference alone no longer marks a workflow as publish** — the installer is used in verification workflows too. The collector now requires an actual publish-shape command (`ko publish`, `cosign sign`, `crane push`, etc.) or a registry-login action (`docker/login-action`, `google-github-actions/auth` + `gcloud auth configure-docker`, `aws-actions/configure-aws-credentials` + `amazon-ecr`).
+- **`id-token: write` permission alone no longer marks a workflow as publish.** Verification + test workflows frequently declare `id-token: write` for OIDC-keyless verification flows.
+
+### Features
+
+- **Registry-login actions recognized as a publish signal.** `docker/login-action`, `google-github-actions/auth` with `gcloud auth configure-docker`, and `aws-actions/configure-aws-credentials` + `amazon-ecr` patterns catch opaque publish paths (e.g. `make sign-ci-containers` after `docker/login-action`) that don't carry a literal publish command in the workflow YAML.
+
 ## 0.13.53 — 2026-05-21
 
 Polish round across CLI UX, container false-positives, collector skip-disclosure, and README narrative refresh.
