@@ -50,9 +50,10 @@ const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "cr
 const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
 const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
 const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
+const aiApiCollector = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector, aiApiCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -66,6 +67,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(credStoresCollector.playbook_id, "cred-stores");
   assert.equal(hardeningCollector.playbook_id, "hardening");
   assert.equal(runtimeCollector.playbook_id, "runtime");
+  assert.equal(aiApiCollector.playbook_id, "ai-api");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -1639,6 +1641,134 @@ test("runtime collector leaves indicators unflipped when sources unreadable", ()
     assert.equal(r.signal_overrides["duplicate-uid-zero"], undefined);
     assert.equal(r.signal_overrides["world-writable-in-trusted-path"], undefined);
     assert.equal(r.signal_overrides["orphan-privileged-process"], undefined);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api collector flips zero on a clean fake-home", () => {
+  const h = fakeHome("ai-api-clean-");
+  try {
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "miss");
+    assert.equal(r.signal_overrides["long-lived-aws-keys"], "miss");
+    assert.equal(r.signal_overrides["gcp-service-account-json"], "miss");
+    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api cleartext-api-key-in-dotfile fires on OPENAI_API_KEY export in .zshrc", () => {
+  const h = fakeHome("ai-api-zshrc-");
+  try {
+    h.write(".zshrc", "export PATH=$PATH:/usr/local/bin\nexport OPENAI_API_KEY=sk-" + "A".repeat(30) + "\n");
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api cleartext-api-key-in-dotfile fires on ANTHROPIC + HF tokens", () => {
+  const h = fakeHome("ai-api-anthropic-");
+  try {
+    h.write(".bashrc", "export ANTHROPIC_API_KEY=sk-ant-" + "A".repeat(30) + "\nexport HF_TOKEN=hf_" + "A".repeat(30) + "\n");
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api cleartext-api-key-in-dotfile fires on fish-style set -gx", () => {
+  const h = fakeHome("ai-api-fish-");
+  try {
+    h.write(".config/fish/config.fish", "set -gx GOOGLE_API_KEY " + "A".repeat(40) + "\n");
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api long-lived-aws-keys: STS session_token sibling demotes to miss", () => {
+  const h = fakeHome("ai-api-aws-sts-");
+  try {
+    h.write(".aws/credentials", [
+      "[default]",
+      "aws_access_key_id = ASIASYNTHETICTEMPKEY",
+      "aws_secret_access_key = " + "a".repeat(40),
+      "aws_session_token = " + "z".repeat(40),
+    ].join("\n"));
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["long-lived-aws-keys"], "miss",
+      "aws_session_token sibling marks the profile as STS-temporary, not long-lived");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api long-lived-aws-keys: AKIA without session token fires", () => {
+  const h = fakeHome("ai-api-aws-longlived-");
+  try {
+    h.write(".aws/credentials", [
+      "[default]",
+      "aws_access_key_id = AKIASYNTHETICTESTKEY",
+      "aws_secret_access_key = " + "a".repeat(40),
+    ].join("\n"));
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["long-lived-aws-keys"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api kubeconfig-with-static-token honours user.token / not auth-provider", () => {
+  const h = fakeHome("ai-api-kube-token-");
+  try {
+    h.write(".kube/config", [
+      "users:",
+      "- name: admin",
+      "  user:",
+      "    token: abcdef1234567890",
+    ].join("\n"));
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("ai-api kubeconfig-with-static-token miss on auth-provider cached token", () => {
+  const h = fakeHome("ai-api-kube-authprov-");
+  try {
+    h.write(".kube/config", [
+      "users:",
+      "- name: gcp-iap",
+      "  user:",
+      "    auth-provider:",
+      "      name: gcp",
+      "      config:",
+      "        access-token: ya29.dynamic-cached",
+    ].join("\n"));
+    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("collect ai-api pipes into run --evidence -", () => {
+  const h = fakeHome("ai-api-pipe-");
+  try {
+    h.write(".zshrc", "export OPENAI_API_KEY=sk-" + "P".repeat(40) + "\n");
+    const collected = cli(["collect", "ai-api", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(collected.status, 0);
+    const ran = cli(["run", "ai-api", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
+    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
+    assert.ok(body, `run must emit parseable JSON; stdout: ${ran.stdout.slice(0,200)}`);
+    assert.equal(body.playbook_id, "ai-api");
   } finally {
     h.cleanup();
   }
