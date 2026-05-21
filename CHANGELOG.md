@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.44 — 2026-05-21
+
+Thirteenth reference collector.
+
+### Features
+
+- **`lib/collectors/cicd-pipeline-compromise.js`** — consumer-side CI/CD posture collector. Walks `.github/workflows/*.{yml,yaml}` + `.gitlab-ci.yml` + `.circleci/config.yml`, plus `infra/` / `terraform/` / `policies/` / `.aws/` for OIDC trust JSON. Flips five deterministic indicators: `workflow-injection-sink` (`${{ github.event.* }}` interpolated directly inside a `run:` block without env-var indirection — the canonical GHA script-injection class, covers `pull_request.title` / `pull_request.body` / `issue.title` / `issue.body` / `comment.body` / `head_commit.message` / `review.body`), `pull-request-target-with-pr-checkout` (`on: pull_request_target` + `actions/checkout` referencing `github.event.pull_request.head.sha`, `.head.ref`, or `github.head_ref`), `actions-floating-tag-pin` (any third-party `uses: owner/repo@<ref>` where ref isn't a 40-char hex SHA; first-party `actions/*` excluded per playbook), `wildcarded-oidc-sub-claim` (`"token.actions.githubusercontent.com:sub": "*"` or wildcard repo/branch glob in any OIDC trust JSON under the searched roots), `secret-exposed-to-fork-pr` (`pull_request_target` trigger + any `secrets.*` reference other than `GITHUB_TOKEN` in the same workflow). `self-hosted-runner-non-ephemeral` (needs GitHub API runners list), `runner-scoped-signing-key` (needs HSM/KMS inspection) remain AI-driven.
+
 ## 0.13.43 — 2026-05-21
 
 Twelfth reference collector.
