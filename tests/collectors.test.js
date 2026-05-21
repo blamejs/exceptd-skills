@@ -452,6 +452,106 @@ test("library-author publish-workflow predicates align with playbook spec", () =
   }
 });
 
+test("library-author static-token matcher covers every publish-credential secret in the playbook spec", () => {
+  // Per data/playbooks/library-author.json: the predicate names
+  // NPM_TOKEN / PYPI_TOKEN / CARGO_TOKEN / RUBYGEMS_API_KEY /
+  // GEM_HOST_API_KEY. The collector must flip the indicator for
+  // any of these (when id-token: write is absent).
+  const tokenNames = ["NPM_TOKEN", "PYPI_TOKEN", "CARGO_TOKEN", "RUBYGEMS_API_KEY", "GEM_HOST_API_KEY"];
+  for (const name of tokenNames) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `lib-token-${name}-`));
+    try {
+      fs.mkdirSync(path.join(tmp, ".github", "workflows"), { recursive: true });
+      fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
+      fs.writeFileSync(path.join(tmp, ".github", "workflows", "release.yml"), [
+        "name: release",
+        "on: { push: { tags: ['v*'] } }",
+        "jobs:",
+        "  publish:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - run: echo publish",
+        "        env:",
+        `          TOKEN: \${{ secrets.${name} }}`,
+      ].join("\n") + "\n");
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["publish-workflow-uses-static-token"], "hit",
+        `secrets.${name} without id-token: write must fire publish-workflow-uses-static-token`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+});
+
+test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays unflipped when no lockfile present", () => {
+  // Pre-fix the collector forced miss when no package-lock.json
+  // was present, hiding integrity gaps in yarn / pnpm / cargo / go
+  // repos. The predicate covers ALL walked lockfiles.
+
+  // Case A: no lockfile → indicator stays unflipped (undefined),
+  // runner returns inconclusive.
+  {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-none-"));
+    try {
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], undefined,
+        "no lockfile present → indicator must stay unflipped (inconclusive)");
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case B: yarn.lock with one resolved-no-integrity block → hit.
+  {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-yarn-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "yarn.lock"), [
+        "# yarn lockfile v1",
+        "",
+        "foo@1.0.0:",
+        "  version \"1.0.0\"",
+        "  resolved \"https://r/foo-1.0.0.tgz\"",
+        "  integrity sha512-abc",
+        "",
+        "bar@2.0.0:",
+        "  version \"2.0.0\"",
+        "  resolved \"https://r/bar-2.0.0.tgz\"",
+        // no integrity line — should fire the indicator
+      ].join("\n") + "\n");
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], "hit",
+        "yarn.lock entry with resolved + no integrity must fire the indicator");
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+});
+
+test("library-author package-json-provenance-missing checks workflow --provenance fallback", () => {
+  // Per playbook spec: the indicator fires when BOTH manifest
+  // opt-in AND workflow --provenance are absent. A repo that
+  // publishes via `npm publish --provenance` without
+  // publishConfig.provenance must NOT be flagged.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-prov-wf-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".github", "workflows"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
+    fs.writeFileSync(path.join(tmp, ".github", "workflows", "release.yml"), [
+      "name: release",
+      "on: { push: { tags: ['v*'] } }",
+      "jobs:",
+      "  publish:",
+      "    permissions: { id-token: write }",
+      "    steps:",
+      "      - run: npm publish --provenance",
+    ].join("\n") + "\n");
+    const r = libraryAuthorCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["package-json-provenance-missing"], "miss",
+      "workflow --provenance path must satisfy the indicator even when publishConfig.provenance is unset");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("library-author publish-workflow predicates miss on the clean OIDC + sha-pinned shape", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-lib-wf-clean-"));
   try {
