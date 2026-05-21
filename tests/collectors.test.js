@@ -784,6 +784,66 @@ test("crypto-codebase vendored-pqc-no-provenance fires on vendor PQC without pro
   }
 });
 
+test("crypto-codebase pbkdf2 1024 iterations fires (codex P1 #77)", () => {
+  // Regression test for codex P1: pbkdf2Sync(pw, salt, 1024, ...) is
+  // an under-iterated call; the iter scanner must not pre-filter 1024
+  // as a "common key-bit-size" value.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-pbkdf2-1024-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(path.join(tmp, "src", "kdf.js"), [
+      "const crypto = require('crypto');",
+      "crypto.pbkdf2Sync(pw, salt, 1024, 32, 'sha256');",
+    ].join("\n"));
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "hit");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase test-fixture PQC/FIPS code does not contaminate behavioral signals (codex P1 #77)", () => {
+  // Regression test for codex P1: ML-KEM / FIPS / Dilithium references
+  // inside tests/ should NOT count as evidence the library ships the
+  // capability. The library claims PQC-ready but its only ML-KEM
+  // reference is in a test — should still flip no-ml-kem-implementation
+  // to hit, because the production tree carries no impl.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-fixture-contam-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "README.md"), "Post-quantum ready library.\n");
+    fs.mkdirSync(path.join(tmp, "tests"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "tests", "kem-fixture.js"), [
+      "// Test fixture references ML-KEM keys for round-trip checks",
+      "const kyberKey = require('./fixtures/ml-kem-768.bin');",
+    ].join("\n"));
+    fs.writeFileSync(path.join(tmp, "src", "main.js"), "module.exports = {};\n");
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    // PQC claim + no production ML-KEM impl → hit (test fixture must
+    // not flip sawMlKemImpl=true).
+    assert.equal(r.signal_overrides["no-ml-kem-implementation"], "hit");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase vendored-pqc walks all the way up to repo root (codex P2 #77)", () => {
+  // Regression test for codex P2: provenance marker at vendor root
+  // must be discovered even when the PQC source is deeply nested.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-deep-vendor-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "vendor", "a", "b", "c", "d", "e", "kyber-impl"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "vendor", "a", "b", "c", "d", "e", "kyber-impl", "kyber.c"), "/* kyber */\n");
+    // Marker at the vendor root — 6+ levels above the source file.
+    fs.writeFileSync(path.join(tmp, "vendor", "_PROVENANCE.json"), JSON.stringify({ upstream: "x" }));
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "miss",
+      "provenance marker at vendor root must be found regardless of nesting depth");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("collect crypto-codebase pipes into run --evidence -", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-pipe-"));
   try {
