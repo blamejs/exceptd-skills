@@ -2218,6 +2218,66 @@ test("cicd-pipeline-compromise collector excludes actions/* first-party from flo
   }
 });
 
+test("cicd-pipeline-compromise collector recognises block-list on: trigger form", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-block-list-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wfDir = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wfDir, { recursive: true });
+    fs.writeFileSync(path.join(wfDir, "test.yml"), [
+      "name: test",
+      "on:",
+      "  - pull_request_target",
+      "  - push",
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v4",
+      "        with:",
+      "          ref: ${{ github.event.pull_request.head.sha }}",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cicd-pipeline-compromise PR-head ref must be bound to the actions/checkout step, not any step", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-binding-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wfDir = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wfDir, { recursive: true });
+    // Checkout uses BASE ref (safe); a separate step echos PR head.
+    // File-wide co-occurrence used to falsely flag this — must miss now.
+    fs.writeFileSync(path.join(wfDir, "test.yml"), [
+      "name: test",
+      "on: pull_request_target",
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@" + "a".repeat(40),
+      "        with:",
+      "          ref: ${{ github.event.pull_request.base.sha }}",
+      "      - name: log head",
+      "        env:",
+      "          PR_HEAD: ${{ github.event.pull_request.head.sha }}",
+      "        run: echo \"$PR_HEAD\"",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("crypto collector leaves indicators unflipped (inconclusive) when openssl + sshd_config are both unreadable", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-empty-"));
   try {
