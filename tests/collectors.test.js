@@ -2351,6 +2351,25 @@ test("crypto-codebase demotes weak-hash hits in content-integrity / fingerprinti
   }
 });
 
+test("crypto-codebase filename demotion does NOT bypass an explicit security-context token (integrity.go with password fires)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-int-pw-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.mkdirSync(path.join(tmp, "r"));
+    fs.writeFileSync(
+      path.join(tmp, "r", "integrity.go"),
+      'package r\nimport "crypto/md5"\nfunc PasswordCheck(password string) string { h := md5.Sum([]byte(password)); return string(h[:]) }\n',
+    );
+    const { collect } = require("../lib/collectors/crypto-codebase.js");
+    const r = collect({ cwd: tmp });
+    // Filename signals content-addressable, but the code carries a
+    // strong security token (password). The hit must fire.
+    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("crypto-codebase still fires weak-hash on a real security context (auth.go with token)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-auth-token-"));
   try {
