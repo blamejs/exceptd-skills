@@ -802,6 +802,12 @@ function emitError(msg, extra, pretty) {
   // class — CLAUDE.md's "fix the class, not the instance." Now: write to
   // stderr, set exitCode = 1, return. Every caller already uses
   // `return emitError(...)` so the return-value propagation is clean.
+  //
+  // Errors emit as JSON envelope on stderr regardless of mode — that
+  // contract has been load-bearing since v0.11.x for piped consumers
+  // (CI parsers, smart-agent retry logic). Operators wanting human
+  // text on stderr can pipe `2>&1 | jq -r .error || cat` as a
+  // workaround.
   const body = Object.assign({ ok: false, error: msg }, extra || {});
   const s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
   process.stderr.write(s + "\n");
@@ -2193,7 +2199,13 @@ Flags (selected — see \`exceptd run --help\` for the full list):
 function cmdCollect(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   if (!playbookId) {
-    return emitError("collect: usage: exceptd collect <playbook>. See `lib/collectors/` for the list of playbooks with companion collectors.", null, pretty);
+    return emitError(
+      "collect: usage: exceptd collect <playbook>",
+      {
+        hint: "Run `exceptd doctor --collectors` to see which playbooks have collectors, or `exceptd discover` to see which apply to this cwd.",
+      },
+      pretty,
+    );
   }
   if (refuseInvalidPlaybookId("collect", playbookId, pretty)) return;
 
@@ -6448,8 +6460,21 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     }
   }
   if (checks.signing) {
+    // Icon picks from the bucketing severity, not from .ok:
+    //   severity: info  → [ok]   (consumer install, no key expected)
+    //   severity: warn  → [!]    (contributor checkout, key would
+    //                             enable signed attestations; nudge,
+    //                             not failure)
+    //   severity: error → [!!]   (genuine signing failure)
+    // Pre-fix the renderer used [!!] for any !private_key_present
+    // path, including consumer installs where the summary said "all
+    // checks green" — the icon contradicted the summary.
     if (checks.signing.private_key_present) {
       lines.push(`  [ok] attestation signing: private key present (.keys/private.pem)`);
+    } else if (checks.signing.severity === "warn") {
+      lines.push(`  [!]  attestation signing: private key absent (contributor checkout — run \`exceptd doctor --fix\` to enable signed attestations)`);
+    } else if (checks.signing.severity === "info") {
+      lines.push(`  [ok] attestation signing: consumer install (signing is contributor-only; this is the expected state)`);
     } else {
       lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`exceptd doctor --fix\` to enable`);
     }

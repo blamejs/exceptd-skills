@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.51 — 2026-05-21
+
+`doctor` signing-check renders by severity; `crypto-codebase` weak-hash predicate demotes content-integrity files; `collect` no-arg hint points at operator-facing verbs.
+
+### Bugs
+
+- **`exceptd doctor` signing-check icon now reads the bucketing severity** rather than always painting `[!!]` on `!private_key_present`. Consumer installs (`severity: info`) render `[ok] attestation signing: consumer install (signing is contributor-only; this is the expected state)`; contributor checkouts without keys (`severity: warn`) render `[!]  attestation signing: private key absent (contributor checkout — ...)`; genuine signing errors keep `[!!]`. Operators no longer see `[!!]` next to a "summary: all checks green" line.
+- **`exceptd collect` no-arg hint points at `exceptd doctor --collectors` + `exceptd discover`** instead of `lib/collectors/` (a path inside the npm tarball that the operator typically can't browse).
+- **`crypto-codebase` weak-hash predicate demotes content-integrity / fingerprinting files.** Hugo's `resources/integrity/integrity.go`, kustomize-style `fingerprint.py`, sphinx-style `cache_key.go`, etc. use MD5 / SHA-1 for content-addressable hashing — legitimate non-security use. The previous predicate's var-flow regex included `integrity` as a security-signal keyword, which fired on Hugo's `integrity.go`. Now: (a) `integrity` is dropped from the var-flow regex; (b) a filename-path demotion catches `integrity.go` / `hashing.go` / `fingerprint.py` / `content_hash.*` / `cache_key.*` / `etag.*` / `build_id.*` shapes and skips them.
+
 ## 0.13.50 — 2026-05-21
 
 `sbom` collector recognises pyproject.toml + requirements variants + one-level subdir layouts.
