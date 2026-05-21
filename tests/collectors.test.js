@@ -909,11 +909,51 @@ test("cred-stores aws-static-key-present fires on AKIA* with no federation", () 
   try {
     h.write(".aws/credentials", [
       "[default]",
+      // Synthetic AKIA value — not the AWS-published doc-fixture
+      // (AKIAIOSFODNN7EXAMPLE), which the collector demotes per
+      // false_positive_checks_required[0].
+      "aws_access_key_id = AKIASYNTHETICTESTKEY",
+      "aws_secret_access_key = " + "a".repeat(40),
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["aws-static-key-present"], "hit");
+    // Codex P1 #78: the collector must attest the FP checks it ran so
+    // the runner doesn't downgrade hit → inconclusive.
+    const att = r.signal_overrides["aws-static-key-present__fp_checks"];
+    assert.equal(typeof att, "object", "fp-check attestation must be present on hit");
+    assert.equal(att["0"], true);
+    assert.equal(att["2"], true);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores aws-static-key-present demotes the AWS-published doc-fixture key (codex P1 #78 FP[0])", () => {
+  const h = fakeHome("cred-aws-docfixture-");
+  try {
+    h.write(".aws/credentials", [
+      "[default]",
       "aws_access_key_id = AKIAIOSFODNN7EXAMPLE",
       "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
     ].join("\n"));
     const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "hit");
+    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
+    assert.equal(r.signal_overrides["aws-static-key-present__fp_checks"], undefined);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores aws-static-key-present demotes break-glass profile names (codex P1 #78 FP[2])", () => {
+  const h = fakeHome("cred-aws-breakglass-");
+  try {
+    h.write(".aws/credentials", [
+      "[breakglass-emergency]",
+      "aws_access_key_id = AKIASYNTHETICBREAKGLASS",
+      "aws_secret_access_key = " + "z".repeat(40),
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
   } finally {
     h.cleanup();
   }
@@ -948,6 +988,35 @@ test("cred-stores kube-static-token fires on users[].user.token", () => {
     ].join("\n"));
     const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r.signal_overrides["kube-static-token"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores kube-static-token miss on auth-provider cached tokens (codex P2 #78)", () => {
+  // Regression test for codex P2: tokens cached under
+  // auth-provider.config.access-token (gcp-iap, oidc, etc.) are NOT
+  // static credentials — they're dynamic provider tokens. The
+  // collector must scope its token: match to user.token /
+  // user.token-data, not any sub-key in the user block.
+  const h = fakeHome("cred-kube-authprovider-");
+  try {
+    h.write(".kube/config", [
+      "apiVersion: v1",
+      "kind: Config",
+      "users:",
+      "- name: gcp-iap-user",
+      "  user:",
+      "    auth-provider:",
+      "      name: gcp",
+      "      config:",
+      "        access-token: ya29.cached-dynamic-token-not-static",
+      "        id-token: eyJhbGc.cached-id-token",
+      "        refresh-token: refresh-cached",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kube-static-token"], "miss",
+      "auth-provider.config.access-token must NOT count as user.token static credential");
   } finally {
     h.cleanup();
   }
@@ -1019,6 +1088,56 @@ test("cred-stores docker-cleartext-auth fires when auths set with no cred helper
   }
 });
 
+test("cred-stores docker-cleartext-auth demotes vendor-token user patterns (codex P1 #78 FP[0])", () => {
+  const h = fakeHome("cred-docker-vendortoken-");
+  try {
+    // base64("<token>:abcdef") — the user portion is `<token>`, a
+    // documented ECR-helper convention; not a static cleartext cred.
+    const authValue = Buffer.from("<token>:abcdef").toString("base64");
+    h.write(".docker/config.json", JSON.stringify({
+      auths: { "public.ecr.aws": { auth: authValue } },
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores docker-cleartext-auth demotes local-only registries (codex P1 #78 FP[1])", () => {
+  const h = fakeHome("cred-docker-local-");
+  try {
+    const authValue = Buffer.from("user:password").toString("base64");
+    h.write(".docker/config.json", JSON.stringify({
+      auths: { "127.0.0.1:5000": { auth: authValue } },
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss",
+      "127.0.0.1 registry is local-only, blast radius is negligible");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores docker-cleartext-auth attests all three FP checks on hit (codex P1 #78)", () => {
+  const h = fakeHome("cred-docker-fp-attest-");
+  try {
+    const authValue = Buffer.from("real-user:real-pass").toString("base64");
+    h.write(".docker/config.json", JSON.stringify({
+      auths: { "registry.example.com": { auth: authValue } },
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "hit");
+    const att = r.signal_overrides["docker-cleartext-auth__fp_checks"];
+    assert.equal(typeof att, "object");
+    assert.equal(att["0"], true);
+    assert.equal(att["1"], true);
+    assert.equal(att["2"], true);
+  } finally {
+    h.cleanup();
+  }
+});
+
 test("cred-stores docker-cleartext-auth miss when credsStore covers the registry", () => {
   const h = fakeHome("cred-docker-helper-");
   try {
@@ -1067,14 +1186,32 @@ test("cred-stores project-level .npmrc / .pypirc are picked up via cwd", () => {
 test("cred-stores credentials-file-bad-perms: posix only; skipped on win32", { skip: process.platform === "win32" }, () => {
   const h = fakeHome("cred-perms-");
   try {
-    const credPath = h.write(".aws/credentials", "[default]\naws_access_key_id = AKIAIOSFODNN7EXAMPLE\n");
+    const credPath = h.write(".aws/credentials", "[default]\naws_access_key_id = AKIASYNTHETICTESTKEY\n");
     // Make it world-readable — not 0600.
     fs.chmodSync(credPath, 0o644);
     const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit");
+    // Codex P1 #78: FP checks the collector ran must be attested.
+    const att = r.signal_overrides["credentials-file-bad-perms__fp_checks"];
+    assert.equal(typeof att, "object");
+    assert.equal(att["0"], true);
+    assert.equal(att["1"], true);
     fs.chmodSync(credPath, 0o600);
     const r2 = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r2.signal_overrides["credentials-file-bad-perms"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores credentials-file-bad-perms includes gcloud ADC (codex P2 #78)", { skip: process.platform === "win32" }, () => {
+  const h = fakeHome("cred-perms-gcloud-");
+  try {
+    const adcPath = h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({ type: "authorized_user" }));
+    fs.chmodSync(adcPath, 0o644);
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit",
+      "world-readable application_default_credentials.json must flip the indicator");
   } finally {
     h.cleanup();
   }
