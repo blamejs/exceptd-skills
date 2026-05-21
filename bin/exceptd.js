@@ -1114,6 +1114,8 @@ function dispatchPlaybook(cmd, argv) {
             // were already accepted; explicit registration removes the silent
             // "unknown bool flag" surface in parseArgs.
             "shipped-tarball", "registry-check", "signatures", "currency", "cves", "rfcs",
+            // doctor --collectors health-checks the collector layer.
+            "collectors",
             // doctor --exit-codes dumps the canonical exit-code table.
             "exit-codes"],
     multi: ["playbook", "format"],
@@ -1162,7 +1164,7 @@ function dispatchPlaybook(cmd, argv) {
   // through without a refusal.
   const PASSTHROUGH_FLAGS = new Set([
     "directive", "domain", "phase", "signal-list", "explain",
-    "signatures", "currency", "cves", "rfcs", "shipped-tarball",
+    "signatures", "currency", "cves", "rfcs", "shipped-tarball", "collectors",
     "human", "json-stdout-only", "max-rwep", "diff-from-latest",
     "upstream-check", "latest", "force-replay", "flat", "directives",
     "fix", "session-key", "all", "scope", "playbook",
@@ -5692,11 +5694,13 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const onlyCves = !!args.cves;
   const onlyRfcs = !!args.rfcs;
   const onlyAiConfig = !!args["ai-config"];
-  const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs || onlyAiConfig;
+  const onlyCollectors = !!args.collectors;
+  const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs || onlyAiConfig || onlyCollectors;
   const runSigs = !anySelected || onlySigs;
   const runCurrency = !anySelected || onlyCurrency;
   const runCves = !anySelected || onlyCves;
   const runRfcs = !anySelected || onlyRfcs;
+  const runCollectors = !anySelected || onlyCollectors;
   const runSigning = !anySelected;
   // --ai-config is opt-in — never runs as part of the default no-flag
   // doctor pass. Operators ask for it explicitly.
@@ -6136,6 +6140,64 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     if (errorFindings.length > 0 && (!args.fix || fixesFailed > 0)) issues.push('ai_config');
   }
 
+  // Collector-layer health gate. Walks every playbook, looks up the
+  // matching `lib/collectors/<id>.js`, requires the module, verifies
+  // `playbook_id` matches the file name AND `collect` is exported.
+  // policy_skips is the catalogued set of judgement-shaped playbooks
+  // (incident / governance / pure-analyze) that intentionally have no
+  // collector per AGENTS.md — operators see "10 missing is by design,
+  // not regression."
+  if (runCollectors) {
+    try {
+      const playbookDir = path.join(PKG_ROOT, "data", "playbooks");
+      const collectorDir = path.join(PKG_ROOT, "lib", "collectors");
+      const POLICY_SKIPS = [
+        "framework", "ransomware", "ai-discovered-cve-triage",
+        "cloud-iam-incident", "idp-incident", "identity-sso-compromise",
+        "llm-tool-use-exfil", "supply-chain-recovery",
+        "post-quantum-migration", "webhook-callback-abuse",
+      ];
+      const playbookFiles = fs.readdirSync(playbookDir)
+        .filter(f => f.endsWith(".json") && !f.startsWith("_"))
+        .map(f => f.replace(/\.json$/, ""))
+        .sort();
+      const without_collector = [];
+      const load_errors = [];
+      let with_collector = 0;
+      for (const pid of playbookFiles) {
+        const collectorPath = path.join(collectorDir, pid + ".js");
+        if (!fs.existsSync(collectorPath)) { without_collector.push(pid); continue; }
+        try {
+          delete require.cache[require.resolve(collectorPath)];
+          const mod = require(collectorPath);
+          if (mod.playbook_id !== pid) {
+            load_errors.push({ id: pid, error: `playbook_id mismatch: module exports "${mod.playbook_id}"` });
+          } else if (typeof mod.collect !== "function") {
+            load_errors.push({ id: pid, error: "collect is not a function" });
+          } else {
+            with_collector++;
+          }
+        } catch (e) {
+          load_errors.push({ id: pid, error: `require failed: ${e.message}` });
+        }
+      }
+      const ok = load_errors.length === 0;
+      checks.collectors = {
+        ok,
+        severity: ok ? "info" : "error",
+        total_playbooks: playbookFiles.length,
+        with_collector,
+        without_collector,
+        load_errors,
+        policy_skips: POLICY_SKIPS.sort(),
+      };
+      if (!ok) issues.push("collectors");
+    } catch (e) {
+      checks.collectors = { ok: false, severity: "error", error: e.message };
+      issues.push("collectors");
+    }
+  }
+
   // Walk every check and split: errors (severity error/missing/fail) vs warnings
   // (severity warn). all_green is true ONLY when zero errors AND zero warnings.
   // v0.13.11: bucketing logic extracted to lib/doctor-bucketing.js so the
@@ -6315,6 +6377,21 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       lines.push(`  [ok] attestation signing: private key present (.keys/private.pem)`);
     } else {
       lines.push(`  [!!] attestation signing: private key MISSING (.keys/private.pem) — run \`exceptd doctor --fix\` to enable`);
+    }
+  }
+  if (checks.collectors) {
+    const c = checks.collectors;
+    const icon = c.ok ? "[ok]" : "[!!]";
+    const skipNote = Array.isArray(c.policy_skips) && c.policy_skips.length > 0
+      ? ` (${c.policy_skips.length} judgement-shaped playbooks intentionally without a collector — see AGENTS.md)`
+      : "";
+    lines.push(`  ${icon} collector layer: ${c.with_collector ?? "?"}/${c.total_playbooks ?? "?"} playbooks have collectors${skipNote}`);
+    if (Array.isArray(c.load_errors) && c.load_errors.length > 0) {
+      lines.push(`       ${c.load_errors.length} collector(s) failed to load:`);
+      for (const e of c.load_errors.slice(0, 5)) {
+        lines.push(`       [!!] ${e.id}: ${e.error}`);
+      }
+      if (c.load_errors.length > 5) lines.push(`       … and ${c.load_errors.length - 5} more (use --json for full list)`);
     }
   }
   if (checks.ai_config) {

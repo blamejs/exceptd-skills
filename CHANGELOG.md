@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.46 — 2026-05-21
+
+`doctor` now health-checks the collector layer.
+
+### Features
+
+- **`doctor --collectors` (and folded into the default `doctor` pass).** Walks every `data/playbooks/<id>.json`, looks up `lib/collectors/<id>.js`, requires the module, verifies `playbook_id` matches the file name AND `collect` is exported as a function. Reports counts via a new `checks.collectors: { ok, total_playbooks, with_collector, without_collector, load_errors, policy_skips }` envelope field. `policy_skips` enumerates the ten judgement-shaped playbooks (incident / governance / pure-analyze) that are intentionally without a collector per AGENTS.md — operators see "10 missing is by design, not regression." Any `load_errors` (require fails, `playbook_id` mismatch, missing `collect` export) fail the gate. Closes the deterministic-collector layer: 13/23 playbooks have collectors, the remaining 10 are policy-skipped.
+- **Human renderer** prints `[ok] collector layer: <with>/<total> playbooks have collectors (N judgement-shaped playbooks intentionally without a collector — see AGENTS.md)`. Per-collector load errors render as `[!!] <id>: <error>` lines.
+
 ## 0.13.45 — 2026-05-21
 
 `discover` surfaces collector availability per recommendation.
