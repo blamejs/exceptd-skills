@@ -46,9 +46,10 @@ const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"
 const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
 const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
 const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
+const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -58,6 +59,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(sbomCollector.playbook_id, "sbom");
   assert.equal(containersCollector.playbook_id, "containers");
   assert.equal(libraryAuthorCollector.playbook_id, "library-author");
+  assert.equal(cryptoCodebaseCollector.playbook_id, "crypto-codebase");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -595,4 +597,212 @@ test("collect <pb> --pretty produces indented JSON envelope", () => {
   const body = tryJson(r.stdout);
   assert.ok(body);
   assert.equal(body.collector_meta.collector_id, "kernel");
+});
+
+test("crypto-codebase collector flips the deterministic predicates on bad fixtures", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-bad-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "src"));
+    // Weak hash in security context: md5 + the variable name "token"
+    // appears in the same file — flow heuristic flips.
+    fs.writeFileSync(path.join(tmp, "src", "auth.js"), [
+      "const crypto = require('crypto');",
+      "function token(payload) {",
+      "  return crypto.createHash('md5').update(payload).digest('hex');",
+      "}",
+    ].join("\n"));
+    // Weak cipher mode (ECB) + RSA-1024 + TLS-old-protocol in one file.
+    fs.writeFileSync(path.join(tmp, "src", "broken.js"), [
+      "const c = require('crypto');",
+      "c.createCipheriv('aes-128-ecb', key, null);",
+      "c.generateKeyPairSync('rsa', { modulusLength: 1024 });",
+      "tls.createServer({ secureProtocol: 'TLSv1_method' });",
+    ].join("\n"));
+    // Math.random with security variable in proximity.
+    fs.writeFileSync(path.join(tmp, "src", "rng.js"), [
+      "function makeToken() {",
+      "  const session_token = Math.random().toString(36).slice(2);",
+      "  return session_token;",
+      "}",
+    ].join("\n"));
+    // Under-iterated PBKDF2 + low bcrypt cost.
+    fs.writeFileSync(path.join(tmp, "src", "kdf.js"), [
+      "const crypto = require('crypto');",
+      "const bcrypt = require('bcrypt');",
+      "crypto.pbkdf2Sync(pw, salt, 10000, 32, 'sha256');",
+      "bcrypt.hashSync(password, 8);",
+    ].join("\n"));
+    // Hardcoded PEM key material in source.
+    fs.writeFileSync(path.join(tmp, "src", "key.js"), [
+      "const KEY = `-----BEGIN PRIVATE KEY-----",
+      "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKc=",
+      "-----END PRIVATE KEY-----`;",
+    ].join("\n"));
+
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
+    assert.equal(r.signal_overrides["weak-cipher-mode"], "hit");
+    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "hit");
+    assert.equal(r.signal_overrides["math-random-in-security-path"], "hit");
+    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "hit");
+    assert.equal(r.signal_overrides["bcrypt-cost-low"], "hit");
+    assert.equal(r.signal_overrides["hardcoded-key-material"], "hit");
+    assert.equal(r.signal_overrides["tls-old-protocol"], "hit");
+    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "miss");
+    assert.equal(r.collector_errors.length, 0);
+    // ecdsa-without-pqc-roadmap should NOT be set — no classical sig
+    // markers in the fixtures means the indicator stays unflipped
+    // (inconclusive).
+    assert.equal(r.signal_overrides["ecdsa-without-pqc-roadmap"], undefined);
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase collector returns clean miss on a benign fixture", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-clean-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
+    fs.writeFileSync(path.join(tmp, "src", "ok.js"), [
+      "const crypto = require('crypto');",
+      "function token() {",
+      "  return crypto.randomBytes(32).toString('hex');",
+      "}",
+      "crypto.pbkdf2Sync(pw, salt, 600001, 32, 'sha256');",
+      "bcrypt.hashSync(pw, 12);",
+    ].join("\n"));
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
+    assert.equal(r.signal_overrides["weak-cipher-mode"], "miss");
+    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "miss");
+    assert.equal(r.signal_overrides["math-random-in-security-path"], "miss");
+    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "miss");
+    assert.equal(r.signal_overrides["bcrypt-cost-low"], "miss");
+    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss");
+    assert.equal(r.signal_overrides["tls-old-protocol"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase collector demotes test/spec/fixture paths", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-testdemote-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "tests"), { recursive: true });
+    // Same bad-cipher fixture as the hit test, but under tests/ — the
+    // production-context indicators must NOT flip.
+    fs.writeFileSync(path.join(tmp, "tests", "kat.js"), [
+      "// Known-answer test against published RC4 vector.",
+      "const c = require('crypto');",
+      "c.createCipheriv('aes-128-ecb', key, null);",
+      "c.generateKeyPairSync('rsa', { modulusLength: 1024 });",
+    ].join("\n"));
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-cipher-mode"], "miss");
+    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase ecdsa-without-pqc-roadmap fires only when classical sig + no roadmap", () => {
+  const baseline = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-ecdsa-"));
+  try {
+    fs.mkdirSync(path.join(baseline, "src"));
+    // Classical ECDSA use, no PQC impl, no roadmap text → hit.
+    fs.writeFileSync(path.join(baseline, "src", "sig.js"), [
+      "const sig = crypto.sign('ECDSA', data, key);",
+      "// curve secp256r1",
+    ].join("\n"));
+    const r1 = cryptoCodebaseCollector.collect({ cwd: baseline });
+    assert.equal(r1.signal_overrides["ecdsa-without-pqc-roadmap"], "hit");
+
+    // Add a roadmap mention in SECURITY.md → miss.
+    fs.writeFileSync(path.join(baseline, "SECURITY.md"), [
+      "## PQC migration",
+      "This library publishes a hybrid-signature migration roadmap for downstream consumers.",
+    ].join("\n"));
+    const r2 = cryptoCodebaseCollector.collect({ cwd: baseline });
+    assert.equal(r2.signal_overrides["ecdsa-without-pqc-roadmap"], "miss");
+  } finally {
+    try { fs.rmSync(baseline, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase no-ml-kem-implementation fires on PQC claim without ML-KEM", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-mlkem-"));
+  try {
+    // README claims PQC-ready; no ML-KEM/Kyber/liboqs anywhere in src.
+    fs.writeFileSync(path.join(tmp, "README.md"), [
+      "# my-lib",
+      "Post-quantum ready library for next-gen cryptography.",
+    ].join("\n"));
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(path.join(tmp, "src", "ok.js"), "module.exports = {};\n");
+    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["no-ml-kem-implementation"], "hit");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase fips-claim-without-runtime-activation fires only when claim + no activation", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-fips-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "SECURITY.md"), "This library is FIPS 140-3 validated.\n");
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(path.join(tmp, "src", "ok.js"), "module.exports = {};\n");
+    const r1 = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r1.signal_overrides["fips-claim-without-runtime-activation"], "hit");
+
+    // Add a setFips activation call site → flip to miss.
+    fs.writeFileSync(path.join(tmp, "src", "boot.js"), [
+      "const crypto = require('crypto');",
+      "crypto.setFips(true);",
+    ].join("\n"));
+    const r2 = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r2.signal_overrides["fips-claim-without-runtime-activation"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("crypto-codebase vendored-pqc-no-provenance fires on vendor PQC without provenance marker", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-vendor-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "vendor", "kyber-impl"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "vendor", "kyber-impl", "kyber.c"), "/* kyber */\n");
+    const r1 = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r1.signal_overrides["vendored-pqc-no-provenance"], "hit");
+
+    fs.writeFileSync(path.join(tmp, "vendor", "kyber-impl", "_PROVENANCE.json"), JSON.stringify({ upstream: "x" }));
+    const r2 = cryptoCodebaseCollector.collect({ cwd: tmp });
+    assert.equal(r2.signal_overrides["vendored-pqc-no-provenance"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("collect crypto-codebase pipes into run --evidence -", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-pipe-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(path.join(tmp, "src", "auth.js"), [
+      "function token() {",
+      "  return require('crypto').createHash('md5').update('x').digest('hex');",
+      "}",
+    ].join("\n"));
+    const collected = cli(["collect", "crypto-codebase", "--json", "--cwd", tmp]);
+    assert.equal(collected.status, 0, `collect stderr: ${collected.stderr}`);
+    const ran = cli(["run", "crypto-codebase", "--evidence", "-", "--json"], { input: collected.stdout });
+    // The runner may return any verdict; what matters is that it
+    // accepts the collector's submission and returns a structured
+    // envelope rather than a parse error.
+    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
+    assert.ok(body, `run must emit parseable JSON; status=${ran.status}, stdout: ${ran.stdout.slice(0, 200)}; stderr: ${ran.stderr.slice(0, 200)}`);
+    assert.equal(body.playbook_id, "crypto-codebase");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
 });

@@ -1,22 +1,22 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:253d4324-29a0-42bc-82ae-1414f0a6afd5",
+  "serialNumber": "urn:uuid:1566bbe0-0faf-41fd-aa89-96918785680e",
   "version": 1,
   "metadata": {
-    "timestamp": "2045-10-19T03:44:36.000Z",
+    "timestamp": "2037-05-18T17:18:24.000Z",
     "tools": [
       {
         "vendor": "blamejs",
         "name": "scripts/refresh-sbom.js",
-        "version": "0.13.36"
+        "version": "0.13.37"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.36",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.37",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.13.36",
+      "version": "0.13.37",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
       "licenses": [
         {
@@ -25,17 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.36",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.37",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "52255725b552dc024852a29785177730eda3107d1c1ac12aeef3beb5f640864b"
+          "content": "f803d428e074317d9ad8475a738fceb1fb437361e76f5466304dc85a5eb28244"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.36"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.37"
         },
         {
           "type": "vcs",
@@ -116,11 +116,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "5d3613d541bc80eed5b4f0827c3d423ca6bdf49cfed4d7cbd4026536b9a6ac43"
+          "content": "bc8077cb304ade5c9229b1562e40ab09676656e1e096ecad22f09b9d9621b592"
         },
         {
           "alg": "SHA3-512",
-          "content": "abffe7dffc93aa90a46514700137d73025f4864b12a1527e2cea586ccbd15a7db0e6a2d12be469376d6fd4c3266e201b53bda2ccc363643fccf75015456d7651"
+          "content": "2bbcf3161bdb764940885886c84439ba0e87b555c67cfb85f8b1b32a98609538c0343a74c7572dafd0445fe3eacaaabb0a95ed7bfc71f4164825b0a562f01c36"
         }
       ]
     },
@@ -890,6 +890,21 @@
       ]
     },
     {
+      "bom-ref": "file:lib/collectors/crypto-codebase.js",
+      "type": "file",
+      "name": "lib/collectors/crypto-codebase.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eae37efd00acfe3bda4c7a62a9dede1e0b9457682c48d77caa8a333aa327f799"
+        },
+        {
+          "alg": "SHA3-512",
+          "content": "9e38ff7ecbac8ab7e968297575de004adf6717e91b17fb49ccb4373e1a4c8a0f8db03e01ae898ea2997a46a69e2391677d94b0a65c8c56b877ce7f666f335a34"
+        }
+      ]
+    },
+    {
       "bom-ref": "file:lib/collectors/kernel.js",
       "type": "file",
       "name": "lib/collectors/kernel.js",
@@ -1541,11 +1556,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "7ef8020cde7f0d25db4a7b3070f58e0bf385b01135040223788fcbe2e92b495c"
+          "content": "5eeb28b7edf5ebf368b201b1988d0b6ccbb7ca838ee7fe45e63a878e7d3650f9"
         },
         {
           "alg": "SHA3-512",
-          "content": "269a1b4be750bf635a96d0cfa4113e0a89e35bc67d2db9700aab02c31ced552f07657260e16c727684864346d78fc90373b2c67b2107154ab11946b947b84e9c"
+          "content": "78836660cec949624fede0a9e110834d38f36e6e4319bd6d8a74bacfc9878de982036adc910948dbe3e26269d9008115ccb166c32ae017eff1f3f4342832cb14"
         }
       ]
     },

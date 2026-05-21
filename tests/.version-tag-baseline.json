@@ -1,6 +1,6 @@
 {
   "note": "Snapshot of pre-existing version-tag drift. The check-version-tags gate fails when these counts go UP. Refresh after an organic cleanup with `node scripts/check-version-tags.js --update-baseline`.",
-  "recorded_at": "2026-05-20",
+  "recorded_at": "2026-05-21",
   "byFile": {
     "AGENTS.md": 5,
     "bin/exceptd.js": 183,
