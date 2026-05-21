@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.53 — 2026-05-21
+
+Polish round across CLI UX, container false-positives, collector skip-disclosure, and README narrative refresh.
+
+### Bugs
+
+- **`containers` collector demotes the `dockerfile-runs-as-root` indicator on metadata-only Dockerfiles.** A Dockerfile that contains only `FROM <image>` (no `RUN`/`COPY`/`ADD`/`CMD`/`ENTRYPOINT`/`EXPOSE`/`VOLUME`/`WORKDIR`/`USER`/`HEALTHCHECK`/`SHELL` directive) is not a runtime image — it's a base-image probe used by `docker build` to extract a version label or similar. The runs-as-root predicate is meaningless on those; demote.
+- **`scan` / `dispatch` / `currency` aliases relabelled in the README as legacy passthroughs.** These verbs dispatch to the v0.10.x orchestrator script and emit the legacy `{timestamp, host, findings}` shape — NOT the canonical verb's structured envelope. The previous README claim ("alias for `discover --scan-only`" / etc.) implied output-shape equivalence; corrected.
+
+### Features
+
+- **`exceptd ask` alternates list now tags collector-backed playbooks with `[collector]`** (matching the discover output convention). Operators see at a glance which routed-to suggestions have a `collect | run` pipe path vs. which require AI-driven evidence.
+- **`exceptd collect` emits a stderr skip-disclosure line when the collector's preconditions fail** (e.g. `[collect crypto] precondition not satisfied: linux-platform — empty submission emitted (collector skipped on this host)`). Previously the empty `signal_overrides` on a gated collector looked indistinguishable from "ran but found nothing".
+- **Errors render as human text when stderr is a TTY** (interactive operator), and continue to emit the structured JSON envelope when stderr is piped (CI parsers, smart-agent retry, tests). Operators with stderr=tty see `error: <msg>\n  hint: ...\n  suggested: ...` lines; the JSON-by-default contract on piped stderr is preserved. Explicit `--json` / `--pretty` / `--json-stdout-only` forces JSON even on a TTY.
+- **README narrative refresh** covering the v0.13.34+ evidence-collection layer: `exceptd collect <playbook>` verb, the discover-collect-run pipe pattern, `--attest-ownership` for cicd-pipeline-compromise, the 13/23 collector coverage, and the pointer to `exceptd doctor --collectors` for the live list.
+
 ## 0.13.52 — 2026-05-21
 
 README jurisdiction-count normalization; collect-verb + collector-pipe docs; new predeploy gate verifying AGENTS.md collector enumeration matches `lib/collectors/`.
