@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.47 — 2026-05-21
+
+`cicd-pipeline-compromise` collect | run pipe now produces a verdict when the operator opts in to the CI-fleet ownership attestation.
+
+### Bugs
+
+- **`lib/collectors/cicd-pipeline-compromise.js` attests `ci-config-readable` on the success path** (the walked workflow YAML + OIDC trust JSON are genuine evidence of filesystem-read access). Previously the collector emitted only `cwd-is-repo: true`, so the canonical pipe `exceptd collect cicd-pipeline-compromise | exceptd run cicd-pipeline-compromise --evidence -` halted at preflight even when the collector ran successfully.
+
+### Features
+
+- **`exceptd collect cicd-pipeline-compromise --attest-ownership`** opts the operator in to the `operator-owns-ci-fleet` precondition. Without the flag, the playbook's `on_fail: halt` ownership gate stays enforced and the pipe blocks at preflight (as the playbook intends — running collect against a `--cwd <someone-else's-repo>` should not implicitly attest authorization to audit that fleet). With the flag, the operator explicitly attests they own / are authorized to audit the CI fleet rooted at cwd. The flag bridges kebab-case CLI invocation (`--attest-ownership`) and camel-case programmatic invocation (`args.attestOwnership`).
+
 ## 0.13.46 — 2026-05-21
 
 `doctor` now health-checks the collector layer.
