@@ -5572,6 +5572,19 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   // Always include cross-cutting framework correlation.
   recommend("framework", "cross-cutting: framework correlation always applicable");
 
+  // Enrich each recommendation with whether a companion collector
+  // exists for the playbook. Operators who discover a relevant
+  // playbook for their cwd should see one pipe away from running
+  // it (rather than having to translate the playbook's look phase
+  // into a filesystem walk by hand).
+  const collectorsDir = path.join(PKG_ROOT, "lib", "collectors");
+  for (const rec of recs) {
+    const collectorPath = path.join(collectorsDir, rec.id + ".js");
+    const hasCollector = fs.existsSync(collectorPath);
+    rec.collector_available = hasCollector;
+    rec.collect_cmd = hasCollector ? `exceptd collect ${rec.id}` : null;
+  }
+
   const nextSteps = [
     "exceptd brief <playbook>       # learn what a playbook checks",
     "exceptd run <playbook>          # run it",
@@ -5634,7 +5647,11 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   lines.push("");
   lines.push(`Recommended playbooks (${recs.length}):`);
   for (const r of recs) {
-    lines.push(`  - ${r.id.padEnd(20)} ${r.reason}`);
+    const tag = r.collector_available ? " [collector]" : "";
+    lines.push(`  - ${(r.id + tag).padEnd(32)} ${r.reason}`);
+    if (r.collector_available) {
+      lines.push(`      → ${r.collect_cmd} | exceptd run ${r.id} --evidence -`);
+    }
   }
   lines.push("");
   lines.push("Next steps:");
