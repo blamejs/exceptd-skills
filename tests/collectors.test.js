@@ -1423,8 +1423,12 @@ test("hardening collector lockdown=integrity in cmdline counts kernel-lockdown a
     "BOOT_IMAGE=/vmlinuz quiet lockdown=integrity",
     "", // no /sys/kernel/security/lockdown file
     "PermitRootLogin no\n");
-  // Strip the lockdown path so it acts as absent.
-  delete h.paths.lockdown;
+  // Override the lockdown path with a deliberately non-existent
+  // file so the collector treats it as absent. (Deleting the key
+  // lets the default `/sys/kernel/security/lockdown` take over,
+  // which DOES exist on CI Linux hosts and would contaminate the
+  // test's intended absent-file scenario.)
+  h.paths.lockdown = path.join(h.tmp, "lockdown.nonexistent");
   try {
     const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
     assert.equal(r.signal_overrides["kernel-lockdown-none"], "miss");
