@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.42 — 2026-05-20
+
+Eleventh reference collector.
+
+### Features
+
+- **`lib/collectors/mcp.js`** — inspects MCP client configurations across Cursor (`~/.cursor/mcp.json`), Claude Code (`~/.config/claude/config.json`, `~/.claude/settings.json`), Windsurf (`~/.codeium/windsurf/mcp_config.json`), VS Code Copilot (`~/.config/Code/User/settings.json`, macOS / Windows variants, project-level `.vscode/settings.json`), and Gemini CLI (`~/.gemini/settings.json`). Flips four deterministic indicators: `mcp-version-without-integrity` (any `mcpServers.<name>.command` / `args` containing `@scope/pkg@X.Y.Z` or `pkg==X.Y.Z` without an `integrity` / `sha256` / `sri` sibling), `copilot-yolo-mode-flag` (`chat.tools.autoApprove: true` at user-global / workspace scope OR any per-server `autoApprove: true|"all"` in `chat.mcp.servers`), `mcp-response-ansi-escape` (any 0x1B byte in MCP tool-response logs under `~/.claude/logs/mcp/*.jsonl`, `~/.cursor/logs/mcp*.{jsonl,log}`, `~/.codeium/windsurf/logs/mcp*`), `mcp-response-unicode-tag-smuggling` (any codepoint in U+E0000..U+E007F in the same log scope). Defers `unsigned-mcp-manifest` (sigstore lookup), `vulnerable-windsurf-version` (install detection), `mcp-server-running-as-root` (ps + capabilities), `mcp-server-invoked-from-ci-pipeline` (process-tree env-var correlation) — out of stdlib scope.
+
 ## 0.13.41 — 2026-05-20
 
 Tenth reference collector.
