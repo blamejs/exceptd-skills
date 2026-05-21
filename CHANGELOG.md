@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.43 — 2026-05-21
+
+Twelfth reference collector.
+
+### Features
+
+- **`lib/collectors/crypto.js`** — host crypto-posture collector. Linux-only. Reads `openssl version -a` / `openssl list -kem-algorithms` / `openssl list -signature-algorithms` (execFile-shape spawning, never shell-interpolated), parses `/etc/ssh/sshd_config` + `sshd_config.d/*.conf` with Include expansion (same logic the hardening collector uses), and lists the `/etc/ssl/certs` trust-anchor count. Flips five deterministic indicators: `openssl-pre-3-5` (banner is `OpenSSL < 3.5.0` — pre-native-ML-KEM), `ml-kem-absent` (no `mlkem512` / `mlkem768` / `mlkem1024` in `openssl list -kem-algorithms`), `ml-dsa-slh-dsa-absent` (no `ML-DSA` / `SLH-DSA` / `SPHINCS+` / `Falcon` in `openssl list -signature-algorithms`), `sshd-no-pqc-kex` (`KexAlgorithms` line absent OR present-without `sntrup761x25519` / `mlkem768x25519` / `mlkem1024`), `weak-mac-or-cipher` (`MACs` containing `hmac-md5` / `hmac-sha1` without `-etm`, or `Ciphers` containing `arcfour` / `3des-cbc` / `des-cbc` / `blowfish-cbc`). When openssl exec fails AND `/etc/ssh/sshd_config` is unreadable, the indicators stay out of `signal_overrides` so the runner returns inconclusive — same unflipped-when-unreadable semantics as `hardening` / `runtime`. `tls-no-hybrid-group` (needs a live TLS handshake), `rsa-2048-cert-long-life` (cert content + chain walk; sensitivity-horizon comparison is operator review), and `no-crypto-inventory` (governance) remain AI-driven. Path overrides via `args.paths` for synthetic-tempdir tests.
+
 ## 0.13.42 — 2026-05-20
 
 Eleventh reference collector.
