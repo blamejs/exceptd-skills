@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.41 — 2026-05-20
+
+Tenth reference collector.
+
+### Features
+
+- **`lib/collectors/ai-api.js`** — scans shell rc files (`~/.bashrc`, `~/.bash_profile`, `~/.zshrc`, `~/.zprofile`, `~/.profile`, `~/.config/fish/config.fish`, `~/.config/fish/conf.d/*.fish`) and vendor dotfiles (`~/.openai`, `~/.anthropic`, `~/.config/anthropic`, `~/.config/openai`, `~/.gemini`, `~/.config/google-genai`, `~/.config/azure-openai`) for cleartext AI API key exports — OpenAI `sk-*`, Anthropic `sk-ant-*`, Azure OpenAI, Google / Gemini / Generative AI, HuggingFace `hf_*`, Cohere. Honours `export VAR=value`, `VAR=value`, and fish-style `set -gx VAR value` shapes. Reuses the cred-stores carrier inspection for `long-lived-aws-keys` (any AWS profile with `aws_access_key_id` and no `aws_session_token` sibling), `gcp-service-account-json` (`type: service_account` in ADC JSON), `kubeconfig-with-static-token` (`users[].user.token` non-null, not the `auth-provider.config.access-token` sub-key). Behavioral indicators (`ai-api-egress-from-unexpected-process`, `ai-api-anomalous-volume`, `ai-api-beaconing-cadence`, `base64-or-encoded-payload-in-prompts`) need ss / netstat / auditd / process-list correlation and stay unflipped — the runner returns inconclusive and operator-supplied evidence completes the verdict.
+
 ## 0.13.40 — 2026-05-20
 
 Ninth reference collector.
