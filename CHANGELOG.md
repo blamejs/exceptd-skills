@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.37 — 2026-05-20
+
+Sixth reference collector.
+
+### Features
+
+- **`lib/collectors/crypto-codebase.js`** — audits a consumer repo for cryptographic-primitive misuse. Walks source files (JS/TS/Python/Go/Rust/Java/Ruby/PHP/C/C++/C#/Swift/Obj-C) and flips eight deterministic indicators from the `crypto-codebase` playbook: `weak-hash-import` (MD5 / SHA-1 with same-file flow into auth / integrity / token variables), `weak-cipher-mode` (AES-ECB, DES / 3DES, RC4), `rsa-1024-anywhere` (`modulusLength: 1024` and variants), `math-random-in-security-path` (`Math.random` / `random.random` / `mt_rand` / `rand()` within 200 chars of a `token` / `secret` / `key` / `salt` / `nonce` / `iv` / `seed` / `state` / `jwt` / `csrf` / `session` variable assignment), `pbkdf2-under-iterated` (OWASP 2023 thresholds — SHA256 < 600,000 / SHA512 < 210,000 / SHA1 < 1,300,000), `bcrypt-cost-low` (< 12), `hardcoded-key-material` (PEM markers outside test / spec / fixture / example / sample / demo / doc paths), `tls-old-protocol` (TLSv1.0 / TLSv1.1 / SSLv3 / SSLv23 in `secureProtocol` / `minVersion` / `ssl_version`). Three indicators flip conditionally: `ecdsa-without-pqc-roadmap` fires when classical signature use is observed AND no PQC sig impl AND no hybrid-migration roadmap in README / SECURITY.md; `no-ml-kem-implementation` fires when the library claims PQC-ready in README / SECURITY.md AND no ML-KEM / Kyber / liboqs / noble-post-quantum / oqsprovider call site exists; `fips-claim-without-runtime-activation` fires when the library claims FIPS validation AND no `crypto.setFips(true)` / `OSSL_PROVIDER_load(*, "fips", *)` / `Provider::load(*, "fips")` call site exists. `vendored-pqc-no-provenance` fires when a `vendor/` / `third_party/` subdirectory contains a Kyber / Dilithium / SLH-DSA / SPHINCS+ / Falcon source file AND no `_PROVENANCE.json` / `UPSTREAM` / `ORIGIN` / `.upstream-commit` / `PROVENANCE.md` marker exists at any ancestor up to the vendor root. `no-crypto-agility-abstraction` (behavioral / interface-shape) is left unflipped so the runner returns inconclusive — that one requires operator review of the public API surface.
+
 ## 0.13.36 — 2026-05-20
 
 Fifth reference collector.
