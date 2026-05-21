@@ -1,22 +1,22 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:fc61f805-6740-4746-9ace-c5646de5c30a",
+  "serialNumber": "urn:uuid:482f14b8-36cf-4529-8479-0cd7412263c7",
   "version": 1,
   "metadata": {
-    "timestamp": "2160-03-06T20:35:17.000Z",
+    "timestamp": "2064-05-17T17:24:08.000Z",
     "tools": [
       {
         "vendor": "blamejs",
         "name": "scripts/refresh-sbom.js",
-        "version": "0.13.39"
+        "version": "0.13.40"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.39",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.13.40",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.13.39",
+      "version": "0.13.40",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 10 catalogs (312 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 7476 RFCs), 34 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
       "licenses": [
         {
@@ -25,17 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.39",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.13.40",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "74ddf4a0338a1e5b64531527ddc887ff95795ae9dfd1bd6bd5308129d9278f1d"
+          "content": "b3a8b114baac3baa6dd50cdd822cc69e2c4045fa15cdcdd139b531283ab0ca86"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.39"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.13.40"
         },
         {
           "type": "vcs",
@@ -86,11 +86,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "d6eeb79e1a53bdf399b48d79fc4cd30161be3b4202c1c45653329e1b80a4b2ad"
+          "content": "8911f20b0f7409dea94f84bc3a809e1275afb433d92a2f587be9ec9c8a38c3bf"
         },
         {
           "alg": "SHA3-512",
-          "content": "861654229312f2c2d6b1f279038a771fcdb56f38aec9eda1ca4d5d66c4a475d8c3fa99468adddc883c61bfb092e4e245d1b4ea26c5fe745f981bfdb085864ab8"
+          "content": "ad0978dc3f30facc785c57314e792ceafa5c56fe82604eb850c4fc9da3213321c39455f712571dc9cdfd155815ce0f80831ab6048006eecfdb1a52b30602be1f"
         }
       ]
     },
@@ -116,11 +116,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "58bb67fe475a44a19e96b28ee97c286e2b5f6c69188c40a5392a5aca2bf188f1"
+          "content": "5f0a98a0c98e7f58fad2ae6e978cbcd72c4f99b6659ed0c940f4e99f6cf46ffd"
         },
         {
           "alg": "SHA3-512",
-          "content": "610996d04a43067e1109444fd87a4ff6334599d5cffe21d0c9ee80520fed1e1728d2be0da0758c7a2016ed6660bbf6188a190fba9bcb0fca9197560af3aed565"
+          "content": "8e1186081ae33ac87f285751bea486be304767cadd9dc883012bc2ff9974115f6c7b1d1a326f8b06b2dac3da4c8888c63f7cbdcf9fc3f7b498324982e7a931f2"
         }
       ]
     },
@@ -965,6 +965,21 @@
       ]
     },
     {
+      "bom-ref": "file:lib/collectors/runtime.js",
+      "type": "file",
+      "name": "lib/collectors/runtime.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "26c871c4c794a8af97af022550e301d6f438ff2e4044f5de19746b6fd481d5bd"
+        },
+        {
+          "alg": "SHA3-512",
+          "content": "40835b3f7142a6102a61baa75a46e7badea2fd17f16cd3afeb02815053cf37be2d359bf84755855500a3a9e148d68d10a65f494cf90e8121655f0c0140d2ede5"
+        }
+      ]
+    },
+    {
       "bom-ref": "file:lib/collectors/sbom.js",
       "type": "file",
       "name": "lib/collectors/sbom.js",
@@ -1586,11 +1601,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0785c4b4b99897d6846d7e324c8a093da8bfdeaa48ca9ab234cd82009d1e04d0"
+          "content": "4dad124024253fc34e1c7ef1cce0677e22243c219523b460e82f23a928ce0a20"
         },
         {
           "alg": "SHA3-512",
-          "content": "1391605f5361e83252247ffff0d85511abd4d3aed6308b89027ae4cd5df1aeb67ff3abfa71396421e9cdc31535e1783cb53b150aa0caf08000734171371ce480"
+          "content": "5e9a9663f2e9f3b9da97e746b1865473fb10c95ac7eb47273c8048644c5f1fc5f912e178cadf1a58dab0643bae349081dc9b2c9bfb39d979d1ad548e8a84f65e"
         }
       ]
     },
