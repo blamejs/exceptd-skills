@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.35 — 2026-05-20
+
+Fourth reference collector + a sbom-collector indicator-pattern correction.
+
+### Features
+
+- **`lib/collectors/containers.js`** — companion collector for the `containers` playbook. Walks cwd for Dockerfile / Containerfile / docker-compose.{yml,yaml} / k8s manifests (detected by `apiVersion:` + `kind:` line presence), applies pattern matchers for 11 catalogued deterministic indicators: `dockerfile-from-latest`, `dockerfile-no-digest-pin`, `dockerfile-runs-as-root`, `dockerfile-curl-pipe-bash`, `compose-privileged`, `compose-cap-add-sys-admin`, `compose-host-network`, `compose-docker-sock-mount`, `k8s-privileged`, `k8s-host-namespaces`, `k8s-run-as-root`, `k8s-hostpath-sensitive`, `k8s-image-latest`, `k8s-cluster-admin-binding`. Leaves indicators that require cluster-API access (`psa-policy-permissive-or-absent`, `network-policies-absent-from-workload-namespace`, `k8s-no-seccomp-profile`) unflipped — the runner can decide them when operator-supplied cluster snapshots are available.
+
 ## 0.13.34 — 2026-05-20
 
 Evidence-collection layer (Option A from the cold-start workflow audit). New verb `exceptd collect <playbook>` runs a companion script per playbook that walks the cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. The operator pipes:
