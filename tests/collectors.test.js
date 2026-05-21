@@ -2153,19 +2153,37 @@ test("cicd-pipeline-compromise collector misses on a clean SHA-pinned + env-boun
   }
 });
 
-test("cicd-pipeline-compromise collector attests every playbook precondition on the success path so the collect|run pipe doesn't preflight-block", () => {
+test("cicd-pipeline-compromise collector attests ci-config-readable on the success path (filesystem read genuinely performed)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-preconds-"));
   try {
     fs.mkdirSync(path.join(tmp, ".git"));
     const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
     const r = collect({ cwd: tmp });
-    // The cicd-pipeline-compromise playbook has two preconditions
-    // (ci-config-readable + operator-owns-ci-fleet), both with on_fail:halt.
-    // The collector must attest both — otherwise `collect | run --evidence -`
-    // halts at preflight regardless of detect-phase results.
     assert.equal(r.precondition_checks["cwd-is-repo"], true);
     assert.equal(r.precondition_checks["ci-config-readable"], true);
-    assert.equal(r.precondition_checks["operator-owns-ci-fleet"], true);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cicd-pipeline-compromise collector requires explicit --attest-ownership for the CI-fleet ownership precondition", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-attest-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+
+    // Default: no flag → ownership NOT attested (playbook gate stays
+    // enforced, run halts at preflight unless operator opts in).
+    const noFlag = collect({ cwd: tmp });
+    assert.equal(noFlag.precondition_checks["operator-owns-ci-fleet"], false);
+
+    // Camel-case (programmatic): explicit attestOwnership: true
+    const camel = collect({ cwd: tmp, args: { attestOwnership: true } });
+    assert.equal(camel.precondition_checks["operator-owns-ci-fleet"], true);
+
+    // Kebab-case (CLI): --attest-ownership lands as args["attest-ownership"]
+    const kebab = collect({ cwd: tmp, args: { "attest-ownership": true } });
+    assert.equal(kebab.precondition_checks["operator-owns-ci-fleet"], true);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
