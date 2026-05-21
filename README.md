@@ -30,7 +30,7 @@ This platform surfaces what is actually happening right now. Every skill explici
 
 ## Status
 
-Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 38 jurisdictions — the CVE catalog grew from 68 to 312 entries in v0.13.17 via a CISA KEV bulk-intake of `dateAdded >= 2024-01-01` actively-exploited vulnerabilities. 23 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory + research-blog + tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073) into auto-PRs for editorial review. v0.13.17 also ships `lib/cve-regression-watcher.js` (NEW-CTRL-074) — a complementary detection method that surfaces poller-diff historical-CVE references as candidate silent-regression cases, the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned).
+Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 35 jurisdictions — the CVE catalog grew from 68 to 312 entries in v0.13.17 via a CISA KEV bulk-intake of `dateAdded >= 2024-01-01` actively-exploited vulnerabilities. 23 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory + research-blog + tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073) into auto-PRs for editorial review. v0.13.17 also ships `lib/cve-regression-watcher.js` (NEW-CTRL-074) — a complementary detection method that surfaces poller-diff historical-CVE references as candidate silent-regression cases, the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned).
 
 ---
 
@@ -256,6 +256,25 @@ exceptd ai-run <playbook>             JSONL streaming variant of run. AI emits
                                       phase events on stdout. One pipe, no
                                       file handoff.
   --no-stream                         Single-shot mode (emit one combined JSON).
+
+exceptd collect <playbook>            Walk cwd + invoke the companion collector
+                                      under lib/collectors/<playbook>.js. Emits
+                                      a submission JSON ready to pipe into
+                                      `exceptd run <playbook> --evidence -`.
+                                      13/23 playbooks have collectors; the rest
+                                      are AI-driven by design (incident /
+                                      governance / pure-analyze — see
+                                      AGENTS.md).
+  --cwd <path>                        Collect against a different repo / host.
+  --pretty                            Indented JSON.
+  --attest-ownership                  cicd-pipeline-compromise only — opt-in to
+                                      the operator-owns-ci-fleet precondition
+                                      so the runner doesn't halt at preflight.
+
+# Canonical operator flow on a freshly-cloned repo:
+exceptd discover                      # which playbooks apply here?
+exceptd collect <pb> | exceptd run <pb> --evidence -   # full pipe to verdict
+exceptd doctor --collectors           # list every collector + which are skipped
 
 exceptd attest <subverb> [<sid>]      Auditor-facing operations.
   attest list                         Inventory all sessions across both
@@ -483,7 +502,7 @@ If your tool has a conventional auto-load filename not listed here and you'd lik
 - **`recipes.json`** — 8 curated skill sequences for common use cases (AI red team prep, PCI audit defense, federal IR, DORA TLPT, K-12 EdTech review, ransomware tabletop, new-CVE triage, OSS dep triage).
 - **`chains.json`** — pre-hydrated cross-walks per CVE and per CWE: which skills cite this, which framework gaps it surfaces, which D3FEND countermeasures back it.
 - **`token-budget.json`** — approximate token cost per skill + per section for context budgeting.
-- **`jurisdiction-clocks.json`** — normalized jurisdiction × obligation × hours matrix (breach notification, patch SLA) across 29 jurisdictions.
+- **`jurisdiction-clocks.json`** — normalized jurisdiction × obligation × hours matrix (breach notification, patch SLA) across 35 jurisdictions.
 - **`did-ladders.json`** — canonical defense-in-depth ladders per attack class (prompt injection, kernel LPE, AI-as-C2, ransomware, supply chain, BOLA, model exfiltration, BEC).
 - **`theater-fingerprints.json`** — structured records for the 7 compliance theater patterns: claim, audit evidence, reality, fast detection test, controls implicated.
 - **`_meta.json`** — sha256 of every source file. The `validate-indexes` predeploy gate fails if any source changed after the last build; `build-indexes --changed` reads this to know what to rebuild.

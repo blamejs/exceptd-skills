@@ -221,6 +221,17 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-version-tags.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // AGENTS.md collector enumeration drift gate. Catches the case
+    // where lib/collectors/ gets a new module but AGENTS.md's
+    // "<N> reference collectors ship today (...)" paragraph isn't
+    // bumped (or vice versa). The paragraph is the canonical source
+    // for AI-agent consumers; drift produces stale enumeration.
+    name: "AGENTS.md collector enumeration drift",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-agents-md-collectors.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {
