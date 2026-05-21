@@ -796,20 +796,34 @@ function emit(obj, pretty, humanRenderer) {
 }
 
 function emitError(msg, extra, pretty) {
-  // v0.12.14: the v0.11.13 emit() fix used exitCode + return
-  // to defend stdout-buffered writes from truncation under piped consumers.
-  // emitError() (stderr) kept process.exit(1), which has the same truncation
-  // class — CLAUDE.md's "fix the class, not the instance." Now: write to
-  // stderr, set exitCode = 1, return. Every caller already uses
-  // `return emitError(...)` so the return-value propagation is clean.
+  // Stderr + exitCode + return (defends stdout drain under piped
+  // consumers — same class as emit()'s v0.11.13 fix).
   //
-  // Errors emit as JSON envelope on stderr regardless of mode — that
-  // contract has been load-bearing since v0.11.x for piped consumers
-  // (CI parsers, smart-agent retry logic). Operators wanting human
-  // text on stderr can pipe `2>&1 | jq -r .error || cat` as a
-  // workaround.
+  // Output shape branches on whether stderr is attached to a TTY:
+  //   - piped (CI parsers, smart-agent retry, tests using
+  //     `tryJson(r.stderr)`): JSON envelope — the load-bearing
+  //     contract for programmatic consumers.
+  //   - interactive (operator at a terminal): human-readable
+  //     "error: <msg>" + indented helper lines. Operators wanting
+  //     the structured envelope explicitly can pass --json.
+  // Explicit --json / --pretty / --json-stdout-only also force JSON
+  // regardless of TTY (e.g. an operator redirecting to a file).
   const body = Object.assign({ ok: false, error: msg }, extra || {});
-  const s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
+  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
+  const stderrIsTty = process.stderr.isTTY === true;
+  let s;
+  if (wantJson || !stderrIsTty) {
+    s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
+  } else {
+    const lines = [`error: ${msg}`];
+    if (extra && typeof extra === "object") {
+      const helperFields = ["hint", "suggested", "did_you_mean", "remediation", "submission_hint"];
+      for (const key of helperFields) {
+        if (extra[key] != null) lines.push(`  ${key}: ${extra[key]}`);
+      }
+    }
+    s = lines.join("\n");
+  }
   process.stderr.write(s + "\n");
   process.exitCode = EXIT_CODES.GENERIC_FAILURE;
 }
@@ -2264,8 +2278,21 @@ function cmdCollect(runner, args, runOpts, pretty) {
     return emitError(
       `collect: collector for "${playbookId}" threw an unhandled exception: ${e.message}. File a bug — collectors must catch their own errors and surface them via collector_errors[].`,
       { verb: "collect", playbook_id: playbookId, stack: e.stack || null, exit_code: 2 },
-      pretty
+      pretty,
     );
+  }
+
+  // Skip-disclosure on stderr when a precondition gate returned
+  // false (typically a platform gate — `linux-platform: false` on
+  // win32 / macOS). Without this, the empty signal_overrides on a
+  // gated collector looks indistinguishable from "the collector
+  // ran but found nothing". Operators get one stderr line per
+  // platform-skipped run.
+  const failedPre = Object.entries(submission.precondition_checks || {})
+    .filter(([, v]) => v === false)
+    .map(([k]) => k);
+  if (failedPre.length > 0 && (submission.signal_overrides && Object.keys(submission.signal_overrides).length === 0)) {
+    process.stderr.write(`[collect ${playbookId}] precondition not satisfied: ${failedPre.join(", ")} — empty submission emitted (collector skipped on this host)\n`);
   }
 
   // Emit the submission JSON to stdout. The operator pipes this into
@@ -7143,6 +7170,16 @@ function cmdAsk(runner, args, runOpts, pretty) {
     return;
   }
 
+  // Enrich each match with whether a companion collector exists for
+  // the playbook (same lookup discover uses). Operators see at a
+  // glance which alternates have a collect|run pipe path vs. which
+  // require AI-driven evidence.
+  const collectorsDir = path.join(PKG_ROOT, "lib", "collectors");
+  for (const t of top) {
+    const collectorPath = path.join(collectorsDir, t.id + ".js");
+    t.collector_available = fs.existsSync(collectorPath);
+  }
+
   const result = {
     verb: "ask",
     question,
@@ -7152,7 +7189,9 @@ function cmdAsk(runner, args, runOpts, pretty) {
     full_match_list: top,
   };
   if (args.json || args.pretty) return emit(result, pretty);
-  process.stdout.write(`ask: ${question}\n  top match: ${top[0].id} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${top.slice(1).map(t => t.id).join(", ") || "(none)"}\n`);
+  const topGlyph = top[0].collector_available ? " [collector]" : "";
+  const altLine = top.slice(1).map(t => t.id + (t.collector_available ? " [collector]" : "")).join(", ") || "(none)";
+  process.stdout.write(`ask: ${question}\n  top match: ${top[0].id}${topGlyph} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${altLine}\n`);
 }
 
 /**

@@ -162,6 +162,8 @@ GitHub repo-pattern monitoring: `exceptd watchlist --org-scan --org <login>` pro
 
 AI-assistant config-file audit: `exceptd doctor --ai-config` walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, and `~/.continue`, flagging sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each finding is surfaced with an info-level "manual ACL review" note. Catches the AI-config-credential-exfil class that the Shai-Hulud framework targets. Opt-in — does not run as part of the default no-flag `doctor` pass.
 
+Evidence-collection layer: `exceptd collect <playbook>` invokes a companion script under `lib/collectors/<playbook>.js` that walks cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. 13 of 23 playbooks have collectors today (`ai-api`, `cicd-pipeline-compromise`, `containers`, `cred-stores`, `crypto`, `crypto-codebase`, `hardening`, `kernel`, `library-author`, `mcp`, `runtime`, `sbom`, `secrets`); the remaining 10 are policy-skipped per AGENTS.md (judgement-shaped incident / governance / pure-analyze playbooks where AI-driven evidence collection is the design). Canonical operator pipe: `exceptd collect <pb> | exceptd run <pb> --evidence -`. `exceptd doctor --collectors` enumerates the layer; `exceptd discover` tags applicable playbooks with `[collector]` when one ships. `cicd-pipeline-compromise` requires `--attest-ownership` on the collect call (the playbook's `operator-owns-ci-fleet` precondition is opt-in to prevent unauthorized CI assessments).
+
 Daily scheduled threat intake: a `routine: exceptd-threat-intake` (claude.ai remote agent) runs daily at 14:00 UTC. Sequence: `npm install` → `refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new CVE IDs from the primary-source feeds → re-sign + rebuild-indexes if the catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with the full diff in the report. Closes the cadence gap that previously left fresh disclosures dependent on operator-triggered intake. Operator-managed at <https://claude.ai/code/routines>.
 
 Optional env vars for higher rate budgets:
@@ -416,20 +418,27 @@ Five verbs removed in v0.13.0 after deprecation since v0.11.0. Invoking any of t
 | `look <pb>` | `brief <pb> --phase look` |
 | `ingest` | `run` |
 
-The remaining v0.10.x verbs are aliases — still functional, no banner, no removal scheduled:
+The remaining v0.10.x verbs are still functional, no banner, no removal scheduled. Two shapes:
 
-| Alias | Canonical |
+**Canonical-equivalent aliases** — same output shape as the canonical verb; safe to use interchangeably:
+
+| Alias | Canonical | Output shape |
+|---|---|---|
+| `verify` | `doctor --signatures` | matches canonical |
+| `validate-cves` | `doctor --cves` | matches canonical |
+| `validate-rfcs` | `doctor --rfcs` | matches canonical |
+| `list-attestations` | `attest list` | matches canonical |
+| `reattest <sid>` | `attest diff <sid>` | matches canonical |
+| `prefetch` | `refresh --no-network` | matches canonical |
+| `build-indexes` | `refresh --indexes-only` | matches canonical |
+
+**Legacy passthrough verbs** — dispatch to the v0.10.x orchestrator script. The output shape is **NOT** identical to the canonical verb — it's the legacy `{timestamp, host, findings}` envelope. Use the canonical verb when you want the v0.11+ structured envelope contract; the passthrough is kept only for scripts that depend on the legacy output:
+
+| Passthrough | Canonical (different output shape) |
 |---|---|
 | `scan` | `discover --scan-only` |
 | `dispatch` | `discover` |
 | `currency` | `doctor --currency` |
-| `verify` | `doctor --signatures` |
-| `validate-cves` | `doctor --cves` |
-| `validate-rfcs` | `doctor --rfcs` |
-| `reattest <sid>` | `attest diff <sid>` |
-| `list-attestations` | `attest list` |
-| `prefetch` | `refresh --no-network` |
-| `build-indexes` | `refresh --indexes-only` |
 
 ### Result envelope contract
 
