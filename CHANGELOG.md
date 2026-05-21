@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.47 — 2026-05-21
+
+`cicd-pipeline-compromise` collect | run pipe now produces a verdict instead of always blocking at preflight.
+
+### Bugs
+
+- **`lib/collectors/cicd-pipeline-compromise.js` attests every playbook precondition on the success path.** The playbook has two `on_fail: halt` preconditions — `ci-config-readable` (filesystem read works) and `operator-owns-ci-fleet` (operator attests CI ownership). The collector previously emitted only `cwd-is-repo: true`, so the canonical pipe `exceptd collect cicd-pipeline-compromise | exceptd run cicd-pipeline-compromise --evidence -` halted at preflight with `verdict: blocked` regardless of detect-phase results. Now the collector emits all three preconditions when it runs successfully: running `exceptd collect` against a cwd IS the act of attesting filesystem read access + ownership of that repo's CI. The pipe now produces an actual detect-phase verdict.
+
 ## 0.13.46 — 2026-05-21
 
 `doctor` now health-checks the collector layer.

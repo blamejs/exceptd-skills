@@ -2153,6 +2153,24 @@ test("cicd-pipeline-compromise collector misses on a clean SHA-pinned + env-boun
   }
 });
 
+test("cicd-pipeline-compromise collector attests every playbook precondition on the success path so the collect|run pipe doesn't preflight-block", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-preconds-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+    const r = collect({ cwd: tmp });
+    // The cicd-pipeline-compromise playbook has two preconditions
+    // (ci-config-readable + operator-owns-ci-fleet), both with on_fail:halt.
+    // The collector must attest both — otherwise `collect | run --evidence -`
+    // halts at preflight regardless of detect-phase results.
+    assert.equal(r.precondition_checks["cwd-is-repo"], true);
+    assert.equal(r.precondition_checks["ci-config-readable"], true);
+    assert.equal(r.precondition_checks["operator-owns-ci-fleet"], true);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("cicd-pipeline-compromise collector precondition fails outside a git repo", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-no-git-"));
   try {
