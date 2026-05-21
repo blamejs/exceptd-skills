@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.49 — 2026-05-21
+
+`discover` covers four previously-invisible collectors. CLI UX cleanup across welcome banner, help text, attestation warning.
+
+### Bugs
+
+- **`discover` recommends `cicd-pipeline-compromise`, `mcp`, `ai-api`, and `crypto`.** Before, the cwd-aware recommender only knew about 9 of the 13 collectors — `discover` from a repo with `.github/workflows/` never surfaced the CI/CD posture playbook; `mcp` / `ai-api` were invisible even when the operator had MCP client config or shell rc files in their home; `crypto` was absent from the Linux branch alongside `hardening` / `runtime`. New probes: `.github/workflows/*.yml` for CI/CD, `~/.cursor/mcp.json` + `~/.config/claude` + `~/.codeium/windsurf/mcp_config.json` + `~/.gemini/settings.json` for MCP clients, `~/.bashrc` + `~/.zshrc` + `~/.profile` for shell rc, plus `crypto` always on Linux.
+- **`discover` reason text drops the misleading "node lockfile" claim.** A `package.json`-only repo (no `package-lock.json`) used to receive the recommendation reason "git repo + node lockfile" even though the lockfile didn't exist. The reason now says "node project" (and similarly "python project" / "rust project" / "go project"), which is accurate for the broad manifest-OR-lockfile trigger.
+- **`exceptd run --scope code` next-step suggestion is omitted from `discover` when no code-scope playbooks were recommended.** Previously, discover from an empty cwd suggested `exceptd run --scope code` even though no code playbooks applied — operators following the suggestion got every code-scope playbook running against an empty tree and a multi-hundred-KB JSON dump. Now the next-steps list shows `--scope code` only when at least one code-scope recommendation fired.
+- **`exceptd help` section header drops the stale `v0.12.0 canonical surface` pin.** The surface evolves with each release; the header now reads `Canonical verbs` without a frozen version label.
+
+### Features
+
+- **Welcome banner enumerates the playbook starting set by trigger rather than by abstract category** (`git repos:`, `GitHub Actions:`, `Linux hosts:`, `AI assistants:`, `containers:`). Each row names the artifact that triggers the recommendation, and the banner explicitly points at `exceptd discover` as the authoritative recommender.
+- **Attestation unsigned warning shrinks to a single line on consumer installs.** Previously every `exceptd run` from a globally-installed package (e.g. `npm install -g`) emitted a 4-line warning prescribing `exceptd doctor --fix` — but consumer installs land the package under `node_modules/` where `.keys/` typically isn't writable by the operator. The collector now detects consumer-install layout (PKG_ROOT under `node_modules/` OR parent dir is `@blamejs`) and prints `[attest] writing unsigned attestation (consumer install — signing is contributor-only).` instead. Contributor checkouts still see the full nudge.
+
 ## 0.13.48 — 2026-05-21
 
 Collector predicate tightening across `secrets`, `library-author`, `crypto-codebase`, and `cred-stores`.

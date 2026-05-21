@@ -49,6 +49,62 @@ test("discover JSON envelope: every recommendation carries collector_available +
   }
 });
 
+test("discover recommends cicd-pipeline-compromise when .github/workflows/ exists at cwd", () => {
+  // The exceptd repo itself has .github/workflows/ — running discover
+  // here MUST surface cicd-pipeline-compromise in the recommendation
+  // list. (Stream-1 finding F1.1: before this fix, the 4 collectors
+  // cicd / mcp / ai-api / crypto were never surfaced by discover.)
+  const r = runCli(["discover", "--json"]);
+  const body = JSON.parse(r.stdout);
+  const ids = body.recommended_playbooks.map(p => p.id);
+  assert.ok(ids.includes("cicd-pipeline-compromise"),
+    `cicd-pipeline-compromise must be recommended (cwd has .github/workflows/); got: ${ids.join(", ")}`);
+  // Its reason text should mention the trigger artifact.
+  const rec = body.recommended_playbooks.find(p => p.id === "cicd-pipeline-compromise");
+  assert.match(rec.reason, /\.github\/workflows\//);
+});
+
+test("discover reason text uses 'project' (not 'lockfile') so package.json-only repos aren't misrepresented", () => {
+  // The exceptd repo has package-lock.json, but the heuristic now
+  // labels the reason as 'node project' rather than 'node lockfile'
+  // so repos with only package.json (e.g. expressjs/express) don't
+  // claim a lockfile that doesn't exist. F1.2.
+  const r = runCli(["discover", "--json"]);
+  const body = JSON.parse(r.stdout);
+  const sec = body.recommended_playbooks.find(p => p.id === "secrets");
+  assert.ok(sec, "secrets must be recommended on the exceptd repo");
+  assert.match(sec.reason, /project/, `reason text should say 'project' not 'lockfile'; got: ${sec.reason}`);
+  assert.doesNotMatch(sec.reason, /lockfile/, "reason text must not claim 'lockfile' for the broad node-detection trigger");
+});
+
+test("discover human renderer omits `--scope code` next-step when no code playbooks were recommended", () => {
+  // Run discover from a fresh tempdir with no .git / no manifest /
+  // no Dockerfile → recommendations should be empty-of-code-scope,
+  // and the next-step list must NOT include `--scope code`. F2.3.
+  const os = require("node:os");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "discover-empty-"));
+  try {
+    const r = runCli(["discover"], { cwd: tmp });
+    assert.equal(r.status, 0);
+    assert.doesNotMatch(r.stdout, /exceptd run --scope code/,
+      "next-step `--scope code` must NOT appear when no code-scope playbooks were recommended");
+    assert.doesNotMatch(r.stdout, /exceptd ci --scope code/,
+      "next-step `ci --scope code` must NOT appear when no code-scope playbooks were recommended");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("help section header omits any pinned-version text", () => {
+  // Help should not lead with a version tag in the section header.
+  // The header IS the surface; the version belongs in CHANGELOG /
+  // git tags, not in operator-facing help prose.
+  const r = runCli(["help"]);
+  assert.equal(r.status, 0);
+  assert.doesNotMatch(r.stdout, /v\d+\.\d+\.\d+ canonical surface/,
+    "help text section header must not pin a version tag");
+});
+
 test("discover human renderer: [collector] tag + pipe-pointer line render when collector_available is true", () => {
   const r = runCli(["discover"]);
   assert.equal(r.status, 0);
