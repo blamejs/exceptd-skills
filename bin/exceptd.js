@@ -334,9 +334,14 @@ If you know what you want:
   exceptd ci --scope code    # CI gate against every code-scoped playbook
 
 Common starting playbooks
-  code repos:    secrets, sbom, library-author, crypto-codebase
-  Linux hosts:   kernel, hardening, runtime, cred-stores
-  AI / service:  ai-api, mcp, crypto
+  git repos:      secrets, sbom, library-author, crypto-codebase
+  GitHub Actions: cicd-pipeline-compromise (.github/workflows/ present)
+  Linux hosts:    kernel, hardening, runtime, cred-stores, crypto
+  AI assistants:  mcp (MCP client config), ai-api (shell rc + AI key exports)
+  containers:     containers (Dockerfile / docker-compose)
+
+\`exceptd discover\` is the authoritative recommender — it inspects your
+cwd + host and only suggests the playbooks that actually apply.
 
 Full reference: exceptd help
 Per-verb help:  exceptd <verb> --help
@@ -349,8 +354,8 @@ function printHelp() {
 Usage: exceptd <command> [args]
        npx @blamejs/exceptd-skills <command> [args]
 
-v0.12.0 canonical surface
-─────────────────────────
+Canonical verbs
+───────────────
 
   brief [playbook]           Unified info doc — jurisdictions + threat context
                              + preconditions + artifacts + indicators. Replaces
@@ -4275,18 +4280,28 @@ function maybeSignAttestation(filePath) {
   // Operators who set `.keys/private.pem` get tamper-evident attestations;
   // operators without the keypair get a single nudge per session telling them
   // exactly how to enable signing.
+  //
+  // Consumer installs (`npm install -g`) land PKG_ROOT under
+  // node_modules/ where the operator typically can't write to
+  // .keys/. For those installs the multi-line nudge prescribes a
+  // remediation (doctor --fix) the operator doesn't own — surface a
+  // single-line marker so the unsigned attestation isn't silent, but
+  // skip the call-to-action that doesn't apply.
   if (!fs.existsSync(privKeyPath) && !process.env.EXCEPTD_UNSIGNED_WARNED) {
-    // Cycle 20 A P2 (v0.12.40): operator-facing verb `exceptd doctor --fix`
-    // calls sign.js generate-keypair under the hood. Pre-fix the message
-    // hinted at a node-internal script path that's not on PATH after
-    // `npm install -g`. Surface the doctor route first; cite the lib
-    // script only as the contributor / non-npm-installed fallback.
-    process.stderr.write(
-      "[attest] attestation will be written UNSIGNED (no private key at .keys/private.pem). " +
-      "Operators reading the attestation later can verify the SHA-256 hash but not authenticity. " +
-      "Enable Ed25519 signing: `exceptd doctor --fix` (or for contributor checkouts: `node $(exceptd path)/lib/sign.js generate-keypair`). " +
-      "Suppress this notice: export EXCEPTD_UNSIGNED_WARNED=1.\n"
-    );
+    const pkgRootSegments = PKG_ROOT.split(/[\\/]/);
+    const isConsumerInstall =
+      pkgRootSegments.includes("node_modules") ||
+      path.basename(path.dirname(PKG_ROOT)) === "@blamejs";
+    if (isConsumerInstall) {
+      process.stderr.write("[attest] writing unsigned attestation (consumer install — signing is contributor-only).\n");
+    } else {
+      process.stderr.write(
+        "[attest] attestation will be written UNSIGNED (no private key at .keys/private.pem). " +
+        "Operators reading the attestation later can verify the SHA-256 hash but not authenticity. " +
+        "Enable Ed25519 signing: `exceptd doctor --fix` (or for contributor checkouts: `node $(exceptd path)/lib/sign.js generate-keypair`). " +
+        "Suppress this notice: export EXCEPTD_UNSIGNED_WARNED=1.\n"
+      );
+    }
     process.env.EXCEPTD_UNSIGNED_WARNED = "1";
   }
   try {
@@ -5535,16 +5550,59 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   // Build recommendation set. Dedup by playbook id so multi-trigger rules
   // don't double-list.
   const isRepo = detected.includes(".git/");
-  const hasNode = detected.includes("package.json") || detected.includes("package-lock.json")
+  const hasNodeManifest = detected.includes("package.json");
+  const hasNodeLockfile = detected.includes("package-lock.json")
     || detected.includes("yarn.lock") || detected.includes("pnpm-lock.yaml");
+  const hasNode = hasNodeManifest || hasNodeLockfile;
   const hasPython = detected.includes("pyproject.toml") || detected.includes("requirements.txt")
     || detected.includes("Pipfile");
   const hasRust = detected.includes("Cargo.toml");
   const hasGo = detected.includes("go.mod");
-  const hasLockfile = hasNode || hasPython || hasRust || hasGo;
+  const hasProject = hasNode || hasPython || hasRust || hasGo;
   const hasContainers = detected.includes("Dockerfile") || detected.includes("docker-compose.yml")
     || detected.includes("docker-compose.yaml");
   const isLinux = hostPlatform === "linux";
+
+  // .github/workflows/ directory probe — surfaces the CI/CD posture
+  // playbook when present.
+  let hasGithubWorkflows = false;
+  try {
+    const wfDir = path.join(cwd, ".github", "workflows");
+    if (fs.existsSync(wfDir) && fs.statSync(wfDir).isDirectory()) {
+      const entries = fs.readdirSync(wfDir).filter(f => /\.(ya?ml)$/i.test(f));
+      if (entries.length > 0) hasGithubWorkflows = true;
+    }
+  } catch { /* swallow */ }
+
+  // Home-resident MCP client config probe — surfaces the `mcp`
+  // playbook when at least one supported client is configured on
+  // this host. Best-effort: silently skip if home isn't readable.
+  let hasMcpClientConfig = false;
+  const homeForProbe = process.env.HOME || process.env.USERPROFILE || null;
+  if (homeForProbe) {
+    const mcpProbes = [
+      path.join(homeForProbe, ".cursor", "mcp.json"),
+      path.join(homeForProbe, ".config", "claude"),
+      path.join(homeForProbe, ".claude"),
+      path.join(homeForProbe, ".codeium", "windsurf", "mcp_config.json"),
+      path.join(homeForProbe, ".gemini", "settings.json"),
+    ];
+    for (const p of mcpProbes) {
+      try { if (fs.existsSync(p)) { hasMcpClientConfig = true; break; } } catch { /* swallow */ }
+    }
+  }
+
+  // Shell rc presence — proxy signal for "user has a shell-driven
+  // workflow that might export AI API keys". The ai-api collector
+  // checks rc files + vendor dotfiles regardless; surface the
+  // recommendation when at least one rc file exists.
+  let hasShellRc = false;
+  if (homeForProbe) {
+    const rcProbes = [".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".profile"];
+    for (const f of rcProbes) {
+      try { if (fs.existsSync(path.join(homeForProbe, f))) { hasShellRc = true; break; } } catch { /* swallow */ }
+    }
+  }
 
   const recs = [];
   const seen = new Set();
@@ -5554,22 +5612,32 @@ function cmdDiscover(runner, args, runOpts, pretty) {
     recs.push({ id, reason });
   }
 
-  if (isRepo && hasLockfile) {
+  if (isRepo && hasProject) {
     const langs = [hasNode && "node", hasPython && "python", hasRust && "rust", hasGo && "go"]
       .filter(Boolean).join("/");
-    recommend("secrets", `git repo + ${langs} lockfile → check for committed credentials`);
-    recommend("sbom", `git repo + ${langs} lockfile → SBOM + supply-chain integrity`);
-    recommend("library-author", `git repo + ${langs} lockfile → publisher-side audit`);
-    recommend("crypto-codebase", `git repo + ${langs} lockfile → cryptographic primitive review`);
+    recommend("secrets", `git repo + ${langs} project → check for committed credentials`);
+    recommend("sbom", `git repo + ${langs} project → SBOM + supply-chain integrity`);
+    recommend("library-author", `git repo + ${langs} project → publisher-side audit`);
+    recommend("crypto-codebase", `git repo + ${langs} project → cryptographic primitive review`);
   }
   if (hasContainers) {
     recommend("containers", "Dockerfile / docker-compose present → container security review");
+  }
+  if (hasGithubWorkflows) {
+    recommend("cicd-pipeline-compromise", ".github/workflows/ present → CI/CD posture (fork-PR / OIDC / floating-tag)");
+  }
+  if (hasMcpClientConfig) {
+    recommend("mcp", "MCP client config present in home → MCP supply-chain audit");
+  }
+  if (hasShellRc) {
+    recommend("ai-api", "shell rc present in home → AI API key + cred-carrier audit");
   }
   if (isLinux) {
     recommend("kernel", "Linux host detected → kernel LPE / privilege escalation triage");
     recommend("hardening", "Linux host detected → system hardening review");
     recommend("runtime", "Linux host detected → runtime behavior review");
     recommend("cred-stores", "Linux host detected → credential store review");
+    recommend("crypto", "Linux host detected → host crypto posture (OpenSSL / sshd PQC readiness)");
   }
   // Always include cross-cutting framework correlation.
   recommend("framework", "cross-cutting: framework correlation always applicable");
@@ -5587,12 +5655,19 @@ function cmdDiscover(runner, args, runOpts, pretty) {
     rec.collect_cmd = hasCollector ? `exceptd collect ${rec.id}` : null;
   }
 
+  // Next-step suggestions are conditional on what discover detected.
+  // From an empty / no-code-detected cwd, suggesting `run --scope code`
+  // would silently run every code-scope playbook against an empty tree
+  // and produce a multi-hundred-KB JSON dump for no useful reason.
+  const recHasCodeScope = recs.some(r => ["secrets", "sbom", "library-author", "crypto-codebase", "containers", "cicd-pipeline-compromise"].includes(r.id));
   const nextSteps = [
     "exceptd brief <playbook>       # learn what a playbook checks",
     "exceptd run <playbook>          # run it",
-    "exceptd run --scope code        # run all code-scoped playbooks (auto-detected)",
-    "exceptd ci --scope code         # CI-gate against all code-scoped playbooks",
   ];
+  if (recHasCodeScope) {
+    nextSteps.push("exceptd run --scope code        # run all code-scoped playbooks (those applicable to this cwd)");
+    nextSteps.push("exceptd ci --scope code         # CI-gate against all code-scoped playbooks");
+  }
 
   const out = {
     verb: "discover",
