@@ -372,7 +372,7 @@ This split costs every consumer the same translation work on every invocation. C
 exceptd collect secrets | exceptd run secrets --evidence -
 ```
 
-The collector library is small and grows as playbooks are touched. Ten reference collectors ship today (`lib/collectors/secrets.js`, `lib/collectors/kernel.js`, `lib/collectors/sbom.js`, `lib/collectors/containers.js`, `lib/collectors/library-author.js`, `lib/collectors/crypto-codebase.js`, `lib/collectors/cred-stores.js`, `lib/collectors/hardening.js`, `lib/collectors/runtime.js`, `lib/collectors/ai-api.js`); the rest are written when each playbook needs them. Until a playbook has a collector, the AI/operator owns evidence collection as before.
+The collector library is small and grows as playbooks are touched. Eleven reference collectors ship today (`lib/collectors/secrets.js`, `lib/collectors/kernel.js`, `lib/collectors/sbom.js`, `lib/collectors/containers.js`, `lib/collectors/library-author.js`, `lib/collectors/crypto-codebase.js`, `lib/collectors/cred-stores.js`, `lib/collectors/hardening.js`, `lib/collectors/runtime.js`, `lib/collectors/ai-api.js`, `lib/collectors/mcp.js`); the rest are written when each playbook needs them. Until a playbook has a collector, the AI/operator owns evidence collection as before.
 
 ### Precision target for new `look.artifacts[].source` strings
 

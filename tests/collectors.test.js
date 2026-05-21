@@ -51,9 +51,10 @@ const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-s
 const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
 const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
 const aiApiCollector = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
+const mcpCollector = require(path.join(ROOT, "lib", "collectors", "mcp.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector, aiApiCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector, aiApiCollector, mcpCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -68,6 +69,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(hardeningCollector.playbook_id, "hardening");
   assert.equal(runtimeCollector.playbook_id, "runtime");
   assert.equal(aiApiCollector.playbook_id, "ai-api");
+  assert.equal(mcpCollector.playbook_id, "mcp");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -1754,6 +1756,146 @@ test("ai-api kubeconfig-with-static-token miss on auth-provider cached token", (
     ].join("\n"));
     const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp collector flips zero on a clean fake-home", () => {
+  const h = fakeHome("mcp-clean-");
+  try {
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "miss");
+    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "miss");
+    // ANSI / unicode indicators should be unflipped when no logs exist.
+    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], undefined);
+    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], undefined);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp version-without-integrity fires on npx @scope/pkg@x.y.z without integrity sibling", () => {
+  const h = fakeHome("mcp-pinned-");
+  try {
+    h.write(".cursor/mcp.json", JSON.stringify({
+      mcpServers: {
+        "fs-server": { command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem@1.2.3"] },
+      },
+    }));
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp version-without-integrity miss when integrity sibling present", () => {
+  const h = fakeHome("mcp-integ-");
+  try {
+    h.write(".cursor/mcp.json", JSON.stringify({
+      mcpServers: {
+        "fs-server": {
+          command: "npx",
+          args: ["-y", "@modelcontextprotocol/server-filesystem@1.2.3"],
+          integrity: "sha256-abc123",
+        },
+      },
+    }));
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp copilot-yolo-mode-flag fires on chat.tools.autoApprove=true", () => {
+  const h = fakeHome("mcp-yolo-");
+  try {
+    h.write(".config/Code/User/settings.json", JSON.stringify({
+      "chat.tools.autoApprove": true,
+    }));
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp copilot-yolo-mode-flag fires on per-server autoApprove=true", () => {
+  const h = fakeHome("mcp-yolo-perserver-");
+  try {
+    h.write(".config/Code/User/settings.json", JSON.stringify({
+      "chat.mcp.servers": {
+        "dangerous-server": { autoApprove: true },
+      },
+    }));
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp ansi-escape + unicode-tag-smuggling fire on tainted log content", () => {
+  const h = fakeHome("mcp-tainted-log-");
+  try {
+    // ANSI escape: 0x1B in the JSONL content.
+    h.write(".claude/logs/mcp/server1.jsonl",
+      `{"method":"tools/call","result":{"content":[{"text":"hello \x1b[31mred\x1b[0m"}]}}\n`);
+    // Unicode tag smuggling: codepoint U+E0040.
+    const tagSmuggled = "innocent " + String.fromCodePoint(0xE0040) + " text";
+    h.write(".cursor/logs/mcp-call.jsonl",
+      JSON.stringify({ method: "tools/list", result: { tools: [{ description: tagSmuggled }] } }) + "\n");
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], "hit");
+    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp ansi-escape miss when log content is clean", () => {
+  const h = fakeHome("mcp-clean-log-");
+  try {
+    h.write(".claude/logs/mcp/server1.jsonl",
+      JSON.stringify({ method: "tools/call", result: { content: [{ text: "plain text" }] } }) + "\n");
+    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], "miss");
+    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("mcp project-level .vscode/settings.json under cwd flips yolo flag", () => {
+  const h = fakeHome("mcp-proj-vsc-");
+  const projTmp = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-proj-cwd-"));
+  try {
+    fs.mkdirSync(path.join(projTmp, ".vscode"), { recursive: true });
+    fs.writeFileSync(path.join(projTmp, ".vscode", "settings.json"), JSON.stringify({
+      chat: { tools: { autoApprove: true } },
+    }));
+    const r = mcpCollector.collect({ cwd: projTmp, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
+  } finally {
+    h.cleanup();
+    try { fs.rmSync(projTmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("collect mcp pipes into run --evidence -", () => {
+  const h = fakeHome("mcp-pipe-");
+  try {
+    h.write(".cursor/mcp.json", JSON.stringify({
+      mcpServers: { fs: { command: "npx", args: ["@modelcontextprotocol/server-filesystem@1.0.0"] } },
+    }));
+    const collected = cli(["collect", "mcp", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(collected.status, 0);
+    const ran = cli(["run", "mcp", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
+    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
+    assert.ok(body);
+    assert.equal(body.playbook_id, "mcp");
   } finally {
     h.cleanup();
   }
