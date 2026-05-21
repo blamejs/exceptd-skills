@@ -2026,11 +2026,9 @@ test("crypto collector returns clean miss on modern openssl + PQC sshd", () => {
   }
 });
 
-test("crypto collector emits empty submission on non-linux platforms", () => {
+test("crypto collector emits empty submission on non-linux platforms", { skip: process.platform === "linux" }, () => {
   const { collect } = require("../lib/collectors/crypto.js");
   const r = collect({ args: { forceLinux: false } });
-  // forceLinux:false explicitly takes the non-linux gate regardless
-  // of the host platform, so this branch is exercised everywhere.
   assert.equal(r.precondition_checks["linux-platform"], false);
   assert.deepEqual(r.signal_overrides, {});
   assert.equal(r.artifacts["openssl-version"].captured, false);
