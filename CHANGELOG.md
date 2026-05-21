@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.48 — 2026-05-21
+
+Collector predicate tightening across `secrets`, `library-author`, `crypto-codebase`, and `cred-stores`.
+
+### Bugs
+
+- **`secrets` collector demotes hits scoped exclusively to test / fixture / example paths.** Previously a JWT literal in `fulcio_test.go` or a private-key block in `cosign-test.key` flipped `jwt-token-with-secret-context` / `ssh-private-key-block` to `hit`. The collector now splits hits into production-scope vs. test-scope (segments `/test/` `/tests/` `/spec/` `/fixtures/` `/examples/` `/samples/` `/demo/` `/testdata/`, plus `*.test.<ext>` / `*.spec.<ext>` / `*_test.<ext>` / `*-test[-.]*` filename conventions). The indicator fires only when at least one production-scope hit exists. Test-only hits stay visible in the `secret-regex-scan-text-files` artifact for operator inspection but don't trip the signal. Mirrors the existing `crypto-codebase` demotion pattern.
+- **`library-author` recognises container-native publish workflows.** The previous heuristic only matched npm / pypi / cargo / goreleaser / softprops-action-gh-release publish paths. Workflows using `ko publish` / `cosign sign(-blob)` / `crane push` / `oras push` / `docker push` / `docker/build-push-action` were missed, which falsely flipped `publish-workflow-no-id-token-write` on projects (e.g. sigstore/cosign) that use `id-token: write` for OIDC-based publishing. Now those workflows are recognized as publish-related, AND any workflow declaring `id-token: write` inside a `permissions:` block with executable `steps:` is treated as publish context.
+- **`crypto-codebase` test-path demotion now covers Go's `_test.go` convention.** The previous regex matched only `*.test.<ext>` / `*.spec.<ext>` (dot-separated). Go convention is `foo_test.go` (underscore-separated); those test files were not demoted and false-positive'd indicators like `weak-hash-import` (md5 in a Go test using a "token" variable). Added `(?:^|[\\/])[^\\/]+_test\.[a-z]+$` to the demotion regex.
+
+### Features
+
+- **`cred-stores` surfaces a `credentials-file-perms-check` artifact** documenting whether the POSIX-mode-bit check ran (`captured: true` on Linux / macOS) or was skipped (`captured: false, reason: "...skipped on win32..."` on Windows). Previously the `credentials-file-bad-perms` signal was silently absent from `signal_overrides` on Windows, indistinguishable from "indicator not catalogued". Mirrors the `secrets` collector's `world-writable-secret-files` skip pattern.
+
 ## 0.13.47 — 2026-05-21
 
 `cicd-pipeline-compromise` collect | run pipe now produces a verdict when the operator opts in to the CI-fleet ownership attestation.

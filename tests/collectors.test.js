@@ -2166,6 +2166,118 @@ test("cicd-pipeline-compromise collector attests ci-config-readable on the succe
   }
 });
 
+test("secrets collector demotes hits that exist only in test / fixture paths", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "secrets-demote-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.mkdirSync(path.join(tmp, "test"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "test", "fulcio_test.go"),
+      'const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";\n',
+    );
+    fs.mkdirSync(path.join(tmp, ".github", "workflows"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, ".github", "workflows", "cosign-test.key"),
+      "-----BEGIN PRIVATE KEY-----\nMIIBAA==\n-----END PRIVATE KEY-----\n",
+    );
+
+    const { collect } = require("../lib/collectors/secrets.js");
+    const r = collect({ cwd: tmp });
+
+    assert.equal(r.signal_overrides["jwt-token-with-secret-context"], "miss");
+    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("secrets collector still fires when production code has a real secret (demotion is not blanket suppression)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "secrets-prod-hit-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "src", "auth.go"),
+      'const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";\n',
+    );
+
+    const { collect } = require("../lib/collectors/secrets.js");
+    const r = collect({ cwd: tmp });
+
+    assert.equal(r.signal_overrides["jwt-token-with-secret-context"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("library-author recognises container-native publish workflows (cosign + ko + id-token: write)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "la-publish-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wf = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wf, { recursive: true });
+    fs.writeFileSync(
+      path.join(wf, "build.yaml"),
+      [
+        "name: build",
+        "on: push",
+        "jobs:",
+        "  build:",
+        "    permissions:",
+        "      id-token: write",
+        "      contents: read",
+        "    steps:",
+        "      - uses: sigstore/cosign-installer@" + "a".repeat(40),
+        "      - run: cosign sign-blob ./artifact",
+        "",
+      ].join("\n"),
+    );
+    fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"x","version":"1.0.0"}');
+
+    const { collect } = require("../lib/collectors/library-author.js");
+    const r = collect({ cwd: tmp });
+
+    assert.ok(r.collector_meta.publish_workflows.includes("build.yaml"),
+      `expected build.yaml in publish_workflows; got: ${JSON.stringify(r.collector_meta.publish_workflows)}`);
+    assert.equal(r.signal_overrides["publish-workflow-no-id-token-write"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cred-stores surfaces credentials-file-perms-check skip on Windows", { skip: process.platform !== "win32" }, () => {
+  const { collect } = require("../lib/collectors/cred-stores.js");
+  const r = collect({ cwd: process.cwd() });
+  const art = r.artifacts["credentials-file-perms-check"];
+  assert.ok(art, "credentials-file-perms-check artifact missing");
+  assert.equal(art.captured, false);
+  assert.match(art.reason, /Windows|ACL|POSIX/i);
+});
+
+test("cred-stores credentials-file-perms-check is captured on POSIX", { skip: process.platform === "win32" }, () => {
+  const { collect } = require("../lib/collectors/cred-stores.js");
+  const r = collect({ cwd: process.cwd() });
+  const art = r.artifacts["credentials-file-perms-check"];
+  assert.ok(art, "credentials-file-perms-check artifact missing");
+  assert.equal(art.captured, true);
+});
+
+test("crypto-codebase isTestPath demotes Go _test.go files", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-go-test-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.writeFileSync(
+      path.join(tmp, "auth_test.go"),
+      'package auth\nimport "crypto/md5"\nfunc TestThing(t *testing.T) { token := md5.Sum([]byte("x")); _ = token }\n',
+    );
+    const { collect } = require("../lib/collectors/crypto-codebase.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("cicd-pipeline-compromise collector requires explicit --attest-ownership for the CI-fleet ownership precondition", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-attest-"));
   try {
