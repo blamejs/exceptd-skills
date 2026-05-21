@@ -2334,6 +2334,40 @@ test("cred-stores credentials-file-perms-check is captured on POSIX", { skip: pr
   assert.equal(art.captured, true);
 });
 
+test("crypto-codebase demotes weak-hash hits in content-integrity / fingerprinting files (non-security context)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-integrity-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.mkdirSync(path.join(tmp, "resources", "integrity"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "resources", "integrity", "integrity.go"),
+      'package integrity\nimport "crypto/md5"\nfunc Hash(b []byte) string { h := md5.Sum(b); return string(h[:]) }\n',
+    );
+    const { collect } = require("../lib/collectors/crypto-codebase.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("crypto-codebase still fires weak-hash on a real security context (auth.go with token)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-auth-token-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.mkdirSync(path.join(tmp, "src"));
+    fs.writeFileSync(
+      path.join(tmp, "src", "auth.go"),
+      'package auth\nimport "crypto/md5"\nfunc TokenHash(t string) string { return string(md5.Sum([]byte(t)))[:] }\n',
+    );
+    const { collect } = require("../lib/collectors/crypto-codebase.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("crypto-codebase isTestPath demotes Go _test.go files", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-go-test-"));
   try {
