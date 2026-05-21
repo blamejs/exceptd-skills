@@ -77,9 +77,14 @@ test("doctor --collectors counts match on-disk truth (every playbook resolved ag
 });
 
 test("default doctor pass (no flags) folds in the collector gate", () => {
+  // The default doctor pass also runs the signing-status check, which
+  // is severity:warn (not green) when .keys/private.pem is absent.
+  // On CI / consumer installs that's the normal state, so the overall
+  // doctor exit code lands non-zero. We don't care here — we only need
+  // to confirm the collectors gate is included in the envelope.
   const r = runCli(["doctor", "--json"]);
-  assert.equal(r.status, 0, `doctor exit non-zero; stderr=${r.stderr.slice(0, 400)}`);
   const body = JSON.parse(r.stdout);
+  assert.ok(body.checks, "doctor envelope missing checks");
   assert.ok(body.checks.collectors, "default doctor pass missing collectors gate");
   assert.equal(body.checks.collectors.ok, true);
 });
