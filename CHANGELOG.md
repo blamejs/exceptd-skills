@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.52 — 2026-05-21
+
+README jurisdiction-count normalization; collect-verb + collector-pipe docs; new predeploy gate verifying AGENTS.md collector enumeration matches `lib/collectors/`.
+
+### Bugs
+
+- **README jurisdiction count normalized to 35 across all three locations.** The preamble previously claimed "38 jurisdictions", the `jurisdiction-clocks.json` description claimed "29 jurisdictions", and the `global-frameworks.json` description claimed "35 jurisdictions" — three different numbers in the same file. The actual count in `data/global-frameworks.json` (top-level keys excluding `_meta` + the two `_*_summary` entries) is 35; all three README mentions now match.
+
+### Features
+
+- **`exceptd collect <playbook>` documented in the CLI command reference.** The verb has shipped since v0.13.34 and now backs 13 of 23 playbooks, but the README only documented `discover` / `brief` / `run` / `ci` / `attest` / `doctor` / `ask` / `refresh` / `lint`. The reference now describes `collect` + the canonical `discover → collect → run --evidence -` pipe + the `--attest-ownership` flag (cicd-pipeline-compromise specific) + the pointer to `exceptd doctor --collectors` for the live list.
+- **New predeploy gate: `scripts/check-agents-md-collectors.js`.** Verifies that AGENTS.md's "<N> reference collectors ship today (...)" paragraph stays in sync with the actual contents of `lib/collectors/`. Checks the spelled-out count word (Eleven / Twelve / ...) matches the on-disk count AND every collector path in the parenthesized list exists on disk AND every on-disk collector appears in the list. Predeploy gate count: 17 → 18.
+
 ## 0.13.51 — 2026-05-21
 
 `doctor` signing-check renders by severity; `crypto-codebase` weak-hash predicate demotes content-integrity files; `collect` no-arg hint points at operator-facing verbs.
