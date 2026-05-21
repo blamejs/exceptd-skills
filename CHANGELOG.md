@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.39 — 2026-05-20
+
+Eighth reference collector.
+
+### Features
+
+- **`lib/collectors/hardening.js`** — Linux-only host-hardening posture collector. Reads `/proc/sys/kernel/kptr_restrict`, `/proc/sys/kernel/unprivileged_userns_clone`, `/proc/sys/kernel/unprivileged_bpf_disabled`, `/proc/sys/kernel/yama/ptrace_scope`, `/proc/sys/fs/suid_dumpable`, `/proc/cmdline`, `/sys/kernel/security/lockdown`, `/etc/ssh/sshd_config` (+ `/etc/ssh/sshd_config.d/*.conf`), and flips eight deterministic indicators: `kptr-restrict-disabled` (`kernel.kptr_restrict == 0`), `unprivileged-userns-enabled` (`kernel.unprivileged_userns_clone == 1`), `unprivileged-bpf-allowed` (`kernel.unprivileged_bpf_disabled == 0`), `yama-ptrace-permissive` (`kernel.yama.ptrace_scope == 0`), `kaslr-disabled-at-boot` (`nokaslr` or `kaslr=off` in `/proc/cmdline`), `mitigations-off` (`mitigations=off` in `/proc/cmdline`), `sshd-permitrootlogin-yes` (effective `yes` or `without-password`), `kernel-lockdown-none` (`[none]` bracket in `/sys/kernel/security/lockdown` OR file absent AND no `lockdown=` cmdline parameter). On non-Linux hosts the precondition `linux-platform` fails and the collector emits an empty submission rather than producing phantom values. Attests `kptr-restrict-disabled__fp_checks[1]` when `/proc/kallsyms` actually leaks non-zero pointer addresses (the catalogued counter-evidence for false-positive demotion). Path overrides via `args.paths` so the collector can be exercised against synthetic tempdir layouts in tests.
+
 ## 0.13.38 — 2026-05-20
 
 Seventh reference collector.
