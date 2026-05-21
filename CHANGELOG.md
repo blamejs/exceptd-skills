@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.45 — 2026-05-21
+
+`discover` surfaces collector availability per recommendation.
+
+### Features
+
+- **`discover` recommendations now include `collector_available: bool` + `collect_cmd: string|null`.** Each entry in `recommended_playbooks[]` is enriched with on-disk lookup of `lib/collectors/<id>.js`. Operators who discover a relevant playbook for their cwd no longer need to guess whether running it requires manual evidence translation — the next-step command is right there. Playbooks without a collector show the recommendation line unchanged; `exceptd brief <id>` remains the path for manual evidence.
+- **Human renderer** prints `[collector]` after the playbook id and a `→ exceptd collect <id> | exceptd run <id> --evidence -` pipe-pointer line for entries where the collector exists. Entries without a collector render unchanged. Padding widened from 20 to 32 columns to accommodate the tag.
+
 ## 0.13.44 — 2026-05-21
 
 Thirteenth reference collector.
