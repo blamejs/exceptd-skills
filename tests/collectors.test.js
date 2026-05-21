@@ -1564,6 +1564,59 @@ test("runtime collector world-writable-in-trusted-path: posix only", { skip: pro
   }
 });
 
+test("runtime collector mixed-user sudoers entry fires when non-root principal grants wildcard (codex P2 #80)", () => {
+  const h = fakeRuntimeRoot("runtime-mixed-sudo-");
+  try {
+    const sudoers = h.write("etc/sudoers", "root,deploy ALL=(ALL) NOPASSWD: ALL\n");
+    const passwd = h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
+        forceLinux: true,
+      },
+    });
+    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "hit",
+      "root,deploy NOPASSWD: ALL grants wildcard to deploy — must fire");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("runtime collector orphan-privileged stays unflipped when /proc/<pid>/exe unreadable (codex P1 #80)", () => {
+  // Synthesise /proc layout where every PID's status file exists
+  // but no exe symlink does — mirrors hidepid / ptrace-restrict on
+  // non-root scope. The collector must NOT report "miss" — that
+  // would mask real orphan-privileged implants.
+  const h = fakeRuntimeRoot("runtime-orphan-noexe-");
+  try {
+    const procRoot = h.mkdir("proc");
+    // PID 1 (no exe symlink readable)
+    h.write("proc/1/status", "Name:\tsystemd\nPPid:\t0\nUid:\t0\t0\t0\t0\n");
+    // PID 100, UID 0, PPID 1 — would look like an orphan, but exe
+    // symlink missing.
+    h.write("proc/100/status", "Name:\tsuspicious\nPPid:\t1\nUid:\t0\t0\t0\t0\n");
+    const r = runtimeCollector.collect({
+      cwd: ROOT,
+      args: {
+        paths: {
+          sudoers: path.join(h.tmp, "nosudoers"),
+          sudoersD: path.join(h.tmp, "nodir"),
+          passwd: path.join(h.tmp, "nopasswd"),
+          trustedPaths: [],
+          procRoot,
+        },
+        forceLinux: true,
+      },
+    });
+    // exe links unreadable → indicator unflipped (codex P1 #80)
+    assert.equal(r.signal_overrides["orphan-privileged-process"], undefined,
+      "missing exe links must leave indicator unflipped, not assert clean");
+  } finally {
+    h.cleanup();
+  }
+});
+
 test("runtime collector leaves indicators unflipped when sources unreadable", () => {
   // All paths point at non-existent locations → no indicator should
   // be set; runner returns inconclusive.
