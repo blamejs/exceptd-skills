@@ -47,9 +47,10 @@ const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
 const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
 const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
 const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -60,6 +61,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(containersCollector.playbook_id, "containers");
   assert.equal(libraryAuthorCollector.playbook_id, "library-author");
   assert.equal(cryptoCodebaseCollector.playbook_id, "crypto-codebase");
+  assert.equal(credStoresCollector.playbook_id, "cred-stores");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -864,5 +866,231 @@ test("collect crypto-codebase pipes into run --evidence -", () => {
     assert.equal(body.playbook_id, "crypto-codebase");
   } finally {
     try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+// Fake-HOME helper for cred-stores fixture tests. Each test stages a
+// synthetic ~/.aws / ~/.kube / etc. inside the tempdir and points
+// the collector at it via env.HOME (env.USERPROFILE on Windows is
+// honoured by the collector too).
+function fakeHome(prefix) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return {
+    home: tmp,
+    write(rel, content) {
+      const full = path.join(tmp, rel);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, content);
+      return full;
+    },
+    cleanup() {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    },
+  };
+}
+
+test("cred-stores collector flips zero on a clean fake-home", () => {
+  const h = fakeHome("cred-clean-");
+  try {
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
+    assert.equal(r.signal_overrides["kube-static-token"], "miss");
+    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "miss");
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
+    assert.equal(r.signal_overrides["npm-pat-present"], "miss");
+    assert.equal(r.signal_overrides["pypi-token-present"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores aws-static-key-present fires on AKIA* with no federation", () => {
+  const h = fakeHome("cred-aws-static-");
+  try {
+    h.write(".aws/credentials", [
+      "[default]",
+      "aws_access_key_id = AKIAIOSFODNN7EXAMPLE",
+      "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["aws-static-key-present"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores aws-static-key-present demotes when sso_session present", () => {
+  const h = fakeHome("cred-aws-sso-");
+  try {
+    h.write(".aws/credentials", [
+      "[profile work]",
+      "sso_session = my-org",
+      "sso_account_id = 111122223333",
+      "sso_role_name = ReadOnly",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores kube-static-token fires on users[].user.token", () => {
+  const h = fakeHome("cred-kube-static-");
+  try {
+    h.write(".kube/config", [
+      "apiVersion: v1",
+      "kind: Config",
+      "users:",
+      "- name: admin",
+      "  user:",
+      "    token: abcdef1234567890",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kube-static-token"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores kube-static-token miss when only exec provider", () => {
+  const h = fakeHome("cred-kube-exec-");
+  try {
+    h.write(".kube/config", [
+      "apiVersion: v1",
+      "kind: Config",
+      "users:",
+      "- name: admin",
+      "  user:",
+      "    exec:",
+      "      apiVersion: client.authentication.k8s.io/v1beta1",
+      "      command: aws",
+      "      args:",
+      "      - eks",
+      "      - get-token",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kube-static-token"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores gcp-service-account-json-adc fires on type=service_account", () => {
+  const h = fakeHome("cred-gcp-sa-");
+  try {
+    h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({
+      type: "service_account",
+      private_key: "stub",
+      client_email: "svc@project.iam.gserviceaccount.com",
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores gcp-service-account-json-adc miss on user adc shape", () => {
+  const h = fakeHome("cred-gcp-user-");
+  try {
+    h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({
+      type: "authorized_user",
+      client_id: "x",
+      refresh_token: "y",
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores docker-cleartext-auth fires when auths set with no cred helper", () => {
+  const h = fakeHome("cred-docker-cleartext-");
+  try {
+    h.write(".docker/config.json", JSON.stringify({
+      auths: { "https://index.docker.io/v1/": { auth: "dXNlcjpwYXNzd29yZA==" } },
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores docker-cleartext-auth miss when credsStore covers the registry", () => {
+  const h = fakeHome("cred-docker-helper-");
+  try {
+    h.write(".docker/config.json", JSON.stringify({
+      auths: { "https://index.docker.io/v1/": { auth: "dXNlcjpwYXNzd29yZA==" } },
+      credsStore: "desktop",
+    }));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores npm-pat-present + pypi-token-present fire on the catalogued patterns", () => {
+  const h = fakeHome("cred-npm-pypi-");
+  try {
+    h.write(".npmrc", "//registry.npmjs.org/:_authToken=npm_" + "A".repeat(36) + "\n");
+    h.write(".pypirc", [
+      "[pypi]",
+      "username = __token__",
+      "password = pypi-" + "A".repeat(50),
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["npm-pat-present"], "hit");
+    assert.equal(r.signal_overrides["pypi-token-present"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("cred-stores project-level .npmrc / .pypirc are picked up via cwd", () => {
+  const h = fakeHome("cred-proj-");
+  const projTmp = fs.mkdtempSync(path.join(os.tmpdir(), "cred-proj-cwd-"));
+  try {
+    fs.writeFileSync(path.join(projTmp, ".npmrc"), "//registry.npmjs.org/:_authToken=npm_" + "B".repeat(40) + "\n");
+    const r = credStoresCollector.collect({ cwd: projTmp, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["npm-pat-present"], "hit",
+      "project-level .npmrc token must flip the indicator");
+  } finally {
+    h.cleanup();
+    try { fs.rmSync(projTmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("cred-stores credentials-file-bad-perms: posix only; skipped on win32", { skip: process.platform === "win32" }, () => {
+  const h = fakeHome("cred-perms-");
+  try {
+    const credPath = h.write(".aws/credentials", "[default]\naws_access_key_id = AKIAIOSFODNN7EXAMPLE\n");
+    // Make it world-readable — not 0600.
+    fs.chmodSync(credPath, 0o644);
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit");
+    fs.chmodSync(credPath, 0o600);
+    const r2 = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r2.signal_overrides["credentials-file-bad-perms"], "miss");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("collect cred-stores pipes into run --evidence -", () => {
+  const h = fakeHome("cred-pipe-");
+  try {
+    h.write(".npmrc", "//registry.npmjs.org/:_authToken=npm_" + "C".repeat(36) + "\n");
+    const collected = cli(["collect", "cred-stores", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(collected.status, 0, `collect stderr: ${collected.stderr}`);
+    const ran = cli(["run", "cred-stores", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
+    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
+    assert.ok(body, `run must emit parseable JSON; status=${ran.status}, stdout: ${ran.stdout.slice(0, 200)}`);
+    assert.equal(body.playbook_id, "cred-stores");
+  } finally {
+    h.cleanup();
   }
 });

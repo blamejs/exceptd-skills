@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.38 — 2026-05-20
+
+Seventh reference collector.
+
+### Features
+
+- **`lib/collectors/cred-stores.js`** — inspects local credential carriers (`~/.aws/credentials`, `~/.kube/config`, `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`, `~/.config/gcloud/application_default_credentials.json`, plus project-level `.npmrc` / `.pypirc` under cwd). Flips seven deterministic indicators from the `cred-stores` playbook: `aws-static-key-present` (any `aws_access_key_id` profile with no `sso_session` / `credential_process` / `role_arn` sibling), `kube-static-token` (any `users[].user.token` field non-null with no `exec:` provider on the same user), `gcp-service-account-json-adc` (`type: "service_account"` in `application_default_credentials.json`), `docker-cleartext-auth` (any `auths[<registry>].auth` field with no `credsStore` / `credHelpers[<registry>]` covering it), `npm-pat-present` (`:_authToken=npm_[A-Za-z0-9]{36,}` in either home or project `.npmrc`), `pypi-token-present` (`password = pypi-[A-Za-z0-9_-]{40,}` in either home or project `.pypirc`), `credentials-file-bad-perms` (POSIX only — any of the listed carriers with mode != 0600). The `aws-sso-cache`, `gcloud-credentials` (SQLite path), `gpg-keys`, `ssh-keys-inventory`, `ssh-config`, `keychain-inventory` artifacts are explicitly marked `captured: false` with a `reason` so the runner records partial-evidence coverage — `ssh-key-rsa-short-bits` / `ssh-key-old` / `gpg-key-old-or-weak` / `all-stores-empty-or-federated` need ssh-keygen / gpg / keychain access that would force a child_process out of the stdlib-only collector contract; left to operator-supplied evidence.
+
 ## 0.13.37 — 2026-05-20
 
 Sixth reference collector.
