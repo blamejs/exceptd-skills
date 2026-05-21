@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.36 — 2026-05-20
+
+Fifth reference collector.
+
+### Features
+
+- **`lib/collectors/library-author.js`** — audits a publisher-side repository for supply-chain posture markers. Flips 11 deterministic indicators: `publish-workflow-uses-static-token`, `publish-workflow-no-id-token-write`, `publish-workflow-action-refs-mutable` (any `uses: <action>@<ref>` where ref isn't a 40-char SHA), `release-workflow-non-frozen-install` (`npm install` vs `npm ci`, cargo without `--locked`), `publish-workflow-runs-on-self-hosted`, `package-json-provenance-missing` (no `publishConfig.provenance: true`), `lockfile-missing-integrity`, `sbom-absent-or-unsigned`, `no-security-md`, `no-security-txt`, `vendored-no-provenance`. Indicators that require GitHub API / sigstore lookup / GPG identity inspection (`tag-protection-absent`, `private-vuln-reporting-disabled`, `no-rekor-entry-for-latest-release`, etc.) are left unflipped — operator-supplied evidence remains the path for those.
+
 ## 0.13.35 — 2026-05-20
 
 Fourth reference collector + a sbom-collector indicator-pattern correction.
