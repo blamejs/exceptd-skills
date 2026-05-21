@@ -44,9 +44,10 @@ function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
 const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"));
 const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -54,6 +55,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(secretsCollector.playbook_id, "secrets");
   assert.equal(kernelCollector.playbook_id, "kernel");
   assert.equal(sbomCollector.playbook_id, "sbom");
+  assert.equal(containersCollector.playbook_id, "containers");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -235,6 +237,74 @@ test("collect sbom does not flip lockfile-no-integrity when every entry carries 
     assert.equal(r.status, 0);
     const body = tryJson(r.stdout);
     assert.equal(body.signal_overrides["lockfile-no-integrity"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("containers collector flips every deterministic indicator on a synthetic bad-shape fixture", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-containers-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "Dockerfile"), [
+      "FROM ubuntu:latest",
+      "RUN curl https://get.example.com | bash",
+      "COPY app /",
+      'CMD ["/app"]',
+    ].join("\n") + "\n");
+    fs.writeFileSync(path.join(tmp, "docker-compose.yml"), [
+      "services:",
+      "  web:",
+      "    image: nginx",
+      "    privileged: true",
+      "    network_mode: host",
+      "    volumes:",
+      "      - /var/run/docker.sock:/var/run/docker.sock",
+    ].join("\n") + "\n");
+    fs.writeFileSync(path.join(tmp, "deployment.yaml"), [
+      "apiVersion: apps/v1",
+      "kind: Deployment",
+      "metadata:",
+      "  name: app",
+      "spec:",
+      "  template:",
+      "    spec:",
+      "      hostNetwork: true",
+      "      containers:",
+      "        - image: nginx:latest",
+      "          securityContext:",
+      "            runAsUser: 0",
+      "            privileged: true",
+    ].join("\n") + "\n");
+
+    const r = containersCollector.collect({ cwd: tmp });
+    const expectedHits = [
+      "dockerfile-from-latest", "dockerfile-no-digest-pin",
+      "dockerfile-runs-as-root", "dockerfile-curl-pipe-bash",
+      "compose-privileged", "compose-host-network", "compose-docker-sock-mount",
+      "k8s-privileged", "k8s-host-namespaces", "k8s-run-as-root", "k8s-image-latest",
+    ];
+    for (const id of expectedHits) {
+      assert.equal(r.signal_overrides[id], "hit",
+        `containers collector must flip ${id} on the bad-shape fixture`);
+    }
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("containers collector misses every indicator on a clean Dockerfile (digest-pinned + non-root)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-containers-clean-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "Dockerfile"), [
+      "FROM node:20-alpine@sha256:" + "a".repeat(64),
+      "USER nonroot",
+      "RUN echo safe",
+    ].join("\n") + "\n");
+    const r = containersCollector.collect({ cwd: tmp });
+    for (const id of ["dockerfile-from-latest", "dockerfile-no-digest-pin", "dockerfile-runs-as-root", "dockerfile-curl-pipe-bash"]) {
+      assert.equal(r.signal_overrides[id], "miss",
+        `clean Dockerfile must NOT flip ${id}`);
+    }
   } finally {
     try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
   }
