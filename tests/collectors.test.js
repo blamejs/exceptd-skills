@@ -256,6 +256,78 @@ test("collect sbom does not flip lockfile-no-integrity when every entry carries 
   }
 });
 
+test("sbom collector recognises pyproject.toml as a Python dependency manifest", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-pyproject-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "pyproject.toml"), [
+      "[project]",
+      'name = "x"',
+      "dependencies = [",
+      '  "requests>=2.0",',
+      '  "urllib3>=1.26",',
+      "]",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    assert.ok(r.collector_meta.ecosystems_detected.includes("python"),
+      `expected python in ecosystems; got: ${JSON.stringify(r.collector_meta.ecosystems_detected)}`);
+    assert.match(r.artifacts["lockfile-inventory"].value, /pyproject\.toml/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector recognises requirements-VARIANT.txt glob (not just the canonical name)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-reqglob-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "requirements-dev.txt"), "pytest\nblack\n");
+    fs.writeFileSync(path.join(tmp, "dev-requirements.txt"), "ruff\n");
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    const inv = r.artifacts["lockfile-inventory"].value;
+    assert.match(inv, /requirements-dev\.txt/);
+    assert.match(inv, /dev-requirements\.txt/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector probes one level into docs/ + packages/ subdirs", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-subdir-"));
+  try {
+    // docs/requirements.txt (sphinx-style)
+    fs.mkdirSync(path.join(tmp, "docs"));
+    fs.writeFileSync(path.join(tmp, "docs", "requirements.txt"), "sphinx\nfuro\n");
+    // packages/foo/package.json (monorepo workspace)
+    fs.mkdirSync(path.join(tmp, "packages", "foo"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "packages", "foo", "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: { "": {}, "node_modules/bar": { version: "1.0.0", integrity: "sha512-x" } },
+    }));
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    const inv = r.artifacts["lockfile-inventory"].value;
+    assert.match(inv, /docs\/requirements\.txt/);
+    assert.match(inv, /packages\/foo\/package-lock\.json/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector does not double-count requirements.txt when both root-LOCKFILES match and glob match are eligible", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-no-dup-"));
+  try {
+    // Only the canonical name at root — must be captured exactly once.
+    fs.writeFileSync(path.join(tmp, "requirements.txt"), "requests\nurllib3\n");
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.collector_meta.lockfiles_found, 1);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("containers collector flips every deterministic indicator on a synthetic bad-shape fixture", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-containers-"));
   try {

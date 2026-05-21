@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.50 — 2026-05-21
+
+`sbom` collector recognises pyproject.toml + requirements variants + one-level subdir layouts.
+
+### Bugs
+
+- **`sbom` collector now detects `pyproject.toml` as a Python dependency manifest.** Previously the LOCKFILES catalogue only carried `requirements.txt` / `Pipfile.lock` / `poetry.lock` — Python projects with only a `pyproject.toml` (PEP 621 dependencies array OR `[tool.poetry.dependencies]` block) returned `lockfile-inventory: no lockfile found` and the playbook verdict was inconclusive. Now `pyproject.toml` is parsed: counts entries in `[project.dependencies]`, `[project.optional-dependencies]`, `[tool.poetry.dependencies]`, `[tool.poetry.dev-dependencies]`, and the PEP 621 array-style `dependencies = [...]`.
+- **`requirements*.txt` glob.** Variants like `requirements-dev.txt`, `dev-requirements.txt`, `requirements-prod.txt` are now recognized alongside the canonical `requirements.txt`. The glob pattern is `^(?:[a-z0-9_-]+-)?requirements(?:-[a-z0-9_-]+)?\.txt$`. Excluded from glob to avoid double-capture: the literal `requirements.txt` (already in LOCKFILES).
+- **One-level subdirectory probe** for canonical lockfile names across `docs/`, `packages/*/`, `backend/`, `frontend/`, `infra/`, `iac/`, `src/`, `app/`. Covers the common `docs/requirements.txt` (sphinx-style doc builds) and monorepo-workspace (`packages/<name>/package-lock.json`) layouts. Walk is hand-listed and capped at one level to keep the collector's filesystem footprint bounded.
+
 ## 0.13.49 — 2026-05-21
 
 `discover` covers four previously-invisible collectors. CLI UX cleanup across welcome banner, help text, attestation warning.
