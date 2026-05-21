@@ -1930,3 +1930,168 @@ test("collect cred-stores pipes into run --evidence -", () => {
     h.cleanup();
   }
 });
+
+test("crypto collector flips openssl-pre-3-5 + sshd-no-pqc-kex + ml-kem-absent + ml-dsa-slh-dsa-absent + weak-mac-or-cipher on a pre-3.5 host without PQC", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-bad-"));
+  try {
+    const sshdPath = path.join(tmp, "sshd_config");
+    fs.writeFileSync(sshdPath, [
+      "Port 22",
+      "KexAlgorithms curve25519-sha256,ecdh-sha2-nistp256",
+      "MACs hmac-sha1,hmac-sha2-256",
+      "Ciphers aes256-ctr,arcfour",
+      "PermitRootLogin no",
+      "",
+    ].join("\n"));
+    const sshdD = path.join(tmp, "sshd_config.d");
+    fs.mkdirSync(sshdD);
+    const opensslVerPath = path.join(tmp, "openssl-version.txt");
+    fs.writeFileSync(opensslVerPath, "OpenSSL 3.0.13 30 Jan 2024\nbuilt on: ...\n");
+    const opensslKemPath = path.join(tmp, "openssl-kem.txt");
+    fs.writeFileSync(opensslKemPath, "Name: X25519\nName: X448\n");
+    const opensslSigPath = path.join(tmp, "openssl-sig.txt");
+    fs.writeFileSync(opensslSigPath, "Name: ECDSA\nName: RSA-PSS\n");
+    const certStoreDir = path.join(tmp, "certs");
+    fs.mkdirSync(certStoreDir);
+    fs.writeFileSync(path.join(certStoreDir, "ca.pem"), "-----BEGIN CERTIFICATE-----\n");
+
+    const { collect } = require("../lib/collectors/crypto.js");
+    const r = collect({
+      cwd: tmp,
+      args: {
+        forceLinux: true,
+        paths: {
+          sshdConfig: sshdPath,
+          sshdConfigD: sshdD,
+          opensslVersionOutput: opensslVerPath,
+          opensslKemOutput: opensslKemPath,
+          opensslSignatureOutput: opensslSigPath,
+          certStore: certStoreDir,
+        },
+      },
+    });
+
+    assert.equal(r.signal_overrides["openssl-pre-3-5"], "hit");
+    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], "hit");
+    assert.equal(r.signal_overrides["ml-kem-absent"], "hit");
+    assert.equal(r.signal_overrides["ml-dsa-slh-dsa-absent"], "hit");
+    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "hit");
+    assert.equal(r.precondition_checks["linux-platform"], true);
+    assert.equal(r.collector_meta.collector_id, "crypto");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("crypto collector returns clean miss on modern openssl + PQC sshd", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-ok-"));
+  try {
+    const sshdPath = path.join(tmp, "sshd_config");
+    fs.writeFileSync(sshdPath, [
+      "Port 22",
+      "KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256",
+      "MACs hmac-sha2-512-etm@openssh.com",
+      "Ciphers chacha20-poly1305@openssh.com",
+      "",
+    ].join("\n"));
+    const opensslVerPath = path.join(tmp, "openssl-version.txt");
+    fs.writeFileSync(opensslVerPath, "OpenSSL 3.5.0 8 Apr 2025\n");
+    const opensslKemPath = path.join(tmp, "openssl-kem.txt");
+    fs.writeFileSync(opensslKemPath, "Name: mlkem768\nName: X25519\n");
+    const opensslSigPath = path.join(tmp, "openssl-sig.txt");
+    fs.writeFileSync(opensslSigPath, "Name: ML-DSA-65\nName: ECDSA\n");
+
+    const { collect } = require("../lib/collectors/crypto.js");
+    const r = collect({
+      cwd: tmp,
+      args: {
+        forceLinux: true,
+        paths: {
+          sshdConfig: sshdPath,
+          sshdConfigD: path.join(tmp, "sshd_config.d"),
+          opensslVersionOutput: opensslVerPath,
+          opensslKemOutput: opensslKemPath,
+          opensslSignatureOutput: opensslSigPath,
+          certStore: path.join(tmp, "no-certs"),
+        },
+      },
+    });
+    assert.equal(r.signal_overrides["openssl-pre-3-5"], "miss");
+    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], "miss");
+    assert.equal(r.signal_overrides["ml-kem-absent"], "miss");
+    assert.equal(r.signal_overrides["ml-dsa-slh-dsa-absent"], "miss");
+    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("crypto collector emits empty submission on non-linux platforms", { skip: process.platform === "linux" }, () => {
+  const { collect } = require("../lib/collectors/crypto.js");
+  const r = collect({ args: { forceLinux: false } });
+  assert.equal(r.precondition_checks["linux-platform"], false);
+  assert.deepEqual(r.signal_overrides, {});
+  assert.equal(r.artifacts["openssl-version"].captured, false);
+});
+
+test("crypto collector flips weak-mac-or-cipher on aes-cbc variants", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-aes-cbc-"));
+  try {
+    const sshdPath = path.join(tmp, "sshd_config");
+    fs.writeFileSync(sshdPath, [
+      "Port 22",
+      "KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256",
+      "MACs hmac-sha2-512-etm@openssh.com",
+      "Ciphers aes256-ctr,aes128-cbc",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/crypto.js");
+    const r = collect({
+      cwd: tmp,
+      args: {
+        forceLinux: true,
+        paths: {
+          sshdConfig: sshdPath,
+          sshdConfigD: path.join(tmp, "sshd_config.d"),
+          opensslVersionOutput: path.join(tmp, "noop"),
+          opensslKemOutput: path.join(tmp, "noop"),
+          opensslSignatureOutput: path.join(tmp, "noop"),
+          certStore: path.join(tmp, "no-certs"),
+        },
+      },
+    });
+    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("crypto collector leaves indicators unflipped (inconclusive) when openssl + sshd_config are both unreadable", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-empty-"));
+  try {
+    const { collect } = require("../lib/collectors/crypto.js");
+    const r = collect({
+      cwd: tmp,
+      args: {
+        forceLinux: true,
+        paths: {
+          sshdConfig: path.join(tmp, "nonexistent"),
+          sshdConfigD: path.join(tmp, "nonexistent.d"),
+          opensslVersionOutput: path.join(tmp, "no-version"),
+          opensslKemOutput: path.join(tmp, "no-kem"),
+          opensslSignatureOutput: path.join(tmp, "no-sig"),
+          certStore: path.join(tmp, "no-certs"),
+        },
+      },
+    });
+    // Nothing was readable → no indicator emits a verdict.
+    assert.equal(r.signal_overrides["openssl-pre-3-5"], undefined);
+    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], undefined);
+    assert.equal(r.signal_overrides["ml-kem-absent"], undefined);
+    assert.equal(r.signal_overrides["weak-mac-or-cipher"], undefined);
+    assert.equal(r.artifacts["openssl-version"].captured, false);
+    assert.equal(r.artifacts["sshd-config-effective"].captured, false);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
