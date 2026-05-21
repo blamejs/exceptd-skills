@@ -2034,6 +2034,38 @@ test("crypto collector emits empty submission on non-linux platforms", { skip: p
   assert.equal(r.artifacts["openssl-version"].captured, false);
 });
 
+test("crypto collector flips weak-mac-or-cipher on aes-cbc variants", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-aes-cbc-"));
+  try {
+    const sshdPath = path.join(tmp, "sshd_config");
+    fs.writeFileSync(sshdPath, [
+      "Port 22",
+      "KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256",
+      "MACs hmac-sha2-512-etm@openssh.com",
+      "Ciphers aes256-ctr,aes128-cbc",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/crypto.js");
+    const r = collect({
+      cwd: tmp,
+      args: {
+        forceLinux: true,
+        paths: {
+          sshdConfig: sshdPath,
+          sshdConfigD: path.join(tmp, "sshd_config.d"),
+          opensslVersionOutput: path.join(tmp, "noop"),
+          opensslKemOutput: path.join(tmp, "noop"),
+          opensslSignatureOutput: path.join(tmp, "noop"),
+          certStore: path.join(tmp, "no-certs"),
+        },
+      },
+    });
+    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "hit");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("crypto collector leaves indicators unflipped (inconclusive) when openssl + sshd_config are both unreadable", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-empty-"));
   try {
