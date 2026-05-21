@@ -1109,11 +1109,11 @@ test("cred-stores docker-cleartext-auth demotes local-only registries (codex P1 
   try {
     const authValue = Buffer.from("user:password").toString("base64");
     h.write(".docker/config.json", JSON.stringify({
-      auths: { "127.0.0.1:5000": { auth: authValue } },
+      auths: { "localhost:5000": { auth: authValue } },
     }));
     const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss",
-      "127.0.0.1 registry is local-only, blast radius is negligible");
+      "loopback registry is local-only, blast radius is negligible");
   } finally {
     h.cleanup();
   }
