@@ -1346,6 +1346,78 @@ test("hardening collector PermitRootLogin without-password counts as hit (legacy
   }
 });
 
+test("hardening collector honours sshd Include drop-in precedence (codex P1 #79)", () => {
+  // Regression test for codex P1: when sshd_config starts with
+  //   Include /etc/ssh/sshd_config.d/*.conf
+  // OpenSSH parses the drop-in directives FIRST, so any
+  // `PermitRootLogin yes` in a drop-in beats a later
+  // `PermitRootLogin no` in the base file. The collector must
+  // honour that ordering.
+  const h = fakeLinuxRoot("harden-sshd-include-", { kptrRestrict: 2 },
+    "BOOT_IMAGE=/vmlinuz quiet", "[confidentiality]\n", null);
+  try {
+    // sshd_config: Include first, then PermitRootLogin no.
+    const sshdConfig = path.join(h.tmp, "etc", "ssh", "sshd_config");
+    fs.mkdirSync(path.dirname(sshdConfig), { recursive: true });
+    fs.writeFileSync(sshdConfig,
+      "Include /etc/ssh/sshd_config.d/*.conf\n" +
+      "PermitRootLogin no\n");
+    // Drop-in: PermitRootLogin yes (should win).
+    const dDir = path.join(h.tmp, "etc", "ssh", "sshd_config.d");
+    fs.mkdirSync(dDir, { recursive: true });
+    fs.writeFileSync(path.join(dDir, "10-cloud-init.conf"), "PermitRootLogin yes\n");
+    h.paths.sshdConfig = sshdConfig;
+    h.paths.sshdConfigD = dDir;
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit",
+      "drop-in PermitRootLogin yes must beat base-file no when Include appears first");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector leaves unreadable sysctls unflipped (codex P1 #79)", () => {
+  // Regression test for codex P1: when sysctl reads fail (permission
+  // denied, masked /proc in a container, knob absent on the kernel
+  // build), the indicator must NOT flip to "miss" — that asserts a
+  // hardened posture without evidence. It must stay unflipped so the
+  // runner returns inconclusive.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "harden-unreadable-"));
+  try {
+    // Point every sysctl path at a non-existent location; only
+    // populate cmdline + lockdown + sshd so those indicators DO flip.
+    const paths = {
+      kptrRestrict: path.join(tmp, "missing-kptr"),
+      unprivUserns: path.join(tmp, "missing-userns"),
+      unprivBpf: path.join(tmp, "missing-bpf"),
+      yamaPtrace: path.join(tmp, "missing-yama"),
+      suidDumpable: path.join(tmp, "missing-suid"),
+      cmdline: path.join(tmp, "cmdline"),
+      lockdown: path.join(tmp, "lockdown"),
+      sshdConfig: path.join(tmp, "sshd_config"),
+      sshdConfigD: path.join(tmp, "sshd_config.d.nonexistent"),
+      kallsyms: path.join(tmp, "missing-kallsyms"),
+    };
+    fs.writeFileSync(paths.cmdline, "BOOT_IMAGE=/vmlinuz quiet");
+    fs.writeFileSync(paths.lockdown, "[confidentiality]\n");
+    fs.writeFileSync(paths.sshdConfig, "PermitRootLogin no\n");
+
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths, forceLinux: true } });
+    // Sysctl-derived indicators must NOT be present in signal_overrides.
+    assert.equal(r.signal_overrides["kptr-restrict-disabled"], undefined);
+    assert.equal(r.signal_overrides["unprivileged-userns-enabled"], undefined);
+    assert.equal(r.signal_overrides["unprivileged-bpf-allowed"], undefined);
+    assert.equal(r.signal_overrides["yama-ptrace-permissive"], undefined);
+    // cmdline-derived + sshd-derived indicators DO flip — they're
+    // readable.
+    assert.equal(r.signal_overrides["kaslr-disabled-at-boot"], "miss");
+    assert.equal(r.signal_overrides["mitigations-off"], "miss");
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("hardening collector lockdown=integrity in cmdline counts kernel-lockdown as miss", () => {
   const h = fakeLinuxRoot("harden-lockdown-int-", { kptrRestrict: 2 },
     "BOOT_IMAGE=/vmlinuz quiet lockdown=integrity",
