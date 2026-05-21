@@ -292,6 +292,73 @@ test("containers collector flips every deterministic indicator on a synthetic ba
   }
 });
 
+test("containers collector matches the playbook predicates exactly (codex P1s on PR #75)", () => {
+  // Four predicate-alignment regression cases. Each was a P1 in the
+  // codex review on PR #75; pinning so future renames don't silently
+  // regress the contract.
+  const cases = [
+    {
+      name: "USER 0:0 counts as root",
+      dockerfile: "FROM alpine\nUSER 0:0\n",
+      expect: { "dockerfile-runs-as-root": "hit" },
+    },
+    {
+      name: "USER root:wheel counts as root",
+      dockerfile: "FROM alpine\nUSER root:wheel\n",
+      expect: { "dockerfile-runs-as-root": "hit" },
+    },
+    {
+      name: "USER nonroot does NOT count as root",
+      dockerfile: "FROM alpine\nUSER nonroot:wheel\n",
+      expect: { "dockerfile-runs-as-root": "miss" },
+    },
+    {
+      name: "compose pid: host fires compose-host-network",
+      compose: "services:\n  web:\n    image: nginx\n    pid: host\n",
+      expect: { "compose-host-network": "hit" },
+    },
+    {
+      name: "compose ipc: host fires compose-host-network",
+      compose: "services:\n  web:\n    image: nginx\n    ipc: host\n",
+      expect: { "compose-host-network": "hit" },
+    },
+    {
+      name: "compose SYS_PTRACE fires compose-cap-add-sys-admin",
+      compose: "services:\n  web:\n    image: nginx\n    cap_add:\n      - SYS_PTRACE\n",
+      expect: { "compose-cap-add-sys-admin": "hit" },
+    },
+    {
+      name: "compose SYS_MODULE fires compose-cap-add-sys-admin",
+      compose: "services:\n  web:\n    image: nginx\n    cap_add: [SYS_MODULE]\n",
+      expect: { "compose-cap-add-sys-admin": "hit" },
+    },
+    {
+      name: "k8s runAsNonRoot:false fires k8s-run-as-root",
+      k8s: [
+        "apiVersion: v1", "kind: Pod", "metadata: { name: x }",
+        "spec:", "  containers:", "    - image: nginx@sha256:" + "a".repeat(64),
+        "      securityContext:", "        runAsNonRoot: false",
+      ].join("\n") + "\n",
+      expect: { "k8s-run-as-root": "hit" },
+    },
+  ];
+  for (const c of cases) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-c-case-"));
+    try {
+      if (c.dockerfile) fs.writeFileSync(path.join(tmp, "Dockerfile"), c.dockerfile);
+      if (c.compose) fs.writeFileSync(path.join(tmp, "docker-compose.yml"), c.compose);
+      if (c.k8s) fs.writeFileSync(path.join(tmp, "pod.yaml"), c.k8s);
+      const r = containersCollector.collect({ cwd: tmp });
+      for (const [id, expected] of Object.entries(c.expect)) {
+        assert.equal(r.signal_overrides[id], expected,
+          `case "${c.name}" expected ${id}=${expected}; got ${r.signal_overrides[id]}`);
+      }
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+});
+
 test("containers collector misses every indicator on a clean Dockerfile (digest-pinned + non-root)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-containers-clean-"));
   try {
