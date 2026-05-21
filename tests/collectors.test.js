@@ -48,9 +48,10 @@ const containersCollector = require(path.join(ROOT, "lib", "collectors", "contai
 const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
 const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
 const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
+const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
 
 test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector]) {
+  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector]) {
     assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
     assert.ok(mod.playbook_id.length > 0);
     assert.equal(typeof mod.collect, "function", "collect must be a function");
@@ -62,6 +63,7 @@ test("collector modules export the contract: playbook_id + collect()", () => {
   assert.equal(libraryAuthorCollector.playbook_id, "library-author");
   assert.equal(cryptoCodebaseCollector.playbook_id, "crypto-codebase");
   assert.equal(credStoresCollector.playbook_id, "cred-stores");
+  assert.equal(hardeningCollector.playbook_id, "hardening");
 });
 
 test("collector.collect() returns the contract envelope when called directly", () => {
@@ -1212,6 +1214,224 @@ test("cred-stores credentials-file-bad-perms includes gcloud ADC (codex P2 #78)"
     const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
     assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit",
       "world-readable application_default_credentials.json must flip the indicator");
+  } finally {
+    h.cleanup();
+  }
+});
+
+// Builds a synthetic /proc + /sys + /etc/ssh layout under a tempdir
+// and returns args.paths that point the hardening collector at it.
+function fakeLinuxRoot(prefix, sysctls = {}, cmdline = "", lockdown = "", sshd = "", kallsyms = "") {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const write = (rel, content) => {
+    const full = path.join(tmp, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, content);
+    return full;
+  };
+  const out = { tmp, cleanup: () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} } };
+  const paths = {};
+  if (sysctls.kptrRestrict != null) paths.kptrRestrict = write("proc/sys/kernel/kptr_restrict", String(sysctls.kptrRestrict));
+  if (sysctls.unprivUserns != null) paths.unprivUserns = write("proc/sys/kernel/unprivileged_userns_clone", String(sysctls.unprivUserns));
+  if (sysctls.unprivBpf != null) paths.unprivBpf = write("proc/sys/kernel/unprivileged_bpf_disabled", String(sysctls.unprivBpf));
+  if (sysctls.yamaPtrace != null) paths.yamaPtrace = write("proc/sys/kernel/yama/ptrace_scope", String(sysctls.yamaPtrace));
+  if (sysctls.suidDumpable != null) paths.suidDumpable = write("proc/sys/fs/suid_dumpable", String(sysctls.suidDumpable));
+  if (cmdline != null) paths.cmdline = write("proc/cmdline", cmdline);
+  if (lockdown != null) paths.lockdown = write("sys/kernel/security/lockdown", lockdown);
+  if (sshd != null) paths.sshdConfig = write("etc/ssh/sshd_config", sshd);
+  if (kallsyms != null) paths.kallsyms = write("proc/kallsyms", kallsyms);
+  // sshd_config.d does not exist by default — point at a non-existent path.
+  paths.sshdConfigD = path.join(tmp, "etc", "ssh", "sshd_config.d.nonexistent");
+  out.paths = paths;
+  return out;
+}
+
+test("hardening collector skips with linux-platform=false on non-Linux", () => {
+  // Force-skip path: when forceLinux is NOT set and platform != linux,
+  // collector emits a skipped envelope with linux-platform=false.
+  const r = hardeningCollector.collect({ cwd: ROOT });
+  if (process.platform !== "linux") {
+    assert.equal(r.precondition_checks["linux-platform"], false);
+    assert.deepEqual(r.signal_overrides, {});
+    assert.match(r.artifacts["sysctl-kernel-hardening"].reason, /linux required/);
+  } else {
+    assert.equal(r.precondition_checks["linux-platform"], true);
+  }
+});
+
+test("hardening collector flips all deterministic indicators against a synthetic bad layout", () => {
+  const h = fakeLinuxRoot("harden-bad-", {
+    kptrRestrict: 0,
+    unprivUserns: 1,
+    unprivBpf: 0,
+    yamaPtrace: 0,
+    suidDumpable: 1,
+  }, "BOOT_IMAGE=/vmlinuz root=UUID=x mitigations=off nokaslr quiet",
+     "[none] integrity confidentiality\n",
+     "PermitRootLogin yes\nPasswordAuthentication yes\n",
+     "ffffffff81000000 T _stext\n");
+  try {
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.precondition_checks["linux-platform"], true);
+    assert.equal(r.signal_overrides["kptr-restrict-disabled"], "hit");
+    assert.equal(r.signal_overrides["unprivileged-userns-enabled"], "hit");
+    assert.equal(r.signal_overrides["unprivileged-bpf-allowed"], "hit");
+    assert.equal(r.signal_overrides["yama-ptrace-permissive"], "hit");
+    assert.equal(r.signal_overrides["kaslr-disabled-at-boot"], "hit");
+    assert.equal(r.signal_overrides["mitigations-off"], "hit");
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit");
+    assert.equal(r.signal_overrides["kernel-lockdown-none"], "hit");
+    // kptr FP-check attestation: collector saw kallsyms leak non-zero
+    // addresses → attests FP[1].
+    const att = r.signal_overrides["kptr-restrict-disabled__fp_checks"];
+    assert.equal(typeof att, "object", "kptr fp-check attestation must be present");
+    assert.equal(att["1"], true);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector returns clean miss on a hardened synthetic layout", () => {
+  const h = fakeLinuxRoot("harden-good-", {
+    kptrRestrict: 2,
+    unprivUserns: 0,
+    unprivBpf: 1,
+    yamaPtrace: 1,
+    suidDumpable: 0,
+  }, "BOOT_IMAGE=/vmlinuz root=UUID=x quiet lockdown=confidentiality",
+     "none integrity [confidentiality]\n",
+     "PermitRootLogin prohibit-password\nPasswordAuthentication no\n",
+     "0000000000000000 T _stext\n");
+  try {
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    for (const id of [
+      "kptr-restrict-disabled", "unprivileged-userns-enabled", "unprivileged-bpf-allowed",
+      "yama-ptrace-permissive", "kaslr-disabled-at-boot", "mitigations-off",
+      "sshd-permitrootlogin-yes", "kernel-lockdown-none",
+    ]) {
+      assert.equal(r.signal_overrides[id], "miss", `${id} must be miss on hardened layout`);
+    }
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector kptr fp-check NOT attested when kallsyms is zeroed (legitimate kptr=2)", () => {
+  // kptr_restrict=0 but kallsyms shows zeroed addresses — the FP[1]
+  // counter-evidence (kallsyms zeros despite kptr=0) means the
+  // indicator should NOT carry the attestation (operator must check).
+  const h = fakeLinuxRoot("harden-kptr-zeroed-", { kptrRestrict: 0 },
+    "BOOT_IMAGE=/vmlinuz quiet", "[none]\n", "PermitRootLogin no\n",
+    "0000000000000000 T _stext\n");
+  try {
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.signal_overrides["kptr-restrict-disabled"], "hit");
+    // Attestation must be absent — collector can't honestly confirm
+    // the indicator is real when kallsyms shows zeros.
+    assert.equal(r.signal_overrides["kptr-restrict-disabled__fp_checks"], undefined);
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector PermitRootLogin without-password counts as hit (legacy form)", () => {
+  const h = fakeLinuxRoot("harden-rootlogin-legacy-", { kptrRestrict: 2 },
+    "BOOT_IMAGE=/vmlinuz quiet", "[confidentiality]\n",
+    "PermitRootLogin without-password\n");
+  try {
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector honours sshd Include drop-in precedence (codex P1 #79)", () => {
+  // Regression test for codex P1: when sshd_config starts with
+  //   Include /etc/ssh/sshd_config.d/*.conf
+  // OpenSSH parses the drop-in directives FIRST, so any
+  // `PermitRootLogin yes` in a drop-in beats a later
+  // `PermitRootLogin no` in the base file. The collector must
+  // honour that ordering.
+  const h = fakeLinuxRoot("harden-sshd-include-", { kptrRestrict: 2 },
+    "BOOT_IMAGE=/vmlinuz quiet", "[confidentiality]\n", null);
+  try {
+    // sshd_config: Include first, then PermitRootLogin no.
+    const sshdConfig = path.join(h.tmp, "etc", "ssh", "sshd_config");
+    fs.mkdirSync(path.dirname(sshdConfig), { recursive: true });
+    fs.writeFileSync(sshdConfig,
+      "Include /etc/ssh/sshd_config.d/*.conf\n" +
+      "PermitRootLogin no\n");
+    // Drop-in: PermitRootLogin yes (should win).
+    const dDir = path.join(h.tmp, "etc", "ssh", "sshd_config.d");
+    fs.mkdirSync(dDir, { recursive: true });
+    fs.writeFileSync(path.join(dDir, "10-cloud-init.conf"), "PermitRootLogin yes\n");
+    h.paths.sshdConfig = sshdConfig;
+    h.paths.sshdConfigD = dDir;
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit",
+      "drop-in PermitRootLogin yes must beat base-file no when Include appears first");
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("hardening collector leaves unreadable sysctls unflipped (codex P1 #79)", () => {
+  // Regression test for codex P1: when sysctl reads fail (permission
+  // denied, masked /proc in a container, knob absent on the kernel
+  // build), the indicator must NOT flip to "miss" — that asserts a
+  // hardened posture without evidence. It must stay unflipped so the
+  // runner returns inconclusive.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "harden-unreadable-"));
+  try {
+    // Point every sysctl path at a non-existent location; only
+    // populate cmdline + lockdown + sshd so those indicators DO flip.
+    const paths = {
+      kptrRestrict: path.join(tmp, "missing-kptr"),
+      unprivUserns: path.join(tmp, "missing-userns"),
+      unprivBpf: path.join(tmp, "missing-bpf"),
+      yamaPtrace: path.join(tmp, "missing-yama"),
+      suidDumpable: path.join(tmp, "missing-suid"),
+      cmdline: path.join(tmp, "cmdline"),
+      lockdown: path.join(tmp, "lockdown"),
+      sshdConfig: path.join(tmp, "sshd_config"),
+      sshdConfigD: path.join(tmp, "sshd_config.d.nonexistent"),
+      kallsyms: path.join(tmp, "missing-kallsyms"),
+    };
+    fs.writeFileSync(paths.cmdline, "BOOT_IMAGE=/vmlinuz quiet");
+    fs.writeFileSync(paths.lockdown, "[confidentiality]\n");
+    fs.writeFileSync(paths.sshdConfig, "PermitRootLogin no\n");
+
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths, forceLinux: true } });
+    // Sysctl-derived indicators must NOT be present in signal_overrides.
+    assert.equal(r.signal_overrides["kptr-restrict-disabled"], undefined);
+    assert.equal(r.signal_overrides["unprivileged-userns-enabled"], undefined);
+    assert.equal(r.signal_overrides["unprivileged-bpf-allowed"], undefined);
+    assert.equal(r.signal_overrides["yama-ptrace-permissive"], undefined);
+    // cmdline-derived + sshd-derived indicators DO flip — they're
+    // readable.
+    assert.equal(r.signal_overrides["kaslr-disabled-at-boot"], "miss");
+    assert.equal(r.signal_overrides["mitigations-off"], "miss");
+    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("hardening collector lockdown=integrity in cmdline counts kernel-lockdown as miss", () => {
+  const h = fakeLinuxRoot("harden-lockdown-int-", { kptrRestrict: 2 },
+    "BOOT_IMAGE=/vmlinuz quiet lockdown=integrity",
+    "", // no /sys/kernel/security/lockdown file
+    "PermitRootLogin no\n");
+  // Override the lockdown path with a deliberately non-existent
+  // file so the collector treats it as absent. (Deleting the key
+  // lets the default `/sys/kernel/security/lockdown` take over,
+  // which DOES exist on CI Linux hosts and would contaminate the
+  // test's intended absent-file scenario.)
+  h.paths.lockdown = path.join(h.tmp, "lockdown.nonexistent");
+  try {
+    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
+    assert.equal(r.signal_overrides["kernel-lockdown-none"], "miss");
   } finally {
     h.cleanup();
   }
