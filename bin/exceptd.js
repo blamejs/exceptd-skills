@@ -1989,14 +1989,42 @@ Subchecks:
                           Currently scoped to: regenerate the local Ed25519
                           private key when keys/public.pem exists but
                           .keys/private.pem is absent. Does NOT modify any
-                          file outside .keys/.
-  (no flag)               All four subchecks above (sans --registry-check
-                          unless explicitly requested), plus signing-status
-                          (private key presence under .keys/).
+                          file outside .keys/. When the key is already
+                          present, --fix is a no-op (surfaces fix_status:
+                          "already_present" so callers can distinguish
+                          clean-state from broken-state).
+  --collectors            Audit the per-playbook collector layer:
+                          which playbooks have a collector module under
+                          lib/collectors/, which are policy-skipped by
+                          design, and which collectors haven't been wired
+                          up yet. JSON emits has_collector / policy_skips /
+                          without_collector arrays.
+  --ai-config             Walk the operator's AI-assistant configuration
+                          files (~/.claude/, ~/.cursor/, ~/.codeium/,
+                          ~/.aider/, ~/.continue/) and surface sensitive
+                          content (API keys, tokens, MCP server
+                          definitions) plus on Windows the icacls ACL
+                          state. Combine with --fix to harden ACLs.
+                          Opt-in — never part of the default scan.
+  --exit-codes            Dump the canonical EXIT_CODES table as JSON.
+                          Useful for CI / scripting consumers that want
+                          the documented exit-code contract without parsing
+                          help text. Off by default.
+  --shipped-tarball       Round-trip the verify-shipped-tarball gate:
+                          npm pack → extract to a tempdir → run
+                          lib/verify.js against the extracted tree.
+                          Surfaces the signature-regression class where
+                          source-tree verify passes but the published
+                          tarball fails. Off by default.
+  (no flag)               --signatures + --currency + --cves + --rfcs +
+                          signing-status. --registry-check, --collectors,
+                          --ai-config, --exit-codes, --shipped-tarball are
+                          opt-in and never run as part of the default scan.
 
 Flags:
   --json                  Emit JSON (default is human-readable text).
   --pretty                Indented JSON output (implies --json).
+  --air-gap               Suppress the --registry-check network probe.
 
 Output: checks{} per subcheck + summary{all_green, issues_count}.`,
     "ai-run": `ai-run <playbook> — streaming JSONL contract for AI-driven runs (v0.11.0).
@@ -3164,6 +3192,15 @@ function cmdRun(runner, args, runOpts, pretty) {
 
   const result = runner.run(playbookId, directiveId, submission, runOpts);
   if (result && upstreamCheck) result.upstream_check = upstreamCheck;
+
+  // Audit 3 A.2: surface air_gap_mode at the top of the envelope so
+  // stdout-parsing consumers can detect that the run honored --air-gap
+  // (or the playbook's _meta.air_gap_mode flag) without descending into
+  // phases.govern. Mirrors the run-result hoist pattern (verdict,
+  // rwep_score, evidence_completeness, attestation_path).
+  if (result) {
+    result.air_gap_mode = !!(pb._meta?.air_gap_mode || runOpts.airGap);
+  }
 
   // v0.11.9 (#113/#114): surface --operator and --ack in the run result so
   // operators see the attribution + consent state without inspecting the
@@ -5920,6 +5957,27 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const wantJson = !!args.json || !!args.pretty;
   const indent = !!args.pretty;
 
+  // Refuse unknown flags rather than silently running the full default
+  // scan. Pre-fix, typos and renamed-out flags all returned exit 0 with
+  // the operator believing they'd run a targeted check.
+  const KNOWN_DOCTOR_FLAGS = new Set([
+    "json", "pretty", "fix", "air-gap",
+    "signatures", "currency", "cves", "rfcs", "registry-check",
+    "ai-config", "collectors", "exit-codes", "shipped-tarball",
+    // Global flags the parser may inject regardless of verb.
+    "_", "json-stdout-only", "_jsonMode",
+  ]);
+  const unknownFlags = Object.keys(args).filter(k => !KNOWN_DOCTOR_FLAGS.has(k));
+  if (unknownFlags.length > 0) {
+    const dym = unknownFlags.map(f => {
+      const candidates = [...KNOWN_DOCTOR_FLAGS].filter(k => typeof k === "string" && k.length >= 2 && (k.includes(f) || f.includes(k) || levenshtein1(f, k) <= 1));
+      return { flag: `--${f}`, did_you_mean: candidates.slice(0, 3).map(c => `--${c}`) };
+    });
+    return emitError(`doctor: unknown flag(s): ${unknownFlags.map(f => `--${f}`).join(", ")}`,
+      { verb: "doctor", unknown_flags: dym, known_flags: [...KNOWN_DOCTOR_FLAGS].filter(k => k !== "_" && !k.startsWith("_") && k !== "json-stdout-only").sort().map(k => `--${k}`) },
+      pretty);
+  }
+
   // `doctor --exit-codes` dumps the canonical exit-code table as JSON so
   // operator-facing docs cannot drift from runtime behavior. Short-circuit
   // before the regular health checks since the dump is informational.
@@ -6079,22 +6137,37 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       // MAL-* (malicious package) entries silently dropped from the
       // doctor report — operators reading "34 entries" assumed the
       // Shai-Hulud / TanStack worm intel had been removed when it was
-      // present all along. Read the catalog and report both totals.
+      // present all along. Read the catalog and report all prefix
+      // groups — the previous CVE+MAL-only enumeration silently dropped
+      // any other prefix (BUG-*, SNYK-*, etc.) from the breakdown even
+      // though they were summed into total. Same regression class as
+      // the original CVE-only fix; this generalizes it.
       let total = null;
       let cve_count = null;
       let mal_count = null;
+      let by_prefix = null;
       try {
         const catalog = require(path.join(PKG_ROOT, "data", "cve-catalog.json"));
         const keys = Object.keys(catalog).filter((k) => !k.startsWith("_"));
         cve_count = keys.filter((k) => k.startsWith("CVE-")).length;
         mal_count = keys.filter((k) => k.startsWith("MAL-")).length;
         total = keys.length;
+        // Enumerate every prefix present so future additions (BUG-*,
+        // SNYK-*, GHSA-*, RUSTSEC-*) surface in the breakdown instead
+        // of vanishing into the total - sum-of-named-prefixes gap.
+        by_prefix = {};
+        for (const k of keys) {
+          const m = k.match(/^([A-Z]+)-/);
+          const p = m ? m[1] : "OTHER";
+          by_prefix[p] = (by_prefix[p] || 0) + 1;
+        }
       } catch { /* fall through with nulls */ }
       checks.cves = {
         ok,
         total,
         cve_count,
         mal_count,
+        by_prefix,
         drift: driftMatch ? Number(driftMatch[1]) : 0,
         ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
       };
@@ -6543,6 +6616,23 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     }
   }
 
+  // Audit 3 B.3: --fix was passed but nothing to fix. Pre-fix this was
+  // silently a no-op — operators couldn't distinguish "we tried and were
+  // already healthy" from "we tried and failed silently." Now surfaces a
+  // structured fix_status so callers reading the envelope can branch on
+  // it.
+  // The ai-config branch tracks its remediations on checks.ai_config
+  // (fix_applied / fix_failed are nested there, not on out.summary), so
+  // include that signal when deciding whether ANY fix actually ran.
+  // Without this, doctor --ai-config --fix applying chmod/icacls would
+  // simultaneously report checks.ai_config.fix_applied > 0 AND
+  // summary.fix_status: "already_present", which is contradictory.
+  const aiConfigFixed = !!(checks.ai_config && ((checks.ai_config.fix_applied || 0) > 0 || (checks.ai_config.fix_failed || 0) > 0));
+  if (args.fix && !out.summary.fix_applied && !out.summary.fix_attempted && !out.summary.fix_partial && !out.summary.fix_decline_reason && !aiConfigFixed) {
+    out.summary.fix_status = "already_present";
+    out.summary.fix_skipped_reason = "Signing key + skill signatures are already valid; nothing to remediate.";
+  }
+
   if (wantJson) {
     emit(out, indent);
     if (!allGreen) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
@@ -6578,7 +6668,12 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   mark(checks.cves, c => {
     if (!c.ok) return `CVE catalog FAILED (exit=${c.exit_code ?? "?"})`;
     const total = c.total ?? "?";
-    const breakdown = (c.cve_count != null && c.mal_count != null)
+    // Audit 3 B.2: enumerate every prefix so the sum equals total.
+    // Falls back to the legacy CVE + MAL display only if by_prefix isn't
+    // present (older catalog read paths).
+    const breakdown = c.by_prefix
+      ? ` (${Object.entries(c.by_prefix).sort().map(([p, n]) => `${n} ${p}`).join(" + ")})`
+      : (c.cve_count != null && c.mal_count != null)
       ? ` (${c.cve_count} CVE + ${c.mal_count} MAL)`
       : "";
     return `CVE catalog: ${total} entries${breakdown}, drift ${c.drift ?? 0}`;
@@ -7243,10 +7338,10 @@ function cmdAsk(runner, args, runOpts, pretty) {
   // Keeps cmdAsk dependency-free; rich enough to cover the 80% of natural
   // queries listed in the operator report.
   const SYNONYMS = {
-    "credential": ["secret", "key", "token", "password", "cred"],
-    "credentials": ["secret", "key", "token", "password", "cred"],
-    "api key": ["secret", "credential"],
-    "api keys": ["secret", "credential"],
+    "credential": ["secret", "key", "token", "password", "cred", "secrets"],
+    "credentials": ["secret", "key", "token", "password", "cred", "secrets"],
+    "api key": ["secret", "credential", "secrets"],
+    "api keys": ["secret", "credential", "secrets"],
     "supply chain": ["sbom", "dependency", "vendor", "package", "library", "publish"],
     "supply-chain": ["sbom", "dependency", "vendor", "package", "library", "publish"],
     "npm package": ["sbom", "dependency", "library", "publish"],
@@ -7262,7 +7357,47 @@ function cmdAsk(runner, args, runOpts, pretty) {
     "secret": ["credential", "key", "token", "env", "leak"],
     "secrets": ["credential", "key", "token", "env", "leak", "repo"],
     "config": ["configuration", "settings"],
+    // Audit 3 C.2: missing identity / phishing / SSO / BEC vocabulary.
+    "phish": ["identity-sso-compromise", "idp-incident", "sso", "bec"],
+    "phishing": ["identity-sso-compromise", "idp-incident", "sso", "bec"],
+    "phished": ["identity-sso-compromise", "idp-incident", "sso", "bec"],
+    "sso": ["identity-sso-compromise", "idp-incident", "okta", "azure-ad", "entra"],
+    "oauth": ["identity-sso-compromise", "idp-incident", "openid", "oidc"],
+    "saml": ["identity-sso-compromise", "idp-incident"],
+    "okta": ["identity-sso-compromise", "idp-incident", "sso"],
+    "entra": ["identity-sso-compromise", "idp-incident", "azure-ad", "sso"],
+    "bec": ["identity-sso-compromise", "phish"],
+    "deepfake": ["identity-sso-compromise", "phish", "ai-c2"],
+    // Famous-attack vocabulary maps to library-author / sbom / supply-chain.
+    "left-pad": ["library-author", "sbom", "supply-chain-recovery", "npm"],
+    "left pad": ["library-author", "sbom", "supply-chain-recovery", "npm"],
+    "event-stream": ["library-author", "sbom", "supply-chain-recovery", "npm"],
+    "shai-hulud": ["library-author", "sbom", "supply-chain-recovery", "npm"],
+    "ransomware": ["ransomware", "kernel", "runtime"],
+    "rogue": ["ai-c2", "llm-tool-use-exfil"],
+    "agentic": ["ai-c2", "llm-tool-use-exfil", "mcp"],
+    // Credential theft from a developer laptop is cred-stores territory.
+    "credential theft": ["cred-stores", "secrets"],
+    "cred theft": ["cred-stores", "secrets"],
+    "credential exfil": ["cred-stores", "llm-tool-use-exfil"],
+    "developer laptop": ["cred-stores", "hardening"],
   };
+
+  // Audit 3 C.1: stopwords filtered after synonym expansion so common
+  // English words don't drive false positives via raw substring matching.
+  // "the the the the" used to route to ai-api because "the" substring-hit
+  // "anthropic" in the haystack.
+  const STOPWORDS = new Set([
+    "the", "and", "for", "are", "but", "not", "you", "all", "can", "had",
+    "her", "was", "one", "our", "out", "day", "get", "has", "him", "his",
+    "how", "man", "new", "now", "old", "see", "two", "way", "who", "boy",
+    "did", "its", "let", "put", "say", "she", "too", "use", "any", "got",
+    "from", "this", "that", "with", "have", "they", "what", "your", "when",
+    "which", "would", "could", "should", "there", "their", "about", "into",
+    "than", "then", "them", "some", "more", "most", "very", "much", "such",
+    "been", "were", "want", "well", "back", "good", "make", "made", "take",
+    "took", "give", "gave", "find", "found", "know", "knew", "told", "ago",
+  ]);
 
   // Tokenize question (length >= 2, lowercase) + expand via synonyms.
   const baseTokens = q.split(/\W+/).filter(t => t.length >= 2);
@@ -7275,13 +7410,16 @@ function cmdAsk(runner, args, runOpts, pretty) {
   for (const t of baseTokens) {
     if (SYNONYMS[t]) for (const s of SYNONYMS[t]) expanded.add(s);
   }
+  // Filter stopwords AFTER synonym expansion (synonym lookup may have
+  // pulled in canonical tokens via a stopword-adjacent multi-word phrase).
+  for (const sw of STOPWORDS) expanded.delete(sw);
   const tokens = [...expanded];
 
   const scored = [];
   for (const id of ids) {
     let pb;
     try { pb = runner.loadPlaybook(id); } catch { continue; }
-    const haystack = [
+    const haystackText = [
       pb._meta?.id || id,
       pb.domain?.name || "",
       pb.domain?.attack_class || "",
@@ -7297,8 +7435,14 @@ function cmdAsk(runner, args, runOpts, pretty) {
       pb.phases?.look?.collection_scope?.asset_scope || "",
       pb.phases?.look?.collection_scope?.time_window || "",
     ].join(" ").toLowerCase();
+    // Audit 3 C.1: tokenize the haystack and use Set membership instead
+    // of raw substring matching. The substring approach matched "the" in
+    // "authentication" and "got" inside larger words, allowing stopword
+    // and partial-word false positives. Tokenized membership matches
+    // whole tokens only.
+    const haystackTokens = new Set(haystackText.split(/\W+/).filter(t => t.length >= 2));
     let score = 0;
-    for (const t of tokens) if (haystack.includes(t)) score++;
+    for (const t of tokens) if (haystackTokens.has(t)) score++;
     // ID match counts double — "secrets" should map to the secrets playbook.
     if (tokens.some(t => (pb._meta?.id || id) === t)) score += 3;
     scored.push({ id: pb._meta?.id || id, score });
