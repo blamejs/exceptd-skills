@@ -6608,9 +6608,21 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       // back-compat.
       const policySkipSet = new Set(POLICY_SKIPS);
       const unexplained_missing_collectors = without_collector.filter(p => !policySkipSet.has(p));
+      // Audit-3 codex P1 follow-up: when an unexplained missing collector
+      // appears (a playbook that SHOULD have a collector but doesn't,
+      // i.e. NOT in the policy-skip allowlist), the check fails. Without
+      // this, automation and CI health checks would miss the exact
+      // regression class that unexplained_missing_collectors exists to
+      // surface. Load errors still fail at "error" severity; unexplained
+      // missings fail at "warn" (they're a build-time gap, not a
+      // runtime crash).
+      const collectorOk = ok && unexplained_missing_collectors.length === 0;
+      const collectorSeverity = load_errors.length > 0 ? "error"
+        : unexplained_missing_collectors.length > 0 ? "warn"
+        : "info";
       checks.collectors = {
-        ok,
-        severity: ok ? "info" : "error",
+        ok: collectorOk,
+        severity: collectorSeverity,
         total_playbooks: playbookFiles.length,
         with_collector,
         without_collector,
@@ -6618,7 +6630,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         load_errors,
         policy_skips: POLICY_SKIPS.sort(),
       };
-      if (!ok) issues.push("collectors");
+      if (!collectorOk) issues.push("collectors");
     } catch (e) {
       checks.collectors = { ok: false, severity: "error", error: e.message };
       issues.push("collectors");

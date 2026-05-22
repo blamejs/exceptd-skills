@@ -1746,7 +1746,7 @@ test('audit-3 B.9: doctor --ai-config walk caps + truncation marker', () => {
     `max_files cap should bound the walk; got ${c.walk_caps.max_files}`);
 });
 
-test('audit-3 B.6: doctor --collectors surfaces unexplained_missing_collectors', () => {
+test('audit-3 B.6: doctor --collectors surfaces unexplained_missing_collectors AND gates ok on it', () => {
   const r = cli(['doctor', '--collectors', '--json']);
   const data = tryJson(r.stdout);
   assert.ok(data, 'doctor --collectors --json must parse');
@@ -1761,6 +1761,16 @@ test('audit-3 B.6: doctor --collectors surfaces unexplained_missing_collectors',
   for (const id of c.unexplained_missing_collectors) {
     assert.ok(!policy.has(id),
       `unexplained_missing_collectors must exclude policy-skipped playbooks; ${id} is in both lists`);
+  }
+  // ok must reflect the unexplained_missing set. If the array is empty,
+  // ok stays true; if anything appears in it, ok must flip to false so
+  // CI health checks catch the regression class this field was added to
+  // surface.
+  if (c.unexplained_missing_collectors.length === 0) {
+    assert.equal(c.ok, true, 'no unexplained missings → ok stays true');
+  } else {
+    assert.equal(c.ok, false,
+      'unexplained missings must flip ok to false so doctor surfaces the gap as a failed check');
   }
 });
 
