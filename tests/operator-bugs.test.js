@@ -1661,11 +1661,32 @@ test('audit-3 A.1: refresh --air-gap with no fixtures/cache refuses every source
 });
 
 test('audit-3 A.4: collect envelope surfaces air_gap_mode on the top-level result', () => {
-  const r = cli(['collect', 'secrets', '--air-gap', '--json']);
-  const data = tryJson(r.stdout);
-  assert.ok(data, 'collect --json must emit parseable JSON');
-  assert.equal(data.air_gap_mode, true,
-    'collect --air-gap must surface air_gap_mode: true at the top of the envelope');
+  // Two paths to surface: (a) operator passes --air-gap explicitly, (b)
+  // the playbook declares _meta.air_gap_mode: true intrinsically (secrets,
+  // cred-stores, containers do this). Both must produce the same envelope
+  // marker so downstream automation makes the right network-policy call.
+  const r1 = cli(['collect', 'secrets', '--air-gap', '--json']);
+  const d1 = tryJson(r1.stdout);
+  assert.ok(d1, 'collect --json must emit parseable JSON');
+  assert.equal(d1.air_gap_mode, true,
+    'collect --air-gap must surface air_gap_mode: true');
+
+  // mcp is NOT intrinsically air-gapped; without --air-gap the field
+  // should reflect that.
+  const r2 = cli(['collect', 'mcp', '--json']);
+  const d2 = tryJson(r2.stdout);
+  assert.ok(d2);
+  assert.equal(d2.air_gap_mode, false,
+    'collect on a non-intrinsic playbook without --air-gap must report air_gap_mode: false');
+
+  // Intrinsic playbook (secrets has _meta.air_gap_mode: true) — air-gap
+  // marker must fire even WITHOUT --air-gap, mirroring how `run` honors
+  // _meta.air_gap_mode.
+  const r3 = cli(['collect', 'secrets', '--json']);
+  const d3 = tryJson(r3.stdout);
+  assert.ok(d3);
+  assert.equal(d3.air_gap_mode, true,
+    'collect on an intrinsically-air-gapped playbook must surface air_gap_mode: true even without --air-gap');
 });
 
 test('audit-3 A.6: run --upstream-check --air-gap refuses the registry probe', () => {

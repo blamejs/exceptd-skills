@@ -2359,8 +2359,18 @@ function cmdCollect(runner, args, runOpts, pretty) {
   // collection step. Collectors themselves currently make no network
   // calls — but the flag's intent is to flag the collection context for
   // any future collector that might.
-  const collectAirGap = !!(runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1");
-  emit({ verb: "collect", playbook_id: playbookId, air_gap_mode: collectAirGap, ...submission }, pretty, (obj) => {
+  // Also honor _meta.air_gap_mode on the playbook itself — playbooks
+  // like secrets / cred-stores / containers declare air-gap intrinsically
+  // and `run` honors that even without --air-gap. Collect must mirror so
+  // automation downstream sees the same intrinsic mode.
+  let pbMetaAirGap = false;
+  try { pbMetaAirGap = !!(runner.loadPlaybook(playbookId)?._meta?.air_gap_mode); }
+  catch { /* playbook load shouldn't fail here — collector exists — but be defensive */ }
+  const collectAirGap = !!(runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1" || pbMetaAirGap);
+  // Spread `submission` first, then explicit fields, so a submission key
+  // named `air_gap_mode` (currently always undefined but defensive against
+  // future collector contracts) can't clobber the envelope marker.
+  emit({ verb: "collect", playbook_id: playbookId, ...submission, air_gap_mode: collectAirGap }, pretty, (obj) => {
     const lines = [];
     const meta = obj.collector_meta || {};
     lines.push(`collect: ${obj.playbook_id}  (${meta.collector_version || "?"} on ${meta.platform || "?"})`);
@@ -6423,6 +6433,13 @@ function cmdDoctor(runner, args, runOpts, pretty) {
           walk(childAbs, displayRoot, childRel, depth + 1);
         } else if (e.isFile()) {
           scannedFiles++;
+          // Check the file cap immediately after the increment so a
+          // single large directory doesn't process tens of thousands of
+          // entries before the next recursive call catches the bound.
+          if (scannedFiles > MAX_FILES) {
+            walkAborted = true;
+            return;
+          }
           if (!SENSITIVE_PATTERNS.some((re) => re.test(e.name))) continue;
           let st;
           try { st = fs.statSync(childAbs); } catch { continue; }
