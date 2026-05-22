@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.58 — 2026-05-22
+
+Air-gap mode now blocks every refresh source (not just GHSA/OSV). `doctor` help text catches up with runtime flag set, surfaces a fix status when nothing to remediate, and refuses unknown flags. `ask` stops returning false-positive substring matches and learns identity / phishing / SSO / famous-attack vocabulary.
+
+### Bugs
+
+- **`refresh --air-gap` was a partial guarantee.** GHSA + OSV honored `ctx.airGap` at the source-module level. `kev`, `epss`, `nvd`, `rfc`, and `pins` fell through to their live-network branches when neither `--from-fixture` nor `--from-cache` was wired up — operators got a banner promising no egress while CISA KEV updates were being applied to the catalog. The air-gap guard now lives at the central source-dispatch (`runOne` in `lib/refresh-external.js`) so the guarantee holds uniformly across every source. Sources with a `fixtures.<name>` or `cacheDir` offline path still run normally.
+- **`exceptd doctor --help` advertised 6 flags but the runtime accepted 10.** `--collectors`, `--ai-config`, `--exit-codes`, and `--shipped-tarball` were dispatchable but undiscoverable. The help block now enumerates the full set, with one-paragraph descriptions of what each surface checks. `--exit-codes` is now operator-discoverable as the canonical EXIT_CODES contract dump.
+- **`doctor --cves` breakdown arithmetic** silently dropped `BUG-*` and any non-CVE/non-MAL prefix entries from the named totals. `312 entries (301 CVE + 8 MAL)` is now `312 entries (3 BUG + 301 CVE + 8 MAL)` — exact sum. Output adds a structured `by_prefix` map so the breakdown is data-driven against the live catalog instead of hardcoded against two prefixes (same regression class as the v0.13.6 MAL fix, now generalized).
+- **`doctor --fix` silently no-op'd when nothing was wrong.** Operators couldn't distinguish "we tried and were already healthy" from "we tried and failed silently." The summary now carries `fix_status: "already_present"` + `fix_skipped_reason` on a healthy install. Existing `fix_applied` / `fix_attempted` / `fix_partial` states unchanged.
+- **`doctor` accepted unknown flags as no-ops** instead of refusing. `doctor --singatures` (typo), `doctor --data` (renamed-out flag), `doctor --bogus-flag-xyz` all ran a full default scan and exited 0. Refusal is now structured: ok:false + `unknown_flags[]` with did-you-mean candidates + `known_flags[]` listing every accepted flag. Non-zero exit.
+- **`ask` substring matching produced stopword false positives.** `"the"` substring-hit `"authentication"` in the haystack, so any query containing a stopword inflated scores. The pure-stopword query `"the the the the"` routed confidently to ai-api. Fix: tokenize the haystack with the same splitter as the question and match by whole-token Set membership instead of `String.includes`. Plus a stopword filter applied after synonym expansion to drop common English words that would otherwise dilute scoring.
+
+### Features
+
+- **`run` / `ai-run` / `ci` envelopes surface `air_gap_mode` at the top.** Stdout-parsing consumers can detect that air-gap was active without descending into `phases.govern`. Mirrors the existing result-hoist pattern (`verdict`, `rwep_score`, `evidence_completeness`, `attestation_path`).
+- **`ask` synonym map grew to cover identity / phishing / SSO / BEC / famous-attack vocabulary.** New keys: `phish*`, `sso`, `oauth`, `saml`, `okta`, `entra`, `bec`, `deepfake`, `left-pad`, `event-stream`, `shai-hulud`, `agentic`, `rogue`, `credential theft`, `developer laptop`. Queries like `"I think we got phished"` now top-route to identity-sso-compromise; `"left-pad style attack"` to library-author; `"credential theft from developer laptop"` to secrets (with cred-stores in top 3).
+
 ## 0.13.57 — 2026-05-22
 
 `attest list` populates the signed field. README + verb help document the ai-run JSONL event grammar. `--block-on-jurisdiction-clock` clarifies pending-vs-started semantics.

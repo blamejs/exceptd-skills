@@ -229,8 +229,11 @@ test('run <pb> --evidence envelope (single-playbook success): exact top-level ke
     // phases.* to find them.
     // v0.13.23: attestation_path surfaces the persisted filesystem path
     // so the operator can locate the JSON without grepping ~/.exceptd/.
+    // air_gap_mode is hoisted to the envelope so stdout-parsing
+    // consumers can see whether --air-gap (or _meta.air_gap_mode) was
+    // active without descending into govern.
     const expected = [
-      'ack', 'attestation_path', 'directive_id', 'evidence_completeness', 'evidence_hash',
+      'ack', 'air_gap_mode', 'attestation_path', 'directive_id', 'evidence_completeness', 'evidence_hash',
       'indicators_evaluated', 'indicators_known', 'ok', 'phases',
       'playbook_id', 'precondition_check_source', 'preflight_issues',
       'rwep_score', 'session_id', 'submission_digest',

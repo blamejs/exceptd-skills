@@ -1532,6 +1532,134 @@ test('#E7 jurisdiction clock pending without --ack on detected classification', 
 });
 
 // ===================================================================
+test('audit-3 B.1: doctor --help advertises every runtime-accepted flag', () => {
+  // Pre-fix: --collectors, --ai-config, --exit-codes, --shipped-tarball were
+  // all runtime-accepted but absent from `doctor --help`. Operators couldn't
+  // discover them. The fix added them to the help block. This test pins the
+  // help text against the runtime acceptance set; if a new flag is added to
+  // KNOWN_DOCTOR_FLAGS without a help entry, this fails.
+  const r = cli(['doctor', '--help']);
+  const text = (r.stdout || '') + (r.stderr || '');
+  for (const flag of ['--collectors', '--ai-config', '--exit-codes', '--shipped-tarball', '--registry-check', '--fix']) {
+    assert.match(text, new RegExp(`${flag.replace(/-/g, '\\-')}\\b`),
+      `doctor --help must advertise ${flag}; got: ${text.slice(0, 500)}`);
+  }
+});
+
+test('audit-3 B.2: doctor CVE catalog by_prefix sums to total', () => {
+  const r = cli(['doctor', '--cves', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --cves --json must emit parseable JSON');
+  const cves = data?.checks?.cves;
+  assert.ok(cves, 'checks.cves must be present');
+  assert.equal(typeof cves.total, 'number', 'cves.total must be numeric');
+  assert.ok(cves.by_prefix && typeof cves.by_prefix === 'object',
+    'cves.by_prefix must be an object enumerating every prefix group');
+  const sum = Object.values(cves.by_prefix).reduce((a, b) => a + b, 0);
+  assert.equal(sum, cves.total,
+    `by_prefix must sum to total (${sum} != ${cves.total}); pre-fix only CVE + MAL were enumerated and BUG-* entries dropped from the breakdown`);
+});
+
+test('audit-3 B.3: doctor --fix on healthy install emits fix_status: already_present', () => {
+  // Pre-fix --fix silently no-op'd when keys were already present. Operators
+  // couldn't distinguish "we tried and were already healthy" from "we tried
+  // and failed silently." Now surfaces a structured fix_status so the
+  // operator (or CI script) can branch on it.
+  const r = cli(['doctor', '--fix', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --fix --json must emit parseable JSON');
+  // On a healthy local checkout (keys/public.pem + .keys/private.pem both
+  // present + sigs valid), --fix has nothing to do. Surface that explicitly.
+  if (data.summary?.fix_applied || data.summary?.fix_attempted) {
+    // Fix actually ran — not the path under test here.
+    return;
+  }
+  assert.equal(data.summary?.fix_status, 'already_present',
+    `--fix on a healthy install must report fix_status: "already_present"; got: ${JSON.stringify(data.summary)}`);
+  assert.equal(typeof data.summary?.fix_skipped_reason, 'string',
+    'fix_skipped_reason must accompany fix_status for operator clarity');
+});
+
+test('audit-3 B.4: doctor refuses unknown flags with structured error + known_flags list', () => {
+  const r = cli(['doctor', '--bogus-flag-xyz']);
+  const err = tryJson(r.stderr);
+  assert.ok(err, 'unknown flag must produce stderr JSON');
+  assert.equal(err.ok, false);
+  assert.equal(err.verb, 'doctor');
+  assert.ok(Array.isArray(err.unknown_flags), 'unknown_flags must be an array');
+  assert.ok(Array.isArray(err.known_flags), 'known_flags must list every accepted flag');
+  assert.ok(err.known_flags.includes('--signatures'),
+    'known_flags must include --signatures (sanity)');
+  // Refusal must exit GENERIC_FAILURE (1), not 0. Pinning exact: per the
+  // anti-coincidence rule (CLAUDE.md), a status !== 0 check would have
+  // passed on any non-success exit including 2 (DETECTED_ESCALATE) or
+  // 10 (UNKNOWN_COMMAND) — both of which would be the wrong code path.
+  assert.equal(r.status, 1, 'unknown-flag refusal must exit 1 (GENERIC_FAILURE)');
+});
+
+test('audit-3 A.2: run envelope surfaces air_gap_mode on the top-level result', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected' }
+  });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--air-gap', '--session-id', 'a2-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run --json must emit parseable JSON');
+  assert.equal(data.air_gap_mode, true,
+    'run --air-gap must surface air_gap_mode: true at the top of the result envelope; stdout-parsing consumers depend on it');
+});
+
+test('audit-3 C.1: ask "the the the the" routes to nothing (stopwords filtered)', () => {
+  // Pre-fix: substring matching caused "the" to hit "authentication" /
+  // "anthropic" / etc inside larger words, so a pure-stopword query
+  // routed confidently to ai-api. Now: stopwords are filtered after
+  // synonym expansion and the haystack is tokenized for whole-token
+  // membership tests.
+  const r = cli(['ask', 'the the the the', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ask --json must emit parseable JSON');
+  assert.equal(data.verb, 'ask');
+  assert.deepEqual(data.routed_to, [],
+    `pure-stopword query must route to nothing; got: ${JSON.stringify(data.routed_to)}`);
+});
+
+test('audit-3 C.2: ask "phished" routes to identity-sso-compromise', () => {
+  // Pre-fix: no phishing / SSO / oauth / bec vocabulary in the synonym map.
+  // "I think we got phished" routed to crypto instead of identity-sso-*.
+  const r = cli(['ask', 'I think we got phished', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ask --json must emit parseable JSON');
+  assert.ok(Array.isArray(data.routed_to) && data.routed_to.length > 0,
+    'phished query must produce a match');
+  assert.equal(data.routed_to[0], 'identity-sso-compromise',
+    `phished query must top-route to identity-sso-compromise; got: ${JSON.stringify(data.routed_to)}`);
+});
+
+test('audit-3 A.1: refresh --air-gap with no fixtures/cache refuses every source', () => {
+  // Pre-fix: only GHSA + OSV honored ctx.airGap at the source-module level.
+  // kev/epss/nvd/rfc/pins fell through to live-network branches when
+  // neither fixtures nor cacheDir was wired up. The fix puts the guard at
+  // the central runOne dispatch.
+  const r = cli(['refresh', '--air-gap', '--source', 'kev', '--json']);
+  // refresh may print informational text on stdout; the report lives in
+  // a separate report file but the dispatch must not have made a live
+  // network call. Inspect the persisted report to confirm.
+  const reportPath = path.join(ROOT, 'refresh-report.json');
+  if (!fs.existsSync(reportPath)) {
+    // refresh in dry-run may not write the report. Looking for the in-stdout
+    // markers instead.
+    const text = (r.stdout || '') + (r.stderr || '');
+    assert.match(text, /air-gap mode: kev skipped/,
+      `refresh --air-gap must short-circuit kev with the air_gap_blocked summary; got: ${text.slice(0, 600)}`);
+    return;
+  }
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(report.sources?.kev?.status, 'unreachable',
+    'kev under --air-gap with no cache must report status: unreachable');
+  assert.equal(report.sources?.kev?.air_gap_blocked, true,
+    'kev under --air-gap must surface air_gap_blocked: true');
+});
+
 test('#87 doctor --fix is registered (smoke)', () => {
   // Dispatch-table-only smoke test. The earlier shape of this test invoked
   // `exceptd doctor --fix` directly. On any machine where `.keys/private.pem`
