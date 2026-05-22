@@ -2035,7 +2035,18 @@ Exit codes:
   9  STORAGE_EXHAUSTED     Disk/quota/RO filesystem on attestation write.
 
 Stdin event grammar (one JSON object per line):
-  {"event":"evidence","payload":{"observations":{},"verdict":{}}}
+  {"event":"evidence","payload":{
+    "precondition_checks": {...},  // per-precondition boolean assertions
+    "observations":        {...},  // per-artifact + per-indicator captures
+    "verdict":             {...}   // optional operator-supplied verdict
+  }}
+  observations[<key>] carries both artifact captures
+  ({ captured: true, value: "..." }) AND indicator overrides
+  ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalises
+  both branches from a single map. The alternative nested shape
+  ({ artifacts, signal_overrides, signals }) is also accepted; do not mix
+  the two — if signal_overrides is present, observations/verdict are
+  ignored.
 
 Stdin acceptance contract:
   In streaming mode, ai-run reads JSON-Lines from stdin until the FIRST
@@ -2088,6 +2099,18 @@ Flags:
   --block-on-jurisdiction-clock
                           Fail when any close.notification_actions started a
                           regulatory clock (GDPR 72h, HIPAA breach, etc.).
+                          Clocks are STARTED, not pending — most playbooks
+                          declare clock_starts: "detect_confirmed", which
+                          stays pending_clock_start_event until two things
+                          align: (a) the submission's verdict.classification
+                          (signals.detection_classification) is "detected",
+                          AND (b) the operator passes --ack (records
+                          operator_consent.explicit = true). Alternatively,
+                          stamp it directly with
+                          verdict.clock_started_at_detect_confirmed: "<ISO>"
+                          in the submission's signals. Without one of those
+                          paths the clocks stay pending and the flag is a
+                          no-op.
   --format <fmt>          Output shape. Supported: json (default, single-line),
                           summary (5-field digest), markdown (human digest).
                           Bundles (csaf-2.0/sarif/openvex) live on per-run
@@ -6723,6 +6746,26 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
           // v0.12.14: normalized array-set filter (see top of fn).
           if (playbookFilter && !playbookFilter.has(j.playbook_id)) continue;
           if (args.since && (j.captured_at || "") < args.since) continue;
+          // Populate the `signed` field by reading the .sig sidecar.
+          // The sidecar payload either carries algorithm: "Ed25519"
+          // + signature_base64 (true signature) or algorithm: "unsigned"
+          // (unsigned-fallback marker — written when no private key
+          // was available at run time). Both forms ARE a .sig file on
+          // disk; the field distinguishes them so operators can scan
+          // the list for unsigned attestations without verifying every
+          // one individually.
+          const sigPath = path.join(sdir, f + ".sig");
+          let signed = false;
+          if (fs.existsSync(sigPath)) {
+            try {
+              const sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8"));
+              signed =
+                !!sigDoc &&
+                sigDoc.algorithm === "Ed25519" &&
+                typeof sigDoc.signature_base64 === "string" &&
+                sigDoc.signature_base64.length > 0;
+            } catch { /* unreadable sidecar treated as unsigned */ }
+          }
           entries.push({
             session_id: sid,
             playbook_id: j.playbook_id,
@@ -6731,6 +6774,7 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
             captured_at: j.captured_at || null,
             attestation_root: root,
             file: path.join(sdir, f),
+            signed,
           });
         } catch { /* skip malformed */ }
       }

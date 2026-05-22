@@ -199,7 +199,7 @@ test('F22: ai-run --help text documents the first-evidence-wins stdin contract',
   // and any incidental references.
   const helpEntry = src.indexOf('"ai-run": `ai-run');
   assert.ok(helpEntry > 0, 'ai-run help entry must be registered');
-  const helpBlock = src.slice(helpEntry, helpEntry + 3000);
+  const helpBlock = src.slice(helpEntry, helpEntry + 3600);
   assert.match(helpBlock, /Stdin acceptance contract/);
   assert.match(helpBlock, /FIRST/);
   assert.match(helpBlock, /handled/);

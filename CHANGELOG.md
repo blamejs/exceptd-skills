@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.57 — 2026-05-22
+
+`attest list` populates the signed field. README + verb help document the ai-run JSONL event grammar. `--block-on-jurisdiction-clock` clarifies pending-vs-started semantics.
+
+### Bugs
+
+- **`attest list --json` reports `signed: true|false`** for every attestation by reading the .sig sidecar (Ed25519 + `signature_base64` → signed; `algorithm: "unsigned"` → unsigned). Previously the field was `undefined`, forcing operators to `attest verify` each session individually to learn its signing state.
+
+### Features
+
+- **README + verb help document the `ai-run` JSONL event grammar.** The canonical stdin event shape (`{ "event": "evidence", "payload": { precondition_checks, observations, verdict } }`) plus the phase emission order are now in the README's CLI command reference. The doc also flags the two-shapes-don't-mix rule: if `signal_overrides` is present, the runner takes the nested shape and ignores `observations`/`verdict`. Previously the contract was discoverable only at runtime via the `await_evidence` event's `submission_shape.note` field.
+- **`--block-on-jurisdiction-clock` help text clarifies pending-vs-started semantics.** Most playbooks declare `clock_starts: "detect_confirmed"`. The clock stays `pending_clock_start_event` until two things align: (a) the submission's verdict classifies as `detected`, AND (b) the operator passes `--ack` (records `operator_consent.explicit = true`). Alternatively, the submission can stamp `clock_started_at_detect_confirmed: "<ISO>"` directly in the signals. Without one of those paths the clocks stay pending and the flag is a no-op. The help text now documents the exact contract instead of pointing at a `verdict.detect_confirmed` field the runner never consumed.
+
 ## 0.13.56 — 2026-05-22
 
 `attest diff <sid>` (without `--against`) emits the v0.11+ envelope and surfaces granular drift.
