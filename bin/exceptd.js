@@ -2035,7 +2035,18 @@ Exit codes:
   9  STORAGE_EXHAUSTED     Disk/quota/RO filesystem on attestation write.
 
 Stdin event grammar (one JSON object per line):
-  {"event":"evidence","payload":{"observations":{},"verdict":{}}}
+  {"event":"evidence","payload":{
+    "precondition_checks": {...},  // per-precondition boolean assertions
+    "observations":        {...},  // per-artifact + per-indicator captures
+    "verdict":             {...}   // optional operator-supplied verdict
+  }}
+  observations[<key>] carries both artifact captures
+  ({ captured: true, value: "..." }) AND indicator overrides
+  ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalises
+  both branches from a single map. The alternative nested shape
+  ({ artifacts, signal_overrides, signals }) is also accepted; do not mix
+  the two — if signal_overrides is present, observations/verdict are
+  ignored.
 
 Stdin acceptance contract:
   In streaming mode, ai-run reads JSON-Lines from stdin until the FIRST
@@ -2090,12 +2101,16 @@ Flags:
                           regulatory clock (GDPR 72h, HIPAA breach, etc.).
                           Clocks are STARTED, not pending — most playbooks
                           declare clock_starts: "detect_confirmed", which
-                          requires the OPERATOR to confirm detection. Submit
-                          evidence with verdict.detect_confirmed: true (or
-                          the playbook-specific event) to advance the clock
-                          from pending_clock_start_event to STARTED so the
-                          flag actually fires. Without operator confirmation
-                          the clocks stay pending and the flag is a no-op.
+                          stays pending_clock_start_event until two things
+                          align: (a) the submission's verdict.classification
+                          (signals.detection_classification) is "detected",
+                          AND (b) the operator passes --ack (records
+                          operator_consent.explicit = true). Alternatively,
+                          stamp it directly with
+                          verdict.clock_started_at_detect_confirmed: "<ISO>"
+                          in the submission's signals. Without one of those
+                          paths the clocks stay pending and the flag is a
+                          no-op.
   --format <fmt>          Output shape. Supported: json (default, single-line),
                           summary (5-field digest), markdown (human digest).
                           Bundles (csaf-2.0/sarif/openvex) live on per-run

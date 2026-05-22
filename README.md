@@ -263,10 +263,16 @@ exceptd ai-run <playbook>             JSONL streaming variant of run. AI emits
 # Stdin event the host emits (one JSON object per line):
 #   {"event":"evidence","payload":{
 #     "precondition_checks": {...},  // per-precondition boolean assertions
-#     "observations":       {...},   // per-artifact captured values
-#     "signal_overrides":   {...},   // per-indicator hit/miss override
+#     "observations":       {...},   // per-artifact + per-indicator captures
 #     "verdict":            {...}    // optional operator-supplied verdict
 #   }}
+# observations[<key>] carries both artifact captures
+# ({ captured: true, value: "..." }) AND indicator overrides
+# ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalises
+# both branches from a single map. The alternative nested shape
+# ({ artifacts, signal_overrides, signals }) is also accepted, but do not
+# mix the two — if `signal_overrides` is present, `observations` and
+# `verdict` are ignored.
 # Phases emitted on stdout (in order): govern → direct → look →
 # await_evidence → detect → analyze → validate → close → done.
 # Errors emit {"event":"error","reason":"..."} and exit non-zero.
