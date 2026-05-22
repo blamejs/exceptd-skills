@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.59 — 2026-05-22
+
+Air-gap mode honored by `--upstream-check` and the `collect` envelope. `doctor` subchecks surface freshness timestamps + walk-cap markers. `--collectors` text matches its JSON.
+
+### Bugs
+
+- **`run --upstream-check --air-gap` was making the registry call anyway.** The upstream-check helper had no air-gap awareness, and the run path didn't gate the call. The refusal now lives at the central upstream-check dispatch so any future caller inherits it; the result envelope carries `upstream_check.air_gap_blocked: true` and `source: "air-gap"` so consumers see the refusal happened.
+- **`doctor --ai-config` walked unbounded** — 48k+ entries under `~/.claude/` (conversation logs, cache, plugin tarballs) before finishing. The walk now caps at 4 depth + 5000 files and skips known-noisy subdir names (`node_modules`, `.git`, `.cache`, `logs`, `sessions`, `conversations`, `history`, `tmp`, `cache`). When the cap fires, `walk_truncated: true` and `walk_caps: { max_depth, max_files }` surface so operators see the bound.
+- **`doctor --ai-config` text mode still said "manual ACL review noted for any sensitive files found"** on Windows even though the runtime ACL audit lands real findings via `icacls`. The placeholder dated to the original POSIX-only implementation; replaced with a description that matches the actual check.
+- **`doctor --collectors` text mode was a strict subset of JSON** — the count of policy-skipped playbooks was visible but the names were `--json`-only. Text now enumerates the first 5 names + a `+N more` indicator so terminal operators see the same actionable information.
+
+### Features
+
+- **`doctor --currency`** surfaces `oldest_last_threat_review`, `newest_last_threat_review`, `max_days_since_review`, and `checked_at` so operators can answer "is my skill catalog stale?" without parsing the per-skill report.
+- **`doctor --rfcs`** surfaces `index_last_modified` + `index_age_days` from the RFC index mtime so operators can answer "is the offline RFC catalog fresh?" without running a separate refresh.
+- **`collect` envelope** surfaces `air_gap_mode` at the top of the result so downstream `run --evidence -` and AI consumers see the collection-time mode propagating. Collectors themselves don't currently make network calls; the marker flags the collection context for future collector additions.
+
 ## 0.13.58 — 2026-05-22
 
 Air-gap mode now blocks every refresh source (not just GHSA/OSV). `doctor` help text catches up with runtime flag set, surfaces a fix status when nothing to remediate, and refuses unknown flags. `ask` stops returning false-positive substring matches and learns identity / phishing / SSO / famous-attack vocabulary.

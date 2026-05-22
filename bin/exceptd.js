@@ -2354,7 +2354,13 @@ function cmdCollect(runner, args, runOpts, pretty) {
   // `exceptd run <playbook> --evidence -` to drive a real verdict.
   // Human-rendered version is concise so an interactive operator can
   // see what the collector found without parsing the JSON.
-  emit({ verb: "collect", playbook_id: playbookId, ...submission }, pretty, (obj) => {
+  // Audit 3 A.4: surface air_gap_mode on the collect envelope so the
+  // downstream `run --evidence -` sees the mode propagating from the
+  // collection step. Collectors themselves currently make no network
+  // calls — but the flag's intent is to flag the collection context for
+  // any future collector that might.
+  const collectAirGap = !!(runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1");
+  emit({ verb: "collect", playbook_id: playbookId, air_gap_mode: collectAirGap, ...submission }, pretty, (obj) => {
     const lines = [];
     const meta = obj.collector_meta || {};
     lines.push(`collect: ${obj.playbook_id}  (${meta.collector_version || "?"} on ${meta.platform || "?"})`);
@@ -3174,19 +3180,32 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Network bounded by an 8s timeout; degrades gracefully when offline.
   let upstreamCheck = null;
   if (args["upstream-check"]) {
-    try {
-      const cliPath = path.join(PKG_ROOT, "lib", "upstream-check-cli.js");
-      const res = spawnSync(process.execPath, [cliPath, "--timeout", "5000"], {
-        encoding: "utf8",
-        cwd: PKG_ROOT,
-        timeout: 8000,
-      });
-      try { upstreamCheck = JSON.parse((res.stdout || "").trim()); } catch { /* fall through */ }
-      if (upstreamCheck && upstreamCheck.behind) {
-        process.stderr.write(`[exceptd run --upstream-check] STALE: local v${upstreamCheck.local_version} < published v${upstreamCheck.latest_version} (published ${upstreamCheck.latest_published_at}, ${upstreamCheck.days_since_latest_publish}d ago). Continuing with local catalog. Run \`npm update -g @blamejs/exceptd-skills\` or \`exceptd refresh --network\` to consume the latest.\n`);
+    // Audit 3 A.6: --air-gap must refuse the registry probe. The
+    // upstream-check helper has no air-gap awareness of its own; the
+    // central refusal lives here so any future caller of --upstream-check
+    // inherits it.
+    if (runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1") {
+      upstreamCheck = {
+        ok: false,
+        source: "air-gap",
+        air_gap_blocked: true,
+        skipped_reason: "--upstream-check would query the npm registry; refused under --air-gap.",
+      };
+    } else {
+      try {
+        const cliPath = path.join(PKG_ROOT, "lib", "upstream-check-cli.js");
+        const res = spawnSync(process.execPath, [cliPath, "--timeout", "5000"], {
+          encoding: "utf8",
+          cwd: PKG_ROOT,
+          timeout: 8000,
+        });
+        try { upstreamCheck = JSON.parse((res.stdout || "").trim()); } catch { /* fall through */ }
+        if (upstreamCheck && upstreamCheck.behind) {
+          process.stderr.write(`[exceptd run --upstream-check] STALE: local v${upstreamCheck.local_version} < published v${upstreamCheck.latest_version} (published ${upstreamCheck.latest_published_at}, ${upstreamCheck.days_since_latest_publish}d ago). Continuing with local catalog. Run \`npm update -g @blamejs/exceptd-skills\` or \`exceptd refresh --network\` to consume the latest.\n`);
+        }
+      } catch (e) {
+        upstreamCheck = { ok: false, error: e.message, source: "offline" };
       }
-    } catch (e) {
-      upstreamCheck = { ok: false, error: e.message, source: "offline" };
     }
   }
 
@@ -6097,12 +6116,25 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         const stale = parsed.currency_report.filter(s => s.action_required || s.currency_label !== "current");
         const critical = parsed.currency_report.filter(s => s.currency_score !== undefined && s.currency_score < 50);
         const ok = stale.length === 0 && !parsed.action_required;
+        // Audit 3 B.7: surface the freshest + stalest last_threat_review
+        // so operators can answer "is my data stale?" without parsing the
+        // full report. Falls back gracefully when the upstream report
+        // omits the per-skill date.
+        const dates = parsed.currency_report
+          .map(s => s.last_threat_review)
+          .filter(d => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d))
+          .sort();
+        const minDaysSince = dates.length ? Math.floor((Date.now() - new Date(dates[0]).getTime()) / 86400000) : null;
         checks.currency = {
           ok,
           total_skills: parsed.currency_report.length,
           stale_skills: stale.map(s => s.skill),
           critical_stale: critical.map(s => s.skill),
           critical_count: parsed.critical_count || 0,
+          oldest_last_threat_review: dates[0] || null,
+          newest_last_threat_review: dates[dates.length - 1] || null,
+          max_days_since_review: minDaysSince,
+          checked_at: new Date().toISOString(),
         };
         if (!ok) issues.push("currency");
       } else {
@@ -6190,10 +6222,23 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       const rfcRows = (text.match(/^RFC-\d+/gm) || []).length;
       const driftMatch = text.match(/drift[:\s]+(\d+)/i);
       const ok = res.status === 0;
+      // Audit 3 B.7: surface the RFC catalog file's mtime + age so
+      // operators can answer "is the offline RFC index fresh?" without
+      // running a separate refresh.
+      let rfcMtime = null;
+      let rfcAgeDays = null;
+      try {
+        const rfcPath = path.join(PKG_ROOT, "data", "rfc-index.json");
+        const st = fs.statSync(rfcPath);
+        rfcMtime = st.mtime.toISOString();
+        rfcAgeDays = Math.floor((Date.now() - st.mtimeMs) / 86400000);
+      } catch { /* file may not exist on contributor checkouts */ }
       checks.rfcs = {
         ok,
         total: rfcRows,
         drift: driftMatch ? Number(driftMatch[1]) : 0,
+        index_last_modified: rfcMtime,
+        index_age_days: rfcAgeDays,
         ...(ok ? {} : { exit_code: res.status, raw: text.slice(0, 500) }),
       };
       if (!ok) issues.push("rfcs");
@@ -6344,16 +6389,38 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     const findings = [];
     let scannedDirs = 0;
     let scannedFiles = 0;
-    function walk(absDir, displayRoot, rel) {
+    let walkAborted = false;
+    // Audit 3 B.9: cap depth + file count to bound the walk. Without
+    // these, doctor --ai-config can read 48k+ entries under ~/.claude
+    // (conversation logs, cache dirs, plugin tarballs) before finishing.
+    // The five SENSITIVE_PATTERNS files all live within ~3 levels of an
+    // AI-assistant config root, so 4 is generous. The skipped dirs are
+    // known non-config noise that shouldn't carry credentials.
+    const MAX_DEPTH = 4;
+    const MAX_FILES = 5000;
+    const SKIP_DIR_NAMES = new Set([
+      'node_modules', '.git', '.cache', 'logs', 'log',
+      'sessions', 'session', 'transcripts', 'transcript',
+      'conversations', 'history', 'tmp', 'temp', 'cache',
+    ]);
+    function walk(absDir, displayRoot, rel, depth = 0) {
+      if (walkAborted) return;
+      if (depth > MAX_DEPTH) return;
+      if (scannedFiles > MAX_FILES) {
+        walkAborted = true;
+        return;
+      }
       if (!fs.existsSync(absDir)) return;
       let entries;
       try { entries = fs.readdirSync(absDir, { withFileTypes: true }); }
       catch { return; }
       for (const e of entries) {
+        if (walkAborted) return;
+        if (e.isDirectory() && SKIP_DIR_NAMES.has(e.name.toLowerCase())) continue;
         const childAbs = path.join(absDir, e.name);
         const childRel = rel ? rel + '/' + e.name : e.name;
         if (e.isDirectory()) {
-          walk(childAbs, displayRoot, childRel);
+          walk(childAbs, displayRoot, childRel, depth + 1);
         } else if (e.isFile()) {
           scannedFiles++;
           if (!SENSITIVE_PATTERNS.some((re) => re.test(e.name))) continue;
@@ -6448,6 +6515,8 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       severity: errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info'),
       scanned_dirs: scannedDirs,
       scanned_files: scannedFiles,
+      walk_truncated: walkAborted,
+      walk_caps: { max_depth: MAX_DEPTH, max_files: MAX_FILES },
       directories_inspected: AI_CONFIG_DIRS.map((d) => d.display),
       sensitive_patterns: ['settings.json', 'mcp.json', '*.mcp_config.json', 'api_key*', '*.token', '*.credentials'],
       findings,
@@ -6739,6 +6808,16 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       ? ` (${c.policy_skips.length} judgement-shaped playbooks intentionally without a collector — see AGENTS.md)`
       : "";
     lines.push(`  ${icon} collector layer: ${c.with_collector ?? "?"}/${c.total_playbooks ?? "?"} playbooks have collectors${skipNote}`);
+    // Audit 3 B.5: enumerate the policy-skipped playbooks in text mode
+    // so it carries the same operator-actionable information as the
+    // JSON envelope. Pre-fix the count was visible but the names were
+    // --json-only, forcing operators to parse JSON to learn which
+    // playbooks are policy-skipped.
+    if (Array.isArray(c.policy_skips) && c.policy_skips.length > 0) {
+      const shown = c.policy_skips.slice(0, 5).join(", ");
+      const more = c.policy_skips.length > 5 ? `, … +${c.policy_skips.length - 5} more` : "";
+      lines.push(`       policy-skipped: ${shown}${more}`);
+    }
     if (Array.isArray(c.load_errors) && c.load_errors.length > 0) {
       lines.push(`       ${c.load_errors.length} collector(s) failed to load:`);
       for (const e of c.load_errors.slice(0, 5)) {
@@ -6755,7 +6834,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     const fileCount = c.scanned_files ?? 0;
     lines.push(`  ${icon} AI-assistant config audit: scanned ${fileCount} file(s) across ${dirCount} dir(s) of ${(c.directories_inspected || []).length} candidate root(s); ${findings.length} finding(s)`);
     if (c.platform === "win32" && findings.length === 0 && fileCount > 0) {
-      lines.push(`       (on Windows, POSIX mode bits are not load-bearing — manual ACL review noted for any sensitive files found)`);
+      lines.push(`       (Windows: ACL inspected via icacls; every sensitive file restricted to the workstation user)`);
+    }
+    if (c.walk_truncated) {
+      lines.push(`       (walk truncated at ${c.walk_caps?.max_files || "?"} file(s) / depth ${c.walk_caps?.max_depth || "?"}; rerun under a narrower path if you need exhaustive coverage)`);
     }
     for (const f of findings.slice(0, 5)) {
       const sev = f.severity === "error" ? "[!!]" : f.severity === "warn" ? "[warn]" : "[info]";
