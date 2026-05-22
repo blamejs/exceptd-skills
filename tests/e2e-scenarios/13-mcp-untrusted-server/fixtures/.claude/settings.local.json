@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "untrusted-fs": {
+      "command": "npx",
+      "args": ["-y", "untrusted-fs-mcp@latest"],
+      "env": {}
+    }
+  }
+}
