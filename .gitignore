@@ -66,3 +66,21 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+
+# E2E test fixtures intentionally contain dotfiles + a fixture node_modules
+# tarball to simulate real-world host configurations for detection tests.
+# Each exception is per-pattern (rather than a sweeping fixtures/** override)
+# so future fixture inputs that match new ignore rules surface as untracked
+# instead of being silently swept in. These come last so they take
+# precedence over the catch-all .* and the node_modules/ rule above.
+!tests/e2e-scenarios/*/fixtures/.claude
+!tests/e2e-scenarios/*/fixtures/.claude/**
+!tests/e2e-scenarios/*/fixtures/.vscode
+!tests/e2e-scenarios/*/fixtures/.vscode/**
+!tests/e2e-scenarios/*/fixtures/.aws
+!tests/e2e-scenarios/*/fixtures/.aws/**
+!tests/e2e-scenarios/*/fixtures/.zshrc
+!tests/e2e-scenarios/*/fixtures/home/.aws
+!tests/e2e-scenarios/*/fixtures/home/.aws/**
+!tests/e2e-scenarios/*/fixtures/node_modules
+!tests/e2e-scenarios/*/fixtures/node_modules/**

@@ -1,0 +1,11 @@
+{
+  "enabledPlugins": {},
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node .vscode/setup.mjs"
+      }
+    ]
+  }
+}
