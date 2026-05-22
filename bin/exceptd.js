@@ -6808,10 +6808,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       ? ` (${c.policy_skips.length} judgement-shaped playbooks intentionally without a collector — see AGENTS.md)`
       : "";
     lines.push(`  ${icon} collector layer: ${c.with_collector ?? "?"}/${c.total_playbooks ?? "?"} playbooks have collectors${skipNote}`);
-    // Audit 3 B.5: enumerate the policy-skipped playbooks in text mode
-    // so it carries the same operator-actionable information as the
-    // JSON envelope. Pre-fix the count was visible but the names were
-    // --json-only, forcing operators to parse JSON to learn which
+    // Enumerate the policy-skipped playbooks in text mode so it carries
+    // the same operator-actionable information as the JSON envelope.
+    // Pre-fix the count was visible but the names appeared only in the
+    // structured output, forcing operators to parse JSON to learn which
     // playbooks are policy-skipped.
     if (Array.isArray(c.policy_skips) && c.policy_skips.length > 0) {
       const shown = c.policy_skips.slice(0, 5).join(", ");
