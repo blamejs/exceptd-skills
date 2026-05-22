@@ -5957,9 +5957,8 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const wantJson = !!args.json || !!args.pretty;
   const indent = !!args.pretty;
 
-  // Audit 3 B.4: refuse unknown flags rather than silently running the
-  // full default scan. Pre-fix, `doctor --bogus`, `doctor --singatures`
-  // (typo), `doctor --data` (renamed-out flag) all returned exit 0 with
+  // Refuse unknown flags rather than silently running the full default
+  // scan. Pre-fix, typos and renamed-out flags all returned exit 0 with
   // the operator believing they'd run a targeted check.
   const KNOWN_DOCTOR_FLAGS = new Set([
     "json", "pretty", "fix", "air-gap",
