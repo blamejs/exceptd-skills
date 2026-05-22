@@ -2000,8 +2000,8 @@ Subchecks:
                           up yet. JSON emits has_collector / policy_skips /
                           without_collector arrays.
   --ai-config             Walk the operator's AI-assistant configuration
-                          files (~/.claude/, ~/.cursor/, ~/.windsurf/,
-                          ~/.codeium/, ~/.zed/) and surface sensitive
+                          files (~/.claude/, ~/.cursor/, ~/.codeium/,
+                          ~/.aider/, ~/.continue/) and surface sensitive
                           content (API keys, tokens, MCP server
                           definitions) plus on Windows the icacls ACL
                           state. Combine with --fix to harden ACLs.
@@ -6621,7 +6621,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // already healthy" from "we tried and failed silently." Now surfaces a
   // structured fix_status so callers reading the envelope can branch on
   // it.
-  if (args.fix && !out.summary.fix_applied && !out.summary.fix_attempted && !out.summary.fix_partial && !out.summary.fix_decline_reason) {
+  // The ai-config branch tracks its remediations on checks.ai_config
+  // (fix_applied / fix_failed are nested there, not on out.summary), so
+  // include that signal when deciding whether ANY fix actually ran.
+  // Without this, doctor --ai-config --fix applying chmod/icacls would
+  // simultaneously report checks.ai_config.fix_applied > 0 AND
+  // summary.fix_status: "already_present", which is contradictory.
+  const aiConfigFixed = !!(checks.ai_config && ((checks.ai_config.fix_applied || 0) > 0 || (checks.ai_config.fix_failed || 0) > 0));
+  if (args.fix && !out.summary.fix_applied && !out.summary.fix_attempted && !out.summary.fix_partial && !out.summary.fix_decline_reason && !aiConfigFixed) {
     out.summary.fix_status = "already_present";
     out.summary.fix_skipped_reason = "Signing key + skill signatures are already valid; nothing to remediate.";
   }
