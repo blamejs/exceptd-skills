@@ -310,9 +310,14 @@ test('run-all alias produces the same playbook set as run --all', () => {
   const sub = JSON.stringify({});
   // run-all takes no extra arg by design; cmdRunAll sets args.all=true and
   // re-enters cmdRun, which fans out to cmdRunMulti over runner.listPlaybooks().
-  const rAlias = cli(['run-all', '--evidence', '-', '--session-id', 'ra-' + Date.now()],
+  // Both invocations pass --include-judgement-shaped so the policy-skipped
+  // exclusion (governance / incident / migration playbooks the runner can't
+  // execute without operator-attested evidence in a CI context) doesn't apply
+  // — the alias-vs-explicit equivalence test is about coverage parity, not
+  // about the CI-gate default exclusion.
+  const rAlias = cli(['run-all', '--include-judgement-shaped', '--evidence', '-', '--session-id', 'ra-' + Date.now()],
     { input: sub });
-  const rExplicit = cli(['run', '--all', '--evidence', '-', '--session-id', 're-' + Date.now()],
+  const rExplicit = cli(['run', '--all', '--include-judgement-shaped', '--evidence', '-', '--session-id', 're-' + Date.now()],
     { input: sub });
   const aliasJson = tryJson(rAlias.stdout);
   const explicitJson = tryJson(rExplicit.stdout);
@@ -323,7 +328,34 @@ test('run-all alias produces the same playbook set as run --all', () => {
   assert.deepEqual(aliasIds, explicitIds,
     'run-all and run --all must dispatch the same playbook set');
   assert.equal(aliasIds.length, PLAYBOOK_COUNT,
-    `run-all must cover all ${PLAYBOOK_COUNT} shipped playbooks`);
+    `run-all --include-judgement-shaped must cover all ${PLAYBOOK_COUNT} shipped playbooks`);
+});
+
+test('run --all (no --include-judgement-shaped) excludes the 9 policy-skipped playbooks by default', () => {
+  // Without --include-judgement-shaped, the default scope-expansion path
+  // excludes governance / incident / migration playbooks whose halt-
+  // preconditions require operator-attested evidence (vulnerability-feed-
+  // readable, tenant_ownership_attested, incident-confirmed, etc.). The
+  // CI gate was previously broken because these halted at preflight.
+  const sub = JSON.stringify({});
+  const r = cli(['run', '--all', '--evidence', '-', '--session-id', 'ranopolicy-' + Date.now()],
+    { input: sub });
+  const body = tryJson(r.stdout);
+  assert.ok(body, 'run --all must emit JSON');
+  const ids = body.playbooks_run;
+  // The 9 policy-skipped ids must NOT appear in the default --all set.
+  const POLICY_SKIPPED = [
+    'ai-discovered-cve-triage', 'cloud-iam-incident', 'idp-incident',
+    'identity-sso-compromise', 'llm-tool-use-exfil', 'post-quantum-migration',
+    'ransomware', 'supply-chain-recovery', 'webhook-callback-abuse',
+  ];
+  for (const skipped of POLICY_SKIPPED) {
+    assert.ok(!ids.includes(skipped),
+      `default --all must exclude policy-skipped playbook ${skipped}; got: ${ids.join(', ')}`);
+  }
+  // framework MUST still be included (analyze-only, warn-precondition).
+  assert.ok(ids.includes('framework'),
+    `default --all must include framework (analyze-only, warn-precondition); got: ${ids.join(', ')}`);
 });
 
 // ===================================================================
