@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.60 — 2026-05-22
+
+Final tranche of audit cycle 3 polish. `doctor` surfaces the local version; `--collectors` distinguishes policy-skipped from actually-missing collectors; `ask` confidence penalizes ties.
+
+### Features
+
+- **`doctor` surfaces `local_version`** at the top of the JSON envelope + in the text header. Operators see "which version am I running?" alongside "is my install healthy?" without invoking `exceptd version` separately. Opt-in `--registry-check` augments with the published comparison; `local_version` alone is offline-clean.
+- **`doctor --collectors` adds `unexplained_missing_collectors`** — the set difference of `without_collector` and `policy_skips`. Previously these were identical-by-coincidence; a future regression that lost an active collector or a policy-skipped playbook that gained one would have gone unnoticed. The new field surfaces the operator-actionable gaps directly.
+- **`ask` confidence is penalized by tie spread.** A 5-way tie at the top score no longer reports the same confidence as a single clear winner. `confidence_factors` surfaces `base` (raw score / token count) + `tie_count` so consumers can introspect the math. Tied scores also break alphabetically only as a last resort — direct id-match between the question and a playbook id now outranks alphabetical accident.
+
 ## 0.13.59 — 2026-05-22
 
 Air-gap mode honored by `--upstream-check` and the `collect` envelope. `doctor` subchecks surface freshness timestamps + walk-cap markers. `--collectors` text matches its JSON.
