@@ -1660,6 +1660,92 @@ test('audit-3 A.1: refresh --air-gap with no fixtures/cache refuses every source
     'kev under --air-gap must surface air_gap_blocked: true');
 });
 
+test('audit-3 A.4: collect envelope surfaces air_gap_mode on the top-level result', () => {
+  // Two paths to surface: (a) operator passes --air-gap explicitly, (b)
+  // the playbook declares _meta.air_gap_mode: true intrinsically (secrets,
+  // cred-stores, containers do this). Both must produce the same envelope
+  // marker so downstream automation makes the right network-policy call.
+  const r1 = cli(['collect', 'secrets', '--air-gap', '--json']);
+  const d1 = tryJson(r1.stdout);
+  assert.ok(d1, 'collect --json must emit parseable JSON');
+  assert.equal(d1.air_gap_mode, true,
+    'collect --air-gap must surface air_gap_mode: true');
+
+  // mcp is NOT intrinsically air-gapped; without --air-gap the field
+  // should reflect that.
+  const r2 = cli(['collect', 'mcp', '--json']);
+  const d2 = tryJson(r2.stdout);
+  assert.ok(d2);
+  assert.equal(d2.air_gap_mode, false,
+    'collect on a non-intrinsic playbook without --air-gap must report air_gap_mode: false');
+
+  // Intrinsic playbook (secrets has _meta.air_gap_mode: true) — air-gap
+  // marker must fire even WITHOUT --air-gap, mirroring how `run` honors
+  // _meta.air_gap_mode.
+  const r3 = cli(['collect', 'secrets', '--json']);
+  const d3 = tryJson(r3.stdout);
+  assert.ok(d3);
+  assert.equal(d3.air_gap_mode, true,
+    'collect on an intrinsically-air-gapped playbook must surface air_gap_mode: true even without --air-gap');
+});
+
+test('audit-3 A.6: run --upstream-check --air-gap refuses the registry probe', () => {
+  // Pre-fix: --upstream-check fired the registry probe regardless of
+  // --air-gap because the upstream-check helper had no air-gap awareness
+  // and the run path didn't gate the call. Fix lives at the central
+  // upstream-check dispatch in the run verb so any future caller inherits
+  // the refusal.
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'x', indicator: 'aws-access-key-id', result: 'miss' } }
+  });
+  const r = cli(['run', 'secrets', '--upstream-check', '--air-gap', '--evidence', '-',
+    '--session-id', 'a6-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run --json must emit parseable JSON');
+  assert.ok(data.upstream_check, 'upstream_check field must be present even when refused');
+  assert.equal(data.upstream_check.air_gap_blocked, true,
+    'upstream_check.air_gap_blocked must be true; pre-fix the probe ran anyway');
+  assert.equal(data.upstream_check.source, 'air-gap');
+});
+
+test('audit-3 B.5: doctor --collectors text mode enumerates policy_skips', () => {
+  const r = cli(['doctor', '--collectors']);
+  const text = (r.stdout || '') + (r.stderr || '');
+  assert.match(text, /policy-skipped:.*[a-z]/i,
+    'doctor --collectors text mode must enumerate policy-skipped playbook names, not just the count');
+});
+
+test('audit-3 B.7: doctor --currency surfaces freshness fields', () => {
+  const r = cli(['doctor', '--currency', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --currency --json must parse');
+  const c = data.checks?.currency;
+  assert.ok(c, 'checks.currency must be present');
+  assert.equal(typeof c.checked_at, 'string', 'checked_at must be an ISO timestamp');
+  // oldest_last_threat_review / max_days_since_review may be null on a
+  // freshly-bootstrapped catalog with no dates yet — but the keys must
+  // exist for the consumer to know they were inspected.
+  assert.ok('oldest_last_threat_review' in c, 'oldest_last_threat_review key must exist');
+  assert.ok('newest_last_threat_review' in c, 'newest_last_threat_review key must exist');
+  assert.ok('max_days_since_review' in c, 'max_days_since_review key must exist');
+});
+
+test('audit-3 B.9: doctor --ai-config walk caps + truncation marker', () => {
+  const r = cli(['doctor', '--ai-config', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --ai-config --json must parse');
+  const c = data.checks?.ai_config;
+  assert.ok(c, 'checks.ai_config must be present');
+  assert.ok(c.walk_caps && typeof c.walk_caps.max_files === 'number',
+    'walk_caps.max_files must be a numeric ceiling so operators see the bound');
+  assert.ok(typeof c.walk_caps.max_depth === 'number',
+    'walk_caps.max_depth must be numeric');
+  assert.equal(typeof c.walk_truncated, 'boolean',
+    'walk_truncated must be a boolean so callers can detect partial scans');
+  assert.ok(c.walk_caps.max_files <= 10000,
+    `max_files cap should bound the walk; got ${c.walk_caps.max_files}`);
+});
+
 test('#87 doctor --fix is registered (smoke)', () => {
   // Dispatch-table-only smoke test. The earlier shape of this test invoked
   // `exceptd doctor --fix` directly. On any machine where `.keys/private.pem`
