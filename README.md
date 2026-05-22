@@ -256,8 +256,20 @@ exceptd run [playbook]                Phases 4-7. Auto-detects cwd context when
 exceptd ai-run <playbook>             JSONL streaming variant of run. AI emits
                                       evidence events on stdin; runner streams
                                       phase events on stdout. One pipe, no
-                                      file handoff.
+                                      file handoff. See `exceptd ai-run --help`
+                                      for the full stdin event grammar.
   --no-stream                         Single-shot mode (emit one combined JSON).
+
+# Stdin event the host emits (one JSON object per line):
+#   {"event":"evidence","payload":{
+#     "precondition_checks": {...},  // per-precondition boolean assertions
+#     "observations":       {...},   // per-artifact captured values
+#     "signal_overrides":   {...},   // per-indicator hit/miss override
+#     "verdict":            {...}    // optional operator-supplied verdict
+#   }}
+# Phases emitted on stdout (in order): govern → direct → look →
+# await_evidence → detect → analyze → validate → close → done.
+# Errors emit {"event":"error","reason":"..."} and exit non-zero.
 
 exceptd collect <playbook>            Walk cwd + invoke the companion collector
                                       under lib/collectors/<playbook>.js. Emits
