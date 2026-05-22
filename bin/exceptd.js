@@ -5156,10 +5156,76 @@ function cmdAttest(runner, args, runOpts, pretty) {
       }, pretty);
       return;
     }
-    // Fall through to reattest-style replay below by setting subverb to a
-    // sentinel and re-dispatching via cmdReattest.
-    args._ = [sessionId];
-    return cmdReattest(runner, args, {}, pretty);
+    // No --against: find the most-recent prior attestation for the
+    // SAME playbook as `sessionId` and diff against that. Pure
+    // comparison — no replay.
+    const self = attestations[0];
+    if (!self) {
+      return emitError(
+        `attest diff ${sessionId}: no attestation found in session dir.`,
+        { verb: "attest diff", session_id: sessionId, attestation_count: 0 },
+        pretty,
+      );
+    }
+    const prior = findLatestAttestation({
+      playbookId: self.playbook_id,
+      excludeSessionId: sessionId,
+    });
+    if (!prior) {
+      emit({
+        verb: "attest diff",
+        a_session: sessionId,
+        a_captured: self.captured_at,
+        a_evidence_hash: self.evidence_hash,
+        status: "no-prior",
+        message: `no prior attestation found for playbook "${self.playbook_id}" other than session "${sessionId}" — this run becomes the baseline.`,
+      }, pretty);
+      return;
+    }
+    const other = prior.parsed;
+    const status = self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted";
+    const sidecarVerify = verifyAttestationSidecar(path.join(dir, "attestation.json"));
+    emit({
+      verb: "attest diff",
+      a_session: sessionId,
+      b_session: prior.sessionId,
+      a_captured: self.captured_at,
+      b_captured: other.captured_at,
+      a_evidence_hash: self.evidence_hash,
+      b_evidence_hash: other.evidence_hash,
+      status,
+      sidecar_verify: sidecarVerify,
+      artifact_diff: diffArtifacts(
+        normalizedArtifacts(self.submission, runner, self.playbook_id),
+        normalizedArtifacts(other.submission, runner, other.playbook_id),
+      ),
+      signal_override_diff: diffSignalOverrides(
+        normalizedSignalOverrides(self.submission, runner, self.playbook_id),
+        normalizedSignalOverrides(other.submission, runner, other.playbook_id),
+      ),
+    }, pretty, (obj) => {
+      // Human renderer for the no-against `attest diff` path. Same
+      // one-screen shape the old cmdReattest renderer used so the
+      // operator sees the verdict + drift summary + sidecar class.
+      const lines = [];
+      lines.push(`attest diff: ${obj.a_session} (${self.playbook_id})`);
+      lines.push(`  vs prior: ${obj.b_session} (captured ${obj.b_captured})`);
+      const icon = obj.status === "unchanged" ? "[ok]" : "[!]";
+      lines.push(`  ${icon}  status=${obj.status}  evidence_hash=${(obj.a_evidence_hash || "").slice(0, 12)}...`);
+      const ad = obj.artifact_diff || {};
+      const sd = obj.signal_override_diff || {};
+      lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
+      lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
+      const sv = obj.sidecar_verify || {};
+      let sidecarClass = "verified";
+      if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
+      else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
+      else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
+      else if (!sv.signed) sidecarClass = "no-public-key";
+      lines.push(`  sidecar verify: ${sidecarClass}`);
+      return lines.join("\n");
+    });
+    return;
   }
 
   if (subverb === "verify") {

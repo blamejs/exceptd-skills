@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.56 — 2026-05-22
+
+`attest diff <sid>` (without `--against`) emits the v0.11+ envelope and surfaces granular drift.
+
+### Bugs
+
+- **`attest diff <session-id>` (no `--against`) used to fall through to `cmdReattest`**, which emitted the legacy v0.10.x `{verb: "reattest", status, prior_evidence_hash, replay_evidence_hash}` envelope — missing the documented `a_session` / `b_session` / `artifact_diff` / `signal_override_diff` fields. The fall-through ALSO replayed the run against the prior attestation's evidence (heavyweight; semantically different from a pure compare). Now: the no-`--against` path explicitly finds the most-recent prior attestation for the same playbook (via `findLatestAttestation({ playbookId, excludeSessionId })`) and emits the same v0.11+ envelope as the `--against` path. Pure compare; no replay.
+- **`exceptd ci --required <pb> --all`** (or `--required <pb> --scope <type>`) now refuses as ambiguous instead of silently running `--required` and dropping the conflicting flag. Same refusal shape as the existing positional + flag refusal.
+
+### Features
+
+- **`attest diff <sid>` on a playbook with no prior attestation** returns a structured `{ status: "no-prior", a_session, a_evidence_hash, message }` envelope instead of erroring out. Operators get a clear "this becomes the baseline" signal.
+
 ## 0.13.55 — 2026-05-22
 
 `ci --scope code` no longer halts at preflight on judgement-shaped playbooks. `--required` refuses combination with `--all` / `--scope` as ambiguous.

@@ -106,25 +106,30 @@ test("attest verify --json still emits parseable structured envelope", () => {
   }
 });
 
-test("attest diff default output is human text with status row + next-step", () => {
+test("attest diff default output is human text with status row + sidecar verify class", () => {
+  // attest diff <sid> without --against now uses a pure-compare path
+  // (finds the most-recent prior attestation for the same playbook;
+  // no replay). The human renderer shows a one-screen verdict summary.
   const { tmpHome, env, sessionId } = setupSession();
   try {
-    // --force-replay is required on a CI runner where the setup `run`
-    // wrote an unsigned attestation (no .keys/private.pem available).
-    // The security-refusal-without-force-replay path is exercised in
-    // a separate test file; here we want to reach the human renderer.
-    const r = cli(["attest", "diff", sessionId, "--force-replay"], { env });
-    // The replay re-runs the playbook. On CI without a private key the
-    // overall exit code may be 0 but the human renderer still fires
-    // for the diff. Pin output shape regardless of signing state.
+    // Run a second attestation with the same evidence so a prior
+    // exists for the diff to compare against.
+    const sid2 = sessionId + "-b";
+    const evidence = JSON.stringify({
+      precondition_checks: { "linux-platform": true, "uname-available": true },
+      artifacts: { "kernel-release": "5.15.0-69-generic" },
+      signal_overrides: { "kver-in-affected-range": "hit" },
+    });
+    const setup = cli(["run", "kernel", "--evidence", "-", "--session-id", sid2, "--force-overwrite"],
+      { env, input: evidence });
+    assert.equal(setup.status, 0, `second run setup failed: ${setup.stderr.slice(0, 200)}`);
+    const r = cli(["attest", "diff", sid2], { env });
     assert.equal(tryJson(r.stdout), null,
       "default attest diff output must NOT be parseable JSON");
-    assert.match(r.stdout, new RegExp(`attest diff: ${sessionId} \\(kernel\\)`),
+    assert.match(r.stdout, new RegExp(`attest diff: ${sid2} \\(kernel\\)`),
       "header must include session id + playbook id");
-    assert.match(r.stdout, /\[ok\]\s+status=unchanged|\[i\s+DRIFTED\]\s+status=drifted/,
+    assert.match(r.stdout, /\[ok\]\s+status=unchanged|\[!\]\s+status=drifted/,
       "status row must carry the verdict icon");
-    // sidecar_verify class is one of verified / explicitly-unsigned /
-    // no-public-key / no-sidecar depending on the environment.
     assert.match(r.stdout, /sidecar verify: \w/,
       "sidecar verify class must appear on the human output");
   } finally {

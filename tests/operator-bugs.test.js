@@ -796,6 +796,36 @@ test('#101 ai-run --no-stream shape matches run shape (phases nested)', () => {
   assert.ok('analyze' in data.phases, 'phases.analyze must be present');
 });
 
+test('attest diff <sid> (no --against) emits the v0.11+ envelope (not the legacy reattest shape)', () => {
+  // Before this fix, `attest diff <sid>` without --against fell through
+  // to cmdReattest which emitted `verb: "reattest"` + the legacy
+  // {status, prior_evidence_hash, replay_evidence_hash} envelope.
+  // The pure-comparison path now finds the most-recent prior
+  // attestation for the same playbook and emits the v0.11+ envelope
+  // (verb: "attest diff", a_session/b_session, artifact_diff,
+  // signal_override_diff).
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'miss' } }
+  });
+  const sidA = 'diff-noagainst-a-' + Date.now();
+  const sidB = 'diff-noagainst-b-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sidA, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sidB, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sidB, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff <sid> --json should emit parseable JSON');
+  assert.equal(data.verb, 'attest diff',
+    `verb must be "attest diff", not legacy "reattest"; got: ${data.verb}`);
+  assert.equal(data.a_session, sidB);
+  assert.ok(data.b_session, 'b_session must name the auto-selected prior session');
+  assert.ok(['unchanged', 'drifted'].includes(data.status),
+    `status must be unchanged/drifted; got: ${data.status}`);
+  assert.ok(data.signal_override_diff,
+    'signal_override_diff must be present (granular drift surface)');
+  assert.ok(data.artifact_diff,
+    'artifact_diff must be present (granular drift surface)');
+});
+
 test('#102 attest diff unchanged_count counts identical entries', () => {
   // Run twice with the same flat-shape submission. Diff should report
   // unchanged_count >= 1 for the artifact and signal_override.
