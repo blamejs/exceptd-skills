@@ -1142,7 +1142,11 @@ function dispatchPlaybook(cmd, argv) {
             // doctor --collectors health-checks the collector layer.
             "collectors",
             // doctor --exit-codes dumps the canonical exit-code table.
-            "exit-codes"],
+            "exit-codes",
+            // ci / run --include-judgement-shaped opts the operator in to
+            // policy-skipped playbooks (governance / incident) that the
+            // default scope filter excludes.
+            "include-judgement-shaped"],
     multi: ["playbook", "format"],
   });
   // v0.11.2 bug #60: flip defaults to human-readable. JSON via explicit --json
@@ -2799,13 +2803,47 @@ function refuseNoDirectives(verb, playbookId, pretty) {
   );
 }
 
-function filterPlaybooksByScope(runner, scope) {
+// Playbooks whose halt-preconditions require operator-attested
+// evidence the runner cannot derive in a CI gate (incident /
+// governance / migration playbooks). These DECLARE a scope but
+// their preconditions are gated on operator-attested booleans
+// like `incident_confirmed == true`, `tenant_ownership_attested
+// == true`, `operator_owns_migration_programme == true` — values
+// no CI gate can infer. Without excluding them, `ci --scope code`
+// / `ci --all` halt at preflight on at least one playbook.
+//
+// `framework` is intentionally NOT in this list — it's analyze-only
+// (its single precondition is `on_fail: warn`) and SHOULD run in
+// every CI invocation to correlate framework findings.
+// `cicd-pipeline-compromise` is NOT in this list — its operator-
+// owns-ci-fleet halt is opt-in via the collector's --attest-
+// ownership flag, and ci consumers who run with evidence-dir
+// supply the precondition themselves.
+const POLICY_SKIPPED_PLAYBOOKS = new Set([
+  "ai-discovered-cve-triage",
+  "cloud-iam-incident",
+  "idp-incident",
+  "identity-sso-compromise",
+  "llm-tool-use-exfil",
+  "post-quantum-migration",
+  "ransomware",
+  "supply-chain-recovery",
+  "webhook-callback-abuse",
+]);
+
+function filterPlaybooksByScope(runner, scope, opts = {}) {
   validateScopeOrThrow(scope);
   const ids = runner.listPlaybooks();
+  const includeJudgementShaped = opts.includeJudgementShaped === true;
   return ids.filter(id => {
     try {
       const pb = runner.loadPlaybook(id);
-      return scope === "all" || pb._meta.scope === scope;
+      if (scope !== "all" && pb._meta.scope !== scope) return false;
+      // Default-exclude judgement-shaped playbooks from scope filters.
+      // Operator can opt in via --include-judgement-shaped when they
+      // genuinely want to run the AI-attestation-required set.
+      if (!includeJudgementShaped && POLICY_SKIPPED_PLAYBOOKS.has(id)) return false;
+      return true;
     } catch { return false; }
   });
 }
@@ -2881,18 +2919,22 @@ function cmdRun(runner, args, runOpts, pretty) {
   // (if malformed) intent. An empty string reaches validateScopeOrThrow
   // which rejects with the accepted-set message.
   if (!positional && (args.all || args.scope !== undefined)) {
+    const includeJudgementShaped = args["include-judgement-shaped"] === true;
     let ids;
     if (args.all) {
-      ids = runner.listPlaybooks();
+      ids = runner.listPlaybooks().filter(id =>
+        includeJudgementShaped || !POLICY_SKIPPED_PLAYBOOKS.has(id)
+      );
     } else {
-      try { ids = filterPlaybooksByScope(runner, args.scope); }
+      try { ids = filterPlaybooksByScope(runner, args.scope, { includeJudgementShaped }); }
       catch (e) { return emitError(`run: ${e.message}`, { provided_scope: args.scope }, pretty); }
     }
     return cmdRunMulti(runner, ids, args, runOpts, pretty, { trigger: args.all ? "--all" : `--scope ${args.scope}` });
   }
   if (!positional && !args.all && args.scope === undefined) {
+    const includeJudgementShaped = args["include-judgement-shaped"] === true;
     const scopes = detectScopes();
-    const ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
+    const ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s, { includeJudgementShaped }));
     const unique = [...new Set(ids)];
     if (unique.length === 0) {
       // Surface the auto-detect failure cause so operators see WHY no
@@ -7252,6 +7294,20 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
     ids = positional;
   } else if (args.required) {
+    // Refuse `--required + --all` / `--required + --scope` as ambiguous
+    // (matches the positional-args refusal at top of cmdCi). Pre-fix
+    // the runner silently picked --required and dropped --all/--scope,
+    // which is operator error — surface it loudly.
+    const conflictingFlags = [];
+    if (args.all) conflictingFlags.push('--all');
+    if (args.scope) conflictingFlags.push('--scope');
+    if (conflictingFlags.length > 0) {
+      return emitError(
+        `ci: --required cannot be combined with ${conflictingFlags.join(' / ')}. Pick one selector: either --required <list>, OR --all, OR --scope <type>.`,
+        { conflicting_flags: ['--required', ...conflictingFlags] },
+        pretty,
+      );
+    }
     const requestedRaw = Array.isArray(args.required) ? args.required.join(",") : args.required;
     const requested = requestedRaw.split(",").map(s => s.trim()).filter(Boolean);
     const all = runner.listPlaybooks();
@@ -7261,12 +7317,16 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
     ids = requested;
   } else if (args.all) {
-    ids = runner.listPlaybooks();
+    const includeJudgementShaped = args["include-judgement-shaped"] === true;
+    ids = runner.listPlaybooks().filter(id =>
+      includeJudgementShaped || !POLICY_SKIPPED_PLAYBOOKS.has(id)
+    );
   } else if (scope) {
-    try { ids = filterPlaybooksByScope(runner, scope); }
+    const includeJudgementShaped = args["include-judgement-shaped"] === true;
+    try { ids = filterPlaybooksByScope(runner, scope, { includeJudgementShaped }); }
     catch (e) { return emitError(`ci: ${e.message}`, { provided_scope: scope }, pretty); }
     // Always include cross-cutting playbooks regardless of scope choice.
-    const cross = filterPlaybooksByScope(runner, "cross-cutting");
+    const cross = filterPlaybooksByScope(runner, "cross-cutting", { includeJudgementShaped });
     ids = [...new Set([...ids, ...cross])];
     // For code-scope on a repo: also include sbom (system-scope but
     // repo-relevant) so ci output matches discover.
@@ -7278,8 +7338,9 @@ function cmdCi(runner, args, runOpts, pretty) {
       }
     }
   } else {
+    const includeJudgementShaped = args["include-judgement-shaped"] === true;
     const scopes = detectScopes();
-    ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s));
+    ids = scopes.flatMap(s => filterPlaybooksByScope(runner, s, { includeJudgementShaped }));
     ids = [...new Set(ids)];
   }
   if (!ids || ids.length === 0) {

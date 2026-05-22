@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.55 — 2026-05-22
+
+`ci --scope code` no longer halts at preflight on judgement-shaped playbooks. `--required` refuses combination with `--all` / `--scope` as ambiguous.
+
+### Bugs
+
+- **`exceptd ci --scope code` exited 4 BLOCKED out-of-the-box** because the scope filter swept in 3 playbooks whose halt-preconditions require operator-attested evidence the CI runner cannot infer (`ai-discovered-cve-triage` wants `agent_has_vulnerability_feed_access`, `post-quantum-migration` wants `operator_ownership_attested`, `supply-chain-recovery` wants `incident-confirmed`). The canonical CI-gate entry point the README documents was broken. `--scope code` / `--all` / scope-autodetect now default-exclude 9 incident / governance / migration playbooks; operators who genuinely want them pass `--include-judgement-shaped`. `framework` stays included (analyze-only, warn-precondition).
+- **`exceptd ci --required <pb> --all`** (or `--required <pb> --scope <type>`) used to silently run `--required` and drop the conflicting flag. Now refuses as ambiguous — same shape as the existing positional+flag refusal: `ci: --required cannot be combined with --all / --scope. Pick one selector...`
+
+### Features
+
+- **`--include-judgement-shaped` opt-in flag** on `ci` and `run`. Operators who do want the policy-skipped set in their scope expansion can opt in explicitly; the default excludes them.
+
 ## 0.13.54 — 2026-05-21
 
 `library-author` publish-workflow heuristic re-tightens after the v0.13.48 broadening exposed verification / e2e workflows as false-positive publish.
