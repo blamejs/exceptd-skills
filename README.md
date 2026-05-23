@@ -366,8 +366,10 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
                                       ZDI, kernel.org commits, oss-security
                                       mailing list, JFrog SecOps, CISA current
                                       advisories, Microsoft Security Blog,
-                                      Sysdig, Trail of Bits, Embrace the Red)
-                                      for CVE IDs disclosed at T+0 to T+1 —
+                                      Sysdig, Trail of Bits, Embrace the Red,
+                                      BleepingComputer, The Hacker News,
+                                      Nightmare-Eclipse GitHub tracker) for
+                                      CVE IDs disclosed at T+0 to T+1 —
                                       days ahead of NVD enrichment.
                                       Report-only: emits structured diffs[]
                                       with {cve_id, sources[], advisory_urls[],

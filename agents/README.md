@@ -8,9 +8,8 @@ Multi-agent coordination for exceptd Security. Each agent file defines a special
 
 | Agent | Role | Triggers |
 |---|---|---|
-| [threat-researcher](threat-researcher.md) | Research and validate new CVEs, threat campaigns, and ATLAS TTPs | New CVE published, ATLAS update, CISA KEV addition |
-| [framework-analyst](framework-analyst.md) | Analyze framework updates and gap changes | Framework amendment published |
-| [skill-updater](skill-updater.md) | Apply validated intelligence to update skill files | Threat researcher or framework analyst output |
+| [threat-researcher](threat-researcher.md) | Research and validate new CVEs, threat campaigns, ATLAS TTPs, and framework updates | New CVE published, ATLAS update, CISA KEV addition, framework amendment |
+| [skill-updater](skill-updater.md) | Apply validated intelligence to update skill files | Threat researcher output |
 | [source-validator](source-validator.md) | Cross-check data against primary sources | Before any data enters cve-catalog.json or atlas-ttps.json |
 | [report-generator](report-generator.md) | Generate structured reports from skill outputs | User invokes a reporting workflow |
 
@@ -21,8 +20,8 @@ Multi-agent coordination for exceptd Security. Each agent file defines a special
 ```
 External trigger (new CVE, ATLAS update, framework change)
           ↓
-[threat-researcher] or [framework-analyst]
-   — researches the trigger
+[threat-researcher]
+   — researches the trigger (CVE, ATLAS update, or framework amendment)
    — identifies affected skills
    — produces a validated intelligence package
           ↓
@@ -48,8 +47,7 @@ External trigger (new CVE, ATLAS update, framework change)
 These agents can run in parallel when their inputs are independent:
 
 **Parallel-safe:**
-- Multiple threat-researcher instances on different CVEs
-- framework-analyst + threat-researcher on unrelated topics
+- Multiple threat-researcher instances on different CVEs or framework amendments
 - Multiple source-validator instances on different data items
 
 **Must be sequential:**

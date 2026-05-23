@@ -23,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-05-18"
+last_threat_review: "2026-05-22"
 ---
 
 # Policy Exception Generation
@@ -99,7 +99,7 @@ A granted exception does not remove the threat — it shifts the burden onto com
 | Exception 3 — Zero Trust Architecture Network Segmentation | T1021 (Remote Services), T1570 (Lateral Tool Transfer), T1078 (Valid Accounts), T1199 (Trusted Relationship) | Workload identity (SPIFFE/SPIRE), per-request mTLS, device-posture verification, east-west behavioral analytics |
 | Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, network-layer isolation if no live patch available, scheduled reboot window |
 
-The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v5.6.0, February 2026) supplemented by ATT&CK Enterprise. Per Hard Rule #4, no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
+The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v5.6.0, May 2026) supplemented by ATT&CK Enterprise. Per Hard Rule #4, no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
 
 ---
 

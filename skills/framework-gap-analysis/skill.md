@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-18"
+last_threat_review: "2026-05-22"
 ---
 
 # Framework Gap Analysis
@@ -69,7 +69,7 @@ A gap declaration that closes section 6 (Global coverage check) without referenc
 
 ## TTP Mapping (MITRE ATLAS v5.6.0 and ATT&CK)
 
-This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, February 2026) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
+This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, May 2026) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
 
 | Built-in gap | Primary TTP(s) | Gap flag |
 |---|---|---|
