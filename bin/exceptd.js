@@ -6586,16 +6586,51 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         }
       }
       const ok = load_errors.length === 0;
+      // Audit 3 B.6: pre-fix `without_collector` was just "playbooks
+      // missing a collector file" — which happened to equal POLICY_SKIPS
+      // exactly because every policy-skipped playbook also has no
+      // collector. That coincidence isn't an invariant: a future
+      // playbook could lose its collector by accident OR a policy-skipped
+      // playbook could gain a collector intentionally. Distinguish the
+      // two: `without_collector` is now playbooks-missing-a-collector
+      // that are NOT in the policy-skip allowlist — i.e. actual gaps
+      // that need attention. The set-difference is what operators
+      // should remediate.
+      // Pre-fix `without_collector` was just "playbooks missing a
+      // collector file" — which happened to equal POLICY_SKIPS exactly
+      // because every policy-skipped playbook also has no collector.
+      // That coincidence isn't an invariant: a future playbook could
+      // lose its collector by accident OR a policy-skipped playbook
+      // could gain one. The new `unexplained_missing_collectors`
+      // field surfaces the operator-actionable set difference:
+      // playbooks missing a collector that are NOT in the policy
+      // allowlist. Existing `without_collector` retained for
+      // back-compat.
+      const policySkipSet = new Set(POLICY_SKIPS);
+      const unexplained_missing_collectors = without_collector.filter(p => !policySkipSet.has(p));
+      // Audit-3 codex P1 follow-up: when an unexplained missing collector
+      // appears (a playbook that SHOULD have a collector but doesn't,
+      // i.e. NOT in the policy-skip allowlist), the check fails. Without
+      // this, automation and CI health checks would miss the exact
+      // regression class that unexplained_missing_collectors exists to
+      // surface. Load errors still fail at "error" severity; unexplained
+      // missings fail at "warn" (they're a build-time gap, not a
+      // runtime crash).
+      const collectorOk = ok && unexplained_missing_collectors.length === 0;
+      const collectorSeverity = load_errors.length > 0 ? "error"
+        : unexplained_missing_collectors.length > 0 ? "warn"
+        : "info";
       checks.collectors = {
-        ok,
-        severity: ok ? "info" : "error",
+        ok: collectorOk,
+        severity: collectorSeverity,
         total_playbooks: playbookFiles.length,
         with_collector,
         without_collector,
+        unexplained_missing_collectors,
         load_errors,
         policy_skips: POLICY_SKIPS.sort(),
       };
-      if (!ok) issues.push("collectors");
+      if (!collectorOk) issues.push("collectors");
     } catch (e) {
       checks.collectors = { ok: false, severity: "error", error: e.message };
       issues.push("collectors");
@@ -6615,8 +6650,18 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const { bucketChecks } = require(path.join(PKG_ROOT, "lib", "doctor-bucketing.js"));
   const { warnList, errorList } = bucketChecks(checks);
   const allGreen = errorList.length === 0 && warnList.length === 0;
+  // Audit 3 B.11: surface the local version on the default doctor output
+  // so operators answer both "is my install healthy?" AND "which version
+  // am I running?" without having to invoke `exceptd version` separately.
+  // The opt-in --registry-check augments this with the published comparison;
+  // local_version alone is offline-clean.
+  let localVersion = null;
+  try {
+    localVersion = require(path.join(PKG_ROOT, "package.json")).version || null;
+  } catch { /* package.json unreadable — fall through */ }
   const out = {
     verb: "doctor",
+    local_version: localVersion,
     checks,
     summary: {
       all_green: allGreen,
@@ -6727,7 +6772,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   // Default: human checklist. v0.11.0 redesign #5.
   const lines = [];
-  lines.push("exceptd doctor");
+  lines.push(`exceptd doctor${localVersion ? ` (v${localVersion})` : ""}`);
   function mark(c, render) {
     if (!c) return;
     // Four states: ok / warn / error / skipped. `skipped` is informational
@@ -7546,7 +7591,20 @@ function cmdAsk(runner, args, runOpts, pretty) {
     if (tokens.some(t => (pb._meta?.id || id) === t)) score += 3;
     scored.push({ id: pb._meta?.id || id, score });
   }
-  scored.sort((a, b) => b.score - a.score);
+  // Audit 3 C.6: when scores tie, fall back to a deterministic but more
+  // useful order than alphabetical playbook-id (which made the first-5
+  // playbooks dominate every vague query). Secondary sort favors
+  // playbooks whose id is referenced directly in the question (e.g.
+  // "secrets" matching playbook id "secrets" outranks an alphabetical
+  // accident). Tertiary is the original stable order.
+  scored.forEach((s, i) => { s._origIdx = i; });
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const aIdMatch = tokens.includes(a.id) ? 1 : 0;
+    const bIdMatch = tokens.includes(b.id) ? 1 : 0;
+    if (aIdMatch !== bIdMatch) return bIdMatch - aIdMatch;
+    return a._origIdx - b._origIdx;
+  });
   const top = scored.filter(s => s.score > 0).slice(0, 5);
 
   // v0.11.2: default human-readable; --json for machine.
@@ -7575,11 +7633,22 @@ function cmdAsk(runner, args, runOpts, pretty) {
     t.collector_available = fs.existsSync(collectorPath);
   }
 
+  // Audit 3 C.7: penalize confidence by the tie spread at the top so a
+  // 5-way tie at score 3 doesn't claim the same confidence as a single
+  // clear winner at score 3. tieCount counts how many playbooks share
+  // the top score (1 = clean winner; >1 = tie). Confidence divided
+  // accordingly: a 5-way tie reports ~0.2x the base, a clean winner
+  // reports the full base.
+  const topScore = top[0].score;
+  const tieCount = scored.filter(s => s.score === topScore).length;
+  const baseConfidence = Math.min(1, topScore / Math.max(2, tokens.length));
+  const tiePenalty = tieCount > 1 ? 1 / tieCount : 1;
   const result = {
     verb: "ask",
     question,
     routed_to: top.map(t => t.id),
-    confidence: Math.min(1, top[0].score / Math.max(2, tokens.length)),
+    confidence: Math.round(baseConfidence * tiePenalty * 100) / 100,
+    confidence_factors: { base: Math.round(baseConfidence * 100) / 100, tie_count: tieCount },
     next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
     full_match_list: top,
   };

@@ -1746,6 +1746,64 @@ test('audit-3 B.9: doctor --ai-config walk caps + truncation marker', () => {
     `max_files cap should bound the walk; got ${c.walk_caps.max_files}`);
 });
 
+test('audit-3 B.6: doctor --collectors surfaces unexplained_missing_collectors AND gates ok on it', () => {
+  const r = cli(['doctor', '--collectors', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --collectors --json must parse');
+  const c = data.checks?.collectors;
+  assert.ok(c, 'checks.collectors must be present');
+  assert.ok(Array.isArray(c.unexplained_missing_collectors),
+    'unexplained_missing_collectors must be an array');
+  // The new field surfaces operator-actionable gaps. policy_skips intersection
+  // with without_collector is by design — should appear in without_collector
+  // but NOT in unexplained_missing_collectors.
+  const policy = new Set(c.policy_skips || []);
+  for (const id of c.unexplained_missing_collectors) {
+    assert.ok(!policy.has(id),
+      `unexplained_missing_collectors must exclude policy-skipped playbooks; ${id} is in both lists`);
+  }
+  // ok must reflect the unexplained_missing set. If the array is empty,
+  // ok stays true; if anything appears in it, ok must flip to false so
+  // CI health checks catch the regression class this field was added to
+  // surface.
+  if (c.unexplained_missing_collectors.length === 0) {
+    assert.equal(c.ok, true, 'no unexplained missings → ok stays true');
+  } else {
+    assert.equal(c.ok, false,
+      'unexplained missings must flip ok to false so doctor surfaces the gap as a failed check');
+  }
+});
+
+test('audit-3 B.11: doctor surfaces local_version on the top-level result', () => {
+  const r = cli(['doctor', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'doctor --json must parse');
+  assert.equal(typeof data.local_version, 'string',
+    'doctor --json must surface local_version (the running CLI version) at the top level');
+  assert.match(data.local_version, /^\d+\.\d+\.\d+/,
+    `local_version must look like a semver; got: ${data.local_version}`);
+});
+
+test('audit-3 C.7: ask confidence penalized by tie count', () => {
+  // A vague single-token query produces a tie. The post-fix confidence
+  // formula divides the base score by the tie spread, so multi-way ties
+  // surface as visibly lower confidence than a clean winner.
+  const r = cli(['ask', 'I think we got phished', '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ask --json must parse');
+  assert.ok(data.confidence_factors,
+    'confidence_factors must surface base + tie_count');
+  assert.equal(typeof data.confidence_factors.tie_count, 'number',
+    'tie_count must be numeric');
+  assert.ok(data.confidence_factors.tie_count >= 1, 'tie_count must be >= 1');
+  // If there's any tie, the reported confidence must be strictly less
+  // than the base.
+  if (data.confidence_factors.tie_count > 1) {
+    assert.ok(data.confidence < data.confidence_factors.base,
+      `ties must reduce confidence below base; got confidence=${data.confidence} base=${data.confidence_factors.base} ties=${data.confidence_factors.tie_count}`);
+  }
+});
+
 test('#87 doctor --fix is registered (smoke)', () => {
   // Dispatch-table-only smoke test. The earlier shape of this test invoked
   // `exceptd doctor --fix` directly. On any machine where `.keys/private.pem`

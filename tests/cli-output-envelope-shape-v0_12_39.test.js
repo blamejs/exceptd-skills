@@ -149,7 +149,10 @@ test('doctor envelope: exact top-level + summary sub-key set + baseline check se
   const body = tryJson(r.stdout);
   assert.ok(body, `doctor must emit parseable JSON; got: ${r.stdout.slice(0, 200)}`);
   // v0.13.0: top-level `ok` added (summary.all_green remains authoritative).
-  assert.deepEqual(Object.keys(body).sort(), ['checks', 'ok', 'summary', 'verb']);
+  // local_version surfaces the running CLI's semver alongside the other
+  // top-level fields so operators see "which version am I running?" in
+  // the same envelope as "is my install healthy?"
+  assert.deepEqual(Object.keys(body).sort(), ['checks', 'local_version', 'ok', 'summary', 'verb']);
   assert.equal(body.verb, 'doctor');
   assert.equal(body.ok, true, 'v0.13: doctor carries ok:true (summary.all_green remains authoritative)');
 
