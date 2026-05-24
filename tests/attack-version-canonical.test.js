@@ -42,6 +42,7 @@ const FILES_TO_CHECK = [
   'SECURITY.md',
   '.github/copilot-instructions.md',
   '.github/PULL_REQUEST_TEMPLATE.md',
+  '.cursorrules',
 ];
 
 function listSkillBodies() {

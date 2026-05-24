@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.63 — 2026-05-24
+
+Metadata accuracy corrections. Five references still cited MITRE ATLAS v5.1.0 — a catalog descriptor and four control-gap / TTP cross-walk notes — while the shipped catalog tracks v5.6.0. The catalog-summary index and one skill's forecast note dated ATLAS v5.6.0 to February 2026; its release date is May 2026 (2026-05-08). The package description counted 10 intelligence catalogs when 11 ship. The researcher skill described 37 downstream skills (itself the 38th); the library ships 42 (41 downstream).
+
 ## 0.13.62 — 2026-05-24
 
 Threat-framework version pins are now consistent across the full surface. The remaining skills and the source registry cite MITRE ATT&CK v19.0 (April 2026); `attack-surface-pentest` and `skill-update-loop` still described the superseded v17 matrix, and `sources/index.json` pointed callers at v17 / 2025-06-25. The same registry's ATLAS pointer is corrected to v5.6.0 (May 2026) — it had drifted to v5.1.0 while every other surface moved on. A new guard refuses any operator-facing reference to an ATT&CK version older than the catalog pin, while permitting forward-looking references so forward-watch entries naming the next release cycle stay intact.
