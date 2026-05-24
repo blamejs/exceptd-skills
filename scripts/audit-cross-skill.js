@@ -228,7 +228,12 @@ if (badgeMatch && Number(badgeMatch[1]) !== skills.length) {
 const jurBadge = readme.match(/jurisdictions-(\d+)-/);
 const liveJurs = (() => {
   const g = JSON.parse(fs.readFileSync(ABS("data/global-frameworks.json"), "utf8"));
-  return Object.keys(g).filter((k) => !k.startsWith("_") && k !== "GLOBAL").length;
+  // Canonical jurisdiction count: every non-metadata top-level entry in the
+  // registry. GLOBAL (the International / Multi-Jurisdiction standards scope:
+  // ISO, CSA, CIS) is a counted entry, matching the README badge and the
+  // catalog-summary index. Only `_`-prefixed keys (_meta, _notification_summary,
+  // _patch_sla_summary) are metadata and excluded.
+  return Object.keys(g).filter((k) => !k.startsWith("_")).length;
 })();
 if (jurBadge && Number(jurBadge[1]) !== liveJurs) {
   note(`README BADGE DRIFT: shows jurisdictions-${jurBadge[1]}- but live count is ${liveJurs}`);

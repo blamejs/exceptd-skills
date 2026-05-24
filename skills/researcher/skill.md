@@ -222,11 +222,15 @@ Use this mapping. Pick one primary route and zero-or-more secondary routes.
 - Financial cyber / banking cyber / DORA TLPT / PSD2 SCA / SWIFT CSCF / NYDFS 23 NYCRR 500 / FFIEC / MAS TRM / APRA CPS 234 / TIBER-EU / CBEST question → `sector-financial`
 - Federal cyber / government cyber / FedRAMP / CMMC / EO 14028 / NIST 800-171 CUI / FISMA / M-22-09 Zero Trust / OMB M-24-04 AI / CISA BOD/ED question → `sector-federal-government`
 - Energy cyber / electric grid cyber / NERC CIP / TSA pipeline / AWWA water / EU NCCS-G / AESCSF / DER cyber / inverter security / smart meter cyber question → `sector-energy`
+- Telecom / 5G core / Salt Typhoon / Volt Typhoon / SS7 / Diameter / GTP / lawful intercept / CALEA / FCC CPNI / O-RAN / GSMA NESAS / 3GPP TS 33.501 question → `sector-telecom`
 - API security / OWASP API Top 10 / BOLA / BFLA / mass assignment / GraphQL / gRPC / WebSocket / API gateway / rate limit policy question → `api-security`
 - Cloud security / CSPM / CWPP / CNAPP / CSA CCM / AWS / Azure / GCP / shared responsibility / workload identity / cloud IAM question → `cloud-security`
 - Container security / Kubernetes / CIS K8s Benchmark / Pod Security Standards / Kyverno / Gatekeeper / Falco / Tetragon / admission policy / NetworkPolicy question → `container-runtime-security`
 - MLOps security / training data integrity / model registry / model signing / drift detection / MLflow / Kubeflow / Vertex AI / SageMaker / Hugging Face question → `mlops-security`
 - Incident response / IR playbook / PICERL / NIST 800-61 / ISO 27035 / breach notification / BEC incident / AI-class incident handling question → `incident-response-playbook`
+- Ransomware incident / encryption event / LockBit / ALPHV / Akira / RansomHub / Hunters International / ransom payment / OFAC sanctions screening / decryptor availability question → `ransomware-response`
+- Cloud-IAM incident / AWS account takeover / GCP service-account compromise / Azure managed-identity replay / access-key leak / IAM role-assumption abuse / cross-account assume-role / IMDS SSRF / CloudTrail anomaly question → `cloud-iam-incident`
+- IdP incident / Okta / Entra ID / Auth0 / Ping / OneLogin tenant compromise / federated-trust abuse / OAuth consent abuse / SAML-OIDC token forgery / Midnight Blizzard / Scattered Spider question → `idp-incident-response`
 - Email security / anti-phishing / SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / BEC / vishing / deepfake / AI-augmented phishing question → `email-security-anti-phishing`
 - Age gate / age verification / age assurance / child online safety / COPPA / CIPA / California AADC / UK Children's Code / KOSA / GDPR Art. 8 / DSA Art. 28 / parental consent / CSAM detection question → `age-gates-child-safety`
 

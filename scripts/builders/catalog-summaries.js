@@ -21,7 +21,7 @@ const CATALOG_PURPOSES = {
   "atlas-ttps.json": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.6.0 (May 2026).",
   "d3fend-catalog.json": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.0.0 release.",
   "framework-control-gaps.json": "Per-control framework gap declarations: SI-2, A.8.8, PCI 6.3.3, etc. Each entry names the control, the lag, the evidence CVE, and remediation guidance.",
-  "global-frameworks.json": "Multi-jurisdiction framework registry: 35 jurisdictions × applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps. Cross-cutting authority for jurisdiction-clocks index.",
+  "global-frameworks.json": "Multi-jurisdiction framework registry: per-jurisdiction applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps (jurisdiction count is reported by entry_count, not duplicated here). Cross-cutting authority for jurisdiction-clocks index.",
   "exploit-availability.json": "Per-CVE exploit availability: PoC public status, weaponization signal, AI-assist status, blast-radius. Project-curated (B2 Admiralty confidence) with source citations.",
   "zeroday-lessons.json": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
   "rfc-references.json": "IETF RFCs + active Internet-Drafts cited by skills (TLS, IPsec, PQ crypto migration, HTTP/3, CT). Cross-validated against IETF Datatracker via validate-rfcs.",

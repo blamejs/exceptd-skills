@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.64 — 2026-05-24
+
+Audit-tooling and metadata consistency. The jurisdiction count now has a single source of truth — it is computed from the framework registry (35: every non-metadata entry, including the international / multi-jurisdiction standards scope) rather than restated by hand in the catalog summary and the cross-skill audit, which had diverged to 34. The researcher routing table gained entries for four skills it previously could not reach: `sector-telecom`, `ransomware-response`, `cloud-iam-incident`, and `idp-incident-response`. The per-skill `forward_watch` and `last_threat_review` fields in the shipped manifest are now synchronized from each skill's frontmatter — 40 stale cached values were corrected, including a forecast note that still dated an ATLAS release to the wrong month — and a guard now fails the build if the manifest cache drifts from frontmatter again. The defensive-countermeasure-mapping skill cites the current MITRE Center for Threat-Informed Defense ATT&CK Mappings crosswalk version (v16.1) and notes that it lags the live ATT&CK v19.0 matrix.
+
 ## 0.13.63 — 2026-05-24
 
 Metadata accuracy corrections. Five references still cited MITRE ATLAS v5.1.0 — a catalog descriptor and four control-gap / TTP cross-walk notes — while the shipped catalog tracks v5.6.0. The catalog-summary index and one skill's forecast note dated ATLAS v5.6.0 to February 2026; its release date is May 2026 (2026-05-08). The package description counted 10 intelligence catalogs when 11 ship. The researcher skill described 37 downstream skills (itself the 38th); the library ships 42 (41 downstream).

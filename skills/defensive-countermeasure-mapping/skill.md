@@ -79,7 +79,7 @@ The skill exists because the inverse direction — given a CVE or TTP, produce t
 
 ## Framework Lag Declaration
 
-No major compliance framework requires technique-grained defensive mapping. Each requires controls; none require controls expressed in the D3FEND technique taxonomy that mirrors ATT&CK and ATLAS. The MITRE ATT&CK Mappings v17 project (the NIST 800-53 → ATT&CK and D3FEND → NIST 800-53 crosswalks) provides the bridge, but operator awareness is limited and no framework yet requires its use.
+No major compliance framework requires technique-grained defensive mapping. Each requires controls; none require controls expressed in the D3FEND technique taxonomy that mirrors ATT&CK and ATLAS. The MITRE Center for Threat-Informed Defense ATT&CK Mappings project (the NIST 800-53 → ATT&CK and D3FEND → NIST 800-53 crosswalks) provides the bridge, but its latest published crosswalk targets ATT&CK Enterprise v16.1 — lagging the current v19.0 matrix — operator awareness is limited, and no framework yet requires its use.
 
 | Jurisdiction | Framework / Control | What It Requires | Why It Is Insufficient at D3FEND Grain |
 |---|---|---|---|
@@ -290,7 +290,7 @@ This skill is itself the canonical mapper. The section name doubles as the secti
 
 The cross-walks the skill maintains:
 
-- **ATT&CK → D3FEND.** Sourced from the MITRE ATT&CK Mappings v17 NIST 800-53 → ATT&CK and D3FEND → ATT&CK crosswalks, materialized locally in `data/d3fend-catalog.json` as the `counters_attack_techniques` array on every D3FEND entry. To map an ATT&CK T-number to D3FEND, scan every catalog entry and collect those whose `counters_attack_techniques` includes the T-number. This skill never invents a mapping not present in the catalog; if a T-number has no coverage, the absence is a finding routed to `zeroday-gap-learn`.
+- **ATT&CK → D3FEND.** Sourced from the MITRE Center for Threat-Informed Defense ATT&CK Mappings NIST 800-53 → ATT&CK and D3FEND → ATT&CK crosswalks (latest crosswalk targets ATT&CK Enterprise v16.1; the live matrix is v19.0), materialized locally in `data/d3fend-catalog.json` as the `counters_attack_techniques` array on every D3FEND entry. To map an ATT&CK T-number to D3FEND, scan every catalog entry and collect those whose `counters_attack_techniques` includes the T-number. This skill never invents a mapping not present in the catalog; if a T-number has no coverage, the absence is a finding routed to `zeroday-gap-learn`.
 
 - **ATLAS → D3FEND.** Sourced from cross-references in `data/atlas-ttps.json` (each ATLAS entry's defensive references) and from `data/d3fend-catalog.json` (each D3FEND entry's `counters_attack_techniques` array, which carries AML.T-numbers in addition to T-numbers). To map an AML.T technique to D3FEND, scan the catalog the same way as for ATT&CK. The bidirectional consistency is enforced by `lib/lint-skills.js` and by the schemas declared in the catalog `_meta` blocks.
 
