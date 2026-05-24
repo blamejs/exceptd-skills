@@ -126,6 +126,7 @@
       "mcp-agent-trust"
     ],
     "pqc-first": [
+      "ai-c2-detection",
       "compliance-theater",
       "framework-gap-analysis"
     ],
@@ -513,7 +514,7 @@
   "in_degree": {
     "age-gates-child-safety": 1,
     "ai-attack-surface": 26,
-    "ai-c2-detection": 12,
+    "ai-c2-detection": 13,
     "ai-risk-management": 5,
     "api-security": 4,
     "attack-surface-pentest": 13,
@@ -581,7 +582,7 @@
     "mlops-security": 10,
     "ot-ics-security": 14,
     "policy-exception-gen": 0,
-    "pqc-first": 2,
+    "pqc-first": 3,
     "rag-pipeline-security": 6,
     "ransomware-response": 10,
     "researcher": 37,

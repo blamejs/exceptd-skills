@@ -485,7 +485,7 @@ This skill does not have a single exploited target — its "exploit surface" is 
 | MITRE ATLAS changelog | TTP additions, renames, removals for AI/ML threat domain | Quarterly check; immediate on minor-version release | ATLAS v5.6.0 (May 2026) — pinned in AGENTS.md and `data/atlas-ttps.json._meta.atlas_version` | `_meta.atlas_version` |
 | NVD CVE 2.0 API | Authoritative CVE metadata, CVSS vectors, references | Real-time on new CVE in covered domain | services.nvd.nist.gov/rest/json/cves/2.0 | `data/cve-catalog.json` |
 | NIST FIPS publication tracker | PQC and crypto-standard finalizations | Per-publication (event-driven) | csrc.nist.gov/publications | pqc-first `forward_watch` + manifest `last_threat_review` |
-| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v17, 2025-06-25) | Skill `attack_refs` fields |
+| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v19.0, 2026-04-28) | Skill `attack_refs` fields |
 | GitHub Security Advisories / OSV | CVEs for AI assistants, MCP clients/servers, supply-chain JS/Python packages | Real-time on covered repos | osv.dev, github.com/advisories | `data/cve-catalog.json` |
 | Framework publisher feeds | NIST SP revisions, ISO amendments, NIS2 implementing acts, EU Official Journal, ENISA, NCSC, ASD | RSS / changelog per publisher | csrc.nist.gov, iso.org, eur-lex.europa.eu | `data/framework-control-gaps.json`, `data/global-frameworks.json` |
 | Kernel CNA / distro advisories | Kernel LPE, container-escape, page-cache CVEs | Per advisory | kernel.org, RHEL/Ubuntu/Debian security advisories | `data/cve-catalog.json`, kernel-lpe-triage |

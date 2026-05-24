@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1668009,
-    "total_approx_tokens": 417007,
+    "total_chars": 1671867,
+    "total_approx_tokens": 417973,
     "skill_count": 42
   },
   "skills": {
@@ -770,10 +770,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 34118,
-      "chars": 33970,
-      "lines": 551,
-      "approx_tokens": 8493,
+      "bytes": 37988,
+      "chars": 37818,
+      "lines": 572,
+      "approx_tokens": 9455,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -787,9 +787,9 @@
           "approx_tokens": 1976
         },
         "ttp-mapping": {
-          "bytes": 2120,
-          "chars": 2108,
-          "approx_tokens": 527
+          "bytes": 2122,
+          "chars": 2110,
+          "approx_tokens": 528
         },
         "exploit-availability-matrix": {
           "bytes": 2472,
@@ -841,6 +841,11 @@
           "chars": 1471,
           "approx_tokens": 368
         },
+        "defensive-countermeasure-mapping": {
+          "bytes": 3868,
+          "chars": 3846,
+          "approx_tokens": 962
+        },
         "compliance-theater-check": {
           "bytes": 660,
           "chars": 660,
@@ -850,10 +855,10 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "bytes": 47831,
-      "chars": 47697,
+      "bytes": 47833,
+      "chars": 47699,
       "lines": 522,
-      "approx_tokens": 11924,
+      "approx_tokens": 11925,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -907,8 +912,8 @@
           "approx_tokens": 699
         },
         "exploit-availability-matrix": {
-          "bytes": 2725,
-          "chars": 2719,
+          "bytes": 2727,
+          "chars": 2721,
           "approx_tokens": 680
         },
         "compliance-theater-check": {
@@ -1065,10 +1070,10 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "bytes": 33284,
-      "chars": 33141,
+      "bytes": 33290,
+      "chars": 33147,
       "lines": 388,
-      "approx_tokens": 8285,
+      "approx_tokens": 8287,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1077,14 +1082,14 @@
           "approx_tokens": 1173
         },
         "framework-lag-declaration": {
-          "bytes": 4561,
-          "chars": 4551,
+          "bytes": 4563,
+          "chars": 4553,
           "approx_tokens": 1138
         },
         "ttp-mapping": {
-          "bytes": 2231,
-          "chars": 2210,
-          "approx_tokens": 553
+          "bytes": 2235,
+          "chars": 2214,
+          "approx_tokens": 554
         },
         "exploit-availability-matrix": {
           "bytes": 2455,
@@ -2150,10 +2155,10 @@
     },
     "incident-response-playbook": {
       "path": "skills/incident-response-playbook/skill.md",
-      "bytes": 63305,
-      "chars": 63053,
+      "bytes": 63307,
+      "chars": 63055,
       "lines": 549,
-      "approx_tokens": 15763,
+      "approx_tokens": 15764,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
