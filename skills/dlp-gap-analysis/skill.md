@@ -318,7 +318,7 @@ Ask: "A customer files a Data Subject Access Request under GDPR Art 15, LGPD Art
 
 ## Defensive Countermeasure Mapping
 
-D3FEND v1.0+ countermeasure references from `data/d3fend-catalog.json`. Indicates which D3FEND defenses are the primary control category for each DLP channel.
+D3FEND v1.3.0+ countermeasure references from `data/d3fend-catalog.json`. Indicates which D3FEND defenses are the primary control category for each DLP channel.
 
 | DLP Channel | Primary D3FEND Defense | Secondary D3FEND Defenses | Notes |
 |---|---|---|---|

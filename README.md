@@ -552,8 +552,8 @@ All skills pull from `data/`. Cross-validated against canonical upstream sources
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
 - `global-frameworks.json` — All major global compliance frameworks (35 jurisdictions) with control inventories and lag scores
 - `zeroday-lessons.json` — Zero-day → control gap → framework gap → new control requirement mappings
-- `cwe-catalog.json` — CWE entries pinned to CWE v4.17 (Top 25 + AI- / supply-chain-relevant additions)
-- `d3fend-catalog.json` — MITRE D3FEND defensive technique entries pinned to D3FEND v1.0.0
+- `cwe-catalog.json` — CWE entries pinned to CWE v4.20 (Top 25 + AI- / supply-chain-relevant additions)
+- `d3fend-catalog.json` — MITRE D3FEND defensive technique entries pinned to D3FEND v1.3.0
 - `rfc-references.json` — IETF RFC / Internet-Draft references with status, errata, replaces / replaced-by, `last_verified`
 - `dlp-controls.json` — DLP control entries indexed by channel / classifier / surface / enforcement / evidence
 

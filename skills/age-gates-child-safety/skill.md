@@ -420,7 +420,7 @@ Ask: "Under COPPA, AADC, DSA Art. 28(2), and ANPD 2024 Guide, behavioural advert
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps the offensive findings of this skill to MITRE D3FEND v1.0+ countermeasure references from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per Hard Rule #9.
+Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps the offensive findings of this skill to MITRE D3FEND v1.3.0+ countermeasure references from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per Hard Rule #9.
 
 | D3FEND ID | Technique | Child-Safeguarding Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability (Hard Rule #9) |
 |---|---|---|---|---|---|

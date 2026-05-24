@@ -413,7 +413,7 @@ For every identity flagged in Step 2, every prompt flagged in Step 3, every Sesa
 
 ## Defensive Countermeasure Mapping
 
-D3FEND v1.0+ references from `data/d3fend-catalog.json`. Maps the SesameOp / PROMPTFLUX / PROMPTSTEAL detection surfaces to the defense-in-depth layer they actually live on.
+D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. Maps the SesameOp / PROMPTFLUX / PROMPTSTEAL detection surfaces to the defense-in-depth layer they actually live on.
 
 | D3FEND ID | Name | Layer | Rationale (what it counters here) |
 |---|---|---|---|
