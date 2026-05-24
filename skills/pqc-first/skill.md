@@ -53,7 +53,7 @@ cwe_refs:
 d3fend_refs:
   - D3-FE
   - D3-MENCR
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-05-22"
 ---
 
 # PQC-First Mentality
@@ -139,7 +139,7 @@ This skill addresses a **future-state attack class** that is not yet represented
 |---|---|---|
 | MITRE ATT&CK T1557 (Adversary-in-the-Middle) | Partial — operational family | T1557 covers AitM credential capture and traffic interception. The capture half of HNDL falls into T1557 operationally; the later decrypt phase has no ATT&CK technique. |
 | MITRE ATT&CK T1040 (Network Sniffing) | Partial — capture phase | Covers passive traffic capture. Does not cover the strategic-archive intent of HNDL, where the captured data has no immediate use and is stored for future decryption. |
-| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap through ATT&CK v17 (2025-06-25). |
+| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap through ATT&CK v19.0 (April 2026). |
 | MITRE ATLAS | **MISSING (out of scope)** | ATLAS scope is ML/AI system attacks. CRQC cryptanalysis is not in ATLAS scope. |
 | CAPEC-114 (Authentication Abuse) | Indirect | Forged signatures via broken signature scheme would manifest as authentication abuse, but CAPEC does not enumerate "signature scheme broken by CRQC" as a precondition. |
 | CAPEC-475 (Signature Spoofing by Improper Validation) | Indirect | Same — the post-CRQC equivalent has no CAPEC entry. |
@@ -542,6 +542,27 @@ The skill produces a structured PQC Readiness Assessment that scores the org's p
 ### Framework Compliance
 [Per applicable framework: PQC requirement, current status, gap if any]
 ```
+
+---
+
+## Defensive Countermeasure Mapping
+
+D3FEND references from `data/d3fend-catalog.json`. The harvest-now-decrypt-later (HNDL) threat has two capture surfaces — data in transit and data at rest — and each maps to a distinct D3FEND hardening technique. The capture itself is conventional; it is the *future decryption* that has no ATT&CK or D3FEND coverage. The countermeasure is therefore not "detect the capture" but "make the captured ciphertext worthless to a future CRQC."
+
+| D3FEND ID | Name | Layer | Rationale (what it counters here) |
+|---|---|---|---|
+| `D3-MENCR` | Message Encryption | Transit (TLS / application) | Counters in-flight HNDL capture (T1040 Network Sniffing, T1557 Adversary-in-the-Middle — the same techniques the TTP Mapping above flags as the HNDL capture half). Only PQC-hybrid key exchange (ML-KEM-768 + X25519, per the TLS Configuration section) makes today's captured session ciphertext non-decryptable post-CRQC. Classical-only TLS is HNDL-exposed even when otherwise correctly configured. |
+| `D3-FE` | File Encryption | At-rest (storage) | Counters HNDL on stolen or copied storage (T1005 Data from Local System, T1565.001 Stored Data Manipulation). The trap: AES-256 at rest is quantum-resilient (Grover only halves the effective key length), but the DEK→KEK key-wrapping step is usually RSA/ECC and therefore HNDL-exposed. The control is incomplete unless the envelope KEM is ML-KEM-based or the wrapped key is itself 256-bit symmetric. |
+
+**Framework gap — signature forgery has no D3FEND technique.** The third PQC threat — a CRQC forging RSA/ECDSA signatures (code-signing, certificate, document) — maps to no D3FEND hardening technique and no ATT&CK technique (see the TTP Mapping table). D3FEND's encryption families harden confidentiality, not authenticity. The only countermeasure is migrating signature schemes to ML-DSA / SLH-DSA per the Hybrid Signature Standard; there is no detection-layer fallback, which is why the version gates are non-negotiable minimums rather than defense-in-depth options.
+
+**Defense-in-depth posture:** `D3-MENCR` and `D3-FE` are independent layers (transit vs. at-rest) and both are required — encrypting the wire while leaving model weights wrapped under RSA, or the reverse, leaves an HNDL surface open. Neither D3FEND technique expresses *algorithm strength*; the PQC-specific minimum (hybrid KEM, ML-KEM-768 floor) is the layer the taxonomy omits, which is the framework lag this skill exists to close.
+
+**Least-privilege scope:** key-management authority is scoped to the migration roadmap — DEK/KEK rotation to PQC-hybrid wrapping is an operation a narrow KMS-admin identity performs, not a blanket "re-encrypt everything" grant. At-rest re-wrapping (`D3-FE`) is staged by data-sensitivity-window so the longest-lived secrets migrate first.
+
+**Zero-trust posture:** every session negotiates PQC-hybrid key exchange regardless of network trust level — there is no "internal traffic is safe from HNDL" exemption, because a passive collector on an internal span harvests ciphertext as readily as one on the public path. Confidentiality is asserted per-session at the crypto layer, not inferred from network position.
+
+**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-FE` applies to model-weight files, training datasets, and embedding stores at rest; for ephemeral inference workloads that never persist state locally, the control shifts to PQC-hybrid-wrapped object storage (e.g. SSE-KMS with an ML-KEM-based envelope) rather than local-disk encryption. `D3-MENCR` applies to all AI-API traffic, which must move to TLS 1.3 with hybrid key exchange on the CNSA 2.0 timeline — noting that PQC protects the confidentiality of that traffic but not its content-layer abuse as a covert channel (pair with the AI-C2 egress controls in `ai-c2-detection`).
 
 ---
 

@@ -117,9 +117,9 @@
       "url": "https://attack.mitre.org",
       "techniques_url": "https://attack.mitre.org/techniques/{TECHNIQUE_ID}",
       "stix_bundle_enterprise": "https://github.com/mitre-attack/attack-stix-data/blob/master/enterprise-attack/enterprise-attack.json",
-      "current_version": "17",
-      "version_date": "2025-06-25",
-      "next_release_window": "late 2026 (typically October minor release)",
+      "current_version": "19.0",
+      "version_date": "2026-04-28",
+      "next_release_window": "October 2026 (v20; semi-annual April/October cadence)",
       "fields": ["technique_id", "sub_technique_id", "name", "tactic", "platforms", "data_sources", "mitigations"],
       "update_frequency": "biannual (major in spring, minor in fall historically)",
       "applies_to": "data/atlas-ttps.json (cross-references), skill frontmatter attack_refs",
@@ -235,10 +235,10 @@
       "url": "https://atlas.mitre.org",
       "techniques_url": "https://atlas.mitre.org/techniques/{TTP_ID}",
       "changelog_url": "https://atlas.mitre.org/resources/changelog",
-      "current_version": "5.1.0",
-      "version_date": "2025-11-01",
+      "current_version": "5.6.0",
+      "version_date": "2026-05-08",
       "fields": ["atlas_refs", "ttp_name", "ttp_description", "tactic"],
-      "update_frequency": "quarterly"
+      "update_frequency": "monthly"
     },
     "ietf_datatracker": {
       "name": "IETF Datatracker",

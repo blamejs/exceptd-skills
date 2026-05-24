@@ -55,14 +55,14 @@ forward_watch:
   - AU SOCI Act expanded sector coverage (data-storage and processing entities added 2024; further mandatory-reporting tiers under review)
   - IL INCD Incident Response Process v4 (slated for 2026-2027) consolidating AI-incident sub-class
   - NYDFS 23 NYCRR 500.17 amendments tightening ransom-payment 24h disclosure operationalization
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-22"
 ---
 
 # Incident Response Playbook
 
 Incident response (IR) is the operational closure of every other skill in this catalog. A vulnerability becomes a CVE through `coordinated-vuln-disclosure`; a CVE becomes a lesson through `zeroday-gap-learn`; a lesson becomes a control through `framework-gap-analysis`; an attack on that control becomes an incident — and the incident handler runs the playbook this skill defines. If the playbook is wrong, every preceding investment leaks at the last yard.
 
-This skill operationalizes NIST SP 800-61r3 (Computer Security Incident Handling Guide, 2025 update integrating ATT&CK and Cyber Kill Chain), ISO/IEC 27035-1:2023 (principles and process) + ISO/IEC 27035-2:2023 (guidelines for incident response planning), and the SANS PICERL phases (Preparation, Identification, Containment, Eradication, Recovery, Lessons learned). It threads the Diamond Model and the MITRE Unified Kill Chain for adversary-narrative reconstruction, anchors detection engineering to MITRE ATT&CK v17 (2025-06-25), and treats three incident classes that the legacy IR literature predates: AI-class incidents (prompt-injection breach, model exfiltration, AI-API as C2 channel, AI-agent-initiated unauthorized action), AI-generated supply-chain compromise, and regulator-mandated notification under cross-jurisdiction clocks running in parallel.
+This skill operationalizes NIST SP 800-61r3 (Computer Security Incident Handling Guide, 2025 update integrating ATT&CK and Cyber Kill Chain), ISO/IEC 27035-1:2023 (principles and process) + ISO/IEC 27035-2:2023 (guidelines for incident response planning), and the SANS PICERL phases (Preparation, Identification, Containment, Eradication, Recovery, Lessons learned). It threads the Diamond Model and the MITRE Unified Kill Chain for adversary-narrative reconstruction, anchors detection engineering to MITRE ATT&CK v19.0 (April 2026), and treats three incident classes that the legacy IR literature predates: AI-class incidents (prompt-injection breach, model exfiltration, AI-API as C2 channel, AI-agent-initiated unauthorized action), AI-generated supply-chain compromise, and regulator-mandated notification under cross-jurisdiction clocks running in parallel.
 
 ---
 
@@ -128,7 +128,7 @@ This skill is response-shaped — the TTPs below name the incident classes the p
 | **AML.T0017** | Discover ML Model Ontology | Adversary mapping of deployed model family, system-prompt structure, guardrails, and training-data signal — precursor to extraction and adversarial-input crafting | Identification: anomalous inference-API usage patterns (high-volume queries, structured probing, membership-inference signatures, repeated training-data extraction prompts). Containment: rate-limit + API-key revocation + IP block. Eradication: identify attacker access surface; assess what model-ontology data was exposed. Recovery: re-key, consider model-rotation if proprietary weights are at risk; for training-data exfiltration consider differential-privacy retraining. | No standardized detection signatures; org must build custom telemetry over AI inference APIs. |
 | **AML.T0051** | LLM Prompt Injection | Prompt-injection breach as incident trigger | Identification: AI-assistant or agentic-system anomalous action (unauthorized data access, anomalous tool invocation, identity-context confusion). Containment: revoke AI-system tool scopes, disable agent autonomy, isolate affected RAG corpus. Eradication: identify injection vector (web content, email signature, document metadata, RAG corpus poisoning) and remove. Recovery: re-deploy with hardened system prompt + tool-scoping per `mcp-agent-trust`. | Detection lags; most orgs discover the incident from downstream effect (unauthorized action) rather than detection at the prompt boundary. |
 
-ATLAS pinned to v5.6.0 (February 2026) per AGENTS.md rule #8. ATT&CK pinned to v17 (2025-06-25) per the same rule; the v15-to-v17 ID migration does not introduce breaking changes for the T-IDs cited above.
+ATLAS pinned to v5.6.0 (May 2026) per AGENTS.md rule #12. ATT&CK pinned to v19.0 (April 2026) per the same rule; the Defense Evasion (TA0005) split into Stealth (TA0005) and Defense Impairment (TA0112) is traced via `tactic_moved_from` on affected `data/attack-techniques.json` entries and does not introduce breaking changes for the T-IDs cited above.
 
 ---
 

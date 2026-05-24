@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-05-18"
+last_threat_review: "2026-05-22"
 ---
 
 # Compliance Theater Detection
@@ -92,7 +92,7 @@ Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps
 | Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (ML Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
 | Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs for payload crafting) | AI-generated content evades grammar/style heuristics and template-matching detectors |
 
-Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, February 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
+Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, May 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
 
 ---
 

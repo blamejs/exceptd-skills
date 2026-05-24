@@ -33,7 +33,7 @@ forward_watch:
   - AI/MCP platform CVEs (GitHub Security Advisories, OSV database)
   - Framework publication updates (NIST SP updates, ISO amendments, NIS2 implementing acts)
   - IETF RFC publications and draft status changes (datatracker.ietf.org, rfc-editor.org); run `npm run validate-rfcs` quarterly
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-05-22"
 discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief skill-update-loop` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -55,7 +55,7 @@ The threat context this skill defends against is not a specific adversary techni
 
 Real-world manifestations in mid-2026:
 
-- ATLAS v5.6.0 (February 2026) added TTPs that bind to operational reality (AML.T0096 AI-API C2, AML.T0048 erode-integrity-via-drift). A skill pinned to ATLAS v4 cannot route these. **AML.T0010** family was expanded to cover MCP supply-chain compromise mid-cycle.
+- ATLAS v5.6.0 (May 2026) added TTPs that bind to operational reality (AML.T0096 AI-API C2, AML.T0048 erode-integrity-via-drift). A skill pinned to ATLAS v4 cannot route these. **AML.T0010** family was expanded to cover MCP supply-chain compromise mid-cycle.
 - CVE-2026-31431 (Copy Fail) joined CISA KEV on 2026-05-01 with a 2026-05-15 federal due date. Any skill whose `last_threat_review` predates that listing and whose body recommends "patch on 30-day SLA" is recommending against a threat model that KEV escalated to days, not weeks.
 - NIST SP 800-63B updated PBKDF2 iteration guidance to ≥ 600,000 in 2022; many compliance attestations still cite the 2017 numbers. A skill that does not track that lag perpetuates the theater.
 - IETF RFC 9116 (security.txt) and the CSAF 2.0 transition both have hard cutover signals that change how `coordinated-vuln-disclosure` should advise.
@@ -482,10 +482,10 @@ This skill does not have a single exploited target — its "exploit surface" is 
 | Source | What It Provides | Cadence | Pinned Version / Anchor | Tracked In |
 |---|---|---|---|---|
 | CISA KEV catalog | Confirmed in-the-wild exploitation flag per CVE | Real-time (RSS / JSON API) | cisa.gov/known-exploited-vulnerabilities-catalog | `data/exploit-availability.json` (`cisa_kev`, `cisa_kev_date`) |
-| MITRE ATLAS changelog | TTP additions, renames, removals for AI/ML threat domain | Quarterly check; immediate on minor-version release | ATLAS v5.6.0 (February 2026) — pinned in AGENTS.md and `data/atlas-ttps.json._meta.atlas_version` | `_meta.atlas_version` |
+| MITRE ATLAS changelog | TTP additions, renames, removals for AI/ML threat domain | Quarterly check; immediate on minor-version release | ATLAS v5.6.0 (May 2026) — pinned in AGENTS.md and `data/atlas-ttps.json._meta.atlas_version` | `_meta.atlas_version` |
 | NVD CVE 2.0 API | Authoritative CVE metadata, CVSS vectors, references | Real-time on new CVE in covered domain | services.nvd.nist.gov/rest/json/cves/2.0 | `data/cve-catalog.json` |
 | NIST FIPS publication tracker | PQC and crypto-standard finalizations | Per-publication (event-driven) | csrc.nist.gov/publications | pqc-first `forward_watch` + manifest `last_threat_review` |
-| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v17, 2025-06-25) | Skill `attack_refs` fields |
+| MITRE ATT&CK Enterprise | Non-AI TTP additions/renames | Per ATT&CK version release | attack.mitre.org (current pinned: v19.0, 2026-04-28) | Skill `attack_refs` fields |
 | GitHub Security Advisories / OSV | CVEs for AI assistants, MCP clients/servers, supply-chain JS/Python packages | Real-time on covered repos | osv.dev, github.com/advisories | `data/cve-catalog.json` |
 | Framework publisher feeds | NIST SP revisions, ISO amendments, NIS2 implementing acts, EU Official Journal, ENISA, NCSC, ASD | RSS / changelog per publisher | csrc.nist.gov, iso.org, eur-lex.europa.eu | `data/framework-control-gaps.json`, `data/global-frameworks.json` |
 | Kernel CNA / distro advisories | Kernel LPE, container-escape, page-cache CVEs | Per advisory | kernel.org, RHEL/Ubuntu/Debian security advisories | `data/cve-catalog.json`, kernel-lpe-triage |

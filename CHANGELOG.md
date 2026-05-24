@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.13.62 — 2026-05-24
+
+Threat-framework version pins are now consistent across the full surface. The remaining skills and the source registry cite MITRE ATT&CK v19.0 (April 2026); `attack-surface-pentest` and `skill-update-loop` still described the superseded v17 matrix, and `sources/index.json` pointed callers at v17 / 2025-06-25. The same registry's ATLAS pointer is corrected to v5.6.0 (May 2026) — it had drifted to v5.1.0 while every other surface moved on. A new guard refuses any operator-facing reference to an ATT&CK version older than the catalog pin, while permitting forward-looking references so forward-watch entries naming the next release cycle stay intact.
+
+### Bugs
+
+- **`attack-surface-pentest` and `skill-update-loop` cited ATT&CK v17** in their TTP-mapping tables and source-tracking rows while the catalog pin (`data/attack-techniques.json._meta.attack_version`) is v19.0. The version operators read in the skill body now matches the version the engine resolves against.
+- **`sources/index.json` pinned ATT&CK at v17 / 2025-06-25 and ATLAS at v5.1.0 / 2025-11-01** — the machine-readable "current version" pointers consumers read to learn which framework revision the catalog tracks. Both now match the catalog: ATT&CK v19.0 / 2026-04-28, ATLAS v5.6.0 / 2026-05-08, with the ATLAS update cadence corrected to monthly.
+
+### Internal
+
+- Added an ATT&CK-version drift guard mirroring the existing ATLAS guard. It is stale-only: a reference older than the pinned version fails the suite; an equal-or-newer reference (how forward-watch records the next release) passes. The source-registry version pointers are asserted against the catalog pins so they cannot silently diverge again.
+
+## 0.13.61 — 2026-05-22
+
+Documentation and skill-content drift fixes. `package.json` description, SBOM metadata, and the operator-queryable catalog summary now report the correct 35-jurisdiction count. Eight skills correct their MITRE ATLAS release date (May 2026, not February 2026); three skills bump their ATT&CK pin to v19.0 to match `data/attack-techniques.json._meta.attack_version` and the AGENTS.md Hard Rule #12 pin. `refresh --check-advisories` help text now enumerates all 15 advisory feeds the runtime polls. The agents/ directory roster drops a broken link to a non-existent `framework-analyst.md` and folds its responsibility into `threat-researcher`.
+
+### Bugs
+
+- **`package.json.description` and `sbom.cdx.json` reported "34 jurisdictions"** while every other surface (README badge, README body, ARCHITECTURE.md, CONTEXT.md) reported 35 and `data/global-frameworks.json` actually ships 35. The npm registry blurb — the first discovery-path operators see — was wrong by one. Bumped to 35 across both, plus `scripts/builders/catalog-summaries.js` and the regenerated `data/_indexes/catalog-summaries.json` which downstream AI consumers query for catalog introspection.
+- **Eight skills described MITRE ATLAS v5.6.0 as released "February 2026" (or `2026-02-06`)** when the actual release date is `2026-05-08` (May 2026), as pinned in AGENTS.md Hard Rule #12 and `data/atlas-ttps.json._meta.atlas_release_date`. Audit traceability — "which TTP catalog were we using on May 1?" — requires the date to be consistent across the shipped surface. Fixed in compliance-theater, framework-gap-analysis, incident-response-playbook, policy-exception-gen, mlops-security (×2), rag-pipeline-security, ransomware-response, and skill-update-loop (×2).
+- **Three skills referenced ATT&CK v17 (2025-06-25) and AGENTS.md "rule #8"** — both stale. Hard Rule #8 is compliance-theater detection, not version pinning; the version-pinning rule is #12. The pinned ATT&CK version per AGENTS.md and `data/attack-techniques.json._meta.attack_version` is v19.0 (April 2026), which split Defense Evasion into Stealth (TA0005) and Defense Impairment (TA0112). Skills now cite the correct rule number and the current pinned version. Affects incident-response-playbook and ransomware-response.
+- **`refresh --check-advisories` help text enumerated 12 venues** while the prose around it (and the runtime in `lib/source-advisories.js`) polls 15. The three omissions — BleepingComputer security, The Hacker News, and the Nightmare-Eclipse GitHub tracker — are now listed inline so the count and the enumeration agree.
+- **`agents/README.md` listed a `framework-analyst.md` role that has no file on disk** — the roster, workflow diagram, and parallelization section all referenced a fifth agent that ships as a 404. The threat-researcher role already covers framework amendments; its description and trigger list now reflect that, and the broken row + diagram node are removed.
+
 ## 0.13.60 — 2026-05-22
 
 Final tranche of audit cycle 3 polish. `doctor` surfaces the local version; `--collectors` distinguishes policy-skipped from actually-missing collectors; `ask` confidence penalizes ties.
