@@ -120,8 +120,8 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 | `exploit-availability.json` | 10 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |
 | `global-frameworks.json` | 35 jurisdictions | Patch SLAs and notification windows across global regulatory regimes |
 | `zeroday-lessons.json` | 10 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
-| `cwe-catalog.json` | 55 | CWE v4.17 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
-| `d3fend-catalog.json` | 28 | MITRE D3FEND v1.0.0 defensive techniques for offensive → defensive mapping |
+| `cwe-catalog.json` | 171 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
+| `d3fend-catalog.json` | 468 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
 | `rfc-references.json` | 31 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
 | `dlp-controls.json` | 22 | DLP control entries indexed by channel, classifier, surface, enforcement mode, evidence type |
 | `playbooks/` | 13 | Playbook specifications (see above) |

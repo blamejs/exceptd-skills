@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.65 — 2026-05-24
+
+Standards refresh: the MITRE D3FEND and CWE pins are brought current. D3FEND moves from v1.0.0 (June 2024) to v1.3.0 (December 2025) and CWE to 4.20 (April 2026) across the catalog `_meta`, operator docs, skill bodies, and the catalog-summary index. A breaking-change audit against both releases found no renamed or deprecated identifiers among the referenced techniques and weaknesses — D3FEND v1.0→v1.3 is additive, and CWE 4.16→4.20 deprecated nothing — so no skill mapping changed. Also corrected stale catalog counts in the architecture and context docs (CWE 55→171, D3FEND 28→468) and a skill that still cited D3FEND v0.10. A new guard fails the build if any D3FEND or CWE version mention diverges from the catalog pin.
+
 ## 0.13.64 — 2026-05-24
 
 Audit-tooling and metadata consistency. The jurisdiction count now has a single source of truth — it is computed from the framework registry (35: every non-metadata entry, including the international / multi-jurisdiction standards scope) rather than restated by hand in the catalog summary and the cross-skill audit, which had diverged to 34. The researcher routing table gained entries for four skills it previously could not reach: `sector-telecom`, `ransomware-response`, `cloud-iam-incident`, and `idp-incident-response`. The per-skill `forward_watch` and `last_threat_review` fields in the shipped manifest are now synchronized from each skill's frontmatter — 40 stale cached values were corrected, including a forecast note that still dated an ATLAS release to the wrong month — and a guard now fails the build if the manifest cache drifts from frontmatter again. The defensive-countermeasure-mapping skill cites the current MITRE Center for Threat-Informed Defense ATT&CK Mappings crosswalk version (v16.1) and notes that it lags the live ATT&CK v19.0 matrix.

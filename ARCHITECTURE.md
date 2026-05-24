@@ -176,13 +176,13 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-55 CWE entries pinned to **CWE v4.17**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
+171 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
 ### `data/d3fend-catalog.json`
 
-468 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.0.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
+468 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.3.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
 
 `_meta.d3fend_version` pins the version; D3FEND ontology additions are tracked in skill `forward_watch` fields.
 

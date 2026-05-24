@@ -353,7 +353,7 @@ For ephemeral / serverless AI-pipeline contexts (per AGENTS.md rule #9): live SL
 
 ## Defensive Countermeasure Mapping
 
-D3FEND v1.0+ references from `data/d3fend-catalog.json`. MCP trust failures land on a tightly bounded set of defensive techniques because the attack surface is structural: a tool registered in `mcp.json` runs with the AI assistant's authority unless the listed controls intervene.
+D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. MCP trust failures land on a tightly bounded set of defensive techniques because the attack surface is structural: a tool registered in `mcp.json` runs with the AI assistant's authority unless the listed controls intervene.
 
 | D3FEND ID | Name | Layer | Rationale (what it counters here) |
 |---|---|---|---|

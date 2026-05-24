@@ -122,7 +122,7 @@
     },
     "ai-attack-surface": {
       "path": "skills/ai-attack-surface/skill.md",
-      "total_bytes": 29677,
+      "total_bytes": 29679,
       "total_lines": 337,
       "frontmatter": {
         "line_start": 1,
@@ -190,16 +190,16 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 310,
           "byte_start": 24873,
-          "byte_end": 28591,
-          "bytes": 3718,
+          "byte_end": 28593,
+          "bytes": 3720,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 332,
-          "byte_start": 28591,
-          "byte_end": 29677,
+          "byte_start": 28593,
+          "byte_end": 29679,
           "bytes": 1086,
           "h3_count": 0
         }
@@ -207,7 +207,7 @@
     },
     "mcp-agent-trust": {
       "path": "skills/mcp-agent-trust/skill.md",
-      "total_bytes": 32105,
+      "total_bytes": 32107,
       "total_lines": 380,
       "frontmatter": {
         "line_start": 1,
@@ -284,16 +284,16 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 354,
           "byte_start": 27391,
-          "byte_end": 31592,
-          "bytes": 4201,
+          "byte_end": 31594,
+          "bytes": 4203,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 377,
-          "byte_start": 31592,
-          "byte_end": 32105,
+          "byte_start": 31594,
+          "byte_end": 32107,
           "bytes": 513,
           "h3_count": 0
         }
@@ -628,7 +628,7 @@
     },
     "rag-pipeline-security": {
       "path": "skills/rag-pipeline-security/skill.md",
-      "total_bytes": 31951,
+      "total_bytes": 31953,
       "total_lines": 334,
       "frontmatter": {
         "line_start": 1,
@@ -750,16 +750,16 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 309,
           "byte_start": 27428,
-          "byte_end": 31307,
-          "bytes": 3879,
+          "byte_end": 31309,
+          "bytes": 3881,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 331,
-          "byte_start": 31307,
-          "byte_end": 31951,
+          "byte_start": 31309,
+          "byte_end": 31953,
           "bytes": 644,
           "h3_count": 0
         }
@@ -767,7 +767,7 @@
     },
     "ai-c2-detection": {
       "path": "skills/ai-c2-detection/skill.md",
-      "total_bytes": 39771,
+      "total_bytes": 39773,
       "total_lines": 488,
       "frontmatter": {
         "line_start": 1,
@@ -853,16 +853,16 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 414,
           "byte_start": 30003,
-          "byte_end": 33945,
-          "bytes": 3942,
+          "byte_end": 33947,
+          "bytes": 3944,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 438,
-          "byte_start": 33945,
-          "byte_end": 35335,
+          "byte_start": 33947,
+          "byte_end": 35337,
           "bytes": 1390,
           "h3_count": 0
         },
@@ -870,8 +870,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 444,
-          "byte_start": 35335,
-          "byte_end": 36828,
+          "byte_start": 35337,
+          "byte_end": 36830,
           "bytes": 1493,
           "h3_count": 5
         },
@@ -879,8 +879,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 477,
-          "byte_start": 36828,
-          "byte_end": 39771,
+          "byte_start": 36830,
+          "byte_end": 39773,
           "bytes": 2943,
           "h3_count": 0
         }
@@ -1847,7 +1847,7 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "total_bytes": 33290,
+      "total_bytes": 33291,
       "total_lines": 388,
       "frontmatter": {
         "line_start": 1,
@@ -1924,8 +1924,8 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 377,
           "byte_start": 31679,
-          "byte_end": 33290,
-          "bytes": 1611,
+          "byte_end": 33291,
+          "bytes": 1612,
           "h3_count": 0
         }
       ]
@@ -2017,7 +2017,7 @@
     },
     "dlp-gap-analysis": {
       "path": "skills/dlp-gap-analysis/skill.md",
-      "total_bytes": 42409,
+      "total_bytes": 42411,
       "total_lines": 346,
       "frontmatter": {
         "line_start": 1,
@@ -2094,8 +2094,8 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 319,
           "byte_start": 38454,
-          "byte_end": 42409,
-          "bytes": 3955,
+          "byte_end": 42411,
+          "bytes": 3957,
           "h3_count": 0
         }
       ]
@@ -3982,7 +3982,7 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "total_bytes": 70471,
+      "total_bytes": 70473,
       "total_lines": 459,
       "frontmatter": {
         "line_start": 1,
@@ -4059,16 +4059,16 @@
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 421,
           "byte_start": 60996,
-          "byte_end": 66138,
-          "bytes": 5142,
+          "byte_end": 66140,
+          "bytes": 5144,
           "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 441,
-          "byte_start": 66138,
-          "byte_end": 70471,
+          "byte_start": 66140,
+          "byte_end": 70473,
           "bytes": 4333,
           "h3_count": 0
         }

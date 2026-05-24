@@ -309,7 +309,7 @@ The assessment produces a structured AI Attack Surface Assessment report. The sh
 
 ## Defensive Countermeasure Mapping
 
-D3FEND v1.0+ references from `data/d3fend-catalog.json`. The AI attack surface enumerated above lands on five primary defensive techniques. Each entry below identifies which ATLAS TTP class the countermeasure addresses and the defense-in-depth layer it occupies.
+D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. The AI attack surface enumerated above lands on five primary defensive techniques. Each entry below identifies which ATLAS TTP class the countermeasure addresses and the defense-in-depth layer it occupies.
 
 | D3FEND ID | Name | Layer | Rationale (what it counters here) |
 |---|---|---|---|

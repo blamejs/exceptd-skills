@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1672960,
-    "total_approx_tokens": 418246,
+    "total_chars": 1672973,
+    "total_approx_tokens": 418252,
     "skill_count": 42
   },
   "skills": {
@@ -70,10 +70,10 @@
     },
     "ai-attack-surface": {
       "path": "skills/ai-attack-surface/skill.md",
-      "bytes": 29677,
-      "chars": 29601,
+      "bytes": 29679,
+      "chars": 29603,
       "lines": 337,
-      "approx_tokens": 7400,
+      "approx_tokens": 7401,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -107,8 +107,8 @@
           "approx_tokens": 422
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3718,
-          "chars": 3706,
+          "bytes": 3720,
+          "chars": 3708,
           "approx_tokens": 927
         },
         "compliance-theater-check": {
@@ -120,10 +120,10 @@
     },
     "mcp-agent-trust": {
       "path": "skills/mcp-agent-trust/skill.md",
-      "bytes": 32105,
-      "chars": 32013,
+      "bytes": 32107,
+      "chars": 32015,
       "lines": 380,
-      "approx_tokens": 8003,
+      "approx_tokens": 8004,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -162,8 +162,8 @@
           "approx_tokens": 608
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 4201,
-          "chars": 4195,
+          "bytes": 4203,
+          "chars": 4197,
           "approx_tokens": 1049
         },
         "compliance-theater-check": {
@@ -365,10 +365,10 @@
     },
     "rag-pipeline-security": {
       "path": "skills/rag-pipeline-security/skill.md",
-      "bytes": 31951,
-      "chars": 31776,
+      "bytes": 31953,
+      "chars": 31778,
       "lines": 334,
-      "approx_tokens": 7944,
+      "approx_tokens": 7945,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -432,9 +432,9 @@
           "approx_tokens": 656
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3879,
-          "chars": 3857,
-          "approx_tokens": 964
+          "bytes": 3881,
+          "chars": 3859,
+          "approx_tokens": 965
         },
         "compliance-theater-check": {
           "bytes": 644,
@@ -445,10 +445,10 @@
     },
     "ai-c2-detection": {
       "path": "skills/ai-c2-detection/skill.md",
-      "bytes": 39771,
-      "chars": 39617,
+      "bytes": 39773,
+      "chars": 39619,
       "lines": 488,
-      "approx_tokens": 9904,
+      "approx_tokens": 9905,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -492,8 +492,8 @@
           "approx_tokens": 1018
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3942,
-          "chars": 3930,
+          "bytes": 3944,
+          "chars": 3932,
           "approx_tokens": 983
         },
         "compliance-theater-check": {
@@ -1070,8 +1070,8 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "bytes": 33290,
-      "chars": 33147,
+      "bytes": 33291,
+      "chars": 33148,
       "lines": 388,
       "approx_tokens": 8287,
       "approx_chars_per_token": 4,
@@ -1112,9 +1112,9 @@
           "approx_tokens": 576
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 1611,
-          "chars": 1609,
-          "approx_tokens": 402
+          "bytes": 1612,
+          "chars": 1610,
+          "approx_tokens": 403
         }
       }
     },
@@ -1170,10 +1170,10 @@
     },
     "dlp-gap-analysis": {
       "path": "skills/dlp-gap-analysis/skill.md",
-      "bytes": 42409,
-      "chars": 42140,
+      "bytes": 42411,
+      "chars": 42142,
       "lines": 346,
-      "approx_tokens": 10535,
+      "approx_tokens": 10536,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1212,8 +1212,8 @@
           "approx_tokens": 645
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3955,
-          "chars": 3903,
+          "bytes": 3957,
+          "chars": 3905,
           "approx_tokens": 976
         }
       }
@@ -2320,10 +2320,10 @@
     },
     "age-gates-child-safety": {
       "path": "skills/age-gates-child-safety/skill.md",
-      "bytes": 70471,
-      "chars": 70181,
+      "bytes": 70473,
+      "chars": 70183,
       "lines": 459,
-      "approx_tokens": 17545,
+      "approx_tokens": 17546,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2362,8 +2362,8 @@
           "approx_tokens": 1517
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 5142,
-          "chars": 5131,
+          "bytes": 5144,
+          "chars": 5133,
           "approx_tokens": 1283
         },
         "hand-off": {

@@ -2,8 +2,8 @@
   "_meta": {
     "schema_version": "1.0.0",
     "last_updated": "2026-05-19",
-    "cwe_version": "4.16",
-    "cwe_version_release_date": "2024-11-19",
+    "cwe_version": "4.20",
+    "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
     "view_general": "CWE View 1003 (Weaknesses for Simplified Mapping of Published Vulnerabilities)",
     "view_research": "CWE View 1000 (Research Concepts)",

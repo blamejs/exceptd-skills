@@ -308,7 +308,7 @@ For ephemeral / serverless RAG pipelines (per AGENTS.md rule #9): embedding-dist
 
 ## Defensive Countermeasure Mapping
 
-D3FEND v1.0+ references from `data/d3fend-catalog.json`. The five RAG attack classes above map to the following defensive techniques. Coverage for RAG pipelines is uneven across enterprises in mid-2026 — most have `D3-NTA` on the network layer and nothing else.
+D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. The five RAG attack classes above map to the following defensive techniques. Coverage for RAG pipelines is uneven across enterprises in mid-2026 — most have `D3-NTA` on the network layer and nothing else.
 
 | D3FEND ID | Name | Layer | Rationale (what it counters here) |
 |---|---|---|---|
