@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.66 — 2026-05-24
+
+RFC reference currency. The `draft-ietf-tls-hybrid-design` entry no longer claims status-synchronization with `draft-ietf-tls-ecdhe-mlkem` — the two have diverged. Hybrid-design has been IESG-approved (draft-16) for publication as an Informational RFC and sits in the RFC Editor queue (no number assigned yet); ecdhe-mlkem remains an active Standards-Track draft. Both are referenced by pqc-first as the post-quantum TLS 1.3 migration path.
+
 ## 0.13.65 — 2026-05-24
 
 Standards refresh: the MITRE D3FEND and CWE pins are brought current. D3FEND moves from v1.0.0 (June 2024) to v1.3.0 (December 2025) and CWE to 4.20 (April 2026) across the catalog `_meta`, operator docs, skill bodies, and the catalog-summary index. A breaking-change audit against both releases found no renamed or deprecated identifiers among the referenced techniques and weaknesses — D3FEND v1.0→v1.3 is additive, and CWE 4.16→4.20 deprecated nothing — so no skill mapping changed. Also corrected stale catalog counts in the architecture and context docs (CWE 55→171, D3FEND 28→468) and a skill that still cited D3FEND v0.10. A new guard fails the build if any D3FEND or CWE version mention diverges from the catalog pin.
