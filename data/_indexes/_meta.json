@@ -1,18 +1,18 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-24T14:51:18.851Z",
+  "generated_at": "2026-05-24T15:29:21.057Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "a5c737f12027f2dbea6de6ea9e540a81a075ba49cf0d4d72bdb9b247732e3907",
-    "data/atlas-ttps.json": "d296c1d3e71807c9279b731f047e57796e85137f186586743a8cdad214b408f9",
+    "manifest.json": "3be89a674691acd2ea97c62841b563b53f76cf22d1350f4b395f1259d684986b",
+    "data/atlas-ttps.json": "019f12d24dc45ef8f5ae8812dec7c31a9506429a94751aaa559890a007ec6b22",
     "data/attack-techniques.json": "49b6010b317edd219def135171ea8f3b1bbf1e00e9c5a08bf7237215ff54e2c3",
     "data/cve-catalog.json": "a09c83af3f9679a7ea73935726a1ff9de2cab94b4ab6321fc017fc147747d7c3",
     "data/cwe-catalog.json": "c56e74b8c9290583b1d6fdd21b54bd65a254c58890c5f683379788ca7b080e9d",
     "data/d3fend-catalog.json": "4271102f8c38999444bcd981c1cf5feb4ad09f8c0b1d9b79df3f1a82f4fb50f0",
     "data/dlp-controls.json": "d2406c482dddd30e49203879999dc4b3a7fd4d0494d6a61d86b91ee76415df19",
     "data/exploit-availability.json": "ec2656f0d9a893610e27b43eb6035fe9b18e057c9f6dfaac7e7d4959bbcbb795",
-    "data/framework-control-gaps.json": "b63fe398c3de068093871e8bbca11e16b6567fb15482648d0bbce06939c34104",
+    "data/framework-control-gaps.json": "2f6147edef1cdec29ae755ec42021038145a702d908a1d5cf0a42e2484cbc786",
     "data/global-frameworks.json": "9ba563a85f7f8d6c3c957de64945e20925a89d0ed6ea6fc561cf093811acf558",
     "data/rfc-references.json": "926ea25892e052fc6a8b9952afc1d8e2bd06c4aec223a1a7aa79ef1dfd7b7bb5",
     "data/zeroday-lessons.json": "7242a7349ac79a74813bf2b7486b6000c0c877e71cec17e2d68df33bc4007b93",
@@ -31,7 +31,7 @@
     "skills/pqc-first/skill.md": "3b41b59eb4e8480b691ff17185f42b9fbfd7665e369fc210feba496688cc77aa",
     "skills/skill-update-loop/skill.md": "f7cd18df293b90c0d2afb6ba8b87664419becea6b63221f03efaf09c69586025",
     "skills/security-maturity-tiers/skill.md": "2e46c9332a5a6190d4605ba7bc653410659be19fab50c78c0a6732f84ebdb300",
-    "skills/researcher/skill.md": "959aeba706eea43a69136561968d7942dcd981d0a6c3da7db47673c51943b6df",
+    "skills/researcher/skill.md": "0f55168c5cbcf8f8ad2760e7f782ca171a1a82a1f92c5123cb3c80d769386c7a",
     "skills/attack-surface-pentest/skill.md": "d6ea35136f93eb4aa75b65a5ae402353b0e2c63a83acece1606fe3f5d1ec6a8d",
     "skills/fuzz-testing-strategy/skill.md": "86e7bf537e4313b932acaba6282a4514336066a740bdbee4e7cbea2d2ef05b54",
     "skills/dlp-gap-analysis/skill.md": "b5183b5ea6fad6986500d7a04e83239a5fbf4272eaa6888b8be6420ce3d36ac5",
@@ -87,7 +87,7 @@
     "frequency_fields": 7,
     "activity_feed_events": 54,
     "catalog_summaries": 11,
-    "stale_content_findings": 2
+    "stale_content_findings": 1
   },
   "invalidation_note": "If any source file in source_hashes has a different SHA-256 than recorded here, the indexes are stale. Re-run `npm run build-indexes`."
 }
