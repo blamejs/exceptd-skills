@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-24T20:26:56.389Z",
+  "generated_at": "2026-05-24T20:35:17.848Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
@@ -14,7 +14,7 @@
     "data/exploit-availability.json": "ec2656f0d9a893610e27b43eb6035fe9b18e057c9f6dfaac7e7d4959bbcbb795",
     "data/framework-control-gaps.json": "2f6147edef1cdec29ae755ec42021038145a702d908a1d5cf0a42e2484cbc786",
     "data/global-frameworks.json": "9ba563a85f7f8d6c3c957de64945e20925a89d0ed6ea6fc561cf093811acf558",
-    "data/rfc-references.json": "a4ccc154823f285c8bf51287187f3069d1fdacfdef029b72e5ff4fd78d77745a",
+    "data/rfc-references.json": "66ef2e1f444a2cf0c2700a754f0a66030bb8a91d9e68394b9537ea1fe8b904fe",
     "data/zeroday-lessons.json": "7242a7349ac79a74813bf2b7486b6000c0c877e71cec17e2d68df33bc4007b93",
     "skills/kernel-lpe-triage/skill.md": "08b3e9815ba481c57c80f5fc0ccbf5bb7cbb41f570c235ba6ff9596b8c07354d",
     "skills/ai-attack-surface/skill.md": "c4c1eb22a38ca7a959b5725222bab8fbd4f4044a548a93f3e288e6f698334b72",
