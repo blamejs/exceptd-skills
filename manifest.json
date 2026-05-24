@@ -1,6 +1,6 @@
 {
   "name": "exceptd-security",
-  "version": "0.13.63",
+  "version": "0.13.64",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation",
   "homepage": "https://exceptd.com",
   "license": "Apache-2.0",
@@ -51,9 +51,9 @@
         "RFC-4303",
         "RFC-7296"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-15",
       "signature": "lXhZgoIrrVloO3XaTvo/43AxZn4mwErstd7DR0O/oVhD3AOGODM4HqrageYEou9WKOdMEGP5mJNTjJsXdP5NDA==",
-      "signed_at": "2026-05-24T15:26:02.678Z",
+      "signed_at": "2026-05-24T17:26:27.906Z",
       "cwe_refs": [
         "CWE-125",
         "CWE-362",
@@ -66,6 +66,12 @@
         "D3-EAL",
         "D3-PHRA",
         "D3-PSEP"
+      ],
+      "forward_watch": [
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE improper access control by DEVCORE (Angelboy + TwinkleStar03); track MSRC advisory and KEV add",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE heap buffer overflow by Marcin Wiązowski; track MSRC advisory and KEV add",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE 2x use-after-free by Kentaro Kawane (GMO); track MSRC advisory and KEV add",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — RHEL race-condition LPE by chompie / IBM X-Force XOR; track Red Hat advisory and KEV add"
       ]
     },
     {
@@ -115,9 +121,9 @@
         "OWASP-LLM-Top-10-2025-LLM02",
         "SOC2-CC6-logical-access"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-17",
       "signature": "vSVqu4wBm+d68ujZmM6Rto/HzViCkE0gPUcv/MYE/bjFiqamf/s0On4kTOo1KIveV9cOwYNxiItaGEWlVkRFDg==",
-      "signed_at": "2026-05-24T15:26:02.679Z",
+      "signed_at": "2026-05-24T17:26:27.907Z",
       "cwe_refs": [
         "CWE-1039",
         "CWE-1426",
@@ -126,6 +132,16 @@
       "d3fend_refs": [
         "D3-IOPR",
         "D3-NTA"
+      ],
+      "forward_watch": [
+        "NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; expect coordinated CVE assignments and upstream patch; track KEV add post-embargo",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local AI runtime trust; track patch and MCP integration advisories",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — OpenAI Codex CWE-150 improper neutralization by Compass Security; AI coding-agent surface; forward-watch only (no coding-agent-security skill yet)",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory"
       ]
     },
     {
@@ -178,9 +194,9 @@
         "RFC-9421",
         "RFC-9700"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-17",
       "signature": "RIgXKvolQjgJdnlrDnVOd90IOY1B7VHHZD/YJQRzouL+wUeOLclPrdK/EgEuFyiu7lR4bi+Pl6aGB9G9tOxYCQ==",
-      "signed_at": "2026-05-24T15:26:02.679Z",
+      "signed_at": "2026-05-24T17:26:27.907Z",
       "cwe_refs": [
         "CWE-22",
         "CWE-345",
@@ -197,6 +213,12 @@
         "D3-EAL",
         "D3-EHB",
         "D3-MFA"
+      ],
+      "forward_watch": [
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; MCP-adjacent LLM proxy surface; track upstream patch and MCP trust advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local MCP/agent runtime trust; track patch and integration advisories",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Claude Code MCP collision-scored entry by Viettel Cyber Security; CVE in flight; track MCP trust and tool-collision advisory"
       ]
     },
     {
@@ -224,9 +246,9 @@
       "atlas_refs": [],
       "attack_refs": [],
       "framework_gaps": [],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "Qd3SBWmUAaaT++e1Ry2wBIz/dCBmNBMl0+4Rb0etvJLES0fIBEAkU1mTbgNZnT5XOg9J5twdUpymWtmKnDDQCQ==",
-      "signed_at": "2026-05-24T15:26:02.680Z"
+      "signed_at": "2026-05-24T17:26:27.908Z"
     },
     {
       "name": "compliance-theater",
@@ -255,9 +277,9 @@
         "FedRAMP-Rev5-Moderate",
         "CMMC-2.0-Level-2"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "F2Shxae0ua0gPtvwzTRVzzHaIgJcFDRT3/akLUAZ4aaMQhkleKkcTaTpkjp+pTVEdPfLeLGNCeAOMs+whVYOBg==",
-      "signed_at": "2026-05-24T15:26:02.680Z"
+      "signed_at": "2026-05-24T17:26:27.908Z"
     },
     {
       "name": "exploit-scoring",
@@ -284,9 +306,9 @@
         "CWE-Top-25-2024-meta",
         "CIS-Controls-v8-Control7"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-18",
       "signature": "NA1hoQycvQhSUoG5rwlXX0mOVmGxoXRVezkELGEA2nZOdGis4gXkHT3O6Sfw7zxE4JuMrsCb65TEeOWk9WEPDg==",
-      "signed_at": "2026-05-24T15:26:02.681Z"
+      "signed_at": "2026-05-24T17:26:27.909Z"
     },
     {
       "name": "rag-pipeline-security",
@@ -321,9 +343,9 @@
         "NIST-AI-RMF-MEASURE-2.5",
         "OWASP-LLM-Top-10-2025-LLM08"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "aNm8KljKPajh12h5pLqcQ7xHVf4dNqEBqGR+rr0rDWy32g+ZJSydz+yV7ejoQEyELSghiwkwebkhVOdZZ+5LDQ==",
-      "signed_at": "2026-05-24T15:26:02.681Z",
+      "signed_at": "2026-05-24T17:26:27.909Z",
       "cwe_refs": [
         "CWE-1395",
         "CWE-1426"
@@ -332,6 +354,9 @@
         "D3-CSPP",
         "D3-IOPR",
         "D3-NTA"
+      ],
+      "forward_watch": [
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity (integer overflow + race condition); track patch and downstream RAG pipeline advisory"
       ]
     },
     {
@@ -378,9 +403,9 @@
         "RFC-9114",
         "RFC-9000"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-17",
       "signature": "9+hZlZOqZdeACUmamQk66L5levZhhwnFXuYRhdT6Mce99eQaKT7wNfWq12hXQztkRcVRKaFH+a01zwJQwsRQCA==",
-      "signed_at": "2026-05-24T15:26:02.681Z",
+      "signed_at": "2026-05-24T17:26:27.909Z",
       "d3fend_refs": [
         "D3-CA",
         "D3-CSPP",
@@ -413,11 +438,17 @@
       "atlas_refs": [],
       "attack_refs": [],
       "framework_gaps": [],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "za1NKBpy9LC91F/ESO/qhUfmvVr8GNItQOjR5OJLeHm+2dQ9HHiFWQK2eo53V/n/0uhubuggURA3yS6kJuWwBg==",
-      "signed_at": "2026-05-24T15:26:02.682Z",
+      "signed_at": "2026-05-24T17:26:27.910Z",
       "cwe_refs": [
         "CWE-1188"
+      ],
+      "forward_watch": [
+        "New ephemeral compute paradigms (WASM, MicroVMs)",
+        "EU CRA exceptions for AI pipeline components",
+        "NIST SP 800-204 series updates for microservices",
+        "FedRAMP updates for container/serverless authorization"
       ]
     },
     {
@@ -441,9 +472,16 @@
       "atlas_refs": [],
       "attack_refs": [],
       "framework_gaps": [],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-18",
       "signature": "xiHAhhdufm9hCKU8PLiPE0MX65ej2F4OZwtlWLGLCiie9/km+Kiqbt192LcMvr94v83C98pb9wIaqFsFWft6AQ==",
-      "signed_at": "2026-05-24T15:26:02.682Z"
+      "signed_at": "2026-05-24T17:26:27.910Z",
+      "forward_watch": [
+        "New AI attack classes as ATLAS v6 publishes",
+        "Post-quantum adversary capability timeline",
+        "New CISA KEV entries in kernel/AI/supply chain categories",
+        "New MCP or agent protocol security disclosures",
+        "Emerging malware families using AI for evasion"
+      ]
     },
     {
       "name": "global-grc",
@@ -475,7 +513,7 @@
       "framework_gaps": [],
       "last_threat_review": "2026-05-01",
       "signature": "oYsSk35N2Uzq7MRofACykylcVwkgPhI4luWZ14vmQT+gUKLyZiKVOUJbe1+7lGl6BYPRN0sUDQ0f7S5Eu5w2Ag==",
-      "signed_at": "2026-05-24T15:26:02.682Z"
+      "signed_at": "2026-05-24T17:26:27.910Z"
     },
     {
       "name": "zeroday-gap-learn",
@@ -500,9 +538,15 @@
       "atlas_refs": [],
       "attack_refs": [],
       "framework_gaps": [],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-18",
       "signature": "igRqYyU1unRFH40BsPyAR62SPrk8QZv8dPGb8S9O9EvLCNOZAzm3t+HdT/NKqzWHwrpomOzkkkyLfYI/0qTUDA==",
-      "signed_at": "2026-05-24T15:26:02.683Z"
+      "signed_at": "2026-05-24T17:26:27.911Z",
+      "forward_watch": [
+        "New CISA KEV entries",
+        "New ATLAS TTP additions in each ATLAS release",
+        "Framework updates that close previously open gaps",
+        "Vendor advisories for MCP/AI tool supply chain CVEs"
+      ]
     },
     {
       "name": "pqc-first",
@@ -546,15 +590,21 @@
         "RFC-9106"
       ],
       "forward_watch": [
-        "FIPS 206 (HQC) finalization",
-        "X25519+ML-KEM TLS RFC publication",
-        "OpenSSL FIPS 140-3 certification",
-        "ENISA PQC mandate",
-        "CRQC timeline estimate changes"
+        "NIST FIPS 206 (HQC — backup KEM)",
+        "NIST SP 800-208 (stateful hash-based signatures — LMS/XMSS)",
+        "IETF RFC for ML-KEM in TLS 1.3 (draft-connolly-tls-mlkem-key-agreement)",
+        "IETF RFC for hybrid X25519+ML-KEM (RFC 9180 extension)",
+        "OpenSSL 3.5 default algorithm changes",
+        "CISA PQC Migration Project timelines",
+        "NSA CNSS advisory updates (Commercial National Security Algorithm Suite 2.0)",
+        "EU ENISA PQC transition timeline updates",
+        "Browser TLS negotiation support for ML-KEM (Chrome, Firefox milestones)",
+        "HSM/TPM vendor PQC firmware support timelines",
+        "New CRQC timeline estimates from academic cryptanalysis"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "i/17u4kJiSpcZAz7LnTyRePFugQOstQ1P4kVoe0oGf4E2/j8oIN9U9DccjUn/YHZhKWIJ2AILG/DMhvMrr3bBg==",
-      "signed_at": "2026-05-24T15:26:02.683Z",
+      "signed_at": "2026-05-24T17:26:27.911Z",
       "cwe_refs": [
         "CWE-327"
       ],
@@ -592,16 +642,17 @@
       "attack_refs": [],
       "framework_gaps": [],
       "forward_watch": [
-        "MITRE ATLAS version releases",
-        "CISA KEV additions",
-        "NIST PQC standards finalization",
-        "Major kernel CVEs",
-        "AI/MCP platform CVEs",
-        "Framework publication updates"
+        "MITRE ATLAS version releases (check atlas.mitre.org/resources/changelog)",
+        "CISA KEV additions (check cisa.gov/known-exploited-vulnerabilities-catalog)",
+        "NIST PQC standards finalization (check csrc.nist.gov/projects/post-quantum-cryptography)",
+        "Major kernel CVEs (CNA: kernel.org, distro security advisories)",
+        "AI/MCP platform CVEs (GitHub Security Advisories, OSV database)",
+        "Framework publication updates (NIST SP updates, ISO amendments, NIS2 implementing acts)",
+        "IETF RFC publications and draft status changes (datatracker.ietf.org, rfc-editor.org); run `npm run validate-rfcs` quarterly"
       ],
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-05-22",
       "signature": "QuOVaQ4E2Sl39TClbhZ7HA9XrYAyRrDL44HY3RTE7aWLue0hV2cxaBt40ALGmHS++631QGFDlZTLZI77Tr6nAA==",
-      "signed_at": "2026-05-24T15:26:02.683Z"
+      "signed_at": "2026-05-24T17:26:27.911Z"
     },
     {
       "name": "security-maturity-tiers",
@@ -638,7 +689,7 @@
       ],
       "last_threat_review": "2026-05-01",
       "signature": "8Px1s2lDj10/Q6erwEQlXgUHM1+OTruUR8qAHPX7Oo3k/l69N6P9sm0PsafS9wDFtj9l5C/OiLiFgzMlMt6vBw==",
-      "signed_at": "2026-05-24T15:26:02.684Z",
+      "signed_at": "2026-05-24T17:26:27.912Z",
       "cwe_refs": [
         "CWE-1188"
       ]
@@ -672,8 +723,8 @@
       "attack_refs": [],
       "framework_gaps": [],
       "last_threat_review": "2026-05-11",
-      "signature": "i1Ko7AfG7z5Z/EI33hmyBJMUntpur9Q/mdfbXYeNSEt4RV0iGdW7HA8yJ8I5TY0cRN1QLHqR3Gw682FaLI3FDA==",
-      "signed_at": "2026-05-24T15:26:02.684Z"
+      "signature": "urRcataVWg6/utyEkSiOWoNxTL8sABRjPR7ShyDfZGnAozFph/yDktSoaPVxQDXwu9EfJE+qhUW5OYR/yJECBQ==",
+      "signed_at": "2026-05-24T17:26:27.912Z"
     },
     {
       "name": "attack-surface-pentest",
@@ -741,10 +792,11 @@
         "NIST SP 800-115 successor publication (the 2008 original is the active gap)",
         "TIBER-EU scenario library refresh under DORA Year-2 supervisory cycle",
         "OWASP WSTG v5.x AI/MCP test cases (currently in working-group draft)",
-        "PTES revision incorporating AI-surface enumeration"
+        "PTES revision incorporating AI-surface enumeration",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Microsoft Edge 4-bug sandbox escape by Orange Tsai (DEVCORE); forward-watch only (browser sandbox, out of current playbook scope); track Microsoft Edge security advisory and KEV add"
       ],
       "signature": "IVrZDxI3Ak/xLLqvKA3OXgxCXg2egJQHmkmtQutSa9v/C22HblISVVa610goNwdLDQ4GhIcoFD5q31SKrpALDg==",
-      "signed_at": "2026-05-24T15:26:02.684Z"
+      "signed_at": "2026-05-24T17:26:27.912Z"
     },
     {
       "name": "fuzz-testing-strategy",
@@ -804,7 +856,7 @@
         "OSS-Fuzz-Gen / AI-assisted harness generation becoming the default expectation for OSS maintainers"
       ],
       "signature": "Z7ypCUnXx8JpLtgxxB6RHNi39w74AmrGY1N4ofAGCXhkuM2EaFVm1AU0dvl9UQ1bVLfHKEDGqMO/TwlIY7RABg==",
-      "signed_at": "2026-05-24T15:26:02.685Z"
+      "signed_at": "2026-05-24T17:26:27.913Z"
     },
     {
       "name": "dlp-gap-analysis",
@@ -870,7 +922,7 @@
         "D3-NTA",
         "D3-NTPM"
       ],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-15",
       "forward_watch": [
         "EU AI Office secondary legislation under EU AI Act Art 10 / Art 15 that may operationalise inference-time data-flow controls",
         "ISO/IEC 42001 amendments expected 2026-2027 likely to add prescriptive data-flow guidance for AI systems",
@@ -879,7 +931,7 @@
         "Quebec Law 25, India DPDPA, KSA PDPL enforcement actions naming AI-tool prompt data as in-scope personal information"
       ],
       "signature": "fgxG344JGYBWWWwFXZ1IzGipWKP7EyBhrsvsbsb0CCGXfv/MvNHVNI6G0zQddCsWX1JeQbhZT3Vk8v1uJKDTDA==",
-      "signed_at": "2026-05-24T15:26:02.685Z"
+      "signed_at": "2026-05-24T17:26:27.913Z"
     },
     {
       "name": "supply-chain-integrity",
@@ -946,17 +998,19 @@
         "D3-EAL",
         "D3-EHB"
       ],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-15",
       "forward_watch": [
         "SLSA v1.1 (draft) — adds attestation chain requirements above L3 and a hardened-builder profile; track for re-baselining",
         "CSAF 2.1 finalization — VEX status vocabulary expansion and machine-readable advisory pivoting",
         "CycloneDX 1.7 — ML-BOM enrichment, model card embedding, training-data lineage fields",
         "SPDX 3.1 — AI profile maturation, dataset provenance schema stabilization",
         "EU CRA (Regulation 2024/2847) — implementing acts for technical documentation and SBOM submission expected through 2027",
-        "OpenSSF model-signing — emerging Sigstore-based signing standard for ML model weights; track for production adoption"
+        "OpenSSF model-signing — emerging Sigstore-based signing standard for ML model weights; track for production adoption",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM-attestation impact",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM-attestation impact"
       ],
       "signature": "pcLrM98A3vUSZRjwNAk0aZ9umvOwB41XCLLsCOy/IebB2F/06oIrGUKkMHtHwm4pTVPShMMcKdZQQ3jz30FnCg==",
-      "signed_at": "2026-05-24T15:26:02.685Z"
+      "signed_at": "2026-05-24T17:26:27.913Z"
     },
     {
       "name": "defensive-countermeasure-mapping",
@@ -1012,8 +1066,8 @@
         "D3-SCP"
       ],
       "last_threat_review": "2026-05-11",
-      "signature": "gqF8eU3VBrZhO2WnlcqKa7wm1d2mmWtvpbmx0kNCgHojNV+qEt+Ij84RO6bZvaUqhfYPWizWL79Fa4DL0curAQ==",
-      "signed_at": "2026-05-24T15:26:02.685Z"
+      "signature": "G5q5elh7Q7eu2xcwTVQJGDTGfvZR0OGQaLSLJPb2wjzCHFF8PWuZfCHZdjjqisiRzRWPyLlzgfHeMJqOdy7cBw==",
+      "signed_at": "2026-05-24T17:26:27.913Z"
     },
     {
       "name": "identity-assurance",
@@ -1080,7 +1134,7 @@
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
       "signature": "Wv5hGMeHjlaQK1zwicVCA7AvdKgJBgvcjdpGM9Ywahh9tagAKhbkOjybowDQZzu7OZ3bDkbh6pBYc1Sdwr6NAA==",
-      "signed_at": "2026-05-24T15:26:02.686Z"
+      "signed_at": "2026-05-24T17:26:27.914Z"
     },
     {
       "name": "ot-ics-security",
@@ -1136,7 +1190,7 @@
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
       "signature": "8t5qKHd3yWi57dvG36YQkLN/X9bQWqtEiYjay4IfSmqhJpM/xXPaQVKNGz3wscrO8OLKUZ0OaX7Mj5kzpgBKBQ==",
-      "signed_at": "2026-05-24T15:26:02.686Z"
+      "signed_at": "2026-05-24T17:26:27.914Z"
     },
     {
       "name": "coordinated-vuln-disclosure",
@@ -1188,7 +1242,7 @@
         "NYDFS 23 NYCRR 500 amendments potentially adding explicit CVD program requirements"
       ],
       "signature": "GDGt4UPqBa04PjlpSmpyihGzd3OgfBN7jaAK5tfwp+LRSs3ygKOdbeivUCCHNagTY1hE6hG2Ou40ADfBFuXeAg==",
-      "signed_at": "2026-05-24T15:26:02.687Z"
+      "signed_at": "2026-05-24T17:26:27.914Z"
     },
     {
       "name": "threat-modeling-methodology",
@@ -1238,7 +1292,7 @@
         "PASTA v2 updates incorporating AI/ML application threats"
       ],
       "signature": "rFBpOQEJUPpl+v88Lw/WqVJRhTl80vy0VbPAbzQj3Q0suJRRrJg368I9uKu5LXIBKFDvKxnGIcIzbGg9NUtaCA==",
-      "signed_at": "2026-05-24T15:26:02.687Z"
+      "signed_at": "2026-05-24T17:26:27.915Z"
     },
     {
       "name": "webapp-security",
@@ -1312,7 +1366,10 @@
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
       "signature": "ux85YI4t2mVHOyt744Yin1HHy+z11JIFygjKfFfQOBBl5QVV3A267jeIy7utix85irMcpZm/T3yx/ooqiK2tBA==",
-      "signed_at": "2026-05-24T15:26:02.687Z"
+      "signed_at": "2026-05-24T17:26:27.915Z",
+      "forward_watch": [
+        "NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory affecting front-door web app deployments"
+      ]
     },
     {
       "name": "ai-risk-management",
@@ -1360,9 +1417,9 @@
         "CWE-1039"
       ],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-15",
       "signature": "IIXnkZ5ZNqFwOto5KfytADTLLZLoyXNZACD1ORZ40P1HUAQxe6u2uyXFzzsfuob4Uy06jNkRGr2FFgCphUH1Cw==",
-      "signed_at": "2026-05-24T15:26:02.688Z"
+      "signed_at": "2026-05-24T17:26:27.916Z"
     },
     {
       "name": "sector-healthcare",
@@ -1422,7 +1479,7 @@
       "d3fend_refs": [],
       "last_threat_review": "2026-05-11",
       "signature": "AhF9KF8ZBlDteciV+F8IBSmFVYCvQOn44GmD4rZjgLoPxfIv/QE1/vSkK32zyqDKtHWkLSXExbkkPkxA/V6dDw==",
-      "signed_at": "2026-05-24T15:26:02.688Z"
+      "signed_at": "2026-05-24T17:26:27.916Z"
     },
     {
       "name": "sector-financial",
@@ -1487,7 +1544,7 @@
         "CWE-352"
       ],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-15",
       "forward_watch": [
         "PSD3 + PSR (Payment Services Regulation) trilogue and final adoption (expected 2026-2027); track agent-initiated payment treatment in final text",
         "DORA Art. 26 TLPT first full cycle completion mid-2027; ESAs publishing aggregate findings under JC 2024/40 RTS",
@@ -1503,7 +1560,7 @@
         "TIBER-EU framework v2.0 alignment with DORA TLPT RTS (JC 2024/40); cross-recognition with CBEST and iCAST"
       ],
       "signature": "HQgZvb4ReziEz5rNFr8i/O8/rJEZR+iHRROT7m/D2QUqhrcNISPkYXENsUZlG8xapzy/Ik92ehkseyj4hdmhCQ==",
-      "signed_at": "2026-05-24T15:26:02.688Z"
+      "signed_at": "2026-05-24T17:26:27.916Z"
     },
     {
       "name": "sector-federal-government",
@@ -1572,7 +1629,7 @@
         "Australia PSPF 2024 revision and ISM quarterly updates — track for Essential Eight Maturity Level requirements for federal entities"
       ],
       "signature": "linxmsXZiOYtcs71sSWgGCrvb8xQfmxmtTY5PRvZJ0/8FgJulo0tQtejzexYG775s7XhjAmGsDP238BQTQ8ADA==",
-      "signed_at": "2026-05-24T15:26:02.689Z"
+      "signed_at": "2026-05-24T17:26:27.917Z"
     },
     {
       "name": "sector-energy",
@@ -1637,7 +1694,7 @@
         "ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI"
       ],
       "signature": "JjBfc0ovta560Clk0x3QGRM5osFJDwcvpy3rT7QEGdCIL827jzE8QCow1C8deXq+4JhY2sA/d7/8IsxikdlkCg==",
-      "signed_at": "2026-05-24T15:26:02.689Z"
+      "signed_at": "2026-05-24T17:26:27.917Z"
     },
     {
       "name": "sector-telecom",
@@ -1723,7 +1780,7 @@
         "O-RAN SFG / WG11 security specifications"
       ],
       "signature": "JWVxKFoKrbX4d+Tko1d4OBdwyg25MfFFKn4CT6E/CzH+YwnU3T6Y76uBQIKg3+gIGTvPduqyvQwQQ5FxKDuPBw==",
-      "signed_at": "2026-05-24T15:26:02.689Z"
+      "signed_at": "2026-05-24T17:26:27.917Z"
     },
     {
       "name": "api-security",
@@ -1790,9 +1847,14 @@
         "CWE-1188"
       ],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-18",
       "signature": "BmCRCestWqr55+fCynEhtAl5NWLT+xLTkpwS0Icp3SaoZOw/ce3Y6TtqjHRSKn4CBJq7YDiLRWxmhO3MStvOAA==",
-      "signed_at": "2026-05-24T15:26:02.690Z"
+      "signed_at": "2026-05-24T17:26:27.918Z",
+      "forward_watch": [
+        "NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; track for active-exploitation confirmation and patch advisory affecting API gateway / reverse-proxy deployments",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM 3-bug SSRF + Code Injection chain by k3vg3n; LLM-proxy API surface; track upstream patch and CVE assignments",
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory"
+      ]
     },
     {
       "name": "cloud-security",
@@ -1873,7 +1935,7 @@
         "CISA KEV additions for cloud-control-plane CVEs (IMDSv1 abuses, federation token mishandling, cross-tenant boundary failures); CISA Cybersecurity Advisories for cross-cloud advisories"
       ],
       "signature": "/DV3pmZwrRySrk1OCbyI+0BQESacjupJfUX3eC2NGtXuYOBro0vndIP+z27heFxumnjU3a9sfla7/U9X+pqnDw==",
-      "signed_at": "2026-05-24T15:26:02.690Z"
+      "signed_at": "2026-05-24T17:26:27.918Z"
     },
     {
       "name": "container-runtime-security",
@@ -1933,9 +1995,12 @@
         "CWE-1395"
       ],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-15",
       "signature": "E2UGSf9ATyYgzBr8uM/0ubOUmDqo1jVA7f9mVxv6LHfWGCNuQNXDyuNou9VAmUCeeXEeUYIi3AFjXkJqpOkxDA==",
-      "signed_at": "2026-05-24T15:26:02.690Z"
+      "signed_at": "2026-05-24T17:26:27.918Z",
+      "forward_watch": [
+        "Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Container Toolkit container escape ($50K award) by chompie / IBM X-Force XOR; high-severity container/hypervisor boundary break; track patch and KEV add post-embargo"
+      ]
     },
     {
       "name": "mlops-security",
@@ -1996,7 +2061,7 @@
         "CWE-502"
       ],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-22",
       "forward_watch": [
         "CycloneDX 1.7 ML-BOM enrichment — training-data lineage fields and model-card embedding stabilize; re-baseline ML-BOM coverage when published",
         "SPDX 3.1 AI / Dataset profile maturation — dataset provenance schema firms up; re-audit training-data lineage attestations",
@@ -2006,7 +2071,7 @@
         "MITRE ATLAS v5.6.0 (released May 2026) shipped the AML.T0010 sub-technique expansion this forecast tracked plus new techniques (\"Publish Poisoned AI Agent Tool\", \"Escape to Host\"); inventory now 16 tactics, 84 techniques, 56 sub-techniques. Forward watch: subsequent ATLAS minor and major releases — track next-cadence updates to agentic-AI TTPs and MLOps-pipeline-specific techniques"
       ],
       "signature": "IL+DlRCDJN/p08iiJCFkasKcoyjcB0uWrJ6ORLjQcS1HrUa5Xt62QxVjYPHzaevlm5y36ZdmfESqsZJmzK3lCg==",
-      "signed_at": "2026-05-24T15:26:02.691Z"
+      "signed_at": "2026-05-24T17:26:27.919Z"
     },
     {
       "name": "incident-response-playbook",
@@ -2056,7 +2121,7 @@
       "rfc_refs": [],
       "cwe_refs": [],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-22",
       "forward_watch": [
         "NIST 800-61r3 minor revisions (expected 2026-2027) aligning incident-handling language with the in-force EU CRA Art. 11 24h clock and EU AI Act Art. 73 serious-incident reporting",
         "ISO/IEC 27035-3:2026 (technical incident response operations) — final publication expected Q3 2026, expected to formalize AI-class incident sub-types currently absent from 27035-1/-2",
@@ -2068,7 +2133,7 @@
         "NYDFS 23 NYCRR 500.17 amendments tightening ransom-payment 24h disclosure operationalization"
       ],
       "signature": "MmjLjlmOMLjhJJ4ZfR8MYlHam+ZB+eSqfh6Nv+DecaG4O5zeo9DBP/iL3cbyDVZxmhnhivgJild2ccYeWTeZAg==",
-      "signed_at": "2026-05-24T15:26:02.691Z"
+      "signed_at": "2026-05-24T17:26:27.919Z"
     },
     {
       "name": "ransomware-response",
@@ -2146,9 +2211,9 @@
         "No More Ransom Project decryptor releases — affiliate-takedown decryptor drops (Operation Cronos LockBit decryptor, BlackCat post-exit-scam decryptors)",
         "SCOTUS or circuit-court rulings on ransomware payment, sanctions liability, and insurance-policy enforcement"
       ],
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-05-22",
       "signature": "ssueL03g9fWlhXpTe+IiY5l7RqQkunN4DTN5QETKE+VOX+qggdjAR8PONxk77ol4xWYmHrM/VcH8CNtXUEvgBA==",
-      "signed_at": "2026-05-24T15:26:02.691Z"
+      "signed_at": "2026-05-24T17:26:27.919Z"
     },
     {
       "name": "email-security-anti-phishing",
@@ -2199,9 +2264,9 @@
       "rfc_refs": [],
       "cwe_refs": [],
       "d3fend_refs": [],
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-05-18",
       "signature": "rK+WnuS+9tqEABmwc0jO/PEmxcLjG1/tmUb897HsClQeKzf+TQOlwBE+OsbtuKxpjYNwur62Xxs3TxObkwm8Cw==",
-      "signed_at": "2026-05-24T15:26:02.692Z"
+      "signed_at": "2026-05-24T17:26:27.920Z"
     },
     {
       "name": "age-gates-child-safety",
@@ -2260,16 +2325,16 @@
         "KOSA (Kids Online Safety Act) federal enactment status — reintroduced 2024-2025 with bipartisan support; if enacted, duty-of-care + safest-defaults + age-appropriate-design obligations become US federal floor",
         "Ofcom UK Online Safety Act child-safety codes — illegal-content codes live July 2025; child-safety codes phasing through 2026 with iterative enforcement guidance",
         "California AADC (AB-2273) — Sept 2023 federal injunction (NetChoice v. Bonta), 2024 partial revival; track Ninth Circuit / SCOTUS posture and state legislative response",
-        "AU social media under-16 ban entered force 10 December 2025 under the Online Safety Amendment (Social Media Minimum Age) Act 2024; eSafety Commissioner penalty regime (up to A$49.5M civil penalty) active; >4.7M accounts deactivated / restricted by mid-January 2026; eSafety opened formal investigations into Facebook, Instagram, Snapchat, TikTok and YouTube on 31 March 2026. Forward watch: eSafety investigation outcomes + first civil penalty proceedings + age-assurance methodology guidance refresh cadence",
+        "AU social media under-16 ban — Online Safety Amendment (Social Media Minimum Age) Act 2024 passed Nov 2024; implementation deferred to late 2025; age-assurance method finalisation pending",
         "EU CSAM Regulation (\"chat control\") — Commission proposal 2022, contested through 2024-2025; if adopted, automated detection on encrypted communications becomes mandatory with significant fundamental-rights challenge",
         "NIST IR on Age Assurance — pending publication; will operationalise age-assurance levels for US federal procurement",
         "euCONSENT pilot outcomes — EU age-verification interoperability scheme; if scaled, becomes the de facto Member State age-verification reference architecture",
-        "AI product age policy enforcement — Character.ai litigation (2024 minor-suicide complaint) testing duty-of-care for AI companion apps; ChatGPT / Claude / Gemini under-13 / under-18 enforcement evolving via FTC + state AG actions",
+        "AI product age policy enforcement — Character.ai litigation (2024 child-suicide complaint) testing duty-of-care for AI companion apps; ChatGPT / Claude / Gemini under-13 / under-18 enforcement evolving via FTC + state AG actions",
         "France SREN (Securing and Regulating the Digital Space) Act 2024 — ARCOM age-verification referential for adult content services; double-anonymity model under deployment",
         "US state adult-site age-verification laws — 19+ states by mid-2026 (TX HB 18 upheld by SCOTUS June 2025 in Free Speech Coalition v. Paxton); track ongoing challenges in remaining states"
       ],
       "signature": "+OO0RhQ303RJV7kaH38IuZpLeQbapep6Ds4Re/WEZu0FHBwKSlwvF7jbtP7KQ57xldJYn/xZm2jaszyOacMfDg==",
-      "signed_at": "2026-05-24T15:26:02.692Z"
+      "signed_at": "2026-05-24T17:26:27.920Z"
     },
     {
       "name": "cloud-iam-incident",
@@ -2349,7 +2414,20 @@
       ],
       "last_threat_review": "2026-05-15",
       "signature": "e/kij7GtKaytROyIj7V5RH+FC9WtmVFzrmG2kIlNDNn29ep/CRNlIQKwXLpzo/81AIf634pmdr1qy/+vwIuUDA==",
-      "signed_at": "2026-05-24T15:26:02.692Z"
+      "signed_at": "2026-05-24T17:26:27.920Z",
+      "forward_watch": [
+        "AWS IAM Identity Center session-policy refresh and step-up-on-admin enforcement (anticipated 2026-H2 release)",
+        "GCP Workload Identity Federation principal-set attribute mapping tightening (post-2026 Q3 Federation hardening guide)",
+        "Azure managed-identity continuous-access-evaluation rollout for cross-tenant trust scenarios",
+        "CISA Snowflake AA24 follow-up advisories on IdP-to-cloud chained-compromise patterns (continuous 2025-2026)",
+        "FedRAMP Rev 5 cloud-IAM control overlay; cross-IL trust patterns in IL6 sovereign cloud",
+        "NIST 800-53 Rev 6 (anticipated 2027) Account Management chain-of-assumptions sub-control",
+        "ISO/IEC 27017:2027 (anticipated) cloud-IAM hardening including managed-identity token-binding and IMDS hardening",
+        "UK CAF v4 cloud-IAM specificity in B2 contributing outcomes",
+        "AU ISM update enumerating cloud non-human-principal credential hygiene with explicit bearer-token TTL ceilings",
+        "DORA TLPT (JC 2024/40 RTS) first-cycle aggregate findings on cloud-account-compromise scenarios",
+        "AWS, GCP, and Azure shared-fate / shared-responsibility recalibration for federated-trust hygiene"
+      ]
     },
     {
       "name": "idp-incident-response",
@@ -2430,11 +2508,24 @@
       ],
       "last_threat_review": "2026-05-15",
       "signature": "ew9Kglc9fAZzbn0ZIfGP7WSK/j4eV2VhSvpy+s5bEfNEVYIMa2kZjnGBapgUsyGDLes9H9K2ovjQyX17+GKiBw==",
-      "signed_at": "2026-05-24T15:26:02.693Z"
+      "signed_at": "2026-05-24T17:26:27.921Z",
+      "forward_watch": [
+        "Entra ID conditional access evolution post-Midnight Blizzard — Microsoft's 2025-2026 commitments on legacy-tenant MFA enforcement and OAuth-app consent gating",
+        "Okta IPSIE (Interoperability Profile for Secure Identity in the Enterprise) OpenID Foundation working-group output and adoption timeline",
+        "Auth0 management-API token deprecation roadmap and replacement workload-identity-federation pattern",
+        "Ping Identity DaVinci flow-execution security model under post-2024 Thoma Bravo ownership",
+        "OneLogin (One Identity) post-acquisition platform evolution",
+        "CISA AA24 series — Okta, Entra ID, and IdP-tenant compromise advisories (forward-watched for AA25/AA26 successors)",
+        "SAML token-forgery (T1606.002) detection-strategy publication in MITRE ATT&CK v20 (October 2026 cycle)",
+        "DORA Art.19 implementing-act guidance for IdP-class incidents — forward-watched for ESAs publication",
+        "NIS2 implementing-act revision enumerating federated-identity control-plane indicators",
+        "Cross-tenant access settings evolution at Entra ID — partner-tenant attestation cadence and revocation latency",
+        "PSD3 / PSR final text on agent-initiated payments and the IdP-mediated agent-attestation surface"
+      ]
     }
   ],
   "manifest_signature": {
     "algorithm": "Ed25519",
-    "signature_base64": "Et2lPOBPBHY5gLfdlVz4FGr6aKjR/fAYhizxRPh0x3XcvecrTcUx2+ha8EgkPmhhA6avKBxloYXKrbr4xvpnCQ=="
+    "signature_base64": "hqrfFz6Dg6AIvfykdiGJL3femKkUgDEIk/+bVbKSxGuFDQuK6CyF4dCdQozVuvR6oSztKqL6yziir1W+noduAA=="
   }
 }

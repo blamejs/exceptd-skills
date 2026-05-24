@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1671867,
-    "total_approx_tokens": 417973,
+    "total_chars": 1672960,
+    "total_approx_tokens": 418246,
     "skill_count": 42
   },
   "skills": {
@@ -1015,10 +1015,10 @@
     },
     "researcher": {
       "path": "skills/researcher/skill.md",
-      "bytes": 32800,
-      "chars": 32626,
-      "lines": 338,
-      "approx_tokens": 8157,
+      "bytes": 33661,
+      "chars": 33479,
+      "lines": 342,
+      "approx_tokens": 8370,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -1047,9 +1047,9 @@
           "approx_tokens": 377
         },
         "analysis-procedure": {
-          "bytes": 13999,
-          "chars": 13871,
-          "approx_tokens": 3468
+          "bytes": 14860,
+          "chars": 14724,
+          "approx_tokens": 3681
         },
         "output-format": {
           "bytes": 3163,
@@ -1270,10 +1270,10 @@
     },
     "defensive-countermeasure-mapping": {
       "path": "skills/defensive-countermeasure-mapping/skill.md",
-      "bytes": 33463,
-      "chars": 33325,
+      "bytes": 33707,
+      "chars": 33565,
       "lines": 304,
-      "approx_tokens": 8331,
+      "approx_tokens": 8391,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1282,9 +1282,9 @@
           "approx_tokens": 882
         },
         "framework-lag-declaration": {
-          "bytes": 4420,
-          "chars": 4404,
-          "approx_tokens": 1101
+          "bytes": 4556,
+          "chars": 4536,
+          "approx_tokens": 1134
         },
         "ttp-mapping": {
           "bytes": 1957,
@@ -1312,9 +1312,9 @@
           "approx_tokens": 694
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 3321,
-          "chars": 3295,
-          "approx_tokens": 824
+          "bytes": 3429,
+          "chars": 3403,
+          "approx_tokens": 851
         }
       }
     },

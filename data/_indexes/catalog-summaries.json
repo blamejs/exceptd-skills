@@ -183,7 +183,7 @@
     },
     "global-frameworks.json": {
       "path": "data/global-frameworks.json",
-      "purpose": "Multi-jurisdiction framework registry: 35 jurisdictions × applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps. Cross-cutting authority for jurisdiction-clocks index.",
+      "purpose": "Multi-jurisdiction framework registry: per-jurisdiction applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps (jurisdiction count is reported by entry_count, not duplicated here). Cross-cutting authority for jurisdiction-clocks index.",
       "schema_version": "1.3.0",
       "last_updated": "2026-05-15",
       "tlp": "CLEAR",

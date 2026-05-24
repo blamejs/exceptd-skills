@@ -34,9 +34,19 @@ const atlas = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.jso
 const attack = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'attack-techniques.json'), 'utf8'));
 const d3fend = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'd3fend-catalog.json'), 'utf8'));
 const cve = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+const globalFrameworks = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'global-frameworks.json'), 'utf8'));
+const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
 function entryCount(catalog) {
   return Object.keys(catalog).filter((k) => k !== '_meta').length;
+}
+
+// Canonical jurisdiction count: every non-metadata top-level entry in the
+// registry (GLOBAL, the International / Multi-Jurisdiction standards scope, is
+// a counted entry). Only `_`-prefixed keys are metadata. This is the single
+// source the operator-facing surfaces below must agree with.
+function jurisdictionCount() {
+  return Object.keys(globalFrameworks).filter((k) => !k.startsWith('_')).length;
 }
 
 // Generic mismatch scan. Pull every version-shaped token next to the named
@@ -239,4 +249,24 @@ test('Skill bodies + indexes + builder scripts — ATLAS version matches live pi
     [],
     `Skill / index / builder surface contains stale ATLAS version mentions; expected live pin v${live}. Mismatches: ${JSON.stringify(unique, null, 2)}`,
   );
+});
+
+test('jurisdiction count — README badge, README body, and package description equal the live registry count', () => {
+  const live = jurisdictionCount();
+  const mismatches = [];
+
+  const badge = README.match(/badge\/jurisdictions-(\d+)-/);
+  assert.ok(badge, 'README must declare a jurisdictions badge');
+  if (Number(badge[1]) !== live) mismatches.push(`README badge: ${badge[1]} vs live ${live}`);
+
+  for (const m of README.matchAll(/(\d+)\s+jurisdictions/g)) {
+    if (Number(m[1]) !== live) mismatches.push(`README body "${m[1]} jurisdictions" vs live ${live}`);
+  }
+
+  const pkgMatch = (pkg.description || '').match(/(\d+)\s+jurisdictions/);
+  assert.ok(pkgMatch, 'package.json description must state the jurisdiction count');
+  if (Number(pkgMatch[1]) !== live) mismatches.push(`package.json: ${pkgMatch[1]} vs live ${live}`);
+
+  assert.deepEqual(mismatches, [],
+    `Jurisdiction count drift (live registry = ${live}):\n  ${mismatches.join('\n  ')}`);
 });
