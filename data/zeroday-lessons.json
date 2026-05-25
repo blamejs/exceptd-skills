@@ -5971,7 +5971,7 @@
       {
         "id": "NEW-CTRL-080",
         "name": "AGENT-TOOL-EXECUTION-SANDBOX",
-        "description": "Any AI agent wired to tools that can write files or execute code must treat its tool boundary as an attacker-reachable remote-code-execution boundary: sandbox file-writing / code-running plugins with strict path and capability confinement, validate and canonicalize all tool-supplied paths against traversal, gate code-execution tools behind out-of-band human approval for untrusted-content-triggered invocations, and track agent-framework SDK dependencies (e.g. Microsoft.SemanticKernel.Core >= 1.71.0) as KEV-priority patch targets. Prompt injection must be modeled as a code-execution primitive, not a content-safety nuisance.",
+        "description": "Any AI agent wired to tools that can write files or execute code must treat its tool boundary as an attacker-reachable remote-code-execution boundary: sandbox file-writing / code-running plugins with strict path and capability confinement, validate and canonicalize all tool-supplied paths against traversal, gate code-execution tools behind out-of-band human approval for untrusted-content-triggered invocations, and track agent-framework SDK dependencies (e.g. Microsoft.SemanticKernel.Plugins.Core >= 1.71.0) as KEV-priority patch targets. Prompt injection must be modeled as a code-execution primitive, not a content-safety nuisance.",
         "evidence": "https://www.microsoft.com/en-us/security/blog/2026/05/07/prompts-become-shells-rce-vulnerabilities-ai-agent-frameworks/",
         "gap_closes": [
           "NIST-800-53-SI-2",
