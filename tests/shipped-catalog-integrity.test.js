@@ -60,7 +60,12 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
   // the same PR. This is the no-MVP rule applied to the catalog —
   // you can't make the catalog WORSE without explicit acknowledgement.
   const BUDGET = {
-    "cve-catalog":     { iocs: 291 },
+    // +5 for the 2026-05-20 legacy KEV re-listings (CVE-2008-4250 MS08-067,
+    // CVE-2009-1537, CVE-2009-3459, CVE-2010-0249 Aurora, CVE-2010-0806) added
+    // as enrichment-pending drafts: they intentionally carry no iocs block yet,
+    // matching the auto-imported KEV-intake convention. This is tracked
+    // draft-debt, not a regression — iocs land if/when a draft is curated.
+    "cve-catalog":     { iocs: 296 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
