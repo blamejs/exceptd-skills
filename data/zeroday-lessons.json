@@ -7221,7 +7221,7 @@
       {
         "id": "NEW-CTRL-092",
         "name": "AI-INFERENCE-RPC-BACKEND-HARDENING",
-        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b3561 or later. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
+        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b8492 or later — b3561 fixed only GET_TENSOR / SET_TENSOR (CVE-2024-42478 / CVE-2024-42479), and builds b3561 through b8491 remain exploitable via the GRAPH_COMPUTE buffer=0 path (CVE-2026-34159), which b8492 closes. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
         "evidence": "https://github.com/ggerganov/llama.cpp/security/advisories/GHSA-wcr5-566p-9cwj",
         "gap_closes": [
           "NIST-800-53-SI-2",
@@ -7271,7 +7271,7 @@
       {
         "id": "NEW-CTRL-092",
         "name": "AI-INFERENCE-RPC-BACKEND-HARDENING",
-        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b3561 or later. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
+        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b8492 or later — b3561 fixed only GET_TENSOR / SET_TENSOR (CVE-2024-42478 / CVE-2024-42479), and builds b3561 through b8491 remain exploitable via the GRAPH_COMPUTE buffer=0 path (CVE-2026-34159), which b8492 closes. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
         "evidence": "https://github.com/ggerganov/llama.cpp/security/advisories/GHSA-5vm9-p64x-gqw9",
         "gap_closes": [
           "NIST-800-53-SI-2",
