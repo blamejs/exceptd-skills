@@ -1525,7 +1525,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--f13dede7-12ee-5f0e-985a-4f801aecb681",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022"
+    ]
   },
   "AML.T0029": {
     "id": "AML.T0029",
@@ -1573,7 +1576,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--7bbac64e-2b1d-5cb0-a442-bb7573b0a328",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022"
+    ]
   },
   "AML.T0035": {
     "id": "AML.T0035",
@@ -1589,7 +1595,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--801658f2-81cd-5935-93c7-5e6e2d80e669",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022"
+    ]
   },
   "AML.T0036": {
     "id": "AML.T0036",
@@ -1685,7 +1694,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--ebeed0c7-c5de-5049-8f27-efcae5f88b00",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022"
+    ]
   },
   "AML.T0050": {
     "id": "AML.T0050",

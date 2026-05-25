@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.80 — 2026-05-25
+
+CVE catalog — ShadowRay (CVE-2023-48022). Adds Anyscale Ray's unauthenticated Job Submission / Dashboard API remote code execution, the landmark case for prioritizing on real-world exploitation rather than CVSS or KEV alone. NVD marks the CVE disputed — the vendor frames the open Job API as intended for trusted networks — so it carries no code patch and is not on the CISA KEV catalog. Yet it is exploited at scale: Oligo's ShadowRay 2.0 campaign turned roughly 230,000 internet-exposed Ray clusters into crypto-mining botnets and exfiltrated model weights and cloud credentials. It therefore scores RWEP 68 (high) on confirmed active exploitation plus broad blast radius with no patch credit. The entry maps real MITRE ATLAS techniques (AML.T0049 / T0034 / T0035 / T0025) and ATT&CK T1190 / T1059 / T1496, and its zero-day lesson names the "controlled network is a security control" theater pattern, with a control requiring the AI compute control plane to authenticate every caller (Ray token auth, no untrusted-network exposure). Mitigation is configuration, not a patch. CVE count 339 → 340.
+
 ## 0.13.79 — 2026-05-25
 
 CVE catalog — NVIDIA Triton Inference Server authentication bypass. Adds the two CWE-288 authentication-bypass CVEs from NVIDIA's May 2026 Triton bulletin: **CVE-2026-24207** and **CVE-2026-24206**, both NIST CVSS 9.8 and reachable unauthenticated over the network against one of the most widely deployed AI inference servers. A successful bypass reaches Triton's model control plane (model load/unload, repository management) without credentials. Fixed in r26.03. NVD enriched CVE-2026-24206 to 9.8 while NVIDIA scored it 7.3 — the entry stores the NVD primary and records the dispute. Their shared zero-day lesson adds a control requiring inference-server authentication to be proven complete across every request path, not assumed from the primary API. CVE count 337 → 339.

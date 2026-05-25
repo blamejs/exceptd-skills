@@ -269,6 +269,7 @@
       "DS0017"
     ],
     "cve_refs": [
+      "CVE-2023-48022",
       "CVE-2024-50050",
       "CVE-2025-1094",
       "CVE-2025-11837",
@@ -825,6 +826,7 @@
       "CVE-2023-33538",
       "CVE-2023-3519",
       "CVE-2023-39780",
+      "CVE-2023-48022",
       "CVE-2023-52163",
       "CVE-2024-12987",
       "CVE-2024-1709",
@@ -2458,6 +2460,7 @@
     "name": "Resource Hijacking",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-48022",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "description_full": "Adversaries may leverage the resources of co-opted systems to complete resource-intensive tasks, which may impact system and/or hosted service availability. Resource hijacking may take a number of different forms. For example, adversaries may: * Leverage compute resources in order to mine cryptocurrency * Sell network bandwidth to proxy networks * Generate SMS traffic for profit * Abuse cloud-based messaging services to send large quantities of spam messages In some cases, adversaries may leverage multiple types of Resource Hijacking at once.(Citation: Sysdig Cryptojacking Proxyjacking 2023)",
