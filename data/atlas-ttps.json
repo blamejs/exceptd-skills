@@ -1037,7 +1037,10 @@
     ],
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0104",
     "stix_id": "attack-pattern--04842d98-bb69-586e-9765-6ff1f56ef722",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-54136"
+    ]
   },
   "AML.T0105": {
     "id": "AML.T0105",
@@ -2379,7 +2382,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--b1b2cc5a-7312-5f26-93d3-8b8ee1baf97d",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-54136"
+    ]
   },
   "AML.T0111": {
     "id": "AML.T0111",

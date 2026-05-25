@@ -274,6 +274,7 @@
       "CVE-2025-34291",
       "CVE-2025-49596",
       "CVE-2025-53773",
+      "CVE-2025-54136",
       "CVE-2025-55319",
       "CVE-2025-68664",
       "CVE-2026-22778",
@@ -1003,6 +1004,9 @@
     "description": "Adversaries may manipulate products or product delivery mechanisms prior to receipt by a final consumer for the purpose of data or system compromise.",
     "tactic": [
       "Initial Access"
+    ],
+    "cve_refs": [
+      "CVE-2025-54136"
     ]
   },
   "T1195.001": {

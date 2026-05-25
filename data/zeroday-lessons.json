@@ -6033,6 +6033,56 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-54136": {
+    "name": "Cursor MCPoison — Persistent RCE via Modified Already-Trusted MCP Config",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Cursor trusts an MCP server entry when the user first approves it but never re-validates the .cursor/mcp.json entry on later edits. An attacker who modifies that already-trusted entry (via a shared repo the victim pulls, or local access) substitutes malicious commands (CWE-78) that Cursor runs silently and persistently on every project open — AI-agent tool poisoning (ATLAS AML.T0110).",
+      "privileges_required": "low — the victim must have approved an MCP entry once; the attacker then modifies it (shared-repo collaboration or local access)",
+      "complexity": "low (NVD AC:L); no re-prompt after the first approval",
+      "ai_factor": "The trust boundary is an AI IDE's MCP tool configuration. The lesson: an AI agent's tool-approval is not a one-time decision — the approved artifact can be mutated, so tool configs must be re-validated on change. Surfaced via Check Point Research + GHSA/MCP advisory feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI IDE / agent tooling on workstations as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not enumerate AI coding assistants and their tool-config trust model as in-scope."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an AI agent's tool-approval state as a control plane requiring re-validation on change; trust-on-first-use turns a shared-repo config edit into silent persistent RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Developer AI IDEs and their MCP tool configs are almost never in the managed vulnerability program, and tool-approval trust is treated as a one-time event; shared-repo config edits are not reviewed as code-execution changes.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-082",
+        "name": "AI-AGENT-TOOL-APPROVAL-REVALIDATION",
+        "description": "An AI agent / IDE must re-validate a tool configuration (MCP server entry, plugin command) whenever its definition changes, not trust it indefinitely after first approval. Treat tool-config files (e.g. .cursor/mcp.json) as untrusted in shared repositories, diff and re-approve MCP entries on every change, disable auto-approval of tool servers, and track the AI IDE itself (e.g. Cursor >= 1.3) as managed, patch-prioritized software.",
+        "evidence": "https://research.checkpoint.com/2025/cursor-mcpoison-cve-2025-54136/",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
