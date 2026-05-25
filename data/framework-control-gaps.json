@@ -33,7 +33,9 @@
     "real_requirement": "AI pipeline integrity controls: (1) model version pinning where API supports it, (2) behavioral test suite with regression alerting, (3) provider changelog monitoring, (4) training pipeline SLSA-equivalent supply chain attestation for self-hosted models.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-34291"
+    ],
     "atlas_refs": [
       "AML.T0018",
       "AML.T0020"
@@ -1392,6 +1394,7 @@
       "CVE-2025-33053",
       "CVE-2025-33073",
       "CVE-2025-34026",
+      "CVE-2025-34291",
       "CVE-2025-35939",
       "CVE-2025-37164",
       "CVE-2025-38352",
@@ -2305,6 +2308,7 @@
       "CVE-2025-33053",
       "CVE-2025-33073",
       "CVE-2025-34026",
+      "CVE-2025-34291",
       "CVE-2025-35939",
       "CVE-2025-37164",
       "CVE-2025-38352",

@@ -5933,6 +5933,51 @@
     "_auto_imported": true,
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
+  "CVE-2025-34291": {
+    "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
+    "lesson_date": "2026-05-24",
+    "attack_vector": {
+      "description": "Overly-permissive CORS plus a CSRF-unprotected token-refresh endpoint (SameSite=None cookies) let a malicious page steal a logged-in Langflow user's token pair, which is replayed against the by-design code-validation endpoint for account takeover and remote code execution.",
+      "privileges_required": "none standing for the attacker — requires only that an authenticated victim visits an attacker-controlled page (drive-by)",
+      "complexity": "low (NVD AC:L; the default configuration of Langflow <= 1.6.9 is exploitable)",
+      "ai_factor": "Not AI-discovered (Obsidian Security, conventional web-security research). The AI-security lesson: an AI agent/workflow orchestration platform is itself an RCE-bearing web trust boundary — compromising it grants control over every model, tool, and credential it brokers. Surfaced by the CISA-KEV poller + advisory feeds after the v0.13.17 bulk intake (KEV catalog 2026.05.15) had already run."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day flaw-remediation SLA inadequate for a KEV-listed, in-the-wild-exploited RCE; the CISA KEV due date is the binding clock."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not differentiate routinely-disclosed CVEs from KEV-listed actively-exploited ones. Also: application-layer origin policy (CORS) and session-cookie configuration — the boundary this chain abuses — is rarely audited on self-hosted AI-agent platforms."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Self-hosted AI-platform deployments rarely audit CORS / session-cookie configuration; audit programs check patch SLA and TLS but not application-layer origin policy. Exposure widened by Langflow's 140k-star footprint and the drive-by trigger (victim need only visit a page).",
+      "theater_pattern": "config_drift"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-076",
+        "name": "AI-PLATFORM-ORIGIN-POLICY-AUDIT",
+        "description": "Self-hosted AI agent / LLM workflow platforms that expose a by-design code-execution endpoint (Langflow, Flowise, and similar) must enforce and audit, on every release: an explicit CORS allow-list (no wildcard or credentialed any-origin), CSRF protection on all token/session endpoints, and SameSite=Lax-or-Strict authentication cookies. The platform's session boundary is a remote-code-execution boundary and must be reviewed as one.",
+        "evidence": "https://www.obsidiansecurity.com/blog/cve-2025-34291-critical-account-takeover-and-rce-vulnerability-in-the-langflow-ai-agent-workflow-platform",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-32432": {
     "name": "Craft CMS Code Injection Vulnerability",
     "lesson_date": "2026-05-18",

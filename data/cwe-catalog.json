@@ -1031,7 +1031,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
-      "CVE-2023-2533"
+      "CVE-2023-2533",
+      "CVE-2025-34291"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-23",
@@ -2959,7 +2960,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-34291"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3833,7 +3836,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-34291"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
