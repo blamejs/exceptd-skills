@@ -6983,6 +6983,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-0132": {
+    "name": "NVIDIA Container Toolkit TOCTOU Container Escape",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Container Toolkit (CWE-367 TOCTOU race) lets a crafted container image escape its container and execute code on the host, crossing the tenant boundary on shared GPU infrastructure. Disclosed by Wiz Research.",
+      "privileges_required": "ability to run or schedule a crafted container image on a GPU node",
+      "complexity": "low (a crafted image / short Dockerfile is sufficient)",
+      "ai_factor": "The GPU container runtime underpins essentially all containerized AI/ML GPU workloads. A single escape on a shared GPU host crosses the tenant boundary and exposes co-tenant models, training data, and cloud credentials. The lesson: the GPU container runtime is an AI-pipeline trust boundary that must be patched and hardened like any isolation control, not assumed safe."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the GPU container runtime as managed, escape-bearing software under every AI/ML GPU workload."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes the container is the tenant boundary; a runtime escape crosses it on shared GPU infrastructure."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the GPU container runtime as an AI-pipeline trust boundary whose escape exposes co-tenant AI assets."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Organizations treat container isolation as a given and do not track the GPU container runtime version; shared GPU clouds run mixed-tenant workloads on the same hosts.",
+      "theater_pattern": "container_isolation_assumed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-090",
+        "name": "AI-GPU-CONTAINER-RUNTIME-ISOLATION",
+        "description": "Treat the GPU container runtime (NVIDIA Container Toolkit / GPU Operator) as a patch-prioritized isolation boundary: keep it current (upgrade to 1.16.2+), do not run untrusted or mixed-tenant container images on the same GPU host, restrict who can schedule GPU workloads, and run workloads least-privilege. The distinguishing test: on a staging GPU node, run a crafted image that manipulates init hooks / mounts and confirm it cannot read host paths or load host-side code outside its container.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5582",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-23266": {
+    "name": "NVIDIA Container Toolkit Init-Hook Untrusted Search Path Container Escape (NVIDIAScape)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Container Toolkit (CWE-426 untrusted search path in init hooks) lets a crafted container image escape its container and execute code on the host, crossing the tenant boundary on shared GPU infrastructure. Disclosed by Wiz Research.",
+      "privileges_required": "ability to run or schedule a crafted container image on a GPU node",
+      "complexity": "low (a crafted image / short Dockerfile is sufficient)",
+      "ai_factor": "The GPU container runtime underpins essentially all containerized AI/ML GPU workloads. A single escape on a shared GPU host crosses the tenant boundary and exposes co-tenant models, training data, and cloud credentials. The lesson: the GPU container runtime is an AI-pipeline trust boundary that must be patched and hardened like any isolation control, not assumed safe."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the GPU container runtime as managed, escape-bearing software under every AI/ML GPU workload."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes the container is the tenant boundary; a runtime escape crosses it on shared GPU infrastructure."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the GPU container runtime as an AI-pipeline trust boundary whose escape exposes co-tenant AI assets."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Organizations treat container isolation as a given and do not track the GPU container runtime version; shared GPU clouds run mixed-tenant workloads on the same hosts.",
+      "theater_pattern": "container_isolation_assumed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-090",
+        "name": "AI-GPU-CONTAINER-RUNTIME-ISOLATION",
+        "description": "Treat the GPU container runtime (NVIDIA Container Toolkit / GPU Operator) as a patch-prioritized isolation boundary: keep it current (apply the fix from NVIDIA advisory a_id/5659), do not run untrusted or mixed-tenant container images on the same GPU host, restrict who can schedule GPU workloads, and run workloads least-privilege. The distinguishing test: on a staging GPU node, run a crafted image that manipulates init hooks / mounts and confirm it cannot read host paths or load host-side code outside its container.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5659",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",

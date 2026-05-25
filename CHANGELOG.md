@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.82 — 2026-05-25
+
+CVE catalog — NVIDIA Container Toolkit GPU container escape. Adds the two Wiz-disclosed escapes in the container runtime that underpins essentially all containerized GPU/AI workloads. **CVE-2024-0132** (CWE-367, NIST CVSS 8.3 / NVIDIA 9.0) — a time-of-check/time-of-use race lets a crafted container image escape to the host; fixed in Container Toolkit 1.16.2. **CVE-2025-23266** (NVIDIAScape, CWE-426, CVSS 9.0) — an untrusted search path in container-initialization hooks lets a crafted container load attacker code with elevated host permissions; patch per NVIDIA advisory a_id/5659. Both map ATT&CK T1610/T1611 (deploy container / escape to host) and carry maximal blast radius because a single escape on a shared GPU host crosses the tenant boundary and exposes co-tenant models, data, and credentials. Their shared zero-day lesson (NEW-CTRL-090) treats the GPU container runtime as a patch-prioritized AI-pipeline isolation boundary, not an assumed-safe layer. CVE count 342 → 344.
+
 ## 0.13.81 — 2026-05-25
 
 CVE catalog — Open WebUI code-injection RCEs. Adds two remote code execution flaws in Open WebUI, a widely deployed self-hosted AI chat front end. **CVE-2026-0766** (CWE-94, ZDI CVSS 8.8) — the `load_tool_module_by_id` function runs an unvalidated user-supplied string as Python, so an authenticated user achieves RCE on the host. **CVE-2025-64496** (CWE-95/501/829, NIST CVSS 8.0, fixed 0.6.35) — with the Direct Connections feature enabled and a user lured to a malicious external model server, that server injects JavaScript via server-sent events, leading to token theft, account takeover, and with extended permissions RCE. Both carry CWE + ATT&CK T1190/T1059 mappings, global-first framework gaps, and behavioral IoCs; their shared zero-day lesson (NEW-CTRL-089) requires an AI application never to turn user-supplied strings or external-model-server content into executable code. CVE count 340 → 342.
