@@ -185,12 +185,14 @@ test('doctor --signatures emits only the signatures subcheck', () => {
 });
 
 test('doctor --signatures --shipped-tarball opts into tarball-verify round-trip', () => {
-  // v0.12.9: --shipped-tarball runs scripts/verify-shipped-tarball.js
-  // alongside the source-tree signature check, populating
-  // checks.signatures.shipped_tarball. On an installed (npm) tree the
-  // script may be absent — accept either a populated sub-check or a
-  // documented skip reason so the test runs in both contexts.
-  const r = cli(['doctor', '--signatures', '--shipped-tarball', '--json']);
+  // --shipped-tarball runs scripts/verify-shipped-tarball.js alongside the
+  // source-tree signature check, populating checks.signatures.shipped_tarball.
+  // On an installed (npm) tree the script may be absent — accept either a
+  // populated sub-check or a documented skip reason so the test runs in both
+  // contexts. The round-trip (npm pack + extract + Ed25519 verify) is slow on
+  // the macOS CI runner and intermittently exceeded the default 30s cap, so
+  // this invocation gets a generous timeout to stop the spurious failure.
+  const r = cli(['doctor', '--signatures', '--shipped-tarball', '--json'], { timeout: 120000 });
   const data = tryJson(r.stdout);
   assert.ok(data?.checks?.signatures, 'checks.signatures must be present');
   assert.ok(data.checks.signatures.shipped_tarball,
