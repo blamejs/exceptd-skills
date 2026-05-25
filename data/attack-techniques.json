@@ -273,6 +273,7 @@
       "CVE-2024-50050",
       "CVE-2025-1094",
       "CVE-2025-11837",
+      "CVE-2025-1550",
       "CVE-2025-23254",
       "CVE-2025-30165",
       "CVE-2025-34291",
@@ -283,6 +284,7 @@
       "CVE-2025-60455",
       "CVE-2025-64496",
       "CVE-2025-68664",
+      "CVE-2025-8747",
       "CVE-2026-0766",
       "CVE-2026-22252",
       "CVE-2026-22688",
@@ -1069,6 +1071,8 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2024-3094",
+      "CVE-2025-1550",
+      "CVE-2025-8747",
       "CVE-2026-45321",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
@@ -4234,7 +4238,11 @@
       "Containers"
     ],
     "stix_id": "attack-pattern--8c32eb4d-805f-4fc5-bf60-c4d476c131b5",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-1550",
+      "CVE-2025-8747"
+    ]
   },
   "T1205": {
     "id": "T1205",

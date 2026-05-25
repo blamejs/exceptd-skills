@@ -143,6 +143,8 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2025-1550",
+      "CVE-2025-8747",
       "CVE-2026-22778",
       "CVE-2026-30615",
       "CVE-2026-39987",
@@ -1259,6 +1261,8 @@
     "exceptd_skills": [],
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2025-1550",
+      "CVE-2025-8747",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "description_full": "An adversary may rely upon specific actions by a user in order to gain execution. Users may inadvertently execute unsafe code introduced via [AI Supply Chain Compromise](/techniques/AML.T0010). Users may be subjected to social engineering to get them to execute malicious code by, for example, opening a malicious document file or link.",
@@ -2784,7 +2788,11 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--a5cc5062-f672-510a-8a4f-a8d1aa7f5024",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2025-1550",
+      "CVE-2025-8747"
+    ]
   },
   "AML.T0011.001": {
     "id": "AML.T0011.001",
