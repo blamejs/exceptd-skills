@@ -3346,7 +3346,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--92a78814-b191-47ca-909c-1ccfe3777414",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-34926"
+    ]
   },
   "T1074": {
     "id": "T1074",
@@ -3439,7 +3442,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--7bc57495-ea59-4380-be31-a64af124ef18",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-34926"
+    ]
   },
   "T1087": {
     "id": "T1087",
