@@ -272,6 +272,9 @@
       "CVE-2022-1471",
       "CVE-2023-43654",
       "CVE-2023-48022",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
       "CVE-2024-37032",
       "CVE-2024-42479",
       "CVE-2024-50050",
@@ -1084,6 +1087,9 @@
     "name": "Supply Chain Compromise: Software Supply Chain",
     "version": "v19",
     "cve_refs": [
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
       "CVE-2024-3094",
       "CVE-2025-1550",
       "CVE-2025-8747",
@@ -4259,6 +4265,9 @@
     "stix_id": "attack-pattern--8c32eb4d-805f-4fc5-bf60-c4d476c131b5",
     "is_subtechnique": false,
     "cve_refs": [
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
       "CVE-2025-1550",
       "CVE-2025-8747"
     ]

@@ -7483,6 +7483,156 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-11392": {
+    "name": "Hugging Face Transformers MobileViTV2 Deserialization Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Hugging Face Transformers' MobileViTV2 loader deserializes untrusted configuration files without validation (CWE-502), so loading a malicious MobileViTV2 model/config executes attacker code in the user's process.",
+      "privileges_required": "none beyond getting a user to load an untrusted MobileViTV2 model/config (NVD UI:R)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is a model loader in the foundational ML library (Hugging Face Transformers). The lesson is the same one the Keras CVEs teach at ecosystem scale: a model artifact is executable code at load time, so artifacts must be treated as untrusted (provenance, safe formats, sandboxed loading) — pulling from a model hub is a supply-chain trust decision, not a data fetch."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the foundational ML library's model loaders as RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to model artifacts/configs the library deserializes at load time."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model artifact as untrusted executable input; loading one from an untrusted source through Transformers is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "ML pipelines pull models from hubs and treat them as data; the foundational library's loaders are assumed safe despite per-loader deserialization RCEs.",
+      "theater_pattern": "model_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load models/configs from untrusted sources, verify provenance, prefer safe formats (e.g. safetensors), and load untrusted models only in a sandboxed, network-isolated, least-privilege environment. Upgrade Hugging Face Transformers to 4.48.0 or later (which fixes the MobileViTV2 loader deserialization, CVE-2024-11392). The control is the same one that closes the Keras model-deserialization CVEs — the class is 'model file equals executable code', not a single loader. The distinguishing test: load an attacker-crafted MobileViTV2 artifact on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2024-11392",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-11393": {
+    "name": "Hugging Face Transformers MaskFormer Deserialization Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Hugging Face Transformers' MaskFormer loader deserializes untrusted model files without validation (CWE-502), so loading a malicious MaskFormer model/config executes attacker code in the user's process.",
+      "privileges_required": "none beyond getting a user to load an untrusted MaskFormer model/config (NVD UI:R)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is a model loader in the foundational ML library (Hugging Face Transformers). The lesson is the same one the Keras CVEs teach at ecosystem scale: a model artifact is executable code at load time, so artifacts must be treated as untrusted (provenance, safe formats, sandboxed loading) — pulling from a model hub is a supply-chain trust decision, not a data fetch."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the foundational ML library's model loaders as RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to model artifacts/configs the library deserializes at load time."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model artifact as untrusted executable input; loading one from an untrusted source through Transformers is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "ML pipelines pull models from hubs and treat them as data; the foundational library's loaders are assumed safe despite per-loader deserialization RCEs.",
+      "theater_pattern": "model_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load models/configs from untrusted sources, verify provenance, prefer safe formats (e.g. safetensors), and load untrusted models only in a sandboxed, network-isolated, least-privilege environment. Upgrade Hugging Face Transformers to 4.48.0 or later (which fixes the MaskFormer loader deserialization, CVE-2024-11393). The control is the same one that closes the Keras model-deserialization CVEs — the class is 'model file equals executable code', not a single loader. The distinguishing test: load an attacker-crafted MaskFormer artifact on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2024-11393",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-11394": {
+    "name": "Hugging Face Transformers Trax Deserialization Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Hugging Face Transformers' Trax loader deserializes untrusted model files without validation (CWE-502), so loading a malicious Trax model/config executes attacker code in the user's process.",
+      "privileges_required": "none beyond getting a user to load an untrusted Trax model/config (NVD UI:R)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is a model loader in the foundational ML library (Hugging Face Transformers). The lesson is the same one the Keras CVEs teach at ecosystem scale: a model artifact is executable code at load time, so artifacts must be treated as untrusted (provenance, safe formats, sandboxed loading) — pulling from a model hub is a supply-chain trust decision, not a data fetch."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the foundational ML library's model loaders as RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to model artifacts/configs the library deserializes at load time."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model artifact as untrusted executable input; loading one from an untrusted source through Transformers is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "ML pipelines pull models from hubs and treat them as data; the foundational library's loaders are assumed safe despite per-loader deserialization RCEs.",
+      "theater_pattern": "model_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load models/configs from untrusted sources, verify provenance, prefer safe formats (e.g. safetensors), and load untrusted models only in a sandboxed, network-isolated, least-privilege environment. Upgrade Hugging Face Transformers to 4.48.0 or later (which fixes the Trax loader deserialization, CVE-2024-11394). The control is the same one that closes the Keras model-deserialization CVEs — the class is 'model file equals executable code', not a single loader. The distinguishing test: load an attacker-crafted Trax artifact on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2024-11394",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2023-51449": {
     "name": "Gradio /file Route Path Traversal and SSRF Arbitrary File Read",
     "lesson_date": "2026-05-25",
