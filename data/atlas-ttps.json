@@ -1527,7 +1527,8 @@
     "stix_id": "attack-pattern--f13dede7-12ee-5f0e-985a-4f801aecb681",
     "is_subtechnique": false,
     "cve_refs": [
-      "CVE-2023-48022"
+      "CVE-2023-48022",
+      "CVE-2025-64496"
     ]
   },
   "AML.T0029": {
@@ -1696,7 +1697,9 @@
     "stix_id": "attack-pattern--ebeed0c7-c5de-5049-8f27-efcae5f88b00",
     "is_subtechnique": false,
     "cve_refs": [
-      "CVE-2023-48022"
+      "CVE-2023-48022",
+      "CVE-2025-64496",
+      "CVE-2026-0766"
     ]
   },
   "AML.T0050": {

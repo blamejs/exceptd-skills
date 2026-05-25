@@ -6883,6 +6883,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-0766": {
+    "name": "Open WebUI Tool Module Code Injection RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Open WebUI's load_tool_module_by_id runs an unvalidated user-supplied string as Python (CWE-94), giving an authenticated attacker remote code execution on the host.",
+      "privileges_required": "authenticated Open WebUI user (PR:L)",
+      "complexity": "low (NVD/CNA AC:L)",
+      "ai_factor": "The abused surface is a widely deployed self-hosted AI chat front end. The lesson: an AI app must never turn a user-supplied string or external-model-server content into executable code; tool-loading and model-connection paths are untrusted input that needs validation, not convenience features that bypass it."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track self-hosted AI chat front ends as managed, RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to the tool-module identifier before it is used to execute Python."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats tool-module strings or external-model-server content as untrusted input the AI app must not execute as code."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Self-hosted AI front ends are rarely in the managed vulnerability program, and their tool/model-connection features are trusted by design.",
+      "theater_pattern": "secure_coding_theater"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-089",
+        "name": "AI-APP-DYNAMIC-CODE-EXECUTION-CONTROL",
+        "description": "An AI application must not turn user-supplied strings or external-model-server content into executable code: validate/allow-list tool-module identifiers before loading, treat external model servers as untrusted (no execution of their content), and keep features like Direct Connections disabled unless required. Upgrade Open WebUI to the fixed release (0.6.35+ for CVE-2025-64496; the ZDI-coordinated fix for CVE-2026-0766). The distinguishing test: on a staging instance, attempt to load a tool by an arbitrary id and connect to an attacker-controlled model server, and confirm neither results in code execution.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-0766",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-64496": {
+    "name": "Open WebUI Malicious Model Server Code Injection (Account Takeover to RCE)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "With Direct Connections enabled and a user lured to a malicious external model server, that server's SSE stream injects and executes JavaScript in the client (CWE-95/829), enabling token theft, account takeover, and with extended permissions RCE.",
+      "privileges_required": "authenticated user lured to a malicious model server (PR:L / UI:R)",
+      "complexity": "low (NVD/CNA AC:L)",
+      "ai_factor": "The abused surface is a widely deployed self-hosted AI chat front end. The lesson: an AI app must never turn a user-supplied string or external-model-server content into executable code; tool-loading and model-connection paths are untrusted input that needs validation, not convenience features that bypass it."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track self-hosted AI chat front ends as managed, RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Content received from an external model server is rendered/executed without treating it as untrusted input."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats tool-module strings or external-model-server content as untrusted input the AI app must not execute as code."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "Self-hosted AI front ends are rarely in the managed vulnerability program, and their tool/model-connection features are trusted by design.",
+      "theater_pattern": "third_party_model_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-089",
+        "name": "AI-APP-DYNAMIC-CODE-EXECUTION-CONTROL",
+        "description": "An AI application must not turn user-supplied strings or external-model-server content into executable code: validate/allow-list tool-module identifiers before loading, treat external model servers as untrusted (no execution of their content), and keep features like Direct Connections disabled unless required. Upgrade Open WebUI to the fixed release (0.6.35+ for CVE-2025-64496; the ZDI-coordinated fix for CVE-2026-0766). The distinguishing test: on a staging instance, attempt to load a tool by an arbitrary id and connect to an attacker-controlled model server, and confirm neither results in code execution.",
+        "evidence": "https://github.com/open-webui/open-webui/security/advisories/GHSA-cm35-v4vp-5xvx",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
