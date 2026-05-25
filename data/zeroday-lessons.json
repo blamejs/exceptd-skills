@@ -6183,6 +6183,256 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-40933": {
+    "name": "FlowiseAI Flowise MCP Custom Config Command Injection",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Flowise lets an authenticated user define a Custom MCP server configuration whose command/args the server executes; sanitization is bypassed by pairing an allow-listed binary (npx) with execution flags (CWE-78), yielding arbitrary OS command execution on the host.",
+      "privileges_required": "authenticated Flowise user (PR:L)",
+      "complexity": "low (NVD AC:L); allow-list bypass via execution flags",
+      "ai_factor": "The abused surface is the MCP command/transport configuration of an AI framework. The lesson matches the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) cases: user-supplied or attacker-influenced MCP command/args are untrusted input the transport must neutralize, because the transport's by-design command execution turns injection into RCE. Surfaced via the 2026 MCP supply-chain advisory + GHSA feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track self-hosted low-code LLM builders and their Custom-MCP command surfaces as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not enumerate the Custom MCP configuration as an authorization-critical command-execution surface, nor recognize allow-list bypass via argument flags."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the MCP transport to neutralize allow-listed binaries' execution flags; an allow-list alone is not a command boundary."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI agent / RAG frameworks are rarely in the managed vulnerability program, and their MCP command surfaces are not treated as command-injection-prone input.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-084",
+        "name": "MCP-STDIO-CONFIG-INPUT-NEUTRALIZATION",
+        "description": "MCP command configuration must neutralize untrusted command/args, and command allow-lists (npm/npx) must also block argument flags that re-enable arbitrary execution. Upgrade Flowise to 3.1.0+, restrict who may author Custom MCP configurations, and run least-privilege. Same governance as the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) MCP transport flaws.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-40933",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-30625": {
+    "name": "Upsonic MCP Task Allowed-Command Argument Injection RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Upsonic MCP task creation allow-lists npm/npx whose argument flags can be abused to execute arbitrary OS commands (CWE-77 argument injection). An attacker who can create an MCP task achieves code execution; 0.72.0 adds a warning rather than a confirmed fix.",
+      "privileges_required": "attacker able to create an Upsonic MCP task (PR:N per NVD)",
+      "complexity": "low (NVD AC:L); allow-list argument-flag abuse",
+      "ai_factor": "The abused surface is the MCP command/transport configuration of an AI framework. The lesson matches the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) cases: user-supplied or attacker-influenced MCP command/args are untrusted input the transport must neutralize, because the transport's by-design command execution turns injection into RCE. Surfaced via the 2026 MCP supply-chain advisory + GHSA feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track agent frameworks and their MCP task command allow-lists as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats an allow-list of binaries as a control without accounting for argument-flag abuse of those binaries."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires an MCP command allow-list to also constrain the arguments those commands accept; npm/npx flags re-enable execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "AI agent / RAG frameworks are rarely in the managed vulnerability program, and their MCP command surfaces are not treated as command-injection-prone input.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-084",
+        "name": "MCP-STDIO-CONFIG-INPUT-NEUTRALIZATION",
+        "description": "An MCP command allow-list must also constrain arguments — npm/npx execution flags must be blocked, not just the binary name allow-listed. Treat 0.72.0's warning as insufficient; restrict who may create MCP tasks and run Upsonic least-privilege until a confirmed fix ships.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-30625",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-30617": {
+    "name": "Langchain-Chatchat MCP Management Interface stdio RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Langchain-Chatchat exposes an MCP management interface that lets a caller configure a malicious stdio server command, which the server executes without neutralizing special elements (CWE-77), yielding remote code execution on the host.",
+      "privileges_required": "caller reaching the exposed MCP management interface (PR:N per NVD)",
+      "complexity": "low (NVD AC:L); exposed management interface",
+      "ai_factor": "The abused surface is the MCP command/transport configuration of an AI framework. The lesson matches the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) cases: user-supplied or attacker-influenced MCP command/args are untrusted input the transport must neutralize, because the transport's by-design command execution turns injection into RCE. Surfaced via the 2026 MCP supply-chain advisory + GHSA feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track RAG / knowledge-base assistants and their MCP management interfaces as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not enumerate an exposed MCP management interface as an authorization-critical command-execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the MCP management interface to be authenticated and the configured stdio command to be neutralized before execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI agent / RAG frameworks are rarely in the managed vulnerability program, and their MCP command surfaces are not treated as command-injection-prone input.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-083",
+        "name": "MCP-STDIO-TRANSPORT-COMMAND-GOVERNANCE",
+        "description": "The MCP management/transport surface must authorize callers and neutralize the stdio command it is handed before execution. Do not expose the MCP management interface to untrusted networks; run least-privilege. Same governance as the LibreChat (CVE-2026-22252) MCP transport flaw, applied to an exposed management interface.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-30617",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-30624": {
+    "name": "Agent Zero MCP Server Config Command Injection",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Agent Zero executes MCP server configurations without adequately validating the command/args before spawning the subprocess (CWE-77). An attacker who can supply or influence an MCP server configuration achieves remote code execution on the host.",
+      "privileges_required": "attacker able to supply or influence an MCP server configuration (PR:N per NVD)",
+      "complexity": "low (NVD AC:L); unvalidated server configuration",
+      "ai_factor": "The abused surface is the MCP command/transport configuration of an AI framework. The lesson matches the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) cases: user-supplied or attacker-influenced MCP command/args are untrusted input the transport must neutralize, because the transport's by-design command execution turns injection into RCE. Surfaced via the 2026 MCP supply-chain advisory + GHSA feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track autonomous agent frameworks and their MCP server-configuration surfaces as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not enumerate MCP server configuration as an authorization-critical command-execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires MCP server configurations to be validated and authorized before the configured command is executed."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI agent / RAG frameworks are rarely in the managed vulnerability program, and their MCP command surfaces are not treated as command-injection-prone input.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-083",
+        "name": "MCP-STDIO-TRANSPORT-COMMAND-GOVERNANCE",
+        "description": "MCP server configurations must be validated and the caller authorized before the configured command is spawned. Treat MCP server configuration as a privileged surface, restrict who can edit it, and run Agent Zero least-privilege. Same governance as the LibreChat (CVE-2026-22252) MCP transport flaw.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-30624",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-30616": {
+    "name": "Jaaz MCP stdio Command Execution RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Jaaz mishandles MCP stdio command execution, running command/args from an MCP configuration without neutralizing special elements (CWE-77). An attacker able to set the stdio command achieves code execution on the Jaaz host.",
+      "privileges_required": "attacker able to set the Jaaz MCP stdio command (PR:N per CISA-ADP)",
+      "complexity": "low (CISA-ADP AC:L)",
+      "ai_factor": "The abused surface is the MCP command/transport configuration of an AI framework. The lesson matches the LibreChat (CVE-2026-22252) and WeKnora (CVE-2026-22688) cases: user-supplied or attacker-influenced MCP command/args are untrusted input the transport must neutralize, because the transport's by-design command execution turns injection into RCE. Surfaced via the 2026 MCP supply-chain advisory + GHSA feeds."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI design / agent applications and their MCP stdio handling as managed, RCE-bearing software."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not enumerate MCP stdio command handling as an authorization-critical command-execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the MCP stdio handler to neutralize the configured command before execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI agent / RAG frameworks are rarely in the managed vulnerability program, and their MCP command surfaces are not treated as command-injection-prone input.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-084",
+        "name": "MCP-STDIO-CONFIG-INPUT-NEUTRALIZATION",
+        "description": "The MCP stdio handler must neutralize the configured command/args before execution and restrict who can configure stdio servers. Run Jaaz least-privilege. Same governance as the WeKnora (CVE-2026-22688) MCP stdio flaw.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-30616",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
