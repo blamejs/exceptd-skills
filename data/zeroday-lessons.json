@@ -6833,6 +6833,56 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2023-48022": {
+    "name": "Anyscale Ray Job Submission API Unauthenticated RCE (ShadowRay)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Ray's Job Submission / Dashboard API runs attacker-supplied Python without authentication (missing authorization). Internet-exposed clusters are exploited at scale (ShadowRay 2.0) for crypto mining and theft of model weights and cloud credentials.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated against an exposed dashboard",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The exposed compute is AI/ML infrastructure: a single unauthenticated Job API yields the model weights, training data, and cloud credentials on the cluster. The lesson is that 'deploy only on a controlled network' is not a security control — it is an assumption that fails at scale (≈230k exposed Ray environments), so the AI compute control plane must authenticate every caller."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is treated as out-of-scope for the Ray Job API on the assumption of a controlled network; the API is internet-exposed and unauthenticated in practice."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes the AI compute cluster is isolated; hundreds of thousands of dashboards are internet-exposed."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework rejects the 'controlled network is the control' assumption for AI compute; the exposed Job API is RCE plus AI-artifact and credential theft."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Organizations accept the vendor's 'controlled network' framing and never test whether the Ray dashboard is internet-reachable or authenticated; the disputed status keeps it out of patch-driven programs.",
+      "theater_pattern": "controlled_network_assumption"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-088",
+        "name": "AI-COMPUTE-CONTROL-PLANE-AUTHENTICATION",
+        "description": "An AI compute framework's job/control API must authenticate every caller; 'deploy only on a trusted network' is an assumption, not a control, and must not substitute for authentication. Enable Ray token authentication (2.52.0+), never expose the dashboard / Job Submission API to untrusted networks, front it with an authenticating proxy, and treat any internet-exposed cluster as compromised (rotate model artifacts and cloud credentials). The distinguishing test: from the public internet, attempt to reach the Ray dashboard (default 8265) and submit a job unauthenticated on a staging cluster; it must be refused.",
+        "evidence": "https://atlas.mitre.org/studies/AML.CS0023",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
