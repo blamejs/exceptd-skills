@@ -382,6 +382,7 @@
       "CVE-2025-62848",
       "CVE-2025-8875",
       "CVE-2025-8876",
+      "CVE-2026-0766",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-20045",
@@ -1668,6 +1669,7 @@
     "evidence_cves": [
       "CVE-2025-32463",
       "CVE-2025-54136",
+      "CVE-2025-64496",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS"
     ],
@@ -2202,6 +2204,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2025-24893",
+      "CVE-2025-64496",
       "CVE-2026-33017"
     ],
     "last_verified": "2026-05-18",
@@ -3176,7 +3179,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-64496"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
