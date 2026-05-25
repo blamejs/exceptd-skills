@@ -43,6 +43,8 @@
       "CVE-2025-60455",
       "CVE-2026-22252",
       "CVE-2026-22688",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-26015",
       "CVE-2026-30616",
       "CVE-2026-30617",
@@ -1760,6 +1762,8 @@
       "CVE-2025-60455",
       "CVE-2026-22252",
       "CVE-2026-22688",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-25592",
       "CVE-2026-26015",
       "CVE-2026-30616",
@@ -2501,6 +2505,8 @@
       "CVE-2026-22769",
       "CVE-2026-23760",
       "CVE-2026-24061",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-2441",
       "CVE-2026-24423",
       "CVE-2026-24858",
@@ -3568,7 +3574,10 @@
     "real_requirement": "Identity controls treat AI agents as distinct principals where they execute tools; MCP plugin invocations log model decision + tool name + arguments + user identity; AI-provider service credentials are short-lived, rotated, and excluded from cleartext storage policy exceptions; passkeys/WebAuthn for human-operator-to-AI authentication where supported.",
     "status": "open",
     "opened_date": "2026-05-13",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-24206",
+      "CVE-2026-24207"
+    ],
     "atlas_refs": [
       "AML.T0010",
       "AML.T0051"
@@ -4787,6 +4796,8 @@
       "CVE-2026-20182",
       "CVE-2026-22252",
       "CVE-2026-22688",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-25592",
       "CVE-2026-26015",
       "CVE-2026-30616",
@@ -5351,6 +5362,8 @@
       "CVE-2025-60455",
       "CVE-2026-22252",
       "CVE-2026-22688",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-25592",
       "CVE-2026-26015",
       "CVE-2026-30616",
@@ -5566,7 +5579,9 @@
     "opened_date": "2026-05-18",
     "evidence_cves": [
       "CVE-2020-10148",
-      "CVE-2025-55241"
+      "CVE-2025-55241",
+      "CVE-2026-24206",
+      "CVE-2026-24207"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5632,7 +5647,9 @@
     "evidence_cves": [
       "CVE-2020-10148",
       "CVE-2024-1709",
-      "CVE-2026-20182"
+      "CVE-2026-20182",
+      "CVE-2026-24206",
+      "CVE-2026-24207"
     ],
     "atlas_refs": [],
     "attack_refs": [
