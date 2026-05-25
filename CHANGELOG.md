@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.88 — 2026-05-25
+
+CVE catalog — Hugging Face Transformers model-loader deserialization RCE. Adds the three ZDI-coordinated deserialization flaws in the foundational ML library's model loaders, all CWE-502 and fixed in 4.48.0: **CVE-2024-11392** (MobileViTV2 configuration files), **CVE-2024-11393** (MaskFormer model files), and **CVE-2024-11394** (Trax model files), each NIST CVSS 8.8 — loading a malicious model/config of the affected type executes attacker code in the user's process. All map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and they reuse the existing untrusted-model-artifact control (NEW-CTRL-091) — the same control that closes the Keras model-deserialization CVEs, because the class is "a model file is executable code", not a single loader. CVE count 355 → 358.
+
 ## 0.13.87 — 2026-05-25
 
 CVE catalog — Gradio file-access (Hugging Face Spaces secret theft). Adds the two Horizon3.ai-disclosed file-read flaws in Gradio, the ML demo/UI framework behind Hugging Face Spaces and countless public ML demos. **CVE-2024-1561** (CWE-22, NIST CVSS 7.5) — the `/component_server` endpoint invokes arbitrary Component methods with attacker-controlled arguments, abused via `move_resource_to_block_cache()` to read host files (and steal HF Spaces secrets); fixed in 4.13.0. **CVE-2023-51449** (CWE-22 + SSRF, NIST CVSS 7.5) — the `/file` route's directory-containment check was flawed, allowing arbitrary file read (and full-read SSRF) on a publicly reachable app; fixed in 4.11.0. Both map MITRE ATLAS AML.T0049 + AML.T0055 (unsecured credentials) and ATT&CK T1190 / T1083 / T1005; their shared zero-day lesson (NEW-CTRL-095) requires the framework's file-serving routes to enforce directory containment, not expose arbitrary method invocation or SSRF, and keep secret-bearing apps off untrusted networks. CVE count 353 → 355.
