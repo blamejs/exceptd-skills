@@ -707,6 +707,7 @@
       "CVE-2020-24363",
       "CVE-2025-32433",
       "CVE-2025-4008",
+      "CVE-2025-49596",
       "CVE-2025-61757",
       "CVE-2026-0300",
       "CVE-2026-24423",
@@ -1036,7 +1037,8 @@
     ],
     "evidence_cves": [
       "CVE-2023-2533",
-      "CVE-2025-34291"
+      "CVE-2025-34291",
+      "CVE-2025-49596"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-23",
@@ -2974,7 +2976,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2025-34291"
+      "CVE-2025-34291",
+      "CVE-2025-49596"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
