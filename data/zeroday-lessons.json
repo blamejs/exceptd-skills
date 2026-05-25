@@ -6533,6 +6533,206 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-23254": {
+    "name": "NVIDIA TensorRT-LLM Python Executor Deserialization RCE (ShadowMQ)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA TensorRT-LLM deserializes untrusted pickle data received over a ZeroMQ / IPC socket without validation (CWE-502), so an attacker who reaches the channel executes code. The same insecure pattern spread across AI inference engines by copy-paste code reuse (Oligo ShadowMQ).",
+      "privileges_required": "local access to the TRT-LLM server (NVD AV:L/PR:L)",
+      "complexity": "low (NVD AC:L); a crafted serialized payload on the deserialization channel",
+      "ai_factor": "The abused surface is the IPC/socket layer of an AI inference engine. The lesson is the supply-chain one: an insecure deserialization primitive was reused across vLLM, NVIDIA TensorRT-LLM, Meta Llama Stack and Modular Max, so one root cause became an ecosystem-wide exposure. Inference-engine sockets must use a safe serializer and be treated as untrusted input."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI inference engines and their socket serialization layers as managed, RCE-bearing software, nor flag a flaw recurring across projects via code reuse."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation control is not applied to data deserialized from an inference engine's internal socket; the serializer is treated as trusted."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires an AI inference engine's socket serialization to use a safe format and validate peers; the unsafe primitive propagated by code reuse."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "AI inference engines are rarely in the managed vulnerability program, and their internal serialization sockets are assumed trusted; a reused insecure primitive is not tracked across the projects that copied it.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (NVIDIA TensorRT-LLM), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5648",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-30165": {
+    "name": "vLLM V0 Engine ZeroMQ Deserialization RCE (ShadowMQ)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "vLLM deserializes untrusted pickle data received over a ZeroMQ / IPC socket without validation (CWE-502), so an attacker who reaches the channel executes code. The same insecure pattern spread across AI inference engines by copy-paste code reuse (Oligo ShadowMQ).",
+      "privileges_required": "adjacent-network reach to the ZeroMQ socket (NVD AV:A/PR:L)",
+      "complexity": "low (NVD AC:L); a crafted serialized payload on the deserialization channel",
+      "ai_factor": "The abused surface is the IPC/socket layer of an AI inference engine. The lesson is the supply-chain one: an insecure deserialization primitive was reused across vLLM, NVIDIA TensorRT-LLM, Meta Llama Stack and Modular Max, so one root cause became an ecosystem-wide exposure. Inference-engine sockets must use a safe serializer and be treated as untrusted input."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI inference engines and their socket serialization layers as managed, RCE-bearing software, nor flag a flaw recurring across projects via code reuse."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation control is not applied to data deserialized from an inference engine's internal socket; the serializer is treated as trusted."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires an AI inference engine's socket serialization to use a safe format and validate peers; the unsafe primitive propagated by code reuse."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI inference engines are rarely in the managed vulnerability program, and their internal serialization sockets are assumed trusted; a reused insecure primitive is not tracked across the projects that copied it.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (vLLM), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://github.com/vllm-project/vllm/security/advisories/GHSA-9pcc-gvx5-r5wm",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-50050": {
+    "name": "Meta Llama Stack Socket Deserialization RCE (ShadowMQ)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Meta Llama Stack deserializes untrusted pickle data received over a ZeroMQ / IPC socket without validation (CWE-502), so an attacker who reaches the channel executes code. The same insecure pattern spread across AI inference engines by copy-paste code reuse (Oligo ShadowMQ).",
+      "privileges_required": "network reach to the inference socket (NVD AV:N/PR:L)",
+      "complexity": "low (NVD AC:L); a crafted serialized payload on the deserialization channel",
+      "ai_factor": "The abused surface is the IPC/socket layer of an AI inference engine. The lesson is the supply-chain one: an insecure deserialization primitive was reused across vLLM, NVIDIA TensorRT-LLM, Meta Llama Stack and Modular Max, so one root cause became an ecosystem-wide exposure. Inference-engine sockets must use a safe serializer and be treated as untrusted input."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI inference engines and their socket serialization layers as managed, RCE-bearing software, nor flag a flaw recurring across projects via code reuse."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation control is not applied to data deserialized from an inference engine's internal socket; the serializer is treated as trusted."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires an AI inference engine's socket serialization to use a safe format and validate peers; the unsafe primitive propagated by code reuse."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "AI inference engines are rarely in the managed vulnerability program, and their internal serialization sockets are assumed trusted; a reused insecure primitive is not tracked across the projects that copied it.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (Meta Llama Stack), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2024-50050",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-60455": {
+    "name": "Modular Max Server KVCache-Agent Deserialization RCE (ShadowMQ)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Modular Max Server deserializes untrusted pickle data received over a ZeroMQ / IPC socket without validation (CWE-502), so an attacker who reaches the channel executes code. The same insecure pattern spread across AI inference engines by copy-paste code reuse (Oligo ShadowMQ).",
+      "privileges_required": "local reach with the experimental KVCache agent enabled (NVD AV:L/PR:N)",
+      "complexity": "low (NVD AC:L); a crafted serialized payload on the deserialization channel",
+      "ai_factor": "The abused surface is the IPC/socket layer of an AI inference engine. The lesson is the supply-chain one: an insecure deserialization primitive was reused across vLLM, NVIDIA TensorRT-LLM, Meta Llama Stack and Modular Max, so one root cause became an ecosystem-wide exposure. Inference-engine sockets must use a safe serializer and be treated as untrusted input."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI inference engines and their socket serialization layers as managed, RCE-bearing software, nor flag a flaw recurring across projects via code reuse."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation control is not applied to data deserialized from an inference engine's internal socket; the serializer is treated as trusted."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires an AI inference engine's socket serialization to use a safe format and validate peers; the unsafe primitive propagated by code reuse."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "AI inference engines are rarely in the managed vulnerability program, and their internal serialization sockets are assumed trusted; a reused insecure primitive is not tracked across the projects that copied it.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (Modular Max Server), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2025-60455",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
