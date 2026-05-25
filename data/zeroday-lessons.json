@@ -5978,6 +5978,51 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-41091": {
+    "name": "Microsoft Defender (Malware Protection Engine) Link-Following LPE to SYSTEM",
+    "lesson_date": "2026-05-24",
+    "attack_vector": {
+      "description": "The Malware Protection Engine, which runs as SYSTEM, improperly resolves links before accessing files (CWE-59). A local low-privileged attacker plants a symlink/junction/hardlink so an engine file operation follows it to a target the attacker could not otherwise write, elevating to SYSTEM.",
+      "privileges_required": "local, low-privileged code execution (no admin)",
+      "complexity": "low (NVD AV:L / AC:L / PR:L)",
+      "ai_factor": "Not AI-discovered. The lesson: the EDR/AV agent is itself a SYSTEM-privileged confused deputy — a link-following flaw in the security tool is a maximally-severe LPE, and engine-build currency must be an audited control, not assumed because 'Defender auto-updates'. Surfaced by the CISA-KEV poller after the v0.13.17 bulk intake."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA inadequate for a KEV-listed LPE; KEV due date (2026-06-03) is the binding clock, and engine-version currency is not a tracked remediation target."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not differentiate routinely-disclosed CVEs from KEV-listed ones, nor require verifying that the security agent's own engine build is patched."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 50,
+      "basis": "Most orgs assume Defender auto-updates close engine flaws; managed environments that pin/delay engine builds remain exposed while passing patch-SLA audits that track OS patches, not AV-engine builds.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-077",
+        "name": "SECURITY-AGENT-ENGINE-CURRENCY-AUDIT",
+        "description": "Treat the EDR/AV agent's own engine/platform build as a first-class, audited remediation target: verify (not assume) that the deployed Microsoft Defender Malware Protection Engine is >= the fixed build (1.1.26040.8 for CVE-2026-41091) on every endpoint, and alarm on hosts whose engine build lags despite an auto-update policy. A SYSTEM-privileged security agent's flaws are LPE-to-SYSTEM by construction.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-41091",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "AU-ISM-1546"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-32432": {
     "name": "Craft CMS Code Injection Vulnerability",
     "lesson_date": "2026-05-18",

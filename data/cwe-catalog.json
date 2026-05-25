@@ -577,7 +577,8 @@
       "CVE-2025-48543",
       "CVE-2025-48572",
       "CVE-2025-62849",
-      "CVE-2026-21533"
+      "CVE-2026-21533",
+      "CVE-2026-41091"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -2148,7 +2149,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2025-48384",
-      "CVE-2025-60710"
+      "CVE-2025-60710",
+      "CVE-2026-41091"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."

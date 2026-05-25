@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.68 — 2026-05-24
+
+CVE catalog currency: adds **CVE-2026-41091**, the actively-exploited Microsoft Defender link-following local privilege escalation (CVSS 7.8; CISA KEV 2026-05-20, due 2026-06-03). The Malware Protection Engine runs as SYSTEM and improperly resolves links before accessing files (CWE-59), so a local low-privileged attacker who plants a symlink/junction can elevate to SYSTEM — the AV/EDR agent itself is the privileged confused deputy. Fixed in engine build 1.1.26040.8 (auto-update, no reboot); managed environments that pin or delay engine updates are the exposed population. The entry carries full RWEP scoring (P2, 55), CWE-59/269 and ATT&CK T1068 mappings, global-first framework-gap declarations, behavioral IoCs, and a matching zero-day lesson whose new control requirement (NEW-CTRL-077) makes the security agent's own engine-build currency an audited target. Postdates the catalog's prior bulk KEV intake (KEV catalog 2026.05.15).
+
 ## 0.13.67 — 2026-05-24
 
 CVE catalog currency: adds **CVE-2025-34291**, the actively-exploited Langflow account-takeover → RCE chain (CVSS 8.8; CISA KEV 2026-05-21; in-the-wild since 2026-01-23). Langflow is a widely deployed open-source AI agent / LLM workflow platform, so this is a direct AI-tooling supply-chain exposure: overly-permissive CORS plus a CSRF-unprotected, SameSite=None token-refresh endpoint lets a malicious page a logged-in user visits steal a token pair and reach the by-design code-execution endpoint. Affects Langflow ≤ 1.6.9; the 1.7 default configuration is protected. The entry carries the full RWEP scoring (P1, score 80), CWE-346/352/942 and ATT&CK T1190/T1539/T1059 mappings, framework-gap declarations, and a matching zero-day lesson; reverse references propagate to the CWE, framework-gap, and ATT&CK catalogs. The CVE postdates the catalog's prior bulk KEV intake (KEV catalog 2026.05.15).
