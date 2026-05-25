@@ -17011,6 +17011,601 @@
       ]
     }
   },
+  "CVE-2008-4250": {
+    "name": "Microsoft Windows Server Service RPC Buffer Overflow (MS08-067)",
+    "rwep": 70,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [
+      "kernel-lpe-triage",
+      "coordinated-vuln-disclosure"
+    ],
+    "chain": {
+      "cwes": [
+        {
+          "id": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-1357",
+          "name": "Reliance on Insufficiently Trustworthy Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-362",
+          "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+          "category": "Concurrency"
+        },
+        {
+          "id": "CWE-416",
+          "name": "Use After Free",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-672",
+          "name": "Operation on a Resource after Expiration or Release",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        }
+      ],
+      "atlas": [],
+      "d3fend": [
+        {
+          "id": "D3-ASLR",
+          "name": "Address Space Layout Randomization",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EAL",
+          "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-PHRA",
+          "name": "Process Hardware Resource Access",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-PSEP",
+          "name": "Process Segment Execution Prevention",
+          "tactic": "Harden"
+        }
+      ],
+      "framework_gaps": [
+        {
+          "id": "CIS-Controls-v8-Control7",
+          "framework": "CIS Controls v8",
+          "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.8",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Management of technical vulnerabilities"
+        },
+        {
+          "id": "NIS2-Art21-patch-management",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Vulnerability handling and disclosure"
+        },
+        {
+          "id": "NIST-800-218-SSDF",
+          "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+          "control_name": "Secure Software Development Framework"
+        },
+        {
+          "id": "NIST-800-53-SC-8",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Transmission Confidentiality and Integrity"
+        },
+        {
+          "id": "NIST-800-53-SI-2",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Flaw Remediation"
+        },
+        {
+          "id": "PCI-DSS-4.0-6.3.3",
+          "framework": "PCI DSS 4.0",
+          "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
+        },
+        {
+          "id": "SOC2-CC9-vendor-management",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        }
+      ],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ]
+    }
+  },
+  "CVE-2009-1537": {
+    "name": "Microsoft DirectShow QuickTime Parsing Memory Corruption",
+    "rwep": 70,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [
+      "kernel-lpe-triage",
+      "coordinated-vuln-disclosure"
+    ],
+    "chain": {
+      "cwes": [
+        {
+          "id": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-1357",
+          "name": "Reliance on Insufficiently Trustworthy Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-362",
+          "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+          "category": "Concurrency"
+        },
+        {
+          "id": "CWE-416",
+          "name": "Use After Free",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-672",
+          "name": "Operation on a Resource after Expiration or Release",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        }
+      ],
+      "atlas": [],
+      "d3fend": [
+        {
+          "id": "D3-ASLR",
+          "name": "Address Space Layout Randomization",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EAL",
+          "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-PHRA",
+          "name": "Process Hardware Resource Access",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-PSEP",
+          "name": "Process Segment Execution Prevention",
+          "tactic": "Harden"
+        }
+      ],
+      "framework_gaps": [
+        {
+          "id": "CIS-Controls-v8-Control7",
+          "framework": "CIS Controls v8",
+          "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.8",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Management of technical vulnerabilities"
+        },
+        {
+          "id": "NIS2-Art21-patch-management",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Vulnerability handling and disclosure"
+        },
+        {
+          "id": "NIST-800-218-SSDF",
+          "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+          "control_name": "Secure Software Development Framework"
+        },
+        {
+          "id": "NIST-800-53-SC-8",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Transmission Confidentiality and Integrity"
+        },
+        {
+          "id": "NIST-800-53-SI-2",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Flaw Remediation"
+        },
+        {
+          "id": "PCI-DSS-4.0-6.3.3",
+          "framework": "PCI DSS 4.0",
+          "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
+        },
+        {
+          "id": "SOC2-CC9-vendor-management",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        }
+      ],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ]
+    }
+  },
+  "CVE-2009-3459": {
+    "name": "Adobe Acrobat and Reader Heap-Based Buffer Overflow",
+    "rwep": 70,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [
+      "kernel-lpe-triage",
+      "coordinated-vuln-disclosure"
+    ],
+    "chain": {
+      "cwes": [
+        {
+          "id": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-1357",
+          "name": "Reliance on Insufficiently Trustworthy Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-362",
+          "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+          "category": "Concurrency"
+        },
+        {
+          "id": "CWE-416",
+          "name": "Use After Free",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-672",
+          "name": "Operation on a Resource after Expiration or Release",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        }
+      ],
+      "atlas": [],
+      "d3fend": [
+        {
+          "id": "D3-ASLR",
+          "name": "Address Space Layout Randomization",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EAL",
+          "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-PHRA",
+          "name": "Process Hardware Resource Access",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-PSEP",
+          "name": "Process Segment Execution Prevention",
+          "tactic": "Harden"
+        }
+      ],
+      "framework_gaps": [
+        {
+          "id": "CIS-Controls-v8-Control7",
+          "framework": "CIS Controls v8",
+          "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.8",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Management of technical vulnerabilities"
+        },
+        {
+          "id": "NIS2-Art21-patch-management",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Vulnerability handling and disclosure"
+        },
+        {
+          "id": "NIST-800-218-SSDF",
+          "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+          "control_name": "Secure Software Development Framework"
+        },
+        {
+          "id": "NIST-800-53-SC-8",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Transmission Confidentiality and Integrity"
+        },
+        {
+          "id": "NIST-800-53-SI-2",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Flaw Remediation"
+        },
+        {
+          "id": "PCI-DSS-4.0-6.3.3",
+          "framework": "PCI DSS 4.0",
+          "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
+        },
+        {
+          "id": "SOC2-CC9-vendor-management",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        }
+      ],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ]
+    }
+  },
+  "CVE-2010-0249": {
+    "name": "Microsoft Internet Explorer Use-After-Free (Operation Aurora)",
+    "rwep": 70,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [
+      "kernel-lpe-triage",
+      "coordinated-vuln-disclosure"
+    ],
+    "chain": {
+      "cwes": [
+        {
+          "id": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-1357",
+          "name": "Reliance on Insufficiently Trustworthy Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-362",
+          "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+          "category": "Concurrency"
+        },
+        {
+          "id": "CWE-416",
+          "name": "Use After Free",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-672",
+          "name": "Operation on a Resource after Expiration or Release",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        }
+      ],
+      "atlas": [],
+      "d3fend": [
+        {
+          "id": "D3-ASLR",
+          "name": "Address Space Layout Randomization",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EAL",
+          "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-PHRA",
+          "name": "Process Hardware Resource Access",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-PSEP",
+          "name": "Process Segment Execution Prevention",
+          "tactic": "Harden"
+        }
+      ],
+      "framework_gaps": [
+        {
+          "id": "CIS-Controls-v8-Control7",
+          "framework": "CIS Controls v8",
+          "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.8",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Management of technical vulnerabilities"
+        },
+        {
+          "id": "NIS2-Art21-patch-management",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Vulnerability handling and disclosure"
+        },
+        {
+          "id": "NIST-800-218-SSDF",
+          "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+          "control_name": "Secure Software Development Framework"
+        },
+        {
+          "id": "NIST-800-53-SC-8",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Transmission Confidentiality and Integrity"
+        },
+        {
+          "id": "NIST-800-53-SI-2",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Flaw Remediation"
+        },
+        {
+          "id": "PCI-DSS-4.0-6.3.3",
+          "framework": "PCI DSS 4.0",
+          "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
+        },
+        {
+          "id": "SOC2-CC9-vendor-management",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        }
+      ],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ]
+    }
+  },
+  "CVE-2010-0806": {
+    "name": "Microsoft Internet Explorer Use-After-Free (iepeers)",
+    "rwep": 70,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": null,
+    "referencing_skills": [
+      "kernel-lpe-triage",
+      "coordinated-vuln-disclosure"
+    ],
+    "chain": {
+      "cwes": [
+        {
+          "id": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-1357",
+          "name": "Reliance on Insufficiently Trustworthy Component",
+          "category": "Supply Chain"
+        },
+        {
+          "id": "CWE-362",
+          "name": "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)",
+          "category": "Concurrency"
+        },
+        {
+          "id": "CWE-416",
+          "name": "Use After Free",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-672",
+          "name": "Operation on a Resource after Expiration or Release",
+          "category": "Memory Safety"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        }
+      ],
+      "atlas": [],
+      "d3fend": [
+        {
+          "id": "D3-ASLR",
+          "name": "Address Space Layout Randomization",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-EAL",
+          "name": "Executable Allowlisting",
+          "tactic": "Harden"
+        },
+        {
+          "id": "D3-PHRA",
+          "name": "Process Hardware Resource Access",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-PSEP",
+          "name": "Process Segment Execution Prevention",
+          "tactic": "Harden"
+        }
+      ],
+      "framework_gaps": [
+        {
+          "id": "CIS-Controls-v8-Control7",
+          "framework": "CIS Controls v8",
+          "control_name": "Continuous Vulnerability Management"
+        },
+        {
+          "id": "ISO-27001-2022-A.8.8",
+          "framework": "ISO/IEC 27001:2022",
+          "control_name": "Management of technical vulnerabilities"
+        },
+        {
+          "id": "NIS2-Art21-patch-management",
+          "framework": "EU NIS2 Directive",
+          "control_name": "Vulnerability handling and disclosure"
+        },
+        {
+          "id": "NIST-800-218-SSDF",
+          "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
+          "control_name": "Secure Software Development Framework"
+        },
+        {
+          "id": "NIST-800-53-SC-8",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Transmission Confidentiality and Integrity"
+        },
+        {
+          "id": "NIST-800-53-SI-2",
+          "framework": "NIST SP 800-53 Rev 5",
+          "control_name": "Flaw Remediation"
+        },
+        {
+          "id": "PCI-DSS-4.0-6.3.3",
+          "framework": "PCI DSS 4.0",
+          "control_name": "All system components are protected from known vulnerabilities by installing applicable security patches/updates"
+        },
+        {
+          "id": "SOC2-CC9-vendor-management",
+          "framework": "SOC 2 (AICPA Trust Services Criteria)",
+          "control_name": "Risk Mitigation — Vendor and Business Partner Risk"
+        }
+      ],
+      "attack_refs": [
+        "T1068",
+        "T1548.001"
+      ],
+      "rfc_refs": [
+        "RFC-4301",
+        "RFC-4303",
+        "RFC-7296"
+      ]
+    }
+  },
   "CVE-2025-32432": {
     "name": "Craft CMS Code Injection Vulnerability",
     "rwep": 77,
@@ -43080,8 +43675,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -45520,8 +46120,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -45914,8 +46519,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -47111,8 +47721,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -47897,8 +48512,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -49943,8 +50563,13 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2007-0671",
       "CVE-2008-0015",
+      "CVE-2008-4250",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",

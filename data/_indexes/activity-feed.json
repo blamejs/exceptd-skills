@@ -149,7 +149,7 @@
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 316
+      "entry_count": 321
     },
     {
       "date": "2026-05-18",

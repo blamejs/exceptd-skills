@@ -1080,6 +1080,10 @@
     "name": "Exploitation for Client Execution",
     "version": "v19",
     "cve_refs": [
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2014-3931",
       "CVE-2018-14634",
       "CVE-2020-9715",
@@ -4249,7 +4253,10 @@
       "ESXi"
     ],
     "stix_id": "attack-pattern--9db0cf3a-a3c9-4012-8268-123b9db6fd82",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2008-4250"
+    ]
   },
   "T1211": {
     "id": "T1211",
