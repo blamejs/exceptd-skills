@@ -101,7 +101,9 @@
     "real_requirement": "Prompt-level access control: each model invocation is constrained to an authorized action scope. Actions outside that scope require explicit user re-authorization. System prompt establishes authority hierarchy.",
     "status": "open",
     "opened_date": "2026-01-01",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-25592"
+    ],
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054"
@@ -1514,6 +1516,7 @@
       "CVE-2026-24423",
       "CVE-2026-24858",
       "CVE-2026-25108",
+      "CVE-2026-25592",
       "CVE-2026-3055",
       "CVE-2026-31431",
       "CVE-2026-31635",
@@ -1720,6 +1723,7 @@
       "CVE-2025-34291",
       "CVE-2025-38352",
       "CVE-2025-43300",
+      "CVE-2026-25592",
       "CVE-2026-31431",
       "CVE-2026-34926",
       "CVE-2026-39884",
@@ -2444,6 +2448,7 @@
       "CVE-2026-24423",
       "CVE-2026-24858",
       "CVE-2026-25108",
+      "CVE-2026-25592",
       "CVE-2026-3055",
       "CVE-2026-31431",
       "CVE-2026-31635",
@@ -4710,6 +4715,7 @@
       "CVE-2025-34291",
       "CVE-2026-0300",
       "CVE-2026-20182",
+      "CVE-2026-25592",
       "CVE-2026-34926",
       "CVE-2026-41091",
       "CVE-2026-42897",
@@ -5204,6 +5210,7 @@
     "evidence_cves": [
       "CVE-2024-21762",
       "CVE-2025-34291",
+      "CVE-2026-25592",
       "CVE-2026-34926",
       "CVE-2026-41091",
       "CVE-2026-45498",
@@ -5242,6 +5249,7 @@
     "evidence_cves": [
       "CVE-2024-21762",
       "CVE-2025-34291",
+      "CVE-2026-25592",
       "CVE-2026-34926",
       "CVE-2026-41091",
       "CVE-2026-45498",
