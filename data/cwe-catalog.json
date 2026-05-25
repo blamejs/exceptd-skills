@@ -146,6 +146,7 @@
       "CVE-2025-53773",
       "CVE-2025-55319",
       "CVE-2025-59689",
+      "CVE-2026-22688",
       "CVE-2026-22719",
       "MAL-2026-3083"
     ],
@@ -195,6 +196,8 @@
       "CVE-2025-66644",
       "CVE-2025-9377",
       "CVE-2026-1731",
+      "CVE-2026-22252",
+      "CVE-2026-22688",
       "CVE-2026-25108",
       "CVE-2026-30623",
       "CVE-2026-39987"
@@ -2920,7 +2923,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-22252"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
