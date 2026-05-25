@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.67 — 2026-05-24
+
+CVE catalog currency: adds **CVE-2025-34291**, the actively-exploited Langflow account-takeover → RCE chain (CVSS 8.8; CISA KEV 2026-05-21; in-the-wild since 2026-01-23). Langflow is a widely deployed open-source AI agent / LLM workflow platform, so this is a direct AI-tooling supply-chain exposure: overly-permissive CORS plus a CSRF-unprotected, SameSite=None token-refresh endpoint lets a malicious page a logged-in user visits steal a token pair and reach the by-design code-execution endpoint. Affects Langflow ≤ 1.6.9; the 1.7 default configuration is protected. The entry carries the full RWEP scoring (P1, score 80), CWE-346/352/942 and ATT&CK T1190/T1539/T1059 mappings, framework-gap declarations, and a matching zero-day lesson; reverse references propagate to the CWE, framework-gap, and ATT&CK catalogs. The CVE postdates the catalog's prior bulk KEV intake (KEV catalog 2026.05.15).
+
 ## 0.13.66 — 2026-05-24
 
 RFC reference currency. The `draft-ietf-tls-hybrid-design` entry no longer claims status-synchronization with `draft-ietf-tls-ecdhe-mlkem` — the two have diverged. Hybrid-design has been IESG-approved (draft-16) for publication as an Informational RFC and sits in the RFC Editor queue (no number assigned yet); ecdhe-mlkem remains an active Standards-Track draft. Both are referenced by pqc-first as the post-quantum TLS 1.3 migration path.
