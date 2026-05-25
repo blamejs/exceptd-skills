@@ -7383,6 +7383,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-37032": {
+    "name": "Ollama Model Registry Path Traversal Arbitrary File Write RCE (Probllama)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Ollama CWE-22 path traversal via unvalidated model-blob digest: an attacker reaching the Ollama HTTP API (default port 11434) manipulates a path/digest the runtime then uses against the filesystem, writing attacker content to an arbitrary path and achieving RCE.",
+      "privileges_required": "low / network (NVD PR:L) — reachable via the Ollama API + a rogue registry",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the model-pull / model API of the most widely used local LLM runtime. The lesson: the model-runtime API must validate digests and path parameters and must never be network-exposed to untrusted clients; pulling from untrusted registries is a supply-chain trust decision."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the local-LLM runtime as managed, network-exposed software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to model-blob digests / API path parameters in the runtime."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the model-runtime API's path/digest handling as untrusted input reaching the filesystem."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Local-LLM runtimes are run on trusted-network assumptions and rarely tracked; model pulls from arbitrary registries are not gated.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "The model-runtime API must validate path-bearing inputs (model-blob digests must be exactly 64-hex SHA256; API route parameters must reject traversal sequences) before touching the filesystem, must not be exposed to untrusted networks (Ollama default port 11434), and must only pull models from trusted registries. Upgrade Ollama to 0.1.34 or later. The distinguishing test: point a staging Ollama at a rogue registry whose manifest carries a traversal digest, and send api/push requests with ../ sequences, and confirm both are rejected without filesystem access.",
+        "evidence": "https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-39722": {
+    "name": "Ollama api/push Path Traversal File-Existence Disclosure",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Ollama CWE-22 path traversal on the api/push route: an attacker reaching the Ollama HTTP API (default port 11434) manipulates a path/digest the runtime then uses against the filesystem, disclosing which files exist on the host.",
+      "privileges_required": "none (NVD PR:N) — unauthenticated",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the model-pull / model API of the most widely used local LLM runtime. The lesson: the model-runtime API must validate digests and path parameters and must never be network-exposed to untrusted clients; pulling from untrusted registries is a supply-chain trust decision."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the local-LLM runtime as managed, network-exposed software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to model-blob digests / API path parameters in the runtime."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the model-runtime API's path/digest handling as untrusted input reaching the filesystem."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Local-LLM runtimes are run on trusted-network assumptions and rarely tracked; model pulls from arbitrary registries are not gated.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "The model-runtime API must validate path-bearing inputs (model-blob digests must be exactly 64-hex SHA256; API route parameters must reject traversal sequences) before touching the filesystem, must not be exposed to untrusted networks (Ollama default port 11434), and must only pull models from trusted registries. Upgrade Ollama to 0.1.46 or later. The distinguishing test: point a staging Ollama at a rogue registry whose manifest carries a traversal digest, and send api/push requests with ../ sequences, and confirm both are rejected without filesystem access.",
+        "evidence": "https://www.oligo.security/blog/more-models-more-probllms",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2022-1471": {
     "name": "SnakeYAML Constructor Unsafe Deserialization RCE (ShellTorch chain)",
     "lesson_date": "2026-05-25",
