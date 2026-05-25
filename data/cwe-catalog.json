@@ -1192,7 +1192,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2012-1854"
+      "CVE-2012-1854",
+      "CVE-2025-23266"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -2074,7 +2075,8 @@
       "CWE-826"
     ],
     "evidence_cves": [
-      "CVE-2020-17103-REREGRESSION-2026"
+      "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2024-0132"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 to back the MiniPlasma cldflt.sys re-regression entry. CWE-367 is the standard MITRE classification for TOCTOU races; the cldflt.sys HsmOsBlockPlaceholderAccess primitive validates a placeholder file's accessibility once, then is racing against a junction / symlink swap before the kernel acts on the cached decision."
