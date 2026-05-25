@@ -6621,7 +6621,7 @@
       {
         "id": "NEW-CTRL-086",
         "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
-        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (vLLM), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. No code patch shipped for vLLM CVE-2025-30165; the mitigation is to keep the legacy V0 engine disabled (its default since 0.8.0) and isolate the ZeroMQ socket on a trusted network segment. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
         "evidence": "https://github.com/vllm-project/vllm/security/advisories/GHSA-9pcc-gvx5-r5wm",
         "gap_closes": [
           "NIST-800-53-SI-2",
