@@ -7183,6 +7183,156 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-42479": {
+    "name": "llama.cpp RPC Backend SET_TENSOR Out-of-Bounds Write RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "llama.cpp's RPC backend deserializes attacker-controlled tensor pointers without bounds validation (CWE-787/CWE-123 write-what-where via SET_TENSOR), so an unauthenticated TCP client to the RPC server (default port 50052) reads/writes arbitrary memory and achieves code execution.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated TCP access to the RPC server",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the distributed-inference RPC backend of the most widely used local LLM runtime. The lesson: the inference RPC backend is an unauthenticated execution boundary that must validate all deserialized tensor bounds on every command path and never be network-exposed. The CVE-2024-42478/42479 -> CVE-2026-34159 sequence shows per-command patching (GET/SET) left GRAPH_COMPUTE exploitable — the fix belongs in deserialize_tensor itself."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the local-LLM runtime's RPC backend as RCE-bearing, nor that the first fix left the GRAPH_COMPUTE path unpatched."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag the unauthenticated RPC server (port 50052) as a network-exposed execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the inference RPC backend to validate deserialized tensor bounds on every command path."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Local-LLM RPC servers are run on trusted-network assumptions and rarely tracked; per-command patches are assumed complete despite the GRAPH_COMPUTE bypass.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-092",
+        "name": "AI-INFERENCE-RPC-BACKEND-HARDENING",
+        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b3561 or later. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
+        "evidence": "https://github.com/ggerganov/llama.cpp/security/advisories/GHSA-wcr5-566p-9cwj",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-42478": {
+    "name": "llama.cpp RPC Backend GET_TENSOR Out-of-Bounds Read",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "llama.cpp's RPC backend deserializes attacker-controlled tensor pointers without bounds validation (CWE-125 arbitrary read via GET_TENSOR), so an unauthenticated TCP client to the RPC server (default port 50052) reads/writes arbitrary memory and achieves code execution.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated TCP access to the RPC server",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the distributed-inference RPC backend of the most widely used local LLM runtime. The lesson: the inference RPC backend is an unauthenticated execution boundary that must validate all deserialized tensor bounds on every command path and never be network-exposed. The CVE-2024-42478/42479 -> CVE-2026-34159 sequence shows per-command patching (GET/SET) left GRAPH_COMPUTE exploitable — the fix belongs in deserialize_tensor itself."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the local-LLM runtime's RPC backend as RCE-bearing, nor that the first fix left the GRAPH_COMPUTE path unpatched."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag the unauthenticated RPC server (port 50052) as a network-exposed execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the inference RPC backend to validate deserialized tensor bounds on every command path."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Local-LLM RPC servers are run on trusted-network assumptions and rarely tracked; per-command patches are assumed complete despite the GRAPH_COMPUTE bypass.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-092",
+        "name": "AI-INFERENCE-RPC-BACKEND-HARDENING",
+        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b3561 or later. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
+        "evidence": "https://github.com/ggerganov/llama.cpp/security/advisories/GHSA-5vm9-p64x-gqw9",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-34159": {
+    "name": "llama.cpp RPC Backend GRAPH_COMPUTE deserialize_tensor Bounds Bypass RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "llama.cpp's RPC backend deserializes attacker-controlled tensor pointers without bounds validation (CWE-119 bounds bypass via GRAPH_COMPUTE (buffer=0)), so an unauthenticated TCP client to the RPC server (default port 50052) reads/writes arbitrary memory and achieves code execution.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated TCP access to the RPC server",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the distributed-inference RPC backend of the most widely used local LLM runtime. The lesson: the inference RPC backend is an unauthenticated execution boundary that must validate all deserialized tensor bounds on every command path and never be network-exposed. The CVE-2024-42478/42479 -> CVE-2026-34159 sequence shows per-command patching (GET/SET) left GRAPH_COMPUTE exploitable — the fix belongs in deserialize_tensor itself."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the local-LLM runtime's RPC backend as RCE-bearing, nor that the first fix left the GRAPH_COMPUTE path unpatched."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag the unauthenticated RPC server (port 50052) as a network-exposed execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the inference RPC backend to validate deserialized tensor bounds on every command path."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Local-LLM RPC servers are run on trusted-network assumptions and rarely tracked; per-command patches are assumed complete despite the GRAPH_COMPUTE bypass.",
+      "theater_pattern": "incomplete_fix_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-092",
+        "name": "AI-INFERENCE-RPC-BACKEND-HARDENING",
+        "description": "The inference RPC backend (llama.cpp / ggml) must validate all deserialized tensor bounds inside deserialize_tensor itself — every command path (GET_TENSOR, SET_TENSOR, GRAPH_COMPUTE), not per-handler — and must never be exposed to untrusted networks (the RPC server on port 50052 has no authentication; bind to localhost or a trusted segment). Upgrade llama.cpp to b8492 or later. The distinguishing test: send a crafted rpc_tensor with buffer=0 / out-of-range data pointer via GRAPH_COMPUTE to a staging RPC server and confirm it is rejected, not dereferenced.",
+        "evidence": "https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-j8rj-fmpv-wcxw",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
