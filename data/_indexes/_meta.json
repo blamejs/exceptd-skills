@@ -1,13 +1,13 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-25T14:23:11.654Z",
+  "generated_at": "2026-05-25T15:01:14.858Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "41fa2fbe736228d38efe569214f54641dc04f3412cb641f37142409b98528edf",
+    "manifest.json": "3e4a093df008208d7faa293f4aba979893e15e51b33cf74121d4e403540e3050",
     "data/atlas-ttps.json": "07e28f5fe196d8e16082968ce36e4d33b720a024a9c00afd10ddc076a8ae8935",
     "data/attack-techniques.json": "192f539589fdae09e1271f44e2384205cf7a17a835bc08400d757896282362ee",
-    "data/cve-catalog.json": "ccec1ebcafae51d12c0f6d3fc62567fd91c002de4d67154429efd7450dd27cc3",
+    "data/cve-catalog.json": "787b65c8bd9ccbd910049c939c46f9037e2ea6fd4592e2617380e58367576c39",
     "data/cwe-catalog.json": "0a8250fa479efcabc88d72c774f7dca7f1b680087161513d489beaf535a4c531",
     "data/d3fend-catalog.json": "9a54bccb9f24f84b32024216cc3f53819a053721ac8ab43c326859e68fc0ffaf",
     "data/dlp-controls.json": "d2406c482dddd30e49203879999dc4b3a7fd4d0494d6a61d86b91ee76415df19",
@@ -72,7 +72,7 @@
       "dlp_refs": 0
     },
     "trigger_table_entries": 538,
-    "chains_cve_entries": 315,
+    "chains_cve_entries": 320,
     "chains_cwe_entries": 171,
     "jurisdictions_indexed": 29,
     "handoff_dag_nodes": 42,

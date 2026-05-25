@@ -18059,6 +18059,86 @@
       ]
     }
   },
+  "CVE-2026-40933": {
+    "name": "FlowiseAI Flowise MCP Custom Config Command Injection",
+    "rwep": 30,
+    "cvss": 9.9,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-30624": {
+    "name": "Agent Zero MCP Server Config Command Injection",
+    "rwep": 40,
+    "cvss": 8.6,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-30616": {
+    "name": "Jaaz MCP stdio Command Execution RCE",
+    "rwep": 35,
+    "cvss": 7.3,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-30617": {
+    "name": "Langchain-Chatchat MCP Management Interface stdio RCE",
+    "rwep": 42,
+    "cvss": 8.6,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-30625": {
+    "name": "Upsonic MCP Task Allowed-Command Argument Injection RCE",
+    "rwep": 38,
+    "cvss": 9.8,
+    "cisa_kev": false,
+    "epss_score": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CVE-2026-41091": {
     "name": "Microsoft Defender (Malware Protection Engine) Link-Following LPE to SYSTEM",
     "rwep": 45,
