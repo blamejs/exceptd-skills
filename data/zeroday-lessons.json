@@ -7071,7 +7071,7 @@
       {
         "id": "NEW-CTRL-090",
         "name": "AI-GPU-CONTAINER-RUNTIME-ISOLATION",
-        "description": "Treat the GPU container runtime (NVIDIA Container Toolkit / GPU Operator) as a patch-prioritized isolation boundary: keep it current (apply the fix from NVIDIA advisory a_id/5659), do not run untrusted or mixed-tenant container images on the same GPU host, restrict who can schedule GPU workloads, and run workloads least-privilege. The distinguishing test: on a staging GPU node, run a crafted image that manipulates init hooks / mounts and confirm it cannot read host paths or load host-side code outside its container.",
+        "description": "Treat the GPU container runtime (NVIDIA Container Toolkit / GPU Operator) as a patch-prioritized isolation boundary: keep it current (Container Toolkit 1.17.8+ / GPU Operator 25.3.1+), do not run untrusted or mixed-tenant container images on the same GPU host, restrict who can schedule GPU workloads, and run workloads least-privilege. The distinguishing test: on a staging GPU node, run a crafted image that manipulates init hooks / mounts and confirm it cannot read host paths or load host-side code outside its container.",
         "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5659",
         "gap_closes": [
           "NIST-800-53-SI-2",
