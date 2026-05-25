@@ -6733,6 +6733,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-24207": {
+    "name": "NVIDIA Triton Inference Server Authentication Bypass (Alternate Path) RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Triton Inference Server exposes a control-plane path that bypasses its authentication layer (CWE-288), so an unauthenticated network attacker reaches privileged model-control functionality without credentials.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated over the network",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the authentication layer of a widely deployed AI inference server. The lesson: authentication on an AI model control plane must be proven complete across every request path — an alternate path that skips the auth layer exposes model load/unload and repository management to anyone on the network. NVD scored 9.8 (NIST)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is asserted for the application but not verified to cover every control-plane path of the inference server; an alternate path bypasses it."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation cadence does not track AI inference servers as network-exposed control planes requiring rapid patching."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the inference server's authentication to be proven complete across all request paths."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "Organizations assert authentication coverage for the inference API but do not test every alternate path into the model control plane; inference servers are rarely in the managed vulnerability program.",
+      "theater_pattern": "authentication_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-087",
+        "name": "AI-INFERENCE-SERVER-AUTH-ENFORCEMENT",
+        "description": "Authentication on an AI inference server's control plane (model load/unload, repository and config management) must be enforced on every request path and proven complete, not assumed from the primary API. Upgrade NVIDIA Triton to r26.03 or later, do not expose Triton HTTP/gRPC endpoints to untrusted networks, and front it with an authenticating reverse proxy. The distinguishing test: from an unauthenticated client on a staging instance, attempt to reach each control-plane endpoint via alternate paths and confirm all are rejected.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5828",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-24206": {
+    "name": "NVIDIA Triton Inference Server Authentication Bypass (Alternate Channel)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Triton Inference Server exposes a control-plane path that bypasses its authentication layer (CWE-288), so an unauthenticated network attacker reaches privileged model-control functionality without credentials.",
+      "privileges_required": "none (NVD AV:N / PR:N) — unauthenticated over the network",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the authentication layer of a widely deployed AI inference server. The lesson: authentication on an AI model control plane must be proven complete across every request path — an alternate path that skips the auth layer exposes model load/unload and repository management to anyone on the network. NVD scored 9.8 NIST / 7.3 NVIDIA."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is asserted for the application but not verified to cover every control-plane path of the inference server; an alternate path bypasses it."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation cadence does not track AI inference servers as network-exposed control planes requiring rapid patching."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires the inference server's authentication to be proven complete across all request paths."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "Organizations assert authentication coverage for the inference API but do not test every alternate path into the model control plane; inference servers are rarely in the managed vulnerability program.",
+      "theater_pattern": "authentication_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-087",
+        "name": "AI-INFERENCE-SERVER-AUTH-ENFORCEMENT",
+        "description": "Authentication on an AI inference server's control plane (model load/unload, repository and config management) must be enforced on every request path and proven complete, not assumed from the primary API. Upgrade NVIDIA Triton to r26.03 or later, do not expose Triton HTTP/gRPC endpoints to untrusted networks, and front it with an authenticating reverse proxy. The distinguishing test: from an unauthenticated client on a staging instance, attempt to reach each control-plane endpoint via alternate paths and confirm all are rejected.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5828",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
