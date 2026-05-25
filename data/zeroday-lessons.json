@@ -6023,6 +6023,51 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-34926": {
+    "name": "Trend Micro Apex One Directory Traversal → Malicious Agent Code Deployment",
+    "lesson_date": "2026-05-24",
+    "attack_vector": {
+      "description": "A relative path traversal (CWE-23) on the Apex One on-premise management server lets an attacker with server admin access modify a key table and inject malicious code that the server deploys to all managed agents — fleet-wide code execution through the security tool's own trusted deployment channel.",
+      "privileges_required": "server access + already-obtained administrative credentials (PR:H)",
+      "complexity": "high (NVD AC:H) — post-admin-compromise propagation primitive, not initial access",
+      "ai_factor": "Not AI-discovered. The lesson: an endpoint-management server's agent-deployment channel is a high-blast-radius supply-chain control plane — its integrity must be monitored, because a foothold on the server becomes the entire agent fleet. Surfaced by the CISA-KEV poller after the v0.13.17 bulk intake."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day SLA inadequate for a KEV-listed flaw; KEV due date (2026-06-04) is the binding clock."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not differentiate routinely-disclosed CVEs from KEV-listed ones, nor treat the agent-deployment channel as a control plane needing integrity monitoring."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 45,
+      "basis": "Orgs audit endpoint protection for coverage and patch SLA but rarely monitor the integrity of the management server's agent-deployment channel; a post-admin foothold there is treated as 'already game over' rather than as a fleet-propagation risk to contain.",
+      "theater_pattern": "detection_gap"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-078",
+        "name": "ENDPOINT-MGMT-DEPLOYMENT-CHANNEL-INTEGRITY",
+        "description": "Treat the EDR/endpoint-management server's agent-deployment channel (package/key-table → agent push) as a privileged supply-chain control plane: integrity-monitor the deployment artifacts and key tables, alert on agent pushes not tied to a sanctioned admin action, and patch the management server to the fixed build (Apex One on-prem 14.0.0.17079 / SaaS 14.0.20731) as a KEV-priority item. A server foothold must not silently become fleet-wide agent code execution.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-34926",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-32432": {
     "name": "Craft CMS Code Injection Vulnerability",
     "lesson_date": "2026-05-18",
