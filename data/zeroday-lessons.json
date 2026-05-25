@@ -7433,6 +7433,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-1561": {
+    "name": "Gradio /component_server Local File Read (Hugging Face Spaces Secret Theft)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Gradio CWE-22 file read via the /component_server method-invocation endpoint: an unauthenticated request to a publicly reachable Gradio app reads arbitrary host files, including the secrets/tokens mounted into Hugging Face Spaces.",
+      "privileges_required": "none (NVD PR:N) — unauthenticated against a public Gradio app",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the ML demo/UI framework behind Hugging Face Spaces and countless public ML demos. The lesson: an ML app framework's file-serving and component routes are access-control surfaces — they must enforce directory containment and not expose arbitrary method invocation, and apps holding secrets must not be reachable by untrusted clients. Horizon3.ai demonstrated mass secret theft from HF Spaces."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the ML demo/UI framework (Gradio) as managed, network-exposed software."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag publicly reachable Gradio apps as a file-read / SSRF surface to host secrets."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the ML demo framework's file/component routes as an untrusted-input access-control surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Public ML demos (HF Spaces) are deployed with secrets readable by the app process and the framework treated as trusted; file-serving routes are not audited for containment.",
+      "theater_pattern": "ai_demo_framework_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-095",
+        "name": "AI-WEBUI-FILE-ROUTE-CONTAINMENT",
+        "description": "An ML demo/UI framework's file-serving routes must enforce strict directory containment (canonicalize and verify the resolved path stays under the allowed temp directory), must not expose arbitrary component-method invocation, and must not perform server-side fetches of attacker-supplied URLs (SSRF). Upgrade Gradio to 4.13.0 or later, keep secrets out of the app process's readable filesystem, and do not expose secret-bearing Gradio apps to untrusted networks (HF Spaces). The distinguishing test: from an unauthenticated client, request a path-traversal file and an external URL against a staging app and confirm both are refused.",
+        "evidence": "https://github.com/advisories/GHSA-g9cj-cfpp-4g2x",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2023-51449": {
+    "name": "Gradio /file Route Path Traversal and SSRF Arbitrary File Read",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Gradio CWE-22 path traversal + SSRF on the /file route: an unauthenticated request to a publicly reachable Gradio app reads arbitrary host files, including the secrets/tokens mounted into Hugging Face Spaces.",
+      "privileges_required": "none (NVD PR:N) — unauthenticated against a public Gradio app",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the ML demo/UI framework behind Hugging Face Spaces and countless public ML demos. The lesson: an ML app framework's file-serving and component routes are access-control surfaces — they must enforce directory containment and not expose arbitrary method invocation, and apps holding secrets must not be reachable by untrusted clients. Horizon3.ai demonstrated mass secret theft from HF Spaces."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the ML demo/UI framework (Gradio) as managed, network-exposed software."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag publicly reachable Gradio apps as a file-read / SSRF surface to host secrets."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the ML demo framework's file/component routes as an untrusted-input access-control surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Public ML demos (HF Spaces) are deployed with secrets readable by the app process and the framework treated as trusted; file-serving routes are not audited for containment.",
+      "theater_pattern": "ai_demo_framework_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-095",
+        "name": "AI-WEBUI-FILE-ROUTE-CONTAINMENT",
+        "description": "An ML demo/UI framework's file-serving routes must enforce strict directory containment (canonicalize and verify the resolved path stays under the allowed temp directory), must not expose arbitrary component-method invocation, and must not perform server-side fetches of attacker-supplied URLs (SSRF). Upgrade Gradio to 4.11.0 or later, keep secrets out of the app process's readable filesystem, and do not expose secret-bearing Gradio apps to untrusted networks (HF Spaces). The distinguishing test: from an unauthenticated client, request a path-traversal file and an external URL against a staging app and confirm both are refused.",
+        "evidence": "https://github.com/advisories/GHSA-6qm2-wpxq-7qh2",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-39722": {
     "name": "Ollama api/push Path Traversal File-Existence Disclosure",
     "lesson_date": "2026-05-25",
