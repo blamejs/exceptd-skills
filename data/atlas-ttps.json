@@ -143,6 +143,7 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-43654",
       "CVE-2025-1550",
       "CVE-2025-8747",
       "CVE-2026-22778",
@@ -1701,6 +1702,7 @@
     "stix_id": "attack-pattern--ebeed0c7-c5de-5049-8f27-efcae5f88b00",
     "is_subtechnique": false,
     "cve_refs": [
+      "CVE-2023-43654",
       "CVE-2023-48022",
       "CVE-2024-42478",
       "CVE-2024-42479",
@@ -2793,6 +2795,7 @@
     "stix_id": "attack-pattern--a5cc5062-f672-510a-8a4f-a8d1aa7f5024",
     "is_subtechnique": true,
     "cve_refs": [
+      "CVE-2022-1471",
       "CVE-2025-1550",
       "CVE-2025-8747"
     ]

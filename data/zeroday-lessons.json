@@ -7333,6 +7333,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2023-43654": {
+    "name": "PyTorch TorchServe Management API SSRF to Remote Code Execution (ShellTorch)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "PyTorch TorchServe Management API SSRF to Remote Code Execution (ShellTorch): CWE-918 SSRF in the management API. In the ShellTorch chain, an unauthenticated, network-exposed TorchServe management API accepts a remote model configuration and parses it with an unsafe YAML deserializer, yielding full remote code execution on the model server.",
+      "privileges_required": "none (NVD PR:N) — default-configured TorchServe is open and unauthenticated",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is an AI model server (TorchServe, maintained by Amazon and Meta) and the libraries it bundles. The lesson: a model server's management API is a privileged control plane that must authenticate, bind to loopback, and never deserialize untrusted config unsafely — Oligo found thousands of exposed instances at major organizations, so the default-open posture is the real-world exposure."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the model server's management API; the default deployment is open and network-exposed."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI model servers and their bundled deserialization libraries as managed, RCE-bearing software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the model server's management API + config deserialization as an untrusted, RCE-bearing surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Model servers are deployed with default-open management planes on trusted-network assumptions; bundled YAML/deserialization libraries are not tracked.",
+      "theater_pattern": "default_open_management_plane"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-093",
+        "name": "AI-MODEL-SERVER-MANAGEMENT-API-HARDENING",
+        "description": "An AI model server's management API must authenticate every caller, bind to loopback (not all interfaces) by default, restrict model sources to an allow-list (no fetching configs/archives from arbitrary URLs), and parse configuration with safe deserializers (SafeConstructor / no arbitrary type instantiation). Upgrade TorchServe 0.8.2+ and bind the management API to loopback with authentication. The distinguishing test: from an unauthenticated remote client, attempt to register a model from an attacker URL against a staging model server and confirm it is refused and no remote content is fetched or deserialized.",
+        "evidence": "https://github.com/pytorch/serve/security/advisories/GHSA-8fxr-qfr9-p34w",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2022-1471": {
+    "name": "SnakeYAML Constructor Unsafe Deserialization RCE (ShellTorch chain)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "SnakeYAML Constructor Unsafe Deserialization RCE (ShellTorch chain): CWE-502 unsafe YAML deserialization. In the ShellTorch chain, an unauthenticated, network-exposed TorchServe management API accepts a remote model configuration and parses it with an unsafe YAML deserializer, yielding full remote code execution on the model server.",
+      "privileges_required": "none for services parsing untrusted YAML (NVD PR:N; CNA Google PR:L)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is an AI model server (TorchServe, maintained by Amazon and Meta) and the libraries it bundles. The lesson: a model server's management API is a privileged control plane that must authenticate, bind to loopback, and never deserialize untrusted config unsafely — Oligo found thousands of exposed instances at major organizations, so the default-open posture is the real-world exposure."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the model server's management API; the default deployment is open and network-exposed."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track AI model servers and their bundled deserialization libraries as managed, RCE-bearing software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the model server's management API + config deserialization as an untrusted, RCE-bearing surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Model servers are deployed with default-open management planes on trusted-network assumptions; bundled YAML/deserialization libraries are not tracked.",
+      "theater_pattern": "default_open_management_plane"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-093",
+        "name": "AI-MODEL-SERVER-MANAGEMENT-API-HARDENING",
+        "description": "An AI model server's management API must authenticate every caller, bind to loopback (not all interfaces) by default, restrict model sources to an allow-list (no fetching configs/archives from arbitrary URLs), and parse configuration with safe deserializers (SafeConstructor / no arbitrary type instantiation). Upgrade SnakeYAML 2.0+ (SafeConstructor default) or construct parsers with SafeConstructor. The distinguishing test: from an unauthenticated remote client, attempt to register a model from an attacker URL against a staging model server and confirm it is refused and no remote content is fetched or deserialized.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2022-1471",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-34291": {
     "name": "Langflow Account Takeover + RCE (CORS / refresh-token chain)",
     "lesson_date": "2026-05-24",
