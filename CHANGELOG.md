@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.98 — 2026-05-25
+
+CVE catalog — Anyscale Ray dashboard. Adds the Ray dashboard CVE pair (fixed in Ray 2.8.1), complementing the disputed ShadowRay Job-API entry. **CVE-2023-6019** (CWE-78, NIST CVSS 9.8) — the dashboard's `cpu_profile` URL parameter is injected into a system command, giving unauthenticated remote code execution on the dashboard host. **CVE-2023-6021** (CWE-22, NIST CVSS 7.5) — the dashboard log API allows path traversal to read any file on the host without authentication. Both map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 / T1083), and reuse the AI-compute control-plane authentication control (NEW-CTRL-088) shared with ShadowRay — the AI compute dashboard/control plane must authenticate every caller and never be network-exposed. Unlike the disputed ShadowRay Job-API issue, these were patched in 2.8.1. CVE count 374 → 376.
+
 ## 0.13.97 — 2026-05-25
 
 CVE catalog — Milvus vector-database authentication bypass. Adds the vector-DB / RAG-persistence surface with two Milvus auth-bypass flaws. **CVE-2025-64513** (CWE-287, CNA GitHub CVSS v4.0 9.3; NVD unscored) — the Milvus Proxy trusts forged HTTP headers, letting an unauthenticated attacker bypass all authentication; fixed in 2.4.24 / 2.5.21 / 2.6.5. **CVE-2026-26190** (CWE-306, NIST CVSS 9.8) — TCP port 9091 is exposed with weak default tokens and unauthenticated API access, enabling arbitrary expression evaluation and full unauthenticated control; fixed in 2.5.27 / 2.6.10. Both map ATLAS AML.T0049 / AML.T0035 and ATT&CK T1190 (+ T1078 / T1059), with a zero-day lesson (NEW-CTRL-101) treating the vector database as a sensitive RAG data store whose every API/management port (including metrics ports) must authenticate, with default tokens replaced and no untrusted-network exposure. CVE count 372 → 374.
