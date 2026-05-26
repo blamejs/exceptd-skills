@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.89 — 2026-05-25
+
+CVE catalog — NVIDIA Triton DALI backend memory safety. Completes the May 2026 Triton bulletin coverage with the three DALI (data-augmentation) backend flaws disclosed by researcher Navtej Kathuria, all fixed in r26.03: **CVE-2026-24213** (CWE-125 out-of-bounds read, NIST CVSS 9.8), **CVE-2026-24214** (CWE-190 integer overflow, NIST CVSS 9.8), and **CVE-2026-24215** (CWE-400 uncontrolled resource consumption / DoS, NIST CVSS 7.5). All process attacker-supplied inference input on a network-reachable backend. These are deliberate CVSS-versus-RWEP cases: NVD rates two of them CRITICAL, but with no CISA KEV listing, no confirmed in-the-wild exploitation, no public proof-of-concept, and a patch available, the Real-World Exploit Priority is P4 — the catalog scores priority on exploitation reality, not CVSS alone. Their shared zero-day lesson (NEW-CTRL-096) requires inference backends to bound and validate untrusted input size/shape and enforce resource limits, with the inference endpoint off untrusted networks. CVE count 358 → 361.
+
 ## 0.13.88 — 2026-05-25
 
 CVE catalog — Hugging Face Transformers model-loader deserialization RCE. Adds the three ZDI-coordinated deserialization flaws in the foundational ML library's model loaders, all CWE-502 and fixed in 4.48.0: **CVE-2024-11392** (MobileViTV2 configuration files), **CVE-2024-11393** (MaskFormer model files), and **CVE-2024-11394** (Trax model files), each NIST CVSS 8.8 — loading a malicious model/config of the affected type executes attacker code in the user's process. All map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and they reuse the existing untrusted-model-artifact control (NEW-CTRL-091) — the same control that closes the Keras model-deserialization CVEs, because the class is "a model file is executable code", not a single loader. CVE count 355 → 358.

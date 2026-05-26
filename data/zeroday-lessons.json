@@ -6783,6 +6783,156 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-24213": {
+    "name": "NVIDIA Triton DALI Backend Out-of-Bounds Read",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Triton's DALI data-augmentation backend mishandles attacker-supplied inference input (CWE-125 out-of-bounds read), which can corrupt memory and lead to code execution or information disclosure.",
+      "privileges_required": "none (NVD AV:N / PR:N) — network-reachable inference input",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the media/data-augmentation backend of a widely deployed AI inference server, which processes untrusted inference input. The lesson: inference backends that decode or transform attacker-supplied data are memory-safety and availability surfaces that must bounds-check and resource-limit, and the inference endpoint must not be network-exposed to untrusted clients. This is also a clean CVSS-vs-RWEP case (NVD CRITICAL, but patched + no exploitation = low real-world priority)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the inference server's media-processing backends as managed, memory-unsafe software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to the size/shape of inference inputs reaching the DALI backend."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the inference data-augmentation backend's handling of untrusted input as a memory-safety / availability surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Inference servers' media backends are not tracked as memory-unsafe attack surface; input size/shape limits on inference requests are rarely enforced.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-096",
+        "name": "AI-INFERENCE-BACKEND-INPUT-HARDENING",
+        "description": "An AI inference server's media/data-augmentation backends (e.g. NVIDIA Triton DALI) must validate and bound the size and shape of untrusted inference input, enforce resource limits, and run with memory-safety mitigations; the inference endpoint must not be exposed to untrusted networks. Upgrade Triton to r26.03 or later. The distinguishing test: send crafted inference inputs (oversized dimensions, malformed media headers) to a staging DALI model and confirm they are rejected/bounded rather than causing crashes or resource exhaustion.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5828",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-24214": {
+    "name": "NVIDIA Triton DALI Backend Integer Overflow",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Triton's DALI data-augmentation backend mishandles attacker-supplied inference input (CWE-190 integer overflow), which can corrupt memory and lead to code execution or information disclosure.",
+      "privileges_required": "none (NVD AV:N / PR:N) — network-reachable inference input",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the media/data-augmentation backend of a widely deployed AI inference server, which processes untrusted inference input. The lesson: inference backends that decode or transform attacker-supplied data are memory-safety and availability surfaces that must bounds-check and resource-limit, and the inference endpoint must not be network-exposed to untrusted clients. This is also a clean CVSS-vs-RWEP case (NVD CRITICAL, but patched + no exploitation = low real-world priority)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the inference server's media-processing backends as managed, memory-unsafe software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to the size/shape of inference inputs reaching the DALI backend."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the inference data-augmentation backend's handling of untrusted input as a memory-safety / availability surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Inference servers' media backends are not tracked as memory-unsafe attack surface; input size/shape limits on inference requests are rarely enforced.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-096",
+        "name": "AI-INFERENCE-BACKEND-INPUT-HARDENING",
+        "description": "An AI inference server's media/data-augmentation backends (e.g. NVIDIA Triton DALI) must validate and bound the size and shape of untrusted inference input, enforce resource limits, and run with memory-safety mitigations; the inference endpoint must not be exposed to untrusted networks. Upgrade Triton to r26.03 or later. The distinguishing test: send crafted inference inputs (oversized dimensions, malformed media headers) to a staging DALI model and confirm they are rejected/bounded rather than causing crashes or resource exhaustion.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5828",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-24215": {
+    "name": "NVIDIA Triton DALI Backend Uncontrolled Resource Consumption (DoS)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA Triton's DALI data-augmentation backend mishandles attacker-supplied inference input (CWE-400 uncontrolled resource consumption), letting an unauthenticated attacker exhaust resources and deny service.",
+      "privileges_required": "none (NVD AV:N / PR:N) — network-reachable inference input",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the media/data-augmentation backend of a widely deployed AI inference server, which processes untrusted inference input. The lesson: inference backends that decode or transform attacker-supplied data are memory-safety and availability surfaces that must bounds-check and resource-limit, and the inference endpoint must not be network-exposed to untrusted clients. This is also a clean CVSS-vs-RWEP case (NVD CRITICAL, but patched + no exploitation = low real-world priority)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the inference server's media-processing backends as managed, memory-unsafe software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to the size/shape of inference inputs reaching the DALI backend."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the inference data-augmentation backend's handling of untrusted input as a memory-safety / availability surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Inference servers' media backends are not tracked as memory-unsafe attack surface; input size/shape limits on inference requests are rarely enforced.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-096",
+        "name": "AI-INFERENCE-BACKEND-INPUT-HARDENING",
+        "description": "An AI inference server's media/data-augmentation backends (e.g. NVIDIA Triton DALI) must validate and bound the size and shape of untrusted inference input, enforce resource limits, and run with memory-safety mitigations; the inference endpoint must not be exposed to untrusted networks. Upgrade Triton to r26.03 or later. The distinguishing test: send crafted inference inputs (oversized dimensions, malformed media headers) to a staging DALI model and confirm they are rejected/bounded rather than causing crashes or resource exhaustion.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5828",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2026-24206": {
     "name": "NVIDIA Triton Inference Server Authentication Bypass (Alternate Channel)",
     "lesson_date": "2026-05-25",
