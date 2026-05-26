@@ -4011,6 +4011,106 @@
     "ai_discovery_date": "2025-12-09",
     "ai_assist_factor": "medium"
   },
+  "CVE-2024-21513": {
+    "name": "LangChain-Experimental VectorSQLDatabaseChain Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "A LangChain experimental chain (CWE-94 dynamic evaluation of prompt-influenced database values) turns prompt-influenced input into executed Python, so prompt injection becomes arbitrary code execution in the LLM application.",
+      "privileges_required": "control of the input prompt to the LLM application (NVD AV:N)",
+      "complexity": "low-to-moderate (steer the chain's generated/evaluated code via the prompt)",
+      "ai_factor": "This is an AI-native attack surface: the LLM-application prompt is the injection vector, and chains that execute generated code (PALChain, VectorSQLDatabaseChain, LLMMathChain) convert prompt injection into RCE. The CVE-2023-36258 -> CVE-2023-44467 sequence shows denylisting builtins is an incomplete fix; code generated under attacker influence must be sandboxed or not executed at all."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track LLM-orchestration libraries' code-executing chains as RCE-bearing software, nor that builtin denylists are an incomplete fix."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation does not cover prompt-influenced strings an LLM chain turns into executable code."
+      },
+      "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats prompt-influenced input to a code-executing LLM chain as untrusted code; prompt injection becomes arbitrary code execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "LLM apps wire in code-executing chains for convenience and trust the prompt; denylist-based mitigations are assumed sufficient despite documented bypasses.",
+      "theater_pattern": "incomplete_fix_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "prompt_injection_vector",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-099",
+        "name": "LLM-CHAIN-GENERATED-CODE-EXECUTION-CONTROL",
+        "description": "LLM chains/agents that execute generated or prompt-influenced code (PALChain, VectorSQLDatabaseChain, LLMMathChain, Python/Pandas agents) must sandbox execution in an isolated, least-privilege, network-restricted environment or disable code execution entirely; builtin/function denylists are insufficient (the CVE-2023-36258 fix was bypassed via the dunder-import builtin in CVE-2023-44467). Upgrade langchain-experimental to 0.0.21 or later, and never expose a code-executing chain to untrusted prompts. The distinguishing test: send a prompt-injection payload that requests code execution to a staging chain and confirm it is sandboxed/refused, not run in-process.",
+        "evidence": "https://github.com/advisories/GHSA-cgcg-p68q-3w7v",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-PROMPT-INJECTION-ACCESS-CONTROL"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2023-44467": {
+    "name": "LangChain-Experimental PALChain dunder-import Code Execution (CVE-2023-36258 bypass)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "A LangChain experimental chain (CWE-94 prompt-generated Python with an incomplete builtin denylist) turns prompt-influenced input into executed Python, so prompt injection becomes arbitrary code execution in the LLM application.",
+      "privileges_required": "control of the input prompt to the LLM application (NVD AV:N)",
+      "complexity": "low-to-moderate (steer the chain's generated/evaluated code via the prompt)",
+      "ai_factor": "This is an AI-native attack surface: the LLM-application prompt is the injection vector, and chains that execute generated code (PALChain, VectorSQLDatabaseChain, LLMMathChain) convert prompt injection into RCE. The CVE-2023-36258 -> CVE-2023-44467 sequence shows denylisting builtins is an incomplete fix; code generated under attacker influence must be sandboxed or not executed at all."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track LLM-orchestration libraries' code-executing chains as RCE-bearing software, nor that builtin denylists are an incomplete fix."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation does not cover prompt-influenced strings an LLM chain turns into executable code."
+      },
+      "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats prompt-influenced input to a code-executing LLM chain as untrusted code; prompt injection becomes arbitrary code execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "LLM apps wire in code-executing chains for convenience and trust the prompt; denylist-based mitigations are assumed sufficient despite documented bypasses.",
+      "theater_pattern": "incomplete_fix_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "prompt_injection_vector",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-099",
+        "name": "LLM-CHAIN-GENERATED-CODE-EXECUTION-CONTROL",
+        "description": "LLM chains/agents that execute generated or prompt-influenced code (PALChain, VectorSQLDatabaseChain, LLMMathChain, Python/Pandas agents) must sandbox execution in an isolated, least-privilege, network-restricted environment or disable code execution entirely; builtin/function denylists are insufficient (the CVE-2023-36258 fix was bypassed via the dunder-import builtin in CVE-2023-44467). Upgrade langchain-experimental to 0.0.306 or later, and never expose a code-executing chain to untrusted prompts. The distinguishing test: send a prompt-injection payload that requests code execution to a staging chain and confirm it is sandboxed/refused, not run in-process.",
+        "evidence": "https://github.com/advisories/GHSA-gjjr-63x4-v8cq",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-PROMPT-INJECTION-ACCESS-CONTROL"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-22224": {
     "name": "VMware ESXi/Workstation VMCI TOCTOU → VMX Host Code Execution",
     "lesson_date": "2026-05-18",
