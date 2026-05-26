@@ -4311,6 +4311,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-3248": {
+    "name": "Langflow /api/v1/validate/code Unauthenticated Code Injection (CISA KEV)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Langflow before 1.3.0 runs attacker-supplied Python submitted to the unauthenticated /api/v1/validate/code endpoint, so a single crafted request gives remote code execution; CISA KEV-listed (actively exploited).",
+      "privileges_required": "none (unauthenticated, single request)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is a widely deployed visual LLM app/agent builder. The lesson: an LLM app builder's flow endpoints are code-execution surfaces, so every one must authenticate and sandbox - and the fix must cover the whole class of endpoints, not the single route that was reported (the Langflow pattern recurred on a new endpoint after the first KEV-listed fix)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement is absent on a code-execution endpoint - the validate-code path is reachable without authentication."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection does not treat the LLM app builder's validate-code endpoint as an attacker-reachable execution channel."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a visual LLM app builder's code endpoints as privileged execution surfaces that must authenticate and sandbox."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "LLM app builders are stood up for rapid prototyping on trusted-network assumptions and exposed without authentication; their flow endpoints are not treated as code-execution surfaces.",
+      "theater_pattern": "ai_app_builder_unauth_exec"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-103",
+        "name": "AI-APP-BUILDER-EXECUTION-ENDPOINT-AUTH-AND-SANDBOX",
+        "description": "A visual LLM app/agent builder (Langflow, Flowise, and similar) must authenticate every endpoint that can reach a code-execution path - validate-code, flow-build, flow-run, public-flow endpoints - and must never run flow-supplied or request-supplied code through a compile-and-run / dynamic-evaluation path with host privileges. Place the builder behind authenticated access control, never expose it to untrusted networks, and sandbox any code the platform executes on a user's behalf (no filesystem/network/process access beyond the flow's intent). The distinguishing test: send an unauthenticated request to each flow validate/build/run endpoint on a staging instance with a payload that attempts a non-flow action (a shell or network call) and confirm it is refused before any code runs - paper 'AI platform' policies that leave a public endpoint wired to a code-execution sink still permit unauthenticated RCE.",
+        "evidence": "https://www.vulncheck.com/blog/langflow-rce",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SI-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-33017": {
+    "name": "Langflow Public Flow-Build Endpoint Unauthenticated Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "After the CVE-2025-3248 fix, Langflow's public flow execution surface remained exploitable: the unauthenticated /api/v1/build_public_tmp/{flow_id}/flow endpoint runs flow-supplied Python through an unsandboxed dynamic-execution sink, giving remote code execution again; fixed in 1.9.0.",
+      "privileges_required": "none (unauthenticated public endpoint)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is a widely deployed visual LLM app/agent builder. The lesson: an LLM app builder's flow endpoints are code-execution surfaces, so every one must authenticate and sandbox - and the fix must cover the whole class of endpoints, not the single route that was reported (the Langflow pattern recurred on a new endpoint after the first KEV-listed fix)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A second public flow endpoint reaches a code-execution sink without authentication - the access-control gap recurred on a new route after the first fix."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality is not enforced: a public endpoint runs flow-supplied code through a dynamic-execution sink without sandboxing."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires enumerating EVERY flow validate/build/run endpoint of an LLM app builder as an execution surface - so the same class recurred on a new endpoint."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 86,
+      "basis": "LLM app builders are stood up for rapid prototyping on trusted-network assumptions and exposed without authentication; their flow endpoints are not treated as code-execution surfaces.",
+      "theater_pattern": "ai_app_builder_unauth_exec"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-103",
+        "name": "AI-APP-BUILDER-EXECUTION-ENDPOINT-AUTH-AND-SANDBOX",
+        "description": "A visual LLM app/agent builder (Langflow, Flowise, and similar) must authenticate every endpoint that can reach a code-execution path - validate-code, flow-build, flow-run, public-flow endpoints - and must never run flow-supplied or request-supplied code through a compile-and-run / dynamic-evaluation path with host privileges. Place the builder behind authenticated access control, never expose it to untrusted networks, and sandbox any code the platform executes on a user's behalf (no filesystem/network/process access beyond the flow's intent). The distinguishing test: send an unauthenticated request to each flow validate/build/run endpoint on a staging instance with a payload that attempts a non-flow action (a shell or network call) and confirm it is refused before any code runs - paper 'AI platform' policies that leave a public endpoint wired to a code-execution sink still permit unauthenticated RCE.",
+        "evidence": "https://github.com/advisories/GHSA-vwmf-pq79-vjvx",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SI-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-12366": {
     "name": "PandasAI Prompt Injection to Remote Code Execution",
     "lesson_date": "2026-05-25",
@@ -6574,38 +6674,6 @@
     "lesson_date": "2026-05-18",
     "attack_vector": {
       "description": "Aquasecurity Trivy contains an embedded malicious code vulnerability that could allow an attacker to gain access to everything in the CI/CD environment, including all tokens, SSH keys, cloud credentials, database passwords, and any sensitive configuration in memory.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
-    },
-    "framework_coverage": {
-      "NIST-800-53-SI-2": {
-        "covered": true,
-        "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
-      },
-      "ISO-27001-2022-A.8.8": {
-        "covered": true,
-        "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
-      }
-    },
-    "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
-    },
-    "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
-  },
-  "CVE-2026-33017": {
-    "name": "Langflow Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
-    "attack_vector": {
-      "description": "Langflow contains a code injection vulnerability that could allow building public flows without requiring authentication.",
       "privileges_required": "network attacker (no authentication required)",
       "complexity": "moderate (bulk-import default)",
       "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
