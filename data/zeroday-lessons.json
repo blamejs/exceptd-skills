@@ -4661,6 +4661,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-31229": {
+    "name": "Adversarial Robustness Toolbox torch.load Model Deserialization RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "ART's Kubeflow model-loading component calls torch.load() without weights_only=True, so loading a maliciously crafted model file runs arbitrary code through unsafe object-deserialization (the same weights_only gap as CVE-2025-32434, here in the defensive-ML library).",
+      "privileges_required": "none-to-low (control the loaded model / the affected CLI argument value)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is the Adversarial Robustness Toolbox (ART) - the Trusted-AI library used to DEFEND ML models against adversarial attacks. The lesson: defensive-ML tooling is code-bearing infrastructure too; a model file it loads is executable code."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No fix is published; loading an untrusted model is inherently code execution - the control is provenance + sandboxing, not patching."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation distinguishes a benign model from a deserialization payload before ART loads it."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the adversarial-robustness library's model-loading path as a privileged code-execution surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Defensive-ML libraries are trusted by assumption and run inside ML pipelines; their model-loading and CLI-parsing paths are not treated as code-execution surfaces, and no patch is published.",
+      "theater_pattern": "untrusted_model_artifact_as_code"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load .keras / pickle-based models from untrusted sources, verify provenance, prefer safe formats (e.g. safetensors), and load untrusted models only in a sandboxed, network-isolated, least-privilege environment. Upgrade Keras to the fixed release (>= 3.8.0 for CVE-2025-1550; past 3.10.0 for the CVE-2025-8747 safe_mode bypass) and do not rely on safe_mode alone — it was bypassable. The distinguishing test: load an attacker-crafted .keras archive with safe_mode enabled on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2025-1550",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-31230": {
+    "name": "Adversarial Robustness Toolbox CLI Argument Dynamic-Evaluation Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "ART's Kubeflow component parses the --clip_values and --input_shape command-line arguments through an unsafe dynamic-evaluation call, so attacker-controlled argument values execute arbitrary Python (the same build-from-arguments root cause as the LlamaIndex CLI injection).",
+      "privileges_required": "none-to-low (control the loaded model / the affected CLI argument value)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is the Adversarial Robustness Toolbox (ART) - the Trusted-AI library used to DEFEND ML models against adversarial attacks. The lesson: defensive-ML tooling is code-bearing infrastructure too; its CLI must parse arguments with a safe literal parser, never a dynamic-evaluation call."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No fix is published; the control is parsing CLI arguments with a safe literal parser rather than a dynamic-evaluation call."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation distinguishes a safe CLI argument value from injected code before ART evaluates it."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML library's CLI argument parsing as a privileged code-execution surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Defensive-ML libraries are trusted by assumption and run inside ML pipelines; their model-loading and CLI-parsing paths are not treated as code-execution surfaces, and no patch is published.",
+      "theater_pattern": "ai_framework_cli_eval"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-100",
+        "name": "AI-FRAMEWORK-CLI-SHELL-INPUT-NEUTRALIZATION",
+        "description": "AI-framework CLIs and tools that invoke external commands must never build a shell string from user-supplied arguments or config: use argv-array execution (no shell), or neutralize input with shlex/equivalent. Upgrade llama-index-cli past 0.12.20 to the shlex-escaped release, and in any wrapper/automation pass arguments as a list rather than a shell string. The distinguishing test: pass a --files value containing shell metacharacters to a staging CLI and confirm no subcommand executes.",
+        "evidence": "https://huntr.com/bounties/19e1c67e-1d77-451d-b10b-acbe99900b22",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2023-43791": {
     "name": "Label Studio Account Impersonation and Privilege Escalation",
     "lesson_date": "2026-05-25",
