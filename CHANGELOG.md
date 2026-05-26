@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.117 — 2026-05-26
+
+CVE catalog — RAGFlow RAG-engine. Adds two flaws in RAGFlow (infiniflow/ragflow), a widely deployed open-source Retrieval-Augmented-Generation engine. **CVE-2024-12450** (NVD CVSS 9.8 CRITICAL; huntr CNA 6.5) — the `web_crawl` function does not filter the supplied URL, yielding full-read SSRF against internal addresses, arbitrary local file read via `file://`, and potential remote code execution through an outdated headless Chromium run with the sandbox disabled; fixed in 0.14.0. Reuses the AI-data-pipeline import SSRF control (NEW-CTRL-105) shared with the Dify `RemoteFileUploadApi` and Label Studio data-pipeline SSRFs. **CVE-2025-69286** (GitHub CNA CVSS v4.0 8.9; NVD v3.1 9.8) — the API key and the assistant/agent share token are generated with the same serializer keyed by the tenant id over a timestamp-based UUIDv1, so the two tokens are mutually derivable; an attacker who obtains a shared assistant/agent link derives the owner's personal API key and takes full control of the account (CWE-340); fixed in 0.22.0. Introduces NEW-CTRL-109: an AI app's API keys and share tokens must be generated from a CSPRNG with an unpredictable per-install secret — never derivable from a tenant id, a timestamp, or another token. Adds CWE-340 (Generation of Predictable Numbers or Identifiers) to the CWE catalog. CVE count 406 → 408.
+
 ## 0.13.116 — 2026-05-26
 
 Documentation. The README pinned the CVE catalog's size to a v0.13.17 milestone ("68 to 312 entries"), which read as the current count even though the catalog has since grown past 400. Reworded to state current scale while keeping the v0.13.17 KEV-intake milestone, phrased so it no longer drifts as the catalog grows.

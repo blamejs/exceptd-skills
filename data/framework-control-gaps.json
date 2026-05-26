@@ -116,7 +116,9 @@
       "CVE-2026-40933",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-45829"
+      "CVE-2026-45829",
+      "CVE-2024-12450",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [
       "AML.T0018",
@@ -2308,7 +2310,8 @@
       "CVE-2025-53767",
       "CVE-2025-56520",
       "CVE-2026-34159",
-      "CVE-2026-42897"
+      "CVE-2026-42897",
+      "CVE-2024-12450"
     ],
     "atlas_refs": [
       "AML.T0096",
@@ -2422,7 +2425,8 @@
       "CVE-2026-39884",
       "CVE-2026-42208",
       "CVE-2026-45829",
-      "CVE-2026-9082"
+      "CVE-2026-9082",
+      "CVE-2024-12450"
     ],
     "atlas_refs": [
       "AML.T0053"
@@ -3890,7 +3894,8 @@
       "CVE-2026-24207",
       "CVE-2026-26190",
       "CVE-2026-41947",
-      "CVE-2026-41950"
+      "CVE-2026-41950",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -5201,7 +5206,9 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
-      "CVE-2026-9082"
+      "CVE-2026-9082",
+      "CVE-2024-12450",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5250,7 +5257,8 @@
       "CVE-2026-39987",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-7482"
+      "CVE-2026-7482",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [
       "AML.T0051"
@@ -5552,7 +5560,8 @@
       "CVE-2026-33017",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-6973"
+      "CVE-2026-6973",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5789,7 +5798,8 @@
       "CVE-2026-46300",
       "CVE-2026-46333",
       "CVE-2026-9082",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "CVE-2024-12450"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5912,7 +5922,9 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
-      "CVE-2026-9082"
+      "CVE-2026-9082",
+      "CVE-2024-12450",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6220,7 +6232,8 @@
       "CVE-2026-24207",
       "CVE-2026-26190",
       "CVE-2026-33017",
-      "CVE-2026-45829"
+      "CVE-2026-45829",
+      "CVE-2025-69286"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6332,7 +6345,8 @@
       "CVE-2024-21762",
       "CVE-2025-25297",
       "CVE-2025-56520",
-      "CVE-2026-20182"
+      "CVE-2026-20182",
+      "CVE-2024-12450"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6760,7 +6774,8 @@
     "opened_at": "2026-05-18",
     "evidence_cves": [
       "CVE-2025-14847",
-      "CVE-2025-22226"
+      "CVE-2025-22226",
+      "CVE-2025-69286"
     ],
     "theater_test": {
       "claim": "We are compliant with A.8.24 (Use of cryptography) because we follow the documented requirement: Annex A.8.24 — defining and implementing rules for the effective use of cryptography, including key management. Anchored on the assumption that correctly-applied transport and at-rest encryption prese",
@@ -7136,7 +7151,8 @@
     "opened_at": "2026-05-18",
     "evidence_cves": [
       "CVE-2025-22224",
-      "CVE-2025-22225"
+      "CVE-2025-22225",
+      "CVE-2024-12450"
     ],
     "theater_test": {
       "claim": "We are compliant with A.8.21 (Security of network services) because we follow the documented requirement: Annex A.8.21 — identifying, implementing, and monitoring security mechanisms, service levels, and management requirements for network services. Anchored on segmentation, secure protocols, and service-",
