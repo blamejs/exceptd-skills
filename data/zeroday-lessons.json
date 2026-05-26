@@ -7633,6 +7633,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2023-6019": {
+    "name": "Anyscale Ray Dashboard cpu_profile Command Injection RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Anyscale Ray's dashboard (CWE-78 command injection via the dashboard cpu_profile parameter) lets an unauthenticated attacker execute OS commands on the dashboard host. The dashboard has no authentication by default.",
+      "privileges_required": "none (NVD AV:N / PR:N) - unauthenticated against a reachable dashboard",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the dashboard of Ray, a widely used distributed AI/ML compute framework. The lesson reinforces the ShadowRay one: the AI compute control plane (dashboard, job API) must authenticate every caller and never be network-exposed - a single dashboard endpoint flaw is unauthenticated RCE or arbitrary file read on the cluster. These were patched in Ray 2.8.1 (unlike the disputed Job-API ShadowRay issue)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the Ray dashboard; unauthenticated callers reach command/file endpoints."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the AI compute framework's dashboard as managed, network-exposed software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the AI compute dashboard as an unauthenticated control plane requiring auth, input neutralization, and path containment."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "AI compute clusters expose dashboards on trusted-network assumptions; the dashboard's endpoints are not audited for injection / path traversal.",
+      "theater_pattern": "controlled_network_assumption"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-088",
+        "name": "AI-COMPUTE-CONTROL-PLANE-AUTHENTICATION",
+        "description": "An AI compute framework's control plane (Ray dashboard, job API, log/profile endpoints) must authenticate every caller and never be exposed to untrusted networks; 'deploy only on a trusted network' is an assumption, not a control. Upgrade Anyscale Ray to 2.8.1 or later (fixes the dashboard cpu_profile command injection and log-API LFI), bind the dashboard to loopback or front it with an authenticating proxy, and run least-privilege. The distinguishing test: from the network, hit the dashboard cpu_profile and log API unauthenticated on a staging cluster and confirm both are refused.",
+        "evidence": "https://github.com/advisories/GHSA-h3xg-wv58-5p43",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2023-6021": {
+    "name": "Anyscale Ray Dashboard Log API Local File Inclusion",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Anyscale Ray's dashboard (CWE-22 path traversal / LFI in the dashboard log API) lets an unauthenticated attacker read arbitrary host files. The dashboard has no authentication by default.",
+      "privileges_required": "none (NVD AV:N / PR:N) - unauthenticated against a reachable dashboard",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the dashboard of Ray, a widely used distributed AI/ML compute framework. The lesson reinforces the ShadowRay one: the AI compute control plane (dashboard, job API) must authenticate every caller and never be network-exposed - a single dashboard endpoint flaw is unauthenticated RCE or arbitrary file read on the cluster. These were patched in Ray 2.8.1 (unlike the disputed Job-API ShadowRay issue)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the Ray dashboard; unauthenticated callers reach command/file endpoints."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the AI compute framework's dashboard as managed, network-exposed software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the AI compute dashboard as an unauthenticated control plane requiring auth, input neutralization, and path containment."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "AI compute clusters expose dashboards on trusted-network assumptions; the dashboard's endpoints are not audited for injection / path traversal.",
+      "theater_pattern": "controlled_network_assumption"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-088",
+        "name": "AI-COMPUTE-CONTROL-PLANE-AUTHENTICATION",
+        "description": "An AI compute framework's control plane (Ray dashboard, job API, log/profile endpoints) must authenticate every caller and never be exposed to untrusted networks; 'deploy only on a trusted network' is an assumption, not a control. Upgrade Anyscale Ray to 2.8.1 or later (fixes the dashboard cpu_profile command injection and log-API LFI), bind the dashboard to loopback or front it with an authenticating proxy, and run least-privilege. The distinguishing test: from the network, hit the dashboard cpu_profile and log API unauthenticated on a staging cluster and confirm both are refused.",
+        "evidence": "https://www.anyscale.com/blog/update-on-ray-cves-cve-2023-6019-cve-2023-6020-cve-2023-6021-cve-2023-48022-cve-2023-48023",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2026-0766": {
     "name": "Open WebUI Tool Module Code Injection RCE",
     "lesson_date": "2026-05-25",
