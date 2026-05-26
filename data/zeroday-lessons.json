@@ -7933,6 +7933,56 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-13059": {
+    "name": "AnythingLLM Non-ASCII Filename Path Traversal Arbitrary File Write to RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "AnythingLLM's multer-based upload handler mishandles non-ASCII filenames so they decode into ../ traversal sequences (CWE-22), letting a manager/admin user write to an arbitrary path and achieve RCE.",
+      "privileges_required": "manager or admin account (NVD PR:H)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the document-upload handler of a self-hosted RAG / AI chat application. The lesson matches the Ollama path-traversal case: AI-app file/path handling must canonicalize and validate names (including non-ASCII / encoding transforms) before touching the filesystem, and privileged roles are not a substitute for input validation."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track self-hosted RAG / AI chat applications as managed, RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to uploaded filenames (including non-ASCII transformations) in the AI app's upload handler."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the AI app's document-upload filename as untrusted input reaching the filesystem."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "Self-hosted RAG apps are deployed for internal teams and assumed trusted; upload filename handling (especially non-ASCII) is not audited for traversal.",
+      "theater_pattern": "ai_demo_framework_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application's file/path-bearing inputs (upload filenames, model digests, API route parameters) must be canonicalized and validated — including non-ASCII / encoding transforms — before touching the filesystem, and the app must not be network-exposed to untrusted users. Upgrade AnythingLLM to 1.3.1 or later. This is the same control that closes the Ollama path-traversal CVEs. The distinguishing test: upload a file with a non-ASCII filename that decodes to ../ traversal on a staging AnythingLLM and confirm it is rejected, not written outside the document store.",
+        "evidence": "https://www.offsec.com/blog/cve-2024-13059/",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-1561": {
     "name": "Gradio /component_server Local File Read (Hugging Face Spaces Secret Theft)",
     "lesson_date": "2026-05-25",

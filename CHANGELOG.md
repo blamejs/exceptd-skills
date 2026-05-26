@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.94 — 2026-05-25
+
+CVE catalog — AnythingLLM upload path traversal to RCE. Adds **CVE-2024-13059** (CWE-22, NIST CVSS 7.2): AnythingLLM's multer-based upload handler mishandles non-ASCII filenames so they decode into `../` traversal sequences, letting a manager/admin user write attacker content to an arbitrary path (e.g. a startup script) and achieve remote code execution on the host; fixed in 1.3.1. Maps ATLAS AML.T0049 and ATT&CK T1190 / T1059, and reuses the runtime-API path-traversal control (NEW-CTRL-094) shared with the Ollama entries — AI-app file/path inputs must be canonicalized and validated, including non-ASCII transforms, before touching the filesystem. CVE count 368 → 369.
+
 ## 0.13.93 — 2026-05-25
 
 CVE catalog — LangChain experimental-chain code execution (prompt injection to RCE). Adds the canonical class where an LLM chain turns prompt-influenced input into executed Python. **CVE-2024-21513** (langchain-experimental, CWE-94, NIST CVSS 8.5) — VectorSQLDatabaseChain evaluates database values as code, so an attacker controlling the input prompt achieves arbitrary code execution; fixed in 0.0.21. **CVE-2023-44467** (langchain_experimental PALChain, CWE-94, NIST CVSS 9.8) — PALChain executes prompt-generated Python and did not block the dunder-import builtin, bypassing the earlier CVE-2023-36258 fix; fixed in 0.0.306. Both map ATLAS AML.T0051 (LLM prompt injection) + AML.T0011 and ATT&CK T1059 / T1059.006, and their shared zero-day lesson (NEW-CTRL-099) requires chains that execute generated code to sandbox or disable it — builtin denylists are an incomplete fix. Distinct from the existing LangChain entries (LangGrinch serialization, Chatchat MCP). CVE count 366 → 368.
