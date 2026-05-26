@@ -2009,7 +2009,7 @@
         "description": "npm publish tokens MUST NOT reside on developer workstations. Publish should require a hardware-key-bound CI/CD pipeline gate (GitHub Actions with OIDC + npm provisioning, or equivalent). Workstation tokens scope to read-only registry pulls.",
         "evidence": "MAL-2026-SHAI-HULUD-OSS pivot mechanism requires a write-scope npm token on the maintainer workstation.",
         "gap_closes": [
-          "NIST-800-53-IA-2",
+          "NIST-800-53-IA-5",
           "NIST-800-218-SSDF-PW.4"
         ]
       },
@@ -4149,7 +4149,7 @@
       {
         "id": "NEW-CTRL-013",
         "name": "AI-GATEWAY-CREDENTIAL-STORE-ISOLATION",
-        "description": "The LLM proxy/gateway must isolate its stored provider credentials from request- and config-controlled flows: allow-list permitted provider endpoints (reject attacker-supplied api_base), never forward stored keys to unvalidated destinations, disable dynamic evaluation of configuration, and keep the admin/config surface off untrusted networks. Upgrade BerriAI LiteLLM to a patched release (past 1.38.10). The distinguishing test: send a /chat/completions request with an attacker api_base, and an admin config with a remote UI_LOGO_PATH, to a staging gateway and confirm no key egress and no code execution.",
+        "description": "The LLM proxy/gateway must isolate its stored provider credentials from request- and config-controlled flows: allow-list permitted provider endpoints (reject attacker-supplied api_base), never forward stored keys to unvalidated destinations, disable dynamic evaluation of configuration, and keep the admin/config surface off untrusted networks. Upgrade BerriAI LiteLLM to a patched release (1.44.8+). The distinguishing test: send a /chat/completions request with an attacker api_base, and an admin config with a remote UI_LOGO_PATH, to a staging gateway and confirm no key egress and no code execution.",
         "evidence": "https://github.com/advisories/GHSA-g26j-5385-hhw3",
         "gap_closes": [
           "NIST-800-53-IA-2",
