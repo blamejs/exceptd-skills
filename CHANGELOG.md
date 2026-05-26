@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.111 — 2026-05-26
+## 0.13.112 — 2026-05-26
 
 CVE catalog — Kubeflow MLOps-console cross-site scripting. Adds two XSS flaws in Kubeflow, the MLOps orchestration console, where user-controlled fields are rendered without neutralization (CWE-79). **CVE-2024-9526** (NVD CVSS 5.4 MEDIUM; Google CNA CVSS v4.0 7.1) — the Pipeline View renders the pipeline description field without filtering HTML, so attacker-stored markup runs in the browser of every operator who views the pipeline; fixed upstream. **CVE-2023-6571** (NVD CVSS 6.1 MEDIUM) — Kubeflow reflects attacker-controlled input into a page without neutralization, so a crafted link runs script in the victim's authenticated session; fixed upstream. Both are patched and introduce NEW-CTRL-107: an MLOps console is a multi-user trust boundary — HTML-encode every user-controlled field it renders, never render description/metadata as raw HTML, set a strict Content-Security-Policy, and mark session cookies HttpOnly, so stored or reflected markup cannot hijack operators' sessions. CVE count 398 → 400.
 
