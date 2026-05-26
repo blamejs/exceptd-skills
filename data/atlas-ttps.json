@@ -545,6 +545,8 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-44467",
+      "CVE-2024-21513",
       "CVE-2025-53773",
       "CVE-2025-55319",
       "CVE-2025-68664",
@@ -1268,9 +1270,11 @@
     "exceptd_skills": [],
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-44467",
       "CVE-2024-11392",
       "CVE-2024-11393",
       "CVE-2024-11394",
+      "CVE-2024-21513",
       "CVE-2025-1550",
       "CVE-2025-8747",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
