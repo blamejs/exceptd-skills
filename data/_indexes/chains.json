@@ -39775,10 +39775,10 @@
     }
   },
   "CVE-2026-33017": {
-    "name": "Langflow Public Flow-Build Endpoint Unauthenticated Remote Code Execution",
-    "rwep": 33,
+    "name": "Langflow Public Flow-Build Endpoint Unauthenticated Remote Code Execution (CISA KEV)",
+    "rwep": 78,
     "cvss": 9.8,
-    "cisa_kev": false,
+    "cisa_kev": true,
     "epss_score": null,
     "referencing_skills": [
       "ai-attack-surface",
