@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.97 — 2026-05-25
+
+CVE catalog — Milvus vector-database authentication bypass. Adds the vector-DB / RAG-persistence surface with two Milvus auth-bypass flaws. **CVE-2025-64513** (CWE-287, CNA GitHub CVSS v4.0 9.3; NVD unscored) — the Milvus Proxy trusts forged HTTP headers, letting an unauthenticated attacker bypass all authentication; fixed in 2.4.24 / 2.5.21 / 2.6.5. **CVE-2026-26190** (CWE-306, NIST CVSS 9.8) — TCP port 9091 is exposed with weak default tokens and unauthenticated API access, enabling arbitrary expression evaluation and full unauthenticated control; fixed in 2.5.27 / 2.6.10. Both map ATLAS AML.T0049 / AML.T0035 and ATT&CK T1190 (+ T1078 / T1059), with a zero-day lesson (NEW-CTRL-101) treating the vector database as a sensitive RAG data store whose every API/management port (including metrics ports) must authenticate, with default tokens replaced and no untrusted-network exposure. CVE count 372 → 374.
+
 ## 0.13.96 — 2026-05-25
 
 CVE catalog — BerriAI LiteLLM gateway. Adds two flaws in the LLM proxy/gateway that concentrates provider API keys. **CVE-2024-6587** (CWE-918, NIST CVSS 7.5) — LiteLLM honors a user-supplied `api_base` on `/chat/completions` and forwards the configured provider API key to the attacker's domain (SSRF → key interception); this was the SSRF link of a Pwn2Own full-chain RCE. **CVE-2024-4889** (CWE-94, NIST CVSS 7.2) — an admin-influenced `UI_LOGO_PATH` with Google KMS / `SAVE_CONFIG_TO_DB` reaches a dynamic-evaluation path in the secret-management code, executing code on the credential-bearing proxy; fixed in 1.44.16. Both map ATLAS AML.T0049 + AML.T0055 (unsecured credentials) and ATT&CK T1190 (+ T1552.001 / T1059), and reuse the gateway-credential-isolation control (NEW-CTRL-013) shared with the LiteLLM SQLi entry — the LLM gateway is a high-value credential store whose request/config plane must be isolated from the secrets. CVE count 370 → 372.

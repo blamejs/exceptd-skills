@@ -4161,6 +4161,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-64513": {
+    "name": "Milvus Proxy Authentication Bypass via Forged Headers",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Milvus (CWE-287 forged-header auth bypass in the Proxy) lets an unauthenticated network attacker reach the vector database's operations and data, bypassing authentication.",
+      "privileges_required": "none (NVD/CNA AV:N / PR:N) - unauthenticated",
+      "complexity": "low (AC:L)",
+      "ai_factor": "The abused surface is the vector database - the RAG persistence layer that stores embeddings and the source documents (often PII) behind LLM applications. The lesson: vector databases are sensitive data stores, not caches; every API/management port (including metrics ports like 9091) must authenticate, default tokens must be replaced, and the DB must not be network-exposed. An auth bypass here exposes RAG data and enables retrieval poisoning."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the vector database's API/management surface."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the vector database (RAG persistence layer) as managed, auth-bypass-bearing software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the vector database as a sensitive RAG data store whose API/management ports must authenticate."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Vector databases are deployed as convenience RAG infrastructure on trusted-network assumptions, often with default tokens and exposed management ports.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-101",
+        "name": "VECTOR-DB-AUTHENTICATION-ENFORCEMENT",
+        "description": "A vector database storing RAG embeddings and source data must enforce authentication on every API and management/metrics port (including ports like Milvus 9091), reject forged/missing auth, replace default tokens, and never be exposed to untrusted networks. Upgrade Milvus to a patched release (2.4.24 / 2.5.21 / 2.6.5). The distinguishing test: from an unauthenticated client, attempt forged-header access to the Proxy and direct access to the metrics/management port on a staging instance and confirm both are refused.",
+        "evidence": "https://github.com/milvus-io/milvus/security/advisories/GHSA-mhjq-8c7m-3f7p",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-26190": {
+    "name": "Milvus Port 9091 Missing Authentication / Weak Default Token",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Milvus (CWE-306 missing authentication on port 9091 with weak default tokens) lets an unauthenticated network attacker reach the vector database's operations and data, bypassing authentication.",
+      "privileges_required": "none (NVD/CNA AV:N / PR:N) - unauthenticated",
+      "complexity": "low (AC:L)",
+      "ai_factor": "The abused surface is the vector database - the RAG persistence layer that stores embeddings and the source documents (often PII) behind LLM applications. The lesson: vector databases are sensitive data stores, not caches; every API/management port (including metrics ports like 9091) must authenticate, default tokens must be replaced, and the DB must not be network-exposed. An auth bypass here exposes RAG data and enables retrieval poisoning."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication is not enforced on the vector database's API/management surface."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the vector database (RAG persistence layer) as managed, auth-bypass-bearing software."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the vector database as a sensitive RAG data store whose API/management ports must authenticate."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Vector databases are deployed as convenience RAG infrastructure on trusted-network assumptions, often with default tokens and exposed management ports.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-101",
+        "name": "VECTOR-DB-AUTHENTICATION-ENFORCEMENT",
+        "description": "A vector database storing RAG embeddings and source data must enforce authentication on every API and management/metrics port (including ports like Milvus 9091), reject forged/missing auth, replace default tokens, and never be exposed to untrusted networks. Upgrade Milvus to a patched release (2.5.27 / 2.6.10). The distinguishing test: from an unauthenticated client, attempt forged-header access to the Proxy and direct access to the metrics/management port on a staging instance and confirm both are refused.",
+        "evidence": "https://github.com/milvus-io/milvus/security/advisories/GHSA-7ppg-37fh-vcr6",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-4889": {
     "name": "BerriAI LiteLLM Config Code Injection via UI_LOGO_PATH / KMS",
     "lesson_date": "2026-05-25",
