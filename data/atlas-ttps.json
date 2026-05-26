@@ -549,7 +549,9 @@
     "last_verified": "2026-05-19",
     "cve_refs": [
       "CVE-2023-44467",
+      "CVE-2024-12366",
       "CVE-2024-21513",
+      "CVE-2024-5565",
       "CVE-2025-53773",
       "CVE-2025-55319",
       "CVE-2025-68664",
@@ -3277,7 +3279,11 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--073f16fc-c4c0-5351-8a22-9c77aaaab91f",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2024-12366",
+      "CVE-2024-5565"
+    ]
   },
   "AML.T0051.001": {
     "id": "AML.T0051.001",

@@ -4261,6 +4261,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-5565": {
+    "name": "Vanna.AI Prompt Injection to Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Vanna's text-to-SQL ask method turns a natural-language question into Python and runs it to render a Plotly visualization (default-on), so prompt injection in the question overrides the visualization code and executes arbitrary Python on the host.",
+      "privileges_required": "none (unauthenticated; AC:H - visualization enabled + injected question)",
+      "complexity": "high",
+      "ai_factor": "The flaw is intrinsic to the AI pipeline: the agent's purpose is to turn natural language into executed code, so prompt injection is the exploit primitive. The lesson - LLM-generated code is attacker-controllable code and must be sandboxed, never run with host privileges."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection does not treat an LLM agent's generate-and-run-code path as a code-execution channel."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality is not enforced - the code-execution / visualization path is on by default rather than sandboxed or disabled for untrusted input."
+      },
+      "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires that prompt-injectable natural-language input be denied a path to code execution in NL-to-code/SQL agents."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "NL-to-code/SQL agents are adopted for analyst productivity and run model-generated code by design; their codegen path is rarely sandboxed and the natural-language input is not treated as untrusted.",
+      "theater_pattern": "ai_agent_codegen_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-102",
+        "name": "AI-NL-TO-CODE-AGENT-EXECUTION-ISOLATION",
+        "description": "An LLM data-analysis agent that generates and executes code or SQL from natural language (text-to-SQL, text-to-Python, charting agents) must treat BOTH the natural-language question and any analyzed data as untrusted, prompt-injectable input, and must never run model-generated code with host or network privileges. Disable code-execution/visualization paths by default for untrusted input, run generated code only in a hardened sandbox (no filesystem/network/process access beyond the dataset), enforce least functionality, and validate or constrain the generated artifact before execution. The distinguishing test: send an analytical question containing an injected instruction to emit non-analytical code (e.g. a shell/file/network call) on a staging agent and confirm the agent refuses to execute it - paper 'AI security' policies that do not sandbox the generate-and-run path still permit RCE.",
+        "evidence": "https://jfrog.com/blog/prompt-injection-attack-code-execution-in-vanna-ai-cve-2024-5565/",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "NIST-800-53-CM-7",
+          "ALL-PROMPT-INJECTION-ACCESS-CONTROL"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-12366": {
+    "name": "PandasAI Prompt Injection to Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "PandasAI's chat interface turns a natural-language question into Python and runs it against DataFrames; it does not separate analytical input from injected instructions, so prompt injection generates and executes arbitrary Python, escaping the intended sandbox (RCE).",
+      "privileges_required": "none (unauthenticated, no user interaction)",
+      "complexity": "low",
+      "ai_factor": "The flaw is intrinsic to the AI pipeline: the agent's purpose is to turn natural language into executed code, so prompt injection is the exploit primitive. The lesson - LLM-generated code is attacker-controllable code and must be sandboxed, never run with host privileges."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection does not treat an LLM agent's generate-and-run-code path as a code-execution channel."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality is not enforced - the code-execution / visualization path is on by default rather than sandboxed or disabled for untrusted input."
+      },
+      "ALL-PROMPT-INJECTION-ACCESS-CONTROL": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires that prompt-injectable natural-language input be denied a path to code execution in NL-to-code/SQL agents."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "NL-to-code/SQL agents are adopted for analyst productivity and run model-generated code by design; their codegen path is rarely sandboxed and the natural-language input is not treated as untrusted.",
+      "theater_pattern": "ai_agent_codegen_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-102",
+        "name": "AI-NL-TO-CODE-AGENT-EXECUTION-ISOLATION",
+        "description": "An LLM data-analysis agent that generates and executes code or SQL from natural language (text-to-SQL, text-to-Python, charting agents) must treat BOTH the natural-language question and any analyzed data as untrusted, prompt-injectable input, and must never run model-generated code with host or network privileges. Disable code-execution/visualization paths by default for untrusted input, run generated code only in a hardened sandbox (no filesystem/network/process access beyond the dataset), enforce least functionality, and validate or constrain the generated artifact before execution. The distinguishing test: send an analytical question containing an injected instruction to emit non-analytical code (e.g. a shell/file/network call) on a staging agent and confirm the agent refuses to execute it - paper 'AI security' policies that do not sandbox the generate-and-run path still permit RCE.",
+        "evidence": "https://www.kb.cert.org/vuls/id/148244",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "NIST-800-53-CM-7",
+          "ALL-PROMPT-INJECTION-ACCESS-CONTROL"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-67818": {
     "name": "Weaviate Backup Restore ZipSlip Path Traversal",
     "lesson_date": "2026-05-25",
