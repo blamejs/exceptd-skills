@@ -4211,6 +4211,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2026-45829": {
+    "name": "ChromaDB FastAPI Pre-Auth Remote Code Execution (ChromaToast)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "ChromaDB's Python FastAPI server processes a caller-supplied embedding-function config (model repo with trust_remote_code=true) on the collections endpoint before authenticating, giving unauthenticated RCE (CWE-94).",
+      "privileges_required": "none (CVSS v4.0 PR:N) - unauthenticated, before any auth check",
+      "complexity": "low",
+      "ai_factor": "The abused surface is a widely used vector database - the RAG persistence layer that stores embeddings and source data behind LLM applications. The lesson: vector databases are sensitive, RCE-bearing data stores; they must authenticate before acting on caller config and never load remote model code on untrusted input."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the vector database (RAG persistence layer) as managed, RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation / auth is not applied before the vector DB processes attacker-controlled collection/embedding config."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the vector database as a sensitive RAG store whose request path must authenticate before code execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Vector databases are deployed as convenience RAG infrastructure on trusted-network assumptions; their request and backup paths are not hardened.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-101",
+        "name": "VECTOR-DB-AUTHENTICATION-ENFORCEMENT",
+        "description": "A vector database must authenticate callers BEFORE processing any caller-supplied configuration (collection/embedding-function config, model repositories), must not load remote model code (trust_remote_code) on untrusted input, and must never be exposed to untrusted networks. For ChromaDB, restrict the FastAPI port, use the Rust 'chroma run' / official Docker deployment, and disable trust_remote_code. The distinguishing test: send an unauthenticated collection-create request with a malicious embedding-function model repo to a staging instance and confirm it is refused before any code loads.",
+        "evidence": "https://www.securityweek.com/unpatched-chromadb-vulnerability-can-lead-to-server-takeover/",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-67818": {
+    "name": "Weaviate Backup Restore ZipSlip Path Traversal",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Weaviate OSS does not constrain backup entry paths on restore, so a write-capable attacker uses absolute / ../ paths to escape the restore root (CWE-22 ZipSlip) and create or overwrite arbitrary host files.",
+      "privileges_required": "data-write access (NVD PR:H)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is a widely used vector database - the RAG persistence layer that stores embeddings and source data behind LLM applications. The lesson: vector databases are sensitive, RCE-bearing data stores; their file/archive-handling paths must be containment-checked."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the vector database (RAG persistence layer) as managed, RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Path validation is not applied to backup entry paths on restore."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the vector database as a sensitive RAG store whose backup/file paths must be containment-checked."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 64,
+      "basis": "Vector databases are deployed as convenience RAG infrastructure on trusted-network assumptions; their request and backup paths are not hardened.",
+      "theater_pattern": "ai_demo_framework_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application's file/path-bearing inputs - including archive (backup) entry paths on extraction - must be canonicalized and constrained to the intended directory before any write (reject absolute paths and ../ traversal / ZipSlip). Upgrade Weaviate OSS to the fixed release on your maintained branch (1.30.20 / 1.31.19 / 1.32.16 / 1.33.4), restrict who can insert data or trigger restores, and run least-privilege. This is the same path-traversal class as the Ollama / AnythingLLM entries. The distinguishing test: restore a backup containing a ../ entry on a staging instance and confirm it is rejected, not written outside the restore root.",
+        "evidence": "https://github.com/advisories/GHSA-7v39-2hx7-7c43",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2026-26190": {
     "name": "Milvus Port 9091 Missing Authentication / Weak Default Token",
     "lesson_date": "2026-05-25",
