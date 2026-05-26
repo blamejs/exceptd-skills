@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.116 — 2026-05-26
+
+Documentation. The README pinned the CVE catalog's size to a v0.13.17 milestone ("68 to 312 entries"), which read as the current count even though the catalog has since grown past 400. Reworded to state current scale while keeping the v0.13.17 KEV-intake milestone, phrased so it no longer drifts as the catalog grows.
+
 ## 0.13.115 — 2026-05-26
 
 CVE catalog — Dify object-level authorization bypass. Adds two flaws in Dify where an API trusts a user-controlled key without an ownership check (CWE-639). **CVE-2026-41947** (VulnCheck CNA CVSS 9.1 CRITICAL / v4.0 9.3) — the trace-configuration endpoints miss tenant-ownership checks, so an authenticated editor configures trace settings for any application and can redirect victim trace data to an attacker-controlled provider; fixed in 1.14.2. **CVE-2026-41950** (VulnCheck CNA CVSS 6.5 MEDIUM) — the chat-messages endpoint accepts an arbitrary file UUID in the files array without verifying ownership, so an authenticated user reads files uploaded by other users in the same tenant; fixed in 1.14.0. Both are patched and reuse the AI-app API object-authorization control (NEW-CTRL-106) shared with the Label Studio privilege-escalation chain — an LLM app platform must enforce object-level authorization on every request that references an object by a caller-supplied id. CVE count 404 → 406.
