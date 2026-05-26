@@ -4611,6 +4611,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2023-47117": {
+    "name": "Label Studio ORM Filter Manipulation Sensitive-Field Disclosure",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Label Studio passes user-controlled task filters into a Django ORM query without restricting referenced fields, so an attacker reads sensitive fields (password hashes, tokens) from all user accounts.",
+      "privileges_required": "none (unauthenticated field disclosure)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is Label Studio, a data-labeling / annotation platform central to ML data pipelines. The lesson: an ML data-platform API must enforce object-level authorization and never expose sensitive fields - this CVE supplies the leaked credentials in a privilege-escalation chain that ends in full account takeover."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not constrain which records/fields a user can read through the API."
+      },
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Sensitive fields (password hashes, tokens) are readable through the API and directly usable once leaked."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML data-platform API's object-level authorization and sensitive-field exposure as integrity controls whose failure yields account takeover."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "ML data-labeling platforms expose rich APIs over collaborative datasets; object-level authorization and serializer field allowlisting are frequently missing, and audits rarely test cross-account field reads.",
+      "theater_pattern": "ai_app_broken_object_authorization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-106",
+        "name": "AI-APP-API-OBJECT-AUTHORIZATION-AND-FIELD-EXPOSURE",
+        "description": "An AI data-platform API (data-labeling, annotation, dataset/registry services) must enforce object-level authorization on every read and must never expose sensitive fields - secrets, session-signing keys, auth tokens, password hashes - through API responses, serializers, or user-controlled query/filter expressions. Use serializer field allowlists (never blanket model serialization), reject ORM/filter inputs that reference fields the caller is not authorized to read, scope every query to the caller's own objects, and store credentials so a read leak is not directly replayable (and rotate exposed secrets). The distinguishing test: as a low-privilege user, craft a filter/query that references another account's password hash or token, and confirm the API refuses it - a platform whose filter/serializer leaks sensitive fields lets an attacker chain disclosure into account impersonation and privilege escalation.",
+        "evidence": "https://github.com/advisories/GHSA-6hjj-gq77-j4qw",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-28",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2023-43791": {
+    "name": "Label Studio Account Impersonation and Privilege Escalation",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "Label Studio exposes information that, chained with the ORM sensitive-field leak (CVE-2023-47117), lets an attacker impersonate any account and escalate from a low-privilege user to a Django super administrator.",
+      "privileges_required": "low (a low-privilege account; the chain reaches Django superadmin)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is Label Studio, a data-labeling / annotation platform central to ML data pipelines. The lesson: an ML data-platform API must enforce object-level authorization and never expose sensitive fields - this CVE replays the leaked credentials to impersonate and escalate in a privilege-escalation chain that ends in full account takeover."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not constrain which records/fields a user can read through the API."
+      },
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Sensitive fields (password hashes, tokens) are readable through the API and directly usable once leaked."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML data-platform API's object-level authorization and sensitive-field exposure as integrity controls whose failure yields account takeover."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "ML data-labeling platforms expose rich APIs over collaborative datasets; object-level authorization and serializer field allowlisting are frequently missing, and audits rarely test cross-account field reads.",
+      "theater_pattern": "ai_app_broken_object_authorization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-106",
+        "name": "AI-APP-API-OBJECT-AUTHORIZATION-AND-FIELD-EXPOSURE",
+        "description": "An AI data-platform API (data-labeling, annotation, dataset/registry services) must enforce object-level authorization on every read and must never expose sensitive fields - secrets, session-signing keys, auth tokens, password hashes - through API responses, serializers, or user-controlled query/filter expressions. Use serializer field allowlists (never blanket model serialization), reject ORM/filter inputs that reference fields the caller is not authorized to read, scope every query to the caller's own objects, and store credentials so a read leak is not directly replayable (and rotate exposed secrets). The distinguishing test: as a low-privilege user, craft a filter/query that references another account's password hash or token, and confirm the API refuses it - a platform whose filter/serializer leaks sensitive fields lets an attacker chain disclosure into account impersonation and privilege escalation.",
+        "evidence": "https://github.com/advisories/GHSA-f475-x83m-rx5m",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-28",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2022-36551": {
     "name": "Label Studio Data Import Server-Side Request Forgery",
     "lesson_date": "2026-05-25",
