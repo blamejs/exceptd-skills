@@ -8433,6 +8433,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-33236": {
+    "name": "NVIDIA NeMo Framework Malicious Model Import Code Injection RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA NeMo (CWE-94 code injection on malicious model import) executes attacker code or writes attacker files when an untrusted NeMo model is imported/loaded.",
+      "privileges_required": "ability to get a NeMo model loaded (NVD AV:L)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the model-import path of NVIDIA NeMo, an LLM training/customization framework. The lesson is the same one the Keras and Hugging Face Transformers CVEs teach: a model artifact is executable code at load time, so models (and their archive formats) from untrusted sources must be treated as untrusted code - provenance, safe extraction, sandboxed loading."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the LLM training/customization framework's model-load path as RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to imported model artifacts/archives that NeMo deserializes or extracts."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model artifact as untrusted executable input; loading an untrusted NeMo model is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 71,
+      "basis": "ML teams import NeMo models/checkpoints from hubs and shared stores and treat them as data; the framework's load path is assumed safe.",
+      "theater_pattern": "model_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load models/checkpoints from untrusted sources, verify provenance, prefer safe formats, extract archives with path validation, and load untrusted models only in a sandboxed, least-privilege environment. Upgrade NVIDIA NeMo to 2.6.1 or later. The control is the same one that closes the Keras and Hugging Face Transformers model-deserialization CVEs - the class is 'a model file is executable code'. The distinguishing test: load an attacker-crafted NeMo model on a sandboxed instance and confirm no code executes and no file is written outside the extraction directory.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5762",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-0129": {
+    "name": "NVIDIA NeMo SaveRestoreConnector .tar Path Traversal to Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "NVIDIA NeMo (CWE-22 path traversal via unsafe .nemo (.tar) extraction) executes attacker code or writes attacker files when an untrusted NeMo model is imported/loaded.",
+      "privileges_required": "ability to get a NeMo model loaded (NVD AV:L)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the model-import path of NVIDIA NeMo, an LLM training/customization framework. The lesson is the same one the Keras and Hugging Face Transformers CVEs teach: a model artifact is executable code at load time, so models (and their archive formats) from untrusted sources must be treated as untrusted code - provenance, safe extraction, sandboxed loading."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the LLM training/customization framework's model-load path as RCE-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to imported model artifacts/archives that NeMo deserializes or extracts."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model artifact as untrusted executable input; loading an untrusted NeMo model is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 71,
+      "basis": "ML teams import NeMo models/checkpoints from hubs and shared stores and treat them as data; the framework's load path is assumed safe.",
+      "theater_pattern": "model_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load models/checkpoints from untrusted sources, verify provenance, prefer safe formats, extract archives with path validation, and load untrusted models only in a sandboxed, least-privilege environment. Upgrade NVIDIA NeMo to r2.0.0rc0 or later. The control is the same one that closes the Keras and Hugging Face Transformers model-deserialization CVEs - the class is 'a model file is executable code'. The distinguishing test: load an attacker-crafted NeMo model on a sandboxed instance and confirm no code executes and no file is written outside the extraction directory.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5580",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-11393": {
     "name": "Hugging Face Transformers MaskFormer Deserialization Remote Code Execution",
     "lesson_date": "2026-05-25",

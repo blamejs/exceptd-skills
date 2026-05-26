@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.99 — 2026-05-25
+
+CVE catalog — NVIDIA NeMo model-load code execution. Adds two flaws in NeMo, NVIDIA's LLM training/customization framework, both where loading an untrusted model executes code. **CVE-2025-33236** (CWE-94, CNA NVIDIA CVSS 7.8; NVD unscored) — importing a malicious AI model triggers code injection and NeMo silently runs attacker code; fixed in 2.6.1 (Cato CTRL research). **CVE-2024-0129** (CWE-22, NIST CVSS 7.8 / NVIDIA 6.3) — the SaveRestoreConnector extracts a `.nemo` (`.tar`) model archive without path restriction, so a malicious model writes to an arbitrary path and can execute code; fixed in r2.0.0rc0. Both map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and reuse the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras and Hugging Face Transformers entries — a model file is executable code, so untrusted models must be provenance-verified and sandboxed. CVE count 376 → 378.
+
 ## 0.13.98 — 2026-05-25
 
 CVE catalog — Anyscale Ray dashboard. Adds the Ray dashboard CVE pair (fixed in Ray 2.8.1), complementing the disputed ShadowRay Job-API entry. **CVE-2023-6019** (CWE-78, NIST CVSS 9.8) — the dashboard's `cpu_profile` URL parameter is injected into a system command, giving unauthenticated remote code execution on the dashboard host. **CVE-2023-6021** (CWE-22, NIST CVSS 7.5) — the dashboard log API allows path traversal to read any file on the host without authentication. Both map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 / T1083), and reuse the AI-compute control-plane authentication control (NEW-CTRL-088) shared with ShadowRay — the AI compute dashboard/control plane must authenticate every caller and never be network-exposed. Unlike the disputed ShadowRay Job-API issue, these were patched in 2.8.1. CVE count 374 → 376.
