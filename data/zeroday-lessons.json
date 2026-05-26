@@ -17036,5 +17036,105 @@
     "ai_assist_factor": "none",
     "_auto_imported": true,
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+  },
+  "CVE-2024-12450": {
+    "name": "RAGFlow web_crawl Full-Read SSRF + Arbitrary File Read",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "RAGFlow's web_crawl function does not filter the supplied URL, so an attacker performs a full-read SSRF against internal addresses, reads local files via file://, and reaches an unsandboxed headless Chromium that can escalate to RCE.",
+      "privileges_required": "none to low (NVD PR:N; huntr PR:L)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is RAGFlow, an open-source Retrieval-Augmented-Generation engine. The lesson: a RAG engine's ingestion crawler is a server-side fetch that must validate and allowlist destinations and run any headless browser sandboxed, or it becomes an SSRF / file-read / RCE pivot."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not treat the RAG engine's crawl as an egress that can reach internal services."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to the user-supplied crawl URL before the server fetches it."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a RAG engine's server-side fetch as an egress that must validate and allowlist destinations."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "RAG engines crawl user-supplied URLs for ingestion on trusted-network assumptions; the fetch destination and scheme are not validated and the headless browser is not sandboxed.",
+      "theater_pattern": "ai_data_pipeline_ssrf_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-105",
+        "name": "AI-DATA-PIPELINE-IMPORT-SSRF-PROTECTION",
+        "description": "An AI data-pipeline platform that fetches from caller-supplied URLs or endpoints (data import, cloud-storage endpoint configuration, webhook/annotation sources, ingestion crawlers) must validate and allowlist the destination before issuing the request: reject private, link-local, and cloud-metadata addresses (169.254.169.254), reject file:// and non-HTTP schemes, and resolve+pin the host to prevent DNS-rebinding. Run any headless browser sandboxed. Restrict who can configure server-side fetches. The distinguishing test: configure the import/crawl URL to an internal or cloud-metadata address (or a file:// path) on a staging instance and confirm the server refuses the fetch - a platform that issues the request and returns the response is exploitable for SSRF / file read / internal pivot, regardless of authentication posture.",
+        "evidence": "https://huntr.com/bounties/da06360c-87c3-4ba9-be67-29f6eff9d44a",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-69286": {
+    "name": "RAGFlow Predictable API-Key / Share-Token Account Takeover",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "RAGFlow generates its API key and share/beta token with the same URLSafeTimedSerializer keyed by the tenant_id over a timestamp-based UUIDv1, so the tokens are mutually derivable - a shared assistant/agent URL yields the owner's API key and full account control.",
+      "privileges_required": "none (an attacker who obtains a shared assistant/agent URL)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is RAGFlow, an open-source Retrieval-Augmented-Generation engine. The lesson: an AI app's API keys and share tokens are authentication material that must be generated from a CSPRNG with an unpredictable per-install secret - never derivable from a tenant id, a timestamp, or another token."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authenticator management does not require API keys / share tokens to be unpredictable and non-derivable."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement is bypassed once a derivable API key grants full account control."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an AI app platform's token generation (CSPRNG + unpredictable secret) as an authentication-integrity control."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "AI app platforms issue API keys and share tokens with bespoke serializers seeded by tenant ids and timestamp-based UUIDs; token-generation entropy is rarely audited.",
+      "theater_pattern": "ai_app_predictable_token_generation"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-109",
+        "name": "AI-APP-API-TOKEN-GENERATION-INTEGRITY",
+        "description": "An AI application's API keys, share/beta tokens, and session identifiers must be generated from a cryptographically secure RNG (os.urandom / secrets) with an unpredictable per-install server secret. Never key a token serializer with a tenant/customer id, never use a timestamp-based UUIDv1 (or any guessable counter) as token material, and never let one issued token be derivable from another. Make tokens long, single-use where applicable, and revocable. The distinguishing test: on a staging instance, mint two tokens (or two accounts' tokens) and confirm that one cannot be derived from the other, from the tenant id, or from the generation timestamp - an AI app whose API-key / share-token derivation is predictable permits account takeover from a shared link alone.",
+        "evidence": "https://github.com/infiniflow/ragflow/security/advisories/GHSA-9j5g-g4xm-57w7",
+        "gap_closes": [
+          "NIST-800-53-IA-5",
+          "NIST-800-53-AC-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

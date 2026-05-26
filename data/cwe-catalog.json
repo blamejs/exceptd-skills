@@ -164,7 +164,8 @@
       "CVE-2026-30617",
       "CVE-2026-30624",
       "CVE-2026-30625",
-      "MAL-2026-3083"
+      "MAL-2026-3083",
+      "CVE-2024-12450"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1885,7 +1886,8 @@
       "CVE-2024-6587",
       "CVE-2025-25297",
       "CVE-2025-56520",
-      "CVE-2025-61884"
+      "CVE-2025-61884",
+      "CVE-2024-12450"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-7",
@@ -4386,5 +4388,36 @@
     ],
     "last_verified": "2026-05-19",
     "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry."
+  },
+  "CWE-340": {
+    "id": "CWE-340",
+    "name": "Generation of Predictable Numbers or Identifiers",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses a scheme that generates numbers or identifiers that are more predictable than required (e.g. timestamp-based UUIDv1, a serializer keyed by a guessable secret, sequential ids), so an attacker can predict or derive the value. Child of CWE-330; siblings include CWE-330, -341, -342.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-59",
+      "CAPEC-112"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-69286"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5",
+      "NIST-800-53-SC-13"
+    ],
+    "real_requirement": "Generate security-relevant identifiers and tokens (API keys, share/reset tokens, session ids) from an OS CSPRNG with an unpredictable per-install secret; never key a serializer with a tenant/customer id, never use timestamp-based UUIDv1 as token material, and never let one token be derivable from another.",
+    "lag_notes": "Framework controls require 'unpredictable' authenticators in the abstract; codebase-level enforcement that token-generation never uses a predictable secret or timestamp source is absent.",
+    "last_verified": "2026-05-26",
+    "playbooks_referencing": [
+      "identity-sso-compromise"
+    ]
   }
 }
