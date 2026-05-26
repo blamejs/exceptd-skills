@@ -6890,7 +6890,7 @@
       "description": "NVIDIA Triton's DALI data-augmentation backend mishandles attacker-supplied inference input (CWE-400 uncontrolled resource consumption), letting an unauthenticated attacker exhaust resources and deny service.",
       "privileges_required": "none (NVD AV:N / PR:N) — network-reachable inference input",
       "complexity": "low (NVD AC:L)",
-      "ai_factor": "The abused surface is the media/data-augmentation backend of a widely deployed AI inference server, which processes untrusted inference input. The lesson: inference backends that decode or transform attacker-supplied data are memory-safety and availability surfaces that must bounds-check and resource-limit, and the inference endpoint must not be network-exposed to untrusted clients. This is also a clean CVSS-vs-RWEP case (NVD CRITICAL, but patched + no exploitation = low real-world priority)."
+      "ai_factor": "The abused surface is the media/data-augmentation backend of a widely deployed AI inference server, which processes untrusted inference input. The lesson: inference backends that decode or transform attacker-supplied data are memory-safety and availability surfaces that must bounds-check and resource-limit, and the inference endpoint must not be network-exposed to untrusted clients. This is also a clean CVSS-vs-RWEP case (NVD rates it HIGH, but patched + no exploitation = low real-world priority)."
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
