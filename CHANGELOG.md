@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.100 — 2026-05-25
+
+CVE catalog — PyTorch torch.load RCE despite weights_only=True. Adds **CVE-2025-32434** (CWE-502, NIST CVSS 9.8 CRITICAL): PyTorch's `torch.load` executes attacker code from a crafted checkpoint even when called with `weights_only=True` — the setting the ecosystem recommended as the safe way to load untrusted models — so pipelines that followed that guidance on ≤ 2.5.1 remain vulnerable; fixed in 2.6.0. Maps MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and reuses the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras, Hugging Face Transformers, and NeMo entries — a model checkpoint is executable code regardless of "safe" load flags. CVE count 378 → 379.
+
 ## 0.13.99 — 2026-05-25
 
 CVE catalog — NVIDIA NeMo model-load code execution. Adds two flaws in NeMo, NVIDIA's LLM training/customization framework, both where loading an untrusted model executes code. **CVE-2025-33236** (CWE-94, CNA NVIDIA CVSS 7.8; NVD unscored) — importing a malicious AI model triggers code injection and NeMo silently runs attacker code; fixed in 2.6.1 (Cato CTRL research). **CVE-2024-0129** (CWE-22, NIST CVSS 7.8 / NVIDIA 6.3) — the SaveRestoreConnector extracts a `.nemo` (`.tar`) model archive without path restriction, so a malicious model writes to an arbitrary path and can execute code; fixed in r2.0.0rc0. Both map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and reuse the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras and Hugging Face Transformers entries — a model file is executable code, so untrusted models must be provenance-verified and sandboxed. CVE count 376 → 378.
