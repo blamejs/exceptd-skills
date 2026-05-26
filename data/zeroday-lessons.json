@@ -8483,6 +8483,56 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-32434": {
+    "name": "PyTorch torch.load Remote Code Execution Despite weights_only=True",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "PyTorch's torch.load executes attacker code from a crafted checkpoint even when weights_only=True is set (CWE-502), so deployments that followed the recommended safe-load guidance on <= 2.5.1 are still vulnerable to loading an untrusted model.",
+      "privileges_required": "ability to get an untrusted checkpoint loaded (NVD AV:N / PR:N)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the primary model-loading API of PyTorch, the foundational deep-learning framework. The lesson, sharpened like the Keras safe_mode bypass: a 'safe' loading flag (weights_only=True) was necessary-but-insufficient. Model checkpoints must be treated as untrusted code regardless of load flags - provenance, safetensors, sandboxed loading - and the framework must be patched (2.6.0+)."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the DL framework's model-loading API as RCE-bearing, nor that the documented safe-load flag was bypassable."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to checkpoints torch.load deserializes; the safe-load flag was trusted as sufficient."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model checkpoint as untrusted executable input; loading one with torch.load (even weights_only=True on <= 2.5.1) is RCE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 76,
+      "basis": "Teams adopted weights_only=True as the safe way to load untrusted checkpoints; on <= 2.5.1 that guidance is bypassable, so 'compliant' pipelines remain exposed.",
+      "theater_pattern": "incomplete_fix_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code regardless of 'safe' load flags: never load checkpoints from untrusted sources, verify provenance, prefer safetensors, and load untrusted models only sandboxed. Upgrade PyTorch to 2.6.0 or later - weights_only=True does NOT make torch.load safe on <= 2.5.1 (CVE-2025-32434). The control is the same one that closes the Keras, Hugging Face Transformers, and NeMo model-deserialization CVEs. The distinguishing test: load an attacker-crafted checkpoint with weights_only=True on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://github.com/pytorch/pytorch/security/advisories/GHSA-53q9-r3pm-6pq6",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-0129": {
     "name": "NVIDIA NeMo SaveRestoreConnector .tar Path Traversal to Code Execution",
     "lesson_date": "2026-05-25",
