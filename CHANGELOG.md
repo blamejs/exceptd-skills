@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.95 — 2026-05-25
+
+CVE catalog — LlamaIndex CLI command injection. Adds **CVE-2025-1753** (CWE-78, CNA huntr.dev CVSS 7.8; NVD has not assigned its own score): the LlamaIndex CLI builds a shell command from the user-supplied `--files` argument and runs it without neutralization, so shell metacharacters execute arbitrary OS commands; the fix adds shlex escaping. Maps ATT&CK T1059, with a zero-day lesson (NEW-CTRL-100) requiring AI-framework CLIs/tools to use argv-array execution or shlex neutralization rather than building shell strings from arguments — the same root cause as the MCP-stdio command-injection family, applied to a framework CLI. CVE count 369 → 370.
+
 ## 0.13.94 — 2026-05-25
 
 CVE catalog — AnythingLLM upload path traversal to RCE. Adds **CVE-2024-13059** (CWE-22, NIST CVSS 7.2): AnythingLLM's multer-based upload handler mishandles non-ASCII filenames so they decode into `../` traversal sequences, letting a manager/admin user write attacker content to an arbitrary path (e.g. a startup script) and achieve remote code execution on the host; fixed in 1.3.1. Maps ATLAS AML.T0049 and ATT&CK T1190 / T1059, and reuses the runtime-API path-traversal control (NEW-CTRL-094) shared with the Ollama entries — AI-app file/path inputs must be canonicalized and validated, including non-ASCII transforms, before touching the filesystem. CVE count 368 → 369.
