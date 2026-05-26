@@ -1321,6 +1321,7 @@
       "CVE-2025-24016",
       "CVE-2025-26399",
       "CVE-2025-30165",
+      "CVE-2025-32444",
       "CVE-2025-40551",
       "CVE-2025-42999",
       "CVE-2025-49113",
@@ -3640,7 +3641,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-30202"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,

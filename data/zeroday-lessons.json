@@ -6633,6 +6633,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-32444": {
+    "name": "vLLM Mooncake Integration ZeroMQ Deserialization RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "vLLM's distributed-serving transport exposes CWE-502 deserialization over unsecured ZeroMQ in the Mooncake integration: an unauthenticated network peer sends a crafted serialized payload that executes code on the vLLM host.",
+      "privileges_required": "none (NVD AV:N / PR:N) — network-reachable",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the distributed-serving IPC layer of the most widely used LLM serving engine. The lesson matches the ShadowMQ family: an inference engine's IPC sockets must use a safe serializer, authenticate peers, and stay on a trusted network segment — never bound to all interfaces or fed untrusted serialized data."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the LLM serving engine's distributed transport as RCE/exposure-bearing software."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag vLLM's ZeroMQ sockets (Mooncake / XPUB) as network-exposed surfaces."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the inference engine's IPC sockets as untrusted surfaces requiring a safe serializer, peer authentication, and isolation."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Distributed LLM serving is deployed on trusted-network assumptions; the engine's IPC sockets are not tracked or isolated.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, bind sockets to loopback/trusted segments (never all interfaces), and isolate the channel. Upgrade vLLM to 0.8.5 or later, which fixes both the Mooncake deserialization RCE (CVE-2025-32444) and the XPUB all-interface exposure (CVE-2025-30202). This is the same control class as the ShadowMQ family (CVE-2025-30165 etc.) — apply it across every inference engine in the estate. The distinguishing test: from an unauthorized peer on a staging cluster, send a crafted serialized object to the Mooncake socket and connect to the XPUB socket; both must be refused.",
+        "evidence": "https://github.com/vllm-project/vllm/security/advisories/GHSA-hj4w-hm2g-p6w5",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-30202": {
+    "name": "vLLM Distributed XPUB ZeroMQ Socket All-Interface Exposure",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "vLLM's distributed-serving transport exposes CWE-770 unauthenticated all-interface XPUB ZeroMQ socket exposure: an unauthenticated network peer reads the broadcast data stream and floods the socket for denial of service.",
+      "privileges_required": "none (NVD AV:N / PR:N) — network-reachable",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the distributed-serving IPC layer of the most widely used LLM serving engine. The lesson matches the ShadowMQ family: an inference engine's IPC sockets must use a safe serializer, authenticate peers, and stay on a trusted network segment — never bound to all interfaces or fed untrusted serialized data."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the LLM serving engine's distributed transport as RCE/exposure-bearing software."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not flag vLLM's ZeroMQ sockets (Mooncake / XPUB) as network-exposed surfaces."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats the inference engine's IPC sockets as untrusted surfaces requiring a safe serializer, peer authentication, and isolation."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "Distributed LLM serving is deployed on trusted-network assumptions; the engine's IPC sockets are not tracked or isolated.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, bind sockets to loopback/trusted segments (never all interfaces), and isolate the channel. Upgrade vLLM to 0.8.5 or later, which fixes both the Mooncake deserialization RCE (CVE-2025-32444) and the XPUB all-interface exposure (CVE-2025-30202). This is the same control class as the ShadowMQ family (CVE-2025-30165 etc.) — apply it across every inference engine in the estate. The distinguishing test: from an unauthorized peer on a staging cluster, send a crafted serialized object to the Mooncake socket and connect to the XPUB socket; both must be refused.",
+        "evidence": "https://github.com/vllm-project/vllm/security/advisories/GHSA-9f8f-2vmf-885j",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-50050": {
     "name": "Meta Llama Stack Socket Deserialization RCE (ShadowMQ)",
     "lesson_date": "2026-05-25",
