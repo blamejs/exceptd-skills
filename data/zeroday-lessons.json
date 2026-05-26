@@ -4299,7 +4299,7 @@
       {
         "id": "NEW-CTRL-094",
         "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
-        "description": "An AI application's file/path-bearing inputs - including archive (backup) entry paths on extraction - must be canonicalized and constrained to the intended directory before any write (reject absolute paths and ../ traversal / ZipSlip). Upgrade Weaviate OSS to 1.33.4 or later, restrict who can insert data or trigger restores, and run least-privilege. This is the same path-traversal class as the Ollama / AnythingLLM entries. The distinguishing test: restore a backup containing a ../ entry on a staging instance and confirm it is rejected, not written outside the restore root.",
+        "description": "An AI application's file/path-bearing inputs - including archive (backup) entry paths on extraction - must be canonicalized and constrained to the intended directory before any write (reject absolute paths and ../ traversal / ZipSlip). Upgrade Weaviate OSS to the fixed release on your maintained branch (1.30.20 / 1.31.19 / 1.32.16 / 1.33.4), restrict who can insert data or trigger restores, and run least-privilege. This is the same path-traversal class as the Ollama / AnythingLLM entries. The distinguishing test: restore a backup containing a ../ entry on a staging instance and confirm it is rejected, not written outside the restore root.",
         "evidence": "https://github.com/advisories/GHSA-7v39-2hx7-7c43",
         "gap_closes": [
           "NIST-800-53-SI-2",
