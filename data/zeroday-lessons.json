@@ -4461,6 +4461,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-2912": {
+    "name": "BentoML Insecure Deserialization Unauthenticated Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "BentoML before 1.2.5 deserializes an attacker-supplied serialized object delivered to a valid serving endpoint without validation, so an unauthenticated attacker runs arbitrary code on the model server.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is BentoML, a model-serving / inference framework. The lesson: a model server must never reconstruct an untrusted serialized object from a request - the same inference-path deserialization class as the ShadowMQ / vLLM entries, here on the HTTP serving API, and it recurred in BentoML after the first fix."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation closed one deserialization path (1.2.5) but the class recurred (serde.py, fixed 1.4.3) - the fix did not generalize to all request-deserialization sinks."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation distinguishes a safe payload from a deserialization-gadget object at the model-serving endpoint."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a model-serving framework's request-deserialization path as a privileged execution surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Model-serving frameworks are deployed for inference throughput on trusted-network assumptions; their request-deserialization paths are not treated as untrusted-input boundaries.",
+      "theater_pattern": "model_serving_deserialization_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (NVIDIA TensorRT-LLM), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5648",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-27520": {
+    "name": "BentoML serde.py Insecure Deserialization Unauthenticated Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "BentoML 1.3.4 through 1.4.2 reconstructs an attacker-supplied serialized object in serde.py from a request without validation, giving any unauthenticated user remote code execution - the same insecure-deserialization class that 1.2.5 fixed, recurring on the serde.py path.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is BentoML, a model-serving / inference framework. The lesson: a model server must never reconstruct an untrusted serialized object from a request - the same inference-path deserialization class as the ShadowMQ / vLLM entries, here on the HTTP serving API, and it recurred in BentoML after the first fix."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation closed one deserialization path (1.2.5) but the class recurred (serde.py, fixed 1.4.3) - the fix did not generalize to all request-deserialization sinks."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation distinguishes a safe payload from a deserialization-gadget object at the model-serving endpoint."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a model-serving framework's request-deserialization path as a privileged execution surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Model-serving frameworks are deployed for inference throughput on trusted-network assumptions; their request-deserialization paths are not treated as untrusted-input boundaries.",
+      "theater_pattern": "model_serving_deserialization_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spread by code reuse, the control must be applied across every inference engine in the estate, not one at a time. Apply the project fix (NVIDIA TensorRT-LLM), and for vLLM keep the legacy V0 engine disabled. The distinguishing test: send a crafted serialized object to the inference engine's socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "evidence": "https://nvidia.custhelp.com/app/answers/detail/a_id/5648",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2023-6038": {
     "name": "H2O-3 REST API Unauthenticated Local File Inclusion (Arbitrary File Read)",
     "lesson_date": "2026-05-25",

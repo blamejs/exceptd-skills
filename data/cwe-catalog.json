@@ -1344,6 +1344,7 @@
       "CVE-2025-23254",
       "CVE-2025-24016",
       "CVE-2025-26399",
+      "CVE-2025-27520",
       "CVE-2025-30165",
       "CVE-2025-32434",
       "CVE-2025-32444",
@@ -1951,6 +1952,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2024-2912",
       "CVE-2025-48927"
     ],
     "framework_controls_partially_addressing": [
