@@ -551,6 +551,8 @@
       "CVE-2026-33825",
       "CVE-2026-39884",
       "CVE-2026-41940",
+      "CVE-2026-41947",
+      "CVE-2026-41950",
       "CVE-2026-42897",
       "CVE-2026-6973",
       "MAL-2026-NODE-IPC-STEALER",
@@ -1086,6 +1088,8 @@
       "CVE-2026-3910",
       "CVE-2026-39987",
       "CVE-2026-40933",
+      "CVE-2026-41947",
+      "CVE-2026-41950",
       "CVE-2026-42208",
       "CVE-2026-42897",
       "CVE-2026-42945",
@@ -1312,6 +1316,9 @@
     "description": "Adversaries may leverage information repositories to mine valuable information.",
     "tactic": [
       "Collection"
+    ],
+    "cve_refs": [
+      "CVE-2026-41950"
     ]
   },
   "T1485": {
@@ -1456,6 +1463,9 @@
     "description": "Adversaries may access data from cloud storage.",
     "tactic": [
       "Collection"
+    ],
+    "cve_refs": [
+      "CVE-2026-41947"
     ]
   },
   "T1543": {
