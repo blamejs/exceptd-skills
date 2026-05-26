@@ -717,6 +717,7 @@
       "CVE-2020-10148",
       "CVE-2021-32030",
       "CVE-2023-27351",
+      "CVE-2024-12776",
       "CVE-2024-1709",
       "CVE-2025-32975",
       "CVE-2025-3935",
@@ -1025,7 +1026,9 @@
       "CAPEC-485"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-1796"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13"
     ],
@@ -3513,7 +3516,10 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-12776",
+      "CVE-2025-1796"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
