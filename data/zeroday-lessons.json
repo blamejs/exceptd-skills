@@ -4100,7 +4100,7 @@
         "id": "NEW-CTRL-099",
         "name": "LLM-CHAIN-GENERATED-CODE-EXECUTION-CONTROL",
         "description": "LLM chains/agents that execute generated or prompt-influenced code (PALChain, VectorSQLDatabaseChain, LLMMathChain, Python/Pandas agents) must sandbox execution in an isolated, least-privilege, network-restricted environment or disable code execution entirely; builtin/function denylists are insufficient (the CVE-2023-36258 fix was bypassed via the dunder-import builtin in CVE-2023-44467). Upgrade langchain-experimental to 0.0.306 or later, and never expose a code-executing chain to untrusted prompts. The distinguishing test: send a prompt-injection payload that requests code execution to a staging chain and confirm it is sandboxed/refused, not run in-process.",
-        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2023-44467",
+        "evidence": "https://github.com/advisories/GHSA-gjjr-63x4-v8cq",
         "gap_closes": [
           "NIST-800-53-SI-2",
           "NIST-800-53-SI-10",
