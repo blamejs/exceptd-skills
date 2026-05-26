@@ -149,7 +149,7 @@
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 392
+      "entry_count": 394
     },
     {
       "date": "2026-05-18",
@@ -165,7 +165,7 @@
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 387
+      "entry_count": 389
     },
     {
       "date": "2026-05-17",
