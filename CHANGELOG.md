@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.91 — 2026-05-25
+
+CVE catalog — MLflow recipe template-injection XSS. Adds **CVE-2024-27132** (CWE-79, NIST CVSS 9.6 CRITICAL): MLflow renders recipe template variables without sufficient sanitization, so running an untrusted recipe executes script in the victim's MLflow session (stored XSS) and pivots to client-side remote code execution against the tracking-server UI; fixed in 2.10.0. Maps ATLAS AML.T0049 and ATT&CK T1189 / T1059.007, with a zero-day lesson (NEW-CTRL-097) requiring the MLOps platform UI to output-encode all user/community-supplied content it renders (recipe variables, run metadata, model cards) and stay off untrusted networks. Complements the existing MLflow path-traversal entry (CVE-2023-43472). CVE count 363 → 364.
+
 ## 0.13.90 — 2026-05-25
 
 CVE catalog — vLLM distributed-serving ZeroMQ transport. Adds two flaws in vLLM's multi-node serving transport, both fixed in 0.8.5. **CVE-2025-32444** (CWE-502, NIST CVSS 9.8) — the Mooncake KV-transfer integration exchanges serialized data over unsecured ZeroMQ sockets, giving an unauthenticated network attacker remote code execution; unlike the off-by-default V0-engine ShadowMQ flaw, the Mooncake sockets are network-reachable when the integration is enabled. **CVE-2025-30202** (CWE-770, NIST CVSS 7.5) — multi-node deployments bind the primary host's XPUB ZeroMQ socket to all interfaces, exposing the broadcast data stream and enabling denial of service. Both map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 / T1499 / T1040), and they reuse the inference-IPC deserialization-safety control (NEW-CTRL-086) shared with the ShadowMQ family — a safe serializer, peer authentication, and loopback/trusted-segment binding across every inference engine. CVE count 361 → 363.

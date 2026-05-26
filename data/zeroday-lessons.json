@@ -2142,6 +2142,56 @@
     "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "low"
   },
+  "CVE-2024-27132": {
+    "name": "MLflow Recipe Template Injection XSS to Client-Side RCE",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "MLflow renders recipe template variables without sufficient sanitization (CWE-79, rooted in template injection), so an untrusted recipe executes script in the victim's MLflow session and can pivot to privileged tracking-server actions.",
+      "privileges_required": "none beyond getting a victim to run/view an untrusted recipe (NVD UI:R)",
+      "complexity": "low (NVD AC:L)",
+      "ai_factor": "The abused surface is the recipe-rendering UI of MLflow, a widely used MLOps experiment-tracking platform. The lesson: MLOps platform UIs render user/community-supplied content (recipes, run metadata, model cards) and must output-encode it — the MLOps UI is a privileged control surface, not a passive viewer."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track the MLOps experiment-tracking platform as managed, user-facing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Output-encoding is not applied to recipe template variables rendered in the MLflow UI."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats untrusted MLOps content (recipes, run metadata) as requiring sanitization before rendering."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 66,
+      "basis": "MLOps platforms are deployed for internal teams and assumed trusted; untrusted recipes/run metadata are rendered without output encoding.",
+      "theater_pattern": "ai_demo_framework_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-097",
+        "name": "MLOPS-PLATFORM-UNTRUSTED-CONTENT-ENCODING",
+        "description": "An MLOps platform UI must output-encode and sanitize all user/community-supplied content it renders (recipe template variables, run metadata, model cards, artifact names) and must not expose its UI / tracking server to untrusted users. Upgrade MLflow to 2.10.0 or later. The distinguishing test: load a recipe whose template variables contain script payloads into a staging MLflow and confirm the UI renders them inert, not executed.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2024-27132",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2020-10148": {
     "name": "SolarWinds Orion API authentication bypass (SUNBURST chain component)",
     "lesson_date": "2026-05-19",
