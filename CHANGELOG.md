@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.96 — 2026-05-25
+
+CVE catalog — BerriAI LiteLLM gateway. Adds two flaws in the LLM proxy/gateway that concentrates provider API keys. **CVE-2024-6587** (CWE-918, NIST CVSS 7.5) — LiteLLM honors a user-supplied `api_base` on `/chat/completions` and forwards the configured provider API key to the attacker's domain (SSRF → key interception); this was the SSRF link of a Pwn2Own full-chain RCE. **CVE-2024-4889** (CWE-94, NIST CVSS 7.2) — an admin-influenced `UI_LOGO_PATH` with Google KMS / `SAVE_CONFIG_TO_DB` reaches a dynamic-evaluation path in the secret-management code, executing code on the credential-bearing proxy; fixed in 1.44.16. Both map ATLAS AML.T0049 + AML.T0055 (unsecured credentials) and ATT&CK T1190 (+ T1552.001 / T1059), and reuse the gateway-credential-isolation control (NEW-CTRL-013) shared with the LiteLLM SQLi entry — the LLM gateway is a high-value credential store whose request/config plane must be isolated from the secrets. CVE count 370 → 372.
+
 ## 0.13.95 — 2026-05-25
 
 CVE catalog — LlamaIndex CLI command injection. Adds **CVE-2025-1753** (CWE-78, CNA huntr.dev CVSS 7.8; NVD has not assigned its own score): the LlamaIndex CLI builds a shell command from the user-supplied `--files` argument and runs it without neutralization, so shell metacharacters execute arbitrary OS commands; the fix adds shlex escaping. Maps ATT&CK T1059, with a zero-day lesson (NEW-CTRL-100) requiring AI-framework CLIs/tools to use argv-array execution or shlex neutralization rather than building shell strings from arguments — the same root cause as the MCP-stdio command-injection family, applied to a framework CLI. CVE count 369 → 370.
