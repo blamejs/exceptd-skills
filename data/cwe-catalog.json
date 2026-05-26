@@ -463,6 +463,7 @@
       "CVE-2025-48633",
       "CVE-2025-5419",
       "CVE-2025-5777",
+      "CVE-2026-24213",
       "CVE-2026-3055"
     ],
     "framework_controls_partially_addressing": [
@@ -2332,7 +2333,8 @@
     "evidence_cves": [
       "CVE-2018-14634",
       "CVE-2021-30952",
-      "CVE-2026-21385"
+      "CVE-2026-21385",
+      "CVE-2026-24214"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."
@@ -2945,6 +2947,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2026-24215",
       "CVE-2026-45498"
     ],
     "last_verified": "2026-05-19",

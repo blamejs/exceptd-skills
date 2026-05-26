@@ -1721,6 +1721,9 @@
       "CVE-2024-42479",
       "CVE-2025-64496",
       "CVE-2026-0766",
+      "CVE-2026-24213",
+      "CVE-2026-24214",
+      "CVE-2026-24215",
       "CVE-2026-34159"
     ]
   },
@@ -3047,7 +3050,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--c54f84ef-93fd-560c-bbbb-5490753a2f97",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2026-24215"
+    ]
   },
   "AML.T0034.002": {
     "id": "AML.T0034.002",
