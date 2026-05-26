@@ -4411,6 +4411,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2023-6016": {
+    "name": "H2O-3 POJO Model Import Unauthenticated Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "H2O-3's dashboard / REST API exposes an unauthenticated POJO (Java) model-import feature that compiles and runs the imported model code, so an unauthenticated attacker imports a malicious model and gains remote code execution on the host.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is H2O-3, an open-source ML/AutoML platform. The lesson: an ML platform's control plane is a privileged surface - model import runs code, so it must authenticate and reject untrusted model artifacts; a 'trusted environment' deployment assumption is not a control."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation does not track the ML platform's model-import feature; the vendor treats H2O-3 as trusted-environment-only, so no fix ships."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation distinguishes a trusted model from attacker code at the unauthenticated model-import endpoint."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML platform's model-import feature as a privileged code-execution surface - a model artifact is executable code."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "H2O-3 is deployed for data-science productivity on trusted-network assumptions; its dashboard / REST API is frequently exposed without authentication, and the vendor ships no fix (trusted-environment-by-design).",
+      "theater_pattern": "ai_platform_trusted_environment_assumption"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts as untrusted code: never load .keras / pickle-based models from untrusted sources, verify provenance, prefer safe formats (e.g. safetensors), and load untrusted models only in a sandboxed, network-isolated, least-privilege environment. Upgrade Keras to the fixed release (>= 3.8.0 for CVE-2025-1550; past 3.10.0 for the CVE-2025-8747 safe_mode bypass) and do not rely on safe_mode alone — it was bypassable. The distinguishing test: load an attacker-crafted .keras archive with safe_mode enabled on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2025-1550",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2023-6038": {
+    "name": "H2O-3 REST API Unauthenticated Local File Inclusion (Arbitrary File Read)",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "H2O-3's REST API exposes a file-import path with no authorization check, so an unauthenticated remote attacker reads arbitrary files on the host with the H2O-3 process's permissions (Local File Inclusion).",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is H2O-3, an open-source ML/AutoML platform. The lesson: an ML platform's control plane is a privileged surface - its REST API must authenticate every endpoint; a 'trusted environment' deployment assumption is not a control."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The H2O-3 REST API does not authenticate callers before serving a file-import path; 'trusted environment' is assumed, not enforced."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not treat the unauthenticated ML-platform REST API as an exposed surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires authenticating every endpoint of an ML platform's control plane / REST API."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "H2O-3 is deployed for data-science productivity on trusted-network assumptions; its dashboard / REST API is frequently exposed without authentication, and the vendor ships no fix (trusted-environment-by-design).",
+      "theater_pattern": "ai_platform_trusted_environment_assumption"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-088",
+        "name": "AI-COMPUTE-CONTROL-PLANE-AUTHENTICATION",
+        "description": "An AI compute framework's job/control API must authenticate every caller; 'deploy only on a trusted network' is an assumption, not a control, and must not substitute for authentication. Enable Ray token authentication (2.52.0+), never expose the dashboard / Job Submission API to untrusted networks, front it with an authenticating proxy, and treat any internet-exposed cluster as compromised (rotate model artifacts and cloud credentials). The distinguishing test: from the public internet, attempt to reach the Ray dashboard (default 8265) and submit a job unauthenticated on a staging cluster; it must be refused.",
+        "evidence": "https://atlas.mitre.org/studies/AML.CS0023",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2024-24591": {
     "name": "ClearML Client SDK Dataset Path Traversal Arbitrary File Write",
     "lesson_date": "2026-05-25",
