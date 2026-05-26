@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.92 — 2026-05-25
+
+CVE catalog — ComfyUI custom-node RCE. Adds the two Snyk-disclosed flaws in the ComfyUI custom-node ecosystem, the AI image-generation tool whose nodes auto-load and run code. **CVE-2024-21575** (ComfyUI-Impact-Pack, CWE-35, NIST CVSS 8.6) — missing validation of `image.filename` on `/upload/temp` allows path-traversal arbitrary file write; dropping a `.py` into the auto-loaded `./custom_nodes` directory escalates to remote code execution. **CVE-2024-21576** (ComfyUI-Bmad-Nodes, CWE-94, NIST CVSS 10.0) — several nodes pass a workflow-supplied string to a dynamic-code-evaluation call, so a crafted workflow yields unauthenticated RCE. Both map ATLAS AML.T0049 and ATT&CK T1190 / T1059; their shared zero-day lesson (NEW-CTRL-098) treats auto-loaded AI-tool custom nodes as an untrusted-code supply-chain and execution surface (allow-list before install, validate node inputs, never expose the tool to untrusted networks). The entries note the April 2026 cryptomining-botnet campaign mass-targeting exposed ComfyUI via this surface, without attributing it to these specific CVEs. CVE count 364 → 366.
+
 ## 0.13.91 — 2026-05-25
 
 CVE catalog — MLflow recipe template-injection XSS. Adds **CVE-2024-27132** (CWE-79, NIST CVSS 9.6 CRITICAL): MLflow renders recipe template variables without sufficient sanitization, so running an untrusted recipe executes script in the victim's MLflow session (stored XSS) and pivots to client-side remote code execution against the tracking-server UI; fixed in 2.10.0. Maps ATLAS AML.T0049 and ATT&CK T1189 / T1059.007, with a zero-day lesson (NEW-CTRL-097) requiring the MLOps platform UI to output-encode all user/community-supplied content it renders (recipe variables, run metadata, model cards) and stay off untrusted networks. Complements the existing MLflow path-traversal entry (CVE-2023-43472). CVE count 363 → 364.
