@@ -4811,6 +4811,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-1796": {
+    "name": "Dify Weak-PRNG Password Reset Account Takeover",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "Dify generates password-reset codes with a weak PRNG (random.randint) rather than a cryptographically secure RNG, so an attacker predicts the reset code and takes over any account, including administrators.",
+      "privileges_required": "low (an account to trigger the predictable reset; takeover reaches admin)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is Dify, a low-code LLM application-development platform. The lesson: an AI app's password-recovery flow is an authentication-integrity control - the predictable reset-code half of a takeover chain that ends in full admin control; reset tokens must be CSPRNG-generated AND verified server-side."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The LLM app's password-recovery flow lets an attacker authenticate as any user, including admin."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A predictable reset code grants control of any account."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an LLM app platform's password-recovery flow as an authentication-integrity control whose failure yields full account takeover."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "LLM app platforms ship self-service password recovery; reset-token generation and verification are rarely audited, and weak PRNG / missing verification persist.",
+      "theater_pattern": "ai_app_weak_password_recovery"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-108",
+        "name": "AI-APP-PASSWORD-RECOVERY-INTEGRITY",
+        "description": "An AI application's password-reset / account-recovery flow must (1) generate reset tokens with a cryptographically secure RNG (e.g. secrets / os.urandom - never random.randint or another predictable PRNG), making them long, single-use, and short-lived; and (2) verify the reset token server-side, bound to the requesting account, before accepting a new password - the reset endpoint must never perform a reset without a valid, matching, unexpired token. Rate-limit reset attempts. The distinguishing test: on a staging instance, request a reset and confirm the code is unpredictable across requests, and confirm POSTing to the reset endpoint with a wrong/absent code is rejected - an AI app whose recovery flow uses a weak PRNG or skips token verification permits takeover of any account, including administrators.",
+        "evidence": "https://github.com/advisories/GHSA-cvg9-334x-w586",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-AC-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-12776": {
+    "name": "Dify Unverified Password-Reset Endpoint Account Takeover",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "Dify's /forgot-password/resets endpoint does not verify the reset code before allowing a password reset, so an attacker resets any user's password (including admin) without a valid code.",
+      "privileges_required": "none (unauthenticated reset of any account)",
+      "complexity": "high",
+      "ai_factor": "The abused surface is Dify, a low-code LLM application-development platform. The lesson: an AI app's password-recovery flow is an authentication-integrity control - the unverified-reset-endpoint half of a takeover chain that ends in full admin control; reset tokens must be CSPRNG-generated AND verified server-side."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The LLM app's password-recovery flow lets an attacker authenticate as any user, including admin."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An unverified reset endpoint grants control of any account."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an LLM app platform's password-recovery flow as an authentication-integrity control whose failure yields full account takeover."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "LLM app platforms ship self-service password recovery; reset-token generation and verification are rarely audited, and weak PRNG / missing verification persist.",
+      "theater_pattern": "ai_app_weak_password_recovery"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-108",
+        "name": "AI-APP-PASSWORD-RECOVERY-INTEGRITY",
+        "description": "An AI application's password-reset / account-recovery flow must (1) generate reset tokens with a cryptographically secure RNG (e.g. secrets / os.urandom - never random.randint or another predictable PRNG), making them long, single-use, and short-lived; and (2) verify the reset token server-side, bound to the requesting account, before accepting a new password - the reset endpoint must never perform a reset without a valid, matching, unexpired token. Rate-limit reset attempts. The distinguishing test: on a staging instance, request a reset and confirm the code is unpredictable across requests, and confirm POSTing to the reset endpoint with a wrong/absent code is rejected - an AI app whose recovery flow uses a weak PRNG or skips token verification permits takeover of any account, including administrators.",
+        "evidence": "https://github.com/advisories/GHSA-g394-qpx6-x7rr",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-AC-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2025-56520": {
     "name": "Dify Remote File Upload Server-Side Request Forgery",
     "lesson_date": "2026-05-26",

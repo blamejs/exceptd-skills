@@ -530,8 +530,10 @@
       "CVE-2023-27351",
       "CVE-2023-43791",
       "CVE-2023-50224",
+      "CVE-2024-12776",
       "CVE-2024-1709",
       "CVE-2024-54085",
+      "CVE-2025-1796",
       "CVE-2025-21085",
       "CVE-2025-2746",
       "CVE-2025-2747",
@@ -776,7 +778,8 @@
     "description": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained.(Citation: TrendMicro Pawn Storm Dec 2020) Without knowledge of the password for an account or set of accounts, an adversary may systematically guess the password using a repetitive or iterative mechanism.(Citation: Dragos Crashoverride 2018) Brute forcing passwords can take place via interaction with a service that will check the validity of those credentials ...",
     "tactic": [
       "Credential Access"
-    ]
+    ],
+    "cve_refs": []
   },
   "T1110.001": {
     "name": "Brute Force: Password Guessing",
@@ -895,6 +898,7 @@
       "CVE-2023-6019",
       "CVE-2023-6021",
       "CVE-2023-6038",
+      "CVE-2024-12776",
       "CVE-2024-12987",
       "CVE-2024-13059",
       "CVE-2024-1561",
@@ -927,6 +931,7 @@
       "CVE-2025-14733",
       "CVE-2025-14847",
       "CVE-2025-15556",
+      "CVE-2025-1796",
       "CVE-2025-20281",
       "CVE-2025-20333",
       "CVE-2025-20337",
@@ -1269,7 +1274,8 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2023-43791",
-      "CVE-2025-14174"
+      "CVE-2025-14174",
+      "CVE-2025-1796"
     ],
     "description_full": "Adversaries may exploit software vulnerabilities in an attempt to collect credentials. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. Credentialing and authentication mechanisms may be targeted for exploitation by adversaries as a means to gain access to useful credentials or circumvent the process to gain authenticated access to systems. One example of this is `MS14-068`, which targets Kerberos and can be used to forge Kerberos tickets using domain user permissions.(Citation: Technet MS14-068)(Citation: ADSecurity Detecting Forged Tickets) Another example of this is replay attacks, in which the adversary intercepts data packets sent between parties and then later replays these packets. If services don't properly validate authentication requests, these replayed packets may allow an adversary to impersonate one of the parties and gain unauthorized access or privileges.(Citation: Bugcrowd Replay Attack)(Citation: Comparitech Replay Attack)(Citation: Microsoft Midnight Blizzard Replay Attack) Such exploitation has been demonstrated in cloud environments as well. For example, adversaries have exploited vulnerabilities in public cloud infrastructure that allowed for unintended authentication token creation and renewal.(Citation: Storm-0558 techniques for unauthorized email access) Exploitation for credential access may also result in Privilege Escalation depending on the process targeted or credentials obtained.",
     "platforms": [
@@ -1726,7 +1732,10 @@
     "stix_id": "attack-pattern--f4c1826f-a322-41cd-9557-562100848c84",
     "is_subtechnique": false,
     "last_verified": "2026-05-19",
-    "description": "Adversaries may modify authentication mechanisms and processes to access user credentials or enable otherwise unwarranted access to accounts."
+    "description": "Adversaries may modify authentication mechanisms and processes to access user credentials or enable otherwise unwarranted access to accounts.",
+    "cve_refs": [
+      "CVE-2024-12776"
+    ]
   },
   "T1557": {
     "name": "Adversary-in-the-Middle",
