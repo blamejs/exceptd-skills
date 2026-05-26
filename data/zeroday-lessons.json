@@ -4361,6 +4361,106 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2024-24590": {
+    "name": "ClearML Client SDK Artifact Deserialization Remote Code Execution",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "ClearML's client SDK reconstructs stored experiment artifacts through an unsafe object-deserialization routine on retrieval, so a maliciously uploaded artifact runs arbitrary code on the retrieving user's system.",
+      "privileges_required": "low-to-none (upload access to a shared project; victim must retrieve the artifact - UI:R)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is the MLOps / experiment-tracking layer that moves artifacts and datasets between data scientists. The lesson: an MLOps platform is a supply-chain channel - uploaded artifacts are untrusted code/file payloads and must never be auto-deserialized or extracted without containment."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to an uploaded artifact before the MLOps SDK deserializes it."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain controls do not treat MLOps experiment artifacts as untrusted third-party content moving between collaborators."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an MLOps platform's uploaded artifacts as an untrusted code-delivery surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "MLOps platforms are deployed for collaboration on trusted-team assumptions; their artifact/dataset retrieval paths are not treated as untrusted-content boundaries.",
+      "theater_pattern": "mlops_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-104",
+        "name": "MLOPS-EXPERIMENT-ARTIFACT-TRUST-BOUNDARY",
+        "description": "An MLOps / experiment-tracking platform (ClearML, and the class: Weights & Biases, MLflow artifact stores, model registries) must treat every uploaded artifact and dataset as untrusted third-party content, because these platforms move artifacts between collaborators automatically. On retrieval the client SDK must NOT reconstruct artifacts through an unsafe object-deserialization routine (use a safe loader / explicit schema, or sandbox the deserialization), and must constrain dataset extraction to a contained directory (reject absolute and ../ traversal entries). Run the SDK least-privilege and only pull from trusted projects. The distinguishing test: upload an artifact carrying a deserialization-gadget payload and a dataset with a ../ entry to a staging project, retrieve them from a separate client, and confirm neither runs code nor writes outside the cache directory - a 'secured MLOps' posture that still auto-deserializes or extracts uploaded content without containment is exposed.",
+        "evidence": "https://hiddenlayer.com/innovation-hub/not-so-clear-how-mlops-solutions-can-muddy-the-waters-of-your-supply-chain/",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "NIST-800-53-CM-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-24591": {
+    "name": "ClearML Client SDK Dataset Path Traversal Arbitrary File Write",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "ClearML's client SDK writes dataset entries without path containment on retrieval, so a maliciously uploaded dataset with absolute / ../ entries writes files to arbitrary locations on the retrieving user's system (escalating to code execution by overwriting startup/config files).",
+      "privileges_required": "low-to-none (upload access to a shared project; victim must retrieve the artifact - UI:R)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is the MLOps / experiment-tracking layer that moves artifacts and datasets between data scientists. The lesson: an MLOps platform is a supply-chain channel - uploaded artifacts are untrusted code/file payloads and must never be auto-deserialized or extracted without containment."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No path validation is applied to dataset entries before the MLOps SDK extracts them."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality is not enforced: dataset extraction writes entries without containing them to the cache directory."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an MLOps platform's uploaded datasets as an untrusted file-write surface."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "MLOps platforms are deployed for collaboration on trusted-team assumptions; their artifact/dataset retrieval paths are not treated as untrusted-content boundaries.",
+      "theater_pattern": "mlops_artifact_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-104",
+        "name": "MLOPS-EXPERIMENT-ARTIFACT-TRUST-BOUNDARY",
+        "description": "An MLOps / experiment-tracking platform (ClearML, and the class: Weights & Biases, MLflow artifact stores, model registries) must treat every uploaded artifact and dataset as untrusted third-party content, because these platforms move artifacts between collaborators automatically. On retrieval the client SDK must NOT reconstruct artifacts through an unsafe object-deserialization routine (use a safe loader / explicit schema, or sandbox the deserialization), and must constrain dataset extraction to a contained directory (reject absolute and ../ traversal entries). Run the SDK least-privilege and only pull from trusted projects. The distinguishing test: upload an artifact carrying a deserialization-gadget payload and a dataset with a ../ entry to a staging project, retrieve them from a separate client, and confirm neither runs code nor writes outside the cache directory - a 'secured MLOps' posture that still auto-deserializes or extracts uploaded content without containment is exposed.",
+        "evidence": "https://hiddenlayer.com/innovation-hub/not-so-clear-how-mlops-solutions-can-muddy-the-waters-of-your-supply-chain/",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "NIST-800-53-CM-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2026-33017": {
     "name": "Langflow Public Flow-Build Endpoint Unauthenticated Remote Code Execution",
     "lesson_date": "2026-05-25",
