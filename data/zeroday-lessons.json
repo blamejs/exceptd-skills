@@ -4061,6 +4061,56 @@
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
   },
+  "CVE-2025-1753": {
+    "name": "LlamaIndex CLI --files OS Command Injection",
+    "lesson_date": "2026-05-25",
+    "attack_vector": {
+      "description": "The LlamaIndex CLI builds a shell command from the user-supplied --files argument and runs it through a shell-execution call without neutralization (CWE-78), so shell metacharacters execute arbitrary OS commands.",
+      "privileges_required": "ability to influence the CLI --files argument (CNA AV:L / PR:L)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is the CLI of a widely used RAG / LLM data-framework. The lesson: AI-framework tooling routinely shells out, and any CLI argument or config forwarded into a shell must be neutralized (argv arrays / shlex), never concatenated into a shell string - this is the same root cause as the MCP-stdio command-injection family, applied to a framework CLI."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not track LLM data-framework CLIs as managed, command-injection-bearing software."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation is not applied to CLI arguments the framework forwards to a shell."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an AI tool's CLI arguments as untrusted input requiring neutralization before shell execution."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "AI-framework CLIs are run in automation/pipelines with forwarded input; shell-string construction from arguments is common and unaudited.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-100",
+        "name": "AI-FRAMEWORK-CLI-SHELL-INPUT-NEUTRALIZATION",
+        "description": "AI-framework CLIs and tools that invoke external commands must never build a shell string from user-supplied arguments or config: use argv-array execution (no shell), or neutralize input with shlex/equivalent. Upgrade llama-index-cli past 0.12.20 to the shlex-escaped release, and in any wrapper/automation pass arguments as a list rather than a shell string. The distinguishing test: pass a --files value containing shell metacharacters to a staging CLI and confirm no subcommand executes.",
+        "evidence": "https://huntr.com/bounties/19e1c67e-1d77-451d-b10b-acbe99900b22",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
   "CVE-2023-44467": {
     "name": "LangChain-Experimental PALChain dunder-import Code Execution (CVE-2023-36258 bypass)",
     "lesson_date": "2026-05-25",
