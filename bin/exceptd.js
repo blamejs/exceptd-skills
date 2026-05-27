@@ -2455,8 +2455,17 @@ async function cmdCollect(runner, args, runOpts, pretty) {
   const failedPre = Object.entries(submission.precondition_checks || {})
     .filter(([, v]) => v === false)
     .map(([k]) => k);
-  if (failedPre.length > 0 && (submission.signal_overrides && Object.keys(submission.signal_overrides).length === 0)) {
-    process.stderr.write(`[collect ${playbookId}] precondition not satisfied: ${failedPre.join(", ")} — empty submission emitted (collector skipped on this host)\n`);
+  if (failedPre.length > 0) {
+    // Warn on ANY failed precondition, not only when signal_overrides is empty.
+    // A collector that gathers artifacts but fails a consent/ownership gate
+    // (e.g. cicd-pipeline-compromise's operator-owns-ci-fleet) emits a populated
+    // submission yet `run` will block at preflight — surface that up front so
+    // the operator isn't surprised by the downstream "verdict: blocked".
+    const emptySignals = !submission.signal_overrides || Object.keys(submission.signal_overrides).length === 0;
+    const tail = emptySignals
+      ? "empty submission emitted (collector skipped on this host)"
+      : "submission emitted, but `run` will block at preflight until this precondition is satisfied";
+    process.stderr.write(`[collect ${playbookId}] precondition not satisfied: ${failedPre.join(", ")} — ${tail}\n`);
   }
 
   // Emit the submission JSON to stdout. The operator pipes this into
@@ -2600,10 +2609,16 @@ function cmdLint(runner, args, runOpts, pretty) {
   const normalized = runner.normalizeSubmission(submission, pb);
   const flat = submission.observations || null;
 
-  // After normalize, validation walks the canonical nested shape.
-  const missingRequired = requiredArtifacts.filter(id => {
+  // After normalize, validation walks the canonical nested shape. Distinguish
+  // a truly-absent required artifact (no entry — operator should add it) from
+  // one that is PRESENT but uncaptured (entry with captured:false + a reason,
+  // e.g. a collector's "skipped on win32 — POSIX mode bits not meaningful").
+  // Conflating them told the operator to "add" an artifact that is already
+  // there.
+  const missingRequired = requiredArtifacts.filter(id => !(normalized.artifacts && normalized.artifacts[id]));
+  const uncapturedRequired = requiredArtifacts.filter(id => {
     const a = normalized.artifacts && normalized.artifacts[id];
-    return !a || !a.captured;
+    return a && !a.captured;
   });
 
   const unknownArtifactKeys = Object.keys(normalized.artifacts || {})
@@ -2632,6 +2647,11 @@ function cmdLint(runner, args, runOpts, pretty) {
   // accepted. Now: lint warns about missing artifacts but doesn't fail.
   for (const id of missingRequired) {
     issues.push({ severity: "warn", kind: "missing_required_artifact", artifact_id: id, hint: `Add to submission.artifacts.${id} = { value, captured: true } (or under observations in the flat shape). The run will still execute without this; the corresponding indicators will return 'inconclusive'.` });
+  }
+  for (const id of uncapturedRequired) {
+    const a = normalized.artifacts[id];
+    const reason = a && typeof a.reason === "string" ? a.reason : null;
+    issues.push({ severity: "warn", kind: "uncaptured_required_artifact", artifact_id: id, captured: false, ...(reason ? { reason } : {}), hint: `Artifact "${id}" is present but captured:false${reason ? ` (${reason})` : ""} — it is NOT missing; nothing to add. Its indicators will return 'inconclusive'. Common when a collector intentionally skips a platform-specific probe (e.g. POSIX mode bits on Windows).` });
   }
   for (const k of unknownArtifactKeys) {
     issues.push({ severity: "warn", kind: "unknown_artifact_key", key: k, hint: `Not in playbook ${playbookId} look.artifacts[]. Recognized: ${[...knownArtifacts].slice(0, 10).join(", ")}…` });
@@ -5054,7 +5074,16 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // Preserve only precondition_checks from the prior submission so the runner
   // doesn't halt on host-environment guards (the reattest is about evidence
   // drift, not re-verifying that the host is still Linux etc.).
-  const emptySubmission = { artifacts: {}, signal_overrides: {}, signals: {} };
+  // Replay the ORIGINAL persisted submission, not a hardcoded empty one.
+  // Replaying empty made the replay's evidence_hash differ from the prior hash
+  // for every session whose original evidence wasn't byte-identical to that
+  // empty stub — i.e. essentially all of them — so reattest reported a false
+  // "drifted" on unchanged sessions. Replaying the prior submission reproduces
+  // the prior hash for unchanged evidence; a mismatch then genuinely means the
+  // hash/canonicalization (or the derived verdict) drifted.
+  const replaySubmission = (prior.submission && typeof prior.submission === "object")
+    ? prior.submission
+    : { artifacts: {}, signal_overrides: {}, signals: {} };
   const replayOpts = Object.assign({}, runOpts, {
     airGap: !!(prior.run_opts && prior.run_opts.airGap) || runOpts.airGap,
     forceStale: true, // bypass currency block on reattest — drift comparison is the point
@@ -5078,7 +5107,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
       }
     } catch { /* ignore */ }
   }
-  const replay = runner.run(prior.playbook_id, prior.directive_id, emptySubmission, replayOpts);
+  const replay = runner.run(prior.playbook_id, prior.directive_id, replaySubmission, replayOpts);
 
   if (!replay || replay.ok === false) {
     // When replay.reason is falsy, dump the available keys so an operator
@@ -5909,7 +5938,18 @@ function previewValue(v) {
 // /etc/os-release on Linux, and outputs a list of recommended playbooks.
 // ---------------------------------------------------------------------------
 function cmdDiscover(runner, args, runOpts, pretty) {
-  const cwd = process.cwd();
+  // Honor --cwd so `discover --cwd <dir>` scans the target tree, not the
+  // process cwd. Pre-fix it was silently ignored — recommendations were
+  // computed for the wrong directory with no signal. Validated like collect.
+  let cwd = process.cwd();
+  if (args.cwd) {
+    const resolved = path.resolve(String(args.cwd));
+    let stat;
+    try { stat = fs.statSync(resolved); }
+    catch (e) { return emitError(`discover: --cwd "${args.cwd}" does not exist (${e.message})`, { verb: "discover", provided_cwd: args.cwd }, pretty); }
+    if (!stat.isDirectory()) return emitError(`discover: --cwd "${args.cwd}" is not a directory`, { verb: "discover", provided_cwd: args.cwd }, pretty);
+    cwd = resolved;
+  }
   const wantJson = !!args.json || !!args.pretty;
   const indent = !!args.pretty;
 

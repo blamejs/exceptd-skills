@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.5 — 2026-05-27
+
+`reattest` no longer reports a false "drifted" on an unchanged session. It now replays the original recorded submission instead of a hardcoded empty one, so unchanged evidence reproduces its prior hash and only a genuine change in the evidence (or the way it canonicalizes) shows as drift. The `attest diff` path was already correct; this fixes the replay-based `reattest`/`attest diff <sid>` verb, which previously emitted "drifted" — and wrote that bogus verdict into the audit trail — on every unchanged session.
+
+`exceptd discover --cwd <dir>` now scans the target directory instead of silently scanning the process working directory; a nonexistent or non-directory path errors cleanly rather than being ignored.
+
+`collect` warns on stderr when any precondition fails — not only when the collector emits an empty submission — so a collector that gathers artifacts but fails a consent/ownership gate (such as `cicd-pipeline-compromise`) tells you up front that `run` will block at preflight.
+
+`lint` distinguishes a required artifact that is present but intentionally uncaptured (e.g. a POSIX-mode probe a collector skips on Windows) from one that is absent, instead of advising you to add an artifact that is already there.
+
 ## 0.14.4 — 2026-05-27
 
 Clearer errors. A case-only playbook typo — `run SECRETS` — now suggests the right id ("Did you mean: secrets?") instead of only printing the id-format rule. Input-validation errors (a bad `--scope`, malformed evidence) are reported plainly rather than dressed as an "internal error" with a file-a-bug pointer. `exceptd ask` now points a question that names a specific CVE or RFC at the direct resolver (`exceptd cve <id>` / `exceptd rfc <n>`). The malformed-CVE message reads accurately for a short year, not only a non-numeric tail, and the RFC resolver's documentation reflects that obsoleted/historic RFCs are now in the local index.
