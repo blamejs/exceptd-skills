@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.10 — 2026-05-27
+
+`ci <playbook> --evidence -` no longer reports a false PASS when handed a flat submission. `run` accepts a flat submission (`{ "signal_overrides": {...} }`) and so do operators by habit; `ci` keyed the input by playbook id, found nothing under that key, and evaluated an empty submission — a detected finding came back PASS. A single-positional `ci` invocation now treats a flat (non-bundle-shaped) submission as belonging to that playbook, so `ci` and `run` agree. A real bundle keyed by playbook id is still routed per-key.
+
+`ai-run <playbook> --no-stream --evidence -` now rejects a non-object submission (`null`, an array, a scalar) at the read boundary, matching `run`. Previously the no-stream path skipped the shape guard and ran a malformed submission as if it were empty, so an operator believed a bad payload had been evaluated.
+
+The `ci` framework-gap rollup now carries the gap explanation. Each rollup entry's `why_insufficient` was always null because the rollup read a field that doesn't exist on a gap record; the text lives in `actual_gap`, which is now surfaced (alongside `required_control`).
+
+A regulatory clock now starts on an engine-confirmed detection, not only on an agent-submitted classification. When indicators fire and the engine itself classifies the detect phase as `detected`, `--ack` starts the notification clock and computes the jurisdiction deadlines — previously the clock only moved if the submission also carried `detection_classification: "detected"`, so an engine-confirmed finding left every deadline stalled at `pending_clock_start_event`.
+
+`framework-gap <framework> <scenario>` refuses an unknown framework instead of returning a zero-gap report that reads as "no gaps found." A typo or an untracked framework now errors with the list of frameworks the catalog covers; the documented short forms (`NIST-800-53`, `PCI-DSS-4.0`) and `all` continue to resolve.
+
 ## 0.14.9 — 2026-05-27
 
 `refresh --advisory <id> --air-gap` now refuses (no network) instead of egressing. The `--air-gap` flag was parsed but dropped before the fetch, so an air-gapped advisory seed silently reached GHSA/OSV — an air-gap-guarantee violation. Both the flag and the `EXCEPTD_AIR_GAP=1` env now refuse identically.
