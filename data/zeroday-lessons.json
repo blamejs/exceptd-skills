@@ -17446,5 +17446,105 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-21858": {
+    "name": "n8n Form-Based Unauthenticated Arbitrary File Access",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "n8n exposes form-based actions that reach a server file-access path without authentication or path confinement, so an unauthenticated attacker reads arbitrary server files.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is n8n, an AI-workflow / automation platform. The lesson: every form/automation action that can reach the filesystem must be authenticated and its path confined - workflow platforms are high-value because their workflows hold credentials."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation confines the file path reached by the form-based action."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not require authentication on a path that reaches server files."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a workflow platform's form-action file path as an integrity boundary requiring auth + confinement."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Workflow-automation platforms expose form/automation actions on trusted-network assumptions; path confinement + auth on file-reaching actions are rarely audited.",
+      "theater_pattern": "ai_workflow_unauth_file_access"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application or workflow platform's file/path-bearing inputs (upload filenames, model-embedded paths, element/document paths, form-action paths, API route parameters) must be authenticated, canonicalized, and confined to an allowlisted base directory before any filesystem access - including non-ASCII / encoding transforms. The distinguishing test: send an unauthenticated request whose path decodes to ../ traversal or an absolute path on a staging instance and confirm it is refused, not read or written outside the intended directory.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2026-21858",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-68668": {
+    "name": "n8n Python Code Node Pyodide Sandbox Bypass RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "n8n's Python Code Node runs user code in a Pyodide sandbox that is bypassable, so an authenticated workflow editor escapes it and executes code with host privileges.",
+      "privileges_required": "low (authenticated user who can edit workflows)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is n8n's code node, in an AI-workflow / automation builder. The lesson: a visual builder's code node is a code-execution sink - it must run in a non-bypassable, host-isolated sandbox, and workflow-edit permission must be tightly scoped."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not contain the code node to its sandbox."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection does not stop a sandbox bypass in the code node."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a workflow builder's code node as a code-execution sink requiring a non-bypassable sandbox."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 81,
+      "basis": "Visual workflow builders ship code nodes with in-process sandboxes (Pyodide/vm) that are bypassable; sandbox non-bypassability is rarely audited.",
+      "theater_pattern": "ai_app_builder_code_node_sandbox_escape"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-103",
+        "name": "AI-APP-BUILDER-EXECUTION-ENDPOINT-AUTH-AND-SANDBOX",
+        "description": "A visual LLM app/agent/workflow builder (Langflow, Flowise, Dify, n8n, and similar) must authenticate every endpoint that can reach a code-execution path and must never run flow/workflow-supplied code through a dynamic-evaluation path with host privileges. Sandbox any code the platform executes on a user's behalf in a non-bypassable, host-isolated environment (no filesystem/network/process access beyond intent), and scope workflow-edit permission tightly. The distinguishing test: run a code node that attempts a host action (shell/network/filesystem) on a staging instance and confirm the sandbox refuses it - an in-process sandbox (Pyodide/vm) that is bypassable still permits RCE.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2025-68668",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SI-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }
