@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.119 — 2026-05-26
+
+CVE catalog — Chainlit LLM-app framework. Adds two flaws in the `/project/element` update flow of Chainlit, a widely used open-source framework for conversational-AI / LLM apps. **CVE-2026-22218** (VulnCheck CNA CVSS v4.0 7.1; NVD v3.1 6.5) — a custom element with a caller-supplied `path` is copied into the requesting user's session without validation, so an authenticated client reads arbitrary files on the server host (CWE-22 path traversal); fixed in 2.9.4. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094) shared with the AnythingLLM upload traversal. **CVE-2026-22219** (VulnCheck CNA CVSS v4.0 8.3; NVD v3.1 7.7, scope-changed) — with the SQLAlchemy data-layer backend, a custom element's `url` is fetched server-side and the response stored, so an authenticated client reaches internal services or cloud metadata (CWE-918 SSRF); fixed in 2.9.4. Reuses the AI-data-pipeline import SSRF control (NEW-CTRL-105) shared with the Dify, RAGFlow, and Label Studio data-pipeline SSRFs. CVE count 408 → 410.
+
 ## 0.13.118 — 2026-05-26
 
 The researcher-handle tracker behind `refresh --check-advisories` (NEW-CTRL-073) now follows the Nightmare-Eclipse handle on its GitLab public-activity Atom feed instead of the GitHub events API — the handle's GitHub account was removed. The feed count is unchanged and the diff shape is identical: GitLab tag pushes and newly created public projects surface as `researcher-handle-drop` diffs exactly as the GitHub events did, carrying the same `researcher_handle` field. The NEW-CTRL-073 control text is now platform-agnostic (GitHub events or a GitLab activity feed).

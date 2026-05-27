@@ -17136,5 +17136,105 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-22218": {
+    "name": "Chainlit /project/element Arbitrary File Read",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "Chainlit's /project/element update flow copies a file at a caller-supplied path into the user's session without validating it stays within the document store, so an authenticated client reads arbitrary host files.",
+      "privileges_required": "low (an authenticated client)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is Chainlit, an open-source LLM-app framework. The lesson: an LLM app framework's file/path-bearing inputs must be canonicalized and validated against an allowlisted base before any filesystem read, and the app must not be exposed to untrusted users."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to the caller-supplied element path before the server reads it."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The read is not confined to the document store - an authenticated user reads arbitrary host files."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an LLM app framework's path-bearing input as an integrity boundary requiring canonicalization."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "LLM app frameworks accept file/element references from clients and read them on trusted-network assumptions; path canonicalization is rarely audited.",
+      "theater_pattern": "ai_app_path_traversal_file_read"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application's file/path-bearing inputs (upload filenames, model digests, element/document paths, API route parameters) must be canonicalized and validated - including non-ASCII / encoding transforms - against an allowlisted base directory before touching the filesystem, and the app must not be network-exposed to untrusted users. The distinguishing test: submit an element/file reference whose path decodes to ../ traversal or an absolute host path on a staging instance and confirm it is rejected, not read and returned.",
+        "evidence": "https://github.com/advisories/GHSA-r399-636x-v7f6",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-22219": {
+    "name": "Chainlit /project/element SQLAlchemy-Backend Server-Side Request Forgery",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "When Chainlit uses the SQLAlchemy data-layer backend, its /project/element flow fetches a caller-supplied url server-side and stores the response without validating the destination, so an authenticated client reaches internal services or cloud metadata.",
+      "privileges_required": "low (an authenticated client)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is Chainlit, an open-source LLM-app framework. The lesson: an LLM app framework's server-side fetches must validate and allowlist destinations or become an SSRF pivot - the same control that closes the Dify and RAGFlow ingestion SSRFs."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not treat the framework's element-url fetch as an egress that can reach internal services."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to the user-supplied element url before the server fetches it."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an LLM app framework's server-side fetch as an egress that must validate and allowlist destinations."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "LLM app frameworks fetch caller-supplied URLs from element/data-layer flows on trusted-network assumptions; the fetch destination is not validated.",
+      "theater_pattern": "ai_data_pipeline_ssrf_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-105",
+        "name": "AI-DATA-PIPELINE-IMPORT-SSRF-PROTECTION",
+        "description": "An AI data-pipeline / app platform that fetches from caller-supplied URLs or endpoints (data import, element urls, cloud-storage endpoint configuration, webhook/annotation sources, ingestion crawlers) must validate and allowlist the destination before issuing the request: reject private, link-local, and cloud-metadata addresses (169.254.169.254), reject file:// and non-HTTP schemes, and resolve+pin the host to prevent DNS-rebinding. Restrict who can configure server-side fetches. The distinguishing test: configure the fetched URL to an internal or cloud-metadata address on a staging instance and confirm the server refuses the fetch - a platform that issues the request and returns/stores the response is exploitable for SSRF / internal pivot, regardless of authentication posture.",
+        "evidence": "https://github.com/advisories/GHSA-r399-636x-v7f6",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }
