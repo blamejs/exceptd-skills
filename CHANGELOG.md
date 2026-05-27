@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.121 — 2026-05-26
+
+CVE catalog — ONNX model-interchange path traversal. Adds **CVE-2025-51480** in ONNX, the de-facto open model-interchange format used across the ML ecosystem. `onnx.external_data_helper.save_external_data` does not confine the model-supplied `external_data` `location`, so processing a crafted ONNX model writes external-data tensors to an arbitrary path (`../` traversal or absolute), overwriting arbitrary files (CWE-22; NVD CVSS v3.1 8.8) — which in a model-load pipeline can escalate to code execution. Requires the victim to process the malicious model (UI:R), so it is modelled as a malicious-model / supply-chain class (ATLAS AML.T0010/AML.T0011, ATT&CK T1195.002). Fixed in 1.18.0. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 411 → 412.
+
 ## 0.13.120 — 2026-05-26
 
 CVE catalog — LangChain JS serialization injection. Adds **CVE-2025-68665**, the JavaScript sibling of the already-catalogued Python-side CVE-2025-68664. LangChain JS's `toJSON()` (and `JSON.stringify` of LangChain objects) did not escape free-form data containing the internal `lc` marker key, so attacker-controlled data carrying that structure is rehydrated as a legitimate LangChain object on deserialization instead of staying plain data (CWE-502; GitHub CNA CVSS v3.1 8.6, scope-changed / NVD 9.1). Fixed in `@langchain/core` 0.3.80 / 1.1.8 and `langchain` 0.3.37 / 1.2.3. Reuses the LLM-output deserialization trust-zone control (NEW-CTRL-064) and AI-tool input-sanitization (NEW-CTRL-005). Scored conservatively below the Python sibling, which additionally carries suspected-exploitation and weaponization signals the JS variant lacks. CVE count 410 → 411.

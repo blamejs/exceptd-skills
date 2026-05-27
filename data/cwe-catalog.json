@@ -114,7 +114,8 @@
       "CVE-2025-8110",
       "CVE-2026-25592",
       "CVE-2026-34926",
-      "CVE-2026-22218"
+      "CVE-2026-22218",
+      "CVE-2025-51480"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",

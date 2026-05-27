@@ -17296,5 +17296,55 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-51480": {
+    "name": "ONNX save_external_data Path Traversal Arbitrary File Overwrite",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "ONNX's save_external_data writes external-data tensors to the attacker-controllable external_data 'location' without confining it to the model directory, so a crafted model overwrites arbitrary files on load/save.",
+      "privileges_required": "none, but requires the victim to process the malicious model (UI:R)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is ONNX, the de-facto ML model-interchange format. The lesson: a model file's embedded paths are untrusted input - model-serialization libraries must canonicalize and confine any file path a model supplies before touching the filesystem, and third-party models must be loaded as untrusted."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to the model-supplied external_data location before write."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain controls do not treat a third-party model's embedded paths as untrusted."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an ML model file's embedded paths as an integrity boundary requiring canonicalization."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "ML pipelines load third-party ONNX models on trusted-input assumptions; model-embedded file paths are rarely canonicalized before write.",
+      "theater_pattern": "ai_model_supply_chain_path_traversal"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application or model library's file/path-bearing inputs (upload filenames, model digests, model-embedded external-data locations, element/document paths, API route parameters) must be canonicalized and confined to an allowlisted base directory before any filesystem read or write - including non-ASCII / encoding transforms - and third-party models must be loaded as untrusted. The distinguishing test: process a model/file reference whose path decodes to ../ traversal or an absolute path on a staging instance and confirm it is rejected, not read or written outside the intended directory.",
+        "evidence": "https://github.com/advisories/GHSA-6rq9-53c3-f7vj",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }
