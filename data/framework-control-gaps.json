@@ -6284,7 +6284,8 @@
       "CVE-2023-43472",
       "CVE-2025-55319",
       "CVE-2025-68664",
-      "CVE-2026-30623"
+      "CVE-2026-30623",
+      "CVE-2025-68665"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -6591,7 +6592,8 @@
       "CVE-2025-68664",
       "CVE-2025-6965",
       "CVE-2026-22778",
-      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
+      "CVE-2025-68665"
     ],
     "theater_test": {
       "claim": "We are compliant with Art-15 (Accuracy, robustness, and cybersecurity of high-risk AI systems) because we follow the documented requirement: Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption",
@@ -7082,7 +7084,8 @@
     "evidence_cves": [
       "CVE-2025-10725",
       "CVE-2025-55319",
-      "CVE-2025-68664"
+      "CVE-2025-68664",
+      "CVE-2025-68665"
     ],
     "theater_test": {
       "claim": "We are compliant with Annex A.6.2.5 (AI system lifecycle — verification and validation) because we follow the documented requirement: Annex A.6.2.5 — verification and validation across the AI system lifecycle, ensuring intended behaviour is preserved across design, training, deployment, and operations. Anchored on lifecycle-stage ga",
@@ -7111,7 +7114,8 @@
     "opened_at": "2026-05-18",
     "evidence_cves": [
       "CVE-2025-55319",
-      "CVE-2025-68664"
+      "CVE-2025-68664",
+      "CVE-2025-68665"
     ],
     "theater_test": {
       "claim": "We are compliant with LLM01 (Prompt Injection (2023 edition)) because we follow the documented requirement: LLM01:2023 — preventing prompt injection where user-controlled input or third-party content overrides the developer's instructions to the LLM. Anchored on input-sanitisation, prompt-template hardening",
@@ -7139,7 +7143,8 @@
     "status": "open",
     "opened_at": "2026-05-18",
     "evidence_cves": [
-      "CVE-2025-68664"
+      "CVE-2025-68664",
+      "CVE-2025-68665"
     ],
     "theater_test": {
       "claim": "We are compliant with LLM02 (Insecure Output Handling (2023 edition)) because we follow the documented requirement: LLM02:2023 — preventing downstream systems from blindly trusting LLM output where it can produce XSS, SSRF, privilege escalation, or remote code execution. Anchored on treating LLM output as untrusted",

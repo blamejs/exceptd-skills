@@ -74182,6 +74182,22 @@
       ]
     }
   },
+  "CVE-2025-68665": {
+    "name": "LangChain JS toJSON() 'lc'-Key Serialization Injection",
+    "rwep": 25,
+    "cvss": 8.6,
+    "cisa_kev": false,
+    "epss_score": 0.00066,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
   "CWE-20": {
     "name": "Improper Input Validation",
     "category": "Validation",
