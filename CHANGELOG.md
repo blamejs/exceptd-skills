@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.4 — 2026-05-27
+
+Clearer errors. A case-only playbook typo — `run SECRETS` — now suggests the right id ("Did you mean: secrets?") instead of only printing the id-format rule. Input-validation errors (a bad `--scope`, malformed evidence) are reported plainly rather than dressed as an "internal error" with a file-a-bug pointer. `exceptd ask` now points a question that names a specific CVE or RFC at the direct resolver (`exceptd cve <id>` / `exceptd rfc <n>`). The malformed-CVE message reads accurately for a short year, not only a non-numeric tail, and the RFC resolver's documentation reflects that obsoleted/historic RFCs are now in the local index.
+
 ## 0.14.3 — 2026-05-27
 
 The resolved-citation cache is now integrity-checked. Each cached record carries a content digest (covering its `resolved_at` timestamp) that is verified on read, and freshness is gated on that timestamp rather than the file's modification time. A cache file edited in place — flipping a rejected CVE to "published" — is rejected as tampered instead of trusted, and a touched file can no longer resurrect a stale verdict. This closes a path where a writable cache could launder a rejected or fabricated citation into a passing verdict (which feeds `collect citation-hygiene --resolve` and, in turn, attestations).
