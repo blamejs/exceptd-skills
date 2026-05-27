@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.1 — 2026-05-27
+
+Two citation resolvers — `exceptd cve <id>` and `exceptd rfc <number>` — answer "is this CVE/RFC citation valid?" so an agent gets the answer from exceptd instead of researching each identifier against NVD or the IETF datatracker by hand. A fan-out of agents auditing a codebase previously re-researched the same citations independently; these resolvers do it once and cache the result for the rest.
+
+`exceptd cve <id>` returns a structured status — published, rejected, disputed, fabricated, nonexistent, or unknown — alongside CVSS / KEV / product. It resolves offline-first: the curated catalog, then a resolved cache, then a single NVD lookup whose result is cached under `.cache/upstream/resolved/` (7-day TTL). The first lookup of an uncatalogued identifier serves every later agent and every offline run. NVD's authoritative `vulnStatus` and `cveTags` are now read — they were previously fetched and discarded — so a rejected or disputed CVE is flagged rather than treated as valid (the class that lets a withdrawn identifier sit cited in a codebase unnoticed). A non-canonical identifier such as `CVE-2024-XXXX` is caught as fabricated with no network call. Network is opt-out: `--air-gap`, `--no-network`, or `EXCEPTD_AIR_GAP=1` keep resolution offline-only and return `unknown` with a reason. Exit code 2 when a citation will not stand up.
+
+`exceptd rfc <number>` resolves an RFC number to its title and status from the local index — the whole current RFC series, fully offline. `--check "<claimed title>"` reports whether a claimed title matches the real one (exit code 2 on mismatch), catching an RFC number cited under the wrong specification.
+
+Catalog entries may now carry a structured `status` field (`published` / `rejected` / `disputed` / `withdrawn` / `reserved`), sourced from NVD `vulnStatus` / `cveTags` or OSV / GHSA `withdrawn`, replacing the prior free-text heuristic. The `citation-hygiene` playbook now routes its "needs external verification" guidance through `exceptd cve` / `exceptd rfc`.
+
 ## 0.14.0 — 2026-05-26
 
 New playbook — `citation-hygiene`. Validates a codebase's own cited security references: it scans source, comments, and docs for CVE and RFC citations and flags fabricated CVE IDs (the non-numeric `CVE-2024-XXXX` form), catalog-rejected/disputed CVEs, and RFC number-vs-title mismatches. Well-formed CVE IDs absent from the curated catalog are routed to an inconclusive "needs external verification" result rather than a false clear or a false fabrication flag. Ships with a companion collector — `exceptd collect citation-hygiene | exceptd run citation-hygiene --evidence -`. The catalog now holds 24 playbooks.

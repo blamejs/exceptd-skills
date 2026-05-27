@@ -349,6 +349,35 @@ exceptd lint <pb> <evidence>          Pre-flight check submission shape vs
                                       playbook (preconditions / artifacts /
                                       indicators) without executing phases 4-7.
 
+exceptd cve <CVE-ID>                  Resolve one CVE citation → status
+                                      (published / rejected / disputed /
+                                      fabricated / nonexistent / unknown) plus
+                                      cvss / kev / product. Order: curated
+                                      catalog (offline) → resolved cache
+                                      (7-day TTL, warmed by a prior lookup) →
+                                      one NVD lookup, then cached. Lets a
+                                      fan-out of agents share one answer
+                                      instead of each researching the same id.
+  --air-gap | --no-network            Offline-only (also EXCEPTD_AIR_GAP=1).
+                                      Returns unknown + a reason when the id
+                                      isn't in catalog/cache.
+  --json | --pretty                   Machine output.
+                                      Exit 2 when the citation won't stand up
+                                      (rejected / fabricated / nonexistent /
+                                      withdrawn).
+
+exceptd rfc <number>                  Resolve an RFC number → title + status
+                                      from the local index (whole current
+                                      series, fully offline).
+  --check "<title>"                   Report title_match true/false; exit 2 on
+                                      mismatch (e.g. RFC 9404 cited as the
+                                      Sieve spec — it's JMAP Blob Management).
+  --air-gap                           Offline-only. Not-found numbers are
+                                      likely obsoleted/historic or nonexistent;
+                                      with network it disambiguates via the
+                                      datatracker.
+  --json | --pretty                   Machine output.
+
 exceptd refresh                       Refresh upstream catalogs + indexes.
                                       Replaces prefetch + refresh + build-indexes.
   --apply                             Write diffs back + rebuild indexes.
@@ -548,6 +577,8 @@ The `agents/` directory ships markdown role cards documenting authoring conventi
 ## Data catalogs
 
 All skills pull from `data/`. Cross-validated against canonical upstream sources via `exceptd refresh` / `exceptd doctor --cves` / `exceptd doctor --rfcs`.
+
+To resolve a single citation rather than refresh the whole catalog, `exceptd cve <CVE-ID>` and `exceptd rfc <number>` return a status verdict for one id (catalog → resolved cache → one NVD / datatracker lookup, offline-capable). The lookup caches, so a fan-out of agents shares the answer instead of each independently re-researching the same citation.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
 - `atlas-ttps.json` — MITRE ATLAS v5.6.0 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
