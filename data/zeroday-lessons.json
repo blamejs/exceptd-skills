@@ -17346,5 +17346,105 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-10164": {
+    "name": "SGLang update_weights_from_tensor Unsafe Deserialization RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "SGLang's update_weights_from_tensor deserializes attacker-controllable serialized-object tensor data, so a deployment exposing the weight-update path to untrusted input executes arbitrary code.",
+      "privileges_required": "none where the weight-update path accepts untrusted input",
+      "complexity": "low",
+      "ai_factor": "The abused surface is SGLang, an LLM serving framework. The lesson: model-weight tensors fed to a serving framework are untrusted code - never deserialize untrusted serialized objects; use a safe tensor format and restrict the weight-update path."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation is applied to the serialized-object tensor data before deserialization."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain controls do not treat model-weight tensors as untrusted code."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a serving framework's weight-update input as an integrity boundary requiring a safe (non-deserializing) format."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "LLM serving frameworks accept model weights over internal paths on trusted assumptions; unsafe object deserialization persists.",
+      "theater_pattern": "ai_serving_unsafe_deserialization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-091",
+        "name": "UNTRUSTED-MODEL-ARTIFACT-LOADING",
+        "description": "Treat ML model artifacts and model-weight tensors as untrusted code: never deserialize / load serialized-object artifacts from untrusted sources, prefer safe formats (e.g. safetensors), verify provenance, and restrict weight-update / model-load paths to trusted callers in a sandboxed, least-privilege environment. The distinguishing test: send a crafted serialized-object payload to the weight-update path on a sandboxed instance and confirm no code executes.",
+        "evidence": "https://github.com/advisories/GHSA-9w53-xr52-mwgj",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-5760": {
+    "name": "SGLang /v1/rerank Malicious-Model Jinja2 Template-Injection RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "SGLang renders a model-supplied tokenizer.chat_template with a non-sandboxed jinja2.Environment at the /v1/rerank endpoint, so a malicious model's template expression executes arbitrary code.",
+      "privileges_required": "none (unauthenticated rerank request loading a malicious model)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is SGLang, an LLM serving framework. The lesson: a model-supplied chat template is untrusted code - render it only in a sandboxed jinja2 environment (ImmutableSandboxedEnvironment), never the default Environment."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No sandboxing is applied to the model-supplied chat template before rendering."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not isolate the template-rendering path an unauthenticated request reaches."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a model-supplied chat template as untrusted code requiring a sandboxed renderer."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "LLM serving frameworks render model-supplied chat templates with default (non-sandboxed) jinja2; template-injection via malicious models is rarely audited.",
+      "theater_pattern": "ai_model_template_injection"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-110",
+        "name": "AI-MODEL-TEMPLATE-RENDERING-SANDBOX",
+        "description": "An LLM serving framework that renders model-supplied templates (jinja2 chat_template, prompt templates, tokenizer config) must render them in a sandboxed environment - jinja2's ImmutableSandboxedEnvironment, never the default jinja2.Environment() - and treat third-party model files (incl. GGUF) as untrusted. The distinguishing test: load a model whose chat_template embeds a Jinja2 expression that reaches builtins/os on a staging instance and confirm rendering is refused, not executed - a framework that renders model templates with the default environment is exploitable for server-side template-injection RCE.",
+        "evidence": "https://kb.cert.org/vuls/id/915947",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "NIST-800-53-SC-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

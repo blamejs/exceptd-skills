@@ -169,7 +169,9 @@
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI",
-      "CVE-2025-51480"
+      "CVE-2025-51480",
+      "CVE-2025-10164",
+      "CVE-2026-5760"
     ],
     "description_full": "Adversaries may gain initial access to a system by compromising the unique portions of the AI supply chain. This could include [Hardware](/techniques/AML.T0010.000), [Data](/techniques/AML.T0010.002) and its annotations, parts of the AI [AI Software](/techniques/AML.T0010.001) stack, or the [Model](/techniques/AML.T0010.003) itself. In some instances the attacker will need secondary access to fully carry out an attack using compromised components of the supply chain.",
     "platforms": [
@@ -1300,7 +1302,9 @@
       "CVE-2025-8747",
       "CVE-2026-31229",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
-      "CVE-2025-51480"
+      "CVE-2025-51480",
+      "CVE-2025-10164",
+      "CVE-2026-5760"
     ],
     "description_full": "An adversary may rely upon specific actions by a user in order to gain execution. Users may inadvertently execute unsafe code introduced via [AI Supply Chain Compromise](/techniques/AML.T0010). Users may be subjected to social engineering to get them to execute malicious code by, for example, opening a malicious document file or link.",
     "platforms": [

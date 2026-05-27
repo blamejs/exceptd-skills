@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.122 — 2026-05-26
+
+CVE catalog — SGLang LLM-serving framework. Adds two RCEs in SGLang (lmsys), a widely used high-performance LLM serving / inference framework. **CVE-2025-10164** (VulDB CNA CVSS v3.1 7.3; GHSA describes it as RCE) — `update_weights_from_tensor` deserializes untrusted serialized-object tensor data, so a deployment that exposes the weight-update path to untrusted input executes arbitrary code (CWE-502 / CWE-20); reuses the untrusted-model-artifact loading control (NEW-CTRL-091). **CVE-2026-5760** (CNA CVSS v3.1 9.8 CRITICAL) — the `/v1/rerank` endpoint renders a model-supplied `tokenizer.chat_template` with a non-sandboxed `jinja2.Environment()`, so a malicious model file achieves remote code execution via server-side template injection (CWE-94); fix renders with `ImmutableSandboxedEnvironment`. Introduces NEW-CTRL-110: an LLM serving framework must render model-supplied templates in a sandboxed environment and treat third-party model files as untrusted. Both are malicious-model classes (ATLAS AML.T0010/AML.T0011). CVE count 412 → 414.
+
 ## 0.13.121 — 2026-05-26
 
 CVE catalog — ONNX model-interchange path traversal. Adds **CVE-2025-51480** in ONNX, the de-facto open model-interchange format used across the ML ecosystem. `onnx.external_data_helper.save_external_data` does not confine the model-supplied `external_data` `location`, so processing a crafted ONNX model writes external-data tensors to an arbitrary path (`../` traversal or absolute), overwriting arbitrary files (CWE-22; NVD CVSS v3.1 8.8) — which in a model-load pipeline can escalate to code execution. Requires the victim to process the malicious model (UI:R), so it is modelled as a malicious-model / supply-chain class (ATLAS AML.T0010/AML.T0011, ATT&CK T1195.002). Fixed in 1.18.0. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 411 → 412.
