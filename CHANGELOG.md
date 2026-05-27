@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.2 — 2026-05-27
+
+`exceptd collect citation-hygiene --resolve` now resolves the cited CVEs the offline catalog can't confirm — once each, through the shared resolver cache — and flips their verdicts instead of parking them as inconclusive for an agent to chase: a rejected or disputed identifier becomes a hit, a well-formed identifier NVD doesn't know becomes fabricated, and a confirmed one clears. Honors `--air-gap` (catalog and cache only, no network).
+
+The RFC index now includes obsoleted and historic RFCs (8888 entries, up from 7476). `exceptd rfc <number>` resolves a superseded RFC entirely offline — RFC 2616, for example, returns "Hypertext Transfer Protocol -- HTTP/1.1, obsoleted by RFC 7230–7235" — so confirming whether a cited RFC is still current no longer requires an IETF datatracker lookup.
+
 ## 0.14.1 — 2026-05-27
 
 Two citation resolvers — `exceptd cve <id>` and `exceptd rfc <number>` — answer "is this CVE/RFC citation valid?" so an agent gets the answer from exceptd instead of researching each identifier against NVD or the IETF datatracker by hand. A fan-out of agents auditing a codebase previously re-researched the same citations independently; these resolvers do it once and cache the result for the rest.
