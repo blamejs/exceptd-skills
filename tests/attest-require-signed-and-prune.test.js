@@ -115,6 +115,23 @@ test("attest prune --all-older-than previews with --dry-run, then deletes", () =
   }
 });
 
+test("attest diff --against validates the id with the same gate as the primary sid", () => {
+  const home = freshHome("exceptd-against-");
+  const cli = makeCli(home);
+  const env = { EXCEPTD_HOME: home };
+  try {
+    assert.equal(cli(["run", "secrets", "--evidence", "-", "--session-id", "d1"], { input: "{}", env }).status, 0);
+    const r = cli(["attest", "diff", "d1", "--against", "../../etc/passwd", "--json"], { env });
+    assert.equal(r.status, 1);
+    const body = tryJson(r.stderr) || tryJson(r.stdout);
+    assert.ok(body && body.ok === false);
+    assert.match(body.error, /Invalid session-id/);
+    assert.doesNotMatch(body.error, /no session dir found/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("attest prune requires --all-older-than", () => {
   const home = freshHome("exceptd-prune2-");
   const cli = makeCli(home);
