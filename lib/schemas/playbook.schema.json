@@ -151,7 +151,7 @@
         "attack_refs": { "type": "array", "items": { "type": "string", "pattern": "^T\\d{4}(\\.\\d{3})?$" } },
         "cve_refs": { "type": "array", "items": { "type": "string", "pattern": "^CVE-\\d{4}-\\d{4,}$" }, "description": "All CVEs must exist in data/cve-catalog.json." },
         "cwe_refs": { "type": "array", "items": { "type": "string", "pattern": "^CWE-\\d+$" } },
-        "d3fend_refs": { "type": "array", "items": { "type": "string" } },
+        "d3fend_refs": { "type": "array", "items": { "type": "string", "pattern": "^D3-[A-Z]+$" } },
         "frameworks_in_scope": {
           "type": "array",
           "items": {
@@ -300,6 +300,7 @@
           "properties": {
             "artifacts": {
               "type": "array",
+              "minItems": 1,
               "items": {
                 "type": "object",
                 "required": ["id", "type", "source", "description", "required"],
@@ -364,6 +365,7 @@
           "properties": {
             "indicators": {
               "type": "array",
+              "minItems": 1,
               "items": {
                 "type": "object",
                 "required": ["id", "type", "value", "confidence", "deterministic"],

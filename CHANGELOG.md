@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.14.12 — 2026-05-27
+
+Structured-bundle accuracy:
+- CSAF advisories no longer attribute exploitation to the CISA KEV catalog for a CVE that is confirmed-exploited but not actually in KEV — the "(CISA KEV)" parenthetical is now conditional on the CVE's KEV status.
+- An empty-evidence run emits a `csaf_informational_advisory` instead of a `csaf_security_advisory` with an empty `vulnerabilities` array (Profile 4 expects vulnerabilities; the informational profile does not).
+- SARIF `cve_match` results now carry a `locations` entry. Without it, GitHub Code Scanning silently dropped the highest-severity result class.
+- SARIF and OpenVEX render "not assessed" for an unassessed blast radius instead of the literal "null" / "null/5".
+- `ci --format csaf|sarif|openvex` emits a JSON array of the pure documents instead of an exceptd wrapper carrying a top-level `ok` key (which is invalid in all three formats). Each array element is now a conformant document.
+
+External-source command hardening:
+- `validate-rfcs` / `validate-cves` reject an unknown flag before doing any work, instead of silently defaulting to a live-network run that hangs on a typo'd flag.
+- `cve` and `rfc` now return `ok:false` (not `ok:true`) when the citation fails to stand up — the envelope matched the exit code was already 2, but `ok` was inverted.
+- `refresh`, `prefetch`, and the `scan`/`dispatch`/`currency`/`watchlist` verbs reject unknown flags instead of silently ignoring them; the latter four also emit a top-level `ok` in their `--json` output.
+- `framework-gap` and `skill` honor `--json` on their missing-argument paths (structured error, not plain text), and `skill --json` no longer treats `--json` as the skill name.
+
+`doctor`:
+- `doctor --rfcs` counts the whole RFC catalog (including the CSAF/draft/ISO citation families it previously dropped) with a `by_prefix` breakdown, and its freshness fields read the real catalog file instead of a path that never existed.
+- `doctor --fix` re-verifies signatures after generating a key and signing, so a successful bootstrap reports success (exit 0) rather than carrying the pre-fix "signatures failed" state through to a non-zero exit. It also refuses to generate a key when a fingerprint pin is present without the public key (a corrupted checkout) rather than producing an install that can never verify.
+- `doctor --shipped-tarball` runs the tarball round-trip even when combined with another selective flag (it was silently skipped). `doctor --ai-config` reports a warning when its scan hits the file cap, rather than an unqualified clean pass on an incomplete walk.
+
+Playbook validation hardening (enforcement for future drift; the shipped corpus is unaffected):
+- `domain.attack_refs` are cross-referenced against the ATT&CK catalog (they were unchecked).
+- An air-gap playbook with a network-sourced artifact lacking an `air_gap_alternative` is now rejected (the schema's air-gap conditional was never executed by the validator).
+- Empty `detect.indicators` / `look.artifacts` are rejected; every playbook must map to at least one real TTP (cross-cutting analysis playbooks excepted). Dangling `false_positive_profile` indicator references and invalid `clock_starts` / `frameworks_in_scope` values now fail validation instead of passing as warnings.
+
+RWEP factor validation accepts a numeric string consistently with the scorer (the two surfaces previously disagreed).
+
 ## 0.14.11 — 2026-05-27
 
 Security: `reattest <session-id>` now validates the session-id before it is joined into a filesystem path, the same gate the other read verbs use. A `../`-bearing id previously escaped the attestation root — reading a forged attestation and writing a signed replay record outside the root. Such an id is now refused (exit 1) and nothing is written.

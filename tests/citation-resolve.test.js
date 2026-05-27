@@ -254,7 +254,9 @@ test('rfc CLI: --check title mismatch exits 2 with title_match:false', () => {
   assert.equal(r.status, 2, `expected exit 2; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
   const body = tryJson(r.stdout.trim());
   assert.ok(body, `stdout should be parseable JSON; got: ${r.stdout.slice(0, 200)}`);
-  assert.equal(body.ok, true);
+  // A title mismatch exits 2 (gate trips), so the envelope must carry
+  // ok:false — the exit code and ok value are derived from the same status.
+  assert.equal(body.ok, false);
   assert.equal(body.title_match, false);
 });
 

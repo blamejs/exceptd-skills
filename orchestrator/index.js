@@ -86,7 +86,7 @@ async function main() {
       await runDispatch();
       break;
     case 'skill':
-      runSkillContext(args[0]);
+      runSkillContext(args);
       break;
     case 'pipeline':
       runPipeline(args[0] || 'manual', args[1] ? JSON.parse(args[1]) : {});
@@ -141,11 +141,23 @@ function runFrameworkGap(rawArgs) {
   const jsonOut = flags.has('--json');
 
   if (args.length < 2) {
-    console.error(`Usage: exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]
+    const usage = `Usage: exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]
 Examples:
   exceptd framework-gap NIST-800-53 CVE-2026-31431
   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
-  exceptd framework-gap all CVE-2025-53773 --json`);
+  exceptd framework-gap all CVE-2025-53773 --json`;
+    // Honor --json on the missing-arg path: a JSON consumer must get a
+    // structured ok:false envelope, not plain usage text on stderr.
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify({
+        ok: false,
+        verb: 'framework-gap',
+        error: 'framework-gap requires <FRAMEWORK_ID|all> and <SCENARIO|CVE-ID>',
+        usage,
+      }) + '\n');
+    } else {
+      console.error(usage);
+    }
     // v0.13 exit-code class fix: usage error is GENERIC_FAILURE (1),
     // not DETECTED_ESCALATE (2). Pre-v0.13 the orchestrator emitted
     // exit 2 for usage errors, colliding with CI gates that branch on
@@ -258,12 +270,15 @@ async function runScan() {
   // other verbs (validate-cves, watchlist, etc.). Previously this was a
   // bare `process.argv.includes('--json')`, which differed in style from
   // the verbs below and could miss `--json=true` or similar future forms.
+  if (rejectUnknownFlags('scan', args, ['--json'])) return;
   const { flags } = parseFlags(process.argv.slice(2), []);
   const jsonOut = flags.has('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
   const result = await scan();
   if (jsonOut) {
-    process.stdout.write(JSON.stringify(result) + '\n');
+    // Top-level ok:true so a single JSON consumer can branch on the same
+    // envelope the ok:false error paths emit.
+    process.stdout.write(JSON.stringify({ ok: true, ...result }) + '\n');
     return result;
   }
 
@@ -293,13 +308,14 @@ async function runScan() {
 }
 
 async function runDispatch() {
+  if (rejectUnknownFlags('dispatch', args, ['--json'])) return;
   const jsonOut = process.argv.includes('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
 
   if (jsonOut) {
-    process.stdout.write(JSON.stringify({ scan: scanResult, dispatch: plan }) + '\n');
+    process.stdout.write(JSON.stringify({ ok: true, scan: scanResult, dispatch: plan }) + '\n');
     return plan;
   }
 
@@ -334,10 +350,28 @@ async function runDispatch() {
   return plan;
 }
 
-function runSkillContext(skillName) {
+function runSkillContext(rawArgs) {
+  // `rawArgs` is the full arg list. Filter --flags out of the positional set
+  // before treating the first positional as the skill name — pre-fix
+  // `skill --json` passed "--json" through as args[0] and reported
+  // "Skill not found: --json".
+  const argList = Array.isArray(rawArgs) ? rawArgs : (rawArgs == null ? [] : [rawArgs]);
+  const jsonOut = argList.includes('--json');
+  const positionals = argList.filter(a => typeof a === 'string' && !a.startsWith('--'));
+  const skillName = positionals[0];
+
   if (!skillName) {
-    console.error('Usage: exceptd skill <skill-name>');
-    console.error('       (Lists available skills: exceptd brief --all)');
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify({
+        ok: false,
+        verb: 'skill',
+        error: 'usage: exceptd skill <skill-name>',
+        hint: 'List available skills: exceptd brief --all',
+      }) + '\n');
+    } else {
+      console.error('Usage: exceptd skill <skill-name>');
+      console.error('       (Lists available skills: exceptd brief --all)');
+    }
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
@@ -381,12 +415,13 @@ function runPipeline(triggerType, payload) {
 }
 
 function runCurrency() {
+  if (rejectUnknownFlags('currency', args, ['--json'])) return;
   const jsonOut = process.argv.includes('--json');
   const result = runCurrencyNow();
   const { currency_report, action_required, critical_count } = currencyCheck();
 
   if (jsonOut) {
-    process.stdout.write(JSON.stringify({ currency_report, action_required, critical_count, generated_at: new Date().toISOString() }) + '\n');
+    process.stdout.write(JSON.stringify({ ok: true, currency_report, action_required, critical_count, generated_at: new Date().toISOString() }) + '\n');
     return;
   }
 
@@ -712,12 +747,52 @@ async function runWatch() {
   console.log('Press Ctrl+C to stop. (SIGTERM / SIGHUP / SIGBREAK also honored.)\n');
 }
 
+// Known flags accepted by validate-cves. An unknown flag (typo) must be
+// rejected before any network work — a swallowed `--ofline` previously fell
+// through to the default live-network path and the verb hung fetching the
+// whole catalog from NVD until killed.
+const VALIDATE_CVES_KNOWN_FLAGS = Object.freeze([
+  '--offline', '--no-fail', '--from-cache', '--concurrency', '--since', '--air-gap',
+]);
+// Known flags accepted by validate-rfcs (same hang-on-typo class as
+// validate-cves). `--live` is the explicit opt-in to the default network
+// path; `--air-gap` forces the offline view with no egress.
+const VALIDATE_RFCS_KNOWN_FLAGS = Object.freeze([
+  '--offline', '--no-fail', '--from-cache', '--since', '--live', '--air-gap',
+]);
+
+// Reject unknown --flags against a per-verb allowlist BEFORE any network work.
+// Returns true when a rejection was emitted (caller should return); false when
+// every flag is recognized. The base flag (text before any `=`) is what gets
+// matched so `--from-cache=path` and `--since=2026-01-01` are accepted.
+function rejectUnknownFlags(verb, rawArgs, knownFlags) {
+  const known = new Set(knownFlags);
+  const unknown = rawArgs
+    .filter(a => typeof a === 'string' && a.startsWith('--'))
+    .map(a => { const eq = a.indexOf('='); return eq === -1 ? a : a.slice(0, eq); })
+    .filter(base => !known.has(base));
+  if (unknown.length === 0) return false;
+  // Dedupe while preserving order.
+  const uniq = [...new Set(unknown)];
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    verb,
+    error: `${verb}: unknown flag(s): ${uniq.join(', ')}`,
+    unknown_flags: uniq,
+    known_flags: knownFlags,
+  }) + '\n');
+  safeExit(EXIT_CODES.GENERIC_FAILURE);
+  return true;
+}
+
 async function runValidateCves(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
 
+  if (rejectUnknownFlags('validate-cves', rawArgs, VALIDATE_CVES_KNOWN_FLAGS)) return;
+
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
-  const offline = flags.has('--offline');
+  const offline = flags.has('--offline') || flags.has('--air-gap');
   const noFail = flags.has('--no-fail');
   // --from-cache: prefer cached upstream snapshots before falling back to live
   // network. Accepts an optional path; defaults to .cache/upstream when bare.
@@ -963,8 +1038,10 @@ async function runValidateRfcs(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
 
+  if (rejectUnknownFlags('validate-rfcs', rawArgs, VALIDATE_RFCS_KNOWN_FLAGS)) return;
+
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
-  const offline = flags.has('--offline');
+  const offline = flags.has('--offline') || flags.has('--air-gap');
   const noFail = flags.has('--no-fail');
   let cacheDir = null;
   for (let i = 0; i < rawArgs.length; i++) {
@@ -1136,10 +1213,20 @@ async function runValidateRfcs(rawArgs = []) {
  * that should trigger a skill update. This command surfaces the union so
  * maintainers can see the full horizon at a glance.
  */
+// Every flag any watchlist mode (default aggregator, --alerts, --org-scan)
+// accepts. The unknown-flag guard runs once at the top of runWatchlist so a
+// typo is rejected regardless of which sub-mode it would have reached.
+const WATCHLIST_KNOWN_FLAGS = Object.freeze([
+  '--json', '--by-skill', '--alerts', '--org-scan',
+  '--org', '--pattern', '--output-format', '--air-gap',
+]);
+
 function runWatchlist(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
   const { parseFrontmatter, extractFrontmatterBlock } = require('../lib/lint-skills.js');
+
+  if (rejectUnknownFlags('watchlist', rawArgs, WATCHLIST_KNOWN_FLAGS)) return;
 
   const byskill = rawArgs.includes('--by-skill');
   const alertsMode = rawArgs.includes('--alerts');
