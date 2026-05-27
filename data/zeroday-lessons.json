@@ -17546,5 +17546,55 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-31462": {
+    "name": "stable-diffusion-webui Backup/Restore Limited File Write (Path Traversal)",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "stable-diffusion-webui's Backup/Restore tab builds a file path from an unvalidated user-supplied name and opens it for writing, yielding a limited file write on Windows.",
+      "privileges_required": "low (a user reaching the Backup/Restore tab)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is AUTOMATIC1111 stable-diffusion-webui, the most widely deployed Stable Diffusion UI. The lesson: an AI web UI's file-bearing features (backup/restore, uploads) must canonicalize and confine user-supplied paths and never be exposed to untrusted users."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No input validation confines the config-state filename before write."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The write is not confined to the intended directory."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an AI web UI's user-supplied file path as an integrity boundary requiring confinement."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "AI image-gen web UIs ship backup/restore + upload features that build filesystem paths from user input on trusted-network assumptions; path confinement is rarely audited.",
+      "theater_pattern": "ai_webui_path_traversal_file_write"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "An AI application / web UI's file/path-bearing inputs (upload filenames, model-embedded paths, backup/restore names, element/document paths, API route parameters) must be canonicalized and confined to an allowlisted base directory before any filesystem read or write - including non-ASCII / encoding transforms - and the UI must not be exposed to untrusted users. The distinguishing test: submit a backup/file name that decodes to ../ traversal or an absolute path on a staging instance and confirm it is rejected, not written outside the intended directory.",
+        "evidence": "https://securitylab.github.com/advisories/GHSL-2024-010_stable-diffusion-webui/",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

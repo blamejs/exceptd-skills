@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.124 — 2026-05-26
+
+CVE catalog — stable-diffusion-webui (AUTOMATIC1111). Adds **CVE-2024-31462** in the most widely deployed Stable Diffusion web UI. The Backup/Restore tab (`save_config_state` in `modules/ui_extensions.py`) builds a file path from an unvalidated user-supplied config-state name and opens it for writing, yielding a limited file write (JSON files to arbitrary locations) on Windows (CWE-22; GitHub CNA CVSS v3.1 6.3; GHSL-2024-010). The advisory tested 1.7.0, but the CVE/OSV record marks releases through 1.8.0 as affected — fixed by commit `d9708c92`, so upgrading 1.7.0 → 1.8.0 is **not** sufficient. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 416 → 417.
+
 ## 0.13.123 — 2026-05-26
 
 CVE catalog — n8n AI-workflow / automation platform. Adds two flaws in n8n (joining the already-catalogued CVE-2025-68613 expression-injection RCE). **CVE-2026-21858** (GitHub CNA CVSS v3.1 10.0 CRITICAL) — versions 1.65.0 to before 1.121.0 let an unauthenticated attacker access files on the underlying server through form-based actions with no path confinement (CWE-20); fixed in 1.121.0. On locally deployed instances the public exploit chains the read into host RCE — read the DB/config, forge an admin session, then run host commands via the Execute Command node — so the entry maps command-execution and valid-accounts TTPs alongside the file read. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). **CVE-2025-68668** (CVSS v3.1 9.9) — the Python Code Node's Pyodide sandbox is bypassable, so an authenticated workflow editor runs code with host privileges (CWE-693 protection-mechanism failure); fixed in 2.0.0. Reuses the AI-app-builder execution-endpoint auth-and-sandbox control (NEW-CTRL-103), shared with the Dify code-node escape and Langflow/Flowise RCEs. CVE count 414 → 416.
