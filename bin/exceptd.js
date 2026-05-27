@@ -506,9 +506,12 @@ here so old scripts know where each moved:
 Deprecated aliases (still work — prefer the canonical verb)
 ───────────────────────────────────────────────────────────
 
-These still run. The [DEPRECATED] prefix keeps them out of the active-verbs
-list that \`exceptd help | grep '^  [a-z]'\` surfaces. Each maps to a canonical
-verb:
+These still run their original implementation — they are NOT transparent
+aliases, and several (scan, dispatch, currency, validate-cves, validate-rfcs)
+emit the older orchestrator output shape, not the canonical verb's. Migrate to
+the canonical replacement listed (whose output may differ); the [DEPRECATED]
+prefix keeps them out of the active-verbs list \`exceptd help | grep '^  [a-z]'\`
+surfaces.
 
   [DEPRECATED] scan              → discover --scan-only
   [DEPRECATED] dispatch          → discover
@@ -5490,6 +5493,13 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // session (= reattest). With --against, compares two sessions A vs B
     // by evidence_hash + artifact-level field diff.
     if (args.against) {
+      // Validate the --against id with the same gate as the primary sid, so a
+      // traversal/garbage value (`../../etc/passwd`) gets the explicit "invalid
+      // session-id" message rather than a misleading "no session dir found".
+      try { validateSessionIdForRead(args.against); }
+      catch (e) {
+        return emitError(`attest diff --against: ${e.message}`, { against_input: typeof args.against === "string" ? args.against.slice(0, 80) : typeof args.against }, pretty);
+      }
       const otherDir = findSessionDir(args.against, runOpts);
       if (!otherDir) {
         return emitError(`attest diff --against ${args.against}: no session dir found.`, null, pretty);

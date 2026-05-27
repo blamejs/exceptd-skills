@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.7 — 2026-05-27
+
+The deprecated-alias help is now honest about behavior. `scan`, `dispatch`, `currency`, `validate-cves`, and `validate-rfcs` still run their original (legacy orchestrator) implementation and emit that older output shape — they are not transparent aliases of the canonical verbs listed as their replacements, and the help no longer implies otherwise.
+
+`attest diff --against <sid>` validates the comparison session-id with the same gate as the primary one, so a path-traversal or malformed value returns an explicit "invalid session-id" error instead of a misleading "no session dir found".
+
 ## 0.14.6 — 2026-05-27
 
 `attest verify --require-signed` makes an unsigned or sidecar-stripped attestation a failure (exit 1) instead of accepting it as "unsigned, exit 0". An audit gate can now require a valid Ed25519 signature, closing the path where deleting the `.sig` downgraded a tampered attestation to a passing verify. Default `attest verify` stays lenient — an unsigned attestation is reported but not failed (the common keyless-CI case).
