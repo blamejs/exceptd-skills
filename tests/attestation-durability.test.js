@@ -98,3 +98,24 @@ test("run blocks (blocked_by:mutex) when a live foreign process holds the run lo
     fs.rmSync(lockDir, { recursive: true, force: true });
   }
 });
+
+test("a malformed/unparsable run lock does NOT permanently block (proceeds best-effort, not held_by_live_pid:null)", () => {
+  const home = freshHome("exceptd-badlock-");
+  const lockDir = freshHome("exceptd-badlockdir-");
+  try {
+    const cli = makeCli(home);
+    // A truncated/garbage lockfile has no parseable pid — must NOT be treated
+    // as a live holder (that would let a crash-left corrupt lock deny all runs).
+    fs.writeFileSync(path.join(lockDir, "secrets.lock"), "not-json-garbage");
+    const r = cli(["run", "secrets", "--evidence", "-", "--session-id", "bl1", "--json"],
+      { input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit" } }), env: { EXCEPTD_HOME: home, EXCEPTD_LOCK_DIR: lockDir } });
+    const body = tryJson(r.stdout);
+    assert.ok(body, "run must emit JSON");
+    assert.notEqual(body.blocked_by, "mutex", "a malformed lock must not be reported as a live mutex holder"); // allow-notEqual: must NOT be the mutex-blocked shape
+    // It ran (best-effort): a verdict was produced and an attestation persisted.
+    assert.ok(fs.existsSync(sessionDir(home, "bl1")), "the run should proceed despite the malformed lock");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(lockDir, { recursive: true, force: true });
+  }
+});
