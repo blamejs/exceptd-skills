@@ -7544,7 +7544,12 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // Read any pre-supplied evidence from stdin OR from --evidence flag.
     let payload = { observations: {}, verdict: {} };
     if (args.evidence) {
-      try { payload = readEvidence(args.evidence); }
+      // Apply the same shape guard `run` enforces at its read boundary: a
+      // submission must be a JSON object. Without this, `--no-stream` accepted
+      // `null` / `[]` / a scalar and ran as if empty, so an operator believed a
+      // malformed submission was evaluated (the streaming path is unaffected —
+      // it only fires on a well-formed evidence event).
+      try { payload = asEvidenceObject(readEvidence(args.evidence)); }
       catch (e) { return emitError(`ai-run: failed to read --evidence: ${e.message}`, null, pretty); }
     } else if (hasReadableStdin()) {
       // hasReadableStdin() probes via fstat before falling into
@@ -8213,6 +8218,20 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
   }
 
+  // Flat-submission tolerance for a single positional playbook. `ci` keys its
+  // bundle by playbook id (so --evidence-dir / multi-playbook bundles work),
+  // but `ci <pb> --evidence -` with the SAME flat/nested submission shape that
+  // `run` accepts would otherwise land as bundle[<pb>]=undefined → empty run →
+  // a false PASS that silently ignores the operator's evidence. When exactly
+  // one playbook is in scope and the bundle carries no playbook-id key (it's a
+  // single submission, not a multi-playbook bundle), treat it as that
+  // playbook's evidence.
+  if (ids.length === 1 && Object.keys(bundle).length > 0 && !(ids[0] in bundle)) {
+    const allIds = new Set(runner.listPlaybooks());
+    const looksLikeBundle = Object.keys(bundle).some(k => allIds.has(k));
+    if (!looksLikeBundle) bundle = { [ids[0]]: bundle };
+  }
+
   const results = [];
   let fail = false;
   let failReasons = [];
@@ -8340,7 +8359,10 @@ function cmdCi(runner, args, runOpts, pretty) {
         gapRollupMap.set(key, {
           framework: g.framework || null,
           claimed_control: g.claimed_control || null,
-          why_insufficient: g.why_insufficient || null,
+          // The explanatory text lives in `actual_gap`; the rollup previously
+          // read a nonexistent `why_insufficient` key and so was always null.
+          why_insufficient: g.actual_gap || g.why_insufficient || null,
+          required_control: g.required_control || null,
           playbooks: [r.playbook_id],
         });
       }

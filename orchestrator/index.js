@@ -165,11 +165,46 @@ Examples:
     return;
   }
 
+  // The set of framework IDs the catalog actually carries gaps for. Used both
+  // to expand `all` and to validate an explicit framework argument.
+  const knownFrameworks = [...new Set(Object.values(controlGaps).flatMap(g =>
+    Array.isArray(g.framework) ? g.framework : [g.framework]
+  ).filter(f => f && f !== 'ALL'))];
+
   const requested = args[0].toLowerCase() === 'all'
-    ? [...new Set(Object.values(controlGaps).flatMap(g =>
-        Array.isArray(g.framework) ? g.framework : [g.framework]
-      ).filter(f => f && f !== 'ALL'))]
+    ? knownFrameworks
     : [args[0]];
+
+  // Validate an explicit framework name. Pre-fix an unknown framework (typo,
+  // wrong casing, a framework the catalog doesn't track) produced a report
+  // with zero matching gaps — indistinguishable from a real "no gaps" result,
+  // so an operator could read a typo as proof the framework covers the
+  // scenario. Refuse with the known-framework list instead.
+  //
+  // Match exactly as gapReport does: normalize (strip case + spaces + hyphens)
+  // and accept a substring hit against either a gap's `framework` or a prefix
+  // hit against a gap KEY — so the documented short forms ("NIST-800-53"
+  // matching "NIST 800-53 Rev 5") still resolve. A framework is "known" when at
+  // least one catalog gap matches it, independent of the scenario; a known
+  // framework with no scenario gaps remains a legitimate empty result.
+  if (args[0].toLowerCase() !== 'all') {
+    const normalize = (s) => String(s).toLowerCase().replace(/[\s_-]/g, '');
+    const idNorm = normalize(args[0]);
+    const matchesFramework = Object.entries(controlGaps).some(([key, g]) => {
+      const fws = Array.isArray(g.framework) ? g.framework : [g.framework];
+      if (fws.some(f => f && normalize(f).includes(idNorm))) return true;
+      if (normalize(key).startsWith(idNorm)) return true;
+      return false;
+    });
+    if (!matchesFramework) {
+      const sorted = knownFrameworks.slice().sort();
+      const msg = `[framework-gap] unknown framework "${args[0]}". No catalog control gaps reference it. Known frameworks: ${sorted.join(', ')}. Use "all" to analyze every framework.`;
+      if (jsonOut) console.log(JSON.stringify({ ok: false, error: msg, known_frameworks: sorted }, null, 2));
+      else console.error(msg);
+      safeExit(EXIT_CODES.GENERIC_FAILURE);
+      return;
+    }
+  }
   const scenario = args[1];
 
   const report = gapReport(requested, scenario, controlGaps, cveCatalog);
