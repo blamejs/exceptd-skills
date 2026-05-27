@@ -1282,8 +1282,8 @@ function dispatchPlaybook(cmd, argv) {
     // a blanket refusal here.
     if (ALL_KNOWN_FLAGS.has(key)) continue;
     // Unknown everywhere — refuse it as a typo / unsupported flag. Silently
-    // ignoring it let `--max-rweap 70` / `--fromat sarif` look like they
-    // applied a cap / format when they did nothing. Surface a suggestion
+    // ignoring an unrecognized flag let a mistyped cap or output-format flag
+    // look like it applied when it did nothing. Surface a suggestion
     // when one is close, and always list the accepted flags so the operator
     // can self-correct. Adding a new flag to a verb means appending it to
     // that verb's allowlist (or PASSTHROUGH_FLAGS) — the test suite exercises
