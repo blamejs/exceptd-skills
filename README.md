@@ -116,7 +116,7 @@ npx @blamejs/exceptd-skills path
 That prints the absolute path of the installed package. Point your AI assistant at:
 
 - `<path>/AGENTS.md` — canonical project rules + ground truth for every skill
-- `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (12 KB)
+- `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (~95 KB)
 - `<path>/data/_indexes/recipes.json` — curated multi-skill chains for common use cases
 
 No clone, no signing keys, no Node 24 required for assistants that read directly from disk. If your assistant needs a local copy as a regular checkout, use `npx degit blamejs/exceptd-skills my-skills` instead.
@@ -156,9 +156,9 @@ Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / E
 
 Primary-source advisory polling: `exceptd refresh --check-advisories` polls 15 vendor and coordinated-disclosure feeds — 8 advisory/coordinated-disclosure venues (Qualys TRU, Red Hat RHSA, Ubuntu USN, Zero Day Initiative, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories), 4 vendor security research blogs added in v0.13.14 (Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red), and 3 additions in v0.13.17 (BleepingComputer security, The Hacker News, and a GitLab activity-feed tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073). Combined coverage publishes CVE IDs at T+0 to T+1 — typically 3–14 days ahead of NVD enrichment. The command is report-only: it returns a structured `diffs[]` listing each newly-seen CVE ID with its source attributions and advisory URLs, but does not mutate the catalog. v0.13.17 also adds a complementary detection method (NEW-CTRL-074 / `lib/cve-regression-watcher.js`): the watcher cross-checks poller diffs for historical-CVE references (year ≤ currentYear − 2) and surfaces candidate silent-regression cases — the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned). Operators triage the output and route promising IDs through `exceptd refresh --advisory <CVE-ID> --apply`. Pairs naturally with the daily scheduled remote agent below.
 
-CVE-class alert surfacing: `exceptd watch --alerts` matches the live `cve-catalog.json` against five operational patterns (`kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`) and returns the matches sorted critical-severity-first, then by RWEP. Use as a fast operational triage on a refreshed catalog without scanning every entry by hand.
+CVE-class alert surfacing: `exceptd watchlist --alerts` matches the live `cve-catalog.json` against five operational patterns (`kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`) and returns the matches sorted critical-severity-first, then by RWEP. Use as a fast operational triage on a refreshed catalog without scanning every entry by hand.
 
-GitHub repo-pattern monitoring: `exceptd watch --org-scan --org <login>` probes GitHub Search for repositories matching known threat-actor naming patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP") scoped to one org. Custom patterns via repeatable `--pattern <s>`. Implements the canonical detection for the Shai-Hulud / TeamPCP supply-chain framework class — the attacker uses GitHub itself as the exfil channel. Set `GITHUB_TOKEN` for private-repo coverage and rate-limit headroom; public-repo search works without auth.
+GitHub repo-pattern monitoring: `exceptd watchlist --org-scan --org <login>` probes GitHub Search for repositories matching known threat-actor naming patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP") scoped to one org. Custom patterns via repeatable `--pattern <s>`. Implements the canonical detection for the Shai-Hulud / TeamPCP supply-chain framework class — the attacker uses GitHub itself as the exfil channel. Set `GITHUB_TOKEN` for private-repo coverage and rate-limit headroom; public-repo search works without auth.
 
 AI-assistant config-file audit: `exceptd doctor --ai-config` walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, and `~/.continue`, flagging sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each finding is surfaced with an info-level "manual ACL review" note. Catches the AI-config-credential-exfil class that the Shai-Hulud framework targets. Opt-in — does not run as part of the default no-flag `doctor` pass.
 
@@ -329,6 +329,21 @@ exceptd doctor                        One-shot health check.
                                       note for each sensitive file on Windows.
                                       Opt-in; not part of the default doctor
                                       pass.
+  --fix                               Auto-remediate signing gaps: regenerate
+                                      the local Ed25519 private key when
+                                      keys/public.pem exists but .keys/private.pem
+                                      is absent. No-op when the key is present.
+  --registry-check                    Probe the npm registry for the latest
+                                      published version + days-since-publish.
+                                      Off by default; --air-gap suppresses it.
+  --collectors                        Enumerate the per-playbook collector layer:
+                                      which playbooks ship a collector, which are
+                                      policy-skipped, and which are unwired.
+  --shipped-tarball                   Run the pack + extract + verify round-trip
+                                      against the tarball operators receive, not
+                                      just the source tree.
+  --exit-codes                        Print the canonical exit-code table as
+                                      JSON for CI / scripting consumers.
 
 exceptd ci                            One-shot CI gate. Exit codes: 0 PASS,
                                       1 framework error, 2 detected/escalate
@@ -382,8 +397,12 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
                                       Replaces prefetch + refresh + build-indexes.
   --apply                             Write diffs back + rebuild indexes.
   --from-cache [<dir>]                Read from prefetch cache.
-  --prefetch                          Populate the offline cache (alias for
-                                      --no-network).
+  --prefetch                          Warm the offline cache by fetching every
+                                      upstream artifact now (network required).
+                                      Run on a connected host, then point
+                                      --from-cache at the result on the air-gap.
+  --no-network                        Report-only dry-run: list what would be
+                                      fetched without touching the network.
   --network                           (v0.11.14) Fetch latest signed catalog
                                       snapshot from npm tarball, verify against
                                       local public.pem, swap data/ in place.
@@ -417,9 +436,10 @@ Packages dataset (`MAL-*` keys). New IDs land as drafts that the catalog
 validator treats as warnings, not errors — editorial review (framework
 gaps, IoCs, ATLAS/ATT&CK refs) is still required.
 
-exceptd watch                         Default mode: aggregate every skill's
+exceptd watchlist                     Default mode: aggregate every skill's
                                       forward_watch entries (upcoming standards,
-                                      RFC publications, new TTPs to monitor).
+                                      RFC publications, new TTPs to monitor) in
+                                      one shot.
                                       `--by-skill` inverts the grouping.
   --alerts                            Switch to CVE-catalog pattern alerts.
                                       Five patterns ship:
@@ -448,6 +468,15 @@ exceptd watch                         Default mode: aggregate every skill's
                                       limit; without it, public-repo search
                                       only.
 
+exceptd watch                         Long-running forward-watch daemon. Blocks
+                                      and listens for KEV additions, ATLAS
+                                      updates, CVE drops, and framework
+                                      amendments, with scheduled currency /
+                                      validation checks. Ctrl-C (or SIGTERM /
+                                      SIGHUP / SIGBREAK) to stop. For one-shot
+                                      aggregation, pattern alerts, or org-scan,
+                                      use `exceptd watchlist`.
+
 exceptd skill <name>                  Show context for one skill.
 exceptd framework-gap <FW> <ref>      One framework + one CVE/scenario, JSON
                                       or human. (Operates outside the seven-
@@ -455,7 +484,8 @@ exceptd framework-gap <FW> <ref>      One framework + one CVE/scenario, JSON
 exceptd path                          Absolute path to the installed package.
 exceptd version                       Package version.
 exceptd help                          This help.
-exceptd <verb> --help                 Per-verb usage with flag descriptions.
+exceptd <verb> --help                 Most verbs print per-verb usage with flag
+                                      descriptions.
 ```
 
 ### Legacy v0.10.x verbs
