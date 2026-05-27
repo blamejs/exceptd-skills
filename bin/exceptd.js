@@ -1603,6 +1603,31 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.csafStatus = cs;
   }
 
+  // --tlp stamps the bundle's distribution marking (CSAF document.distribution
+  // TLP). Previously this flag was allowlisted but never wired into runOpts, so
+  // it was a silent no-op; the runner already emits distribution from
+  // runOpts.tlp. Validate against TLP 2.0 labels and refuse on info-only verbs,
+  // matching --csaf-status.
+  if (args.tlp !== undefined) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --tlp is irrelevant on this verb (no bundle is assembled). --tlp only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}.`,
+        { verb: cmd, flag: "tlp", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
+    const tlp = typeof args.tlp === "string" ? args.tlp.toUpperCase() : args.tlp;
+    const allowedTlp = ["CLEAR", "GREEN", "AMBER", "AMBER+STRICT", "RED"];
+    if (typeof tlp !== "string" || !allowedTlp.includes(tlp)) {
+      return emitError(
+        `${cmd}: --tlp must be one of ${JSON.stringify(allowedTlp)} (TLP 2.0). Got: ${JSON.stringify(String(args.tlp)).slice(0, 40)}`,
+        { verb: cmd, flag: "tlp", provided: args.tlp },
+        pretty
+      );
+    }
+    runOpts.tlp = tlp;
+  }
+
   // --bundle-deterministic + --bundle-epoch (v0.12.27): opt-in deterministic
   // bundle emit. When set, CSAF / OpenVEX / close-envelope timestamps freeze
   // to the supplied epoch (or the playbook's last_threat_review fallback),
