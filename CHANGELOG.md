@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.8 — 2026-05-27
+
+SARIF output now carries file locations. A run's `results[].locations` are populated from per-indicator evidence locations, so a secret or file finding points at the file — and the line, when known — that triggered it instead of shipping location-less, which GitHub code scanning and most SARIF viewers drop or attribute to the repository root. A submission may supply locations directly (`evidence_locations: { "<indicator-id>": ["path", { "uri": "path", "startLine": N }] }`), and the code-scope collectors emit them from their hit data, so `exceptd collect <pb> | exceptd run <pb> --format sarif` produces located findings.
+
 ## 0.14.7 — 2026-05-27
 
 The deprecated-alias help is now honest about behavior. `scan`, `dispatch`, `currency`, `validate-cves`, and `validate-rfcs` still run their original (legacy orchestrator) implementation and emit that older output shape — they are not transparent aliases of the canonical verbs listed as their replacements, and the help no longer implies otherwise.
