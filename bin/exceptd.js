@@ -450,8 +450,19 @@ Canonical verbs
   verify-attestation <sid>   Alias for \`attest verify\`.
   run-all                    Alias for \`run --all\`.
 
+  cve <CVE-ID>               Resolve a CVE citation: published | rejected | disputed
+                             | fabricated | nonexistent (catalog → cache → one NVD
+                             lookup). --air-gap/--no-network offline-only; exit 2 on
+                             a citation that won't stand up.
+  rfc <number>               Resolve an RFC number → title + status from the local
+                             index (offline). --check "<title>" flags a mismatch.
+  collect <playbook>         Run a playbook's companion collector; emits submission
+                             JSON to pipe into \`run --evidence -\`. --resolve
+                             (citation-hygiene) resolves uncatalogued citations.
   skill <name>               Show context for a specific skill.
   framework-gap <fw> <ref>   Programmatic gap analysis (one framework, one CVE/scenario).
+  watch [--alerts]           Forward-watch aggregator across skills.
+  report [executive]         Structured posture report.
   path                       Absolute path to the installed package.
   version                    Package version.
 
@@ -945,6 +956,19 @@ function readJsonFile(filePath) {
   }
 }
 
+// Evidence must be a JSON object. `null`, an array, or a scalar parse as valid
+// JSON but are not a submission — without this guard `null` NPE'd deep in the
+// runner ("internal error") and `[]` / a wrong-typed field were silently
+// accepted and run as if empty, so an operator believed a malformed submission
+// was evaluated. Reject at the read boundary with an actionable message.
+function asEvidenceObject(parsed) {
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    const got = parsed === null ? "null" : Array.isArray(parsed) ? "array" : typeof parsed;
+    throw new Error(`evidence must be a JSON object (e.g. {"artifacts": {...}, "signal_overrides": {...}}); got ${got}. Run \`exceptd brief <playbook>\` for the expected shape.`);
+  }
+  return parsed;
+}
+
 function readEvidence(evidenceFlag) {
   if (!evidenceFlag) return {};
   // v0.12.12: file-path branch enforces a max size to defend against an
@@ -988,7 +1012,7 @@ function readEvidence(evidenceFlag) {
       );
       return {};
     }
-    return JSON.parse(text);
+    return asEvidenceObject(JSON.parse(text));
   }
   let stat;
   try { stat = fs.statSync(evidenceFlag); }
@@ -999,7 +1023,7 @@ function readEvidence(evidenceFlag) {
   // Route through readJsonFile() for UTF-8-BOM / UTF-16 tolerance.
   // Windows-tool-emitted JSON commonly carries these markers; the raw "utf8"
   // decode in readFileSync chokes on the leading 0xFEFF.
-  return readJsonFile(evidenceFlag);
+  return asEvidenceObject(readJsonFile(evidenceFlag));
 }
 
 function loadRunner() {
@@ -3574,6 +3598,14 @@ function cmdRun(runner, args, runOpts, pretty) {
         `run: --format "${requested}" not in accepted set ${JSON.stringify(VALID)}.${hint}`,
         { verb: "run", provided: requested, accepted: VALID, did_you_mean: dym ? [dym] : [] },
         pretty,
+      );
+    }
+    // --format wins over --json (one stdout document). Note it rather than
+    // silently discarding --json — a script that pipes for JSON and later adds
+    // --format markdown for a human would otherwise get non-JSON with no signal.
+    if ((args.json || global.__exceptdWantJson) && requested !== "json") {
+      process.stderr.write(
+        `[exceptd] note: --format "${requested}" overrides --json; stdout is the ${requested} document, not the JSON envelope.\n`
       );
     }
     // Only one document can be written to stdout. When several --format values
@@ -7831,6 +7863,16 @@ function cmdAsk(runner, args, runOpts, pretty) {
 function cmdCi(runner, args, runOpts, pretty) {
   const scope = args.scope;
   const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
+  // Reject a non-numeric / negative cap rather than silently coercing it.
+  // `--max-rwep abc` previously became Number→NaN→0, degenerating the gate to
+  // "block everything at RWEP 0" with no error — a silently-broken CI gate.
+  if (maxRwep !== null && (!Number.isFinite(maxRwep) || maxRwep < 0)) {
+    return emitError(
+      `ci: --max-rwep must be a non-negative number; got ${JSON.stringify(String(args["max-rwep"]))}.`,
+      { verb: "ci", provided: args["max-rwep"] },
+      pretty,
+    );
+  }
   const blockOnClock = !!args["block-on-jurisdiction-clock"];
 
   // v0.11.9 (#115): --required <playbook,playbook,...> takes precedence over
