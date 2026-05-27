@@ -42,6 +42,16 @@ test("--tlp stamps the CSAF distribution marking", () => {
   assert.equal(csaf.document.distribution.text, "TLP:AMBER");
 });
 
+test("--tlp CLEAR maps to the CSAF 2.0-valid WHITE label, preserving TLP:CLEAR in text", () => {
+  // CSAF 2.0 pins tlp.label to WHITE/GREEN/AMBER/RED; CLEAR (TLP 2.0) must map
+  // to WHITE so the document stays schema-valid, with the modern label in text.
+  const r = cli(["run", "sbom", "--evidence", "-", "--tlp", "CLEAR", "--format", "csaf-2.0"], { input: "{}" });
+  assert.equal(r.status, 0);
+  const csaf = tryJson(r.stdout);
+  assert.equal(csaf.document.distribution.tlp.label, "WHITE");
+  assert.equal(csaf.document.distribution.text, "TLP:CLEAR");
+});
+
 test("--tlp rejects a non-TLP value", () => {
   const r = cli(["run", "sbom", "--evidence", "-", "--tlp", "BOGUS"], { input: "{}" });
   assert.equal(r.status, 1);
