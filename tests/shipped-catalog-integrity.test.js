@@ -70,7 +70,11 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     "attack-techniques": {},
     "atlas-ttps":      {},
     "d3fend-catalog":  {},
-    "rfc-references":  {},
+    // Obsoleted/historic RFCs are now imported so a superseded RFC resolves
+    // offline. 31 of them carry no abstract in the IETF index (older RFCs
+    // predate the abstract field); that absence is upstream, not a curation
+    // regression — the rows are otherwise complete (title, status, obsoleted_by).
+    "rfc-references":  { abstract: 31 },
     "framework-control-gaps": {},
     "zeroday-lessons": { new_control_requirements: 252 }
   };

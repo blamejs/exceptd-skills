@@ -353,3 +353,64 @@ test('resolveCve: NVD-reachable rejected record -> rejected', async () => {
   const r = await resolveCve('CVE-2099-10003', { _validateCve: fakeValidate });
   assert.equal(r.status, 'rejected');
 });
+
+// --- #6: citation-hygiene --resolve flips parked verdicts (applyResolution) --
+const citationHygiene = require('../lib/collectors/citation-hygiene.js');
+
+test('applyResolution: rejected CVE flips rejected-or-disputed-cve to hit, clears needs-verification', async () => {
+  const submission = {
+    signal_overrides: {
+      'rejected-or-disputed-cve': 'inconclusive',
+      'cve-citation-needs-external-verification': 'inconclusive',
+    },
+    needs_verification: { cve_not_in_catalog: [{ file: 'src/x.js', citation: 'CVE-2017-9006' }], rfc_not_in_index: [] },
+    artifacts: {},
+  };
+  const out = await citationHygiene.applyResolution(submission, {
+    _resolveCve: async () => ({ status: 'rejected', from: 'network', product: null }),
+    _resolveRfc: async () => ({ status: 'unknown', found: false }),
+  });
+  assert.equal(out.signal_overrides['rejected-or-disputed-cve'], 'hit');
+  assert.equal(out.signal_overrides['cve-citation-needs-external-verification'], 'miss');
+  assert.equal(out.resolution.cve[0].status, 'rejected');
+  assert.equal(typeof out.artifacts['citation-resolution'].value, 'string');
+});
+
+test('applyResolution: published CVE clears needs-verification without a rejected hit', async () => {
+  const submission = {
+    signal_overrides: { 'cve-citation-needs-external-verification': 'inconclusive' },
+    needs_verification: { cve_not_in_catalog: [{ file: 'a', citation: 'CVE-2099-12345' }], rfc_not_in_index: [] },
+    artifacts: {},
+  };
+  const out = await citationHygiene.applyResolution(submission, {
+    _resolveCve: async () => ({ status: 'published', from: 'network', product: 'Acme' }),
+    _resolveRfc: async () => ({}),
+  });
+  assert.equal(out.signal_overrides['cve-citation-needs-external-verification'], 'miss');
+  assert.notEqual(out.signal_overrides['rejected-or-disputed-cve'], 'hit');
+});
+
+test('applyResolution: an unresolvable (unknown) CVE keeps needs-verification inconclusive', async () => {
+  const submission = {
+    signal_overrides: { 'cve-citation-needs-external-verification': 'inconclusive' },
+    needs_verification: { cve_not_in_catalog: [{ file: 'a', citation: 'CVE-2099-22222' }], rfc_not_in_index: [] },
+    artifacts: {},
+  };
+  const out = await citationHygiene.applyResolution(submission, {
+    _resolveCve: async () => ({ status: 'unknown', from: 'offline' }),
+    _resolveRfc: async () => ({}),
+  });
+  assert.equal(out.signal_overrides['cve-citation-needs-external-verification'], 'inconclusive');
+});
+
+// --- #7: obsoleted/historic RFCs are now in the shipped index (offline) ------
+test('obsoleted RFCs are present in the shipped index with obsoleted_by', () => {
+  const idx = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'rfc-references.json'), 'utf8'));
+  const total = Object.keys(idx).filter((k) => k !== '_meta').length;
+  assert.ok(total >= 8000, `expected the index to include obsoleted RFCs (>=8000); got ${total}`);
+  const httpOld = idx['RFC-2616'];
+  assert.ok(httpOld && typeof httpOld === 'object', 'RFC-2616 (HTTP/1.1, obsoleted) must be in the index');
+  assert.equal(httpOld._obsoleted, true);
+  assert.ok(Array.isArray(httpOld.obsoleted_by) && httpOld.obsoleted_by.includes('RFC7230'),
+    `RFC-2616 must carry obsoleted_by incl RFC7230; got ${JSON.stringify(httpOld.obsoleted_by)}`);
+});

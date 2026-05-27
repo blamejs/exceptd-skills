@@ -6,6 +6,14 @@
   },
   "events": [
     {
+      "date": "2026-05-27",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 8888
+    },
+    {
       "date": "2026-05-22",
       "type": "skill_review",
       "artifact": "framework-gap-analysis",
@@ -99,14 +107,6 @@
       "path": "data/d3fend-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 468
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
-      "artifact": "data/rfc-references.json",
-      "path": "data/rfc-references.json",
-      "schema_version": "1.0.0",
-      "entry_count": 7476
     },
     {
       "date": "2026-05-18",

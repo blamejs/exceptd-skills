@@ -2337,7 +2337,7 @@ Flags (selected — see \`exceptd run --help\` for the full list):
  * its evidence JSON before going through phases 4-7. Returns a categorized
  * list: ok / missing_required / unknown_keys / type_mismatch / suggestions.
  */
-function cmdCollect(runner, args, runOpts, pretty) {
+async function cmdCollect(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   if (!playbookId) {
     return emitError(
@@ -2439,6 +2439,30 @@ function cmdCollect(runner, args, runOpts, pretty) {
   try { pbMetaAirGap = !!(runner.loadPlaybook(playbookId)?._meta?.air_gap_mode); }
   catch { /* playbook load shouldn't fail here — collector exists — but be defensive */ }
   const collectAirGap = !!(runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1" || pbMetaAirGap);
+
+  // --resolve: resolve the citations the offline catalog couldn't confirm,
+  // flipping their parked signals instead of leaving them inconclusive for the
+  // operator to research. Opt-in, collector-specific (only citation-hygiene
+  // exposes applyResolution). Honors the collect air-gap disposition.
+  if (args.resolve) {
+    if (typeof mod.applyResolution !== "function") {
+      return emitError(
+        `collect: --resolve is not supported by the "${playbookId}" collector (no resolution step).`,
+        { verb: "collect", playbook_id: playbookId },
+        pretty,
+      );
+    }
+    try {
+      submission = await mod.applyResolution(submission, { airGap: collectAirGap });
+    } catch (e) {
+      return emitError(
+        `collect: --resolve failed for "${playbookId}": ${e.message}`,
+        { verb: "collect", playbook_id: playbookId, exit_code: 2 },
+        pretty,
+      );
+    }
+  }
+
   // Spread `submission` first, then explicit fields, so a submission key
   // named `air_gap_mode` (currently always undefined but defensive against
   // future collector contracts) can't clobber the envelope marker.

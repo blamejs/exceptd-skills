@@ -207,7 +207,7 @@
       "path": "data/rfc-references.json",
       "purpose": "IETF RFCs + active Internet-Drafts cited by skills (TLS, IPsec, PQ crypto migration, HTTP/3, CT). Cross-validated against IETF Datatracker via validate-rfcs.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-05-27",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 7476,
+      "entry_count": 8888,
       "sample_keys": [
         "RFC-4301",
         "RFC-4303",
