@@ -17696,5 +17696,55 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-21877": {
+    "name": "n8n Git Node Arbitrary File Write Authenticated RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "n8n's Git node lets an authenticated user write a dangerous file to an arbitrary path, which is then executed, yielding full instance compromise on self-hosted and Cloud.",
+      "privileges_required": "low (authenticated user who can configure the Git node)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is n8n's Git node, in an AI-workflow / automation builder. The lesson: a workflow node that writes files is a code-execution sink - constrain the file types and paths it can write, and scope workflow-edit permission tightly."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not stop an authenticated user from writing an executable file via the Git node."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection does not stop an arbitrary file write that becomes code execution."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats a workflow builder's file-writing node as a code-execution sink requiring type/path constraint."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 81,
+      "basis": "Workflow builders ship nodes (Git, filesystem) that write files on trusted assumptions; file-type/path constraints on these sinks are rarely audited.",
+      "theater_pattern": "ai_app_builder_code_node_sandbox_escape"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-103",
+        "name": "AI-APP-BUILDER-EXECUTION-ENDPOINT-AUTH-AND-SANDBOX",
+        "description": "A visual LLM app/agent/workflow builder (Langflow, Flowise, Dify, n8n, and similar) must authenticate every endpoint that can reach a code-execution path and must never let a workflow-supplied node write files of executable/dangerous types to arbitrary paths or run code with host privileges. Sandbox any code the platform executes on a user's behalf in a non-bypassable, host-isolated environment, constrain file-writing nodes to safe types/paths, and scope workflow-edit permission tightly. The distinguishing test: configure a file-writing or code node to drop an executable to a startup/cron path on a staging instance and confirm it is refused.",
+        "evidence": "https://github.com/n8n-io/n8n/security/advisories/GHSA-v364-rw7m-3263",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SI-3",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.126 — 2026-05-26
+
+CVE catalog — n8n Git-node RCE. Adds **CVE-2026-21877**, completing the n8n critical cluster. In versions ≥ 0.123.0 and < 1.121.3, an authenticated user abuses the Git node to write a file of a dangerous type to an arbitrary path, which is then executed — yielding remote code execution and full compromise of both self-hosted and Cloud instances (CWE-434 unrestricted upload chained to CWE-94; GitHub CNA CVSS v3.1 9.9). Fixed in 1.121.3. Reuses the AI-app-builder execution-endpoint auth-and-sandbox control (NEW-CTRL-103), which now also covers file-writing workflow nodes as code-execution sinks. CVE count 419 → 420.
+
 ## 0.13.125 — 2026-05-26
 
 CVE catalog — SGLang unauthenticated IPC-deserialization RCE cluster. Adds two unauthenticated RCEs in SGLang (lmsys), the unauth siblings of the already-catalogued authenticated weight-update flaw. **CVE-2026-3059** (CNA CVSS v3.1 9.8) — the multimodal generation module's ZMQ broker deserializes untrusted serialized objects from unauthenticated peers (CWE-502). **CVE-2026-3060** (CNA CVSS v3.1 9.8) — the encoder-parallel disaggregation module does the same. Both yield unauthenticated remote code execution on the serving host and are fixed in 0.5.10 (PR #20904). Both reuse the AI-inference IPC deserialization-safety control (NEW-CTRL-086), shared with the vLLM ZeroMQ-transport and TensorRT-LLM deserialization class — the lesson being that inference-engine IPC channels must use a safe serializer + peer authentication and never deserialize untrusted objects. CVE count 417 → 419.
