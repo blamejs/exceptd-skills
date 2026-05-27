@@ -17596,5 +17596,105 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-3059": {
+    "name": "SGLang Multimodal-Generation ZMQ Broker Unauthenticated Deserialization RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "An unauthenticated peer reaches an SGLang IPC/ZMQ channel that deserializes untrusted serialized objects, executing arbitrary code on the serving host.",
+      "privileges_required": "none (unauthenticated peer reaching the IPC channel)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is SGLang, an LLM serving framework. The lesson: inter-process channels in inference engines must use a safe serializer + peer authentication and be isolated - never deserialize untrusted objects."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation does not single out unsafe IPC deserialization spreading by code reuse across engines."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not isolate the unauthenticated IPC/ZMQ channel."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an inference engine's IPC channel as an integrity boundary requiring a safe serializer + peer auth."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 83,
+      "basis": "Inference engines wire inter-process channels with object-deserializing transports on trusted-network assumptions; peer authentication + safe serialization are rarely audited.",
+      "theater_pattern": "ai_inference_ipc_unsafe_deserialization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket/ZMQ communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spreads by code reuse, apply the control across every inference engine in the estate. The distinguishing test: send a crafted serialized object to the inference engine's IPC socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ],
+        "evidence": "https://github.com/sgl-project/sglang/security/advisories/GHSA-3cp7-c6q2-94xr"
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-3060": {
+    "name": "SGLang Encoder-Parallel Disaggregation Unauthenticated Deserialization RCE",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "An unauthenticated peer reaches an SGLang IPC/ZMQ channel that deserializes untrusted serialized objects, executing arbitrary code on the serving host.",
+      "privileges_required": "none (unauthenticated peer reaching the IPC channel)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is SGLang, an LLM serving framework. The lesson: inter-process channels in inference engines must use a safe serializer + peer authentication and be isolated - never deserialize untrusted objects."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation does not single out unsafe IPC deserialization spreading by code reuse across engines."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not isolate the unauthenticated IPC/ZMQ channel."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an inference engine's IPC channel as an integrity boundary requiring a safe serializer + peer auth."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 83,
+      "basis": "Inference engines wire inter-process channels with object-deserializing transports on trusted-network assumptions; peer authentication + safe serialization are rarely audited.",
+      "theater_pattern": "ai_inference_ipc_unsafe_deserialization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-086",
+        "name": "AI-INFERENCE-IPC-DESERIALIZATION-SAFETY",
+        "description": "AI inference engines must use a safe serializer (e.g. JSON) for IPC/socket/ZMQ communication, never deserialize untrusted serialized objects, authenticate socket peers, and isolate the channel on a trusted network segment. Because the insecure primitive spreads by code reuse, apply the control across every inference engine in the estate. The distinguishing test: send a crafted serialized object to the inference engine's IPC socket from an unauthorized peer on a staging instance and confirm it is rejected, not deserialized.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SI-10",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ],
+        "evidence": "https://github.com/sgl-project/sglang/pull/20904"
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

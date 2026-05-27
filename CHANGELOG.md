@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.125 — 2026-05-26
+
+CVE catalog — SGLang unauthenticated IPC-deserialization RCE cluster. Adds two unauthenticated RCEs in SGLang (lmsys), the unauth siblings of the already-catalogued authenticated weight-update flaw. **CVE-2026-3059** (CNA CVSS v3.1 9.8) — the multimodal generation module's ZMQ broker deserializes untrusted serialized objects from unauthenticated peers (CWE-502). **CVE-2026-3060** (CNA CVSS v3.1 9.8) — the encoder-parallel disaggregation module does the same. Both yield unauthenticated remote code execution on the serving host and are fixed in 0.5.10 (PR #20904). Both reuse the AI-inference IPC deserialization-safety control (NEW-CTRL-086), shared with the vLLM ZeroMQ-transport and TensorRT-LLM deserialization class — the lesson being that inference-engine IPC channels must use a safe serializer + peer authentication and never deserialize untrusted objects. CVE count 417 → 419.
+
 ## 0.13.124 — 2026-05-26
 
 CVE catalog — stable-diffusion-webui (AUTOMATIC1111). Adds **CVE-2024-31462** in the most widely deployed Stable Diffusion web UI. The Backup/Restore tab (`save_config_state` in `modules/ui_extensions.py`) builds a file path from an unvalidated user-supplied config-state name and opens it for writing, yielding a limited file write (JSON files to arbitrary locations) on Windows (CWE-22; GitHub CNA CVSS v3.1 6.3; GHSL-2024-010). The advisory tested 1.7.0, but the CVE/OSV record marks releases through 1.8.0 as affected — fixed by commit `d9708c92`, so upgrading 1.7.0 → 1.8.0 is **not** sufficient. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 416 → 417.
