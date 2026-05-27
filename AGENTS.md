@@ -156,7 +156,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 23 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
+| `exceptd brief --all` | Grouped-by-scope summary of all 24 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
@@ -372,7 +372,7 @@ This split costs every consumer the same translation work on every invocation. C
 exceptd collect secrets | exceptd run secrets --evidence -
 ```
 
-The collector library is small and grows as playbooks are touched. Thirteen reference collectors ship today (`lib/collectors/secrets.js`, `lib/collectors/kernel.js`, `lib/collectors/sbom.js`, `lib/collectors/containers.js`, `lib/collectors/library-author.js`, `lib/collectors/crypto-codebase.js`, `lib/collectors/cred-stores.js`, `lib/collectors/hardening.js`, `lib/collectors/runtime.js`, `lib/collectors/ai-api.js`, `lib/collectors/mcp.js`, `lib/collectors/crypto.js`, `lib/collectors/cicd-pipeline-compromise.js`); the rest are written when each playbook needs them. Until a playbook has a collector, the AI/operator owns evidence collection as before.
+The collector library is small and grows as playbooks are touched. Fourteen reference collectors ship today (`lib/collectors/secrets.js`, `lib/collectors/kernel.js`, `lib/collectors/sbom.js`, `lib/collectors/containers.js`, `lib/collectors/library-author.js`, `lib/collectors/crypto-codebase.js`, `lib/collectors/cred-stores.js`, `lib/collectors/hardening.js`, `lib/collectors/runtime.js`, `lib/collectors/ai-api.js`, `lib/collectors/mcp.js`, `lib/collectors/crypto.js`, `lib/collectors/cicd-pipeline-compromise.js`, `lib/collectors/citation-hygiene.js`); the rest are written when each playbook needs them. Code-scope collectors share `lib/collectors/scan-excludes.js`, which skips dependency/build caches, agent scratch (`.claude`), and linked git worktrees so a tree holding detached worktree copies isn't scanned N times. Until a playbook has a collector, the AI/operator owns evidence collection as before.
 
 ### Precision target for new `look.artifacts[].source` strings
 

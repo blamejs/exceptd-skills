@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.14.0 — 2026-05-26
+
+New playbook — `citation-hygiene`. Validates a codebase's own cited security references: it scans source, comments, and docs for CVE and RFC citations and flags fabricated CVE IDs (the non-numeric `CVE-2024-XXXX` form), catalog-rejected/disputed CVEs, and RFC number-vs-title mismatches. Well-formed CVE IDs absent from the curated catalog are routed to an inconclusive "needs external verification" result rather than a false clear or a false fabrication flag. Ships with a companion collector — `exceptd collect citation-hygiene | exceptd run citation-hygiene --evidence -`. The catalog now holds 24 playbooks.
+
+Unknown flags are refused on every verb. Previously only `doctor` rejected an unrecognized flag; every other verb silently ignored it, so a typo like `--max-rweap 70` or `--fromat sarif` looked like it applied a cap or a format when it did nothing. Each verb now exits 1 with the accepted-flag list and a did-you-mean suggestion. A flag that is valid on another verb (e.g. `--csaf-status` on `brief`) still gets its tailored "that flag belongs on a run-class verb" guidance instead of a blanket refusal.
+
+`exceptd run --format json` now emits the full run result. It previously discarded the result and printed a short "unknown format" stub with a success exit code. SARIF, CSAF, and OpenVEX bundles are now emitted as spec-conformant documents — the internal `ok` envelope key is no longer prepended, so strict validators (GitHub code-scanning SARIF upload, CSAF trusted-provider checks) accept the output. Passing several `--format` values prints a note to stderr pointing at `bundles_by_format` rather than silently dropping all but the first.
+
+`exceptd collect <pb> | exceptd run <pb> --evidence -` works again. `collect` now emits JSON when its stdout is a pipe (the human summary is reserved for an interactive terminal), so the documented one-liner no longer feeds a prose summary into `run`.
+
+`exceptd refresh --check-advisories` polls the primary-source advisory feeds as documented (report-only; emits `diffs[]`) instead of being silently ignored.
+
+`skill --help` and `framework-gap --help` print usage instead of erroring.
+
+`exceptd attest list --limit <n>` caps the inventory; the JSON envelope reports the unfiltered total alongside the shown count.
+
+Code-scope collectors skip agent scratch (`.claude`) and linked git worktrees. A working tree holding detached worktree copies was scanned once per copy, inflating hash and secret counts with duplicates of the same files. The `library-author` collector now recognizes release-time SBOM generation, npm provenance, and sigstore/cosign signing, and `id-token: write` declared at job scope — so a well-run publisher no longer gets false "SBOM absent" or "no OIDC" findings from artifacts that are produced at release time.
+
+Documentation: the `ci` exit-code contract (0–5), the `osv` refresh source, and the full `--format` vocabulary are corrected in `--help` and README; the deprecated-alias help no longer claims a one-time banner it does not emit, and `reattest` / `list-attestations` are documented as canonical short forms rather than deprecated aliases.
+
 ## 0.13.126 — 2026-05-26
 
 CVE catalog — n8n Git-node RCE. Adds **CVE-2026-21877**, completing the n8n critical cluster. In versions ≥ 0.123.0 and < 1.121.3, an authenticated user abuses the Git node to write a file of a dangerous type to an arbitrary path, which is then executed — yielding remote code execution and full compromise of both self-hosted and Cloud instances (CWE-434 unrestricted upload chained to CWE-94; GitHub CNA CVSS v3.1 9.9). Fixed in 1.121.3. Reuses the AI-app-builder execution-endpoint auth-and-sandbox control (NEW-CTRL-103), which now also covers file-writing workflow nodes as code-execution sinks. CVE count 419 → 420.

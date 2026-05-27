@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // v0.13.5 adds 3 playbooks (post-quantum-migration, ai-discovered-cve-
-  // triage, supply-chain-recovery) bringing the canonical set to 23.
+  // citation-hygiene (validates a codebase's own cited CVE/RFC references
+  // against the shipped catalogs) brings the canonical set to 24.
   assert.equal(
     playbooks.length,
-    23,
-    `expected 23 shipped playbooks, found ${playbooks.length}`,
+    24,
+    `expected 24 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

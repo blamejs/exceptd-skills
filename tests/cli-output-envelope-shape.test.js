@@ -56,15 +56,18 @@ test('attest list --json envelope: exact top-level key set', () => {
     assert.ok(body, `attest list --json must parse; got: ${r.stdout.slice(0, 200)}`);
     const keys = Object.keys(body).sort();
     // Adding / removing a top-level field on `attest list` MUST update
-    // this list. Cycle 11 F5 added `roots_evaluated`; that addition was
-    // intentional and this test was authored to capture the post-fix state.
+    // this list. `count` is the unfiltered total; `shown` is how many rows
+    // the envelope carries (== count unless --limit caps it); `limit` echoes
+    // the --limit value (null when unset).
     assert.deepEqual(keys, [
       'attestations',
       'count',
       'filter',
+      'limit',
       'ok',
       'roots_evaluated',
       'roots_searched',
+      'shown',
     ]);
   } finally {
     try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}

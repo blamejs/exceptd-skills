@@ -1,0 +1,820 @@
+{
+  "_meta": {
+    "id": "citation-hygiene",
+    "version": "1.0.0",
+    "last_threat_review": "2026-05-26",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-05-26",
+        "summary": "Initial seven-phase citation-hygiene playbook. Validates a codebase's OWN cited security references — CVE identifiers, RFC numbers, and the prose that surrounds them in source comments, docstrings, SECURITY.md, threat-model docs, and dependency-justification notes — against the shipped CVE and RFC catalogs. Where every other code-scope playbook audits what the source DOES, this one audits what the source CLAIMS: it catches CVE identifiers that are malformed or invented (CVE-2024-XXXX, CVE-2024-zlib), well-formed CVE citations the catalog records as rejected or disputed, RFC numbers paired with a title that does not match the actual RFC title (citing RFC 9404 as the Sieve spec when 9404 is JMAP Blob Management), and Internet-Drafts referenced as if they were the normative RFC for a wire codepoint. A wrong citation in a security comment or a SECURITY.md is a silent correctness bug: it routes a reader to the wrong threat model, defends against a vulnerability that was never real, or pins a protocol decision to a document that says something different. AI-assisted code generation routinely emits plausible-looking but fabricated CVE and RFC citations, so the citation surface now drifts faster than human review catches it.",
+        "cves_added": [],
+        "framework_gaps_updated": [
+          "nist-800-53-SA-15",
+          "nist-800-218-PW-7",
+          "iso-27001-2022-A.8.28",
+          "iso-27001-2022-A.5.36",
+          "eu-cra-annex-I-2"
+        ]
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "code",
+    "preconditions": [
+      {
+        "id": "filesystem-read-repo",
+        "description": "Agent must be able to walk the working directory tree and read source files, comments, docstrings, and documentation.",
+        "check": "agent_has_filesystem_read == true",
+        "on_fail": "halt"
+      },
+      {
+        "id": "repo-cites-security-references",
+        "description": "The repo must contain at least one CVE or RFC citation in source, comments, or docs. A repo that never cites a security reference has no citation surface to validate.",
+        "check": "exists_any_citation('CVE-', 'RFC') == true",
+        "on_fail": "warn"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      },
+      {
+        "playbook_id": "sbom",
+        "condition": "analyze.classification == 'detected'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Cited security-reference hygiene (consumer self-citation audit)",
+    "attack_class": "compliance-theater",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1565.001"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-345",
+      "CWE-693"
+    ],
+    "d3fend_refs": [],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "nist-csf-2",
+      "iso-27001-2022",
+      "soc2",
+      "nis2",
+      "dora",
+      "eu-cra",
+      "uk-caf",
+      "au-ism",
+      "au-essential-8",
+      "cmmc"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Art.13 / Annex I §2",
+          "obligation": "publish_accurate_vulnerability_handling_documentation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "vulnerability_handling_procedure",
+            "accurate_cve_reference_inventory",
+            "security_advisory_cross_reference_map"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "OMB M-22-09 / EO 14028 (secure-software attestation)",
+          "obligation": "attest_accurate_security_documentation",
+          "window_hours": 8760,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "cisa_secure_software_attestation_form",
+            "verified_security_reference_inventory"
+          ]
+        },
+        {
+          "jurisdiction": "UK",
+          "regulation": "UK CAF (NCSC) B4.d (Secure development)",
+          "obligation": "maintain_verifiable_security_documentation",
+          "window_hours": 720,
+          "clock_starts": "manual",
+          "evidence_required": [
+            "documentation_review_record",
+            "cited_reference_verification_log"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "security-comment-cites-nonexistent-cve",
+          "claim": "This code path is hardened against CVE-XXXX-YYYY (cited in a source comment, a mitigation note, or SECURITY.md).",
+          "fast_detection_test": "Extract every CVE identifier cited in source comments, docstrings, and docs. For each, confirm (a) it matches the canonical CVE-\\d{4}-\\d{4,} form — a trailing non-numeric token (CVE-2024-XXXX, CVE-2024-zlib, CVE-2024-TBD) is an invented placeholder that escaped a template; (b) the well-formed ones resolve to a real advisory. A mitigation comment citing a CVE that does not exist defends against nothing — the reviewer who trusts the comment never re-checks the code path. Cross-reference each well-formed citation against the shipped CVE catalog; identifiers absent from the curated catalog are inconclusive (the catalog is curated, not exhaustive) and need an out-of-band NVD lookup before the comment can be trusted.",
+          "implicated_controls": [
+            "nist-800-53-SA-15",
+            "iso-27001-2022-A.8.28",
+            "eu-cra-annex-I-2"
+          ]
+        },
+        {
+          "pattern_id": "mitigation-note-cites-rejected-or-disputed-cve",
+          "claim": "We patched / mitigated CVE-XXXX-YYYY, so this component is safe.",
+          "fast_detection_test": "For each well-formed CVE citation, check the shipped catalog for a rejected-or-disputed marker (the catalog records dispute / rejection status in the entry's analyst notes). A citation to a REJECTED CVE points at an identifier MITRE withdrew — the mitigation note describes work done against a vulnerability that was retracted, which means either the real issue carries a different identifier or the work was unnecessary. A DISPUTED CVE (vendor contests it is a vulnerability) means the mitigation's necessity is contested; the comment should record the dispute, not assert a clean fix. Either way the citation misleads the next reader about what was actually defended.",
+          "implicated_controls": [
+            "nist-800-53-SA-15",
+            "nist-800-218-PW-7",
+            "iso-27001-2022-A.5.36"
+          ]
+        },
+        {
+          "pattern_id": "rfc-citation-title-mismatch",
+          "claim": "This implements / conforms to RFC NNNN (cited alongside a human-readable title in the same comment or doc line).",
+          "fast_detection_test": "Extract every RFC number cited with an adjacent title in the same line or comment block. Look up the actual title in the shipped RFC index. If the cited title does not match the real RFC title (citing RFC 9404 and calling it the Sieve email-filtering spec when RFC 9404 is the JMAP Blob Management Extension), the citation is wrong — either the number is a typo for a different RFC or the author conflated two documents. A conformance claim pinned to the wrong RFC sends an implementer to read the wrong wire format. The distinguishing test is exact: the real title is a fixed string in the index, not a judgement call.",
+          "implicated_controls": [
+            "iso-27001-2022-A.8.28",
+            "nist-800-218-PW-7"
+          ]
+        },
+        {
+          "pattern_id": "internet-draft-cited-as-normative-rfc",
+          "claim": "The wire format / codepoint follows RFC NNNN.",
+          "fast_detection_test": "Where a comment names an RFC as the normative source for a wire codepoint or algorithm identifier but the surrounding text refers to a draft / work-in-progress / terminology document, confirm the cited number is actually a published Standards-Track RFC, not a number borrowed from an Internet-Draft that never became that RFC. Pinning a codepoint to a draft-as-if-RFC means the implementation tracks a document that can still change under it. Keep this conservative — many comments legitimately cite both the draft and the RFC it became; only flag when the normative claim rests on a number that does not resolve to a published RFC.",
+          "implicated_controls": [
+            "iso-27001-2022-A.8.28"
+          ]
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "No compliance framework binds the accuracy of the security references a codebase cites about itself. NIST 800-53 SA-15 (development process, standards, and tools) asks for a documented secure-development process but does not require that the CVE and RFC identifiers cited in that documentation actually resolve to the advisories and standards they name. NIST 800-218 SSDF PW.7 (review and analyze human-readable code) reviews code for vulnerabilities, not the citations in its comments. ISO 27001:2022 A.8.28 (secure coding) and A.5.36 (compliance with policies for information security) govern coding practice and documentation conformance but contain no requirement that cited threat references be verified against an authoritative source. EU CRA Annex I §2 (vulnerability handling) requires manufacturers to document and remediate vulnerabilities — a mitigation note citing a rejected, disputed, or fabricated CVE is documentation that fails that obligation in substance while passing it on paper. The structural gap: every framework treats a security comment or a SECURITY.md as evidence of diligence without testing whether the references inside it are real. AI-assisted code generation has made this gap operationally urgent — generated comments emit confident, well-formatted CVE and RFC citations that are frequently invented, and the citation surface now drifts faster than line-by-line human review catches it. The defending capability — cross-referencing cited identifiers against authoritative CVE and RFC catalogs — is mechanical and available offline, but no framework requires it.",
+        "lag_score": 540,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SA-15",
+            "designed_for": "Development process, standards, and tools — a documented, repeatable secure-development process.",
+            "insufficient_because": "Requires a documented process and tooling; does not require that the CVE / RFC identifiers cited in security documentation resolve to real advisories and standards. A mitigation note citing a fabricated CVE satisfies SA-15's process-documentation surface while defending against nothing."
+          },
+          {
+            "framework": "nist-800-218",
+            "control_id": "PW.7",
+            "designed_for": "Review and analyze human-readable code to identify vulnerabilities and verify compliance with security requirements.",
+            "insufficient_because": "Reviews code for vulnerabilities; says nothing about validating the threat references cited in comments. A reviewer can pass PW.7 while trusting a comment that cites a disputed CVE the catalog would flag."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.28",
+            "designed_for": "Secure coding — secure coding practices throughout the development lifecycle.",
+            "insufficient_because": "Governs coding practice; contains no requirement that cited CVE / RFC references be verified against an authoritative catalog. Permits a codebase whose every mitigation comment cites a nonexistent advisory to claim secure-coding conformance."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.36",
+            "designed_for": "Compliance with policies, rules, and standards for information security.",
+            "insufficient_because": "Tests conformance to documented policy; does not require the security documentation itself to cite verifiable references. Paper-accurate documentation can rest on fabricated identifiers."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I §2 (vulnerability handling)",
+            "designed_for": "Manufacturers must identify, document, and remediate vulnerabilities in products with digital elements.",
+            "insufficient_because": "Requires documentation and remediation; binding for vulnerability-handling provisions from 2026-09-11. A mitigation note citing a rejected / disputed / fabricated CVE passes the documentation obligation on its face while misrepresenting what was actually remediated."
+          }
+        ]
+      },
+      "skill_preload": [
+        "exploit-scoring",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "coordinated-vuln-disclosure",
+        "threat-model-currency"
+      ]
+    },
+    "direct": {
+      "threat_context": "Citation-accuracy posture mid-2026: AI-assisted code generation is the dominant authoring channel for security comments and dependency-justification notes, and it routinely emits confident, well-formatted CVE and RFC citations that are fabricated or mis-attributed. Generated mitigation comments cite CVE identifiers with placeholder tails that survived a template (CVE-2024-XXXX), CVE numbers that resolve to a different product entirely, and RFC numbers paired with the wrong document title. The catalog's own audit history shows the failure mode is real in curated data, not just generated prose: NVD records carry DISPUTED status (the Anyscale Ray Job-API entry CVE-2023-48022, mass-exploited as ShadowRay yet vendor-disputed and absent from CISA KEV) and REJECTED status (a withdrawn React Server Components identifier associated-with but distinct-from the real CVE), so a comment citing the rejected identifier points at nothing while the real issue lives under a different number. RFC mis-citation is equally live: with 7000+ RFCs in the index, a one-digit transposition routes an implementer from the JMAP Blob Management Extension (RFC 9404) to an unrelated document, and a wire-codepoint comment that pins to an Internet-Draft number that never became the cited RFC tracks a document that can still change. The cost is silent: a wrong citation in a security comment defends against the wrong threat, and the reviewer who trusts the comment never re-derives the code path. The defending capability — mechanical cross-reference of every cited identifier against authoritative CVE and RFC catalogs — runs fully offline and in seconds across a large repo, exactly the kind of check AI-assisted review can run continuously.",
+      "rwep_threshold": {
+        "escalate": 70,
+        "monitor": 40,
+        "close": 20
+      },
+      "framework_lag_declaration": "NIST 800-53 SA-15, NIST 800-218 SSDF PW.7, ISO 27001:2022 A.8.28 / A.5.36, SOC 2 CC8.1, and EU CRA Annex I §2 all permit security documentation whose cited CVE and RFC references are never verified against an authoritative source. SA-15 binds the development process, not the accuracy of the threat references named in it. PW.7 reviews code for vulnerabilities, not the citations in its comments. A.8.28 / A.5.36 govern coding practice and policy conformance without a citation-verification requirement. EU CRA Annex I §2 (vulnerability handling, binding 2026-09-11) requires documentation and remediation but a mitigation note citing a fabricated, rejected, or disputed CVE satisfies the documentation surface while misrepresenting the substance. UK CAF B4.d (secure development) is outcome-based and does not require machine-verifiable citation accuracy; AU ISM's software-development guidelines and Essential 8 application-control / patch-application controls bind the operating organization's deployment posture, not the accuracy of the threat references its source cites. The defending capability — offline cross-reference of every cited identifier against authoritative CVE and RFC catalogs — has been mechanically available throughout, but no framework requires it; the lag is roughly 540 days between the availability of the check and any binding obligation to run it.",
+      "skill_chain": [
+        {
+          "skill": "exploit-scoring",
+          "purpose": "For every well-formed CVE citation that resolves to a catalog entry, pull KEV / PoC / AI-discovery / active-exploitation fields so a citation can be judged against the real risk it claims to address, and so a rejected / disputed status is surfaced with its operational context.",
+          "required": true
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "Run the citation theater fingerprints in govern.theater_fingerprints; emit a verdict per cited reference (fabricated / rejected-or-disputed / title-mismatch / draft-as-rfc).",
+          "required": true
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "Map each citation-accuracy finding to the framework controls that fail to bind citation verification (SA-15, PW.7, A.8.28, A.5.36, CRA Annex I §2).",
+          "required": true
+        },
+        {
+          "skill": "threat-model-currency",
+          "purpose": "Assess whether a mitigation comment's cited reference is stale or superseded — a citation that was once accurate may now point at a withdrawn or re-scoped advisory.",
+          "skip_if": "no_well_formed_cve_citations_resolved",
+          "required": false
+        },
+        {
+          "skill": "coordinated-vuln-disclosure",
+          "purpose": "Where a fabricated or wrong citation appears in a published SECURITY.md or advisory, cross-walk to the disclosure-documentation obligations the wrong citation undermines.",
+          "skip_if": "no_citation_in_published_disclosure_surface",
+          "required": false
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 20000,
+        "breakdown": {
+          "govern": 2800,
+          "direct": 1600,
+          "look": 2400,
+          "detect": 3200,
+          "analyze": 4400,
+          "validate": 3600,
+          "close": 2000
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "cve-citations-in-source",
+          "type": "file",
+          "source": "Grep the repo (including comments and docstrings, excluding node_modules / vendor / .venv / target / dist / build / .git) for CVE identifiers. Pattern: `CVE-\\d{4}-[0-9A-Za-z]+` (deliberately permissive on the tail so malformed citations like CVE-2024-XXXX / CVE-2024-zlib are captured, not silently skipped). Capture file_path:line and the surrounding line text for each hit.",
+          "air_gap_alternative": "Identical local-filesystem Grep; no network dependency. Run the same pattern against the working repo.",
+          "description": "Every CVE identifier cited anywhere in the source tree, including comments, docstrings, and string literals. The permissive tail is intentional — the whole point is to catch the citations that do NOT match the canonical numeric form.",
+          "required": true
+        },
+        {
+          "id": "rfc-citations-in-source",
+          "type": "file",
+          "source": "Grep the repo (including comments and docs, same exclusions) for RFC citations. Pattern: `RFC\\s?-?\\d+` (matches `RFC 9404`, `RFC9404`, `RFC-9404`). Capture file_path:line and the full surrounding line so an adjacent title can be extracted for the title-match check.",
+          "air_gap_alternative": "Identical local-filesystem Grep; no network dependency. Run the same pattern against the working repo.",
+          "description": "Every RFC number cited in the source tree, with surrounding line text. The surrounding text is required so the cited number can be paired with any adjacent human-readable title for the title-mismatch indicator.",
+          "required": true
+        },
+        {
+          "id": "security-documentation",
+          "type": "config_file",
+          "source": "Read SECURITY.md, .github/SECURITY.md, docs/SECURITY.md, THREATMODEL.md, docs/threat-model*, CHANGELOG.md security sections, and any advisory / mitigation note files. Grep these for the same CVE and RFC patterns.",
+          "air_gap_alternative": "Identical local-filesystem read; no network dependency. Same Read against the working repo.",
+          "description": "Security documentation — the highest-trust citation surface. A wrong CVE / RFC reference in SECURITY.md or a threat model is read by downstream consumers and security researchers as authoritative.",
+          "required": false
+        },
+        {
+          "id": "cve-catalog",
+          "type": "config_file",
+          "source": "Load data/cve-catalog.json (shipped with the tool). Build the set of known CVE keys and, for each, read the analyst-note fields (cvss_note, active_exploitation_notes, vector, discovery_attribution_note) to detect rejected / disputed markers.",
+          "air_gap_alternative": "The catalog ships in the tarball; this is a local read with no network dependency.",
+          "description": "The authoritative CVE reference for the cross-check. Curated, not exhaustive — a citation absent from the catalog is inconclusive (needs an out-of-band NVD lookup), never a confirmed fabrication.",
+          "required": true
+        },
+        {
+          "id": "rfc-index",
+          "type": "config_file",
+          "source": "Load data/rfc-references.json (shipped with the tool). Build the number -> title map for every indexed RFC.",
+          "air_gap_alternative": "The index ships in the tarball; this is a local read with no network dependency.",
+          "description": "The authoritative RFC number -> title map for the title-mismatch and draft-as-RFC checks. Covers the current published RFC index.",
+          "required": true
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current",
+        "asset_scope": "entire_source_tree_and_security_documentation_excluding_dependencies_and_build_artifacts",
+        "depth": "deep",
+        "sampling": "exhaustive — every source file, comment, docstring, and documentation file is grepped for CVE and RFC citations. Dependency trees (node_modules, vendor, .venv, target) and build output are excluded; their citations belong to upstream, not to this codebase's self-citation surface."
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "working directory is the codebase being audited (not a dependency checkout)",
+          "if_false": "If the working directory is a node_modules subtree or a registry checkout, the citations belong to an upstream author, not the consumer. Mark visibility_gap=upstream_not_consumer and re-run from the consumer's source repository."
+        },
+        {
+          "assumption": "agent has Grep + Read across the source tree and can load the shipped CVE / RFC catalogs",
+          "if_false": "Without the catalogs the cross-check cannot run. Downgrade catalog-dependent indicators to inconclusive and escalate."
+        },
+        {
+          "assumption": "the shipped CVE catalog is curated, not exhaustive",
+          "if_false": "A well-formed CVE citation absent from the catalog is inconclusive (needs an external NVD lookup), never a confirmed fabrication. Only malformed citations (non-numeric tail) are fabrications determinable offline."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "cve-citations-in-source",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "rfc-citations-in-source",
+          "fallback_action": "mark_inconclusive",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "security-documentation",
+          "fallback_action": "use_compensating_artifact",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "cve-catalog",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        },
+        {
+          "artifact_id": "rfc-index",
+          "fallback_action": "escalate_to_human",
+          "confidence_impact": "high"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "fabricated-cve-id",
+          "type": "file_path",
+          "value": "A cited CVE identifier whose tail is not the canonical all-numeric form. The citation matches `CVE-\\d{4}-[0-9A-Za-z]+` but NOT `CVE-\\d{4}-\\d{4,}` — i.e. the tail contains a non-digit (CVE-2024-XXXX, CVE-2024-zlib, CVE-2024-TBD) or is fewer than 4 digits. A non-numeric tail is a template placeholder or an invented identifier that never issued.",
+          "description": "Fabricated or malformed CVE citation. The identifier cannot resolve to any real advisory because it does not match the canonical CVE form. Hard fail — a mitigation comment citing it defends against nothing.",
+          "confidence": "deterministic",
+          "deterministic": true,
+          "false_positive_checks_required": [
+            "If the citation is inside a test fixture, a regex-pattern example, a documentation snippet illustrating the CVE format itself, or a template file (e.g. an issue / advisory template showing `CVE-YYYY-NNNNN` as a fill-in), it is illustrative, not a real citation; demote to miss.",
+            "If the surrounding text explicitly marks the identifier as a placeholder pending assignment (e.g. `CVE-TBD`, `pending CVE assignment`, an inline `<!-- placeholder -->`), record it as a known-placeholder rather than a fabrication — but confirm it is not shipped in operator-facing SECURITY.md / advisory text, where a placeholder is still a defect."
+          ]
+        },
+        {
+          "id": "rejected-or-disputed-cve",
+          "type": "file_path",
+          "value": "A well-formed CVE citation (matches `CVE-\\d{4}-\\d{4,}`) that resolves to a shipped-catalog entry whose analyst notes record a REJECTED or DISPUTED status. The catalog records dispute / rejection in entry note fields (cvss_note, active_exploitation_notes, vector, discovery_attribution_note); a case-insensitive match on `reject` / `disputed` in those fields for the cited entry flips this indicator.",
+          "description": "Citation to a rejected or disputed CVE. A REJECTED identifier was withdrawn by MITRE — the real issue, if any, carries a different number. A DISPUTED identifier is contested by the vendor — the mitigation's necessity is not settled. Either way the citation misrepresents what was defended.",
+          "confidence": "high",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "If the citation's surrounding text already acknowledges the dispute / rejection (e.g. `CVE-2023-48022 (disputed by vendor, mitigated by network isolation)`), the citation is honest about the status; demote to miss — the defect is an UNQUALIFIED citation, not the reference itself.",
+            "Confirm the catalog note actually marks THIS identifier as rejected / disputed and not merely a neighbouring identifier mentioned in the same note (catalog notes sometimes cross-reference a related disputed CVE). Match the rejection / dispute language to the cited key specifically before flagging.",
+            "If the cited identifier is absent from the shipped catalog entirely, this indicator does NOT fire — absence is inconclusive (the catalog is curated, not exhaustive), handled by the needs-verification path, not a rejected/disputed verdict."
+          ]
+        },
+        {
+          "id": "cve-citation-needs-external-verification",
+          "type": "behavioral_signal",
+          "value": "A well-formed CVE citation (matches `CVE-\\d{4}-\\d{4,}`) that is absent from the shipped CVE catalog. The catalog is curated for operational impact and framework coverage, not exhaustive, so absence is not evidence of fabrication — it means the citation could not be confirmed offline.",
+          "description": "Well-formed CVE citation that the offline catalog cannot confirm or refute. Needs an out-of-band NVD / vendor-advisory lookup before the comment that cites it can be trusted. Inconclusive by design — never a false clear, never a false fabrication.",
+          "confidence": "low",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "Resolve the identifier against an authoritative source (NVD, the issuing CNA's advisory) out of band. If it resolves to a real, non-rejected advisory whose product matches the surrounding claim, the citation is sound; record verified and demote to miss.",
+            "If it resolves to a REJECTED / DISPUTED record at NVD, re-classify under rejected-or-disputed-cve rather than leaving it inconclusive."
+          ]
+        },
+        {
+          "id": "rfc-number-title-mismatch",
+          "type": "file_path",
+          "value": "An RFC citation that names a number AND an adjacent human-readable title in the same line / comment, where the cited title does not match the actual RFC title from the shipped index. Example: a comment citing `RFC 9404` and describing it as the Sieve email-filtering spec, when RFC 9404 is the JSON Meta Application Protocol (JMAP) Blob Management Extension. The match is exact against the index title (token-overlap below a conservative threshold after normalising case / punctuation flips this indicator).",
+          "description": "RFC number paired with the wrong title. Either the number is a typo for a different RFC or the author conflated two documents. A conformance or wire-format claim pinned to the wrong RFC sends an implementer to read the wrong specification.",
+          "confidence": "high",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "If the adjacent text is a paraphrase / nickname rather than a title claim (e.g. `RFC 8446 (modern TLS)` — a description, not a wrong title), do not flag; only a stated title that conflicts with the index title is a mismatch.",
+            "If the cited number is not in the shipped RFC index at all, this indicator does NOT fire — an out-of-index number is handled as needs-verification, not a title mismatch (the index covers the current published set but a brand-new RFC may post-date it).",
+            "Confirm the title was extracted from the SAME citation, not from a different RFC cited later in the same comment block; pair each number with the title nearest it before comparing."
+          ]
+        },
+        {
+          "id": "draft-mislabeled-as-rfc",
+          "type": "behavioral_signal",
+          "value": "A comment names an RFC number as the normative source for a wire codepoint / algorithm identifier, but the cited number does not resolve to a published RFC in the shipped index AND the surrounding text refers to a draft / work-in-progress / terminology document. Best-effort heuristic — the absence from the index plus draft-language proximity together suggest a number borrowed from an Internet-Draft that never became that RFC.",
+          "description": "Internet-Draft cited as if it were the normative RFC for a codepoint. The implementation tracks a document that can still change. Conservative by design — only fires when the number is unresolved AND draft language is adjacent.",
+          "confidence": "low",
+          "deterministic": false,
+          "false_positive_checks_required": [
+            "If the comment legitimately cites both the draft and the RFC it became (e.g. `draft-ietf-tls-esni, later RFC 9XXX`), and the RFC number resolves in the index, the citation is sound; demote to miss.",
+            "If the cited number simply post-dates the shipped index (a newly published RFC), this is needs-verification, not a draft mislabel — confirm against the live RFC editor index before flagging.",
+            "Confirm the normative claim actually rests on the unresolved number and not on a separate, valid RFC cited in the same block."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "fabricated-cve-id",
+          "benign_pattern": "A CVE-format placeholder shown in a template, an issue form, a regex-example, or documentation that explains the CVE identifier format itself.",
+          "distinguishing_test": "Check the file's role. If the path is a template (.github/ISSUE_TEMPLATE, *.template, SECURITY.md scaffold), a test fixture, or documentation whose subject IS the CVE format, the malformed token is illustrative; annotate `illustrative_citation=true` and demote. A malformed token in a real mitigation comment or in shipped SECURITY.md prose stands."
+        },
+        {
+          "indicator_id": "rejected-or-disputed-cve",
+          "benign_pattern": "A citation that itself documents the dispute / rejection (e.g. cites the disputed CVE precisely to explain why a configuration-only mitigation was chosen).",
+          "distinguishing_test": "Read the surrounding sentence. If it already names the dispute / rejection and frames the mitigation accordingly, the citation is honest; demote. An unqualified mitigation claim against a rejected / disputed identifier — presented as a clean fix — stands."
+        },
+        {
+          "indicator_id": "rfc-number-title-mismatch",
+          "benign_pattern": "An RFC cited with a descriptive nickname rather than a title claim (`RFC 9110 (HTTP)`), or a title abbreviation that overlaps the real title.",
+          "distinguishing_test": "Compare the adjacent text to the index title after normalising case and punctuation. A descriptive nickname or an abbreviation with high token overlap is not a mismatch; only an adjacent title whose meaningful tokens conflict with the index title (different protocol / document subject) is a mismatch."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one CVE citation has a non-canonical tail in a real (non-illustrative) citation surface, OR at least one well-formed citation resolves to a catalog entry the notes mark rejected / disputed and the surrounding text does not acknowledge it, OR at least one RFC citation pairs a number with a title that conflicts with the shipped index title. Confirmed citation-accuracy defect: a reader trusting the comment is routed to the wrong threat model or specification.",
+        "inconclusive": "Citations were extracted but one or more catalog-dependent checks could not run (catalog unreadable), OR all flagged CVE citations are well-formed identifiers absent from the curated catalog (needs external NVD verification), OR all flagged RFC numbers post-date the shipped index. Cannot confirm or refute without an out-of-band lookup.",
+        "not_detected": "Every cited CVE identifier matches the canonical CVE-\\d{4}-\\d{4,} form and either resolves to a non-rejected, non-disputed catalog entry or is documented as needing external verification; every cited RFC number resolves in the index with a title consistent with the adjacent text; no normative wire-codepoint claim rests on an unresolved draft-as-RFC number."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "fabricated-cve-id",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "A fabricated CVE citation in shipped SECURITY.md / advisory text misleads every downstream reader; blast radius scaled by how operator-facing the citation surface is."
+        },
+        {
+          "signal_id": "fabricated-cve-id",
+          "rwep_factor": "public_poc",
+          "weight": 10,
+          "notes": "The defect is mechanically detectable; once known, the wrong citation is trivially demonstrable to any reader who checks the identifier."
+        },
+        {
+          "signal_id": "rejected-or-disputed-cve",
+          "rwep_factor": "blast_radius",
+          "weight": 20,
+          "notes": "A mitigation note citing a rejected / disputed CVE misrepresents what was defended across every consumer of the documentation."
+        },
+        {
+          "signal_id": "rejected-or-disputed-cve",
+          "rwep_factor": "active_exploitation",
+          "weight": 10,
+          "notes": "Disputed-but-exploited cases (e.g. ShadowRay) mean an unqualified citation understates a live risk the reader will discount."
+        },
+        {
+          "signal_id": "rfc-number-title-mismatch",
+          "rwep_factor": "blast_radius",
+          "weight": 15,
+          "notes": "A conformance / wire-format claim pinned to the wrong RFC routes implementers to the wrong specification; blast radius scaled by how many implementers read the citation."
+        },
+        {
+          "signal_id": "draft-mislabeled-as-rfc",
+          "rwep_factor": "blast_radius",
+          "weight": 10,
+          "notes": "Tracking a draft-as-RFC for a codepoint risks an implementation that diverges when the draft changes; conservative weight given the heuristic confidence."
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "If this citation is wrong, how many readers are routed to the wrong threat model or specification, and how authoritative is the surface it appears on?",
+        "scoring_rubric": [
+          {
+            "condition": "wrong citation is in an internal code comment in a private repo with few readers",
+            "blast_radius_score": 1,
+            "description": "Limited blast; the wrong citation misleads only the team reading the comment."
+          },
+          {
+            "condition": "wrong citation is in a code comment of a published library / SDK that downstream consumers read while integrating",
+            "blast_radius_score": 2,
+            "description": "Bounded blast; integrators reading the comment inherit the wrong threat model."
+          },
+          {
+            "condition": "wrong citation is in published SECURITY.md / threat-model docs / release notes of a widely-used project",
+            "blast_radius_score": 3,
+            "description": "Significant blast; the citation is read as authoritative by downstream consumers and security researchers triaging the project."
+          },
+          {
+            "condition": "wrong citation is in a published security advisory / CSAF document / VEX statement the project issues about its own product",
+            "blast_radius_score": 4,
+            "description": "Massive blast; SBOM-scanning consumers and regulators route on the cited identifier; a wrong reference here corrupts downstream automated triage at scale."
+          },
+          {
+            "condition": "wrong citation is in a reference document or standard others cite in turn (a security guideline, a widely-vendored config template, a framework crosswalk)",
+            "blast_radius_score": 5,
+            "description": "Ecosystem-defining blast; the wrong citation propagates into every document that cites this one."
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "The codebase documents its security posture with cited CVE and RFC references, demonstrating diligence (NIST 800-53 SA-15, NIST 800-218 PW.7, ISO 27001:2022 A.8.28/A.5.36, EU CRA Annex I §2).",
+        "audit_evidence": "Security comments, SECURITY.md, threat-model docs, and advisory notes that cite specific CVE and RFC identifiers as evidence of identified-and-addressed threats and standards conformance.",
+        "reality_test": "Extract every cited identifier and cross-reference it against authoritative catalogs (no host probe). (1) CVE form test: every cited identifier must match `CVE-\\d{4}-\\d{4,}` — a non-numeric tail (CVE-2024-XXXX, CVE-2024-zlib) is a fabricated citation. (2) CVE status test: every well-formed citation that resolves to the shipped catalog must not be marked rejected / disputed in the entry notes unless the citing text acknowledges the status. (3) CVE coverage test: well-formed citations absent from the catalog are recorded as needs-external-verification, not silently trusted. (4) RFC title test: every RFC number cited with an adjacent title must match the shipped index title for that number. (5) RFC resolution test: every RFC number cited as normative for a wire codepoint must resolve to a published RFC, not a draft number. Theater if the documentation cites identifiers that fail (1), (2), or (4) while presenting itself as evidence of diligence.",
+        "theater_verdict_if_gap": "The codebase presents cited security references as evidence of diligence, but the references do not survive cross-checking: fabricated CVE identifiers defend against nothing, rejected / disputed citations misrepresent what was addressed, and wrong RFC titles route implementers to the wrong specification. Remediation paths: (a) correct each citation to the real identifier / title, (b) qualify rejected / disputed citations with their status and the actual mitigation basis, (c) resolve needs-verification citations against NVD and either confirm or correct them, OR (d) generate a defensible policy exception documenting the citations pending external verification with a verification deadline."
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "citation-accuracy-defect",
+          "framework": "nist-800-53",
+          "claimed_control": "SA-15 — Development Process, Standards, and Tools",
+          "actual_gap": "Requires a documented secure-development process; does not require that the CVE / RFC identifiers cited in that documentation resolve to real advisories and standards. Fabricated citations satisfy the process-documentation surface while defending against nothing.",
+          "required_control": "Add SA-15(CITE) requiring that security documentation cross-reference every cited CVE / RFC identifier against an authoritative catalog, with citations that cannot be confirmed flagged as needing verification rather than presented as settled."
+        },
+        {
+          "finding_id": "citation-accuracy-defect",
+          "framework": "nist-800-218",
+          "claimed_control": "PW.7 — Review and Analyze Human-Readable Code",
+          "actual_gap": "Reviews code for vulnerabilities; says nothing about validating the threat references cited in comments. A reviewer passes PW.7 while trusting a comment that cites a disputed or fabricated CVE.",
+          "required_control": "Extend PW.7 to include verification of cited security references against authoritative sources as part of human-readable-code review."
+        },
+        {
+          "finding_id": "citation-accuracy-defect",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.28 — Secure coding",
+          "actual_gap": "Governs coding practice; contains no requirement that cited CVE / RFC references be verified. Permits a codebase whose mitigation comments cite nonexistent advisories to claim secure-coding conformance.",
+          "required_control": "Amendment requiring cited threat references in security-relevant code and documentation to be validated against an authoritative catalog as a secure-coding practice."
+        },
+        {
+          "finding_id": "citation-accuracy-defect",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I §2 — Vulnerability handling",
+          "actual_gap": "Requires documentation and remediation of vulnerabilities; a mitigation note citing a rejected / disputed / fabricated CVE passes the documentation obligation on its face while misrepresenting what was remediated.",
+          "required_control": "Implementing acts binding vulnerability-handling documentation to cite verifiable, non-rejected identifiers, with dispute status disclosed where it applies."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "blast_radius_score >= 3 AND any deterministic indicator fires",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "compliance_theater_check.verdict == 'theater' AND citation appears in published disclosure surface",
+          "action": "trigger_playbook",
+          "target_playbook": "framework"
+        },
+        {
+          "condition": "rejected-or-disputed-cve fires for an identifier whose catalog active_exploitation == 'confirmed'",
+          "action": "raise_severity"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "correct-fabricated-cve-citation",
+          "description": "For each malformed / fabricated CVE citation: determine the real identifier the author intended (from the surrounding context, the linked advisory, or the dependency's changelog) and replace the placeholder with the canonical CVE-\\d{4}-\\d{4,} form. If no real identifier exists, remove the claim — a comment that cites a nonexistent CVE should not assert a mitigation.",
+          "preconditions": [
+            "fabricated_citations_inventoried == true"
+          ],
+          "priority": 1,
+          "compensating_controls": [
+            "lint_rule_rejecting_non_canonical_cve_form_in_comments_and_docs",
+            "ci_check_cross_referencing_cited_cves_against_an_authoritative_catalog"
+          ],
+          "estimated_time_hours": 3
+        },
+        {
+          "id": "qualify-rejected-or-disputed-citation",
+          "description": "For each citation to a rejected / disputed CVE: either re-point to the correct identifier (if the real issue carries a different number) or annotate the citation with its rejected / disputed status and the actual basis for the mitigation (e.g. configuration / network control rather than a vendor patch). The reader must see the status, not an unqualified clean-fix claim.",
+          "preconditions": [
+            "rejected_disputed_citations_inventoried == true"
+          ],
+          "priority": 2,
+          "compensating_controls": [
+            "ci_check_flagging_citations_to_catalog_rejected_disputed_entries",
+            "documentation_review_step_requiring_status_disclosure"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "correct-rfc-title-mismatch",
+          "description": "For each RFC citation whose title conflicts with the index: confirm the intended document, then correct either the number or the title so the citation names a single coherent RFC. Where a wire codepoint or algorithm identifier was pinned to the wrong RFC, re-verify the implementation against the correct specification.",
+          "preconditions": [
+            "rfc_title_mismatches_inventoried == true"
+          ],
+          "priority": 3,
+          "compensating_controls": [
+            "ci_check_matching_cited_rfc_numbers_to_index_titles",
+            "implementation_re_review_against_corrected_rfc"
+          ],
+          "estimated_time_hours": 4
+        },
+        {
+          "id": "resolve-needs-verification-citations",
+          "description": "For each well-formed CVE citation absent from the offline catalog and each RFC number post-dating the index: resolve against the authoritative live source (NVD / vendor advisory / RFC editor index). Confirm the identifier is real, non-rejected, and product-matched; correct or qualify it otherwise.",
+          "preconditions": [
+            "external_lookup_available == true"
+          ],
+          "priority": 4,
+          "compensating_controls": [
+            "scheduled_re_verification_when_catalog_refreshes",
+            "needs_verification_register_maintained_until_resolved"
+          ],
+          "estimated_time_hours": 2
+        },
+        {
+          "id": "policy-exception",
+          "description": "If a citation cannot be resolved within the review window (e.g. an embargoed advisory not yet public, an RFC pending publication): generate an auditor-ready policy exception recording the pending citation, the verification deadline, and the interim caveat added to the documentation.",
+          "preconditions": [
+            "remediation_paths[1..4] blocked for this specific citation due to external_dependency == true"
+          ],
+          "priority": 5,
+          "compensating_controls": [
+            "interim_caveat_added_to_citation_marking_it_unverified",
+            "verification_deadline_tracked",
+            "documentation_review_owner_assigned"
+          ],
+          "estimated_time_hours": 2
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "all-cited-cves-canonical-form",
+          "test": "Run `rg -nP 'CVE-\\d{4}-[0-9A-Za-z]+'` across source and docs (excluding test/fixture/template paths) and confirm every match also satisfies `CVE-\\d{4}-\\d{4,}`. Expect zero non-canonical tails in real citation surfaces.",
+          "expected_result": "Every cited CVE identifier is in canonical numeric form; no placeholder / invented tails remain.",
+          "test_type": "functional"
+        },
+        {
+          "id": "no-unqualified-rejected-or-disputed-citations",
+          "test": "For every well-formed CVE citation that resolves to the shipped catalog, confirm the entry is not marked rejected / disputed, OR the citing text discloses the status. Expect zero unqualified clean-fix claims against rejected / disputed identifiers.",
+          "expected_result": "No mitigation claim presents a rejected / disputed CVE as a clean fix without disclosing the status.",
+          "test_type": "functional"
+        },
+        {
+          "id": "rfc-titles-match-index",
+          "test": "For every RFC citation that pairs a number with a title, confirm the title matches the shipped index title for that number. Expect zero conflicting titles.",
+          "expected_result": "Every cited RFC number is paired with a title consistent with the authoritative index.",
+          "test_type": "functional"
+        },
+        {
+          "id": "needs-verification-citations-resolved",
+          "test": "For each previously flagged needs-verification citation, confirm an external-source resolution was recorded (verified, corrected, or qualified). Expect an empty open needs-verification register or every entry carrying a resolution.",
+          "expected_result": "No well-formed citation remains in an unresolved needs-verification state past its deadline.",
+          "test_type": "regression"
+        },
+        {
+          "id": "citation-lint-gate-in-ci",
+          "test": "Confirm a CI step now cross-references cited CVE / RFC identifiers against the authoritative catalogs and fails on a non-canonical CVE form, a catalog-rejected/disputed citation without disclosure, or an RFC title mismatch.",
+          "expected_result": "CI rejects a re-introduced citation defect; the regression cannot land silently.",
+          "test_type": "negative"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Citations to identifiers absent from the offline catalog remain unconfirmed until an external lookup runs, and newly published advisories / RFCs can post-date the shipped catalogs. A citation that is accurate today can be invalidated when an advisory is later rejected or an RFC is obsoleted.",
+        "why_remains": "The offline catalogs are curated and time-bounded; they cannot confirm every well-formed identifier nor anticipate future rejections. Citation accuracy is a moving target — the defending check reduces but does not eliminate the long tail, because authoritative status changes upstream after the citation is written. The codebase's obligation is to cite canonical, currently-valid references, disclose known disputes, and re-verify on catalog refresh; the residual is the window between an upstream status change and the next verification pass.",
+        "acceptance_level": "manager",
+        "compensating_controls_in_place": [
+          "ci_citation_cross_reference_gate",
+          "needs_verification_register_with_deadlines",
+          "scheduled_re_verification_on_catalog_refresh",
+          "documentation_review_requiring_status_disclosure_for_disputed_citations"
+        ]
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "scan_report",
+          "description": "Full-tree citation extraction report showing every cited CVE / RFC identifier, its canonical-form verdict, its catalog-resolution status (resolved / rejected / disputed / needs-verification), and every RFC title-match verdict against the index.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "nist-800-53-SA-15",
+            "nist-800-218-PW-7",
+            "iso-27001-2022-A.8.28"
+          ]
+        },
+        {
+          "evidence_type": "config_diff",
+          "description": "Before/after diff of corrected citations: malformed identifiers replaced with canonical form, rejected / disputed citations qualified with status, wrong RFC titles corrected. Tied to the documentation-review approval reference.",
+          "retention_period": "audit_cycle",
+          "framework_satisfied": [
+            "iso-27001-2022-A.8.28",
+            "iso-27001-2022-A.5.36"
+          ]
+        },
+        {
+          "evidence_type": "attestation",
+          "description": "Verified-citation inventory: each cited security reference with its authoritative-source resolution and verification date, signed and retained as evidence of accurate vulnerability-handling documentation.",
+          "retention_period": "7_years",
+          "framework_satisfied": [
+            "eu-cra-annex-I-2",
+            "us-cisa-secure-software-attestation"
+          ]
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "new_cve_or_rfc_citation_added_to_source_or_docs",
+          "interval": "on_event"
+        },
+        {
+          "condition": "cve_or_rfc_catalog_refreshed",
+          "interval": "on_event"
+        },
+        {
+          "condition": "pre_release_publish",
+          "interval": "on_event"
+        },
+        {
+          "condition": "quarterly",
+          "interval": "90d"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "json",
+        "contents": [
+          "scan_report",
+          "config_diff",
+          "attestation",
+          "compliance_theater_verdict",
+          "framework_gap_mapping",
+          "residual_risk_statement",
+          "needs_verification_register"
+        ],
+        "destination": "local_only",
+        "signed": true
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Cited security-reference drift: a codebase's own CVE and RFC citations — in comments, docstrings, SECURITY.md, and threat-model docs — drift into fabricated identifiers (non-canonical CVE tails escaping templates), citations to rejected / disputed CVEs presented as clean fixes, and RFC numbers paired with the wrong title. A reader who trusts the citation is routed to the wrong threat model or specification; the wrong reference defends against nothing while passing as diligence. AI-assisted authoring accelerates the drift by emitting confident, well-formatted, wrong citations.",
+          "control_gap": "No control verifies the cited security references in a codebase against an authoritative source. NIST 800-53 SA-15 and 800-218 PW.7 review process and code, not citations. ISO 27001:2022 A.8.28 / A.5.36 govern coding and policy conformance without a citation-verification requirement. The defending check — offline cross-reference against CVE and RFC catalogs — is mechanical and available but unrequired.",
+          "framework_gap": "Frameworks treat a cited security reference as evidence of diligence without testing whether the reference is real, non-rejected, and correctly titled. EU CRA Annex I §2 (binding 2026-09-11) requires vulnerability-handling documentation but a citation to a fabricated / rejected CVE satisfies the surface while misrepresenting the substance.",
+          "new_control_requirement": "Add citation-verification sub-controls to SA-15, PW.7, A.8.28, A.5.36, and CRA Annex I §2 requiring: (a) canonical-form enforcement on every cited CVE identifier, (b) cross-reference of every well-formed CVE citation against an authoritative catalog with rejected / disputed status disclosed, (c) RFC number -> title consistency against the published index, (d) a needs-verification register for citations the offline catalog cannot confirm, (e) a CI gate that fails on a re-introduced citation defect."
+        },
+        "feeds_back_to_skills": [
+          "exploit-scoring",
+          "compliance-theater",
+          "framework-gap-analysis",
+          "threat-model-currency",
+          "zeroday-gap-learn"
+        ]
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/EU CRA Art.13 / Annex I §2 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "vulnerability_handling_procedure",
+            "accurate_cve_reference_inventory",
+            "security_advisory_cross_reference_map"
+          ],
+          "draft_notification": "EU CRA Art.13 / Annex I §2 documentation accuracy record: ${manufacturer_name} confirms the vulnerability-handling documentation for ${product_name} v${current_version} cites verified, canonical, non-rejected CVE identifiers and index-consistent RFC references. Corrected citations: ${corrected_citation_summary}. Citations pending external verification: ${needs_verification_summary}. Re-verification cadence: ${cadence}."
+        },
+        {
+          "obligation_ref": "US/OMB M-22-09 / EO 14028 (secure-software attestation) 8760h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "cisa_secure_software_attestation_form",
+            "verified_security_reference_inventory"
+          ],
+          "draft_notification": "CISA secure-software attestation supporting evidence: ${manufacturer_name} attests that security documentation for ${product_name} cites verified security references. Verified-citation inventory attached. Open needs-verification items: ${needs_verification_count}."
+        },
+        {
+          "obligation_ref": "UK/UK CAF (NCSC) B4.d (Secure development) 720h",
+          "deadline": "computed_at_runtime",
+          "recipient": "internal_legal",
+          "evidence_attached": [
+            "documentation_review_record",
+            "cited_reference_verification_log"
+          ],
+          "draft_notification": "UK CAF B4.d secure-development documentation review: ${manufacturer_name} records a citation-verification review for ${product_name}, confirming cited CVE / RFC references were cross-checked against authoritative catalogs. Findings and corrections: ${review_summary}."
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "remediation_blocked == true OR citation_pending_external_publication == true",
+        "exception_template": {
+          "scope": "Codebase ${product_name} retains citation(s) ${pending_citations} that cannot be confirmed against an authoritative source within the review window (e.g. embargoed advisory not yet public, RFC pending publication). Each is marked unverified in the documentation pending resolution.",
+          "duration": "until_next_audit",
+          "compensating_controls": [
+            "interim_caveat_marking_the_citation_unverified",
+            "verification_deadline_tracked",
+            "ci_gate_preventing_new_unverified_citations_from_being_presented_as_settled",
+            "documentation_review_owner_assigned"
+          ],
+          "risk_acceptance_owner": "manager",
+          "auditor_ready_language": "Pursuant to ${framework_id} ${control_id} (Development Process / Secure Coding / Vulnerability Handling), ${manufacturer_name} documents a time-bound risk acceptance for cited security reference(s) ${pending_citations} in ${product_name} versions ${affected_versions} that could not be confirmed against an authoritative catalog within the review window. The citation(s) are marked unverified in the documentation; a CI gate prevents any new citation from being presented as settled until cross-referenced. The accepted risk class is citation-uncertainty: a reader may treat an unverified reference as authoritative until it is resolved. ${manufacturer_name} acknowledges its obligation under EU CRA Annex I §2 (vulnerability handling, binding 2026-09-11) and ISO 27001:2022 A.8.28 to maintain accurate security documentation and tracks resolution to deadline ${verification_deadline}. Risk accepted by ${reviewer_name} on ${acceptance_date}. Re-evaluation triggers: the embargoed advisory becomes public, the pending RFC publishes, the CVE / RFC catalog refreshes, or the citation surface is published to a wider audience."
+        }
+      },
+      "regression_schedule": {
+        "next_run": "computed_at_runtime",
+        "trigger": "both",
+        "notify_on_skip": true
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "cited-cve-validation",
+      "title": "Validate every cited CVE identifier against canonical form and the shipped catalog (catch-all)",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "cited-rfc-validation",
+      "title": "Validate every cited RFC number and adjacent title against the shipped RFC index",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "tamper-of-defenses-via-wrong-citation",
+      "title": "Wrong security citation as a defense-integrity defect (T1565.001)",
+      "applies_to": {
+        "attack_technique": "T1565.001"
+      }
+    }
+  ]
+}
