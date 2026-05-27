@@ -56,7 +56,8 @@
       "CVE-2026-32201",
       "CVE-2026-34197",
       "CVE-2026-6973",
-      "CVE-2025-10164"
+      "CVE-2025-10164",
+      "CVE-2026-21858"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -2197,7 +2198,8 @@
       "CVE-2025-3466",
       "CVE-2025-40536",
       "CVE-2026-21510",
-      "CVE-2026-21513"
+      "CVE-2026-21513",
+      "CVE-2025-68668"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 to back the UnDefend Defender update-disruption entry. CWE-693 is the canonical parent for failures-of-protection-mechanism — Defender continues running but its update mechanism has been corrupted, so the AV protection-mechanism fails silently while the host still passes 'is Defender running?' health checks."
