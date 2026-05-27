@@ -10,13 +10,14 @@
  * drop and warrants prioritized surfacing of subsequent drops.
  *
  * The first registered handle is Nightmare-Eclipse / Chaotic Eclipse
- * via lib/source-advisories.js#FEEDS[nightmare-eclipse-github]. Future
- * additions follow the same pattern — register a github-events feed
- * for the handle, add a frozen-fixture entry, the invariant flips
- * back to satisfied.
+ * via lib/source-advisories.js#FEEDS[nightmare-eclipse-gitlab] — a GitLab
+ * public-activity Atom feed, migrated from GitHub after the account was
+ * removed. Future additions follow the same pattern — register an activity
+ * feed for the handle (GitHub events JSON or GitLab .atom), add a
+ * frozen-fixture entry, the invariant flips back to satisfied.
  *
- * This pin asserts the github-events parser round-trips a fixture
- * payload into diff entries carrying researcher_handle + repo_name +
+ * This pin asserts the activity parser round-trips a fixture payload into
+ * diff entries carrying researcher_handle + repo_name +
  * triage_class=researcher-handle-drop, which downstream triage logic
  * consumes to surface drops that haven't been assigned a CVE yet.
  */
@@ -35,7 +36,7 @@ const REGISTERED_HANDLES = [
   // name the handle. }
   {
     name: "Nightmare-Eclipse",
-    feed: "nightmare-eclipse-github",
+    feed: "nightmare-eclipse-gitlab",
     anchor_entry_keys: [
       "CVE-2020-17103-REREGRESSION-2026",
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
@@ -45,14 +46,16 @@ const REGISTERED_HANDLES = [
   },
 ];
 
-test("every registered handle has a github-events feed in FEEDS", () => {
+test("every registered handle has an activity feed in FEEDS", () => {
   const feedsByName = new Map(SOURCE.FEEDS.map((f) => [f.name, f]));
   for (const h of REGISTERED_HANDLES) {
     const feed = feedsByName.get(h.feed);
     assert.ok(feed, `FEEDS must include "${h.feed}" — handle "${h.name}" anchored by catalog entries`);
-    assert.equal(feed.kind, "github-events", `${h.feed} must be github-events (handle tracker)`);
-    assert.match(feed.url, /api\.github\.com\/users\/[^/]+\/events\/public/,
-      `${h.feed} must point at the GitHub events API for the handle`);
+    assert.equal(feed.kind, "gitlab-activity", `${h.feed} must be gitlab-activity (handle tracker)`);
+    assert.match(feed.url, /gitlab\.com\/[^/]+\.atom/,
+      `${h.feed} must point at the GitLab public-activity Atom feed for the handle`);
+    assert.equal(feed.researcher_handle, "Nightmare-Eclipse",
+      `${h.feed} must declare researcher_handle explicitly`);
   }
 });
 
@@ -69,26 +72,28 @@ test("every registered handle is named in the anchor catalog entries", () => {
   }
 });
 
-test("github-events parser extracts ReleaseEvent + PublicEvent + PushEvent items", () => {
+test("gitlab-activity parser extracts ReleaseEvent + PublicEvent items", () => {
   const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
-  const handleFeed = SOURCE.FEEDS.find((f) => f.name === "nightmare-eclipse-github");
-  assert.ok(handleFeed, "feed nightmare-eclipse-github must exist");
-  const items = SOURCE.parseGitHubEvents(fx["nightmare-eclipse-github"], handleFeed);
+  const handleFeed = SOURCE.FEEDS.find((f) => f.name === "nightmare-eclipse-gitlab");
+  assert.ok(handleFeed, "feed nightmare-eclipse-gitlab must exist");
+  const items = SOURCE.parseGitLabActivity(fx["nightmare-eclipse-gitlab"], handleFeed);
   assert.ok(items.length >= 3,
     `parser must surface multiple drop events from the fixture; got ${items.length}`);
   const types = new Set(items.map((it) => it.event_type));
   assert.ok(types.has("ReleaseEvent"),
-    "parser must surface ReleaseEvent items (the canonical handle-drop signal)");
+    "parser must surface ReleaseEvent items (a tag push — the canonical handle-drop signal)");
+  assert.ok(types.has("PublicEvent"),
+    "parser must surface PublicEvent items (a newly created public project)");
   // Every item carries the researcher_handle so downstream consumers can
   // group by handle without re-parsing the feed URL.
   for (const it of items) {
     assert.equal(it.researcher_handle, "Nightmare-Eclipse",
-      "every github-events item must carry researcher_handle extracted from the feed URL");
-    assert.ok(it.repo_name, "every github-events item must carry repo_name");
+      "every gitlab-activity item must carry researcher_handle from the feed config");
+    assert.ok(it.repo_name, "every gitlab-activity item must carry repo_name");
   }
 });
 
-test("github-events handle-drop surfaces in fetchDiff diffs even without a CVE ID", () => {
+test("gitlab-activity handle-drop surfaces in fetchDiff diffs even without a CVE ID", () => {
   // Wire a synthetic fetchDiff call against the fixture; assert that a
   // ReleaseEvent without a CVE-ID in its title still appears in the
   // diffs[] with triage_class=researcher-handle-drop.
@@ -104,9 +109,9 @@ test("github-events handle-drop surfaces in fetchDiff diffs even without a CVE I
     const handleDrops = report.diffs.filter((d) => d.triage_class === "researcher-handle-drop");
     assert.ok(handleDrops.length >= 1,
       `at least one researcher-handle-drop diff must be surfaced; got ${handleDrops.length}`);
-    const yellowKeyDrop = handleDrops.find((d) => /YellowKey/i.test(d.title || ""));
-    assert.ok(yellowKeyDrop, "YellowKey ReleaseEvent must appear as a researcher-handle-drop diff");
-    assert.equal(yellowKeyDrop.researcher_handle, "Nightmare-Eclipse",
+    const miniPlasmaDrop = handleDrops.find((d) => /MiniPlasma/i.test(d.title || ""));
+    assert.ok(miniPlasmaDrop, "MiniPlasma tag push (ReleaseEvent) must appear as a researcher-handle-drop diff");
+    assert.equal(miniPlasmaDrop.researcher_handle, "Nightmare-Eclipse",
       "diff must carry researcher_handle so triage can group by handle");
   });
 });

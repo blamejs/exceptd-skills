@@ -6640,8 +6640,8 @@
     "new_control_requirements": [
       {
         "id": "NEW-CTRL-073",
-        "name": "RESEARCHER-HANDLE-GITHUB-RELEASE-TRACKER",
-        "description": "When a researcher handle is named in any catalog entry's discovery_attribution_note or poc_description, their public GitHub releases must be polled by the threat-intake pipeline. The handle becomes a known signal source after a single catalog-grade drop and warrants prioritized surfacing of subsequent drops.",
+        "name": "RESEARCHER-HANDLE-ACTIVITY-TRACKER",
+        "description": "When a researcher handle is named in any catalog entry's discovery_attribution_note or poc_description, their public code-platform activity (GitHub events or a GitLab activity feed) must be polled by the threat-intake pipeline. The handle becomes a known signal source after a single catalog-grade drop and warrants prioritized surfacing of subsequent drops.",
         "evidence": "CVE-2020-17103-REREGRESSION-2026, BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY, BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA, BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND all share the Nightmare-Eclipse / Chaotic Eclipse handle whose prior drop (BlueHammer / CVE-2026-33825) is already in the catalog. The 12-feed intake polled the right RSS sources but had no handle-tracker, so four catalog-grade drops accumulated unobserved over 5 weeks.",
         "gap_closes": [
           "NIST-800-53-SI-5",
@@ -6699,7 +6699,7 @@
     "new_control_requirements": [
       {
         "id": "NEW-CTRL-073",
-        "name": "RESEARCHER-HANDLE-GITHUB-RELEASE-TRACKER",
+        "name": "RESEARCHER-HANDLE-ACTIVITY-TRACKER",
         "description": "Same handle-tracker control as MiniPlasma — Nightmare-Eclipse drop.",
         "evidence": "Same researcher; same intake-pipeline gap.",
         "gap_closes": [
@@ -6740,7 +6740,7 @@
     "new_control_requirements": [
       {
         "id": "NEW-CTRL-073",
-        "name": "RESEARCHER-HANDLE-GITHUB-RELEASE-TRACKER",
+        "name": "RESEARCHER-HANDLE-ACTIVITY-TRACKER",
         "description": "Same handle-tracker control — Nightmare-Eclipse drop.",
         "evidence": "Same researcher; same intake-pipeline gap.",
         "gap_closes": [
@@ -6792,7 +6792,7 @@
       },
       {
         "id": "NEW-CTRL-073",
-        "name": "RESEARCHER-HANDLE-GITHUB-RELEASE-TRACKER",
+        "name": "RESEARCHER-HANDLE-ACTIVITY-TRACKER",
         "description": "Same handle-tracker control — Nightmare-Eclipse April-cluster drop.",
         "evidence": "Same researcher; same intake-pipeline gap.",
         "gap_closes": [
