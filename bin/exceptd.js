@@ -5767,10 +5767,16 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // — so an attacker who tampers the body AND deletes the .sig evades the
     // exit-6 tamper signal. Strict mode makes "not Ed25519-verified" a failure
     // (exit 1 via the ok:false contract, distinct from tamper's exit 6).
-    if (!attTampered && args["require-signed"] && !attResults.every(r => r.verified)) {
+    if (!attTampered && args["require-signed"] && (attResults.length === 0 || !attResults.every(r => r.verified))) {
       body.ok = false;
       body.require_signed = true;
-      body.error = "attest verify --require-signed: one or more attestations are not Ed25519-verified (unsigned or missing .sig sidecar) — refusing under strict mode";
+      // attResults.length === 0 → the session dir has no attestation at all
+      // (only replay records, or the JSON was deleted); `[].every()` is
+      // vacuously true, so without the length check an empty session would
+      // pass strict mode. A strict audit gate must reject "nothing to verify".
+      body.error = attResults.length === 0
+        ? "attest verify --require-signed: no signed attestation present for this session — refusing under strict mode"
+        : "attest verify --require-signed: one or more attestations are not Ed25519-verified (unsigned or missing .sig sidecar) — refusing under strict mode";
     }
     // Human renderer for `attest verify` — one-line answer to "did
     // anyone tamper with my evidence since I ran it?" so the operator

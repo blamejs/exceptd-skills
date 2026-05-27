@@ -63,6 +63,29 @@ test("attest verify --require-signed rejects an unsigned attestation; lenient ve
   }
 });
 
+test("attest verify --require-signed rejects a session with no attestation (empty)", () => {
+  const home = freshHome("exceptd-reqsigned-empty-");
+  const cli = makeCli(home);
+  const env = { EXCEPTD_HOME: home };
+  try {
+    assert.equal(cli(["run", "secrets", "--evidence", "-", "--session-id", "rsE"], { input: "{}", env }).status, 0);
+    // Delete the attestation JSON, leaving the session dir present — the
+    // codex edge: [].every() is vacuously true, so this must NOT pass strict.
+    const sig = findSig(home);
+    if (sig) {
+      const att = sig.replace(/\.sig$/, "");
+      fs.rmSync(att, { force: true });
+    }
+    const strict = cli(["attest", "verify", "rsE", "--require-signed", "--json"], { env });
+    assert.equal(strict.status, 1, "an empty session must fail --require-signed");
+    const body = tryJson(strict.stdout) || tryJson(strict.stderr);
+    assert.ok(body && body.ok === false && body.require_signed === true);
+    assert.match(body.error, /no signed attestation present/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("attest prune --all-older-than previews with --dry-run, then deletes", () => {
   const home = freshHome("exceptd-prune-");
   const cli = makeCli(home);
