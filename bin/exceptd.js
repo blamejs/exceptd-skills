@@ -7556,10 +7556,35 @@ function cmdAiRun(runner, args, runOpts, pretty) {
       // readFileSync(0). Wrapped-stdin test harnesses (isTTY===undefined,
       // size===0) would otherwise hang here.
       // Drain stdin for any evidence event.
-      try {
-        const buf = fs.readFileSync(0, "utf8");
-        if (buf.trim()) {
-          // Accept either a bare submission object or a single evidence event.
+      let buf = "";
+      try { buf = fs.readFileSync(0, "utf8"); }
+      catch { /* stdin empty / unreadable — fall through with empty payload */ }
+      if (buf.trim()) {
+        // First treat stdin as a single JSON document — the common
+        // `echo '<json>' | ai-run … --no-stream` shape. If it parses as one
+        // value we can apply the same shape guard `--evidence` gets: a bare
+        // `null` / `[]` / scalar is a malformed submission, not "no evidence",
+        // and must be rejected rather than silently run as empty.
+        let single;
+        let singleParsed = false;
+        try { single = JSON.parse(buf); singleParsed = true; } catch { /* not a single doc — fall to JSONL scan */ }
+        if (singleParsed) {
+          // An evidence event wrapper is the one object shape that is NOT
+          // itself the submission — unwrap it before guarding.
+          if (single && typeof single === "object" && !Array.isArray(single) && single.event === "evidence" && single.payload) {
+            payload = single.payload;
+          } else {
+            try { payload = asEvidenceObject(single); }
+            catch (e) { return emitError(`ai-run: failed to read evidence from stdin: ${e.message}`, null, pretty); }
+            // Normalize a bare submission into the {observations, verdict} shape.
+            if (!payload.observations && (payload.artifacts || payload.signal_overrides || payload.signals)) {
+              payload = { observations: { ...(payload.artifacts || {}), ...(payload.signal_overrides || {}) }, verdict: payload.signals || {} };
+            }
+          }
+        } else {
+          // JSONL / interleaved host-AI chatter: scan line-by-line for the
+          // first evidence event or bare submission, ignoring non-matching
+          // status frames the host may interleave.
           for (const line of buf.split(/\r?\n/)) {
             const t = line.trim();
             if (!t) continue;
@@ -7579,7 +7604,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
             } catch { /* skip non-JSON lines */ }
           }
         }
-      } catch { /* stdin empty / unreadable — fall through with empty payload */ }
+      }
     }
     const submission = buildSubmissionFromPayload(payload);
     let result;

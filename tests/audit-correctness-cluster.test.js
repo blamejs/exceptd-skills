@@ -80,6 +80,43 @@ test("H2: ai-run --no-stream still accepts a well-formed object submission", () 
   assert.notEqual(body.ok, false, "a well-formed object must not be rejected"); // allow-notEqual: assert valid path is NOT the rejected one
 });
 
+// The bug codex flagged: the guard above only fires on `--evidence`, but
+// --no-stream ALSO auto-reads stdin. Whether a spawnSync pipe triggers the
+// auto-stdin path is platform-divergent (POSIX FIFOs report readable; win32
+// spawnSync pipes do not), so probe reachability first and only assert the
+// rejection where the path is actually live — never coincidence-pass.
+function autoStdinReachable() {
+  const probe = cli(["ai-run", "secrets", "--no-stream", "--json"], {
+    input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } }),
+  });
+  const pj = tryJson(probe.stdout);
+  return !!(pj && pj.phases?.analyze?._detect_classification === "detected");
+}
+
+test("H2: ai-run --no-stream rejects a bare non-object piped via stdin (no --evidence flag)", (t) => {
+  if (!autoStdinReachable()) {
+    t.skip("spawnSync stdin pipe is not auto-read in this environment (win32); the guard is exercised via --evidence above and on POSIX CI here");
+    return;
+  }
+  const r = cli(["ai-run", "secrets", "--no-stream", "--json"], { input: "null" });
+  const body = tryJson(r.stderr) || tryJson(r.stdout);
+  assert.ok(body && body.ok === false, "a bare null piped via stdin must be rejected, not run as empty");
+  assert.match(body.error, /evidence must be a JSON object/, "must name the shape requirement");
+});
+
+test("H2: ai-run --no-stream still reads a valid bare submission piped via stdin", (t) => {
+  if (!autoStdinReachable()) {
+    t.skip("spawnSync stdin pipe is not auto-read in this environment (win32)");
+    return;
+  }
+  const r = cli(["ai-run", "secrets", "--no-stream", "--json"], {
+    input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } }),
+  });
+  const j = tryJson(r.stdout);
+  assert.ok(j && j.ok, "valid stdin submission must run");
+  assert.equal(j.phases.analyze._detect_classification, "detected", "the piped signals must actually be evaluated");
+});
+
 test("H3: ci framework_gap_rollup populates why_insufficient from actual_gap", () => {
   const r = cli(["ci", "secrets", "--evidence", "-", "--json"], { input: FLAT_SECRETS });
   const ci = tryJson(r.stdout);
