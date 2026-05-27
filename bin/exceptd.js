@@ -6469,7 +6469,11 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const onlyAiConfig = !!args["ai-config"];
   const onlyCollectors = !!args.collectors;
   const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs || onlyAiConfig || onlyCollectors;
-  const runSigs = !anySelected || onlySigs;
+  // --shipped-tarball lives inside the signatures check, so it must imply it.
+  // Pre-fix, `doctor --shipped-tarball --cves` made runSigs false (a selective
+  // flag was set, but not --signatures), silently skipping the tarball
+  // round-trip while the operator believed it ran.
+  const runSigs = !anySelected || onlySigs || !!args["shipped-tarball"];
   const runCurrency = !anySelected || onlyCurrency;
   const runCves = !anySelected || onlyCves;
   const runRfcs = !anySelected || onlyRfcs;
@@ -6670,23 +6674,34 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         timeout: 30000,
       });
       const text = (res.stdout || "") + (res.stderr || "");
-      const rfcRows = (text.match(/^RFC-\d+/gm) || []).length;
       const driftMatch = text.match(/drift[:\s]+(\d+)/i);
       const ok = res.status === 0;
-      // Audit 3 B.7: surface the RFC catalog file's mtime + age so
-      // operators can answer "is the offline RFC index fresh?" without
-      // running a separate refresh.
+      // Count the catalog directly (same approach the CVE subcheck uses) rather
+      // than scraping `^RFC-\d+` table rows from the validate-rfcs output. The
+      // text scrape dropped every non-RFC family (CSAF / DRAFT / ISO entries),
+      // undercounting the catalog and hiding those citation families. Read the
+      // canonical file and emit a by_prefix breakdown.
+      const rfcCatalogPath = path.join(PKG_ROOT, "data", "rfc-references.json");
+      let rfcTotal = 0;
+      const byPrefix = {};
       let rfcMtime = null;
       let rfcAgeDays = null;
       try {
-        const rfcPath = path.join(PKG_ROOT, "data", "rfc-index.json");
-        const st = fs.statSync(rfcPath);
+        const catalog = JSON.parse(fs.readFileSync(rfcCatalogPath, "utf8"));
+        for (const k of Object.keys(catalog)) {
+          if (k.startsWith("_")) continue;
+          rfcTotal++;
+          const prefix = (k.match(/^[A-Za-z]+/) || ["?"])[0].toUpperCase();
+          byPrefix[prefix] = (byPrefix[prefix] || 0) + 1;
+        }
+        const st = fs.statSync(rfcCatalogPath);
         rfcMtime = st.mtime.toISOString();
         rfcAgeDays = Math.floor((Date.now() - st.mtimeMs) / 86400000);
-      } catch { /* file may not exist on contributor checkouts */ }
+      } catch { /* file may be absent on exotic installs — total stays 0 */ }
       checks.rfcs = {
         ok,
-        total: rfcRows,
+        total: rfcTotal,
+        by_prefix: byPrefix,
         drift: driftMatch ? Number(driftMatch[1]) : 0,
         index_last_modified: rfcMtime,
         index_age_days: rfcAgeDays,
@@ -6968,9 +6983,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       }
     }
 
+    // A truncated walk (hit the file/depth cap) means the audit is INCOMPLETE —
+    // a sensitive file beyond the cap would be unseen. Don't report an
+    // unqualified clean pass: downgrade to a warn so automation can branch on
+    // incompleteness even when zero findings surfaced within the cap.
+    const baseSeverity = errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info');
     checks.ai_config = {
-      ok: errorFindings.length === 0 || (args.fix && fixesFailed === 0),
-      severity: errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info'),
+      ok: (errorFindings.length === 0 || (args.fix && fixesFailed === 0)) && !walkAborted,
+      severity: walkAborted && baseSeverity === 'info' ? 'warn' : baseSeverity,
       scanned_dirs: scannedDirs,
       scanned_files: scannedFiles,
       walk_truncated: walkAborted,
@@ -7089,8 +7109,8 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // global `npm install -g` reported `failed_checks: ["signing"]` with
   // `warnings_count: 0`, contradicting the [!! warn] text-mode icon.
   const { bucketChecks } = require(path.join(PKG_ROOT, "lib", "doctor-bucketing.js"));
-  const { warnList, errorList } = bucketChecks(checks);
-  const allGreen = errorList.length === 0 && warnList.length === 0;
+  let { warnList, errorList } = bucketChecks(checks);
+  let allGreen = errorList.length === 0 && warnList.length === 0;
   // Audit 3 B.11: surface the local version on the default doctor output
   // so operators answer both "is my install healthy?" AND "which version
   // am I running?" without having to invoke `exceptd version` separately.
@@ -7127,10 +7147,21 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // `exceptd doctor` (signatures check) reports 0/N passing.
   if (args.fix && checks.signing && !checks.signing.private_key_present) {
     const pubKeyExists = fs.existsSync(path.join(PKG_ROOT, "keys", "public.pem"));
+    const fingerprintPinExists = fs.existsSync(path.join(PKG_ROOT, "keys", "EXPECTED_FINGERPRINT"));
     if (pubKeyExists) {
       out.summary.fix_attempted = "ed25519_keypair_generation_declined";
       out.summary.fix_decline_reason = "keys/public.pem already exists but no matching private key. Generating a fresh keypair would overwrite the public key and orphan every shipped signature. If you intend to establish a new signing identity, run `node $(exceptd path)/lib/sign.js generate-keypair --rotate` followed by sign-all.";
       process.stderr.write("[doctor --fix] refused: keys/public.pem present without matching private key. Pass --rotate via the underlying lib/sign.js if a new identity is intended.\n");
+    } else if (fingerprintPinExists) {
+      // A committed EXPECTED_FINGERPRINT without keys/public.pem signals an
+      // intended committed signing identity on a corrupted/partial checkout.
+      // Generating a fresh keypair here would write a public.pem whose
+      // fingerprint can never match the pin, leaving verify.js permanently
+      // refusing (fingerprint-mismatch) while --fix claimed success. Decline
+      // and tell the operator to restore the real public key.
+      out.summary.fix_attempted = "ed25519_keypair_generation_declined";
+      out.summary.fix_decline_reason = "keys/EXPECTED_FINGERPRINT is present but keys/public.pem is missing — this is a corrupted checkout of a project with a committed signing identity, not a fresh contributor checkout. Generating a keypair would produce a public key whose fingerprint cannot match the pin, so verify would refuse forever. Restore keys/public.pem from version control instead (git checkout -- keys/public.pem).";
+      process.stderr.write("[doctor --fix] refused: keys/EXPECTED_FINGERPRINT present without keys/public.pem. Restore the committed public key (git checkout -- keys/public.pem) rather than generating a new identity.\n");
     } else {
       process.stderr.write("[doctor --fix] generating Ed25519 keypair...\n");
       const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], {
@@ -7186,6 +7217,37 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       out.summary.sign_all_exit_code = s.status;
       process.stderr.write(`[doctor --fix] sign-all failed (exit=${s.status}); run \`node $(exceptd path)/lib/sign.js sign-all\` manually.\n`);
     }
+  }
+
+  // After a --fix that re-signed skills (keypair generation OR re-sign), the
+  // captured `checks.signatures` is STALE — it was the verify.js result taken
+  // before any key existed. Re-verify now and recompute the buckets, so a
+  // successful --fix reports success (and exits 0) instead of carrying the
+  // pre-fix "signatures FAILED" through to failed_checks + a non-zero exit.
+  if (args.fix
+      && (out.summary.fix_applied === "ed25519_keypair_generated_and_skills_signed"
+          || out.summary.fix_applied === "skills_resigned_against_current_keypair")) {
+    try {
+      const verifyPath = path.join(PKG_ROOT, "lib", "verify.js");
+      const rv = spawnSync(process.execPath, [verifyPath], { encoding: "utf8", cwd: PKG_ROOT, timeout: 30000 });
+      const rvText = (rv.stdout || "") + (rv.stderr || "");
+      const rvMatch = rvText.match(/(\d+)\/(\d+)\s+skills?\s+passed/i);
+      const rvFp = rvText.match(/SHA256:\s*([A-Za-z0-9+/=]+)/);
+      const rvOk = rv.status === 0;
+      checks.signatures = {
+        ok: rvOk,
+        skills_passed: rvMatch ? Number(rvMatch[1]) : null,
+        skills_total: rvMatch ? Number(rvMatch[2]) : null,
+        fingerprint_sha256: rvFp ? rvFp[1] : null,
+        ...(rvOk ? {} : { exit_code: rv.status, raw: rvText.slice(0, 500) }),
+      };
+      out.checks = checks;
+      ({ warnList, errorList } = bucketChecks(checks));
+      allGreen = errorList.length === 0 && warnList.length === 0;
+      out.summary.failed_checks = errorList;
+      out.summary.warning_checks = warnList;
+      out.summary.all_green = allGreen;
+    } catch { /* re-verify best-effort; leave the pre-fix state if it throws */ }
   }
 
   // Audit 3 B.3: --fix was passed but nothing to fix. Pre-fix this was
@@ -8543,9 +8605,15 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
     process.stdout.write(lines.join("\n") + "\n");
   } else if (fmt === "csaf" || fmt === "sarif" || fmt === "openvex") {
-    // Aggregate the per-run bundles_by_format if present.
+    // Aggregate the per-run bundles_by_format if present. ci spans N playbooks,
+    // so there is no single conformant CSAF/SARIF/OpenVEX document — emit a JSON
+    // ARRAY of the pure documents. Critically, do NOT wrap them in an exceptd
+    // envelope carrying a top-level `ok` key: that key is invalid in all three
+    // standard formats, so a downstream CSAF/SARIF/OpenVEX consumer pointed at
+    // `ci --format` output got a non-conformant top-level shape. Each array
+    // element is now a verbatim, conformant document.
     const bundles = results.map(r => r.phases?.close?.evidence_package?.bundles_by_format?.[fmt === "csaf" ? "csaf-2.0" : fmt]).filter(Boolean);
-    emit({ verb: "ci", session_id: sessionId, format: fmt, bundles_count: bundles.length, bundles }, pretty);
+    process.stdout.write(JSON.stringify(bundles, null, pretty ? 2 : 0) + "\n");
   } else if (fmt && fmt !== "json") {
     // v0.11.4 (#76): garbage format rejected with structured error, not silent empty stdout.
     // Route through emitError so the body propagates exit codes via the

@@ -1,6 +1,6 @@
 {
   "name": "@blamejs/exceptd-skills",
-  "version": "0.14.11",
+  "version": "0.14.12",
   "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 11 catalogs (406 CVEs / 171 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 8888 RFCs), 35 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
   "keywords": [
     "ai-security",
