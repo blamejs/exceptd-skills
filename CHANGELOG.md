@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.14 — 2026-05-27
+
+Attestation durability and verification:
+- Attestations are now written atomically. The body and its Ed25519 `.sig` sidecar are written to fsync'd temporary files and placed together (the body via an atomic create that still detects a session-id collision, the sidecar alongside it), so a crash or out-of-space mid-write can no longer leave a truncated `attestation.json` or a body without its signature. A failed write also leaves no partial file at the slot.
+- `attest verify` now flags a deleted `.sig` sidecar as tampering (exit 6) when a signature was expected — i.e. when a signing key is present or a sibling attestation in the same session is signed — instead of accepting it as a benign "unsigned" attestation (exit 0). This makes the default `attest verify` agree with `reattest`, which already refused. A genuinely unsigned attestation on a keyless host stays benign.
+- A `run` now blocks (`blocked_by: "mutex"`) when a live concurrent process holds the run lock, rather than proceeding without the lock after losing the acquire race. Same-process reentrancy and filesystem quirks are unaffected.
+
 ## 0.14.13 — 2026-05-27
 
 Security: a collector scanning a hostile repository no longer hangs on a crafted file. Three workflow/Dockerfile/manifest scanners (`library-author`, `cicd-pipeline-compromise`, `containers`) had a regex that backtracked catastrophically on a long whitespace line — a single planted file could wedge the scan for minutes. The regexes are fixed and a per-line length cap bounds any future regression.

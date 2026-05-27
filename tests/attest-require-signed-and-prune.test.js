@@ -38,26 +38,43 @@ function findSig(home) {
   return null;
 }
 
-test("attest verify --require-signed rejects an unsigned attestation; lenient verify accepts it", () => {
+test("attest verify --require-signed rejects an unsigned/stripped attestation; lenient verify matches the host's signing state", () => {
   const home = freshHome("exceptd-reqsigned-");
   const cli = makeCli(home);
   const env = { EXCEPTD_HOME: home };
   try {
     const run = cli(["run", "secrets", "--evidence", "-", "--session-id", "rs1"], { input: '{"artifacts":{},"signals":{}}', env });
     assert.equal(run.status, 0, `setup run failed: ${run.stderr.slice(0, 200)}`);
-    // Strip the sidecar so the attestation is unsigned regardless of whether
-    // this host had a private key (keyed local vs keyless CI).
+    // Was the attestation actually Ed25519-signed? (keyed local dev vs keyless
+    // CI.) This determines whether stripping the sidecar is benign or tamper.
     const sig = findSig(home);
+    let wasSigned = false;
+    if (sig) { try { wasSigned = JSON.parse(fs.readFileSync(sig, "utf8")).algorithm === "Ed25519"; } catch { /* unsigned */ } }
     if (sig) fs.rmSync(sig, { force: true });
 
     const lenient = cli(["attest", "verify", "rs1", "--json"], { env });
-    assert.equal(lenient.status, 0, "lenient verify of an unsigned attestation should exit 0");
+    if (wasSigned) {
+      // C-H1: stripping the sidecar of a signed attestation (a sig was
+      // expected — signing key present) is now tamper-detected by default
+      // verify, agreeing with reattest.
+      assert.equal(lenient.status, 6, "stripping a SIGNED attestation's sidecar must be tamper (exit 6)");
+    } else {
+      // Keyless host: a missing sidecar with no signing key and no signed peer
+      // is a genuinely-unsigned attestation — lenient verify stays benign.
+      assert.equal(lenient.status, 0, "lenient verify of a genuinely-unsigned attestation exits 0");
+    }
 
     const strict = cli(["attest", "verify", "rs1", "--require-signed", "--json"], { env });
-    assert.equal(strict.status, 1, "--require-signed on an unsigned attestation must exit 1");
     const body = tryJson(strict.stdout) || tryJson(strict.stderr);
-    assert.ok(body && body.ok === false);
-    assert.equal(body.require_signed, true);
+    assert.ok(body && body.ok === false, "strict verify of an unsigned/stripped attestation must fail");
+    if (wasSigned) {
+      // Tamper detection (exit 6) precedes the --require-signed gate: a stripped
+      // sidecar where one was expected is tamper, which is the stronger signal.
+      assert.equal(strict.status, 6, "stripped signed sidecar under --require-signed is still tamper (exit 6)");
+    } else {
+      assert.equal(strict.status, 1, "--require-signed on a genuinely-unsigned attestation must exit 1");
+      assert.equal(body.require_signed, true);
+    }
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

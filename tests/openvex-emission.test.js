@@ -272,15 +272,15 @@ test('P P1-C: bin/exceptd.js defines normalizeAttestationBytes', () => {
   assert.match(src, /function normalizeAttestationBytes\(input\)/);
 });
 
-test('P P1-C: maybeSignAttestation normalizes content before sign', () => {
+test('P P1-C: the attestation write path normalizes content before computing the sidecar', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  const fnStart = src.indexOf('function maybeSignAttestation(filePath)');
-  const fnEnd = src.indexOf('function ', fnStart + 30);
-  const block = src.slice(fnStart, fnEnd > 0 ? fnEnd : fnStart + 3000);
+  // The signing helper (computeSidecarBytes) signs the bytes it is GIVEN; the
+  // persist path must hand it normalized bytes so sign + verify agree. Assert
+  // the call site normalizes (computeSidecarBytes(normalizeAttestationBytes(…))).
   assert.match(
-    block,
-    /normalizeAttestationBytes\(/,
-    'maybeSignAttestation() must call normalizeAttestationBytes() so sign + verify agree'
+    src,
+    /computeSidecarBytes\(\s*normalizeAttestationBytes\(/,
+    'writeAttestation must call computeSidecarBytes(normalizeAttestationBytes(...)) so sign + verify agree'
   );
 });
 
@@ -299,8 +299,10 @@ test('P P1-C: verifyAttestationSidecar normalizes content before verify', () => 
 test('P P1-C: attest verify subverb normalizes content before verify', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
   const idx = src.indexOf('if (subverb === "verify")');
-  // Window widened post-AA P1-1 / P1-2 (see Q P1 + R F6 note above).
-  const block = src.slice(idx, idx + 4500);
+  // Window widened again: the verify subverb body grew with the
+  // sidecar-missing tamper detection (the peer-signed scan + the expanded
+  // missing-sidecar branch), pushing the normalize call deeper.
+  const block = src.slice(idx, idx + 6500);
   assert.match(
     block,
     /normalizeAttestationBytes\(/,

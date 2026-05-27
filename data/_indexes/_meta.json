@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-27T22:17:04.450Z",
+  "generated_at": "2026-05-27T23:08:52.304Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "a1f0cb852fd487d12bd1a304d36eb175f3ee36a26e37a1ca9cb25d9c576d2afc",
+    "manifest.json": "008292f92fc956004d340bf314748a28ab03a6f14c88ddf7f5deabdab8b14b4d",
     "data/atlas-ttps.json": "d24bc02859d40ccf1615db75cca68c077585904e41e0d8f6de448121e9b1abb0",
     "data/attack-techniques.json": "fa193f0d2d248176a8beddb641e9fe56ba4faa9e15dc253ff876dbf0c5d58a77",
     "data/cve-catalog.json": "3d451dda7ac0c7d57a4075ae4bafd3148c6184b35dc1bc59d8b81d1f2641e430",
