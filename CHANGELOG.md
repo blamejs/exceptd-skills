@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.3 — 2026-05-27
+
+The resolved-citation cache is now integrity-checked. Each cached record carries a content digest (covering its `resolved_at` timestamp) that is verified on read, and freshness is gated on that timestamp rather than the file's modification time. A cache file edited in place — flipping a rejected CVE to "published" — is rejected as tampered instead of trusted, and a touched file can no longer resurrect a stale verdict. This closes a path where a writable cache could launder a rejected or fabricated citation into a passing verdict (which feeds `collect citation-hygiene --resolve` and, in turn, attestations).
+
+`exceptd cve` and `exceptd rfc` reject unknown flags instead of silently ignoring them — a mistyped `--json` no longer emits human text into a pipe that asked for JSON.
+
+Malformed evidence is rejected at the boundary. A JSON `null`, array, or scalar piped to `run --evidence -` now returns "evidence must be a JSON object" instead of being silently accepted as an empty run or surfacing as an internal error.
+
+`collect citation-hygiene --resolve` now flags a cited RFC number that resolves to nothing, matching how it already flags a fabricated CVE. `ci --max-rwep` rejects a non-numeric or negative cap instead of silently coercing it to 0 (which had quietly degenerated the gate to "block everything"). `run --format` notes on stderr when it overrides `--json`. `cve`, `rfc`, `collect`, `watch`, and `report` are now listed in `exceptd help`.
+
 ## 0.14.2 — 2026-05-27
 
 `exceptd collect citation-hygiene --resolve` now resolves the cited CVEs the offline catalog can't confirm — once each, through the shared resolver cache — and flips their verdicts instead of parking them as inconclusive for an agent to chase: a rejected or disputed identifier becomes a hit, a well-formed identifier NVD doesn't know becomes fabricated, and a confirmed one clears. Honors `--air-gap` (catalog and cache only, no network).

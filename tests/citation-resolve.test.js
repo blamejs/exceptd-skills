@@ -155,14 +155,15 @@ test('resolveCve: fresh cache file is read back as a cache hit (noNetwork)', asy
   const cveCacheDir = path.join(CACHE_DIR, 'cve');
   fs.mkdirSync(cveCacheDir, { recursive: true });
   const cacheFile = path.join(cveCacheDir, `${id}.json`);
-  fs.writeFileSync(cacheFile, JSON.stringify({
-    id,
-    kind: 'cve',
-    status: 'rejected',
-    source: 'nvd',
-    resolved_at: new Date().toISOString(),
-  }));
-  // TTL is 7 days; make sure mtime is fresh so cacheGet doesn't treat it stale.
+  // The cache is integrity-checked: a record is only trusted if it carries a
+  // matching `_digest` (sha256 over canonical bytes, keys sorted, _digest
+  // excluded) AND its resolved_at is fresh. Write a valid digested record.
+  const crypto = require('node:crypto');
+  const rec = { id, kind: 'cve', status: 'rejected', source: 'nvd', resolved_at: new Date().toISOString() };
+  const canon = {};
+  for (const k of Object.keys(rec).sort()) canon[k] = rec[k];
+  rec._digest = crypto.createHash('sha256').update(JSON.stringify(canon)).digest('hex');
+  fs.writeFileSync(cacheFile, JSON.stringify(rec));
   const now = new Date();
   fs.utimesSync(cacheFile, now, now);
 
