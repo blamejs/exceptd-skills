@@ -372,7 +372,7 @@
           "confidence": "low",
           "deterministic": false,
           "false_positive_checks_required": [
-            "Resolve the identifier against an authoritative source (NVD, the issuing CNA's advisory) out of band. If it resolves to a real, non-rejected advisory whose product matches the surrounding claim, the citation is sound; record verified and demote to miss.",
+            "Resolve the identifier with `exceptd cve <id>` (catalog -> resolved cache -> one NVD lookup, then cached so sibling agents reuse it instead of each researching the same id). If it returns status=published with a product matching the surrounding claim, the citation is sound; record verified and demote to miss. For RFC numbers use `exceptd rfc <number> --check \"<claimed title>\"`.",
             "If it resolves to a REJECTED / DISPUTED record at NVD, re-classify under rejected-or-disputed-cve rather than leaving it inconclusive."
           ]
         },

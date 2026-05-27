@@ -154,6 +154,10 @@ const COMMANDS = {
   watch:           () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap-analysis": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
+  // Citation resolvers — answer "is this CVE/RFC citation valid?" offline-first
+  // (catalog/index -> resolved cache -> opt-in single network lookup, cached).
+  cve:             () => path.join(PKG_ROOT, "lib", "cve-cli.js"),
+  rfc:             () => path.join(PKG_ROOT, "lib", "rfc-cli.js"),
   // Seven-phase playbook verbs — handled in-process via lib/playbook-runner.js.
   plan:     null,
   govern:   null,
@@ -738,6 +742,8 @@ function main() {
     skill: "exceptd skill <name>          Show the full context document for one skill.",
     "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
+    cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD).",
+    rfc: "exceptd rfc <number> [--check \"<title>\"] [--json] [--air-gap]   Resolve an RFC number -> title + status (local index, offline).",
   };
   if ((effectiveRest.includes("--help") || effectiveRest.includes("-h")) && SPAWN_HELP_USAGE[effectiveCmd]) {
     process.stdout.write(SPAWN_HELP_USAGE[effectiveCmd] + "\n  Full reference: exceptd help\n");
