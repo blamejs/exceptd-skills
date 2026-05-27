@@ -27,7 +27,11 @@ test("reattest reports 'unchanged' for an unchanged session (no false drift)", (
   const sid = "replayfix-base";
   const run = cli(["run", "secrets", "--evidence", "-", "--session-id", sid], { input: '{"artifacts":{},"signals":{}}' });
   assert.equal(run.status, 0, `setup run failed: ${run.stderr.slice(0, 200)}`);
-  const r = cli(["reattest", sid, "--json"]);
+  // --force-replay so the test runs on a host with OR without .keys/private.pem:
+  // a key-less host writes an unsigned attestation, which reattest refuses to
+  // replay without --force-replay. The replay-the-original fix under test is
+  // independent of signing, so this exercises the same drift comparison either way.
+  const r = cli(["reattest", sid, "--force-replay", "--json"]);
   const body = tryJson(r.stdout) || tryJson(r.stderr);
   assert.ok(body, `reattest must emit JSON; got stdout=${r.stdout.slice(0, 200)} stderr=${r.stderr.slice(0, 200)}`);
   assert.equal(body.status, "unchanged");
