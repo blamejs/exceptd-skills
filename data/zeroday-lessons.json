@@ -17236,5 +17236,65 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-68665": {
+    "name": "LangChain JS toJSON() 'lc'-Key Serialization Injection",
+    "lesson_date": "2026-05-26",
+    "attack_vector": {
+      "description": "LangChain JS's toJSON() did not escape free-form data carrying the internal 'lc' marker key, so attacker-controlled data is rehydrated as a legitimate framework object on deserialization.",
+      "privileges_required": "none (untrusted serialized input)",
+      "complexity": "low",
+      "ai_factor": "The abused surface is LangChain JS, an LLM-application framework. The lesson: LLM frameworks must treat (de)serialization of untrusted free-form data as a trust boundary and refuse to rehydrate framework-internal object markers from user-derived fields."
+    },
+    "framework_coverage": {
+      "NIST-AI-RMF-MEASURE-2.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Serialization round-trip of untrusted data through a framework marker is not in the AI-risk taxonomy."
+      },
+      "OWASP-LLM-Top-10-LLM02": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Insecure output handling — rehydrating attacker data as a framework object."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats an LLM framework's (de)serialization of untrusted data as an integrity trust zone."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 81,
+      "basis": "LLM frameworks serialize free-form data through internal markers; trust-zone separation on (de)serialization is rarely audited.",
+      "theater_pattern": "ai_supply_chain_trust"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-064",
+        "name": "LLM-OUTPUT-DESERIALIZATION-TRUST-ZONE",
+        "description": "LLM responses and untrusted free-form data must cross a serialisation trust boundary; frameworks must refuse to rehydrate framework-internal object markers (e.g. LangChain's 'lc' key) from user-derived fields.",
+        "evidence": "CVE-2025-68665 — LangChain JS toJSON()/JSON.stringify did not escape the 'lc' marker in attacker-controlled free-form data.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "EU-AI-Act-Art15",
+          "ISO-IEC-42001-AIMS-A.6.2.5",
+          "OWASP-LLM-Top-10-LLM02"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-005",
+        "name": "AI-TOOL-INPUT-SANITIZATION",
+        "description": "External-source content reaching the LLM / framework serializer must be treated as adversarial; pairs with NEW-CTRL-064 on the output side.",
+        "evidence": "CVE-2025-68665 — untrusted free-form data is the trigger; the (de)serialization trust zone is the closure.",
+        "gap_closes": [
+          "OWASP-LLM-Top-10-LLM01"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
   }
 }

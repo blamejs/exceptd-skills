@@ -1373,7 +1373,8 @@
       "CVE-2025-8747",
       "CVE-2026-20131",
       "CVE-2026-20963",
-      "CVE-2026-31229"
+      "CVE-2026-31229",
+      "CVE-2025-68665"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
