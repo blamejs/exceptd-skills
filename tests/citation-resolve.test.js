@@ -308,3 +308,48 @@ test('OSV normalizeAdvisory: withdrawn -> status:withdrawn + status_source', () 
   assert.equal(typeof entry.status_source, 'string');
   assert.equal(entry.status_source, 'osv:withdrawn');
 });
+
+// --- codex P1: never declare "published" when NVD itself was unreachable ----
+// validateCve only returns "unreachable" when EVERY source fails; with NVD down
+// but KEV/EPSS up it returns match with sources.nvd.reachable === false. The
+// resolver must NOT treat that as published — it would falsely validate an
+// unconfirmed (possibly nonexistent) identifier during an NVD outage.
+test('resolveCve: NVD unreachable (KEV/EPSS up) -> unknown/offline, never published', async () => {
+  const fakeValidate = async () => ({
+    cve_id: 'CVE-2099-10001', status: 'match', discrepancies: [],
+    fetched: { cvss_score: null, in_kev: false, description: null,
+      sources: { nvd: { reachable: false, error: 'timeout' }, kev: { reachable: true }, epss: { reachable: true } } },
+  });
+  const r = await resolveCve('CVE-2099-10001', { _validateCve: fakeValidate });
+  assert.equal(r.status, 'unknown');
+  assert.equal(r.from, 'offline');
+  assert.match(r.reason, /NVD unreachable/);
+});
+
+// --- codex P2: NVD-resolved records carry product (so the product-match check
+//     the CLI contract promises is possible from tool output, no manual lookup).
+test('resolveCve: NVD-resolved published record includes product (description)', async () => {
+  const fakeValidate = async () => ({
+    cve_id: 'CVE-2099-10002', status: 'match', discrepancies: [],
+    fetched: { cvss_score: 9.1, in_kev: true, nvd_vuln_status: 'Analyzed', cve_tags: [],
+      description: 'Acme Widget Server before 2.0 allows remote code execution.',
+      sources: { nvd: { reachable: true, found: true }, kev: { reachable: true }, epss: { reachable: true } } },
+  });
+  const r = await resolveCve('CVE-2099-10002', { _validateCve: fakeValidate });
+  assert.equal(r.status, 'published');
+  assert.equal(r.from, 'network');
+  assert.equal(typeof r.product, 'string');
+  assert.match(r.product, /Acme Widget Server/);
+  assert.equal(r.cvss, 9.1);
+});
+
+// NVD reachable + found but vulnStatus Rejected -> rejected (not published).
+test('resolveCve: NVD-reachable rejected record -> rejected', async () => {
+  const fakeValidate = async () => ({
+    cve_id: 'CVE-2099-10003', status: 'rejected', discrepancies: [],
+    fetched: { cvss_score: null, in_kev: false, nvd_vuln_status: 'Rejected', cve_tags: [], description: null,
+      sources: { nvd: { reachable: true, found: true }, kev: { reachable: true }, epss: { reachable: true } } },
+  });
+  const r = await resolveCve('CVE-2099-10003', { _validateCve: fakeValidate });
+  assert.equal(r.status, 'rejected');
+});
