@@ -761,6 +761,16 @@ function main() {
     "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD). Exit 2 when the citation won't stand up (rejected/fabricated/nonexistent/withdrawn).",
     rfc: "exceptd rfc <number> [--check \"<title>\"] [--json] [--air-gap]   Resolve an RFC number -> title + status (local index, offline). Exit 2 when nonexistent or --check title MISMATCH.",
+    // watch MUST be here: without the interception `watch --help` falls through
+    // to spawning the blocking daemon, hanging the operator's terminal.
+    watch: "exceptd watch          Long-running forward-watch daemon (blocks; Ctrl-C to stop). For a one-shot aggregator use `exceptd watchlist`.",
+    watchlist: "exceptd watchlist [--alerts] [--org-scan --org <login>] [--by-skill] [--json]   One-shot forward-watch aggregator across skills.",
+    report: "exceptd report [executive] [--json]   Structured posture report.",
+    scan: "exceptd scan [--json]          [legacy] Working-directory CVE/KEV scan (orchestrator). See `exceptd discover`.",
+    dispatch: "exceptd dispatch [--json]      [legacy] Scan + route findings to skills (orchestrator). See `exceptd discover`.",
+    currency: "exceptd currency [--json]      [legacy] Skill threat-currency report. See `exceptd doctor --currency`.",
+    "validate-cves": "exceptd validate-cves [--offline|--air-gap] [--json]   Validate the CVE catalog against upstream (offline-first).",
+    "validate-rfcs": "exceptd validate-rfcs [--offline|--air-gap] [--json]   Validate the RFC index against upstream (offline-first).",
   };
   if ((effectiveRest.includes("--help") || effectiveRest.includes("-h")) && SPAWN_HELP_USAGE[effectiveCmd]) {
     process.stdout.write(SPAWN_HELP_USAGE[effectiveCmd] + "\n  Full reference: exceptd help\n");
@@ -2314,6 +2324,20 @@ Exit codes:
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
 results[].`,
+    collect: `collect <playbook> [--cwd <dir>] [--resolve] [--air-gap] [--json]
+
+Scan the working directory (or --cwd <dir>) and emit an evidence submission
+for <playbook>, ready to pipe into \`run\`:
+
+  exceptd collect <playbook> | exceptd run <playbook> --evidence -
+
+Flags:
+  --cwd <dir>             Scan <dir> instead of the current directory.
+  --resolve               (citation-hygiene) resolve uncatalogued CVE/RFC
+                          citations found during the scan.
+  --air-gap               Do not touch the network during collection.
+  --json                  Raw JSON (default when piped; collect output is the
+                          submission, not a human digest).`,
     brief: `brief [playbook] — unified info doc (v0.11.0).
 
 Collapses the three info-only phases plan + govern + direct + look into a
@@ -3553,8 +3577,13 @@ function cmdRun(runner, args, runOpts, pretty) {
   // behavior where warn-level issues stay informational. CI gates wanting
   // "fail on any unverified precondition" pass this flag.
   if (args["strict-preconditions"] && result && Array.isArray(result.preflight_issues)) {
+    // precondition_skip MUST be included: a false skip_phase precondition
+    // means detect never ran, so a CI gate relying on --strict-preconditions
+    // ("any precondition_check returning false fails the run", per --help) would
+    // otherwise silently pass (verdict:skipped, exit 0) — the exact gap the
+    // flag exists to close.
     const warnIssues = result.preflight_issues.filter(i =>
-      i.kind === "precondition_unverified" || i.kind === "precondition_warn"
+      i.kind === "precondition_unverified" || i.kind === "precondition_warn" || i.kind === "precondition_skip"
     );
     if (warnIssues.length > 0) {
       // v0.12.12: surface the contract violation in the emitted body so
@@ -4303,9 +4332,19 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // remediation without parsing the body.
   const anyLockBusy = results.some(r => r.attestation_persist && r.attestation_persist.lock_contention === true);
   const anyStorageExhausted = results.some(r => r.attestation_persist && r.attestation_persist.storage_exhausted === true);
+  // A persist failure that is neither lock-contention nor storage-exhaustion is
+  // a session-id collision (the single-run path exits 7 for the same
+  // condition). Pre-fix a batch where every attestation refused to overwrite
+  // exited 0, so a re-run with a reused --session-id silently persisted nothing
+  // while reporting success. Surface it with the same code as the single-run
+  // path so a CI gate sees it.
+  const anySessionCollision = results.some(r =>
+    r.attestation_persist && r.attestation_persist.ok === false
+    && !r.attestation_persist.lock_contention && !r.attestation_persist.storage_exhausted);
   const anyBlocked = results.some(r => r.ok === false);
   if (anyLockBusy) { process.exitCode = EXIT_CODES.LOCK_CONTENTION; return; }
   if (anyStorageExhausted) { process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED; return; }
+  if (anySessionCollision) { process.exitCode = EXIT_CODES.SESSION_ID_COLLISION; return; }
   if (anyBlocked) { process.exitCode = EXIT_CODES.GENERIC_FAILURE; return; }
 }
 

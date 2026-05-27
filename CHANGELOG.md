@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.14.13 — 2026-05-27
+
+Security: a collector scanning a hostile repository no longer hangs on a crafted file. Three workflow/Dockerfile/manifest scanners (`library-author`, `cicd-pipeline-compromise`, `containers`) had a regex that backtracked catastrophically on a long whitespace line — a single planted file could wedge the scan for minutes. The regexes are fixed and a per-line length cap bounds any future regression.
+
+Deeply-nested evidence is now rejected with an actionable message instead of crashing with an opaque "internal error". The submission canonicalizer (which runs on every `run` to compute the evidence hash) recursed without bound; it now refuses a submission nested beyond 200 levels.
+
+`run --strict-preconditions` now fails (exit 1) when a `skip_phase` precondition is false. Previously such a run skipped the detect phase and exited 0, so a CI gate relying on the flag silently passed despite the detection never running.
+
+Detection no longer silently loses or buries a result:
+- A `signal_overrides` value that isn't a recognized result (e.g. `"maybe"`, a number) now surfaces a `signal_override_unrecognized` runtime error instead of being dropped as if the signal were never supplied.
+- A `not_detected` / `clean` classification override is refused when it would bury a deterministic indicator hit (a deterministic hit is too strong to downgrade to "nothing found"); the run stays inconclusive with an explanatory error. Probabilistic hits remain overridable for the legitimate "I confirmed these are benign" workflow. A refused override is no longer reported as applied.
+
+`run --all` / `run-all` now exits 7 (session-id collision) when a reused `--session-id` collides across the batch, matching the single-run behavior — previously a batch that persisted nothing exited 0 and reported success.
+
+`watch --help` prints usage and exits instead of starting the blocking daemon and hanging the terminal; `collect --help` now prints its synopsis. The `--help` synopsis for the spawned verbs (`watch`, `watchlist`, `report`, `scan`, `dispatch`, `currency`, `validate-cves`, `validate-rfcs`) is filled in.
+
+README corrects the `watch` / `watchlist` documentation (the one-shot aggregator with `--alerts` / `--org-scan` is `watchlist`; `watch` is the long-running daemon) and the `refresh --prefetch` description (it warms the cache by fetching, the opposite of the report-only `--no-network`).
+
 ## 0.14.12 — 2026-05-27
 
 Structured-bundle accuracy:
