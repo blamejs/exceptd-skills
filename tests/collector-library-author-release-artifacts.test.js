@@ -65,6 +65,48 @@ test("id-token: write at JOB scope satisfies publish-workflow-no-id-token-write"
   }
 });
 
+test("a sibling workflow's id-token: write does NOT mask a static-token publish job", () => {
+  // Codex P2: OIDC is per-publish-workflow, not repo-wide. A docs/deploy
+  // workflow declaring id-token: write must not make a release job that
+  // publishes with a long-lived NPM_TOKEN (and no OIDC of its own) look
+  // OIDC-capable — that would hide the static-token takeover case.
+  const publishWf = [
+    "name: release",
+    "on: { push: { tags: ['v*'] } }",
+    "jobs:",
+    "  publish:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    "      - run: npm ci",
+    "      - run: npm publish",
+    "        env: { NODE_AUTH_TOKEN: '${{ secrets.NPM_TOKEN }}' }",
+  ].join("\n") + "\n";
+  const docsWf = [
+    "name: docs",
+    "on: { push: { branches: ['main'] } }",
+    "jobs:",
+    "  deploy-docs:",
+    "    runs-on: ubuntu-latest",
+    "    permissions: { id-token: write }",   // sibling OIDC, unrelated to publish
+    "    steps:",
+    "      - run: echo deploy",
+  ].join("\n") + "\n";
+  const tmp = mkRepo("lib-sibling-oidc-", {
+    "package.json": JSON.stringify({ name: "x", version: "1.0.0" }),
+    ".github/workflows/release.yml": publishWf,
+    ".github/workflows/docs.yml": docsWf,
+  });
+  try {
+    const r = libraryAuthorCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["publish-workflow-no-id-token-write"], "hit",
+      "publish job without its own id-token: write must fire even when a sibling workflow has OIDC");
+    assert.equal(r.signal_overrides["publish-workflow-uses-static-token"], "hit",
+      "a publish job on NPM_TOKEN with no OIDC of its own must fire the static-token indicator");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("release-time SBOM generation step satisfies sbom-absent-or-unsigned (no committed SBOM)", () => {
   const wf = [
     "name: release",
