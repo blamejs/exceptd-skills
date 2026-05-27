@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.9 — 2026-05-27
+
+`refresh --advisory <id> --air-gap` now refuses (no network) instead of egressing. The `--air-gap` flag was parsed but dropped before the fetch, so an air-gapped advisory seed silently reached GHSA/OSV — an air-gap-guarantee violation. Both the flag and the `EXCEPTD_AIR_GAP=1` env now refuse identically.
+
+`--tlp` is wired through. It stamps the emitted bundle's CSAF `document.distribution` marking (TLP 2.0), validates the label against `CLEAR | GREEN | AMBER | AMBER+STRICT | RED`, and is refused on info-only verbs — previously it was accepted but never applied (a silent no-op).
+
+`refresh --advisory ""` errors instead of silently running a full refresh, and `refresh --help` now documents refresh's own exit-code scheme — notably that its exit 3 means "draft produced, review pending" (distinct from `exceptd run`'s exit 3, "ran but no evidence"), so scripts should branch on the `ok` field rather than `$?`.
+
 ## 0.14.8 — 2026-05-27
 
 SARIF output now carries file locations. A run's `results[].locations` are populated from per-indicator evidence locations, so a secret or file finding points at the file — and the line, when known — that triggered it instead of shipping location-less, which GitHub code scanning and most SARIF viewers drop or attribute to the repository root. A submission may supply locations directly (`evidence_locations: { "<indicator-id>": ["path", { "uri": "path", "startLine": N }] }`), and the code-scope collectors emit them from their hit data, so `exceptd collect <pb> | exceptd run <pb> --format sarif` produces located findings.
