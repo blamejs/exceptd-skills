@@ -58,6 +58,14 @@ function main() {
   try {
     collectorFiles = fs.readdirSync(COLLECTOR_DIR)
       .filter(f => f.endsWith(".js"))
+      // A collector is a module exporting a collect() function. Shared
+      // helpers under lib/collectors/ (e.g. scan-excludes.js, the directory-
+      // walk exclusion policy) are not collectors and must not inflate the
+      // count or be required in the AGENTS.md enumeration.
+      .filter(f => {
+        try { return typeof require(path.join(COLLECTOR_DIR, f)).collect === "function"; }
+        catch { return false; }
+      })
       .map(f => `lib/collectors/${f}`)
       .sort();
   } catch (e) {

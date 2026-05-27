@@ -65,7 +65,17 @@ const PKG_ROOT = path.resolve(__dirname, "..");
 // behavior share the same source of truth.
 const { EXIT_CODES, listExitCodes } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
 const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
-const { suggestFlag, flagsFor } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+const { suggestFlag, flagsFor, VERB_FLAG_ALLOWLIST } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+
+// Union of every flag known to ANY verb. A flag that is valid somewhere but
+// not on the active verb (e.g. `--csaf-status` on `brief`) is cross-verb
+// misuse, not a typo — it falls through to the verb handler, which emits a
+// tailored "that flag belongs on a run-class verb" message. Only a flag that
+// is unknown EVERYWHERE is refused outright as a typo/garbage at the
+// dispatcher. Kept module-scope so it is computed once.
+const ALL_KNOWN_FLAGS = new Set(
+  Object.values(VERB_FLAG_ALLOWLIST).flat()
+);
 
 /**
  * Factor the EXPECTED_FINGERPRINT pin check used by
@@ -384,7 +394,7 @@ Canonical verbs
                              --evidence <file|->    flat or nested submission
                              --evidence-dir <dir>   per-playbook submission files
                              --vex <file>           CycloneDX / OpenVEX filter
-                             --format <fmt> ...     csaf-2.0 | sarif | openvex | markdown | summary
+                             --format <fmt> ...     csaf-2.0 | sarif | openvex | markdown | summary | json
                              --diff-from-latest     drift vs prior attestation
                              --ci                   exit-code gate (use \`exceptd ci\` instead)
                              --operator <name>      bind attestation to identity
@@ -458,8 +468,10 @@ Canonical verbs
                              --prefetch             populate offline cache
                              --from-cache           consume offline cache
                              --indexes-only         rebuild indexes only
-                             Sources: kev|epss|nvd|rfc|pins|ghsa (v0.12.0).
+                             Sources: kev|epss|nvd|rfc|pins|ghsa|osv.
                                                     ghsa drafts pass validator as warnings.
+                             --check-advisories     poll primary-source advisory
+                                                    feeds; report-only diffs[].
 
 Removed verbs (refused — these now error with a pointer to the replacement)
 ───────────────────────────────────────────────────────────────────────────
@@ -476,12 +488,10 @@ here so old scripts know where each moved:
 Deprecated aliases (still work — prefer the canonical verb)
 ───────────────────────────────────────────────────────────
 
-These still run but emit a one-time deprecation banner. The [DEPRECATED]
-prefix keeps them out of the active-verbs list that
-\`exceptd help | grep '^  [a-z]'\` surfaces. Each maps to a canonical verb:
+These still run. The [DEPRECATED] prefix keeps them out of the active-verbs
+list that \`exceptd help | grep '^  [a-z]'\` surfaces. Each maps to a canonical
+verb:
 
-  [DEPRECATED] reattest <sid>    → attest diff <sid>
-  [DEPRECATED] list-attestations → attest list
   [DEPRECATED] scan              → discover --scan-only
   [DEPRECATED] dispatch          → discover
   [DEPRECATED] currency          → doctor --currency
@@ -491,6 +501,11 @@ prefix keeps them out of the active-verbs list that
   [DEPRECATED] watchlist         → watch
   [DEPRECATED] prefetch          → refresh --no-network
   [DEPRECATED] build-indexes     → refresh --indexes-only
+
+Accepted short forms (canonical — not deprecated):
+
+  reattest <sid>        short form of \`attest diff <sid>\`
+  list-attestations     short form of \`attest list\`
 
 Output: default human-readable (v0.11.0). --json for machine output.
         --pretty for indented JSON.
@@ -708,6 +723,24 @@ function main() {
       { verb: cmd }
     );
     process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
+    return;
+  }
+
+  // `skill` and `framework-gap` are spawned subcommands that never reach the
+  // in-process per-verb --help, and (unlike `refresh`/`prefetch`, which print
+  // their own help) the orchestrator forwards `--help` as a positional —
+  // `skill --help` tried to resolve a skill literally named "--help"
+  // ("Skill not found: --help") and `framework-gap --help` errored on missing
+  // args. Intercept --help for just these so they honor it. Scoped to the
+  // verbs that lack their own help handler, so spawns that do (refresh,
+  // prefetch) keep their detailed usage.
+  const SPAWN_HELP_USAGE = {
+    skill: "exceptd skill <name>          Show the full context document for one skill.",
+    "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
+    "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
+  };
+  if ((effectiveRest.includes("--help") || effectiveRest.includes("-h")) && SPAWN_HELP_USAGE[effectiveCmd]) {
+    process.stdout.write(SPAWN_HELP_USAGE[effectiveCmd] + "\n  Full reference: exceptd help\n");
     return;
   }
 
@@ -1203,6 +1236,7 @@ function dispatchPlaybook(cmd, argv) {
     "publisher-namespace", "mode", "scope", "playbook", "phase", "tlp",
     "against", "since", "bundle-epoch", "attestation-root", "format",
     "cwd",  // exceptd collect <pb> --cwd <path>
+    "limit",  // exceptd attest list --limit <n>
   ]);
   const verbAllowlist = flagsFor(cmd);
   const allowlistSet = new Set(verbAllowlist);
@@ -1242,21 +1276,29 @@ function dispatchPlaybook(cmd, argv) {
       }
       continue;
     }
-    // Refuse only when a close suggestion exists (likely typo). Unknown
-    // flags with no near-match fall through to verb-level handling so a
-    // future addition doesn't require an allowlist edit in this file
-    // before it can ship. The PASSTHROUGH_FLAGS list above plus the
-    // per-verb allowlist in lib/flag-suggest.js together cover every
-    // shipped flag; anything that misses both AND has a typo suggestion
-    // is the case operators benefit from refusing.
+    // A flag valid on SOME other verb (e.g. `--csaf-status` on `brief`) is
+    // cross-verb misuse — fall through so the verb handler can emit its
+    // tailored "that flag belongs on a run-class verb" guidance rather than
+    // a blanket refusal here.
+    if (ALL_KNOWN_FLAGS.has(key)) continue;
+    // Unknown everywhere — refuse it as a typo / unsupported flag. Silently
+    // ignoring an unrecognized flag let a mistyped cap or output-format flag
+    // look like it applied when it did nothing. Surface a suggestion
+    // when one is close, and always list the accepted flags so the operator
+    // can self-correct. Adding a new flag to a verb means appending it to
+    // that verb's allowlist (or PASSTHROUGH_FLAGS) — the test suite exercises
+    // every shipped flag, so a missing registration fails CI rather than
+    // silently breaking the flag.
     const suggestion = suggestFlag(key, verbAllowlist);
-    if (suggestion) {
-      return emitError(
-        `unknown flag --${key}`,
-        { verb: cmd, suggested: suggestion },
-        pretty
-      );
-    }
+    return emitError(
+      `${cmd}: unknown flag --${key}`,
+      {
+        verb: cmd,
+        unknown_flags: [{ flag: `--${key}`, did_you_mean: suggestion ? [`--${suggestion}`] : [] }],
+        known_flags: verbAllowlist.filter((f) => typeof f === "string").sort().map((f) => `--${f}`),
+      },
+      pretty
+    );
   }
   const runOpts = {
     // Air-gap can be requested via the explicit flag OR the
@@ -1798,10 +1840,14 @@ Flags:
                           or not_affected | fixed (OpenVEX) drop out of
                           analyze.matched_cves. The disposition is preserved
                           under analyze.vex.dropped_cves.
-  --format <fmt> ...      Emit the close.evidence_package bundle in additional
-                          formats. Repeatable. Supported: csaf-2.0 | sarif |
-                          openvex | markdown. CSAF is always primary; extras
-                          populate close.evidence_package.bundles_by_format.
+  --format <fmt> ...      Transform stdout. Supported: summary | markdown |
+                          csaf-2.0 | csaf | sarif | openvex | json (json = the
+                          full run result). Standardized bundles (csaf/sarif/
+                          openvex) are emitted as spec-conformant documents.
+                          Repeatable, but only ONE document goes to stdout — the
+                          first; every requested bundle is embedded under
+                          close.evidence_package.bundles_by_format (see via
+                          --json). Passing several prints a note to stderr.
   --explain               Dry-run: emit preconditions, required artifacts,
                           recognized signal keys, and a submission skeleton.
                           Does not run detect/analyze/validate/close.
@@ -2390,7 +2436,14 @@ function cmdCollect(runner, args, runOpts, pretty) {
   // Spread `submission` first, then explicit fields, so a submission key
   // named `air_gap_mode` (currently always undefined but defensive against
   // future collector contracts) can't clobber the envelope marker.
-  emit({ verb: "collect", playbook_id: playbookId, ...submission, air_gap_mode: collectAirGap }, pretty, (obj) => {
+  const collectBody = { verb: "collect", playbook_id: playbookId, ...submission, air_gap_mode: collectAirGap };
+  // collect's primary purpose is the pipe `exceptd collect <pb> | exceptd run
+  // <pb> --evidence -`. When stdout is NOT a TTY (a pipe / redirect), emit JSON
+  // so that one-liner just works; the human summary is only for an interactive
+  // operator at a terminal. Explicit --json / --pretty force JSON regardless.
+  // Without this gate, emit()'s default-human behavior printed a prose summary
+  // into the pipe and the downstream `run --evidence -` failed to parse it.
+  const collectHuman = process.stdout.isTTY ? (obj) => {
     const lines = [];
     const meta = obj.collector_meta || {};
     lines.push(`collect: ${obj.playbook_id}  (${meta.collector_version || "?"} on ${meta.platform || "?"})`);
@@ -2427,10 +2480,11 @@ function cmdCollect(runner, args, runOpts, pretty) {
       }
       if (errs.length > 5) lines.push(`  … ${errs.length - 5} more`);
     }
-    lines.push(`\n→ next: exceptd collect ${obj.playbook_id} --json | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`\n→ next: exceptd collect ${obj.playbook_id} | exceptd run ${obj.playbook_id} --evidence -`);
     lines.push(`Full structured result: --json (or --pretty for indented JSON).`);
     return lines.join("\n");
-  });
+  } : undefined;
+  emit(collectBody, pretty, collectHuman);
 }
 
 function cmdLint(runner, args, runOpts, pretty) {
@@ -3480,7 +3534,8 @@ function cmdRun(runner, args, runOpts, pretty) {
   //   --format csaf-2.0/sarif/openvex → the corresponding bundle from close
   //   (default — no --format) → full JSON result as before
   if (args.format) {
-    const requested = Array.isArray(args.format) ? args.format[0] : args.format;
+    const requestedAll = Array.isArray(args.format) ? args.format : [args.format];
+    const requested = requestedAll[0];
     const VALID = ["summary", "markdown", "csaf-2.0", "csaf", "sarif", "openvex", "json"];
     if (!VALID.includes(requested)) {
       const dym = suggestFlag(String(requested), VALID);
@@ -3490,6 +3545,25 @@ function cmdRun(runner, args, runOpts, pretty) {
         { verb: "run", provided: requested, accepted: VALID, did_you_mean: dym ? [dym] : [] },
         pretty,
       );
+    }
+    // Only one document can be written to stdout. When several --format values
+    // are given, emit the first and tell the operator where the rest live so
+    // the extras aren't silently dropped.
+    if (requestedAll.length > 1) {
+      process.stderr.write(
+        `[exceptd] note: ${requestedAll.length} --format values given; emitting "${requested}" to stdout. ` +
+        `All requested bundles are embedded under phases.close.evidence_package.bundles_by_format — ` +
+        `re-run with --json to see them.\n`
+      );
+    }
+    // `json` means "the full run result as JSON" — the same body the default
+    // (no --format) path emits. Without this it fell through to the bundle
+    // lookup, found the runner's "unknown format" stub under
+    // bundles_by_format.json, and emitted that 150-byte stub instead of the
+    // scan — silently discarding the result with a success exit code.
+    if (requested === "json") {
+      emit(result, pretty);
+      return;
     }
     if (requested === "summary") {
       const cls = result.phases?.detect?.classification;
@@ -3546,7 +3620,15 @@ function cmdRun(runner, args, runOpts, pretty) {
     const bbf = result.phases?.close?.evidence_package?.bundles_by_format || {};
     const body = bbf[formatNorm] || result.phases?.close?.evidence_package?.bundle_body;
     if (body) {
-      emit(body, pretty);
+      // SARIF / CSAF / OpenVEX are self-describing standard documents. Write
+      // them verbatim rather than through emit(), which prepends the tool's
+      // own `ok` envelope key — `ok` is not a permitted top-level property in
+      // any of these schemas and makes strict validators (GitHub code-scanning
+      // SARIF upload, a CSAF trusted-provider check) reject the output. The
+      // namespaced `exceptd_extension` block (CSAF vendor extension carrying
+      // publisher-namespace provenance) is preserved intentionally.
+      const { ok: _ok, ...spec } = body;
+      process.stdout.write(JSON.stringify(spec, null, pretty ? 2 : 0) + "\n");
       return;
     }
     // Fallback: full result
@@ -7040,10 +7122,28 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     }
   }
   entries.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
+  const total = entries.length;
+  // --limit caps the inventory (newest first). Without it, JSON returns every
+  // session and the human table shows the first 50 with an "… and N more"
+  // footer. With it, both surfaces honor the cap and report `total`.
+  let limitN = null;
+  if (args.limit != null) {
+    limitN = Number(args.limit);
+    if (!Number.isInteger(limitN) || limitN < 0) {
+      return emitError(
+        `attest list: --limit must be a non-negative integer; got ${JSON.stringify(String(args.limit))}.`,
+        { verb: "attest list", provided: args.limit },
+        pretty,
+      );
+    }
+  }
+  const shown = limitN != null ? entries.slice(0, limitN) : entries;
   emit({
     ok: true,
-    attestations: entries,
-    count: entries.length,
+    attestations: shown,
+    count: total,
+    shown: shown.length,
+    limit: limitN,
     filter: { playbook: playbookFilter ? [...playbookFilter] : null, since: args.since || null },
     roots_searched: [...seenRoots],
     // Cycle 11 F5 (v0.12.32): every candidate root + whether it existed,
@@ -7068,10 +7168,17 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     }
     lines.push(`  ${"session-id".padEnd(20)}  ${"playbook".padEnd(16)}  ${"captured-at".padEnd(20)}  evidence-hash`);
     lines.push(`  ${"-".repeat(20)}  ${"-".repeat(16)}  ${"-".repeat(20)}  ${"-".repeat(20)}`);
-    for (const e of obj.attestations.slice(0, 50)) {
+    // When --limit was given, obj.attestations is already capped; show all of
+    // it. Otherwise show the first 50 and footer the remainder.
+    const rows = obj.limit != null ? obj.attestations : obj.attestations.slice(0, 50);
+    for (const e of rows) {
       lines.push(`  ${(e.session_id || "?").padEnd(20)}  ${(e.playbook_id || "?").padEnd(16)}  ${(e.captured_at || "").slice(0, 19).padEnd(20)}  ${e.evidence_hash || ""}`);
     }
-    if (obj.count > 50) lines.push(`  … and ${obj.count - 50} more (use --json for full list)`);
+    if (obj.limit != null) {
+      if (obj.count > rows.length) lines.push(`  showing ${rows.length} of ${obj.count} (raise --limit or use --json for the full list)`);
+    } else if (obj.count > 50) {
+      lines.push(`  … and ${obj.count - 50} more (use --limit <n> or --json for the full list)`);
+    }
     return lines.join("\n");
   });
 }
