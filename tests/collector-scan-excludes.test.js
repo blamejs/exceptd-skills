@@ -73,8 +73,9 @@ test("(b) isLinkedWorktreeDir: true for a .git-FILE dir, false for a .git-DIR", 
 test("(c) collector walk skips a .claude/worktrees copy (no duplicate hits)", () => {
   const tmp = mkTmp("scan-excl-claude-");
   try {
-    // Host-tree source carrying a recognisable secret.
-    const src = 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n';
+    // Host-tree source carrying a recognisable secret. Use a real-shaped
+    // GitHub PAT, not the AWS doc example key (which the collector demotes).
+    const src = 'const token = "ghp_' + "A".repeat(36) + '";\n';
     fs.writeFileSync(path.join(tmp, "keys.js"), src);
 
     // Full repo copy under .claude/worktrees/<id>/ with a gitfile.
@@ -99,7 +100,8 @@ test("(c2) worktree guard skips a linked worktree even outside an excluded dir n
   // Proves the guard is independent of the `.claude` name exclusion:
   // a linked worktree under any directory name is skipped, while a
   // normal nested repo (real `.git` directory) is still walked.
-  const src = 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n';
+  // Real-shaped GitHub PAT (not the demoted AWS doc example key).
+  const src = 'const token = "ghp_' + "A".repeat(36) + '";\n';
 
   // Linked worktree under a non-excluded dir name -> skipped.
   const a = mkTmp("scan-excl-linked-");

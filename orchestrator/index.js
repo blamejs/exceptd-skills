@@ -207,7 +207,8 @@ Examples:
   }
   const scenario = args[1];
 
-  const report = gapReport(requested, scenario, controlGaps, cveCatalog);
+  const allFrameworks = args[0].toLowerCase() === 'all';
+  const report = gapReport(requested, scenario, controlGaps, cveCatalog, { allFrameworks });
   const theater = theaterCheck(controlGaps, cveCatalog);
 
   if (jsonOut) {
@@ -233,7 +234,8 @@ Examples:
   if (report.universal_gaps.length > 0) {
     console.log(`### Universal gaps (no jurisdiction covers these) — ${report.universal_gaps.length}`);
     for (const g of report.universal_gaps) {
-      console.log(`  - ${g.id || g.name}: ${(g.real_requirement || '').slice(0, 140)}`);
+      const req = g.real_requirement || '';
+      console.log(`  - ${g.id || g.name}: ${req.length > 140 ? req.slice(0, 140) + '…' : req}`);
     }
     console.log();
   }
@@ -472,7 +474,10 @@ async function runReport(format) {
     return;
   }
 
-  console.log(`[orchestrator] Generating ${format} report...\n`);
+  // Progress line goes to stderr so `report executive > out.md` produces
+  // clean markdown on stdout — the first stdout line must be the report
+  // header, not this progress notice.
+  console.error(`[orchestrator] Generating ${format} report...\n`);
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
   const { currency_report } = currencyCheck();
@@ -1703,6 +1708,21 @@ async function runWatchlistOrgScan(rawArgs = []) {
       error: 'watchlist --org-scan requires --org <login> (or GITHUB_ORG env var). Example: exceptd watchlist --org-scan --org blamejs',
     }) + '\n');
     safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
+  // Air-gap guard. The org-scan reaches api.github.com on every pattern
+  // query; under air-gap there is no offline substitute, so refuse before
+  // any fetch rather than silently attempting egress. Mirrors the
+  // source-ghsa air-gap refusal shape (ok:false + source + explicit error).
+  if (process.env.EXCEPTD_AIR_GAP === '1' || rawArgs.includes('--air-gap')) {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      source: 'air-gap',
+      verb: 'watchlist',
+      mode: 'org-scan',
+      error: 'air-gap: watchlist --org-scan requires network egress to api.github.com; refused.',
+    }) + '\n');
+    safeExit(EXIT_CODES.BLOCKED);
     return;
   }
   // Custom patterns via --pattern <s> (repeatable). Default set from

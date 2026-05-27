@@ -464,7 +464,8 @@ Canonical verbs
                              (citation-hygiene) resolves uncatalogued citations.
   skill <name>               Show context for a specific skill.
   framework-gap <fw> <ref>   Programmatic gap analysis (one framework, one CVE/scenario).
-  watch [--alerts]           Forward-watch aggregator across skills.
+  watchlist [--alerts]       Forward-watch aggregator across skills (one-shot).
+  watch                      Long-running forward-watch daemon (blocks; Ctrl-C).
   report [executive]         Structured posture report.
   path                       Absolute path to the installed package.
   version                    Package version.
@@ -519,7 +520,6 @@ surfaces.
   [DEPRECATED] verify            → doctor --signatures
   [DEPRECATED] validate-cves     → doctor --cves
   [DEPRECATED] validate-rfcs     → doctor --rfcs
-  [DEPRECATED] watchlist         → watch
   [DEPRECATED] prefetch          → refresh --no-network
   [DEPRECATED] build-indexes     → refresh --indexes-only
 
@@ -759,8 +759,8 @@ function main() {
     skill: "exceptd skill <name>          Show the full context document for one skill.",
     "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
-    cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD).",
-    rfc: "exceptd rfc <number> [--check \"<title>\"] [--json] [--air-gap]   Resolve an RFC number -> title + status (local index, offline).",
+    cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD). Exit 2 when the citation won't stand up (rejected/fabricated/nonexistent/withdrawn).",
+    rfc: "exceptd rfc <number> [--check \"<title>\"] [--json] [--air-gap]   Resolve an RFC number -> title + status (local index, offline). Exit 2 when nonexistent or --check title MISMATCH.",
   };
   if ((effectiveRest.includes("--help") || effectiveRest.includes("-h")) && SPAWN_HELP_USAGE[effectiveCmd]) {
     process.stdout.write(SPAWN_HELP_USAGE[effectiveCmd] + "\n  Full reference: exceptd help\n");
@@ -2858,13 +2858,14 @@ function cmdBrief(runner, args, runOpts, pretty) {
     const required = (obj.artifacts || []).filter(a => a.required);
     const optional = (obj.artifacts || []).filter(a => !a.required);
     lines.push(`\nRequired artifacts (${required.length}): ${required.map(a => a.id).join(", ") || "(none)"}`);
-    if (optional.length) lines.push(`Optional artifacts (${optional.length}): ${optional.map(a => a.id).slice(0, 8).join(", ")}${optional.length > 8 ? ", …" : ""}`);
+    if (optional.length) lines.push(`Optional artifacts (${optional.length}): ${optional.map(a => a.id).slice(0, 8).join(", ")}${optional.length > 8 ? `, … +${optional.length - 8}` : ""}`);
     const indicators = obj.detect_indicators_preview || [];
-    lines.push(`\nIndicators (${indicators.length}): ${indicators.map(i => i.id).slice(0, 8).join(", ")}${indicators.length > 8 ? ", …" : ""}`);
+    lines.push(`\nIndicators (${indicators.length}): ${indicators.map(i => i.id).slice(0, 8).join(", ")}${indicators.length > 8 ? `, … +${indicators.length - 8}` : ""}`);
     if (obj.preconditions?.length) {
       lines.push(`\nPreconditions (${obj.preconditions.length}):`);
       for (const p of obj.preconditions) {
-        lines.push(`  ${p.id} (${p.on_fail}): ${p.description?.slice(0, 80) || p.check}`);
+        const pdesc = p.description || p.check || "";
+        lines.push(`  ${p.id} (${p.on_fail}): ${pdesc.length > 80 ? pdesc.slice(0, 80) + "…" : pdesc}`);
       }
     }
     lines.push(`\nRun: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
@@ -3859,7 +3860,7 @@ function cmdRun(runner, args, runOpts, pretty) {
       lines.push(`\nMatched CVEs (${cves.length}):`);
       for (const c of cves.slice(0, 6)) {
         const via = Array.isArray(c.correlated_via) && c.correlated_via.length ? `  via ${c.correlated_via[0]}${c.correlated_via.length > 1 ? ` (+${c.correlated_via.length - 1})` : ""}` : "";
-        lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev}  ${c.active_exploitation || ""}${via}`);
+        lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev ? "Y" : "N"}  ${c.active_exploitation || ""}${via}`);
       }
       if (cves.length > 6) lines.push(`  … ${cves.length - 6} more`);
     } else if (baseline.length) {
@@ -3872,7 +3873,13 @@ function cmdRun(runner, args, runOpts, pretty) {
     const hits = indicators.filter(i => i.verdict === "hit");
     if (hits.length) {
       lines.push(`\nIndicators that fired (${hits.length}):`);
-      for (const i of hits.slice(0, 8)) lines.push(`  ${i.id}  (${i.confidence}${i.deterministic ? "/deterministic" : ""})`);
+      for (const i of hits.slice(0, 8)) {
+        // Don't double-print "deterministic/deterministic" when confidence is
+        // already the literal "deterministic".
+        const detSuffix = (i.deterministic && i.confidence !== "deterministic") ? "/deterministic" : "";
+        lines.push(`  ${i.id}  (${i.confidence}${detSuffix})`);
+      }
+      if (hits.length > 8) lines.push(`  … ${hits.length - 8} more`);
     }
     // selected_remediation is informational on non-detect runs:
     // validate() always picks the highest-priority remediation path
@@ -3888,7 +3895,8 @@ function cmdRun(runner, args, runOpts, pretty) {
       } else {
         lines.push(`\nRemediation path (informational — verdict=${cls}, no action required now): ${rem.id} (priority ${rem.priority})`);
       }
-      lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
+      const remDesc = rem.description || "";
+      lines.push(`  ${remDesc.length > 200 ? remDesc.slice(0, 200) + "… (full steps: --json)" : remDesc}`);
     }
     // Surface BOTH started and pending notification clocks on detected
     // runs. The detection IS the regulatory event for the obligations
@@ -3940,7 +3948,9 @@ function cmdRun(runner, args, runOpts, pretty) {
       // to the description if `check` is missing too.
       for (const i of issues) {
         const tag = i.on_fail ? `[${i.on_fail}] ` : "";
-        const detail = i.check || i.description || i.reason || "(no detail)";
+        // precondition_warn issues carry their text in `message`; without it in
+        // the fallback chain they rendered "(no detail)".
+        const detail = i.check || i.description || i.reason || i.message || "(no detail)";
         lines.push(`  ${tag}${i.id}: ${detail}`);
       }
     }
@@ -3953,7 +3963,11 @@ function cmdRun(runner, args, runOpts, pretty) {
     if (runtimeErrors.length) {
       lines.push(`\nRuntime warnings (${runtimeErrors.length}):`);
       for (const e of runtimeErrors) {
-        const reason = (e.reason || "").length > 180 ? (e.reason || "").slice(0, 177) + "..." : (e.reason || "");
+        // Some runtime-warning kinds (e.g. csaf_branch_unparseable) carry no
+        // `reason` but do carry context fields (component / cve_id); compose
+        // from those rather than rendering a blank line.
+        const rawReason = e.reason || [e.component, e.cve_id].filter(Boolean).join(" / ") || "(no detail)";
+        const reason = rawReason.length > 180 ? rawReason.slice(0, 177) + "..." : rawReason;
         lines.push(`  [${e.kind || "warning"}] ${reason}`);
         if (e.remediation) lines.push(`    → ${e.remediation}`);
       }
@@ -4242,7 +4256,39 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     },
     jurisdiction_clock_rollup: jurisdictionClockRollup,
     results,
-  }, pretty);
+  }, pretty, (obj) => {
+    // Per-playbook summary table. Without this renderer a multi-run dumped its
+    // entire (often hundreds-of-KB) JSON even in default human mode.
+    const s = obj.summary;
+    const lines = [];
+    const detectedTotal = s.detected;
+    const icon = s.blocked > 0 ? "[!! BLOCKED]" : detectedTotal > 0 ? "[!! DETECTED]" : "[ok]";
+    lines.push(`run ${obj.trigger || "multi"}: ${obj.playbooks_run.length} playbook(s)  session-id: ${obj.session_id}`);
+    lines.push(`\n${icon}  detected=${detectedTotal}  inconclusive=${s.inconclusive}  clean=${s.total - detectedTotal - s.inconclusive - s.blocked}  blocked=${s.blocked}  total=${s.total}`);
+    const rows = (obj.results || []).map(r => (r && r.ok === false)
+      ? { id: r.playbook_id || "?", verdict: "blocked", rwep: "-", evidence: r.evidence_completeness || "not-evaluated", top: r.blocked_by || r.reason || r.error || "" }
+      : { id: r.playbook_id || "?", verdict: r?.phases?.detect?.classification || r?.verdict || "?", rwep: (r?.rwep_score != null) ? String(r.rwep_score) : "-", evidence: r?.evidence_completeness || "unknown", top: r?.top_finding || "" });
+    const wId = Math.max(8, ...rows.map(r => r.id.length));
+    const wV = Math.max(8, ...rows.map(r => r.verdict.length));
+    const wR = Math.max(4, ...rows.map(r => r.rwep.length));
+    const wE = Math.max(8, ...rows.map(r => r.evidence.length));
+    const pad = (str, w) => (str + " ".repeat(w)).slice(0, w);
+    lines.push("");
+    lines.push(`  ${pad("playbook", wId)}  ${pad("verdict", wV)}  ${pad("rwep", wR)}  ${pad("evidence", wE)}  finding`);
+    lines.push(`  ${"-".repeat(wId)}  ${"-".repeat(wV)}  ${"-".repeat(wR)}  ${"-".repeat(wE)}  -------`);
+    for (const row of rows) {
+      const finding = row.top.length > 80 ? row.top.slice(0, 77) + "..." : row.top;
+      lines.push(`  ${pad(row.id, wId)}  ${pad(row.verdict, wV)}  ${pad(row.rwep, wR)}  ${pad(row.evidence, wE)}  ${finding}`);
+    }
+    const clocks = obj.jurisdiction_clock_rollup || [];
+    if (clocks.length) {
+      lines.push(`\nJurisdiction clocks (${clocks.length}):`);
+      for (const n of clocks.slice(0, 5)) lines.push(`  ${n.jurisdiction || "?"}/${n.regulation || "?"} → deadline ${n.deadline || "?"}`);
+      if (clocks.length > 5) lines.push(`  … ${clocks.length - 5} more (--json for all)`);
+    }
+    lines.push(`\nFull structured results: --json or --pretty`);
+    return lines.join("\n");
+  });
   // v0.11.9 (#100): cmdRunMulti exits non-zero when any individual run
   // returned ok:false. Pre-0.11.9 the aggregate result had {ok:false} in
   // the body but exit code stayed 0 — CI gates couldn't distinguish "ran
@@ -5076,6 +5122,15 @@ function cmdReattest(runner, args, runOpts, pretty) {
     attFile = found.file;
   }
   if (!sessionId) return emitError("reattest: missing <session-id>. Pass a session-id or --latest [--playbook <id>] [--since <ISO>].", null, pretty);
+  // Validate the session-id BEFORE it is joined into a filesystem path. The
+  // other read verbs (attest show/verify/diff --against) gate on this; reattest
+  // did not, so `findSessionDir` returning null let the `||` fallback join an
+  // unvalidated `../`-bearing id straight onto the attestation root — escaping
+  // it to read a forged attestation and write a signed replay record outside
+  // the root. Ids resolved from the store via the latest-match path are already
+  // safe; an operator-supplied id is the one that must be checked.
+  try { validateSessionIdForRead(sessionId); }
+  catch (e) { return emitError(`reattest: ${e.message}`, { session_id_input: typeof sessionId === "string" ? sessionId.slice(0, 80) : typeof sessionId }, pretty); }
   const dir = findSessionDir(sessionId, runOpts) || path.join(resolveAttestationRoot(runOpts), sessionId);
   if (!attFile) attFile = path.join(dir, "attestation.json");
   if (!fs.existsSync(attFile)) {
@@ -5437,6 +5492,31 @@ function classifySidecarVerify(verify) {
  *   show <session-id>     Emit the full (unredacted) attestation. Convenience
  *                         alias for `cat .exceptd/attestations/<sid>/attestation.json`.
  */
+// Shared one-screen renderer for `attest diff` (both the --against and the
+// no-against/most-recent-prior branches). Reads only fields off the emitted
+// object so both call sites render identically; the sidecar line is shown only
+// when a sidecar verification was performed (the --against path may omit it).
+function renderAttestDiff(obj) {
+  const lines = [];
+  lines.push(`attest diff: ${obj.a_session}${obj.a_playbook ? ` (${obj.a_playbook})` : ""}`);
+  lines.push(`  vs ${obj.b_session}${obj.b_captured ? ` (captured ${obj.b_captured})` : ""}`);
+  const icon = obj.status === "unchanged" ? "[ok]" : "[!]";
+  lines.push(`  ${icon}  status=${obj.status}  evidence_hash=${(obj.a_evidence_hash || "").slice(0, 12)}...`);
+  const ad = obj.artifact_diff || {};
+  const sd = obj.signal_override_diff || {};
+  lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
+  lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
+  if (obj.sidecar_verify) {
+    const sv = obj.sidecar_verify;
+    let sidecarClass = "verified";
+    if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
+    else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
+    else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
+    else if (!sv.signed) sidecarClass = "no-public-key";
+    lines.push(`  sidecar verify: ${sidecarClass}`);
+  }
+  return lines.join("\n");
+}
 function cmdAttest(runner, args, runOpts, pretty) {
   const subverb = args._[0];
   const sessionId = args._[1];
@@ -5574,12 +5654,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
       emit({
         verb: "attest diff",
         a_session: sessionId,
+        a_playbook: self.playbook_id,
         b_session: args.against,
         a_captured: self.captured_at,
         b_captured: other.captured_at,
         a_evidence_hash: self.evidence_hash,
         b_evidence_hash: other.evidence_hash,
         status: self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted",
+        sidecar_verify: verifyAttestationSidecar(path.join(dir, "attestation.json")),
         // v0.11.8 (#102): normalize submissions before diffing so flat-shape
         // (observations + verdict) submissions emit meaningful artifact_diff
         // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
@@ -5593,7 +5675,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
           normalizedSignalOverrides(self.submission, runner, self.playbook_id),
           normalizedSignalOverrides(other.submission, runner, other.playbook_id)
         ),
-      }, pretty);
+      }, pretty, renderAttestDiff);
       return;
     }
     // No --against: find the most-recent prior attestation for the
@@ -5628,6 +5710,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
     emit({
       verb: "attest diff",
       a_session: sessionId,
+      a_playbook: self.playbook_id,
       b_session: prior.sessionId,
       a_captured: self.captured_at,
       b_captured: other.captured_at,
@@ -5643,28 +5726,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
         normalizedSignalOverrides(self.submission, runner, self.playbook_id),
         normalizedSignalOverrides(other.submission, runner, other.playbook_id),
       ),
-    }, pretty, (obj) => {
-      // Human renderer for the no-against `attest diff` path. Same
-      // one-screen shape the old cmdReattest renderer used so the
-      // operator sees the verdict + drift summary + sidecar class.
-      const lines = [];
-      lines.push(`attest diff: ${obj.a_session} (${self.playbook_id})`);
-      lines.push(`  vs prior: ${obj.b_session} (captured ${obj.b_captured})`);
-      const icon = obj.status === "unchanged" ? "[ok]" : "[!]";
-      lines.push(`  ${icon}  status=${obj.status}  evidence_hash=${(obj.a_evidence_hash || "").slice(0, 12)}...`);
-      const ad = obj.artifact_diff || {};
-      const sd = obj.signal_override_diff || {};
-      lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
-      lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
-      const sv = obj.sidecar_verify || {};
-      let sidecarClass = "verified";
-      if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
-      else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
-      else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
-      else if (!sv.signed) sidecarClass = "no-public-key";
-      lines.push(`  sidecar verify: ${sidecarClass}`);
-      return lines.join("\n");
-    });
+    }, pretty, renderAttestDiff);
     return;
   }
 
@@ -8576,17 +8638,21 @@ function cmdCi(runner, args, runOpts, pretty) {
       // Jurisdiction clocks.
       if (s.jurisdiction_clocks_started > 0) {
         lines.push(`\nJurisdiction clocks started: ${s.jurisdiction_clocks_started}`);
-        for (const n of (s.jurisdiction_clock_rollup || []).slice(0, 5)) {
+        const clocks = s.jurisdiction_clock_rollup || [];
+        for (const n of clocks.slice(0, 5)) {
           lines.push(`  ${n.jurisdiction || "?"}/${n.regulation || "?"} → deadline ${n.deadline || "?"}`);
         }
+        if (clocks.length > 5) lines.push(`  … ${clocks.length - 5} more (--json for all)`);
       }
 
       // Framework gap rollup.
       if (s.framework_gap_count > 0) {
         lines.push(`\nFramework gaps (${s.framework_gap_count}):`);
-        for (const g of (s.framework_gap_rollup || []).slice(0, 5)) {
+        const fgaps = s.framework_gap_rollup || [];
+        for (const g of fgaps.slice(0, 5)) {
           lines.push(`  ${g.framework || "?"} :: ${g.claimed_control || "?"}  (${g.playbooks.length} playbook(s))`);
         }
+        if (fgaps.length > 5) lines.push(`  … ${fgaps.length - 5} more (--json for all)`);
       }
 
       // Fail reasons.
@@ -8608,17 +8674,21 @@ function cmdCi(runner, args, runOpts, pretty) {
       //   CLOCK_STARTED  → notification clock running; see deadline above.
       //   PASS           → nothing to do.
       const blockedRows = (obj.results || []).filter(r => r && r.ok === false);
-      const lintCmd = (id) => `  exceptd lint ${id} -                          # paste {} on stdin, get exact JSON paths`;
+      // Pad the playbook id to a common width so the trailing `#` comments line
+      // up across variable-length ids instead of using a fixed space run.
+      const lintCmd = (id, w) => `  exceptd lint ${(id + " ".repeat(w)).slice(0, w)} -   # paste {} on stdin, get exact JSON paths`;
       if (s.verdict === "BLOCKED" && blockedRows.length) {
         lines.push(`\nNext steps (unblock the ${blockedRows.length} halted playbook(s)):`);
-        for (const row of blockedRows.slice(0, 4)) {
-          lines.push(lintCmd(row.playbook_id || "?"));
+        const shown = blockedRows.slice(0, 4);
+        const wLint = Math.max(...shown.map(r => (r.playbook_id || "?").length));
+        for (const row of shown) {
+          lines.push(lintCmd(row.playbook_id || "?", wLint));
         }
         lines.push(`  exceptd run <playbook> --evidence <file>     # re-run after filling in evidence`);
       } else if (s.verdict === "NO_EVIDENCE") {
         const firstId = (obj.results[0] && obj.results[0].playbook_id) || (obj.playbooks_run[0]) || "<playbook>";
         lines.push(`\nNext steps (every playbook ran inconclusive — no evidence supplied):`);
-        lines.push(lintCmd(firstId));
+        lines.push(lintCmd(firstId, firstId.length));
         lines.push(`  exceptd ci --scope <type> --evidence-dir <dir>  # gate again with real submissions`);
       } else if (s.verdict === "FAIL") {
         // FAIL fires in two distinct shapes:

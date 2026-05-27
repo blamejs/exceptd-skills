@@ -53,8 +53,9 @@ test("citation-hygiene emits evidence_locations keyed by the indicator it flips 
     const locs = sub.evidence_locations["fabricated-cve-id"];
     assert.ok(Array.isArray(locs) && locs.length >= 1, "fabricated-cve-id has >= 1 location");
     assert.equal(locs[0].uri, "notes.md", "uri points at the fixture file");
-    // file-level only — the collector records no line for citation hits.
-    assert.equal(locs[0].startLine, undefined, "no startLine when the hit has no real line number");
+    // The collector now derives a 1-based line from the citation's byte
+    // offset; the fixture's fabricated CVE is on line 1.
+    assert.equal(locs[0].startLine, 1, "startLine points at the line carrying the bad citation");
     // Every evidence_locations key must be an indicator the collector
     // actually flipped to "hit" (no orphan keys).
     for (const id of Object.keys(sub.evidence_locations)) {

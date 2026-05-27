@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.14.11 — 2026-05-27
+
+Security: `reattest <session-id>` now validates the session-id before it is joined into a filesystem path, the same gate the other read verbs use. A `../`-bearing id previously escaped the attestation root — reading a forged attestation and writing a signed replay record outside the root. Such an id is now refused (exit 1) and nothing is written.
+
+Air-gap is now honored on every external-source path that previously leaked. `watchlist --org-scan`, `refresh --network`, and `prefetch` all consulted the network even under `--air-gap` / `EXCEPTD_AIR_GAP=1`; each now refuses (or, for `prefetch`, runs report-only) instead of egressing.
+
+The `sbom` collector no longer reports `lockfile-no-integrity` on every clean repository. It counted the npm lockfile's root entry — which legitimately has no integrity hash — as a missing-integrity dependency, so the indicator fired on any normal `package-lock.json`. It now counts only remote-tarball entries that lack integrity.
+
+The `secrets` collector no longer fires on the published AWS documentation example key (`AKIAIOSFODNN7EXAMPLE`), and a text file skipped for exceeding the size limit is now surfaced in `collector_errors` instead of being dropped silently. Secret/citation/crypto findings now carry the exact line in their evidence locations, so SARIF points at the line rather than the file.
+
+Cache-integrity refusals during `refresh` (sha256 mismatch, tampered or unindexed cache) now exit 4 — the documented "cache precondition failed" code — instead of the generic 1. `refresh --source ""` errors with the valid-source list instead of silently running every source; `cve "  "` (whitespace) is treated as a missing argument; `refresh --advisory "  "` gets the dedicated empty-advisory message. `refresh --help` documents exit 1 and the full meaning of exit 4.
+
+Human-readable output gaps closed across several verbs:
+- `run --all` / `run-all` print a per-playbook summary table instead of dumping the full JSON.
+- `attest diff --against` renders the same one-screen summary the no-argument form already did, rather than raw JSON.
+- A matched CVE renders `KEV=Y`/`KEV=N` (not the raw boolean); a deterministic indicator no longer prints `deterministic/deterministic`; a truncated remediation, an over-long fired-indicator list, and the `ci` framework-gap / jurisdiction-clock rollups now show how much was elided; a preflight warning that carries its text in `message` and a runtime warning that carries only context fields are now shown instead of `(no detail)` / a blank line.
+- `framework-gap <framework> <scenario>` summary line counts only the queried framework's gaps, matching the per-framework body (it previously reported the all-frameworks total).
+- `report executive` writes its progress notice to stderr so piped markdown is clean.
+- The synopsis now describes `watchlist` (the one-shot forward-watch aggregator) and `watch` (the long-running daemon) correctly; the inverted deprecation arrow is gone. `cve`/`rfc` help states their exit-2 contract.
+
 ## 0.14.10 — 2026-05-27
 
 `ci <playbook> --evidence -` no longer reports a false PASS when handed a flat submission. `run` accepts a flat submission (`{ "signal_overrides": {...} }`) and so do operators by habit; `ci` keyed the input by playbook id, found nothing under that key, and evaluated an empty submission — a detected finding came back PASS. A single-positional `ci` invocation now treats a flat (non-bundle-shaped) submission as belonging to that playbook, so `ci` and `run` agree. A real bundle keyed by playbook id is still routed per-key.
