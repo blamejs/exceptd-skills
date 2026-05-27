@@ -293,10 +293,11 @@ test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
   // the test resilient to any cosmetic comment churn around the bound.
   const persistIdx = src.indexOf('function persistAttestation(');
   assert.notEqual(persistIdx, -1, 'persistAttestation function must exist in bin/exceptd.js'); // allow-notEqual: refusal-pin (indexOf returns -1 for missing; structural existence check)
-  // Search within ~6000 chars of the function body — generous enough for
-  // the lock block to relocate but tight enough to refuse a stray match
-  // from a sibling function. The lock block sits well inside this window.
-  const window = src.slice(persistIdx, persistIdx + 6000);
+  // Search within ~9000 chars of the function body — widened after the
+  // atomic-write refactor grew the writeAttestation closure (which precedes
+  // the force-overwrite lock block). Still tight enough to refuse a stray
+  // match from a sibling function.
+  const window = src.slice(persistIdx, persistIdx + 9000);
   const match = window.match(/const MAX_RETRIES = (\d+);/);
   assert.ok(match, 'persistAttestation body must declare a MAX_RETRIES bound');
   assert.equal(Number(match[1]), 10,

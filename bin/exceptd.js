@@ -4564,23 +4564,68 @@ function persistAttestation(args) {
         prior_evidence_hash: priorEvidenceHash,
         prior_captured_at: priorCapturedAt,
       };
-      // Atomic-create via O_EXCL ('wx' flag) eliminates the TOCTOU window
-      // between existsSync and writeFileSync. Two concurrent run-with-same-
-      // session-id invocations now produce one winner + one EEXIST loser,
-      // not silent last-write-wins.
+      // Atomic write: the body and its .sig are written to fsync'd tmp files,
+      // then placed with linkSync (create) / rename (force-overwrite) so a
+      // crash mid-write can never leave a TRUNCATED attestation.json, and the
+      // body never appears partially written. linkSync preserves the O_EXCL
+      // collision guarantee the old "wx" flag gave: it throws EEXIST when the
+      // slot is taken (one winner + one EEXIST loser on concurrent same-
+      // session-id runs), and the placed file has the full content instantly.
       //
-      // v0.12.38 (cycle 18 P1 F2): mode 0o600 + Windows ACL hardening.
-      // Pre-fix attestations were written world-readable (umask-derived
-      // 0o644). On multi-tenant shared hosts a different user could read
-      // the operator's evidence submission, jurisdiction obligations,
-      // and consent records. Mirrors the existing private-key handling
-      // in lib/sign.js (mode 0o600 + restrictWindowsAcl).
-      fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2), { flag, mode: 0o600 });
+      // v0.12.38: mode 0o600 + Windows ACL hardening — attestations carry the
+      // operator's evidence, jurisdiction obligations, and consent records and
+      // must not be world-readable on multi-tenant hosts.
+      const crypto = require("crypto");
+      const jsonStr = JSON.stringify(attestation, null, 2);
+      const sigPath = filePath + ".sig";
+      const suffix = `.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+      const jsonTmp = filePath + suffix;
+      const sigTmp = sigPath + suffix;
+      const writeFsync = (p, data) => {
+        const fd = fs.openSync(p, "w", 0o600);
+        try { fs.writeFileSync(fd, data); fs.fsyncSync(fd); }
+        finally { fs.closeSync(fd); }
+      };
+      // Sidecar is computed over the SAME normalized bytes that will land, so
+      // the sig always matches the placed body.
+      const sidecarBytes = computeSidecarBytes(normalizeAttestationBytes(jsonStr));
+      writeFsync(jsonTmp, jsonStr);
+      writeFsync(sigTmp, sidecarBytes);
+      try {
+        if (flag === "wx") {
+          // Atomic create + collision detection.
+          try {
+            fs.linkSync(jsonTmp, filePath);
+          } catch (linkErr) {
+            if (linkErr.code === "EEXIST") throw linkErr; // collision — outer handler decides
+            // Filesystems without hard-link support (EPERM/EXDEV/ENOSYS): fall
+            // back to an existsSync collision check + atomic rename. Narrow
+            // TOCTOU window, only on such filesystems.
+            if (fs.existsSync(filePath)) { const e = new Error("EEXIST"); e.code = "EEXIST"; throw e; }
+            fs.renameSync(jsonTmp, filePath);
+          }
+          // Slot won — place the sidecar (sigPath is fresh on a create).
+          fs.renameSync(sigTmp, sigPath);
+          try { fs.unlinkSync(jsonTmp); } catch { /* hard-link path leaves a second name */ }
+        } else {
+          // Force-overwrite, under the persist lock: atomic replace of both.
+          // Both tmps are fully written + fsync'd, so the new body and its
+          // matching new sidecar are placed back-to-back.
+          fs.renameSync(jsonTmp, filePath);
+          fs.renameSync(sigTmp, sigPath);
+        }
+      } catch (placeErr) {
+        // Clean up tmps on any placement failure (incl. EEXIST collision) so
+        // a failed/refused write never leaves orphan tmp files at the slot.
+        try { fs.unlinkSync(jsonTmp); } catch { /* may already be linked/renamed */ }
+        try { fs.unlinkSync(sigTmp); } catch { /* may already be renamed */ }
+        throw placeErr;
+      }
       try {
         const { restrictWindowsAcl } = require(path.join(PKG_ROOT, "lib", "sign.js"));
         restrictWindowsAcl(filePath);
+        restrictWindowsAcl(sigPath);
       } catch { /* sign.js not loadable in some test paths — best-effort */ }
-      maybeSignAttestation(filePath);
     };
 
     try {
@@ -4753,40 +4798,18 @@ function normalizeAttestationBytes(input) {
   return s.replace(/\r\n/g, "\n");
 }
 
-function maybeSignAttestation(filePath) {
+// Compute the `.sig` sidecar bytes for an attestation's (already-normalized)
+// content. Pure — does NOT write any file; the persist path writes the
+// returned string to a tmp and atomically renames it into place alongside the
+// attestation body, so the body never lands without its sidecar bytes ready.
+// Emits the one-time-per-process unsigned warning.
+function computeSidecarBytes(contentNormalized) {
   const crypto = require("crypto");
-  const sigPath = filePath + ".sig";
-  // v0.12.9 (P2 #3 from production smoke + codex P1 PR #4 review): keep the
-  // sign key aligned with the VERIFY key. `attest verify` checks signatures
-  // against PKG_ROOT/keys/public.pem; if we sign with cwd/.keys/private.pem
-  // (e.g. the maintainer's repo-local keypair) the resulting `.sig` will
-  // verify INVALID and report a false tamper signal on every freshly-written
-  // attestation. PKG_ROOT-only resolution is the right answer; the original
-  // smoke report's "doctor finds key, run does not" gap is fixed in `doctor`
-  // (reporting only PKG_ROOT now), not by making `run` follow a cwd key the
-  // verifier doesn't trust.
+  // v0.12.9: keep the sign key aligned with the VERIFY key. `attest verify`
+  // checks signatures against PKG_ROOT/keys/public.pem; signing with a
+  // cwd-local key would verify INVALID. PKG_ROOT-only resolution is correct.
   const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
-  // Normalize attestation bytes before sign — strip leading UTF-8 BOM +
-  // collapse CRLF to LF. Mirrors lib/sign.js / lib/verify.js /
-  // lib/refresh-network.js / scripts/verify-shipped-tarball.js. The
-  // attestation file lives on disk under .exceptd/ and can pick up CRLF
-  // through git-attribute / editor round-trips on Windows; without
-  // normalization the sign/verify pair diverges on the same logical content.
-  // The byte-stability contract spans five sites; tests/normalize-contract
-  // .test.js enforces byte-identical output across all of them.
-  const rawContent = fs.readFileSync(filePath, "utf8");
-  const content = normalizeAttestationBytes(rawContent);
   // One-time-per-process unsigned warning so cron jobs don't spam stderr.
-  // Operators who set `.keys/private.pem` get tamper-evident attestations;
-  // operators without the keypair get a single nudge per session telling them
-  // exactly how to enable signing.
-  //
-  // Consumer installs (`npm install -g`) land PKG_ROOT under
-  // node_modules/ where the operator typically can't write to
-  // .keys/. For those installs the multi-line nudge prescribes a
-  // remediation (doctor --fix) the operator doesn't own — surface a
-  // single-line marker so the unsigned attestation isn't silent, but
-  // skip the call-to-action that doesn't apply.
   if (!fs.existsSync(privKeyPath) && !process.env.EXCEPTD_UNSIGNED_WARNED) {
     const pkgRootSegments = PKG_ROOT.split(/[\\/]/);
     const isConsumerInstall =
@@ -4807,37 +4830,45 @@ function maybeSignAttestation(filePath) {
   try {
     if (fs.existsSync(privKeyPath)) {
       const privateKey = fs.readFileSync(privKeyPath, "utf8");
-      const sig = crypto.sign(null, Buffer.from(content, "utf8"), {
+      const sig = crypto.sign(null, Buffer.from(contentNormalized, "utf8"), {
         key: privateKey,
         dsaEncoding: "ieee-p1363",
       });
-      // The sidecar's Ed25519 signature covers ONLY the attestation file
-      // bytes. Fields that travel inside the .sig but are NOT in the signed
-      // message are replay-rewrite trivial: an attacker who can write the
-      // directory can mutate them without invalidating the signature. The
-      // sidecar therefore carries only the algorithm tag, the Ed25519
-      // signature payload, and an explanatory note — no `signed_at`,
-      // `signs_path`, or `signs_sha256`. Operators reading freshness use
-      // filesystem mtime; the attestation file's `captured_at` field is
-      // what's signed.
-      fs.writeFileSync(sigPath, JSON.stringify({
+      // The Ed25519 signature covers ONLY the attestation file bytes; no
+      // replay-rewritable metadata travels in the sidecar.
+      return JSON.stringify({
         algorithm: "Ed25519",
         signature_base64: sig.toString("base64"),
         note: "Ed25519 signature covers the attestation file bytes only. Use filesystem mtime for freshness; use the attestation's `captured_at` for the signed timestamp.",
-      }, null, 2), { mode: 0o600 });
-      // Mirror the v0.12.38 attestation.json hardening: 0o600 on POSIX +
-      // icacls inheritance strip on win32. The sidecar carries the
-      // signature payload; multi-tenant hosts shouldn't leak it.
-      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
-    } else {
-      fs.writeFileSync(sigPath, JSON.stringify({
-        algorithm: "unsigned",
-        signed: false,
-        note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `exceptd doctor --fix` to enable signing.",
-      }, null, 2), { mode: 0o600 });
-      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
+      }, null, 2);
     }
-  } catch { /* non-fatal — signing failure shouldn't block the run */ }
+    return JSON.stringify({
+      algorithm: "unsigned",
+      signed: false,
+      note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `exceptd doctor --fix` to enable signing.",
+    }, null, 2);
+  } catch {
+    // Signing failure must not block the run — fall back to an unsigned marker
+    // so the sidecar always exists alongside the body.
+    return JSON.stringify({
+      algorithm: "unsigned",
+      signed: false,
+      note: "Signing failed at write time; attestation is hash-stable but unsigned.",
+    }, null, 2);
+  }
+}
+
+// Sign an already-written file in place by computing + writing its `.sig`
+// sidecar. The main attestation-persist path writes the sidecar atomically
+// alongside the body (via computeSidecarBytes); this helper serves the
+// replay-record path, which writes a uniquely-named file and so needs no
+// atomic-collision handling. Best-effort: a sign-time failure leaves the
+// record unsigned (still a valid audit entry) rather than aborting.
+function maybeSignAttestation(filePath) {
+  const content = normalizeAttestationBytes(fs.readFileSync(filePath, "utf8"));
+  const sidecar = computeSidecarBytes(content);
+  fs.writeFileSync(filePath + ".sig", sidecar, { mode: 0o600 });
+  try { require(path.join(PKG_ROOT, "lib", "sign.js")).restrictWindowsAcl(filePath + ".sig"); } catch { /* best-effort */ }
 }
 
 /**
@@ -5793,6 +5824,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // tampered attestation.json and overwrote .sig with the unsigned stub).
     const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
     const hasPrivKey = fs.existsSync(privKeyPath);
+    // Does any sidecar in this session dir carry a real Ed25519 signature? If
+    // so, a sibling attestation with NO sidecar is suspicious (a sig was
+    // expected). Combined with hasPrivKey, this lets default `attest verify`
+    // treat a deleted sidecar as tamper — agreeing with `reattest`, which
+    // already refuses. The keyless case (no key, all-unsigned peers) stays
+    // benign so keyless CI is unaffected.
+    let anyPeerEd25519Signed = false;
+    try {
+      for (const sf of fs.readdirSync(dir)) {
+        if (!sf.endsWith(".sig")) continue;
+        try {
+          const sd = JSON.parse(fs.readFileSync(path.join(dir, sf), "utf8"));
+          if (sd && sd.algorithm === "Ed25519") { anyPeerEd25519Signed = true; break; }
+        } catch { /* skip unparseable sidecar */ }
+      }
+    } catch { /* dir unreadable — fall through */ }
 
     // Sidecar-verify helper shared by both the attestations[] and
     // replay-records[] partitions. Centralising the per-file verify
@@ -5800,7 +5847,16 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // instead of two parallel branches.
     const verifySidecar = (f) => {
       const sigPath = path.join(dir, f + ".sig");
-      if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
+      if (!fs.existsSync(sigPath)) {
+        // A missing sidecar is benign ONLY when none was ever expected (the
+        // attestation was written on a keyless host and no peer is signed).
+        // When a sig SHOULD exist, an absent one is a deletion-to-evade-tamper
+        // signal — flag it so default verify matches reattest's refusal.
+        if (hasPrivKey || anyPeerEd25519Signed) {
+          return { file: f, signed: false, verified: false, reason: "no .sig sidecar, but one was expected (signing key present or a signed peer attestation exists) — sidecar deletion suspected", tamper_class: "sidecar-missing" };
+        }
+        return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
+      }
       let sigDoc;
       try { sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8")); }
       catch (e) {
@@ -5876,7 +5932,8 @@ function cmdAttest(runner, args, runOpts, pretty) {
       (r.signed && !r.verified)
       || r.tamper_class === "sidecar-corrupt"
       || r.tamper_class === "unsigned-substitution"
-      || r.tamper_class === "algorithm-unsupported";
+      || r.tamper_class === "algorithm-unsupported"
+      || r.tamper_class === "sidecar-missing";
     const attTampered = attResults.some(tamperPredicate);
     const replayTampered = replayResults.some(tamperPredicate);
 
