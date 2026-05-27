@@ -1715,6 +1715,19 @@ function dispatchPlaybook(cmd, argv) {
         return emitError(`Playbook not found: "${wanted}". ${hint}`, { verb: cmd, wanted, type: "playbook_not_found" }, pretty);
       }
     }
+    // Distinguish an operator-input validation error from a genuine internal
+    // fault. A validation message ("--scope must be one of […]", "must match
+    // …") is the operator's to fix — emit it plainly instead of labeling it an
+    // "internal error" and inviting a bug report. The NPE/typeerror guards keep
+    // real internal faults (that happen to contain "invalid") on the bug path.
+    const msg = e && e.message ? String(e.message) : String(e);
+    if (
+      /\b(must be|must match|not in accepted set|is not a valid|unrecognized)\b|\binvalid /i.test(msg) &&
+      msg.length < 300 &&
+      !/cannot read prop|is not a function|is not defined|undefined \(reading|maximum call stack/i.test(msg)
+    ) {
+      return emitError(`${cmd}: ${msg}`, { verb: cmd, type: "validation_error" }, pretty);
+    }
     // Wrap bare e.message so operators see the verb that triggered the
     // failure + the next action they can take. Re-running with --pretty
     // expands the cause for log-scraping; the GitHub-issues pointer lets
@@ -2974,9 +2987,26 @@ function validateScopeOrThrow(scope) {
 function refuseInvalidPlaybookId(verb, playbookId, pretty) {
   const r = validateIdComponent(playbookId, "playbook");
   if (!r.ok) {
+    // A case-only typo (`run SECRETS`) fails the lowercase-only id regex
+    // before the fuzzy "did you mean" path ever runs. If lowercasing yields a
+    // real playbook, suggest it — the most common id typo shouldn't get the
+    // least helpful error.
+    let suggestion = null;
+    if (typeof playbookId === "string") {
+      const lowered = playbookId.toLowerCase();
+      if (lowered !== playbookId && validateIdComponent(lowered, "playbook").ok) {
+        try {
+          if (fs.existsSync(path.join(PKG_ROOT, "data", "playbooks", `${lowered}.json`))) suggestion = lowered;
+        } catch { /* fall back to no suggestion */ }
+      }
+    }
     emitError(
-      `${verb}: invalid <playbook> id — ${r.reason}.`,
-      { verb, provided: typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId },
+      `${verb}: invalid <playbook> id — ${r.reason}.${suggestion ? ` Did you mean: ${suggestion}?` : ""}`,
+      {
+        verb,
+        provided: typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId,
+        ...(suggestion ? { did_you_mean: [suggestion] } : {}),
+      },
       pretty
     );
     return true;
@@ -7664,6 +7694,13 @@ function cmdAsk(runner, args, runOpts, pretty) {
   if (!question) {
     return emitError("ask: usage: exceptd ask \"<plain-English question>\"", null, pretty);
   }
+  // ask routes to playbooks, but a question naming a specific CVE / RFC ("is
+  // CVE-… real", "what is RFC 9404") is answered directly by the resolver
+  // verbs — point at them on stderr so the operator gets the right tool.
+  const cveTok = question.match(/\bCVE-\d{4}-\d{3,}\b/i);
+  const rfcTok = question.match(/\bRFC[-\s]?(\d{1,6})\b/i);
+  if (cveTok) process.stderr.write(`[exceptd] tip: to validate that identifier directly, run \`exceptd cve ${cveTok[0].toUpperCase()}\`.\n`);
+  if (rfcTok) process.stderr.write(`[exceptd] tip: to resolve that RFC directly, run \`exceptd rfc ${rfcTok[1]}\`.\n`);
   const ids = runner.listPlaybooks();
   const q = question.toLowerCase();
 
