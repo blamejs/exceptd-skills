@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-26T23:43:42.161Z",
+  "generated_at": "2026-05-27T00:21:07.706Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "3388678960393068730d472d6ecf7c761caaca1de75fffc3019bf15ff157bd88",
+    "manifest.json": "c9b4af4a90b3da6eadec358254afe012cfd6c9a4df9944a8f15e92c52afcfd4d",
     "data/atlas-ttps.json": "8dca8b3a370632548b3d7f465686ac6b47a26920bf6f618db401e349af2a33e2",
     "data/attack-techniques.json": "5bdfa22b5a9b4880e5340e70546cd6812750fcaf19697342b0a2bc8658fb2356",
     "data/cve-catalog.json": "5b37ab9f4863738df042a6a71126d99cd403ffdf0c18b2a0ae3de8c08f98dffa",
@@ -15,7 +15,7 @@
     "data/framework-control-gaps.json": "4a0987b9646258d0fcd8df28d82f0bacd8dfb49e19faeca7a5ccd4e151c01bc1",
     "data/global-frameworks.json": "9ba563a85f7f8d6c3c957de64945e20925a89d0ed6ea6fc561cf093811acf558",
     "data/rfc-references.json": "66ef2e1f444a2cf0c2700a754f0a66030bb8a91d9e68394b9537ea1fe8b904fe",
-    "data/zeroday-lessons.json": "0118bf69f5cab53065ade77389c13e5b20211fa20185d0786322789c9dafd7dc",
+    "data/zeroday-lessons.json": "b660d756c816913cfd24211b41d8b67b70881283b028d1b44b6903a6cda8b796",
     "skills/kernel-lpe-triage/skill.md": "08b3e9815ba481c57c80f5fc0ccbf5bb7cbb41f570c235ba6ff9596b8c07354d",
     "skills/ai-attack-surface/skill.md": "c4c1eb22a38ca7a959b5725222bab8fbd4f4044a548a93f3e288e6f698334b72",
     "skills/mcp-agent-trust/skill.md": "89ac89084391d2341b6513fefb1be2d36b93de1c130f057696219c1c59440f13",

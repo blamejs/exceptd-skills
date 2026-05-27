@@ -152,8 +152,9 @@ test('FEEDS: exactly 15 feeds as of v0.13.17 — advisories + vendor security bl
   // embrace-the-red) to close the DirtyDecrypt-class intake gap where a
   // silent kernel patch + delayed-research-disclosure on a vendor blog
   // fell through the advisory-only feed set. v0.13.17 added 3 more
-  // (bleepingcomputer-security, thehackernews, nightmare-eclipse-github)
-  // to close the researcher-GitHub-drop class anchored by MiniPlasma /
+  // (bleepingcomputer-security, thehackernews, nightmare-eclipse — a GitLab
+  // public-activity feed, migrated from GitHub after the account was removed)
+  // to close the researcher-drop class anchored by MiniPlasma /
   // YellowKey / GreenPlasma / UnDefend.
   assert.equal(FEEDS.length, 15);
   const names = FEEDS.map((f) => f.name).sort();
@@ -164,7 +165,7 @@ test('FEEDS: exactly 15 feeds as of v0.13.17 — advisories + vendor security bl
     'jfrog',
     'kernel-org',
     'microsoft-security-blog',
-    'nightmare-eclipse-github',
+    'nightmare-eclipse-gitlab',
     'oss-security',
     'qualys',
     'rhsa',
@@ -180,7 +181,7 @@ test('FEEDS: every feed declares a URL + kind + description', () => {
   for (const f of FEEDS) {
     assert.equal(typeof f.url, 'string');
     assert.match(f.url, /^https:\/\//);
-    assert.ok(['rss', 'csaf-index', 'github-events'].includes(f.kind), `feed ${f.name}: kind must be rss, csaf-index, or github-events`);
+    assert.ok(['rss', 'csaf-index', 'github-events', 'gitlab-activity'].includes(f.kind), `feed ${f.name}: kind must be rss, csaf-index, github-events, or gitlab-activity`);
     assert.equal(typeof f.description, 'string');
     assert.ok(f.description.length > 0);
   }
@@ -215,14 +216,14 @@ test('fetchDiff: in fixture mode, surfaces CVE IDs not in catalog', async () => 
       'trail-of-bits-blog': '<rss><channel></channel></rss>',
       'embrace-the-red': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
       // v0.13.17: 3 more — bleepingcomputer-security + thehackernews
-      // (tech-press RSS) and nightmare-eclipse-github (github-events JSON).
+      // (tech-press RSS) and nightmare-eclipse-gitlab (GitLab activity Atom).
       // Empty fixtures keep this dedup-anchor test isolated from the
       // new feeds; tests/intake-nightmare-eclipse-coverage.test.js +
       // tests/intake-handle-tracker.test.js exercise the v0.13.17
       // intake-path end-to-end against the live fixture file.
       'bleepingcomputer-security': '<rss><channel></channel></rss>',
       'thehackernews': '<rss><channel></channel></rss>',
-      'nightmare-eclipse-github': '[]',
+      'nightmare-eclipse-gitlab': '<feed xmlns="http://www.w3.org/2005/Atom"></feed>',
     },
   };
   const ctx = {

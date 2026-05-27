@@ -354,6 +354,19 @@ function printHelp() {
 Usage: exceptd <command> [args]
        npx @blamejs/exceptd-skills <command> [args]
 
+Quick start
+───────────
+
+  New here? These three cover most workflows:
+
+    exceptd discover            Scan this directory; list the playbooks that apply.
+    exceptd brief <playbook>    What a playbook checks — threat context + indicators.
+    exceptd run <playbook>      Investigate it (add --ci for a pass/fail exit gate).
+
+  Not sure which playbook fits? Describe the problem in plain language:
+
+    exceptd ask "someone may have tampered with our npm packages"
+
 Canonical verbs
 ───────────────
 
@@ -448,18 +461,25 @@ Canonical verbs
                              Sources: kev|epss|nvd|rfc|pins|ghsa (v0.12.0).
                                                     ghsa drafts pass validator as warnings.
 
-v0.10.x compatibility (will be removed in v0.13)
-────────────────────────────────────────────────
+Removed verbs (refused — these now error with a pointer to the replacement)
+───────────────────────────────────────────────────────────────────────────
 
-These verbs still work but emit a one-time deprecation banner. The
-[DEPRECATED] prefix is included so \`exceptd help | grep '^  [a-z]'\`
-doesn't surface them in the active-verbs list. Migrate to v0.11:
+Already gone. Invoking one prints a refusal naming its replacement. Listed
+here so old scripts know where each moved:
 
-  [DEPRECATED] plan              → brief --all
-  [DEPRECATED] govern <pb>       → brief <pb> --phase govern
-  [DEPRECATED] direct <pb>       → brief <pb> --phase direct
-  [DEPRECATED] look <pb>         → brief <pb> --phase look
-  [DEPRECATED] ingest            → run
+  [REMOVED] plan              → brief --all
+  [REMOVED] govern <pb>       → brief <pb> --phase govern
+  [REMOVED] direct <pb>       → brief <pb> --phase direct
+  [REMOVED] look <pb>         → brief <pb> --phase look
+  [REMOVED] ingest            → run
+
+Deprecated aliases (still work — prefer the canonical verb)
+───────────────────────────────────────────────────────────
+
+These still run but emit a one-time deprecation banner. The [DEPRECATED]
+prefix keeps them out of the active-verbs list that
+\`exceptd help | grep '^  [a-z]'\` surfaces. Each maps to a canonical verb:
+
   [DEPRECATED] reattest <sid>    → attest diff <sid>
   [DEPRECATED] list-attestations → attest list
   [DEPRECATED] scan              → discover --scan-only
