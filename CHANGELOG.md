@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.6 — 2026-05-27
+
+`attest verify --require-signed` makes an unsigned or sidecar-stripped attestation a failure (exit 1) instead of accepting it as "unsigned, exit 0". An audit gate can now require a valid Ed25519 signature, closing the path where deleting the `.sig` downgraded a tampered attestation to a passing verify. Default `attest verify` stays lenient — an unsigned attestation is reported but not failed (the common keyless-CI case).
+
+New `attest prune --all-older-than <ISO> [--dry-run]` garbage-collects attestation sessions older than a cutoff. One attestation is written per `run` with no prior cleanup, so the store grew unboundedly; `--dry-run` previews the deletions, and removal is confined to the resolved attestation roots.
+
 ## 0.14.5 — 2026-05-27
 
 `reattest` no longer reports a false "drifted" on an unchanged session. It now replays the original recorded submission instead of a hardcoded empty one, so unchanged evidence reproduces its prior hash and only a genuine change in the evidence (or the way it canonicalizes) shows as drift. The `attest diff` path was already correct; this fixes the replay-based `reattest`/`attest diff <sid>` verb, which previously emitted "drifted" — and wrote that bogus verdict into the audit trail — on every unchanged session.

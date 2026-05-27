@@ -421,7 +421,10 @@ Canonical verbs
                              attest list          inventory all sessions
                              attest export        redacted bundle (--format csaf)
                              attest verify        Ed25519 signature check
+                                                  (--require-signed: unsigned → exit 1)
                              attest diff          drift vs prior or --against <other-sid>
+                             attest prune         GC: delete sessions older than
+                                                  --all-older-than <ISO> (--dry-run to preview)
 
   discover                   Scan cwd → recommend playbooks. Replaces scan + dispatch.
 
@@ -4933,6 +4936,92 @@ function verifyAttestationSidecar(attFile) {
   }
 }
 
+/**
+ * `attest prune --all-older-than <ISO>` — GC for attestation growth.
+ *
+ * One attestation is written per `run`, with no cleanup, so the store grows
+ * monotonically (tests alone pile up thousands). This removes whole session
+ * directories whose attestation `captured_at` predates the cutoff. `--dry-run`
+ * previews without deleting. Deletion is confined to direct child dirs of the
+ * resolved attestation roots — never traverses outside them.
+ */
+function cmdPruneAttestations(runner, args, runOpts, pretty) {
+  const cutoffRaw = args["all-older-than"];
+  if (!cutoffRaw) {
+    return emitError(
+      "attest prune: --all-older-than <ISO-8601 date> is required (e.g. attest prune --all-older-than 2026-01-01). Add --dry-run to preview.",
+      { verb: "attest prune" },
+      pretty,
+    );
+  }
+  const isoErr = validateIsoSince(cutoffRaw);
+  if (isoErr) return emitError(`attest prune: ${isoErr}`, { verb: "attest prune" }, pretty);
+  const cutoffMs = Date.parse(cutoffRaw);
+  const dryRun = !!args["dry-run"];
+
+  const roots = [...new Set([resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")])];
+  const pruned = [];
+  let kept = 0;
+  let scanned = 0;
+  for (const root of roots) {
+    let sessions;
+    try { sessions = fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); }
+    catch { continue; }
+    for (const sid of sessions) {
+      const sdir = path.join(root, sid);
+      scanned++;
+      // Determine the session's captured_at from its newest non-replay
+      // attestation. A session with no parseable captured_at is left alone
+      // (never delete something we can't date).
+      let captured = null;
+      try {
+        for (const f of fs.readdirSync(sdir)) {
+          if (!f.endsWith(".json") || f.endsWith(".sig")) continue;
+          let j; try { j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8")); } catch { continue; }
+          if (!j || j.kind === "replay") continue;
+          if (typeof j.captured_at === "string" && (!captured || j.captured_at > captured)) captured = j.captured_at;
+        }
+      } catch { continue; }
+      const ts = captured ? Date.parse(captured) : NaN;
+      if (!Number.isFinite(ts)) { kept++; continue; }
+      if (ts < cutoffMs) {
+        pruned.push({ session_id: sid, captured_at: captured, dir: sdir });
+        if (!dryRun) {
+          // Confinement: resolve and confirm sdir is a direct child of root
+          // before removing, so a crafted session name can't escape the root.
+          try {
+            const realRoot = fs.realpathSync(root);
+            const realDir = fs.realpathSync(sdir);
+            if (path.dirname(realDir) === realRoot) fs.rmSync(realDir, { recursive: true, force: true });
+          } catch { /* skip undeletable */ }
+        }
+      } else {
+        kept++;
+      }
+    }
+  }
+
+  emit({
+    ok: true,
+    verb: "attest prune",
+    dry_run: dryRun,
+    cutoff: cutoffRaw,
+    scanned,
+    pruned_count: pruned.length,
+    kept,
+    pruned: pruned.map(p => ({ session_id: p.session_id, captured_at: p.captured_at })),
+    roots_searched: roots,
+  }, pretty, (obj) => {
+    const lines = [];
+    lines.push(`attest prune${obj.dry_run ? " (DRY-RUN)" : ""}: cutoff ${obj.cutoff}`);
+    lines.push(`  scanned ${obj.scanned} session(s)  |  ${obj.dry_run ? "would prune" : "pruned"} ${obj.pruned_count}  |  kept ${obj.kept}`);
+    for (const p of obj.pruned.slice(0, 20)) lines.push(`  ${obj.dry_run ? "[would-delete]" : "[deleted]"} ${p.session_id}  (${(p.captured_at || "").slice(0, 19)})`);
+    if (obj.pruned_count > 20) lines.push(`  … ${obj.pruned_count - 20} more`);
+    if (obj.dry_run && obj.pruned_count > 0) lines.push(`  → re-run without --dry-run to delete.`);
+    return lines.join("\n");
+  });
+}
+
 function cmdReattest(runner, args, runOpts, pretty) {
   const crypto = require("crypto");
   // Validate --since as ISO-8601, mirroring `attest list --since`. An
@@ -5324,14 +5413,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
   const subverb = args._[0];
   const sessionId = args._[1];
   if (!subverb) {
-    return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> | diff <sid>", null, pretty);
+    return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> [--require-signed] | diff <sid> | prune --all-older-than <ISO> [--dry-run]", null, pretty);
   }
   // Validate subverb membership BEFORE the session-id branch so a typo
   // (`attest verfy sid`) gets the did-you-mean response, not the
   // misleading "no session dir for sid" downstream. Pre-fix the
   // session-id resolution ran first and a valid-but-unrecognized
   // subverb collapsed into a session-lookup failure.
-  const ATTEST_SUBVERBS = ["list", "show", "export", "verify", "diff"];
+  const ATTEST_SUBVERBS = ["list", "show", "export", "verify", "diff", "prune"];
   if (!ATTEST_SUBVERBS.includes(subverb)) {
     const dym = suggestVerb(subverb, ATTEST_SUBVERBS);
     const hint = dym.length > 0
@@ -5346,6 +5435,10 @@ function cmdAttest(runner, args, runOpts, pretty) {
   // `list` doesn't require a session-id positional.
   if (subverb === "list") {
     return cmdListAttestations(runner, args, runOpts, pretty);
+  }
+  // `prune` is the GC for attestation growth — also no session-id positional.
+  if (subverb === "prune") {
+    return cmdPruneAttestations(runner, args, runOpts, pretty);
   }
   if (!sessionId) {
     return emitError(
@@ -5668,6 +5761,17 @@ function cmdAttest(runner, args, runOpts, pretty) {
       body.replay_tamper = true;
       body.warnings = ["one or more replay records failed Ed25519 verification — audit-trail corruption suspected, regenerate via reattest"];
     }
+    // --require-signed: in an audit context an UNSIGNED or sidecar-stripped
+    // attestation is not acceptable, even though it isn't tamper per se.
+    // Without this, `attest verify` returns exit 0 for an unsigned attestation
+    // — so an attacker who tampers the body AND deletes the .sig evades the
+    // exit-6 tamper signal. Strict mode makes "not Ed25519-verified" a failure
+    // (exit 1 via the ok:false contract, distinct from tamper's exit 6).
+    if (!attTampered && args["require-signed"] && !attResults.every(r => r.verified)) {
+      body.ok = false;
+      body.require_signed = true;
+      body.error = "attest verify --require-signed: one or more attestations are not Ed25519-verified (unsigned or missing .sig sidecar) — refusing under strict mode";
+    }
     // Human renderer for `attest verify` — one-line answer to "did
     // anyone tamper with my evidence since I ran it?" so the operator
     // doesn't have to parse the JSON envelope.
@@ -5688,7 +5792,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
       // failures (tamper_class present) so the next-step block still fires.
       const noTamper = att.every(r => !r.tamper_class) && rep.every(r => !r.tamper_class);
       const allVerified = att.every(r => r.verified) && rep.every(r => r.verified);
-      const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : (allVerified ? "[ok]" : "[i  UNSIGNED]"));
+      const icon = obj.ok === false ? (obj.require_signed ? "[!! UNSIGNED-REJECTED]" : "[!! TAMPERED]") : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : (allVerified ? "[ok]" : "[i  UNSIGNED]"));
       lines.push(`\n${icon}  ${att.filter(r => r.verified).length}/${att.length} attestation(s) verified, ${rep.filter(r => r.verified).length}/${rep.length} replay record(s) verified`);
       // Status icon precedence: verified → [ok]. tamper_class set →
       // [!! <CLASS>] (real tamper signal). signed=false AND no

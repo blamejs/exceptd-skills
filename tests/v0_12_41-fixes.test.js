@@ -112,7 +112,7 @@ test('F4: attest unknown subverb returns did_you_mean[] in JSON body', () => {
   assert.ok(Array.isArray(body.accepted_subverbs), 'accepted_subverbs[] must be present');
   // Pin the canonical subverb set so a future addition/removal updates
   // the test consciously.
-  assert.deepEqual(body.accepted_subverbs.slice().sort(), ['diff', 'export', 'list', 'show', 'verify']);
+  assert.deepEqual(body.accepted_subverbs.slice().sort(), ['diff', 'export', 'list', 'prune', 'show', 'verify']);
 });
 
 // ---------- F6 — cmdAsk honors --pretty ----------
