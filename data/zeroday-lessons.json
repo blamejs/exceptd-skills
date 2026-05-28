@@ -17746,5 +17746,216 @@
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-30066": {
+    "name": "tj-actions/changed-files GitHub Action Supply-Chain Compromise",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "A stolen Personal Access Token repointed the action's mutable release tags (v1..v45.0.7) to a malicious commit (0e58ed8) that dumped CI/CD secrets into publicly readable GitHub Actions workflow logs. ~23,000 repositories referenced the action; any consumer pinning by tag rather than commit SHA pulled the trojaned code on its next run.",
+      "privileges_required": "none — automatic for any workflow that ran the tag-pinned action during the window",
+      "complexity": "low to use once tags were repointed; the access required a leaked maintainer PAT",
+      "ai_factor": "No AI involvement documented in discovery or weaponization. Static base64 Python memory-dump payload."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Pinning every GitHub Action to a full-length 40-character commit SHA rather than a mutable tag. A SHA reference cannot be silently repointed.",
+        "was_this_required": false,
+        "framework_requiring_it": "OWASP CICD-SEC-3 (recommended, not mandated as default)",
+        "adequacy": "SHA pinning fully prevents tag-repointing, but the documented usage pattern for the action was tag pinning, so the safe configuration was opt-in."
+      },
+      "detection": {
+        "what_would_have_worked": "Egress/behavior monitoring on CI runners (e.g. Harden-Runner) that flags unexpected network calls or secret-shaped output from a build step — the mechanism by which the compromise was first observed.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective but rarely deployed; most pipelines have no runner egress baseline."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate every secret exposed to affected workflows during 2025-03-14/15 and repin to a known-good SHA. GitHub purged the malicious commit and the action was restored at v46.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 / SR-11",
+        "adequacy": "Rotation is mandatory but only as good as the org's ability to enumerate which secrets each workflow could read."
+      }
+    },
+    "framework_coverage": {
+      "SLSA-v1.0-Build-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Build provenance does not bind a consumer's tag reference to a specific source revision; a repointed mutable tag substitutes the build inputs silently."
+      },
+      "NIST-800-218-SSDF-PW.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component-reuse controls assume the upstream artifact is immutable; an action tag is mutable with no publisher-side tamper control."
+      },
+      "NIST-800-53-SR-11": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component-authenticity verification assumes signed/versioned artifacts; unsigned action tags carry no integrity guarantee."
+      },
+      "OWASP-CICD-SEC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Dependency-chain abuse: SHA pinning is the control but tag pinning is the documented default usage."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-111",
+        "name": "ACTION-COMMIT-SHA-PINNING-ENFORCEMENT",
+        "description": "Every third-party CI/CD action (GitHub Actions, GitLab CI includes, etc.) must be referenced by a full-length commit SHA, never a mutable tag or branch. Enforce via policy check in the pipeline linter; a tag/branch reference to a third-party action is a hard fail.",
+        "evidence": "CVE-2025-30066 — tags v1..v45.0.7 were repointed to malicious commit 0e58ed8; only SHA-pinned consumers were unaffected.",
+        "gap_closes": [
+          "SLSA-v1.0-Build-L3",
+          "OWASP-CICD-SEC-3",
+          "NIST-800-53-SR-11"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 85,
+      "basis": "Most pipelines pin actions by tag per the documented usage pattern, and few audit frameworks mandate SHA pinning as a hard control. Secrets leaked to public logs before any audit could react.",
+      "theater_pattern": "supply_chain_first_party_only"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2025-03-14",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-30154": {
+    "name": "reviewdog/action-setup GitHub Action Supply-Chain Compromise",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "reviewdog/action-setup@v1 was trojaned on 2025-03-11 to dump exposed secrets to GitHub Actions workflow logs. Because five other reviewdog actions invoke action-setup@v1 internally, consumers were affected transitively even when they SHA-pinned the outer reviewdog action. Assessed as the pivot that leaked the PAT later used in the tj-actions compromise (CVE-2025-30066).",
+      "privileges_required": "none — automatic via transitive action inclusion during the window",
+      "complexity": "low to use; defeated consumer-side SHA pinning of the outer action",
+      "ai_factor": "No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Transitive SHA pinning — verifying that an action's OWN internal dependencies are SHA-pinned, not just the action a consumer references directly. Preferring actions that pin their dependencies by SHA.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Consumer-side SHA pinning is insufficient when the pinned action references a mutable tag internally; the control must extend one tier deeper."
+      },
+      "detection": {
+        "what_would_have_worked": "CI runner egress/behavior monitoring flagging secret-shaped output from a reviewdog step.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective but rarely deployed."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate secrets exposed during 2025-03-11 18:42-20:31 UTC; repin all reviewdog actions to known-good SHAs predating the compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 / SR-11",
+        "adequacy": "Mandatory; complicated by the transitive inclusion masking which workflows were actually affected."
+      }
+    },
+    "framework_coverage": {
+      "SLSA-v1.0-Build-L3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Provenance does not cover transitively-included actions; SHA-pinning the outer action still pulled a tag-referenced malicious inner action."
+      },
+      "NIST-800-53-SR-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Supply-chain inventory captures direct dependencies; a second-tier action (action-setup pulled by action-shellcheck) escapes that inventory."
+      },
+      "OWASP-CICD-SEC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Transitive dependency-chain abuse — consumer SHA pinning is necessary but insufficient."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-112",
+        "name": "TRANSITIVE-ACTION-DEPENDENCY-INTEGRITY",
+        "description": "CI/CD action vetting must extend to the actions a referenced action invokes internally. Prefer actions that SHA-pin their own dependencies; where a dependency is tag-referenced, treat the whole chain as unpinned regardless of how the outer action is pinned.",
+        "evidence": "CVE-2025-30154 — action-setup@v1 (tag) was trojaned and reached consumers who SHA-pinned action-shellcheck/staticcheck/ast-grep/typos/composite-template.",
+        "gap_closes": [
+          "SLSA-v1.0-Build-L3",
+          "NIST-800-53-SR-3",
+          "OWASP-CICD-SEC-3"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Even organizations that adopted SHA pinning (the recommended control) were exposed because the malicious code was a transitive tag-referenced dependency of an action they had pinned correctly.",
+      "theater_pattern": "supply_chain_first_party_only"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2025-03-11",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2026-48027": {
+    "name": "Nx Console IDE Extension Supply-Chain Compromise",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "A malicious Nx Console 18.95.0 was published to the Visual Studio Marketplace (~18 min) and OpenVSX (~36 min) on 2026-05-19. On install/activation it fetched an obfuscated payload that harvested developer credentials from multiple sources on the endpoint. The compromise sits upstream of the CI pipeline — on the developer's machine, where the same secrets a pipeline protects are stored.",
+      "privileges_required": "none beyond install/auto-update of the extension during the window; payload ran with the developer's local privileges",
+      "complexity": "low to use; required publishing under the legitimate publisher identity",
+      "ai_factor": "AI-CLI abuse is not asserted for this specific extension compromise. The Nx ecosystem's earlier August 2025 's1ngularity' npm compromise weaponized installed AI CLI assistants for secret enumeration — a distinct incident noted only as context."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Consumer-verifiable publisher signatures on IDE marketplace extensions, plus disabling auto-update on security-critical developer hosts and verifying publisher/version before updating.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "VS Code/OpenVSX extensions carry no consumer-verifiable publisher signature; version-and-publisher review is manual and rarely performed."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint monitoring flagging an IDE extension host process reading credential stores (Git config, ~/.npmrc, SSH keys, cloud credentials, wallet files) or fetching a second-stage payload after update.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Developer endpoints are seldom instrumented for IDE-extension behavior."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade to clean Nx Console 18.100.0; if 18.95.0 was installed on 2026-05-19, treat the host as compromised and rotate all developer credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exposure window was short but the credential blast radius per host is large."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SR-11": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component-authenticity verification does not extend to IDE marketplace extensions, which carry no consumer-verifiable publisher signature."
+      },
+      "NIST-800-218-SSDF-PW.4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Trusted-component reuse assumes the marketplace artifact matches reviewed source; a malicious version under the legitimate publisher identity defeats that."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Technical-vulnerability management for developer endpoints rarely inventories IDE extensions or their auto-update behavior as a managed surface."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-113",
+        "name": "IDE-EXTENSION-MARKETPLACE-INTEGRITY",
+        "description": "Treat IDE extensions as a managed software supply-chain surface: inventory installed extensions, pin/approve versions for security-critical hosts, disable silent auto-update where feasible, and monitor extension-host processes for credential-store access and unexpected egress.",
+        "evidence": "CVE-2026-48027 — a malicious Nx Console 18.95.0 was live in two marketplaces for minutes and harvested developer credentials on install/update.",
+        "gap_closes": [
+          "NIST-800-53-SR-11",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 92,
+      "basis": "Almost no organization manages developer IDE extensions as a vetted software surface; marketplace publication under a legitimate identity bypasses endpoint controls and auto-update delivers the malicious version before review.",
+      "theater_pattern": "endpoint_dev_tooling_unmanaged"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-05-19",
+    "ai_assist_factor": "none"
   }
 }
