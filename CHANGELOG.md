@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.15 — 2026-05-27
+
+Emitted CSAF 2.0 and SARIF 2.1.0 documents now pass strict schema/profile validation:
+- Every CSAF vulnerability carries `notes` (CVE-keyed entries previously omitted it, failing the security-advisory profile's mandatory test).
+- A clean run's `csaf_informational_advisory` no longer carries a `/vulnerabilities` array or a `/product_tree` (both are wrong for the informational profile) and now includes the required external `/document/references` entry.
+- `tracking.version` equals the last `revision_history` number and uses the same versioning scheme as it (previously the version was the playbook semver while the revision number was the integer `1` — two violations: a version/revision mismatch and mixed versioning schemes).
+- SARIF results with `kind: "informational"` (framework-gap findings) now use `level: "none"` instead of `"note"`; the SARIF spec requires `level: "none"` whenever `kind` is not `"fail"`, so strict validators and GitHub code scanning previously rejected those results.
+- SARIF `artifactLocation.uri` values from a submission-supplied evidence location are normalized to forward slashes. A Windows operator passing a native backslash path previously produced URIs that violate the SARIF URI-reference requirement (the collector-derived locations were already normalized; submission-threaded ones were not).
+
 ## 0.14.14 — 2026-05-27
 
 Attestation durability and verification:
