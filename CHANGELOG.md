@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.17 — 2026-05-27
+
+New `recipes` verb. `exceptd recipes` lists the curated multi-skill workflows (use-case → ordered skill chain); `exceptd recipes <id>` expands one. These were previously reachable only by reading the catalog file.
+
+`ask` now points at the right skill for domains covered by a skill rather than a playbook. A question about email authentication (DMARC/DKIM/SPF/BIMI), child safety / age gates, HIPAA / healthcare, or data-loss prevention surfaces the matching skill (`email-security-anti-phishing`, `age-gates-child-safety`, `sector-healthcare`, `dlp-gap-analysis`) instead of only a confident-looking but wrong playbook. A genuinely low-confidence match also notes that the topic may be skill-only.
+
 ## 0.14.16 — 2026-05-27
 
 `collect` is dramatically faster on large repositories. The directory-walking collectors (`secrets`, `crypto-codebase`, `containers`, `citation-hygiene`) called `realpathSync` on every file for symlink-cycle detection and stat'd each file before reading it; the walk is now a single shared implementation that resolves real paths only for directories and symlinks and reads files without a pre-stat. On a 5000-file repository `collect secrets` drops from ~1.1s to ~0.18s (and `collect containers` from ~0.7s to ~0.02s), with identical results.

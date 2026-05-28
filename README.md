@@ -359,6 +359,13 @@ exceptd ask "<question>"              Plain-English routing to playbook(s).
                                       Returns ranked playbook IDs based on
                                       keyword overlap with each playbook's
                                       domain.name + attack_class + threat_context.
+                                      A question in a domain covered by a skill
+                                      rather than a playbook (email-auth, child
+                                      safety, HIPAA, DLP) surfaces the skill.
+
+exceptd recipes [<id>]                List the curated multi-skill workflows;
+                                      `recipes <id>` expands one into its
+                                      ordered skill chain.
 
 exceptd lint <pb> <evidence>          Pre-flight check submission shape vs
                                       playbook (preconditions / artifacts /
