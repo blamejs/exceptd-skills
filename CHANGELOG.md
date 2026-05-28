@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.26 — 2026-05-28
+
+`citation-hygiene` `rfc-number-title-mismatch` now fires only on an explicitly quoted title that conflicts with the registry title (`RFC 9404 "Sieve Email Filtering Language"` when 9404 is the JMAP Blob extension). The previous whole-line token-overlap heuristic flagged the ordinary ways developers cite RFCs — a mechanism description (`CRLF line endings per RFC 5322 §2.3`), a section pointer, a well-known short name (`RFC 9051 (IMAP4rev2)`), and even an RFC-number-shaped token inside code (`envelope.rfc822` → "RFC 822") — because that surrounding prose or code never shares vocabulary with the formal registry title. Those forms state no title and are no longer flagged; a genuinely conflicting quoted title still fires. The deterministic catalog-backed checks (`fabricated-cve-id`, `rejected-or-disputed-cve`, RFC-not-in-index) are unchanged.
+
 ## 0.14.25 — 2026-05-28
 
 `secrets` collector `ssh-private-key-block` accuracy:
