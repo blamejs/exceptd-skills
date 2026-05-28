@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.25 — 2026-05-28
+
+`secrets` collector `ssh-private-key-block` accuracy:
+- The in-source content scan now requires a complete PEM block — header, base64 body, and closing marker — so a bare `BEGIN … PRIVATE KEY` header used as a detection pattern (a redaction or DLP library's regex literal) or a documentation placeholder no longer registers as an embedded key.
+- File classification is now content-aware for the ambiguous `.pem` / `.key` extensions. A certificate chain (`fullchain.pem`) or a public trust anchor (`bimi-trust-anchors.pem`) is conventionally `.pem` but carries no private key; it is treated as a private-key file only when its content actually contains a `PRIVATE KEY` block. Binary keystores (`.p12` / `.pfx`) and conventionally-named SSH keys (`id_rsa`, …) remain classified by name. A `.pem` or `.key` holding a real private key still fires.
+
 ## 0.14.24 — 2026-05-28
 
 `crypto-codebase` `hardcoded-key-material` now requires a complete PEM block — a `BEGIN … PRIVATE KEY` header, a base64 body, and a closing `END` marker — before it fires. A bare `BEGIN … PRIVATE KEY` marker carrying no key body is a *detection pattern*, not a leak: a redaction or DLP library's regex literal that matches the key header (to redact keys), or a documentation placeholder such as `privateKeyPem: "<elided>"`, no longer registers as embedded key material. An actual pasted private key still fires.
