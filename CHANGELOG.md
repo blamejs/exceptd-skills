@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.23 — 2026-05-27
+
+`crypto-codebase` collector accuracy:
+- `hardcoded-key-material` now fires on private-key blocks only. A public key or certificate embedded in source (a pinned release-signing public key, a BIMI trust anchor, an autoupdate verification key) is published by design and is no longer flagged as leaked key material — it was inflating crypto risk on repositories handling keys correctly.
+- `vendored-pqc-no-provenance` now recognizes `MANIFEST.json` (the common vendor-tree provenance record holding upstream version, source, and license) as provenance, alongside the existing markers. A vendored post-quantum tree documented this way no longer reports as provenance-less.
+
+`containers` collector now resolves `ARG`-interpolated base references. A digest pinned through an ARG default (`ARG BASE=image@sha256:…` then `FROM ${BASE}`) is recognized as digest-pinned, and a base reference whose interpolation can't be resolved from an in-file `ARG` default no longer raises `dockerfile-from-latest` — an unknown reference can't be proven to float on `:latest`. A resolved-but-undigested tag still fires `dockerfile-no-digest-pin`, and a literal unpinned or `:latest` image still fires.
+
 ## 0.14.22 — 2026-05-27
 
 The `containers` collector no longer false-flags multi-stage build-stage references. A `FROM <stage>` line that refers to an earlier `FROM <image> AS <stage>` is an internal build-stage reference, not a registry image, so it needs no tag or digest — but it was raising `dockerfile-from-latest` and `dockerfile-no-digest-pin` on every normal multi-stage Dockerfile. Stage references are now exempt; real registry images (unpinned or `:latest`) still fire.

@@ -57,3 +57,41 @@ test("a tagged-but-undigested registry base fires no-digest-pin but not from-lat
     assert.notEqual(r.signal_overrides["dockerfile-from-latest"], "hit", "an explicit non-latest tag must not fire from-latest");
   });
 });
+
+// ---------------------------------------------------------------------------
+// ARG-interpolated FROM references. A base pinned through an ARG default is a
+// legitimate pinning pattern; an unresolvable interpolation can't be proven
+// to float on :latest. Both shapes false-fired before ARG resolution.
+// ---------------------------------------------------------------------------
+
+test("a digest pinned through an ARG default (FROM ${BASE}) produces no hit", () => {
+  const df = `ARG BASE=node:24-alpine3.23@sha256:${DIGEST}\nFROM \${BASE}\nUSER node\n`;
+  withDockerfile("Dockerfile", df, (r) => {
+    assert.notEqual(r.signal_overrides["dockerfile-no-digest-pin"], "hit", "a digest carried via ARG default must not trip no-digest-pin");
+    assert.notEqual(r.signal_overrides["dockerfile-from-latest"], "hit", "a digest carried via ARG default must not trip from-latest");
+  });
+});
+
+test("a digest in the ARG-interpolated tag (FROM node:${V}) produces no hit", () => {
+  const df = `ARG NODE_VERSION=24-alpine3.23@sha256:${DIGEST}\nFROM node:\${NODE_VERSION}\nUSER node\n`;
+  withDockerfile("Dockerfile", df, (r) => {
+    assert.notEqual(r.signal_overrides["dockerfile-no-digest-pin"], "hit", "a resolved digest must not trip no-digest-pin");
+    assert.notEqual(r.signal_overrides["dockerfile-from-latest"], "hit", "a resolved non-latest tag must not trip from-latest");
+  });
+});
+
+test("an ARG default with a plain tag (no digest) still fires no-digest-pin, not from-latest", () => {
+  const df = `ARG NODE_VERSION=24-alpine3.23\nFROM node:\${NODE_VERSION}\nUSER node\n`;
+  withDockerfile("Dockerfile", df, (r) => {
+    assert.equal(r.signal_overrides["dockerfile-no-digest-pin"], "hit", "a resolved-but-undigested tag must still fire no-digest-pin");
+    assert.notEqual(r.signal_overrides["dockerfile-from-latest"], "hit", "a resolved non-latest tag must not fire from-latest");
+  });
+});
+
+test("an unresolvable interpolation (FROM ${IMG}, no ARG default) suppresses both signals", () => {
+  const df = `FROM \${IMG}\nUSER node\n`;
+  withDockerfile("Dockerfile", df, (r) => {
+    assert.notEqual(r.signal_overrides["dockerfile-from-latest"], "hit", "an unknown interpolated ref can't be proven to be :latest");
+    assert.notEqual(r.signal_overrides["dockerfile-no-digest-pin"], "hit", "an unknown interpolated ref may carry a build-arg digest");
+  });
+});
