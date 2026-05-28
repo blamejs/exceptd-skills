@@ -3337,11 +3337,12 @@ function cmdRun(runner, args, runOpts, pretty) {
     }
   }
 
-  // Lift precondition_checks out of the submission into runOpts so the agent
-  // can declare host-platform / tool-availability facts in one JSON blob.
-  if (submission.precondition_checks) {
-    runOpts.precondition_checks = submission.precondition_checks;
-  }
+  // Note: precondition_checks are NOT lifted into runOpts. run() derives the
+  // effective precondition set from the submission itself (its mergedPCs feeds
+  // preflight), so copying them into runOpts is redundant — and it made every
+  // submission-supplied precondition report provenance "merged" (present in
+  // both the submission and runOpts) instead of "submission". The submission
+  // carries them to run() directly.
 
   // --format <fmt>: override the playbook's declared evidence_package.bundle_format.
   // Supports csaf-2.0 | sarif | openvex | markdown. Multiple --format flags
@@ -4381,16 +4382,16 @@ function cmdIngest(runner, args, runOpts, pretty) {
     || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return refuseNoDirectives("ingest", playbookId, pretty);
 
-  // Strip the routing keys so the runner only sees the contract shape it expects.
+  // Strip the routing keys so the runner only sees the contract shape it
+  // expects. precondition_checks travel on the submission (not lifted into
+  // runOpts) so run()'s mergedPCs derives them with correct "submission"
+  // provenance — the same path cmdRun uses.
   const cleanedSubmission = {
     artifacts: submission.artifacts || {},
     signal_overrides: submission.signal_overrides || {},
     signals: submission.signals || {},
+    ...(submission.precondition_checks ? { precondition_checks: submission.precondition_checks } : {}),
   };
-
-  if (submission.precondition_checks) {
-    runOpts.precondition_checks = submission.precondition_checks;
-  }
 
   const result = runner.run(playbookId, directiveId, cleanedSubmission, runOpts);
 

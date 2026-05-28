@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.18 — 2026-05-27
+
+`precondition_check_source` now reports accurate provenance. A precondition supplied in the submission is tagged `submission` (it was always `merged`, because the value was internally copied into the run options), and a precondition the engine auto-detected from the host is tagged `auto` (it was mislabeled `submission`). A genuine programmatic override that supplies the same precondition both ways is still `merged`. Precondition gating behavior is unchanged.
+
 ## 0.14.17 — 2026-05-27
 
 New `recipes` verb. `exceptd recipes` lists the curated multi-skill workflows (use-case → ordered skill chain); `exceptd recipes <id>` expands one. These were previously reachable only by reading the catalog file.
