@@ -49,6 +49,10 @@ discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief thr
 
 # Threat Modeling Methodology
 
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill teaches the *method* for selecting and combining threat-modeling frameworks and mapping threats to techniques — it does not own a fixed TTP set. The specific TTPs cited in the body are illustrative of the method; the authoritative technique attachment lives on the domain skill or playbook that detects each threat. Duplicating those IDs here would create a divergence surface the next time a downstream mapping changes.
+
 ## Purpose
 
 The companion skill `threat-model-currency` measures *when* a threat model is stale. This skill governs *how* a threat model is built. Currency without methodology yields opinion; methodology without currency yields a current-looking 2022 artefact. Both are required.

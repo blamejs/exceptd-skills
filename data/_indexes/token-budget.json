@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1672872,
-    "total_approx_tokens": 418226,
+    "total_chars": 1674420,
+    "total_approx_tokens": 418611,
     "skill_count": 42
   },
   "skills": {
@@ -175,12 +175,17 @@
     },
     "framework-gap-analysis": {
       "path": "skills/framework-gap-analysis/skill.md",
-      "bytes": 32006,
-      "chars": 31898,
-      "lines": 406,
-      "approx_tokens": 7975,
+      "bytes": 32609,
+      "chars": 32501,
+      "lines": 410,
+      "approx_tokens": 8125,
       "approx_chars_per_token": 4,
       "sections": {
+        "frontmatter-scope": {
+          "bytes": 603,
+          "chars": 603,
+          "approx_tokens": 151
+        },
         "threat-context": {
           "bytes": 1816,
           "chars": 1804,
@@ -645,12 +650,17 @@
     },
     "global-grc": {
       "path": "skills/global-grc/skill.md",
-      "bytes": 40604,
-      "chars": 40406,
-      "lines": 569,
-      "approx_tokens": 10102,
+      "bytes": 41029,
+      "chars": 40829,
+      "lines": 573,
+      "approx_tokens": 10207,
       "approx_chars_per_token": 4,
       "sections": {
+        "frontmatter-scope": {
+          "bytes": 430,
+          "chars": 428,
+          "approx_tokens": 107
+        },
         "framework-registry-mid-2026-currency": {
           "bytes": 17748,
           "chars": 17650,
@@ -1485,12 +1495,17 @@
     },
     "threat-modeling-methodology": {
       "path": "skills/threat-modeling-methodology/skill.md",
-      "bytes": 31561,
-      "chars": 31382,
-      "lines": 320,
-      "approx_tokens": 7846,
+      "bytes": 32085,
+      "chars": 31904,
+      "lines": 324,
+      "approx_tokens": 7976,
       "approx_chars_per_token": 4,
       "sections": {
+        "frontmatter-scope": {
+          "bytes": 524,
+          "chars": 522,
+          "approx_tokens": 131
+        },
         "purpose": {
           "bytes": 684,
           "chars": 684,

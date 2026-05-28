@@ -27,6 +27,10 @@ last_threat_review: "2026-05-22"
 
 This skill analyzes the gap between what a compliance framework control was designed to address and what current attacker TTPs require. It is the meta-skill that underlies compliance-theater, global-grc, and policy-exception-gen.
 
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a meta-analysis: its subject is the *gap* between a control's design intent and the live TTP landscape, so its inputs are the TTP-to-control mappings already attached to every other playbook and skill rather than a fixed native TTP set. The specific techniques appear in the body where a given gap is illustrated; the authoritative TTP attachment lives on the skill or playbook that owns that detection. The `framework_gaps` reference set is the populated, authoritative declaration for this skill.
+
 ## Threat Context (mid-2026)
 
 Compliance frameworks lag the threat environment by years. Most active controls in NIST 800-53, ISO 27001:2022, SOC 2, PCI DSS 4.0, NIS2, and DORA were drafted against assumptions (human-speed exploit development, persistent inventoriable assets, human-controlled accounts) that current attacker TTPs no longer respect. Three concrete mid-2026 instances anchor the lag:

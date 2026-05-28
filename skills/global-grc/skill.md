@@ -31,6 +31,10 @@ last_threat_review: "2026-05-01"
 
 This skill provides multi-jurisdiction GRC analysis. It maps current security threats against frameworks from 14 jurisdictions and two global standards bodies, identifies universal control gaps that no jurisdiction's framework covers, and surfaces jurisdiction-specific notification and compliance requirements.
 
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a jurisdiction/framework registry and gap-correlation layer — its subject is regulatory coverage, not a native set of attacker techniques. The TTPs referenced in the body come from the domain skills whose threats each framework is measured against; that downstream skill carries the authoritative technique attachment.
+
 ---
 
 ## Framework Registry (mid-2026 currency)
