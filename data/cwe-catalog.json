@@ -50,14 +50,14 @@
     "evidence_cves": [
       "CVE-2022-1471",
       "CVE-2024-3154",
+      "CVE-2025-10164",
       "CVE-2025-20393",
       "CVE-2025-54236",
       "CVE-2025-6558",
+      "CVE-2026-21858",
       "CVE-2026-32201",
       "CVE-2026-34197",
-      "CVE-2026-6973",
-      "CVE-2025-10164",
-      "CVE-2026-21858"
+      "CVE-2026-6973"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -104,6 +104,7 @@
       "CVE-2024-1561",
       "CVE-2024-1708",
       "CVE-2024-24591",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-39722",
       "CVE-2024-57728",
@@ -111,14 +112,13 @@
       "CVE-2025-2749",
       "CVE-2025-27920",
       "CVE-2025-4632",
+      "CVE-2025-51480",
       "CVE-2025-6218",
       "CVE-2025-67818",
       "CVE-2025-8110",
-      "CVE-2026-25592",
-      "CVE-2026-34926",
       "CVE-2026-22218",
-      "CVE-2025-51480",
-      "CVE-2024-31462"
+      "CVE-2026-25592",
+      "CVE-2026-34926"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -155,6 +155,7 @@
       "CVE-2016-10033",
       "CVE-2020-25079",
       "CVE-2023-33538",
+      "CVE-2024-12450",
       "CVE-2024-5565",
       "CVE-2025-10035",
       "CVE-2025-29635",
@@ -169,8 +170,7 @@
       "CVE-2026-30617",
       "CVE-2026-30624",
       "CVE-2026-30625",
-      "MAL-2026-3083",
-      "CVE-2024-12450"
+      "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -421,15 +421,15 @@
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-20045",
+      "CVE-2026-21877",
       "CVE-2026-25592",
       "CVE-2026-30615",
       "CVE-2026-33017",
       "CVE-2026-34197",
       "CVE-2026-45829",
-      "CVE-2026-6973",
-      "MAL-2026-3083",
       "CVE-2026-5760",
-      "CVE-2026-21877"
+      "CVE-2026-6973",
+      "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1361,6 +1361,7 @@
       "CVE-2024-50050",
       "CVE-2024-8069",
       "CVE-2025-10035",
+      "CVE-2025-10164",
       "CVE-2025-23254",
       "CVE-2025-24016",
       "CVE-2025-26399",
@@ -1377,14 +1378,13 @@
       "CVE-2025-59287",
       "CVE-2025-60455",
       "CVE-2025-68664",
+      "CVE-2025-68665",
       "CVE-2025-8747",
       "CVE-2026-20131",
       "CVE-2026-20963",
-      "CVE-2026-31229",
-      "CVE-2025-68665",
-      "CVE-2025-10164",
       "CVE-2026-3059",
-      "CVE-2026-3060"
+      "CVE-2026-3060",
+      "CVE-2026-31229"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1414,10 +1414,13 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
       "CVE-2025-54313",
       "CVE-2025-59374",
       "CVE-2026-33634",
       "CVE-2026-45321",
+      "CVE-2026-48027",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
@@ -1895,11 +1898,11 @@
       "CVE-2023-43654",
       "CVE-2023-48022",
       "CVE-2023-51449",
+      "CVE-2024-12450",
       "CVE-2024-6587",
       "CVE-2025-25297",
       "CVE-2025-56520",
       "CVE-2025-61884",
-      "CVE-2024-12450",
       "CVE-2026-22219"
     ],
     "framework_controls_partially_addressing": [
@@ -2202,9 +2205,9 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
       "CVE-2025-3466",
       "CVE-2025-40536",
+      "CVE-2025-68668",
       "CVE-2026-21510",
-      "CVE-2026-21513",
-      "CVE-2025-68668"
+      "CVE-2026-21513"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 to back the UnDefend Defender update-disruption entry. CWE-693 is the canonical parent for failures-of-protection-mechanism — Defender continues running but its update mechanism has been corrupted, so the AV protection-mechanism fails silently while the host still passes 'is Defender running?' health checks."

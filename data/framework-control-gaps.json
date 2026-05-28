@@ -16,7 +16,7 @@
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
     "last_threat_review": "2026-05-15",
-    "entry_count": 192
+    "entry_count": 194
   },
   "ALL-AI-PIPELINE-INTEGRITY": {
     "framework": "ALL",
@@ -52,6 +52,7 @@
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-12366",
+      "CVE-2024-12450",
       "CVE-2024-12776",
       "CVE-2024-13059",
       "CVE-2024-1561",
@@ -61,6 +62,7 @@
       "CVE-2024-24591",
       "CVE-2024-27132",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -72,6 +74,7 @@
       "CVE-2024-5565",
       "CVE-2024-6587",
       "CVE-2024-9526",
+      "CVE-2025-10164",
       "CVE-2025-1550",
       "CVE-2025-1753",
       "CVE-2025-1796",
@@ -88,14 +91,21 @@
       "CVE-2025-34291",
       "CVE-2025-3466",
       "CVE-2025-49596",
+      "CVE-2025-51480",
       "CVE-2025-54136",
       "CVE-2025-56520",
       "CVE-2025-60455",
       "CVE-2025-64496",
       "CVE-2025-64513",
       "CVE-2025-67818",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
       "CVE-2025-8747",
       "CVE-2026-0766",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-22252",
       "CVE-2026-22688",
       "CVE-2026-24206",
@@ -105,6 +115,8 @@
       "CVE-2026-24215",
       "CVE-2026-26015",
       "CVE-2026-26190",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -117,19 +129,7 @@
       "CVE-2026-41947",
       "CVE-2026-41950",
       "CVE-2026-45829",
-      "CVE-2024-12450",
-      "CVE-2025-69286",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
-      "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-3059",
-      "CVE-2026-3060",
-      "CVE-2026-21877"
+      "CVE-2026-5760"
     ],
     "atlas_refs": [
       "AML.T0018",
@@ -1310,28 +1310,28 @@
       "CVE-2024-24590",
       "CVE-2024-24591",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37052",
       "CVE-2024-37060",
       "CVE-2024-5565",
       "CVE-2024-9526",
       "CVE-2025-0133",
+      "CVE-2025-10164",
       "CVE-2025-1094",
       "CVE-2025-27520",
       "CVE-2025-3248",
       "CVE-2025-3466",
+      "CVE-2025-51480",
+      "CVE-2025-68668",
       "CVE-2025-6965",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
       "CVE-2026-30623",
       "CVE-2026-31229",
       "CVE-2026-31230",
       "CVE-2026-33017",
-      "CVE-2026-22218",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
-      "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-21877"
+      "CVE-2026-5760"
     ],
     "atlas_refs": [
       "AML.T0051",
@@ -1365,7 +1365,10 @@
     "opened_date": "2026-04-01",
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
       "CVE-2026-30615",
+      "CVE-2026-48027",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "atlas_refs": [
@@ -1693,6 +1696,8 @@
       "CVE-2026-26015",
       "CVE-2026-26190",
       "CVE-2026-3055",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -1717,10 +1722,9 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
+      "CVE-2026-48027",
       "CVE-2026-5281",
-      "CVE-2026-9082",
-      "CVE-2026-3059",
-      "CVE-2026-3060"
+      "CVE-2026-9082"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -2086,6 +2090,9 @@
     "opened_date": "2026-05-17",
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
+      "CVE-2026-48027",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI"
     ],
@@ -2320,6 +2327,7 @@
       "CVE-2023-51449",
       "CVE-2023-6038",
       "CVE-2024-0132",
+      "CVE-2024-12450",
       "CVE-2024-1561",
       "CVE-2024-21575",
       "CVE-2024-21576",
@@ -2332,13 +2340,12 @@
       "CVE-2025-32444",
       "CVE-2025-53767",
       "CVE-2025-56520",
+      "CVE-2026-22219",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-34159",
       "CVE-2026-42897",
-      "CVE-2024-12450",
-      "CVE-2026-22219",
-      "CVE-2026-5760",
-      "CVE-2026-3059",
-      "CVE-2026-3060"
+      "CVE-2026-5760"
     ],
     "atlas_refs": [
       "AML.T0096",
@@ -2413,12 +2420,14 @@
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-12366",
+      "CVE-2024-12450",
       "CVE-2024-13059",
       "CVE-2024-21513",
       "CVE-2024-24590",
       "CVE-2024-24591",
       "CVE-2024-27132",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -2427,6 +2436,7 @@
       "CVE-2024-5565",
       "CVE-2024-9526",
       "CVE-2025-0133",
+      "CVE-2025-10164",
       "CVE-2025-1094",
       "CVE-2025-1550",
       "CVE-2025-1753",
@@ -2437,6 +2447,7 @@
       "CVE-2025-32434",
       "CVE-2025-33236",
       "CVE-2025-3466",
+      "CVE-2025-51480",
       "CVE-2025-56520",
       "CVE-2025-60455",
       "CVE-2025-64496",
@@ -2444,6 +2455,10 @@
       "CVE-2025-6965",
       "CVE-2025-8747",
       "CVE-2026-0766",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-24213",
       "CVE-2026-24214",
       "CVE-2026-24215",
@@ -2452,16 +2467,8 @@
       "CVE-2026-39884",
       "CVE-2026-42208",
       "CVE-2026-45829",
-      "CVE-2026-9082",
-      "CVE-2024-12450",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
       "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2024-31462",
-      "CVE-2026-21877"
+      "CVE-2026-9082"
     ],
     "atlas_refs": [
       "AML.T0053"
@@ -2639,6 +2646,7 @@
       "CVE-2024-8068",
       "CVE-2024-8069",
       "CVE-2025-10035",
+      "CVE-2025-10164",
       "CVE-2025-10585",
       "CVE-2025-11371",
       "CVE-2025-11953",
@@ -2835,6 +2843,8 @@
       "CVE-2026-26015",
       "CVE-2026-26190",
       "CVE-2026-3055",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -2868,10 +2878,7 @@
       "CVE-2026-46333",
       "CVE-2026-5281",
       "CVE-2026-6973",
-      "CVE-2026-9082",
-      "CVE-2025-10164",
-      "CVE-2026-3059",
-      "CVE-2026-3060"
+      "CVE-2026-9082"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -2913,12 +2920,12 @@
       "CVE-2025-27520",
       "CVE-2025-3248",
       "CVE-2025-3466",
+      "CVE-2025-68668",
+      "CVE-2026-21877",
       "CVE-2026-22778",
       "CVE-2026-32202",
       "CVE-2026-33017",
-      "CVE-2026-33825",
-      "CVE-2025-68668",
-      "CVE-2026-21877"
+      "CVE-2026-33825"
     ],
     "atlas_refs": [
       "AML.T0017"
@@ -2956,10 +2963,11 @@
       "CVE-2024-3094",
       "CVE-2024-37052",
       "CVE-2024-37060",
-      "MAL-2026-SHAI-HULUD-OSS",
-      "CVE-2025-51480",
       "CVE-2025-10164",
-      "CVE-2026-5760"
+      "CVE-2025-30154",
+      "CVE-2025-51480",
+      "CVE-2026-5760",
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [
       "AML.T0010"
@@ -3643,6 +3651,8 @@
     "opened_date": "2026-05-11",
     "evidence_cves": [
       "CVE-2024-3094",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
       "CVE-2026-45321",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
@@ -3933,12 +3943,12 @@
       "CVE-2024-6587",
       "CVE-2025-1796",
       "CVE-2025-64513",
+      "CVE-2025-69286",
       "CVE-2026-24206",
       "CVE-2026-24207",
       "CVE-2026-26190",
       "CVE-2026-41947",
-      "CVE-2026-41950",
-      "CVE-2025-69286"
+      "CVE-2026-41950"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -5172,6 +5182,7 @@
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-12366",
+      "CVE-2024-12450",
       "CVE-2024-12776",
       "CVE-2024-13059",
       "CVE-2024-1561",
@@ -5183,6 +5194,7 @@
       "CVE-2024-24591",
       "CVE-2024-27132",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -5194,6 +5206,7 @@
       "CVE-2024-5565",
       "CVE-2024-6587",
       "CVE-2024-9526",
+      "CVE-2025-10164",
       "CVE-2025-1550",
       "CVE-2025-1753",
       "CVE-2025-1796",
@@ -5210,16 +5223,23 @@
       "CVE-2025-34291",
       "CVE-2025-3466",
       "CVE-2025-49596",
+      "CVE-2025-51480",
       "CVE-2025-54136",
       "CVE-2025-56520",
       "CVE-2025-60455",
       "CVE-2025-64496",
       "CVE-2025-64513",
       "CVE-2025-67818",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
       "CVE-2025-8747",
       "CVE-2026-0300",
       "CVE-2026-0766",
       "CVE-2026-20182",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-22252",
       "CVE-2026-22688",
       "CVE-2026-24206",
@@ -5230,6 +5250,8 @@
       "CVE-2026-25592",
       "CVE-2026-26015",
       "CVE-2026-26190",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -5249,20 +5271,8 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
-      "CVE-2026-9082",
-      "CVE-2024-12450",
-      "CVE-2025-69286",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
       "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-3059",
-      "CVE-2026-3060",
-      "CVE-2026-21877"
+      "CVE-2026-9082"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5302,23 +5312,23 @@
       "CVE-2023-6038",
       "CVE-2024-12776",
       "CVE-2024-1709",
+      "CVE-2024-31462",
       "CVE-2025-1796",
       "CVE-2025-25297",
       "CVE-2025-3248",
       "CVE-2025-3466",
       "CVE-2025-56520",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-33017",
       "CVE-2026-39987",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-7482",
-      "CVE-2025-69286",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-21877"
+      "CVE-2026-7482"
     ],
     "atlas_refs": [
       "AML.T0051"
@@ -5617,11 +5627,11 @@
       "CVE-2024-12776",
       "CVE-2025-1796",
       "CVE-2025-3248",
+      "CVE-2025-69286",
       "CVE-2026-33017",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-6973",
-      "CVE-2025-69286"
+      "CVE-2026-6973"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5794,6 +5804,7 @@
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-12366",
+      "CVE-2024-12450",
       "CVE-2024-13059",
       "CVE-2024-1561",
       "CVE-2024-21513",
@@ -5804,6 +5815,7 @@
       "CVE-2024-24591",
       "CVE-2024-27132",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -5813,6 +5825,7 @@
       "CVE-2024-50050",
       "CVE-2024-5565",
       "CVE-2024-9526",
+      "CVE-2025-10164",
       "CVE-2025-1550",
       "CVE-2025-1753",
       "CVE-2025-23254",
@@ -5828,13 +5841,19 @@
       "CVE-2025-34291",
       "CVE-2025-3466",
       "CVE-2025-49596",
+      "CVE-2025-51480",
       "CVE-2025-54136",
       "CVE-2025-56520",
       "CVE-2025-60455",
       "CVE-2025-64496",
       "CVE-2025-67818",
+      "CVE-2025-68668",
       "CVE-2025-8747",
       "CVE-2026-0766",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-22252",
       "CVE-2026-22688",
       "CVE-2026-24213",
@@ -5842,6 +5861,8 @@
       "CVE-2026-24215",
       "CVE-2026-25592",
       "CVE-2026-26015",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -5857,20 +5878,9 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
-      "CVE-2026-9082",
-      "MAL-2026-SHAI-HULUD-OSS",
-      "CVE-2024-12450",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
       "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-3059",
-      "CVE-2026-3060",
-      "CVE-2026-21877"
+      "CVE-2026-9082",
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -5920,6 +5930,7 @@
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-12366",
+      "CVE-2024-12450",
       "CVE-2024-12776",
       "CVE-2024-13059",
       "CVE-2024-1561",
@@ -5931,6 +5942,7 @@
       "CVE-2024-24591",
       "CVE-2024-27132",
       "CVE-2024-2912",
+      "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -5942,6 +5954,7 @@
       "CVE-2024-5565",
       "CVE-2024-6587",
       "CVE-2024-9526",
+      "CVE-2025-10164",
       "CVE-2025-1550",
       "CVE-2025-1753",
       "CVE-2025-1796",
@@ -5958,14 +5971,21 @@
       "CVE-2025-34291",
       "CVE-2025-3466",
       "CVE-2025-49596",
+      "CVE-2025-51480",
       "CVE-2025-54136",
       "CVE-2025-56520",
       "CVE-2025-60455",
       "CVE-2025-64496",
       "CVE-2025-64513",
       "CVE-2025-67818",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
       "CVE-2025-8747",
       "CVE-2026-0766",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
       "CVE-2026-22252",
       "CVE-2026-22688",
       "CVE-2026-24206",
@@ -5976,6 +5996,8 @@
       "CVE-2026-25592",
       "CVE-2026-26015",
       "CVE-2026-26190",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30616",
       "CVE-2026-30617",
       "CVE-2026-30624",
@@ -5993,20 +6015,8 @@
       "CVE-2026-45829",
       "CVE-2026-46300",
       "CVE-2026-46333",
-      "CVE-2026-9082",
-      "CVE-2024-12450",
-      "CVE-2025-69286",
-      "CVE-2026-22218",
-      "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
       "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
-      "CVE-2026-3059",
-      "CVE-2026-3060",
-      "CVE-2026-21877"
+      "CVE-2026-9082"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6309,13 +6319,13 @@
       "CVE-2025-3248",
       "CVE-2025-64513",
       "CVE-2025-67818",
+      "CVE-2025-69286",
       "CVE-2026-20182",
       "CVE-2026-24206",
       "CVE-2026-24207",
       "CVE-2026-26190",
       "CVE-2026-33017",
-      "CVE-2026-45829",
-      "CVE-2025-69286"
+      "CVE-2026-45829"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6351,8 +6361,8 @@
       "CVE-2023-43472",
       "CVE-2025-55319",
       "CVE-2025-68664",
-      "CVE-2026-30623",
-      "CVE-2025-68665"
+      "CVE-2025-68665",
+      "CVE-2026-30623"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -6425,22 +6435,22 @@
     "opened_date": "2026-05-18",
     "evidence_cves": [
       "CVE-2022-36551",
-      "CVE-2024-21762",
-      "CVE-2025-25297",
-      "CVE-2025-56520",
-      "CVE-2026-20182",
       "CVE-2024-12450",
+      "CVE-2024-21762",
+      "CVE-2024-31462",
+      "CVE-2025-10164",
+      "CVE-2025-25297",
+      "CVE-2025-51480",
+      "CVE-2025-56520",
+      "CVE-2025-68668",
+      "CVE-2026-20182",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
       "CVE-2026-22218",
       "CVE-2026-22219",
-      "CVE-2025-51480",
-      "CVE-2025-10164",
-      "CVE-2026-5760",
-      "CVE-2026-21858",
-      "CVE-2025-68668",
-      "CVE-2024-31462",
       "CVE-2026-3059",
       "CVE-2026-3060",
-      "CVE-2026-21877"
+      "CVE-2026-5760"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6666,10 +6676,10 @@
       "CVE-2025-55319",
       "CVE-2025-59529",
       "CVE-2025-68664",
+      "CVE-2025-68665",
       "CVE-2025-6965",
       "CVE-2026-22778",
-      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
-      "CVE-2025-68665"
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ],
     "theater_test": {
       "claim": "We are compliant with Art-15 (Accuracy, robustness, and cybersecurity of high-risk AI systems) because we follow the documented requirement: Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption",
@@ -7248,9 +7258,9 @@
     "status": "open",
     "opened_at": "2026-05-18",
     "evidence_cves": [
+      "CVE-2024-12450",
       "CVE-2025-22224",
-      "CVE-2025-22225",
-      "CVE-2024-12450"
+      "CVE-2025-22225"
     ],
     "theater_test": {
       "claim": "We are compliant with A.8.21 (Security of network services) because we follow the documented requirement: Annex A.8.21 — identifying, implementing, and monitoring security mechanisms, service levels, and management requirements for network services. Anchored on segmentation, secure protocols, and service-",
@@ -7995,6 +8005,77 @@
       "evidence_required": [
         "protector-class inventory",
         "breach-contingency runbook"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "NIST-800-53-SR-11": {
+    "framework": "NIST SP 800-53 Rev 5",
+    "control_id": "SR-11",
+    "control_name": "Component Authenticity",
+    "designed_for": "Develop and implement anti-counterfeit policy and procedures; detect and report counterfeit or tampered system components; train personnel to recognize them. Framed around hardware/firmware counterfeiting and tamper-evident packaging in a procurement supply chain — authenticity is established by confirming the component came from the genuine vendor.",
+    "misses": [
+      "Equates authenticity with publisher identity. A GitHub Action whose mutable tag is repointed to malicious code, or an IDE extension published as a malicious version under the legitimate publisher account, is 'authentic' by SR-11's vendor-identity test yet fully malicious — authenticity of the principal is necessary but not sufficient when the principal or its release channel is compromised.",
+      "Software artifacts distributed via registries and marketplaces (npm, PyPI, VS Code Marketplace, OpenVSX, GitHub Actions) carry no consumer-verifiable cryptographic provenance by default; SR-11's counterfeit-detection model has no artifact-level integrity check to apply.",
+      "Mutable references (git tags, 'latest' marketplace versions) mean the same identifier resolves to different bytes over time; SR-11 has no concept of binding an authentic component to an immutable revision."
+    ],
+    "real_requirement": "SR-11 implementations for software components must require artifact-level cryptographic provenance, not publisher identity alone: full commit-SHA pinning for CI/CD actions, signed-and-verified IDE extension publishing, and build provenance attestations (sigstore / in-toto / SLSA) verified at install time. The control must explicitly treat 'authentic publisher, malicious payload' as an authenticity failure and require detection of release-channel compromise (repointed tags, anomalous marketplace publications).",
+    "status": "open",
+    "opened_date": "2026-05-28",
+    "evidence_cves": [
+      "CVE-2025-30066",
+      "CVE-2026-48027"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195",
+      "T1195.001"
+    ],
+    "theater_test": {
+      "claim": "Our components are authenticity-verified per NIST 800-53 SR-11.",
+      "test": "Pull the SR-11 authenticity evidence for software components. Confirm it requires artifact-level provenance — full commit-SHA pinning for every third-party CI/CD action, signature verification for IDE extensions, and verified build-provenance attestations — rather than 'the artifact came from the genuine publisher account'. Sample a recent release-channel-compromise case (tj-actions tag repointing or the Nx Console marketplace compromise); verify the SR-11 procedure would have flagged an authentic-publisher malicious artifact. Theater verdict if authenticity is established by publisher identity alone with no immutable artifact binding.",
+      "evidence_required": [
+        "policy mandating commit-SHA pinning for CI/CD actions with an enforcement check",
+        "IDE-extension signature/version verification records for managed developer hosts",
+        "build-provenance (SLSA / sigstore / in-toto) verification logs at install/deploy time"
+      ],
+      "verdict_when_failed": "compliance-theater"
+    }
+  },
+  "OWASP-CICD-SEC-3": {
+    "framework": "OWASP Top 10 CI/CD Security Risks",
+    "control_id": "CICD-SEC-3",
+    "control_name": "Dependency Chain Abuse",
+    "designed_for": "Prevent abuse of the dependency-resolution mechanism — dependency confusion, typosquatting, and pulling malicious packages — across the build and CI/CD dependency chain.",
+    "misses": [
+      "Focuses on package-manager dependency resolution; under-specifies CI/CD ACTION references, where the dominant documented usage pins by mutable tag and a repointed tag silently substitutes code (tj-actions/changed-files).",
+      "Does not address transitive action inclusion: a consumer can correctly SHA-pin an action that itself references a malicious dependency by mutable tag, so consumer-side pinning is defeated one tier down (reviewdog/action-setup).",
+      "Stops at the CI pipeline; the same dependency-chain abuse on the developer endpoint — a trojanized IDE extension that harvests the credentials the pipeline protects — is upstream of every CI/CD control (Nx Console)."
+    ],
+    "real_requirement": "Dependency-chain controls must require full commit-SHA pinning for all CI/CD actions AND verification that transitively-included actions are themselves SHA-pinned (any tag-referenced link in the chain renders the whole chain unpinned). The control must extend to developer-endpoint dependency surfaces (IDE extensions) since they hold the same secrets as the pipeline.",
+    "status": "open",
+    "opened_date": "2026-05-28",
+    "evidence_cves": [
+      "CVE-2025-30066",
+      "CVE-2025-30154",
+      "CVE-2026-48027"
+    ],
+    "atlas_refs": [
+      "AML.T0010"
+    ],
+    "attack_refs": [
+      "T1195",
+      "T1195.001"
+    ],
+    "theater_test": {
+      "claim": "We mitigate CI/CD dependency-chain abuse per OWASP CICD-SEC-3.",
+      "test": "Pull the dependency-chain controls. Confirm they enforce full commit-SHA pinning for every third-party CI/CD action AND verify that those actions pin THEIR own dependencies by SHA. Sample a workflow that uses a composite/nested action; trace whether any link resolves to a mutable tag. Confirm developer IDE extensions are inventoried as a dependency surface. Theater verdict if action pinning stops at the directly-referenced action, if transitive action dependencies are unverified, or if developer-endpoint dependency surfaces are out of scope.",
+      "evidence_required": [
+        "enforcement check rejecting tag/branch references to third-party actions",
+        "transitive-action SHA-pinning audit for nested/composite actions",
+        "developer IDE-extension inventory and version-approval records"
       ],
       "verdict_when_failed": "compliance-theater"
     }

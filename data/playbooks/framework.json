@@ -49,6 +49,7 @@
       "ai-api",
       "ai-discovered-cve-triage",
       "cicd-pipeline-compromise",
+      "citation-hygiene",
       "cloud-iam-incident",
       "crypto",
       "crypto-codebase",

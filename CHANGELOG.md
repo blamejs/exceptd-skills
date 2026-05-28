@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.27 — 2026-05-28
+
+Catalog expansion — CI/CD and IDE-extension supply-chain compromise cluster. Three CISA KEV-listed, actively-exploited CWE-506 (embedded malicious code) entries are now curated with full RWEP scoring, IOCs, zero-day lessons, and reverse-referenced technique/CWE/framework mappings:
+
+- **CVE-2025-30066** — tj-actions/changed-files GitHub Action: mutable release tags repointed to code that dumped CI/CD secrets to public workflow logs (~23,000 dependent repositories).
+- **CVE-2025-30154** — reviewdog/action-setup GitHub Action: trojanized and reached consumers transitively through five dependent reviewdog actions, defeating consumer-side commit-SHA pinning of the outer action.
+- **CVE-2026-48027** — Nx Console IDE extension: a malicious marketplace version (18.95.0) harvested developer credentials on install; clean at 18.100.0.
+
+Two framework-control-gap entries the cluster exposes are added with compliance-theater tests: **NIST 800-53 SR-11 (Component Authenticity)** — authenticity by publisher identity does not detect an authentic-publisher malicious artifact — and **OWASP CICD-SEC-3 (Dependency Chain Abuse)** — action pinning must extend to transitively-included actions and to developer-endpoint IDE extensions.
+
 ## 0.14.26 — 2026-05-28
 
 `citation-hygiene` `rfc-number-title-mismatch` now fires only on an explicitly quoted title that conflicts with the registry title (`RFC 9404 "Sieve Email Filtering Language"` when 9404 is the JMAP Blob extension). The previous whole-line token-overlap heuristic flagged the ordinary ways developers cite RFCs — a mechanism description (`CRLF line endings per RFC 5322 §2.3`), a section pointer, a well-known short name (`RFC 9051 (IMAP4rev2)`), and even an RFC-number-shaped token inside code (`envelope.rfc822` → "RFC 822") — because that surrounding prose or code never shares vocabulary with the formal registry title. Those forms state no title and are no longer flagged; a genuinely conflicting quoted title still fires. The deterministic catalog-backed checks (`fabricated-cve-id`, `rejected-or-disputed-cve`, RFC-not-in-index) are unchanged.

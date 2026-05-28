@@ -149,7 +149,7 @@
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 420
+      "entry_count": 423
     },
     {
       "date": "2026-05-18",
@@ -157,7 +157,7 @@
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 192
+      "entry_count": 194
     },
     {
       "date": "2026-05-18",
@@ -165,7 +165,7 @@
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 415
+      "entry_count": 418
     },
     {
       "date": "2026-05-17",
