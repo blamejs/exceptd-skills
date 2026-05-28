@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.21 — 2026-05-27
+
+The survey/meta skills `framework-gap-analysis`, `threat-modeling-methodology`, and `global-grc` now document why their `atlas_refs` / `attack_refs` are intentionally empty (they correlate or teach across other skills' technique mappings rather than owning a native TTP set), matching the "Frontmatter Scope" note the other meta skills already carry. A reader inspecting the frontmatter alone no longer sees zero technique coverage and assumes the skill maps to nothing.
+
 ## 0.14.20 — 2026-05-27
 
 Skill content cleanup:
