@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1672973,
-    "total_approx_tokens": 418252,
+    "total_chars": 1672872,
+    "total_approx_tokens": 418226,
     "skill_count": 42
   },
   "skills": {
@@ -575,10 +575,10 @@
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "bytes": 33306,
-      "chars": 33120,
+      "bytes": 33310,
+      "chars": 33124,
       "lines": 448,
-      "approx_tokens": 8280,
+      "approx_tokens": 8281,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -612,9 +612,9 @@
           "approx_tokens": 765
         },
         "exploit-availability-matrix": {
-          "bytes": 2349,
-          "chars": 2331,
-          "approx_tokens": 583
+          "bytes": 2353,
+          "chars": 2335,
+          "approx_tokens": 584
         },
         "compliance-theater-check": {
           "bytes": 1568,
@@ -770,10 +770,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 37988,
-      "chars": 37818,
+      "bytes": 38002,
+      "chars": 37832,
       "lines": 572,
-      "approx_tokens": 9455,
+      "approx_tokens": 9458,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -837,9 +837,9 @@
           "approx_tokens": 375
         },
         "output-format": {
-          "bytes": 1477,
-          "chars": 1471,
-          "approx_tokens": 368
+          "bytes": 1491,
+          "chars": 1485,
+          "approx_tokens": 371
         },
         "defensive-countermeasure-mapping": {
           "bytes": 3868,
@@ -1880,10 +1880,10 @@
     },
     "sector-telecom": {
       "path": "skills/sector-telecom/skill.md",
-      "bytes": 20862,
-      "chars": 20762,
+      "bytes": 20754,
+      "chars": 20668,
       "lines": 257,
-      "approx_tokens": 5191,
+      "approx_tokens": 5167,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1907,14 +1907,14 @@
           "approx_tokens": 299
         },
         "analysis-procedure": {
-          "bytes": 5829,
-          "chars": 5773,
-          "approx_tokens": 1443
+          "bytes": 5706,
+          "chars": 5664,
+          "approx_tokens": 1416
         },
         "output-format": {
-          "bytes": 1515,
-          "chars": 1515,
-          "approx_tokens": 379
+          "bytes": 1491,
+          "chars": 1491,
+          "approx_tokens": 373
         },
         "compliance-theater-check": {
           "bytes": 2207,
@@ -1927,9 +1927,9 @@
           "approx_tokens": 188
         },
         "hand-off": {
-          "bytes": 672,
-          "chars": 662,
-          "approx_tokens": 166
+          "bytes": 709,
+          "chars": 699,
+          "approx_tokens": 175
         }
       }
     },
@@ -2265,16 +2265,16 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 29232,
-      "chars": 29116,
+      "bytes": 29207,
+      "chars": 29091,
       "lines": 219,
-      "approx_tokens": 7279,
+      "approx_tokens": 7273,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
-          "bytes": 4430,
-          "chars": 4414,
-          "approx_tokens": 1104
+          "bytes": 4405,
+          "chars": 4389,
+          "approx_tokens": 1097
         },
         "framework-lag-declaration": {
           "bytes": 4082,

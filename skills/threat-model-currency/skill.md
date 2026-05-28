@@ -288,7 +288,7 @@ The truth set: every `AML.T*` key in `data/atlas-ttps.json` (excluding `_meta`) 
 
 ## Exploit Availability Matrix
 
-A threat model is "current" only if it accounts for every `data/cve-catalog.json` entry with RWEP >= 50 — with either a deployed mitigation or a documented, accepted residual risk. As of `last_threat_review: 2026-05-14`:
+A threat model is "current" only if it accounts for every `data/cve-catalog.json` entry with RWEP >= 50 — with either a deployed mitigation or a documented, accepted residual risk. As of the frontmatter `last_threat_review`:
 
 | CVE | Name | CVSS | RWEP | KEV | PoC | AI factor | Live-patchable | Required threat-model treatment |
 |---|---|---|---|---|---|---|---|---|
