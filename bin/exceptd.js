@@ -8186,6 +8186,18 @@ function cmdAsk(runner, args, runOpts, pretty) {
     "cred theft": ["cred-stores", "secrets"],
     "credential exfil": ["cred-stores", "llm-tool-use-exfil"],
     "developer laptop": ["cred-stores", "hardening"],
+    // CI/CD + OIDC vocabulary → the dedicated cicd-pipeline-compromise playbook
+    // (the supply-chain playbooks otherwise out-rank it on shared tokens).
+    "oidc": ["cicd-pipeline-compromise", "ci", "pipeline", "runner", "signing"],
+    "cicd": ["cicd-pipeline-compromise", "ci", "pipeline"],
+    "ci/cd": ["cicd-pipeline-compromise", "pipeline"],
+    "runner": ["cicd-pipeline-compromise", "ci"],
+    "pipeline": ["cicd-pipeline-compromise"],
+    // C2-over-AI-API → the dedicated ai-api playbook (llm-tool-use-exfil
+    // otherwise wins on a long C2 sentence).
+    "c2": ["ai-api", "ai-c2"],
+    "command and control": ["ai-api", "ai-c2"],
+    "command-and-control": ["ai-api", "ai-c2"],
   };
 
   // Audit 3 C.1: stopwords filtered after synonym expansion so common
@@ -8202,6 +8214,11 @@ function cmdAsk(runner, args, runOpts, pretty) {
     "than", "then", "them", "some", "more", "most", "very", "much", "such",
     "been", "were", "want", "well", "back", "good", "make", "made", "take",
     "took", "give", "gave", "find", "found", "know", "knew", "told", "ago",
+    // 2-char English fillers (the length>=2 token filter otherwise lets these
+    // substring-hit a haystack — "do" matched ai-api). Deliberately excludes
+    // security-meaningful 2-char tokens (ai, ml, ci, c2, k8s).
+    "do", "is", "my", "it", "me", "to", "of", "on", "or", "an", "as", "at",
+    "be", "by", "we", "up", "so", "no", "if", "in",
   ]);
 
   // Tokenize question (length >= 2, lowercase) + expand via synonyms.
