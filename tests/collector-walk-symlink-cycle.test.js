@@ -115,7 +115,12 @@ test("(c) walkTree skips a directory symlink cycle yet still finds a secret beyo
 
     const deep = path.join(tmp, "lib", "secrets");
     fs.mkdirSync(deep, { recursive: true });
-    fs.writeFileSync(path.join(deep, "leak.env"), 'GITHUB_TOKEN=ghp_' + "B".repeat(36) + "\n");
+    // Use a non-.env carrier: a .env file is legitimately recorded in TWO
+    // artifact categories (general scan + env-file carrier), which would make
+    // a raw filename-occurrence count 2 even with no symlink at all. A .js
+    // carrier is recorded once, so an occurrence count > 1 genuinely indicates
+    // the cycle re-walked the file via a second path.
+    fs.writeFileSync(path.join(deep, "leak_carrier.js"), 'const t = "ghp_' + "B".repeat(36) + '";\n');
 
     let r;
     assert.doesNotThrow(() => {
@@ -129,8 +134,8 @@ test("(c) walkTree skips a directory symlink cycle yet still finds a secret beyo
       "the real secret beyond the cycle is still discovered",
     );
     if (!made) return; // symlink not created — cycle-specific check skipped
-    // The cycle did not duplicate the carrier into a second path.
-    const occurrences = (JSON.stringify(r.artifacts).match(/leak\.env/g) || []).length;
+    // The cycle did not duplicate the carrier into a second walked path.
+    const occurrences = (JSON.stringify(r.artifacts).match(/leak_carrier\.js/g) || []).length;
     assert.equal(occurrences, 1, "the secret carrier is counted once, not duplicated via the cycle");
   } finally {
     try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
