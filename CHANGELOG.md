@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.20 — 2026-05-27
+
+Skill content cleanup:
+- `sector-telecom` no longer labels its analysis-procedure subsections with the CLI verb names that were removed in 0.13.0 (`govern`, `direct`, `look`, etc.) — the section headings are neutral procedural language now. Its reference to `cred-stores` is annotated as a playbook (not a skill, matching the convention three sibling skills already use), and its `last_threat_review` date is quoted consistently with every other skill.
+- `threat-model-currency` no longer pins an outdated date literal in its body that contradicted the frontmatter — it references the frontmatter `last_threat_review` so the assertion can't desync.
+- `pqc-first` no longer leaks the engine's internal phase numbering ("Phase 5 analyze") into operator-facing output prose.
+- `email-security-anti-phishing` no longer cites an internal contributor rule by name in its threat-context narrative.
+
 ## 0.14.19 — 2026-05-27
 
 Catalog data-integrity pass:
