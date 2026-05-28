@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.28 — 2026-05-28
+
+Catalog expansion — 2025 actively-exploited perimeter and file-transfer RCE cluster. Four CISA KEV-listed, ransomware-associated entries are now fully curated with RWEP scoring, IOCs, zero-day lessons, and reverse-referenced CWE/ATT&CK/framework mappings:
+
+- **CVE-2025-0282** — Ivanti Connect Secure stack-overflow preauth RCE, exploited as a zero-day with the SPAWN malware ecosystem (RWEP 85). Patch alone is insufficient on compromised appliances — factory reset is required.
+- **CVE-2025-22457** — Ivanti Connect Secure stack-overflow RCE, initially mis-triaged as a low-risk DoS and patched as such, then weaponized to RCE (RWEP 83). Demonstrates the severity-mis-triage failure mode for perimeter preauth flaws.
+- **CVE-2025-31324** — SAP NetWeaver Visual Composer Metadata Uploader, unauthenticated file upload to RCE via JSP web shell, CVSS 10.0 (RWEP 78). Complements the existing NetWeaver deserialization entry it was chained with.
+- **CVE-2025-31161** — CrushFTP HTTP authorization-header authentication bypass to crushadmin takeover (RWEP 76).
+
+Adds CWE-305 (Authentication Bypass by Primary Weakness) to the CWE catalog as the authoritative mapping for the CrushFTP entry.
+
 ## 0.14.27 — 2026-05-28
 
 Catalog expansion — CI/CD and IDE-extension supply-chain compromise cluster. Three CISA KEV-listed, actively-exploited CWE-506 (embedded malicious code) entries are now curated with full RWEP scoring, IOCs, zero-day lessons, and reverse-referenced technique/CWE/framework mappings:

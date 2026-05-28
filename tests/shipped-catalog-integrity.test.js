@@ -76,7 +76,14 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // regression — the rows are otherwise complete (title, status, obsoleted_by).
     "rfc-references":  { abstract: 31 },
     "framework-control-gaps": {},
-    "zeroday-lessons": { new_control_requirements: 252 }
+    // +3 for the 2025 perimeter/file-transfer RCE lessons (Ivanti Connect
+    // Secure CVE-2025-0282 / CVE-2025-22457, SAP NetWeaver CVE-2025-31324,
+    // CrushFTP CVE-2025-31161). These intentionally carry no new_control_-
+    // requirements: they reuse the existing perimeter controls NEW-CTRL-030
+    // (perimeter-device compressed patch SLA) and NEW-CTRL-032 (perimeter-
+    // compromise rebuild-not-patch), matching the CVE-2024-21762 edge-lesson
+    // convention. No new control is demanded, so the field is honestly absent.
+    "zeroday-lessons": { new_control_requirements: 255 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {

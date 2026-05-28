@@ -17957,5 +17957,285 @@
     "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-19",
     "ai_assist_factor": "none"
+  },
+  "CVE-2025-0282": {
+    "name": "Ivanti Connect Secure stack-overflow preauth RCE (SPAWN ecosystem)",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "Unauthenticated stack-based buffer overflow in Ivanti Connect Secure reachable over the network. Exploited as a zero-day from mid-December 2024 by the suspected China-nexus cluster UNC5337/UNC5221, deploying the SPAWN malware ecosystem (SPAWNANT/SPAWNMOLE/SPAWNSNAIL), the PHASEJAM dropper, and the DRYHOOK credential stealer, before the 2025-01-08 advisory. Patch-in-place is insufficient where the appliance is already compromised.",
+      "privileges_required": "none (unauthenticated network reach to an internet-facing Connect Secure appliance)",
+      "complexity": "high to weaponize reliably (AC:H), but functioning exploitation was in-the-wild at disclosure and mass-scanning followed",
+      "ai_factor": "Not AI-discovered — vendor/Mandiant incident investigation. No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Connect Secure 22.7R2.5 (Policy Secure 22.7R1.2, Neurons for ZTA 22.7R2.3) under a perimeter-device compressed-SLA tier (NEW-CTRL-030), and restrict the appliance management/web surface to known operator ranges where the tenancy model permits.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2025-01-08)",
+        "adequacy": "Patch fixes the overflow but does not evict SPAWN-ecosystem persistence; on any Integrity Checker Tool indicator the device must be factory-reset and rebuilt (NEW-CTRL-032 perimeter-compromise-rebuild-not-patch), not upgraded in place."
+      },
+      "detection": {
+        "what_would_have_worked": "Ivanti Integrity Checker Tool (ICT) scans; alerting on appliance outbound connections to non-management destinations; file-integrity baselining for SPAWN artifacts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "ICT is necessary to distinguish patch-sufficient from rebuild-required; detection alone does not remediate a confirmed preauth RCE under active exploitation."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any internet-facing Connect Secure exposed before 2025-01-08 as potentially compromised; factory-reset/rebuild on ICT indicators; rotate all appliance and downstream credentials (admin, VPN-user, RADIUS, LDAP bind).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Operationally expensive but necessary; patch-in-place left SPAWN persistence on compromised devices."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "30-day patch SLA is orders of magnitude longer than the observed exploitation window (zero-day, in-wild weeks before disclosure). Reboot-required firmware breaks the maintenance-window assumption and patch-in-place is insufficient on compromised appliances."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; the standard 30-day interpretation is unsafe for an unauthenticated preauth flaw on an internet-facing device/server with public exploitation."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats this class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; the exposure window opened inside the financial-entity SLA."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Silent on the reality that a patched device can still carry attacker persistence seeded before the patch; cleanup/rebuild verification is required."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 ML3 (48h) is closer to reality than NIST SI-2 but still misses the mass-scanning window for this internet-facing class."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "Internet-facing VPN concentrators are routinely run by audited orgs without a documented compressed-SLA patch-and-rebuild procedure; the standard 30-day SLA and patch-in-place habit were active exposure for a zero-day with nation-state and later ransomware use.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-22457": {
+    "name": "Ivanti Connect Secure stack-overflow preauth RCE (mis-triaged DoS weaponized to RCE)",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "Unauthenticated stack-based buffer overflow in Ivanti Connect Secure initially assessed as a low-risk DoS and patched in 22.7R2.6 (2025-02-11), then weaponized to RCE and exploited in the wild from mid-March 2025 by UNC5221 using the TRAILBLAZE in-memory dropper and BRUSHFIRE passive backdoor. Fleets that deprioritized the fix on the basis of its initial DoS rating were exploited after the patch shipped.",
+      "privileges_required": "none (unauthenticated network reach to an internet-facing Connect Secure appliance)",
+      "complexity": "high to weaponize (AC:H); the public RCE understanding lagged the patch, extending effective exposure",
+      "ai_factor": "Not AI-discovered — vendor/Mandiant incident investigation. No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Connect Secure 22.7R2.6 (Policy Secure 22.7R1.4, ZTA Gateways 22.8R2.2). Critically: prioritize internet-facing-appliance patches by exposure class (NEW-CTRL-030), not solely by the initially-published CVSS — a DoS-rated flaw on a preauth perimeter surface must be treated as latent-RCE until proven otherwise.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2025-04-04)",
+        "adequacy": "Patch is definitive once applied, but SLA models keyed on initial CVSS under-protected fleets; rebuild required on compromise indicators (NEW-CTRL-032)."
+      },
+      "detection": {
+        "what_would_have_worked": "ICT scans; alerting on TRAILBLAZE/BRUSHFIRE artifacts and anomalous appliance egress.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of fleets that delayed the low-rated patch."
+      },
+      "response": {
+        "what_would_have_worked": "Factory-reset/rebuild on compromise indicators; rotate appliance and downstream credentials; re-baseline patch prioritization to flag preauth-perimeter DoS flaws for accelerated remediation.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Standard appliance-compromise response; the durable lesson is severity mis-triage of a perimeter preauth flaw."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A flaw patched as low-risk DoS was weaponized to RCE; CVSS-keyed SLA prioritization left fleets unpatched against the real critical risk. The 30-day window far exceeds the weaponization-to-mass-exploitation interval, and reboot-required firmware breaks the maintenance-window assumption."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; the standard 30-day interpretation is unsafe for an unauthenticated preauth flaw on an internet-facing device/server with public exploitation."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats this class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; the exposure window opened inside the financial-entity SLA."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Silent on the reality that a patched device can still carry attacker persistence seeded before the patch; cleanup/rebuild verification is required."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 ML3 (48h) is closer to reality than NIST SI-2 but still misses the mass-scanning window for this internet-facing class."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "CVSS-keyed patch SLAs are near-universal; a perimeter preauth flaw mis-rated as DoS is exactly the case where that model fails, and most audited orgs had no exposure-class override.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-31324": {
+    "name": "SAP NetWeaver Visual Composer Metadata Uploader unauthenticated file-upload RCE",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "The Visual Composer Metadata Uploader endpoint (/developmentserver/metadatauploader) lacks an authorization check, letting an unauthenticated attacker upload a JSP webshell that runs with SAP service privileges. Mass-exploited from April 2025; frequently chained with the NetWeaver deserialization flaw CVE-2025-42999, with webshell access leading to hands-on-keyboard follow-on including ransomware staging.",
+      "privileges_required": "none (unauthenticated POST to an internet-facing NetWeaver server with Visual Composer enabled)",
+      "complexity": "low — single unauthenticated request; webshell IOCs widely published",
+      "ai_factor": "Not AI-discovered — identified during incident investigation (ReliaQuest). No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply SAP Security Note 3594142 promptly under an internet-facing-application compressed SLA (NEW-CTRL-030); where patching is delayed, block /developmentserver/metadatauploader at the proxy and disable Visual Composer if unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2025-04-29)",
+        "adequacy": "Patch closes the upload path, but patch-in-place without webshell hunting leaves attacker-dropped JSP shells resident — cleanup is a required, separate step."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on unauthenticated POSTs to /developmentserver/metadatauploader; file-integrity monitoring of the servlet_jsp/irj root for new JSP files (helper.jsp, cache.jsp, random names); SAP service account spawning shells.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Webshell detection is necessary to catch resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Hunt for and remove JSP webshells under the servlet root; assume service-account credential compromise and rotate; review for the chained CVE-2025-42999 deserialization activity.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary; many operators patched without removing the resident webshells."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "CVSS 10.0 unauthenticated file-upload RCE on an internet-facing ERP application server; the 30-day patch SLA far exceeds the days-scale mass-exploitation window, and webshell persistence means patch-in-place leaves the attacker resident."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; the standard 30-day interpretation is unsafe for an unauthenticated preauth flaw on an internet-facing device/server with public exploitation."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats this class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; the exposure window opened inside the financial-entity SLA."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Silent on the reality that a patched device can still carry attacker persistence seeded before the patch; cleanup/rebuild verification is required."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 ML3 (48h) is closer to reality than NIST SI-2 but still misses the mass-scanning window for this internet-facing class."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "SAP NetWeaver estates are business-critical and change-controlled, so emergency patching of an internet-facing component routinely loses to change windows; webshell hunting after patch is rarely part of the documented procedure.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-31161": {
+    "name": "CrushFTP HTTP authorization-header authentication bypass (crushadmin takeover)",
+    "lesson_date": "2026-05-28",
+    "attack_vector": {
+      "description": "A crafted HTTP Authorization header bypasses authentication and assumes any known/guessable account, including crushadmin, granting administrative control of the file-transfer server (unless fronted by a DMZ proxy instance). Exploited in the wild March-April 2025. The managed-file-transfer class is a proven ransomware/data-extortion initial-access vector (MOVEit lineage).",
+      "privileges_required": "none (unauthenticated network reach to an internet-facing CrushFTP instance without a DMZ proxy)",
+      "complexity": "low — single crafted request; public exploitation details",
+      "ai_factor": "Not AI-discovered — reported by Outpost24. No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to CrushFTP 10.8.4 / 11.3.1 under an internet-facing-service compressed SLA (NEW-CTRL-030); deploy the DMZ proxy instance as a structural mitigation that breaks the direct auth path.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2025-04-07)",
+        "adequacy": "Patch is definitive; the DMZ-proxy mode is an architecture-level control that mitigated even pre-patch. Most exposed instances ran without it."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on unexpected crushadmin logins or newly-created admin accounts; anomalous Authorization headers preceding admin access; egress from the file server to remote-management infrastructure.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch the account takeover; the MFT class is a high-value ransomware target."
+      },
+      "response": {
+        "what_would_have_worked": "Audit for unauthorized admin sessions/accounts; rotate credentials; review transferred-file access logs for data exfiltration given the MFT data-extortion pattern.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary; the extortion risk is the stored/transited data, not just server control."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Unauthenticated admin takeover on an internet-facing managed-file-transfer server — a proven ransomware/data-extortion vector. The 30-day patch SLA is exploitation acceptance; the exposure window opened within days of public details."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appropriate timescales undefined; the standard 30-day interpretation is unsafe for an unauthenticated preauth flaw on an internet-facing device/server with public exploitation."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats this class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT incident management presumes vendor-patch cadence; the exposure window opened inside the financial-entity SLA."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Silent on the reality that a patched device can still carry attacker persistence seeded before the patch; cleanup/rebuild verification is required."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 ML3 (48h) is closer to reality than NIST SI-2 but still misses the mass-scanning window for this internet-facing class."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "MFT servers are internet-facing by function and hold high-value data; audited orgs routinely run them without a compressed-SLA procedure or the structural DMZ-proxy mitigation, and the MOVEit precedent shows the class is a primary extortion target.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   }
 }

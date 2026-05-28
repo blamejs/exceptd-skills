@@ -1283,6 +1283,7 @@
       "CVE-2024-7399",
       "CVE-2024-7694",
       "CVE-2025-2749",
+      "CVE-2025-31324",
       "CVE-2025-52691",
       "CVE-2026-21877"
     ],
@@ -1657,10 +1658,12 @@
       "CVE-2024-21762",
       "CVE-2024-37079",
       "CVE-2024-42479",
+      "CVE-2025-0282",
       "CVE-2025-14174",
       "CVE-2025-14733",
       "CVE-2025-21042",
       "CVE-2025-21043",
+      "CVE-2025-22457",
       "CVE-2025-5419",
       "CVE-2025-6965",
       "CVE-2025-9242",
@@ -2376,7 +2379,9 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-0282",
       "CVE-2025-20352",
+      "CVE-2025-22457",
       "CVE-2025-53521"
     ],
     "last_verified": "2026-05-18",
@@ -4436,5 +4441,31 @@
     "playbooks_referencing": [
       "identity-sso-compromise"
     ]
+  },
+  "CWE-305": {
+    "id": "CWE-305",
+    "name": "Authentication Bypass by Primary Weakness",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "The authentication algorithm is sound, but the implemented mechanism can be bypassed as the result of a separate weakness that is primary to the authentication error.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-115"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-31161"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-2",
+      "ISO-27001-2022-A.5.17"
+    ],
+    "real_requirement": "Authentication paths must be evaluated against bypass via separate primary weaknesses (e.g. header-parsing flaws, race conditions in the auth handler); fuzz and audit the auth mechanism as an integrated whole, not the algorithm in isolation.",
+    "lag_notes": "Authentication-bypass CVEs frequently stem from a primary weakness in request parsing or state handling rather than the auth algorithm itself; controls that audit only the credential-checking logic miss this class.",
+    "last_verified": "2026-05-28"
   }
 }
