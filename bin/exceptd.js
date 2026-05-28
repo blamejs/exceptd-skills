@@ -232,7 +232,7 @@ function suggestVerb(cmd, known) {
 const PLAYBOOK_VERBS = new Set([
   "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
   "verify-attestation", "run-all", "lint", "collect",
-  "reattest", "list-attestations",
+  "reattest", "list-attestations", "recipes",
 ]);
 
 // v0.13.0: hard-removed legacy verbs. The dispatcher refuses the verb
@@ -445,6 +445,7 @@ Canonical verbs
                              --evidence-dir <dir>
 
   ask "<question>"           Plain-English routing to playbook(s).
+  recipes [<id>]             List curated multi-skill workflows (or expand one).
 
   lint <pb> <evidence>       Pre-flight check submission shape vs playbook
                              (preconditions / artifacts / indicators) without
@@ -1740,6 +1741,7 @@ function dispatchPlaybook(cmd, argv) {
       case "doctor": return cmdDoctor(runner, args, runOpts, pretty);
       case "ai-run": return cmdAiRun(runner, args, runOpts, pretty);
       case "ask":    return cmdAsk(runner, args, runOpts, pretty);
+      case "recipes": return cmdRecipes(runner, args, runOpts, pretty);
       case "ci":     return cmdCi(runner, args, runOpts, pretty);
       case "collect": return cmdCollect(runner, args, runOpts, pretty);
     }
@@ -8124,6 +8126,63 @@ function buildSubmissionFromPayload(payload) {
  * playbook scores >= 1, fall back to substring match on playbook ID
  * itself ("secrets" → secrets playbook).
  */
+// `recipes` — list the curated multi-skill workflows, or show one in full.
+// The recipes are use-case curated (when_to_use → ordered skill_chain); they
+// had no CLI surface before, so an operator could only reach them by reading
+// data/_indexes/recipes.json. `recipes` lists them; `recipes <id>` expands one.
+function cmdRecipes(runner, args, runOpts, pretty) {
+  let catalog;
+  try {
+    catalog = require(path.join(PKG_ROOT, "data", "_indexes", "recipes.json"));
+  } catch (e) {
+    return emitError(`recipes: could not load recipe catalog: ${e.message}`, null, pretty);
+  }
+  const recipes = Array.isArray(catalog.recipes) ? catalog.recipes : [];
+  const id = args._[0];
+
+  if (id) {
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe) {
+      return emitError(
+        `recipes: unknown recipe "${id}". Run \`exceptd recipes\` to list available recipes.`,
+        { verb: "recipes", available: recipes.map(r => r.id) },
+        pretty,
+      );
+    }
+    return emit({ verb: "recipes", recipe }, pretty, (obj) => {
+      const r = obj.recipe;
+      const lines = [];
+      lines.push(`Recipe: ${r.name} (${r.id})`);
+      if (r.description) lines.push(`\n${r.description}`);
+      if (r.when_to_use) lines.push(`\nWhen to use: ${r.when_to_use}`);
+      if (Array.isArray(r.typical_jurisdictions) && r.typical_jurisdictions.length) {
+        lines.push(`Typical jurisdictions: ${r.typical_jurisdictions.join(", ")}`);
+      }
+      lines.push(`\nSkill chain (${r.skill_count ?? (r.skill_chain || []).length}):`);
+      const steps = Array.isArray(r.steps) && r.steps.length ? r.steps : (r.skill_chain || []).map(s => ({ skill: s }));
+      steps.forEach((s, i) => {
+        lines.push(`  ${i + 1}. ${s.skill}`);
+        if (s.why) lines.push(`     ${s.why}`);
+      });
+      lines.push(`\nRun a skill: exceptd skill <name>`);
+      return lines.join("\n");
+    });
+  }
+
+  return emit({ verb: "recipes", count: recipes.length, recipes: recipes.map(r => ({
+    id: r.id, name: r.name, when_to_use: r.when_to_use, skill_count: r.skill_count ?? (r.skill_chain || []).length,
+  })) }, pretty, (obj) => {
+    const lines = [`Curated recipes (${obj.count}) — multi-skill workflows for common engagements:`, ""];
+    for (const r of obj.recipes) {
+      lines.push(`  ${r.id}  (${r.skill_count} skills)`);
+      lines.push(`    ${r.name}`);
+      if (r.when_to_use) lines.push(`    when: ${r.when_to_use.length > 140 ? r.when_to_use.slice(0, 140) + "…" : r.when_to_use}`);
+    }
+    lines.push(`\nExpand one: exceptd recipes <id>`);
+    return lines.join("\n");
+  });
+}
+
 function cmdAsk(runner, args, runOpts, pretty) {
   const question = (args._ || []).join(" ").trim();
   if (!question) {
@@ -8321,19 +8380,39 @@ function cmdAsk(runner, args, runOpts, pretty) {
   const tieCount = scored.filter(s => s.score === topScore).length;
   const baseConfidence = Math.min(1, topScore / Math.max(2, tokens.length));
   const tiePenalty = tieCount > 1 ? 1 / tieCount : 1;
+  const confidence = Math.round(baseConfidence * tiePenalty * 100) / 100;
+  // Some domains are covered by a SKILL, not a playbook — the router would
+  // otherwise present a confident-looking wrong playbook (e.g. "DMARC" →
+  // llm-tool-use-exfil, "HIPAA" → ransomware). Detect those by distinctive
+  // keyword and surface the right skill so the operator is pointed at real
+  // coverage instead of a mis-route. Keyed on terms with no playbook home.
+  const SKILL_ONLY_DOMAINS = [
+    { skill: "email-security-anti-phishing", re: /\b(dmarc|dkim|\bspf\b|bimi|mta-sts|email spoof|email security|sender auth|business email compromise)\b/i },
+    { skill: "age-gates-child-safety", re: /\b(age[\s-]?gate|age verification|coppa|child safety|children'?s code|\bkosa\b|\baadc\b|minor protection)\b/i },
+    { skill: "sector-healthcare", re: /\b(hipaa|\bphi\b|hitrust|healthcare security|45 cfr)\b/i },
+    { skill: "dlp-gap-analysis", re: /\b(data loss prevention|\bdlp\b)\b/i },
+  ];
+  const skillDomain = SKILL_ONLY_DOMAINS.find(d => d.re.test(question));
+  const confidence0 = confidence;
+  // A weak top match also signals a likely no-playbook domain.
+  const lowConfidence = confidence0 < 0.15;
   const result = {
     verb: "ask",
     question,
     routed_to: top.map(t => t.id),
-    confidence: Math.round(baseConfidence * tiePenalty * 100) / 100,
+    confidence,
     confidence_factors: { base: Math.round(baseConfidence * 100) / 100, tie_count: tieCount },
     next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
+    ...(skillDomain ? { skill_suggestion: skillDomain.skill, skill_suggestion_note: `This topic is covered by the "${skillDomain.skill}" skill, not a playbook. Run \`exceptd skill ${skillDomain.skill}\`.` } : {}),
+    ...((!skillDomain && lowConfidence) ? { low_confidence: true, fallback_hint: "Low-confidence match — this may be a skill-only domain (no dedicated playbook). Browse `exceptd help` for skills, or `exceptd recipes` for curated multi-skill workflows." } : {}),
     full_match_list: top,
   };
   if (args.json || args.pretty) return emit(result, pretty);
   const topGlyph = top[0].collector_available ? " [collector]" : "";
   const altLine = top.slice(1).map(t => t.id + (t.collector_available ? " [collector]" : "")).join(", ") || "(none)";
   process.stdout.write(`ask: ${question}\n  top match: ${top[0].id}${topGlyph} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${altLine}\n`);
+  if (skillDomain) process.stdout.write(`  note: ${result.skill_suggestion_note}\n`);
+  else if (lowConfidence) process.stdout.write(`  note: ${result.fallback_hint}\n`);
 }
 
 /**
