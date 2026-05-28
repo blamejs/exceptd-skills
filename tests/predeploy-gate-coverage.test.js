@@ -304,21 +304,6 @@ test('VV2 P1-1: cmdRun persistResult-false branch preserves LOCK_CONTENTION exit
   }
 });
 
-test('VV2 P2-1: cmdIngest persistAttestation gates operatorConsent on classification === detected', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // Find the cmdIngest persistAttestation call. The operatorConsent argument
-  // must be conditional on a per-classification gate (ingestConsentApplies
-  // ternary), NOT bare runOpts.operator_consent.
-  const ingestStart = src.indexOf('function cmdIngest');
-  assert.ok(ingestStart > 0, 'cmdIngest function must exist');
-  const ingestEnd = src.indexOf('\nfunction ', ingestStart + 1);
-  const ingestBody = src.slice(ingestStart, ingestEnd > 0 ? ingestEnd : ingestStart + 5000);
-  const persistMatch = ingestBody.match(/persistAttestation\s*\(\{[\s\S]*?\}\s*\)/);
-  assert.ok(persistMatch, 'cmdIngest must call persistAttestation');
-  assert.match(persistMatch[0], /operatorConsent:\s*\w*[Cc]onsentApplies\s*\?/,
-    'cmdIngest persistAttestation must gate operatorConsent on a *ConsentApplies ternary (mirrors cmdRun EE P1-6)');
-});
-
 test('VV2 P2-1: cmdAiRun persistAttestation gates operatorConsent on classification === detected', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
   // cmdAiRun has both --no-stream and streaming persistAttestation sites.

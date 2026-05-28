@@ -89,6 +89,21 @@ test("temporal-staleness: CISA KEV due-date passed without remediation surfaces"
     "passed CISA KEV due date must surface");
 });
 
+test("temporal-staleness: a passed KEV due-date on an AUTO-IMPORTED DRAFT does NOT fire", () => {
+  // Drafts are un-curated backlog; a KEV due-date passing by calendar drift is
+  // expected noise, not an actionable finding (and would otherwise breach the
+  // budget gate on a no-op release). Scoped to curated entries only.
+  const cats = makeCatalogs({
+    "cve-catalog": { _meta: {}, "CVE-2026-0002": {
+      cisa_kev: true, cisa_kev_due_date: "2026-04-01", source_verified: "2026-05-15",
+      _auto_imported: true
+    } }
+  });
+  const f = D.temporalStalenessFindings(cats, { now: new Date("2026-05-19T00:00:00Z") });
+  assert.ok(!f.some((x) => x.field === "cisa_kev_due_date"),
+    "a draft's passed KEV due date must NOT surface as a temporal-staleness finding");
+});
+
 test("temporal-staleness: fresh entry does NOT fire", () => {
   const cats = makeCatalogs({
     "cve-catalog": { _meta: {}, "CVE-2026-0001": {

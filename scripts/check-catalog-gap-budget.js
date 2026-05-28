@@ -51,7 +51,11 @@ function loadAll() {
 // in tests/shipped-catalog-integrity.test.js.
 const BUDGET = {
   "content-quality": 12,
-  "temporal-staleness": 260,
+  // temporal-staleness counts CURATED entries only — auto-imported draft
+  // KEV-due-passed findings are calendar-drift noise (they once saturated a
+  // 260 budget). Curated actual ~20; 35 leaves headroom without the count
+  // breaching the budget purely as the calendar advances.
+  "temporal-staleness": 35,
   "logical-consistency": 5,
   "cross-ref-completeness": 5,
   "schema-evolution": 0,

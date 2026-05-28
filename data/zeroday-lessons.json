@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 68
+    "entry_count": 422
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
