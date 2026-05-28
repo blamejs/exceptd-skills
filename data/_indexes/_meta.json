@@ -1,18 +1,18 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-05-28T01:29:15.827Z",
+  "generated_at": "2026-05-28T02:01:28.108Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 54,
   "source_hashes": {
-    "manifest.json": "942085b9f004cd46ededef88160239a7ab66946592f89e8e974bd411c6d9a10a",
+    "manifest.json": "633b5ddcd6927b365cab9672477db8b0ce64df963f2d44526e10d3eb7b10edd7",
     "data/atlas-ttps.json": "d24bc02859d40ccf1615db75cca68c077585904e41e0d8f6de448121e9b1abb0",
     "data/attack-techniques.json": "fa193f0d2d248176a8beddb641e9fe56ba4faa9e15dc253ff876dbf0c5d58a77",
-    "data/cve-catalog.json": "3d451dda7ac0c7d57a4075ae4bafd3148c6184b35dc1bc59d8b81d1f2641e430",
+    "data/cve-catalog.json": "03d8071c7ae244ccda7611c3bc66a5581c21e790d158c2948c3001f55aa5aac9",
     "data/cwe-catalog.json": "0b82f1ba29024720dcafb66aaa6c7b59b535badd28dbac8a5c08737c5f25e9a9",
     "data/d3fend-catalog.json": "9a54bccb9f24f84b32024216cc3f53819a053721ac8ab43c326859e68fc0ffaf",
     "data/dlp-controls.json": "d2406c482dddd30e49203879999dc4b3a7fd4d0494d6a61d86b91ee76415df19",
     "data/exploit-availability.json": "ec2656f0d9a893610e27b43eb6035fe9b18e057c9f6dfaac7e7d4959bbcbb795",
-    "data/framework-control-gaps.json": "46094ad9b9584f454daddd28f4c5d27faf0ea0510daafd38fb60bf9d30f6a305",
+    "data/framework-control-gaps.json": "563890a91e25079c1b36f61d8cdf21176fba3801168c4b4697cabae3437b33c1",
     "data/global-frameworks.json": "9ba563a85f7f8d6c3c957de64945e20925a89d0ed6ea6fc561cf093811acf558",
     "data/rfc-references.json": "b21d03b948c41bc8a854e2f057948ecf844bd8c105848aeb141d1eadf8192c31",
     "data/zeroday-lessons.json": "258252b9bff1fc11b05b76e10b659c1195971884bd44c92af5fefe17a5ca9512",
@@ -87,7 +87,7 @@
     "frequency_fields": 7,
     "activity_feed_events": 54,
     "catalog_summaries": 11,
-    "stale_content_findings": 1
+    "stale_content_findings": 0
   },
   "invalidation_note": "If any source file in source_hashes has a different SHA-256 than recorded here, the indexes are stale. Re-run `npm run build-indexes`."
 }

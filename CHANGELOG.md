@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.19 — 2026-05-27
+
+Catalog data-integrity pass:
+- The AI supply-chain CVE families ShadowMQ (`CVE-2025-23254`, `CVE-2025-30165`, `CVE-2024-50050`, `CVE-2025-60455`) and the Triton authentication-bypass pair (`CVE-2026-24206`, `CVE-2026-24207`) now carry their ATLAS mapping (`AML.T0049`, Exploit Public-Facing Application) — matching the sibling entries in the same families that were already mapped.
+- The `active_exploitation: "theoretical"` status (a published PoC with no observed in-the-wild exploitation) is now an explicit entry in the RWEP active-exploitation ladder instead of falling through to the zero default.
+- The `framework-control-gaps` catalog's declared entry count is corrected (it read 184 while the catalog held 192) and a validator gate now fails if the declared count ever drifts from the actual count again.
+- The derived staleness index counts jurisdictions consistently with the README and the catalog-summaries index (GLOBAL included → 35), clearing a false "badge drift" staleness finding.
+
 ## 0.14.18 — 2026-05-27
 
 `precondition_check_source` now reports accurate provenance. A precondition supplied in the submission is tagged `submission` (it was always `merged`, because the value was internally copied into the run options), and a precondition the engine auto-detected from the host is tagged `auto` (it was mislabeled `submission`). A genuine programmatic override that supplies the same precondition both ways is still `merged`. Precondition gating behavior is unchanged.

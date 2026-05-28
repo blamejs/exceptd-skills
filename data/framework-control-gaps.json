@@ -16,7 +16,7 @@
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
     "last_threat_review": "2026-05-15",
-    "entry_count": 184
+    "entry_count": 192
   },
   "ALL-AI-PIPELINE-INTEGRITY": {
     "framework": "ALL",
