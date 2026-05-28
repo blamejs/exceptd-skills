@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.22 — 2026-05-27
+
+The `containers` collector no longer false-flags multi-stage build-stage references. A `FROM <stage>` line that refers to an earlier `FROM <image> AS <stage>` is an internal build-stage reference, not a registry image, so it needs no tag or digest — but it was raising `dockerfile-from-latest` and `dockerfile-no-digest-pin` on every normal multi-stage Dockerfile. Stage references are now exempt; real registry images (unpinned or `:latest`) still fire.
+
 ## 0.14.21 — 2026-05-27
 
 The survey/meta skills `framework-gap-analysis`, `threat-modeling-methodology`, and `global-grc` now document why their `atlas_refs` / `attack_refs` are intentionally empty (they correlate or teach across other skills' technique mappings rather than owning a native TTP set), matching the "Frontmatter Scope" note the other meta skills already carry. A reader inspecting the frontmatter alone no longer sees zero technique coverage and assumes the skill maps to nothing.
