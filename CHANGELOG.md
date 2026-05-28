@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.16 — 2026-05-27
+
+`collect` is dramatically faster on large repositories. The directory-walking collectors (`secrets`, `crypto-codebase`, `containers`, `citation-hygiene`) called `realpathSync` on every file for symlink-cycle detection and stat'd each file before reading it; the walk is now a single shared implementation that resolves real paths only for directories and symlinks and reads files without a pre-stat. On a 5000-file repository `collect secrets` drops from ~1.1s to ~0.18s (and `collect containers` from ~0.7s to ~0.02s), with identical results.
+
+Cheap verbs start faster. The CVE catalog (~2.6 MB) was parsed at module load on every invocation; verbs that never analyze (`brief`, `plan`, `look`, `ask`, `lint`, `discover`) no longer pay that cost — the catalog is parsed lazily on the first run that needs it (a corrupt catalog still blocks a `run` cleanly).
+
+`ask` routes a few more questions correctly: a CI/OIDC question (e.g. "my CI runner leaked an OIDC token") routes to `cicd-pipeline-compromise` instead of the supply-chain playbooks, and an "AI command and control" question routes to `ai-api`. Common two-letter English filler words ("do", "is", "to", …) no longer produce a spurious low-confidence match for nonsense questions.
+
+Removed an always-empty `recipes` field from the CVE cross-reference result. Recipes are use-case curated, never CVE-keyed, so a per-CVE recipe lookup could never populate.
+
 ## 0.14.15 — 2026-05-27
 
 Emitted CSAF 2.0 and SARIF 2.1.0 documents now pass strict schema/profile validation:
