@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.24 — 2026-05-28
+
+`crypto-codebase` `hardcoded-key-material` now requires a complete PEM block — a `BEGIN … PRIVATE KEY` header, a base64 body, and a closing `END` marker — before it fires. A bare `BEGIN … PRIVATE KEY` marker carrying no key body is a *detection pattern*, not a leak: a redaction or DLP library's regex literal that matches the key header (to redact keys), or a documentation placeholder such as `privateKeyPem: "<elided>"`, no longer registers as embedded key material. An actual pasted private key still fires.
+
 ## 0.14.23 — 2026-05-27
 
 `crypto-codebase` collector accuracy:

@@ -94,6 +94,40 @@ test("hardcoded-key-material: a BEGIN PRIVATE KEY embedded in source still HITS"
   }
 });
 
+test("hardcoded-key-material: a BEGIN-marker regex literal (key DETECTOR) is a MISS", () => {
+  const tmp = mkTmp("crypto-detector-");
+  try {
+    // A redaction / DLP library tests strings against a private-key marker.
+    // The marker is a detection pattern, not embedded key material.
+    fs.writeFileSync(path.join(tmp, "redact.js"),
+      'const RULES = [\n' +
+      '  { test: (v) => typeof v === "string" && /-----BEGIN OPENSSH PRIVATE KEY-----/.test(v) },\n' +
+      '  { test: (v) => typeof v === "string" && /-----BEGIN RSA PRIVATE KEY-----/.test(v) },\n' +
+      '];\nmodule.exports = { RULES };\n');
+    const r = cryptoCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
+      "a BEGIN-marker regex literal with no body or END is a detector, not a leak");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("hardcoded-key-material: a JSDoc placeholder marker is a MISS", () => {
+  const tmp = mkTmp("crypto-jsdoc-");
+  try {
+    fs.writeFileSync(path.join(tmp, "mail.js"),
+      '/**\n' +
+      ' * @param {object} opts\n' +
+      ' *   privateKeyPem:  "-----BEGIN PRIVATE KEY----- ..."\n' +
+      ' */\nfunction sign(opts) { return opts; }\nmodule.exports = { sign };\n');
+    const r = cryptoCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
+      "an elided doc placeholder marker is not embedded key material");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Fix 2 — vendored-pqc-no-provenance recognizes vendor/MANIFEST.json
 // ---------------------------------------------------------------------------
