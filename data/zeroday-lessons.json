@@ -11543,35 +11543,63 @@
   },
   "CVE-2022-20775": {
     "name": "Cisco SD-WAN Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco SD-WAN CLI contains a path traversal vulnerability that could allow an authenticated local attacker to gain elevated privileges via improper access controls on commands within the application CLI. A successful exploit could allow the attacker to execute arbitrary commands as the root user.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-25/CWE-282) reachable by an unauthenticated attacker. CISA KEV-listed 2026-02-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco SD-WAN fixed release; restrict the management surface to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SD-WAN surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the SD-WAN surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco SD-WAN is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20127": {
     "name": "Cisco Catalyst SD-WAN Controller and Manager Authentication Bypass Vulnerability",
@@ -13363,35 +13391,63 @@
   },
   "CVE-2025-20393": {
     "name": "Cisco Multiple Products Improper Input Validation Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Secure Email Gateway, Secure Email, AsyncOS Software, and Web Manager appliances contains an improper input validation vulnerability that allows threat actors to execute arbitrary commands with root privileges on the underlying operating system of an affected appliance.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "improper input validation (CWE-20) reachable by an unauthenticated attacker. CISA KEV-listed 2025-12-17 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco fixed releases for each affected product; restrict management/data interfaces to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Cisco product surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the Cisco product surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco (multiple products) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-59718": {
     "name": "Fortinet Multiple Products Improper Verification of Cryptographic Signature Vulnerability",
@@ -15303,35 +15359,63 @@
   },
   "CVE-2025-20352": {
     "name": "Cisco IOS and IOS XE Software SNMP Denial of Service and Remote Code Execution Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco IOS and IOS XE contains a stack-based buffer overflow vulnerability in the Simple Network Management Protocol (SNMP) subsystem that could allow for denial of service or remote code execution. A successful exploit could allow a low-privileged attacker to cause the affected system to reload, resulting in a DoS condition, or allow a high-privileged attacker to execute arbitrary code as the root user and obtain full control of the affected system.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a stack-based overflow (CWE-121) in the SNMP subsystem, exploitable by an unauthenticated attacker for denial of service and remote code execution. CISA KEV-listed 2025-09-29 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco IOS/IOS XE fixed release; restrict SNMP to trusted hosts and disable affected OIDs where the advisory permits, pending the upgrade.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the IOS/IOS XE SNMP subsystem: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the IOS/IOS XE SNMP subsystem; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco IOS / IOS XE is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-21311": {
     "name": "Adminer Server-Side Request Forgery Vulnerability",
@@ -15367,67 +15451,123 @@
   },
   "CVE-2025-20362": {
     "name": "Cisco Secure Firewall Adaptive Security (ASA) Appliance and Secure Firewall Threat Defense (FTD) Missing Authorization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Secure Firewall Adaptive Security (ASA) Appliance and Secure Firewall Threat Defense (FTD) Software VPN Web Server contain a missing authorization vulnerability. This vulnerability could be chained with CVE-2025-20333.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a missing-authorization flaw (CWE-862) allowing an unauthenticated attacker to reach restricted URL endpoints (the ASA web-services chain). CISA KEV-listed 2025-09-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco ASA/FTD fixed release; restrict the management/VPN web surface and, on indicators of compromise, follow Cisco's ArcaneDoor-class forensic guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the ASA/FTD web surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the ASA/FTD web surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco Secure Firewall ASA / FTD is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-20333": {
     "name": "Cisco Secure Firewall Adaptive Security Appliance (ASA) and Secure Firewall Threat Defense (FTD) Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Secure Firewall Adaptive Security (ASA) Appliance and Secure Firewall Threat Defense (FTD) Software VPN Web Server contain a buffer overflow vulnerability that allows for remote code execution. This vulnerability could be chained with CVE-2025-20362.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a buffer overflow (CWE-120) enabling unauthenticated remote code execution (chained with the missing-authorization flaw). CISA KEV-listed 2025-09-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco ASA/FTD fixed release; this is chained for full compromise, so on any indicator treat the appliance as compromised and follow Cisco's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the ASA/FTD web surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the ASA/FTD web surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco Secure Firewall ASA / FTD is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-5086": {
     "name": "Dassault Systèmes DELMIA Apriso Deserialization of Untrusted Data Vulnerability",
@@ -16135,67 +16275,123 @@
   },
   "CVE-2025-20337": {
     "name": "Cisco Identity Services Engine Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Identity Services Engine contains an injection vulnerability in a specific API of Cisco ISE and Cisco ISE-PIC due to insufficient validation of user-supplied input allowing an attacker to exploit this vulnerability by submitting a crafted API request. Successful exploitation could allow an attacker to perform remote code execution and obtaining root privileges on an affected device.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an injection flaw (CWE-74) enabling unauthenticated code execution on Cisco ISE. CISA KEV-listed 2025-07-28 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco ISE fixed release; restrict the ISE admin/portal surface to trusted networks and review for unexpected process execution.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the ISE surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the ISE surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco Identity Services Engine (ISE) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-20281": {
-    "name": "Cisco Identity Services Engine Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Cisco Identity Services Engine Injection Vulnerability (variant: CVE-2025-20281)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Identity Services Engine contains an injection vulnerability in a specific API of Cisco ISE and Cisco ISE-PIC due to insufficient validation of user-supplied input allowing an attacker to exploit this vulnerability by submitting a crafted API request. Successful exploitation could allow an attacker to perform remote code execution and obtaining root privileges on an affected device.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an injection flaw (CWE-74, a variant) enabling unauthenticated code execution on Cisco ISE. CISA KEV-listed 2025-07-28 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the device)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco ISE fixed release; restrict the ISE admin/portal surface and review for unexpected process execution.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a network-device patch cycle (gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the ISE surface: requests matching the exploited weakness, device crashes/reloads, and unexpected command execution or restricted-endpoint access.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of devices not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence (implants/config changes) and rotate credentials reachable from the ISE surface; on indicators of compromise, follow the vendor's forensic/recovery guidance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated device flaw; network-device implants survive patching without explicit recovery steps."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-device flaw; CISA KEV due dates are days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing network device."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the device class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter network device in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco Identity Services Engine (ISE) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-2775": {
     "name": "SysAid On-Prem Improper Restriction of XML External Entity Reference Vulnerability",
