@@ -44,7 +44,7 @@ cwe_refs:
   - CWE-1037
 d3fend_refs: []
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief ot-ics-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief ot-ics-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # OT / ICS Security (mid-2026)
@@ -61,7 +61,7 @@ OT is no longer air-gapped. The "air gap" is a label on a Visio file, not a prop
 
 **State-sponsored OT targeting is continuous, not episodic.** Volt Typhoon pre-positioning against US critical infrastructure (water, energy, transport) was confirmed by CISA/NSA/FBI in 2023–2024 and re-affirmed in 2025 joint advisories. Sandworm continues active operations against Ukrainian grid through 2025 (Industroyer2, Pipedream/Incontroller-derived tooling, and bespoke OT-aware wipers). 2025 saw the first publicly attributed AI-assisted OT reconnaissance campaign — adversaries using LLMs to triage exfiltrated engineering documents at scale.
 
-**The exemption posture inverts vs. AGENTS.md rule #9.** Hard Rule #9 is about ephemeral and AI-pipeline environments where some controls are architecturally impossible. OT is the opposite: OT systems are LONG-LIVED, often 10–30 year service lives. PLCs in service today were commissioned when Windows XP was current; HMIs running Windows 7 are routine; safety-instrumented systems (SIS) are deliberately frozen. The exemption that applies is reversed: "patch within 30 days" is architecturally impossible not because the workload is ephemeral but because the workload is fossilised, change-controlled, and physically dangerous to disturb. Recommendations must explicitly acknowledge multi-decade lifecycles and provide compensating-control paths (segmentation, allowlisting, unidirectional gateways, virtual patching at the L2/L3 boundary) rather than handwave "update the firmware."
+**The exemption posture inverts vs. the ephemeral / AI-pipeline case.** The usual architectural-impossibility exemption is about ephemeral and AI-pipeline environments where some controls cannot run. OT is the opposite: OT systems are LONG-LIVED, often 10–30 year service lives. PLCs in service today were commissioned when Windows XP was current; HMIs running Windows 7 are routine; safety-instrumented systems (SIS) are deliberately frozen. The exemption that applies is reversed: "patch within 30 days" is architecturally impossible not because the workload is ephemeral but because the workload is fossilised, change-controlled, and physically dangerous to disturb. Recommendations must explicitly acknowledge multi-decade lifecycles and provide compensating-control paths (segmentation, allowlisting, unidirectional gateways, virtual patching at the L2/L3 boundary) rather than handwave "update the firmware."
 
 ---
 
@@ -82,7 +82,7 @@ OT is no longer air-gapped. The "air gap" is a label on a Visio file, not a prop
 | TW CSMA (Cyber Security Management Act) | National critical-infrastructure cyber-security management | TW critical infrastructure including semicon fabs and energy | Strong on segmentation and reporting; AI-assistant integration into operator workflows not specifically scoped. |
 | ISO 27001:2022 + ISO/IEC 27019 (energy utilities) | Generic ISMS + energy-sector extension | Organisation-level ISMS | A.8.8 vulnerability management is IT-flavoured; ISO/IEC 27019 adds energy specifics but predates AI-augmented HMI. |
 
-**Cross-jurisdiction posture (per AGENTS.md rule #5):** Any OT/ICS gap analysis for a multi-jurisdiction operator must cite at minimum EU NIS2 + DORA + CRA, UK NIS+CAF, AU SOCI+AESCSF, JP NISC, IL INCD, ID BSSN, TW CSMA, alongside ISO 27001:2022 + ISO/IEC 27019. US-only (NIST 800-82r3, NERC CIP) is insufficient for any operator with multinational exposure.
+**Cross-jurisdiction posture (global-first, not US-centric):** Any OT/ICS gap analysis for a multi-jurisdiction operator must cite at minimum EU NIS2 + DORA + CRA, UK NIS+CAF, AU SOCI+AESCSF, JP NISC, IL INCD, ID BSSN, TW CSMA, alongside ISO 27001:2022 + ISO/IEC 27019. US-only (NIST 800-82r3, NERC CIP) is insufficient for any operator with multinational exposure.
 
 ---
 
@@ -117,13 +117,13 @@ ATT&CK for ICS is a separate matrix from Enterprise. Many IT-rooted SOCs do not 
 | Vendor-side OT CVEs (Siemens, Rockwell, Schneider, ABB, GE Vernova) | varies | varies | Several KEV listings 2024–2026 | Mixed — vendor disclosures only sometimes accompanied by PoC | Increasing AI-assisted RE | Targeted exploitation by Sandworm-aligned and Volt Typhoon-aligned actors | Vendor-dependent — typical lag 60–180 days; deploy lag 1–5 years | No — firmware updates require change windows | ICS-aware IDS (Claroty, Nozomi, Dragos, Tenable OT) detection signature lag varies |
 | AI-HMI prompt injection (no CVE-class yet) | n/a | risk-modelled, not CVSS | n/a | Demonstrated in research and 2025 incident-response engagements | n/a (vector is the AI conduit itself) | Suspected in 2025 advanced campaigns | Mitigation only — design-time controls on the AI integration | n/a | Requires LLM-aware telemetry — almost never present |
 
-**Honest gap statement (per AGENTS.md rule #10).** This project's `data/cve-catalog.json` does not yet contain an exhaustive inventory of vendor-side OT CVEs (Siemens SSAs, Rockwell SD advisories, Schneider Electric Security Notifications, ABB CSAs, GE Vernova advisories). The authoritative source for current OT/ICS CVEs is the CISA ICS-CERT advisory feed at https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories — captured in `forward_watch` for inclusion in the catalog as part of the next data refresh. Do not invent CVE IDs to fill this matrix.
+**Honest gap statement (declare what the catalog does not yet cover).** This project's `data/cve-catalog.json` does not yet contain an exhaustive inventory of vendor-side OT CVEs (Siemens SSAs, Rockwell SD advisories, Schneider Electric Security Notifications, ABB CSAs, GE Vernova advisories). The authoritative source for current OT/ICS CVEs is the CISA ICS-CERT advisory feed at https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories — captured in `forward_watch` for inclusion in the catalog as part of the next data refresh. Do not invent CVE IDs to fill this matrix.
 
 ---
 
 ## Analysis Procedure
 
-This procedure threads the three foundational design principles required by AGENTS.md skill-format spec (defense in depth, least privilege, zero trust) through every step.
+This procedure threads the three foundational design principles (defense in depth, least privilege, zero trust) through every step.
 
 **Defense in depth.** Purdue Enterprise Reference Architecture layers (L0 physical I/O → L1 PLC/RTU/BPCS → L2 SCADA/HMI → L3 site operations/MES → L3.5 IDMZ → L4 enterprise → L5 cloud/enterprise edge). Controls required at every layer, with the IDMZ (L3.5) acting as the policy-enforcement boundary between OT and IT. Network segmentation (D3-NI), unidirectional gateways for OT→IT data egress, ICS-aware IDS at L2/L3 boundary (D3-NTA), signed-firmware enforcement at L1 where vendor supports it, executable allowlisting (D3-EAL) on engineering workstations and HMI hosts.
 
@@ -311,7 +311,7 @@ Ask: "Show me the SOCI / NIS2 / NERC CIP / CAF evidence for OT asset inventory, 
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps OT/ICS offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and the inverted ephemeral/AI-pipeline applicability per Hard Rule #9.
+Maps OT/ICS offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and the inverted ephemeral/AI-pipeline applicability (long-lived OT inverts the usual architectural-impossibility exemption).
 
 | D3FEND ID | Technique | Purdue Layer Position | Least-Privilege Scope | Zero-Trust Posture | OT-Realistic Applicability |
 |---|---|---|---|---|---|
@@ -321,7 +321,7 @@ Per AGENTS.md optional 8th section (required for skills shipped on or after 2026
 | D3-EAL | Executable Allowlisting | L2 HMI hosts; L2 engineering workstations; L3 historian/MES hosts | Per-host allowlist of signed executables; vendor-tooling exceptions explicit | Default-deny execution; only enumerated binaries run | Applicable to Windows/Linux HMI and engineering workstation hosts. Cannot apply directly to L1 PLC/RTU devices — for those, signed-firmware enforcement (where vendor supports) is the analogue. |
 | D3-PSEP | Process Segment Execution Prevention | L2 HMI hosts; L2 engineering workstations | Per-process memory-execution policy; non-exec data segments | Memory regions and process behaviour continuously verified at execution time | Applicable where host OS supports modern memory protections. Brownfield Windows 7 / WinCC older versions have weaker support — compensating control: tighter D3-EAL + D3-NTA. |
 
-**Inverted ephemerality posture (per Hard Rule #9, reversed).** OT assets are long-lived (10–30 year service lives). Controls that assume rapid patching are unrealistic; controls that assume rebuild-on-change are catastrophic. The OT-appropriate posture: virtual patching at L3.5 / L2 boundaries, executable allowlisting on hosts that cannot be re-imaged, ICS-IDS detection as the primary control where prevention is architecturally unavailable, signed-firmware enforcement where supported, and explicit documentation of multi-decade compensating-control programmes where the device itself cannot be hardened. Recommendations that read "patch the PLC firmware" without specifying the change window, the vendor's signed-firmware support status, and the rollback plan are operationally indefensible.
+**Inverted ephemerality posture (the usual architectural-impossibility exemption, reversed).** OT assets are long-lived (10–30 year service lives). Controls that assume rapid patching are unrealistic; controls that assume rebuild-on-change are catastrophic. The OT-appropriate posture: virtual patching at L3.5 / L2 boundaries, executable allowlisting on hosts that cannot be re-imaged, ICS-IDS detection as the primary control where prevention is architecturally unavailable, signed-firmware enforcement where supported, and explicit documentation of multi-decade compensating-control programmes where the device itself cannot be hardened. Recommendations that read "patch the PLC firmware" without specifying the change window, the vendor's signed-firmware support status, and the rollback plan are operationally indefensible.
 
 ---
 

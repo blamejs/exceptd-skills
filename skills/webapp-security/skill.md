@@ -66,7 +66,7 @@ d3fend_refs:
 forward_watch:
   - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory affecting front-door web app deployments
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief webapp-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief webapp-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Web Application Security Assessment
@@ -79,7 +79,7 @@ Webapps still ship CWE-79 (Cross-Site Scripting), CWE-89 (SQL Injection), and CW
 
 **Architectural reaction: server-rendered apps regained share.** Through 2023–2025 the SPA-everything trend pushed business logic, auth state, and access decisions into the client. With AI codegen now producing client-side TypeScript at industrial volume, the per-route client attack surface compounded — every route became a potential CWE-200 (Information Exposure) and CWE-862 (Missing Authorization) carrier because client-side checks are advisory, not authoritative. Mid-2026 architectures favour **server-rendered-by-default with interactive islands**: React Server Components, Next.js App Router, Remix, Phoenix LiveView, HTMX, Rails Hotwire. Auth lives on the server. State changes traverse server actions. SPAs survive where a true client-side data model exists (collaborative editing, offline-first), and they pay for it with explicit zero-trust auth on every endpoint.
 
-**Exploit acceleration is current operational reality, not a forecast.** Agentic exploitation frameworks emerging through 2025–2026 (PentestGPT lineage, autonomous-recon-and-exploit toolchains) compress the time from CVE disclosure to mass exploitation for known webapp weakness classes. The defender's working assumption must be: any CVE-2025/2026 RCE in a public webapp framework is being scanned for within hours of disclosure, not days (per DR-5: AI acceleration is current operational reality).
+**Exploit acceleration is current operational reality, not a forecast.** Agentic exploitation frameworks emerging through 2025–2026 (PentestGPT lineage, autonomous-recon-and-exploit toolchains) compress the time from CVE disclosure to mass exploitation for known webapp weakness classes. The defender's working assumption must be: any CVE-2025/2026 RCE in a public webapp framework is being scanned for within hours of disclosure, not days (AI acceleration is current operational reality).
 
 **Transport is no longer a choice.** RFC 8446 (TLS 1.3) is baseline; RFC 9114 (HTTP/3 over QUIC) is the production transport for any public webapp serving a global audience. Skills citing TLS 1.2 as adequate in 2026 are citing a deprecated threat model. JWT-based session tokens must be issued and validated per RFC 7519 with RFC 8725 (JWT BCP) — the BCP is non-optional because the original RFC 7519 threat model under-specified algorithm pinning, audience checks, and key confusion.
 
@@ -171,9 +171,9 @@ The procedure threads three foundational design principles end-to-end. They are 
 ### The 10-step assessment
 
 1. **Inventory routes + auth requirements + data sensitivity.** Enumerate every HTTP route (or GraphQL operation, gRPC method). For each: required role, request schema, response schema, data classification, AI-codegen provenance flag (was this handler suggested by an assistant?).
-2. **Map each route to CWE-Top-25-class risk.** Score by CWE class × data sensitivity × external reachability. Apply the RWEP model — CVSS alone fails per AGENTS.md Hard Rule #3.
+2. **Map each route to CWE-Top-25-class risk.** Score by CWE class × data sensitivity × external reachability. Apply the RWEP model — CVSS alone fails as a prioritization signal; report CVSS alongside RWEP, never alone.
 3. **Audit AI-generated code separately from human-written code.** Require commit-time provenance markers (git trailer, commit-message tag, or co-author metadata) identifying AI-assisted commits. Re-review AI-suggested handlers on every AI-codegen-CVE wave (e.g. CVE-2025-53773, CVSS 7.8 / AV:L — re-review every Copilot agent-mode-generated handler in the affected window, with priority on those that read external content into the agent context). If provenance is not captured, the org cannot answer "what code do we need to re-review?" — this is a compliance-theater indicator.
-4. **SAST + DAST coverage measurement.** Report: % of routes covered by SAST sinks, % covered by DAST in staging, findings-to-fix ratio over trailing 90 days. A SAST programme that finds and does not fix is theater (AGENTS.md DR-1 / Hard Rule #8).
+4. **SAST + DAST coverage measurement.** Report: % of routes covered by SAST sinks, % covered by DAST in staging, findings-to-fix ratio over trailing 90 days. A SAST programme that finds and does not fix is theater (control existence requires an operational fix SLA, not just tooling).
 5. **IAST in staging.** Instrumented runtime testing covers what SAST cannot (intent-dependent authorisation, runtime config). Required for any app handling regulated data (PII, PCI, PHI).
 6. **Fuzz parser surfaces.** Hand off to `fuzz-testing-strategy` for any parser, deserialiser, or media-handler reachable from a public route. Fuzz corpus seeded from production traffic samples (sanitised).
 7. **Server-rendered-by-default decision.** Justify any SPA-only route against the AI-codegen blast radius. SPAs allowed where a true client-side data model exists; not allowed by default for CRUD with auth checks.
@@ -248,19 +248,19 @@ The skill produces a Web Application Security Assessment covering OWASP ASVS-map
 
 Each test below distinguishes paper compliance from real posture. A "no" answer to any of (a)–(d) means the corresponding control claim is theater.
 
-**(a) SAST findings-to-fix ratio.** "Show me the most recent SAST report for this codebase. What was the findings-to-fix ratio over the last 90 days?" If SAST runs but findings sit in a backlog with no SLA — or if the team's first response is "we have a SAST tool" without producing the ratio — the SAST control is theater (AGENTS.md DR-1).
+**(a) SAST findings-to-fix ratio.** "Show me the most recent SAST report for this codebase. What was the findings-to-fix ratio over the last 90 days?" If SAST runs but findings sit in a backlog with no SLA — or if the team's first response is "we have a SAST tool" without producing the ratio — the SAST control is theater (a control exists only when it has an operational SLA, not when the tool is merely owned).
 
 **(b) Auth-failure test coverage.** "What percentage of routes have unit or integration tests that assert auth failure modes — 401 when unauthenticated, 403 when authenticated as a non-authorised role, 404-or-403 (depending on policy) when the resource exists but the caller has no access?" If the answer is qualitative ("we test auth") rather than a number, the auth-control claim is paper (CWE-862 / CWE-863 / CWE-1188 are not tested into existence by the framework alone).
 
 **(c) AI-codegen provenance.** "Is AI-generated code marked at commit time — git trailer, commit message tag, or co-author metadata — so it can be re-reviewed at the next AI-codegen-CVE wave?" If there is no provenance signal, the org cannot answer "what code do we need to re-review when the next CVE-2025-53773-class issue lands?" — and the re-review claim is theater.
 
-**(d) Bug-bounty time-to-fix for Critical.** "For your last 10 bug-bounty payouts (or your last 10 internal security findings classified Critical), what was the time-to-fix? Provide the dates." If the median time-to-fix for Critical exceeds 30 days, the vulnerability-management claim is theater regardless of what the policy document says. For Critical RCE in an AI-codegen reintroduction class (CWE-89, CWE-78, CWE-502, CWE-918), the operational target should be measured in hours-to-days, not weeks (AGENTS.md DR-3 — control existence requires operational SLA, not policy language).
+**(d) Bug-bounty time-to-fix for Critical.** "For your last 10 bug-bounty payouts (or your last 10 internal security findings classified Critical), what was the time-to-fix? Provide the dates." If the median time-to-fix for Critical exceeds 30 days, the vulnerability-management claim is theater regardless of what the policy document says. For Critical RCE in an AI-codegen reintroduction class (CWE-89, CWE-78, CWE-502, CWE-918), the operational target should be measured in hours-to-days, not weeks (control existence requires an operational SLA, not policy language).
 
 ---
 
 ## Defensive Countermeasure Mapping
 
-Each D3FEND technique below maps an offensive finding from the assessment to a defensive control, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per AGENTS.md Hard Rule #9.
+Each D3FEND technique below maps an offensive finding from the assessment to a defensive control, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 | D3FEND ID | Technique | Layer (defense in depth) | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|--------------------------|-----------------------|--------------------|---------------------------|

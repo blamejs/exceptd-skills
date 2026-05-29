@@ -23,7 +23,7 @@ forward_watch:
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
 last_threat_review: "2026-05-18"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Threat Model Currency Assessment
@@ -374,7 +374,7 @@ For each gap, produce a specific, actionable update:
 
 ## Output Format
 
-The skill produces a structured Threat Model Currency Assessment that scores the threat model against each of the 14 threat classes, computes a currency percentage, and emits a priority update roadmap. The shape below is consumed downstream by `framework-gap-analysis` (which converts per-class gaps into Framework Lag Declarations), by `policy-exception-gen` (which generates defensible exceptions for any class the operator cannot remediate immediately), and by `global-grc` (which rolls up the currency score across EU/UK/AU/ISO jurisdictions per Hard Rule #5). Preserve the per-class scoring rows verbatim — they are the auditable derivation of the currency percentage.
+The skill produces a structured Threat Model Currency Assessment that scores the threat model against each of the 14 threat classes, computes a currency percentage, and emits a priority update roadmap. The shape below is consumed downstream by `framework-gap-analysis` (which converts per-class gaps into Framework Lag Declarations), by `policy-exception-gen` (which generates defensible exceptions for any class the operator cannot remediate immediately), and by `global-grc` (which rolls up the currency score across EU/UK/AU/ISO jurisdictions for global-first coverage). Preserve the per-class scoring rows verbatim — they are the auditable derivation of the currency percentage.
 
 ```
 ## Threat Model Currency Assessment
@@ -444,4 +444,4 @@ A threat model is current only when each of the 14 threat classes above has a na
 
 **Zero-trust posture:** every class above is verified in production before the currency score credits it. A class scored as "addressed" with a D3FEND technique that is policy-approved but not deployed, or deployed but not monitored, or monitored but not tested against the cited TTP, is over-credited. The Priority Update Roadmap field (per the Output Format) must list verification tests alongside the technique deployment plan.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** Classes 4, 5, 7, 8, 9, 10, 11, 12, 13 are AI-pipeline-applicable. `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. The currency assessment must record these degradations explicitly when scoring AI-pipeline classes.
+**AI-pipeline applicability:** Classes 4, 5, 7, 8, 9, 10, 11, 12, 13 are AI-pipeline-applicable. `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. The currency assessment must record these degradations explicitly when scoring AI-pipeline classes.

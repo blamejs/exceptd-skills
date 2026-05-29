@@ -34,7 +34,7 @@ forward_watch:
   - Framework publication updates (NIST SP updates, ISO amendments, NIS2 implementing acts)
   - IETF RFC publications and draft status changes (datatracker.ietf.org, rfc-editor.org); run `npm run validate-rfcs` quarterly
 last_threat_review: "2026-05-22"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief skill-update-loop` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief skill-update-loop` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Skill Update Loop
@@ -259,7 +259,7 @@ When a new attack class is documented in research, CVE disclosures, or threat in
 
 **Monitor:** IETF Datatracker (https://datatracker.ietf.org), RFC Editor (https://www.rfc-editor.org). Run `npm run validate-rfcs` (which calls `node orchestrator/index.js validate-rfcs --live`) on a quarterly cadence or whenever a tracked RFC/draft is known to have advanced.
 
-Per AGENTS.md hard rule #12 (external data version pinning), RFCs are tracked alongside ATLAS, NIST, CISA KEV. The catalog lives at `data/rfc-references.json`. Drift surfaces:
+Under the external-data version-pinning discipline, RFCs are tracked alongside ATLAS, NIST, CISA KEV. The catalog lives at `data/rfc-references.json`. Drift surfaces:
 
 - A draft advances to Proposed Standard, Internet Standard, or Best Current Practice.
 - A new RFC errata is published.
@@ -319,7 +319,7 @@ When a sector publishes an update:
 2. Check `data/framework-control-gaps.json` for affected control IDs — mark `status: "closed"` with the update reference if the update addresses the gap, otherwise update `gap_analysis` notes to reflect partial improvement or residual gap.
 3. Update the relevant sector skill's body (regulator-specific sections, control mapping tables, output-format examples) and bump `last_threat_review`.
 4. Bump `last_verified` on affected source entries in `sources/index.json` and in any source-tracking entries in `data/exploit-availability.json` or `data/rfc-references.json` that depend on the sector publication.
-5. If the update introduces a new control class not currently covered by any skill, evaluate whether to extend an existing sector skill or to add a new skill per AGENTS.md "Adding a New Skill" procedure.
+5. If the update introduces a new control class not currently covered by any skill, evaluate whether to extend an existing sector skill or to author a new skill following the project's skill-authoring procedure.
 
 **Affected skills (by default):** sector-healthcare, sector-financial, sector-federal-government, sector-energy, global-grc, framework-gap-analysis, compliance-theater.
 
@@ -331,7 +331,7 @@ When a sector publishes an update:
 
 **Monitor:** Gartner Magic Quadrant and Forrester Wave annual reports for the relevant vendor categories (CSPM, CWPP, CNAPP, EDR/XDR, secure email gateway / ICES, MLOps platforms, container security, API security), CNCF security TAG output (whitepapers, project graduations, and security-tooling assessments), OpenSSF working-group output (SLSA, Sigstore, model-signing, scorecard, secure-supply-chain consumption working groups), and vendor public roadmaps (AWS / Azure / GCP security service launches, Wiz / Lacework / Prisma / Sysdig / CrowdStrike / SentinelOne / Microsoft Defender / Proofpoint / Abnormal / Mimecast / Cloudflare / Akamai / Salt / Noname / Databricks / HuggingFace public capability announcements). Run a vendor-capability check at minimum semi-annually, and immediately on any new Magic Quadrant / Wave release or any vendor's general-availability announcement of a category-shifting capability.
 
-Per AGENTS.md Hard Rule #2 (framework lag is a first-class concept), a skill's framework-gap declaration is only valid as long as the vendor capability landscape behind those frameworks is unchanged. When a major vendor category ships a new detection or enforcement capability that closes a gap the skill currently maps as open, the skill body drifts from operational reality regardless of whether any CVE, ATLAS TTP, or framework amendment has fired. The reverse drift also matters: a vendor category that loses a previously-shipped capability (deprecation, acquisition-driven product collapse, or documented bypass that re-opens the gap) re-opens a skill's gap line and must be reflected promptly.
+Because framework lag is a first-class concept (framework controls trail current threats), a skill's framework-gap declaration is only valid as long as the vendor capability landscape behind those frameworks is unchanged. When a major vendor category ships a new detection or enforcement capability that closes a gap the skill currently maps as open, the skill body drifts from operational reality regardless of whether any CVE, ATLAS TTP, or framework amendment has fired. The reverse drift also matters: a vendor category that loses a previously-shipped capability (deprecation, acquisition-driven product collapse, or documented bypass that re-opens the gap) re-opens a skill's gap line and must be reflected promptly.
 
 When a vendor category ships a new capability (or loses one):
 
@@ -339,7 +339,7 @@ When a vendor category ships a new capability (or loses one):
 2. Update the affected skill's body — move language from "this is the gap" to "this is the new capability" (or vice versa), refresh the framework-lag declaration table, and update any TTP-to-control mapping rows that now resolve differently.
 3. Bump `last_threat_review` on each affected skill.
 4. Update `sources/index.json` if a new vendor primary-source (vendor public-documentation URL, capability-announcement post, security-tooling assessment) needs to be registered or if an existing source's `last_verified` needs to be refreshed.
-5. If the capability shift introduces a new control class not currently covered by any skill, evaluate whether to extend an existing skill or add a new skill per AGENTS.md "Adding a New Skill" procedure.
+5. If the capability shift introduces a new control class not currently covered by any skill, evaluate whether to extend an existing skill or author a new skill following the project's skill-authoring procedure.
 
 **Affected skills (by default):** cloud-security, container-runtime-security, mlops-security, email-security-anti-phishing, defensive-countermeasure-mapping, dlp-gap-analysis.
 
@@ -518,4 +518,4 @@ The drift attack against skill currency is structural, not technical — there i
 | **D3-IOPR** (Input/Output Profiling Resource) | Lint-skills body / frontmatter parsing is the profiling step: every skill body is parsed against the canonical section template (Threat Context, TTP Mapping, Framework Lag Declaration, Exploit Availability Matrix, Analysis Procedure, Output Format, Compliance Theater Check, DCM). A drifted skill that drops a required section is caught at lint time. | Layer 2 (Harden — schema). | Per-skill — schema is per-skill body. | Default-deny missing sections; the v0.13.0 lint upgrade makes DCM a hard-fail. |
 | **D3-PA** (Process Analysis) | The watchlist / dispatch / scan log every load and signature-check event so a forensic reader can reconstruct which skill version produced which finding. Without a per-invocation evidence stream, a stale skill body whose timestamp says "current" cannot be detected after the fact. | Layer 5 (Detect — runtime). | Per-invocation — every CLI invocation emits a structured log entry. | Treat every invocation as untrusted until the signature chain is verified at load time; persist the verification result alongside the finding. |
 
-**Defense-in-depth posture:** signature integrity (D3-CA) and snapshot-pinning (D3-EHB) are the hard gates that prevent a tampered skill body from shipping; lint-schema (D3-IOPR) and currency timestamps (D3-FAPA) are the audit gates that catch silent drift inside an intentional release; D3-PA is the per-invocation evidence stream that lets the operator answer "which version of the skill produced this finding" post-hoc. Per AGENTS.md hard rule #8 (pinned ATLAS / ATT&CK version), every layer's evidence is keyed off the pinned version — a manifest snapshot taken against ATLAS v5.6.0 is not interchangeable with one taken against a later release.
+**Defense-in-depth posture:** signature integrity (D3-CA) and snapshot-pinning (D3-EHB) are the hard gates that prevent a tampered skill body from shipping; lint-schema (D3-IOPR) and currency timestamps (D3-FAPA) are the audit gates that catch silent drift inside an intentional release; D3-PA is the per-invocation evidence stream that lets the operator answer "which version of the skill produced this finding" post-hoc. Because the ATLAS / ATT&CK version is pinned, every layer's evidence is keyed off the pinned version — a manifest snapshot taken against ATLAS v5.6.0 is not interchangeable with one taken against a later release.

@@ -442,7 +442,7 @@ Universal lag: every jurisdiction except Australia (ISM-1623) lacks an operation
 - **Brazil (LGPD Art. 33-35):** Cross-border transfer requires adequacy decision, SCCs, BCRs, or specific consent; ANPD has signalled AI-tool enforcement interest under LGPD Art. 33.
 - **US sub-national — NYDFS 23 NYCRR 500 (amended Nov 2023, phased through Nov 2025):** 72-hour cyber-event notification to DFS, CISO accountability, MFA mandate, annual independent audit for Class A companies, Third-Party Service Provider Security Policy at 500.11. NYDFS is the strictest US sub-national financial-sector regime and operationally exceeds most state-level analogues.
 
-Per AGENTS.md rule #5, the global-grc analysis must cross-walk against the full catalog above, not just EU/UK/AU/ISO. A jurisdictional rollup that omits CN, VN, IL, CH, HK, TW, ID, JP-expanded, KR, BR, or NYDFS for an in-scope org is structurally incomplete.
+The global-grc analysis must cross-walk against the full catalog above, not just EU/UK/AU/ISO — a global-first rollup covers every applicable jurisdiction, not a US-centric subset. A jurisdictional rollup that omits CN, VN, IL, CH, HK, TW, ID, JP-expanded, KR, BR, or NYDFS for an in-scope org is structurally incomplete.
 
 ---
 
@@ -542,7 +542,7 @@ Produce a matrix of: threat class × jurisdiction framework × requirement adequ
 
 ## Output Format
 
-The skill produces a structured Global GRC Assessment that rolls compliance findings across the org's jurisdictional footprint — EU (NIS2, DORA, EU AI Act, CRA), UK (CAF, Cyber Essentials), AU (ISM, Essential 8, APRA CPS 234), ISO 27001:2022 / 42001:2023, NIST, and the expanded set tracked in `data/global-frameworks.json`. The shape below is consumed downstream by `framework-gap-analysis` (which produces per-jurisdiction Framework Lag Declarations), by `policy-exception-gen` (for cross-jurisdictional exception language), and by CSAF-style auditor evidence bundles. Preserve the per-jurisdiction control-mapping rows verbatim — they are the load-bearing cross-walk per Hard Rule #5.
+The skill produces a structured Global GRC Assessment that rolls compliance findings across the org's jurisdictional footprint — EU (NIS2, DORA, EU AI Act, CRA), UK (CAF, Cyber Essentials), AU (ISM, Essential 8, APRA CPS 234), ISO 27001:2022 / 42001:2023, NIST, and the expanded set tracked in `data/global-frameworks.json`. The shape below is consumed downstream by `framework-gap-analysis` (which produces per-jurisdiction Framework Lag Declarations), by `policy-exception-gen` (for cross-jurisdictional exception language), and by CSAF-style auditor evidence bundles. Preserve the per-jurisdiction control-mapping rows verbatim — they are the load-bearing global-first cross-walk.
 
 ```
 ## Global GRC Assessment

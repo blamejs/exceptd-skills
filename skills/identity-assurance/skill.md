@@ -67,7 +67,7 @@ Identity is the new perimeter, and the perimeter expanded. The 2026 principal po
 
 **Agent-as-principal is operational reality.** When an AI coding assistant calls an MCP tool, it does so under the IDE user's OAuth session by default. The agent inherits the user's scopes wholesale — not because anyone designed it that way, but because no current identity standard defines an agent-as-principal model. CVE-2026-30615 (Windsurf MCP local-vector RCE, CVSS 8.0 / AV:L) hinged in part on this implicit inheritance: tool calls executed under the IDE user's privileges with no separate authentication challenge for the agent's actions. The principal who authenticated (the human) is not the principal who took the action (the agent), and the audit trail does not distinguish them.
 
-**Phishing-resistant authentication is now table-stakes.** FIDO2 / WebAuthn synced passkeys are the only widely deployed authenticator class that survives credential phishing, AiTM proxy phishing (evilginx-class), and push-notification fatigue attacks. Orgs still standing on TOTP / SMS / push-MFA in 2026 are shipping password-equivalent risk forward, and the framework gap analysis must say so. AI-assisted phishing kit development means the time-to-weaponize a new bypass technique is hours, not weeks (per DR-5: AI acceleration is current operational reality, not a future consideration).
+**Phishing-resistant authentication is now table-stakes.** FIDO2 / WebAuthn synced passkeys are the only widely deployed authenticator class that survives credential phishing, AiTM proxy phishing (evilginx-class), and push-notification fatigue attacks. Orgs still standing on TOTP / SMS / push-MFA in 2026 are shipping password-equivalent risk forward, and the framework gap analysis must say so. AI-assisted phishing kit development means the time-to-weaponize a new bypass technique is hours, not weeks — AI acceleration is current operational reality, not a future consideration.
 
 **Workload identity is short-lived or it is broken.** Static service-account keys and long-lived OAuth refresh tokens are credential-theft jackpots. RFC 9700 (OAuth 2.0 Security Best Current Practice, January 2025) replaces the original RFC 6749 threat model and assumes short-lived access tokens, sender-constrained tokens (DPoP / mTLS), and rotated refresh tokens. Skills that cite RFC 6749 without RFC 9700 are citing the wrong threat model.
 
@@ -135,7 +135,7 @@ Sourced from `data/cve-catalog.json` and `data/exploit-availability.json` as of 
 
 ## Analysis Procedure
 
-This procedure threads the three foundational principles explicitly (per AGENTS.md skill-format requirement).
+This procedure threads the three foundational principles explicitly.
 
 ### Defense in Depth (multi-layer identity controls)
 
@@ -247,13 +247,13 @@ Four specific tests distinguish paper compliance from real posture:
 
 3. **MCP / agent access token TTL.** "Show me the access-token TTL configured for your MCP server fleet and AI-agent integrations. Show me the refresh-token rotation policy." If access-token TTLs are measured in weeks, or are unconfigured / default-1-year-from-the-SDK, or refresh tokens are never rotated, this is theater against RFC 9700 BCP. The credential-theft blast radius is multiplied by the TTL.
 
-4. **Cross-jurisdiction evidence.** "Show me your jurisdiction-specific identity-control evidence for every jurisdiction you operate in: EU NIS2 Art 21 transposition, DORA RTS, UK CAF B2, AU ISM 0974+, ISO 27001 A.5.16; plus IL INCD Doctrine 2.0 / Cyber Defense Methodology 2024, CH FINMA Circ. 2023/1, JP FISC v9, SG MAS TRM §11/§14.2, IN CERT-In Directions, NY DFS 23 NYCRR 500.12." US-only evidence (or worse, NIST-only evidence) for a multi-jurisdictional org is theater per AGENTS.md rule #5 and DR-4.
+4. **Cross-jurisdiction evidence.** "Show me your jurisdiction-specific identity-control evidence for every jurisdiction you operate in: EU NIS2 Art 21 transposition, DORA RTS, UK CAF B2, AU ISM 0974+, ISO 27001 A.5.16; plus IL INCD Doctrine 2.0 / Cyber Defense Methodology 2024, CH FINMA Circ. 2023/1, JP FISC v9, SG MAS TRM §11/§14.2, IN CERT-In Directions, NY DFS 23 NYCRR 500.12." US-only evidence (or worse, NIST-only evidence) for a multi-jurisdictional org is theater — global-first coverage is required, and identity evidence must be jurisdiction-specific rather than US-centric.
 
 ---
 
 ## Defensive Countermeasure Mapping
 
-Maps the identity-assurance gaps above to MITRE D3FEND techniques with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (per AGENTS.md Hard Rule #9).
+Maps the identity-assurance gaps above to MITRE D3FEND techniques with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 | D3FEND Technique | Mapping | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
@@ -274,4 +274,4 @@ After producing the identity assurance assessment output, chain into the followi
 - **`supply-chain-integrity`** — signed identity artefacts. Federation assertion signing keys, OIDC discovery documents, JWKS endpoints, agent SDK binaries, and MCP server packages are all supply-chain artefacts. Run supply-chain-integrity to produce SLSA-level attestation, Sigstore signature verification, and in-toto provenance for the identity artefacts in this skill's federation-surface inventory.
 - **`compliance-theater`** — paper-MFA theater. If the phishing-resistant coverage matrix in this skill's output shows < 100% phishing-resistant coverage for privileged users while the org's compliance attestations claim MFA-for-all, run compliance-theater for the full structured theater-vs-real-posture report tied to the specific audit reports (SOC 2, ISO, NIS2 conformity) being misrepresented.
 
-For ephemeral / serverless / AI-pipeline contexts (per AGENTS.md rule #9): interactive AAL3 authentication is architecturally impossible inside a serverless function or short-lived container. The scoped alternative is workload-identity-federation (SPIFFE/SPIRE, AWS IAM Roles Anywhere, GCP WIF, Azure Workload Identity) with sender-constrained short-lived tokens (DPoP per RFC 9449 or mTLS per RFC 8705), build-time agent-binary allowlisting baked into the function image, and per-invocation cryptographic device attestation where the platform supports it.
+For ephemeral / serverless / AI-pipeline contexts: interactive AAL3 authentication is architecturally impossible inside a serverless function or short-lived container. The scoped alternative is workload-identity-federation (SPIFFE/SPIRE, AWS IAM Roles Anywhere, GCP WIF, Azure Workload Identity) with sender-constrained short-lived tokens (DPoP per RFC 9449 or mTLS per RFC 8705), build-time agent-binary allowlisting baked into the function image, and per-invocation cryptographic device attestation where the platform supports it.

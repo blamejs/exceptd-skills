@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.1 — 2026-05-29
+
+Skill content and catalog hygiene.
+
+Every skill now describes its requirements in its own terms. References that pointed at the project's internal contributor guide by name or number — "per AGENTS.md", "Hard Rule #N", "DR-N" — have been replaced with the substance of the rule, since an operator reading a shipped skill cannot resolve those pointers. The behavior each rule mandates is unchanged and stated inline (CVSS reported alongside RWEP, global-first jurisdiction coverage, the zero-day learning loop, no orphaned controls, and so on). Version stamps left in skill frontmatter comments were removed.
+
+Seven flagship actively-exploited catalog entries — runc "Leaky Vessels" (CVE-2024-21626), the xz-utils backdoor (CVE-2024-3094), SolarWinds Orion (CVE-2020-10148), Citrix NetScaler (CVE-2023-3519), ConnectWise ScreenConnect (CVE-2024-1709), Cisco SD-WAN (CVE-2026-20182), and Fortinet FortiOS (CVE-2024-21762) — now carry structured `vendor_advisories` (vendor, advisory id, URL, published date) drawn from their verified public advisories.
+
 ## 0.15.0 — 2026-05-28
 
 Validation and gate hardening. Several catalog and skill integrity checks that had been deferred as non-blocking warnings now hard-fail the predeploy gate, and two latent gate weaknesses are closed.

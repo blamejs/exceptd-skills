@@ -62,7 +62,7 @@ forward_watch:
   - EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing
   - MITRE ATLAS v5.6.0 (released May 2026) shipped the AML.T0010 sub-technique expansion this forecast tracked plus new techniques ("Publish Poisoned AI Agent Tool", "Escape to Host"); inventory now 16 tactics, 84 techniques, 56 sub-techniques. Forward watch: subsequent ATLAS minor and major releases — track next-cadence updates to agentic-AI TTPs and MLOps-pipeline-specific techniques
 last_threat_review: "2026-05-22"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief mlops-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief mlops-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # MLOps Pipeline Security Assessment
@@ -136,7 +136,7 @@ Cross-walk to CWE (see `data/cwe-catalog.json`):
 
 ## Exploit Availability Matrix
 
-Sourced from `data/cve-catalog.json`, public incident history, and `data/atlas-ttps.json` real-world-instances as of 2026-05-11. Per AGENTS.md hard rule #1, CVE references include CVSS, KEV, PoC, AI-discovery, exploitation, and patch availability. Technique-class rows are scored as ongoing class risks per AGENTS.md hard rule #3 — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
+Sourced from `data/cve-catalog.json`, public incident history, and `data/atlas-ttps.json` real-world-instances as of 2026-05-11. Every CVE reference includes CVSS, KEV, PoC, AI-discovery, exploitation, and patch availability (no theoretical-only intel). Technique-class rows are scored as ongoing class risks; CVSS is reported alongside RWEP for compatibility but is never the prioritization signal — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
 
 | Incident / Class | CVSS | PoC Public? | CISA KEV? | AI-Accelerated? | Patch / Mitigation | SLSA-Detectable? | ML-BOM-Detectable? |
 |---|---|---|---|---|---|---|---|
@@ -298,7 +298,7 @@ A genuinely conformant MLOps program answers all four with concrete artifacts: a
 
 ## Defensive Countermeasure Mapping
 
-D3FEND techniques referenced (see `data/d3fend-catalog.json`). Each is annotated with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per AGENTS.md hard rule #9.
+D3FEND techniques referenced (see `data/d3fend-catalog.json`). Each is annotated with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (some controls are architecturally impossible in ephemeral / serverless contexts).
 
 - **D3-EHB (Executable Hash-based Allowlist)** — Hash-pinned allowlist for model artifacts at load time. Maps to model-weight SHA-256 verification at inference-service load, and to in-toto / SLSA-style attestation enforcement at deployment. Defense-in-depth layer: runtime model-load. Least-privilege scope: serving service has read-only access to a pinned set of model hashes for its project, no read on other models. Zero-trust posture: default-deny on any model hash not in the allowlist. AI-pipeline applicability: persistent registries store the allowlist; ephemeral serving pods pull and verify on each model-load.
 
@@ -306,7 +306,7 @@ D3FEND techniques referenced (see `data/d3fend-catalog.json`). Each is annotated
 
 - **D3-IOPR (Input/Output Profiling)** — Profiling of input and output payloads at inference services to detect adversarial inputs (AML.T0043) and model-probing patterns (AML.T0017). Defense-in-depth layer: serving-layer pre- and post-inference. Least-privilege scope: profiling service has read-only access to inference traffic at the serving proxy; no model-load privileges, no registry-write privileges. Zero-trust posture: every inference request is profiled regardless of source authentication — authenticated users execute AML.T0043 attacks too. AI-pipeline applicability: serves both ephemeral inference pods (profiling sidecar) and persistent monitoring services (drift-detection pipeline ingesting profiled telemetry).
 
-Per AGENTS.md hard rule #9, MLOps stacks span three architectural layers each requiring an explicit defense story:
+MLOps stacks span three architectural layers, each requiring an explicit defense story (and each surfacing controls that are architecturally impossible in ephemeral environments):
 
 - **Ephemeral training jobs** — per-run pods on Kubeflow / Vertex / SageMaker / Ray. SLSA-style training-run attestation is the integrity anchor; D3-EAL on the training container is the runtime control. Live patching is not applicable — runs are torn down post-training.
 - **Persistent model registries** — MLflow Model Registry, SageMaker Model Registry, Vertex Model Registry, Azure ML registry, Hugging Face Hub private orgs. RBAC is the access-layer control; signature attestation on every write is the integrity control. Standard server-hardening + patch-SLA applies.
@@ -328,4 +328,4 @@ After producing the MLOps pipeline security assessment, chain into the following
 - **`ai-risk-management`** — governance overlay (ISO 42001, ISO 23894, NIST AI RMF). Where this skill identifies a framework gap, the governance overlay translates findings into the management-system documentation, AI impact assessment, and high-risk AI classification work products.
 - **`coordinated-vuln-disclosure`** — AI vulnerability intake. Where this skill surfaces a vendor vulnerability (MLflow class, framework class, MCP server class), or where research surfaces a novel poisoning pattern requiring coordinated disclosure, chain into the CVD skill for the ISO 29147 / 30111 / CSAF 2.0 publication workflow.
 
-For ephemeral / serverless MLOps pipelines (per AGENTS.md hard rule #9): training-run lineage attestation in environments where the training pod is torn down before the registry write completes requires that the attestation is emitted from inside the training run and pushed to the registry as a registry-side artifact (OCI referrers API or in-toto bundle attached to the model entry). Live patching of in-flight training runs is architecturally impossible — the scoped alternative is roll-forward (kill the run, re-run from a signed training-script revision) plus post-hoc attestation-chain audit.
+For ephemeral / serverless MLOps pipelines (where some controls are architecturally impossible): training-run lineage attestation in environments where the training pod is torn down before the registry write completes requires that the attestation is emitted from inside the training run and pushed to the registry as a registry-side artifact (OCI referrers API or in-toto bundle attached to the model entry). Live patching of in-flight training runs is architecturally impossible — the scoped alternative is roll-forward (kill the run, re-run from a signed training-script revision) plus post-hoc attestation-chain audit.

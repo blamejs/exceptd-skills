@@ -161,7 +161,7 @@ Cross-walk to CWE (see `data/cwe-catalog.json`):
 
 ## Exploit Availability Matrix
 
-Sourced from `data/cve-catalog.json`, `data/exploit-availability.json`, and public incident history as of 2026-05-11. Per AGENTS.md hard rule #1, every CVE reference includes CVSS, KEV status, PoC availability, AI-discovery flag, active-exploitation status, and patch availability. Technique-class rows (no single CVE) are scored as ongoing class risks per AGENTS.md hard rule #3 — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
+Sourced from `data/cve-catalog.json`, `data/exploit-availability.json`, and public incident history as of 2026-05-11. Every CVE reference includes CVSS, KEV status, PoC availability, AI-discovery flag, active-exploitation status, and patch availability. Technique-class rows (no single CVE) are scored as ongoing class risks — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
 
 | Incident / Class | CVSS | RWEP | PoC Public? | CISA KEV? | AI-Accelerated? | Patch / Mitigation | SLSA-Detectable? | SBOM-Detectable? | VEX-Helpful? |
 |---|---|---|---|---|---|---|---|---|---|

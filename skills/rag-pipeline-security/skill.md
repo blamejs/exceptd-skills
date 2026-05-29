@@ -302,7 +302,7 @@ After producing the RAG pipeline security assessment, the operator should chain 
 - **`ai-attack-surface`** — RAG is one component of the broader AI-application threat model. Chain into the AI attack surface skill to situate the RAG findings within the surrounding LLM, tool-use, and prompt-handling threat surfaces (especially when Attack Class 5 indirect prompt injection findings extend into agent tool-call behaviour).
 - **`attack-surface-pentest`** — RAG corpora and embedding-store APIs (Pinecone, Weaviate, Qdrant, pgvector, Chroma management endpoints) must be enumerated in pen-test scope. The architectural-control mitigations above are only verifiable through adversarial exercise; without pen-test coverage, the Step 3 posture score is self-reported.
 
-For ephemeral / serverless RAG pipelines (per AGENTS.md rule #9): embedding-distribution-shift monitoring across rolling deployments where the vector store is rebuilt per request is architecturally impossible. The scoped alternative is per-ingestion-event content scanning and provenance attestation, with the distribution-shift signal computed off-line against a sampled snapshot rather than the live store.
+For ephemeral / serverless RAG pipelines (where some controls are architecturally impossible): embedding-distribution-shift monitoring across rolling deployments where the vector store is rebuilt per request is architecturally impossible. The scoped alternative is per-ingestion-event content scanning and provenance attestation, with the distribution-shift signal computed off-line against a sampled snapshot rather than the live store.
 
 ---
 
@@ -324,7 +324,7 @@ D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. The five RAG attack c
 
 **Zero-trust posture:** every retrieved chunk is treated as untrusted content. `D3-CSPP` inspects the composed prompt as if the retrieved context came from a hostile source — because under Attack Class 5, it did. No "internal document is trusted" exemption — internal documents are the documented vector for indirect prompt injection that survives external-content filters.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-FAPA` on ephemeral, per-query rebuilt indices degrades to per-query retrieval logging (`D3-IOPR` captures the query + result set) because there is no persistent corpus to baseline against. The scoped alternative is build-time provenance (signed index manifest at construction) combined with query-time `D3-IOPR` capture of the query+result-set tuple — equivalent observation surface, different anchoring.
+**AI-pipeline applicability (some controls are architecturally impossible on ephemeral, per-query rebuilt indices):** `D3-FAPA` on ephemeral, per-query rebuilt indices degrades to per-query retrieval logging (`D3-IOPR` captures the query + result set) because there is no persistent corpus to baseline against. The scoped alternative is build-time provenance (signed index manifest at construction) combined with query-time `D3-IOPR` capture of the query+result-set tuple — equivalent observation surface, different anchoring.
 
 ---
 

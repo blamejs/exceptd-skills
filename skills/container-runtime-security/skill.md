@@ -112,7 +112,7 @@ State of standards baselines:
 | US FedRAMP Rev 5 + DoD SRG IL2/IL4/IL5 | Federal cloud authorization baseline + DoD impact-level baselines | Federal cloud workloads | FedRAMP Rev 5 inherits NIST 800-53 CM-7 / SI-7. CIS Kubernetes Benchmark is increasingly expected as ATO evidence but not mandated in Rev 5 baseline text. DoD SRG IL5 in practice requires CIS K8s Benchmark + STIG. |
 | ISO 27001:2022 + ISO/IEC 27017 (cloud) | A.8.28, A.8.9 + cloud sector extension | Cloud-service ISMS | Method-neutral; cloud-sector extension predates K8s-native admission policy. |
 
-**Cross-jurisdiction posture (per AGENTS.md rule #5):** Any container/K8s assessment for a multi-jurisdiction operator must cite at minimum EU NIS2 + CRA, UK NCSC CAF, AU ISM, IL INCD, SG GovTech/MAS TRM, alongside ISO 27001:2022 + ISO/IEC 27017 and NIST 800-53 CM-7. US-only is insufficient.
+**Cross-jurisdiction posture (global-first, not US-centric):** Any container/K8s assessment for a multi-jurisdiction operator must cite at minimum EU NIS2 + CRA, UK NCSC CAF, AU ISM, IL INCD, SG GovTech/MAS TRM, alongside ISO 27001:2022 + ISO/IEC 27017 and NIST 800-53 CM-7. US-only is insufficient.
 
 ---
 
@@ -153,13 +153,13 @@ CWE cross-walk (see `data/cwe-catalog.json`):
 | Unsigned container image admitted to production | n/a (class) | n/a | n/a | n/a | n/a | Pervasive — default cluster posture | Sigstore policy-controller `ClusterImagePolicy` requiring keyless verification against pinned publisher identity; Kyverno `verifyImages` rule | Yes — that is the entire point | n/a |
 | AI-inference image with code-executing model load (PyTorch `.pt` / Python-native serialization) | n/a (class) | n/a | n/a | Trivial — published PoC research | Yes — adversarial-weights research and 2025 incident reports | Suspected in advanced campaigns | Reject code-executing serialization formats; require safetensors; verify model signature pre-load | Partial — admission policy on the model-PVC contents | Yes — Falco rule on unexpected serialization-load syscalls from inference container |
 
-**Honest gap statement (per AGENTS.md rule #10).** `data/cve-catalog.json` does not yet enumerate every ingress-controller, CNI plugin, CSI driver, or admission webhook CVE. The authoritative feeds are upstream advisories (`kubernetes.io/security/`, `kubernetes-announce@googlegroups.com`, vendor PSIRT feeds for managed services, ingress-nginx CHANGELOG, Cilium security advisories). Forward-watch covers ingestion of these feeds.
+**Honest gap statement (no fabricated CVE data).** `data/cve-catalog.json` does not yet enumerate every ingress-controller, CNI plugin, CSI driver, or admission webhook CVE. The authoritative feeds are upstream advisories (`kubernetes.io/security/`, `kubernetes-announce@googlegroups.com`, vendor PSIRT feeds for managed services, ingress-nginx CHANGELOG, Cilium security advisories). Forward-watch covers ingestion of these feeds.
 
 ---
 
 ## Analysis Procedure
 
-This procedure threads the three foundational principles required by AGENTS.md skill-format spec (defense in depth, least privilege, zero trust) through every step. Per AGENTS.md rule #9, containers are the canonical ephemeral runtime — and the audit/forensic implication is that this is the operating reality the program must design for, not work around.
+This procedure threads the three foundational principles (defense in depth, least privilege, zero trust) through every step. Containers are the canonical ephemeral runtime — and the audit/forensic implication is that this is the operating reality the program must design for, not work around.
 
 ### Defense in depth
 
@@ -232,7 +232,7 @@ Six layers, each independently capable of blocking a different attacker stage. A
 
 10. **Supply chain hand-off (`supply-chain-integrity`).** Every image in the admission allowlist must trace to a SLSA L3 build with cosign signature, Rekor inclusion proof, and SBOM. The container-runtime job is to enforce verification at admission; the build-side job is to produce the evidence.
 
-### Ephemeral / audit-forensic posture (AGENTS.md rule #9)
+### Ephemeral / audit-forensic posture
 
 Containers are ephemeral by design: pods die, nodes are replaced, log file paths inside the container are gone the moment the pod is. The audit/forensic implication:
 
@@ -349,7 +349,7 @@ Ask: *"Show me the most recent tabletop exercise where the scenario was a kernel
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps container/K8s findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per Hard Rule #9.
+Maps container/K8s findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (controls impossible in serverless / ephemeral contexts name an explicit scoped alternative).
 
 | D3FEND ID | Technique | Cluster Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
@@ -360,7 +360,7 @@ Per AGENTS.md optional 8th section (required for skills shipped on or after 2026
 | D3-NTPM | Network Traffic Policy Mapping | Cilium L7 policy expression of allowed HTTP methods, gRPC services, DNS FQDNs, Kafka topics per workload | Per-workload allowlist of L7 endpoints | Continuous verification of conformance; deviation triggers alert | Highly applicable. AI inference egress should be policy-mapped to specific Hugging Face / vendor registry FQDNs; deviation indicates either model-pull misconfiguration or exfiltration. |
 | D3-IOPR | Input / Output Process Profiling | Falco / Tetragon eBPF syscall + network + process-exec event stream; behavioral baselines per workload class | Per-workload behavioral profile; deviation alerts scoped to that workload's owner | Detection assumes the container is hostile until profile-conformant per-event | Highly applicable. AI inference workloads have a tight behavioral profile (CUDA syscalls, model-PVC reads, inference-result writes); unexpected serialization-load syscalls, `subprocess.Popen`, or `socket(AF_INET)` to non-registry endpoints is a high-confidence alert. The ephemeral nature of pods means baselines should be per-image-digest rather than per-pod-instance. |
 
-**Ephemeral runtime posture (per Hard Rule #9, applied straight).** Containers are the canonical ephemeral runtime: pods die, nodes are replaced, in-pod logs are gone the moment the pod is. Controls that assume a long-lived host (host-based EDR signature DB updated weekly, on-host log retention, in-place patching) are architecturally mismatched. The container-realistic posture: admission policy as the primary preventive layer (D3-EAL, D3-EHB), eBPF runtime detection with out-of-cluster event sink as the primary detective layer (D3-IOPR), node-image swap (Bottlerocket, Talos, Flatcar) as the primary patching pattern, and all audit/forensic data leaving the host before the host can be lost. Recommendations that read "deploy host EDR with weekly signature updates" without specifying how that survives a node replacement are operationally indefensible.
+**Ephemeral runtime posture (applied straight).** Containers are the canonical ephemeral runtime: pods die, nodes are replaced, in-pod logs are gone the moment the pod is. Controls that assume a long-lived host (host-based EDR signature DB updated weekly, on-host log retention, in-place patching) are architecturally mismatched. The container-realistic posture: admission policy as the primary preventive layer (D3-EAL, D3-EHB), eBPF runtime detection with out-of-cluster event sink as the primary detective layer (D3-IOPR), node-image swap (Bottlerocket, Talos, Flatcar) as the primary patching pattern, and all audit/forensic data leaving the host before the host can be lost. Recommendations that read "deploy host EDR with weekly signature updates" without specifying how that survives a node replacement are operationally indefensible.
 
 ---
 

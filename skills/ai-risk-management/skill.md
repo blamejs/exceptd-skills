@@ -45,7 +45,7 @@ cwe_refs:
 d3fend_refs:
   - D3-IOPR
 last_threat_review: "2026-05-15"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # AI Risk Management (Governance Layer)
@@ -88,7 +88,7 @@ AI as adversary is now operational reality, not forecast: 41% of 2025 zero-days 
 
 ## Framework Lag Declaration
 
-AI governance lag is global and asymmetric. Regulatory expectation outruns operational capability everywhere except Israel and (provisionally) the EU. Per Hard Rule AGENTS.md #5, the comparison spans EU, UK, AU, JP, IL, ID, and US-state (NYDFS) frameworks alongside ISO and NIST.
+AI governance lag is global and asymmetric. Regulatory expectation outruns operational capability everywhere except Israel and (provisionally) the EU. The comparison is global-first: it spans EU, UK, AU, JP, IL, ID, and US-state (NYDFS) frameworks alongside ISO and NIST.
 
 | Jurisdiction | Framework | Control / Article | What it misses for AI governance |
 |---|---|---|---|
@@ -128,7 +128,7 @@ Supporting weakness classes consumed from `data/cwe-catalog.json`:
 Defensive technique consumed from `data/d3fend-catalog.json`:
 - **D3-IOPR** (Input / Output Profiling) — the closest D3FEND-mapped defensive technique to "AI prompt / response governance". Governance does not implement D3-IOPR — it *commissions and audits* the implementation done by `defensive-countermeasure-mapping`.
 
-Threats with no TTP attachment are escalated to `zeroday-gap-learn` per Hard Rule AGENTS.md #6.
+Threats with no TTP attachment are escalated to `zeroday-gap-learn` (the zero-day learning loop, so no threat is left orphaned without a mapped technique).
 
 ---
 
@@ -163,7 +163,7 @@ Every AI risk-management exercise must explicitly thread three foundational desi
 - **Least privilege (per principal, per use case).** Every AI use case is scoped to the least data and least authority required. Agentic systems get the narrowest action set required, never the model's full tool-call surface. Every agent's service-account permissions are an explicit risk-treatment decision recorded in the register.
 - **Zero trust (AI vendors and internal AI tooling are untrusted suppliers).** AI vendor data-retention claims require contractual *and* technical verification (vendor-side audit log access, encryption-in-transit verification, zero-data-retention attestation tied to specific endpoints, not the vendor's marketing page). Internal AI tooling (Copilot, Cursor, Windsurf, Claude Code, agent runtimes, internal RAG) receives the same posture: traffic is logged, principals are authenticated, capabilities are scoped, trust boundaries are explicit.
 
-For ephemeral / serverless / AI-pipeline contexts (Hard Rule AGENTS.md #9), governance applies to the *use case*, not to the runtime — the AI inventory entry is per use case, the impact assessment is per use case, and the risk treatment is per use case, regardless of whether the underlying runtime is a long-lived server, a serverless function, or an ephemeral agent invocation.
+For ephemeral / serverless / AI-pipeline contexts, governance applies to the *use case*, not to the runtime — the AI inventory entry is per use case, the impact assessment is per use case, and the risk treatment is per use case, regardless of whether the underlying runtime is a long-lived server, a serverless function, or an ephemeral agent invocation.
 
 ### Step 1 — Build the AI inventory ledger
 
@@ -183,7 +183,7 @@ For each inventory row above the minimal-risk threshold, run the ISO/IEC 23894 c
 
 ### Step 4 — Log every risk-treatment decision
 
-The risk-treatment register is the artefact auditors and regulators ask for first. Every entry: risk identifier (linked to the ATLAS TTP and any relevant CVE in `data/cve-catalog.json`), treatment decision (accept / mitigate / transfer / avoid), owner, residual-risk justification (cross-walked to RWEP per `lib/scoring.js`, never CVSS alone — Hard Rule AGENTS.md #3), review cadence, last review date.
+The risk-treatment register is the artefact auditors and regulators ask for first. Every entry: risk identifier (linked to the ATLAS TTP and any relevant CVE in `data/cve-catalog.json`), treatment decision (accept / mitigate / transfer / avoid), owner, residual-risk justification (cross-walked to RWEP per `lib/scoring.js`, never CVSS alone), review cadence, last review date.
 
 Acceptance decisions require sign-off from the risk-accepting authority. Acceptance without sign-off is theatre (Compliance Theater Check (c) below).
 
@@ -215,7 +215,7 @@ Hand off to `identity-assurance`: every AI agent that takes action requires its 
 
 The above steps are the operational inputs to the AIMS. Per ISO/IEC 42001 the management system also requires: AI policy, leadership commitment, roles/responsibilities, competence/training records, communication, documented information, operational planning, performance evaluation (internal audit, management review), improvement (corrective actions, continual improvement). The AIMS is the meta-artefact that contains all of the above as evidence.
 
-Re-run cadence: per Hard Rule AGENTS.md #12, when ATLAS, EU AI Act implementing measures, ISO/IEC 42001, ISO/IEC 23894, NIST AI RMF, or any data-dep version pin advances, re-run the affected layers. The minimum cadence is annual for the AIMS as a whole; quarterly for the risk-treatment register; per-use-case-change for inventory; per-incident for the incident playbook.
+Re-run cadence: when ATLAS, EU AI Act implementing measures, ISO/IEC 42001, ISO/IEC 23894, NIST AI RMF, or any data-dep version pin advances, re-run the affected layers. The minimum cadence is annual for the AIMS as a whole; quarterly for the risk-treatment register; per-use-case-change for inventory; per-incident for the incident playbook.
 
 ---
 
@@ -289,7 +289,7 @@ Apply each test. A "no" on any of (a)–(e) means the AI governance posture is p
 
 (e) **Show me your acceptance sign-off for the prompt-injection residual risk.** Per AML.T0051 and the bypass rates >85% against SOTA defences (per `ai-attack-surface`), every organisation deploying LLMs with tool-call capability is operating with non-trivial residual prompt-injection risk. That residual must be a *signed-off acceptance decision* by the risk-accepting authority — not a silent assumption that prompt-injection classifiers handle it. If the residual is not documented, the AIMS is missing its highest-priority risk treatment.
 
-(f) **Show me the framework-gap declaration for ISO/IEC 42001 in your AIMS.** Per Hard Rule AGENTS.md #2, the AIMS must explicitly declare what ISO/IEC 42001 controls are insufficient for current TTPs. If the AIMS implies that 42001 certification is adequate evidence of AI security posture, the framework-lag rule is breached. Hand-off to `framework-gap-analysis` is then required.
+(f) **Show me the framework-gap declaration for ISO/IEC 42001 in your AIMS.** The AIMS must explicitly declare what ISO/IEC 42001 controls are insufficient for current TTPs (framework lag is first-class). If the AIMS implies that 42001 certification is adequate evidence of AI security posture, the framework-lag rule is breached. Hand-off to `framework-gap-analysis` is then required.
 
 ---
 
@@ -301,7 +301,7 @@ For each governance finding produced by this skill that maps to a technical risk
 - **Defense-in-depth layer position** — the AIMS audits that every accepted residual has at least two defensive layers, or a signed acceptance for the shallow-defence position.
 - **Least-privilege scope** — the AIMS verifies that every AI principal's authorisation surface is the minimum required and is recorded in the risk-treatment register.
 - **Zero-trust posture** — the AIMS verifies that every boundary crossing in the AI inventory has a stated verification primitive.
-- **AI-pipeline applicability** (Hard Rule AGENTS.md #9) — the AIMS rejects governance recommendations that are architecturally infeasible for the runtime in question and requires an explicitly scoped alternative or an "accept residual or redesign" entry.
+- **AI-pipeline applicability** — the AIMS rejects governance recommendations that are architecturally infeasible for the runtime in question and requires an explicitly scoped alternative or an "accept residual or redesign" entry.
 
 Per the broader `defensive-countermeasure-mapping` cross-walk, the AIMS is the place where D3FEND coverage gaps are *owned*: a missing D3FEND layer is not a defect the technical team carries alone — it is a residual-risk entry the risk-accepting authority owns.
 
@@ -318,5 +318,5 @@ Per the broader `defensive-countermeasure-mapping` cross-walk, the AIMS is the p
 - **`coordinated-vuln-disclosure`** — AI vulnerability intake. The AIMS owns the policy; CVD owns the procedure. AI-specific vulnerabilities flow through CVD; the AIMS consumes the resulting evidence.
 - **`global-grc`** — cross-jurisdictional obligations. The AIMS produces a jurisdictional obligation summary (section 9 of Output Format); `global-grc` is the canonical comparator for the cross-jurisdiction matrix.
 - **`framework-gap-analysis`** — invoked when an AI use case is not adequately covered by ISO/IEC 42001 / 23894 / NIST AI RMF / EU AI Act. Runs the EU+UK+AU+ISO+IL+JP+ID+NYDFS comparison.
-- **`zeroday-gap-learn`** — receives any threat enumerated in the impact-assessment register that has no ATLAS or ATT&CK TTP attachment, per Hard Rule AGENTS.md #6.
+- **`zeroday-gap-learn`** — receives any threat enumerated in the impact-assessment register that has no ATLAS or ATT&CK TTP attachment, feeding the zero-day learning loop.
 - **`compliance-theater`** — runs the broader theatre detection against the AIMS as a whole when an audit cycle approaches.

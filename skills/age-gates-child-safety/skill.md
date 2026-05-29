@@ -59,7 +59,7 @@ forward_watch:
   - France SREN (Securing and Regulating the Digital Space) Act 2024 — ARCOM age-verification referential for adult content services; double-anonymity model under deployment
   - US state adult-site age-verification laws — 19+ states by mid-2026 (TX HB 18 upheld by SCOTUS June 2025 in Free Speech Coalition v. Paxton); track ongoing challenges in remaining states
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief age-gates-child-safety` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief age-gates-child-safety` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Age Gates and Child Online Safety (mid-2026)
@@ -119,7 +119,7 @@ Classical security and privacy frameworks (NIST 800-53 r5, ISO/IEC 27001:2022, S
 | AI-vendor age policies (OpenAI 13+ w/ parental consent for under-18, Anthropic 18+ consumer / age-gated, Google Gemini 13+ w/ Workspace Edu carve-outs, Meta AI 18+, Character.ai 13+ then 17+ for chat post-2024 settlement) | Vendor terms-of-service age minimums | Self-declared | None of the major frontier AI vendors deploys verifiable age assurance at signup as of mid-2026. Terms-of-service are post-hoc liability shields, not technical controls. Character.ai litigation (FL wrongful-death suit 2024, additional complaints 2024-2025) is the leading-edge test of duty-of-care theory for AI companion services. |
 | NCMEC CyberTipline (18 U.S.C. §2258A) + EU CSAM Regulation (proposed) | CSAM reporting obligation for US electronic-service-providers; (proposed) EU detection / reporting obligation | US ESPs (mandatory); EU services (if Regulation adopted) | §2258A is a reporting obligation, not a detection obligation — but operational reality is that hash-matching (PhotoDNA, NCMEC hash, Apple NeuralHash family) is the de facto detection layer. AI-generated CSAM is criminal under existing US obscenity / child-pornography law and is reportable under §2258A as apparent CSAM. EU CSAM Regulation contested; if adopted, expands detection mandate. |
 
-**Cross-jurisdiction posture (per AGENTS.md rule #5).** Any age-gate / child-online-safety posture for a multi-jurisdiction operator must explicitly enumerate the regulator and primary instrument for: US (FTC for COPPA + AADC + KOSA-if-enacted; state AGs for state laws), EU (each Member State DPA + Commission for DSA + national audiovisual regulators for AVMSD), UK (ICO + Ofcom), AU (eSafety Commissioner + OAIC), IN (Data Protection Board, when operational, + MeitY for DPDP Rules), BR (ANPD), CN (CAC + MIIT for industry-specific obligations), SG (IMDA + PDPC), JP (PPC + per-prefecture authorities), KR (PIPC + KCC), CA / QC (CAI), and US-state (CA AG + NY AG plus comparable). ISO/IEC 27001:2022 + IEEE 2089-2021 + (when published) ISO/IEC 27566 + NIST IR on age assurance form the technical-reference layer. US-only (COPPA + state laws) is incomplete for any multinational service likely-accessed-by-children.
+**Cross-jurisdiction posture (global-first, not US-centric).** Any age-gate / child-online-safety posture for a multi-jurisdiction operator must explicitly enumerate the regulator and primary instrument for: US (FTC for COPPA + AADC + KOSA-if-enacted; state AGs for state laws), EU (each Member State DPA + Commission for DSA + national audiovisual regulators for AVMSD), UK (ICO + Ofcom), AU (eSafety Commissioner + OAIC), IN (Data Protection Board, when operational, + MeitY for DPDP Rules), BR (ANPD), CN (CAC + MIIT for industry-specific obligations), SG (IMDA + PDPC), JP (PPC + per-prefecture authorities), KR (PIPC + KCC), CA / QC (CAI), and US-state (CA AG + NY AG plus comparable). ISO/IEC 27001:2022 + IEEE 2089-2021 + (when published) ISO/IEC 27566 + NIST IR on age assurance form the technical-reference layer. US-only (COPPA + state laws) is incomplete for any multinational service likely-accessed-by-children.
 
 ---
 
@@ -134,7 +134,7 @@ This skill is primarily a compliance + privacy-engineering skill rather than a t
 | AI-generated CSAM creation / distribution | Not catalogued in ATLAS or ATT&CK as of v5.6.0 | Generative-AI image / video synthesis depicting children | Direct criminal exposure under 18 U.S.C. §§2251, 2252, 2252A, 2256 (Protect Act / Mash-Up Act framework); mandatory NCMEC reporting per §2258A. Multiple 2024-2025 prosecutions (US v. Anderegg WD-Wis 2024 — first federal AI-CSAM prosecution; UK National Crime Agency campaign 2024-2025). | No formal TTP class. Evidence stream: NCMEC CyberTipline reports + EU IWF reports. Hand off to `ai-attack-surface` for generative-model content-policy red-team and to `incident-response-playbook` for reporting workflow. |
 | AI chatbot grooming / harmful-content engagement with children | Not catalogued | Long-context AI chatbot interactions with children steering toward harm | Research and litigation evidence: Character.ai litigation 2024 (FL wrongful-death suit alleging companion-chatbot contribution to minor suicide; additional 2024-2025 complaints); UK NCA campaign 2024 documenting grooming attempts via AI chatbots; ESRC / RAND research 2024-2025. | No formal TTP class. EU DSA Art. 28 + UK OSA + AU OSA + KOSA-if-enacted all frame this as a platform duty-of-care obligation. Hand off to `ai-risk-management` for AI-product age policy enforcement. |
 
-**Honest scope statement (per AGENTS.md rule #10).** This skill does not invent TTP IDs to fill gaps in the ATLAS or ATT&CK matrices. AI-generated CSAM and AI-chatbot-mediated harm to children are real-world threat classes documented through prosecution records, NCMEC / IWF reporting, and litigation — not novel ATLAS techniques. Citation is to the evidence stream, not to a TTP ID.
+**Honest scope statement (no fabricated TTP IDs).** This skill does not invent TTP IDs to fill gaps in the ATLAS or ATT&CK matrices. AI-generated CSAM and AI-chatbot-mediated harm to children are real-world threat classes documented through prosecution records, NCMEC / IWF reporting, and litigation — not novel ATLAS techniques. Citation is to the evidence stream, not to a TTP ID.
 
 ---
 
@@ -163,7 +163,7 @@ For this skill, "exploit availability" maps to "what child-exposure violations h
 
 ## Analysis Procedure
 
-The procedure threads the three foundational design principles required by AGENTS.md skill-format spec — defense in depth, least privilege, zero trust — through every step before stepping through the audit.
+The procedure threads the three foundational design principles — defense in depth, least privilege, zero trust — through every step before stepping through the audit.
 
 ### Principle 1 — Defense in depth
 
@@ -281,7 +281,7 @@ Apply the tests in the Compliance Theater Check section below.
 
 **Step 12 — Cross-jurisdiction output reconciliation.**
 
-Produce a single per-control mapping across all in-scope jurisdictions; disparate findings for the same control deficiency across jurisdictions are themselves a finding (DR-4).
+Produce a single per-control mapping across all in-scope jurisdictions; disparate findings for the same control deficiency across jurisdictions are themselves a finding (reconcile to one consolidated per-control row).
 
 ---
 
@@ -420,9 +420,9 @@ Ask: "Under COPPA, AADC, DSA Art. 28(2), and ANPD 2024 Guide, behavioural advert
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps the offensive findings of this skill to MITRE D3FEND v1.3.0+ countermeasure references from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per Hard Rule #9.
+Maps the offensive findings of this skill to MITRE D3FEND v1.3.0+ countermeasure references from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (controls that are architecturally impossible in serverless / ephemeral / AI-pipeline contexts must name an explicit scoped alternative).
 
-| D3FEND ID | Technique | Child-Safeguarding Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability (Hard Rule #9) |
+| D3FEND ID | Technique | Child-Safeguarding Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
 | D3-MFA | Multi-Factor Authentication | Verifiable Parental Consent (VPC) flow as multi-channel verification — government-ID + photo-match, credit-card + transaction, knowledge-based + return-channel, video-conference, signed-form + return; child-account MFA at signup and on high-risk actions (purchase, friend-request, location-share, livestream initiate); parental-tool access bound to a separate parental identity with its own MFA. | Per-cohort × per-feature: parental identity distinct from child identity; school-tenant teacher identity distinct from child-student identity; AI-companion feature gated to over-18 cohort or to parental-approved over-13 cohort. | Every cohort-sensitive action re-verifies; cohort attribute provisioned by the verifier with limited lifetime; cohort attribute revocable on parental-revocation. | VPC flow applies to AI products whose terms-of-service require under-18 parental approval; for ephemeral / serverless AI-product backends, the VPC verification point is the identity-provider gateway, not the ephemeral compute — never recommend host-agent-only VPC for ephemeral AI workloads. |
 | D3-IOPR | Input / Output Profiling | AI chatbot input / output profiling for child-online-safety content moderation including CSAM detection on generative-image output, grooming / sextortion / self-harm / eating-disorder conversation classifier on chat flow, and crisis-detection routing. | Per-cohort classifier sensitivity; under-13 strictest; 13-17 cohort-appropriate; over-18 standard; per-feature scope (companion-mode classifiers stricter than information-mode). | Default-deny on generative output until classifier verdict; conversation continuously profiled with classifier decision logged; vendor-side and operator-side classifier evidence both required (do not rely on vendor attestation alone). | Required for every AI feature reachable by children. For serverless / API-only AI integrations, the profiling point is the API-gateway sidecar layer, not the ephemeral inference compute. |

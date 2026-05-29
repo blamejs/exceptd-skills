@@ -143,7 +143,7 @@ Translation: the disclosure-clock choice is itself a security decision with down
 
 ## Analysis Procedure
 
-Before stepping through the disclosure-program assessment, thread the three foundational design principles per AGENTS.md Skill File Format requirements:
+Before stepping through the disclosure-program assessment, thread the three foundational design principles (defense in depth, least privilege, zero trust):
 
 **Defense in depth — disclosure intake as multi-layer pipeline.** A CVD program is not one channel; it is a stack:
 - **Layer 1 — public VDP intake**: security.txt (RFC 9116), `/security` web page, published policy, public security@ alias. The minimum visible surface; tested by every script-kiddie scanner before they email the CEO.
@@ -184,7 +184,7 @@ Audit the published CVD policy:
 Walk the internal handling pipeline:
 - **Intake → triage**: how does a report move from VDP queue to product team? Is there a SLA? Is there a named owner per product?
 - **Validation**: who reproduces? In what isolated environment (D3-RPA)? What is the false-positive rate?
-- **Severity scoring**: CVSS for legacy compatibility, RWEP per `lib/scoring.js` for actual prioritization. Per AGENTS.md DR-2: CVSS-only scoring fails.
+- **Severity scoring**: CVSS for legacy compatibility, RWEP per `lib/scoring.js` for actual prioritization. CVSS-only scoring fails — never rank disclosures on CVSS alone.
 - **Remediation routing**: how does a confirmed vulnerability become a fix? What is the engineering SLA per RWEP band?
 - **Verification**: how is the fix confirmed? Researcher re-verification? Internal regression test?
 - **Disclosure preparation**: who drafts the advisory? Who approves? When does CVE assignment happen (request from CVE.org or via a CNA partner)?
@@ -212,14 +212,14 @@ Audit the bounty program (if operated):
 ### Step 6 — Learning-loop integration (the `zeroday-gap-learn` hand-off)
 
 For every disclosed vulnerability against an org product:
-- Per AGENTS.md DR-8: the CVE entry in `data/cve-catalog.json` triggers a corresponding entry in `data/zeroday-lessons.json`.
+- The CVE entry in `data/cve-catalog.json` triggers a corresponding entry in `data/zeroday-lessons.json` (every disclosed CVE feeds the zero-day learning loop).
 - The CVD program is the source of these entries. If the CVD program is operating but learning-loop entries are not being produced, the hand-off is broken.
 - The internal control gap exposed by each disclosure is the input to `framework-gap-analysis` — is the org's own framework coverage missing this control class?
 
 ### Step 7 — Advisory publication (the CSAF 2.0 / VEX check)
 
 For each disclosed vulnerability, verify advisory output:
-- **CSAF 2.0 advisory** (OASIS CSAF v2.0, published 2022; CSAF 2.1 draft in flight 2026): machine-readable advisory in JSON form, published at `/.well-known/csaf/`. Per AGENTS.md global-first rule, CSAF is the de facto cross-jurisdiction format — CISA, ENISA, BSI, NCSC-NL all consume it.
+- **CSAF 2.0 advisory** (OASIS CSAF v2.0, published 2022; CSAF 2.1 draft in flight 2026): machine-readable advisory in JSON form, published at `/.well-known/csaf/`. CSAF is the de facto cross-jurisdiction format — CISA, ENISA, BSI, NCSC-NL all consume it.
 - **VEX statement** (Vulnerability Exploitability eXchange, CSAF profile): per-product exploitability status. Hand off to `supply-chain-integrity` for SBOM-aligned VEX integration.
 - **CVE Record**: filed via CNA (or via CVE.org if no CNA partner). CVE ID assignment timing matters for regulator-notification (CRA Art. 11 references a specific vulnerability identifier).
 - **Plain-language advisory**: customer-facing version. Translation of CSAF/VEX into operator action.
@@ -249,7 +249,7 @@ Per ISO 30111 §5 (continual improvement) and NIST 800-218 SSDF RV.2 (assess, pr
 - Class-level findings vs instance-level findings (AI-vendor relevance).
 - Hand off to `framework-gap-analysis` whenever metrics show a control class repeatedly absent from intake.
 
-**Ephemeral / serverless / AI-pipeline reality (per AGENTS.md rule #9):** CVD is largely org-process, not infrastructure, so the "is this control architecturally possible in a serverless / AI-pipeline environment" question does not apply in the usual sense. The honest version of the question for THIS skill is: **does your AI / agent pipeline have CVD scope?** Most orgs running production agentic systems do not. The org has a CVD policy covering its web application, its API, and its enterprise software — and silently excludes the LangChain orchestrator, the RAG corpus, the agent toolchain, the MCP-server installations, the model-serving infrastructure, and the fine-tuning pipeline. That silent exclusion is the gap. The fix is to make scope explicit in the published policy: list AI/agent assets in scope or list them as explicitly out-of-scope. Silence is not a posture.
+**Ephemeral / serverless / AI-pipeline reality:** CVD is largely org-process, not infrastructure, so the "is this control architecturally possible in a serverless / AI-pipeline environment" question does not apply in the usual sense. The honest version of the question for THIS skill is: **does your AI / agent pipeline have CVD scope?** Most orgs running production agentic systems do not. The org has a CVD policy covering its web application, its API, and its enterprise software — and silently excludes the LangChain orchestrator, the RAG corpus, the agent toolchain, the MCP-server installations, the model-serving infrastructure, and the fine-tuning pipeline. That silent exclusion is the gap. The fix is to make scope explicit in the published policy: list AI/agent assets in scope or list them as explicitly out-of-scope. Silence is not a posture.
 
 ---
 
@@ -408,7 +408,7 @@ For NYDFS 500.17 / AU SOCI / UK / SG / JP / IL: parallel templates per jurisdict
 | T+30d (RWEP-banded) | Patch shipped | per band | — | Engineering |
 | T+14d (parallel, if exploited) | Final regulator report | 14d | — | Named officer |
 | T+disclosure-day | CSAF advisory published; CVE record live; researcher acknowledged | per agreed window | — | Security + Comms |
-| T+disclosure+1d | Entry filed in `data/zeroday-lessons.json` per AGENTS.md DR-8 | 1d | — | Security |
+| T+disclosure+1d | Entry filed in `data/zeroday-lessons.json` (zero-day learning loop) | 1d | — | Security |
 
 ### 7. Program Metrics Report
 
@@ -435,7 +435,7 @@ Four concrete tests distinguish a real CVD program from CVD theater. Run them in
 
 > **Test 1 — Publish your security.txt URL right now.** Fetch `https://<domain>/.well-known/security.txt`. If it 404s, the org has no public CVD intake — which means no compliance with EU CRA Art. 11 (manufacturers must operate a CVD process; "operate" requires discoverability), no NIS2 Art. 12 coordinator wiring, no RFC 9116 conformance, and the next researcher who finds something will email the CEO or drop on social media. The org will discover this when a Reuters reporter calls. If security.txt exists but `Expires:` is in the past, the org once had a program and stopped operating it — same outcome, with the additional signal that internal ownership has lapsed.
 
-> **Test 2 — Show me your last 12 months of received disclosures and time-to-fix per severity band.** If the answer is "we don't track that," there is no program — only a queue. If the answer is "we track it, here are the numbers," compare time-to-fix against RWEP bands: median time-to-fix for RWEP 90+ must be measured in hours-to-days, not weeks. CVSS-banded SLAs alone are insufficient (per AGENTS.md DR-2). If the org cannot produce metrics, the org cannot demonstrate continuous improvement per ISO 30111 §5 or NIST 800-218 RV.2, so the formal compliance with those controls is theater regardless of policy text.
+> **Test 2 — Show me your last 12 months of received disclosures and time-to-fix per severity band.** If the answer is "we don't track that," there is no program — only a queue. If the answer is "we track it, here are the numbers," compare time-to-fix against RWEP bands: median time-to-fix for RWEP 90+ must be measured in hours-to-days, not weeks. CVSS-banded SLAs alone are insufficient. If the org cannot produce metrics, the org cannot demonstrate continuous improvement per ISO 30111 §5 or NIST 800-218 RV.2, so the formal compliance with those controls is theater regardless of policy text.
 
 > **Test 3 — Show me a single CSAF 2.0 advisory you've published, with a CVE ID, in the last 12 months.** If the answer is "we publish blog posts" or "we wait for the CVE to appear in NVD" or "our security advisories are PDF attachments," downstream consumers (customers, regulators, automated patch-management systems) cannot ingest the disclosures. The org's disclosure posture is theater for the machine-readable era. Under EU CRA Art. 11, the advisory format is left to the manufacturer but consumers and regulators are converging on CSAF 2.0; an org that has never published one is not operating in the de facto downstream ecosystem.
 
@@ -447,7 +447,7 @@ A program passing all four tests is operating CVD as infrastructure. A program f
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md Skill File Format optional 8th section (required for skills shipped on or after 2026-05-11): map this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
+Maps this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 CVD is process infrastructure, not a single technical control — the D3FEND mapping is therefore thin and concentrated at the triage and post-disclosure boundaries.
 
@@ -457,9 +457,9 @@ CVD is process infrastructure, not a single technical control — the D3FEND map
 | **D3-NTA** (Network Traffic Analysis) | Post-disclosure exploitation monitoring. Once an advisory ships, attacker weaponization typically follows within days; egress monitoring detects active exploitation against unpatched customers. | Detection layer (post-disclosure, downstream of CVD output). | Detection scoped to known exploit indicators from disclosed CVE; not all-traffic surveillance. | Assume disclosed CVEs will be exploited; verify exploitation evidence per advisory IOCs. | Limited direct applicability — AI exploitation traffic often blends with legitimate AI API usage (see `ai-c2-detection`); D3-NTA on its own is insufficient. |
 | **D3-EAL** (Executable Allowlisting) | Post-disclosure blocking of known weaponized exploits. When a public PoC ships with the advisory, allowlisting blocks the exploit binary class from execution on patched/unpatched endpoints alike. | Prevention layer (post-disclosure, downstream of CVD output). | Endpoint scope; allowlist administered by endpoint-security team, not application teams. | Default-deny; verify executable signatures and allowlist membership per execution. | Limited — AI exploits are typically prompt-class, not binary-class. D3-EAL applies to traditional-software exploits derived from CVD output, not AI-class disclosures. |
 
-**Explicit statement per AGENTS.md rule #4 (no orphaned controls)**: CVD itself is process infrastructure. The technical defensive layers it *feeds* are the D3FEND techniques above plus the broader cross-walk in `defensive-countermeasure-mapping`. A CVD program with no downstream defensive-control hand-off is producing advisories that no operator action follows — which is the post-disclosure equivalent of compliance theater.
+**Explicit statement (no orphaned controls)**: CVD itself is process infrastructure. The technical defensive layers it *feeds* are the D3FEND techniques above plus the broader cross-walk in `defensive-countermeasure-mapping`. A CVD program with no downstream defensive-control hand-off is producing advisories that no operator action follows — which is the post-disclosure equivalent of compliance theater.
 
-**AI-pipeline statement per AGENTS.md rule #9**: D3FEND's current coverage of AI-vulnerability defenses is sparse. Mid-2026 D3FEND additions (per `data/d3fend-catalog.json` forward-watch) are extending into AI-system telemetry; the gap until then is filled by `ai-attack-surface`, `rag-pipeline-security`, and `ai-c2-detection` skill-specific recommendations.
+**AI-pipeline statement**: D3FEND's current coverage of AI-vulnerability defenses is sparse. Mid-2026 D3FEND additions (per `data/d3fend-catalog.json` forward-watch) are extending into AI-system telemetry; the gap until then is filled by `ai-attack-surface`, `rag-pipeline-security`, and `ai-c2-detection` skill-specific recommendations.
 
 Reference `defensive-countermeasure-mapping` for the full cross-walk; reference `framework-gap-analysis` for the regulatory-control gaps each defensive layer leaves open.
 
@@ -469,8 +469,8 @@ Reference `defensive-countermeasure-mapping` for the full cross-walk; reference 
 
 CVD sits at the upstream end of several skill pipelines. Route to the following on the indicated trigger:
 
-- **`zeroday-gap-learn`** — *downstream consumer of CVD reports.* Every disclosed CVE against an org product triggers a learning-loop entry per AGENTS.md DR-8. If CVD output is not producing `data/zeroday-lessons.json` entries, the hand-off is broken. Run `zeroday-gap-learn` for every advisory shipped.
-- **`exploit-scoring`** — *RWEP scoring of disclosed CVEs.* CVSS alone is insufficient per AGENTS.md DR-2; route every confirmed-validated disclosure through RWEP scoring before regulator notification (the "actively exploited" determination depends on it).
+- **`zeroday-gap-learn`** — *downstream consumer of CVD reports.* Every disclosed CVE against an org product triggers a learning-loop entry. If CVD output is not producing `data/zeroday-lessons.json` entries, the hand-off is broken. Run `zeroday-gap-learn` for every advisory shipped.
+- **`exploit-scoring`** — *RWEP scoring of disclosed CVEs.* CVSS alone is insufficient; route every confirmed-validated disclosure through RWEP scoring before regulator notification (the "actively exploited" determination depends on it).
 - **`supply-chain-integrity`** — *CSAF VEX integration with SBOM.* When the disclosure affects a product component shipped to downstream consumers, the CSAF advisory's VEX status profile must align with the SBOM produced under SLSA / CycloneDX / SPDX. Hand off for the supply-chain-shaped output.
 - **`framework-gap-analysis`** — *CVD failures often expose framework gaps.* When a disclosure shows that an existing control (SI-2, A.8.8, CC9.2, SSDF RV.1) was insufficient to prevent or detect the vulnerability, file the gap under the appropriate framework entry per `data/framework-control-gaps.json`.
 - **`compliance-theater`** — *publish-no-VDP theater test.* The four compliance theater checks in this skill compose with the broader theater detection across frameworks; run `compliance-theater` after this skill when the org is claiming SOC 2 / ISO 27001 / NIST CSF maturity that the CVD test results contradict.
