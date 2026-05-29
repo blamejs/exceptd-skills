@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.3 — 2026-05-29
+
+Draft-curation pass (1 of an ongoing series). Eight CISA KEV-listed CVE entries that were carried as auto-imported drafts are promoted to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Apache ActiveMQ (CVE-2026-34197), Microsoft SharePoint deserialization (CVE-2026-20963), BeyondTrust RS/PRA command injection (CVE-2026-1731), Fortinet FortiClient EMS SQL injection (CVE-2026-21643), Ivanti EPMM code injection (CVE-2026-1340), Cisco Secure Firewall Management Center deserialization (CVE-2026-20131), Broadcom VMware Aria Operations command injection (CVE-2026-22719), and Soliton FileZen command injection (CVE-2026-25108). The CVSS, KEV status, and vendor advisories were retained from the verified import; curation adds detection and response guidance.
+
 ## 0.15.2 — 2026-05-29
 
 Every curated catalog entry now carries detection IOCs. The 51 operator-curated CVE/MAL entries that previously lacked an `iocs` block — spanning the actively-exploited perimeter and supply-chain entries (runc, xz-utils, SolarWinds, Citrix, ConnectWise, Cisco SD-WAN, FortiOS), the AI-ecosystem cluster (MLflow, vLLM, Ollama, LangChain, the MCP SDK, Big Sleep AI-discovered bugs), the malicious-package supply-chain worms (Shai-Hulud, ultralytics, the RubyGems/PyPI stealers), and the Pwn2Own appliance chains — now ship behavioral detection indicators derived from each entry's documented vulnerability mechanics, with the indicator provenance recorded per entry. Detection coverage for the curated catalog is now complete.
