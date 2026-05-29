@@ -61,7 +61,7 @@ forward_watch:
   - EU Cybersecurity Certification Scheme on Common Criteria (EUCC) operational — first certificates issued 2024; high-assurance level for government use cases ramping
   - Australia PSPF 2024 revision and ISM quarterly updates — track for Essential Eight Maturity Level requirements for federal entities
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-federal-government` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-federal-government` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Federal Government and Defense Contractor Cybersecurity
@@ -136,7 +136,7 @@ Cross-walk to CWE (see `data/cwe-catalog.json`):
 
 ## Exploit Availability Matrix
 
-Sourced from `data/cve-catalog.json`, `data/exploit-availability.json`, and CISA KEV (https://www.cisa.gov/known-exploited-vulnerabilities-catalog) plus public federal incident history as of 2026-05-11. Per AGENTS.md hard rule #1, every CVE reference includes CVSS, KEV status, PoC availability, AI-discovery flag, active-exploitation status, and patch availability. Technique-class rows are scored as ongoing class risks per AGENTS.md hard rule #3 — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
+Sourced from `data/cve-catalog.json`, `data/exploit-availability.json`, and CISA KEV (https://www.cisa.gov/known-exploited-vulnerabilities-catalog) plus public federal incident history as of 2026-05-11. Every CVE reference includes CVSS, KEV status, PoC availability, AI-discovery flag, active-exploitation status, and patch availability (no theoretical-only intel). Technique-class rows are scored as ongoing class risks; CVSS is reported alongside RWEP for compatibility but is never the prioritization signal — RWEP is not assigned because the field is defined for individual CVEs in `data/cve-catalog.json`.
 
 | Incident / Class | CVSS | RWEP | PoC Public? | CISA KEV? | AI-Accelerated? | Patch / Mitigation | FedRAMP-Visible? | CMMC-Visible? | SSDF-Attestable? |
 |---|---|---|---|---|---|---|---|---|---|

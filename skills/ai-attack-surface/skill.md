@@ -325,7 +325,7 @@ D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. The AI attack surface
 
 **Zero-trust posture:** every prompt is verified content-shape and origin-identity before downstream tool invocation; every RAG retrieval is clearance-checked at retrieval time (not just at index time); every MCP tool call has its args inspected at the gateway before reaching the tool. No "trusted prompt" exemption — AML.T0051 indirect prompt injection enters via documents and tool outputs, not just user prompts.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-EAL` is not applicable to serverless inference endpoints (no executable to allowlist on the consumer side). The scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider — the model-serving container is the executable surface, and its provenance is the prerequisite. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging (`D3-IOPR`) plus index-build provenance signed at construction.
+**AI-pipeline applicability:** `D3-EAL` is not applicable to serverless inference endpoints (no executable to allowlist on the consumer side). The scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider — the model-serving container is the executable surface, and its provenance is the prerequisite. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging (`D3-IOPR`) plus index-build provenance signed at construction.
 
 ---
 

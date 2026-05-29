@@ -57,7 +57,7 @@ forward_watch:
   - MadIoT-class research on consumer-IoT-driven grid frequency manipulation moving from proof-of-concept to attributed campaigns
   - ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-energy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-energy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Sector — Energy (Electric Power, Oil & Gas, Water/Wastewater, Renewables) — mid-2026
@@ -86,7 +86,7 @@ State-sponsored targeting of energy infrastructure has escalated, not plateaued.
 - **AI-augmented HMI / control-room copilots** are arriving in substation automation suites (Siemens Industrial Copilot, GE Vernova, Hitachi Energy, AVEVA). The risk inversion vs. classical NERC CIP is the same as in `ot-ics-security`: LLM-generated content is non-deterministic content over a conduit that the standards do not name.
 - **AI-assisted reverse engineering of vendor firmware** dropped exploit-development time for vendor-specific OT vulnerabilities in 2025 (per multiple vendor security advisory acknowledgements). The implication: vendor advisory-to-PoC latency is shrinking from months to weeks.
 
-**Inverted ephemerality (AGENTS.md Hard Rule #9, reversed — see `ot-ics-security`).** Energy infrastructure is among the longest-lived OT in existence. Substation relays from the 1980s remain in service. Transmission RTUs commissioned in the 1990s carry IEC 60870-5-101 / -104 traffic today. Pipeline SCADA running on Windows XP / Server 2003 hosts remains operationally common. Recommendations assuming patch-fast or rebuild-on-change are operationally indefensible without an explicit compensating-control programme.
+**Inverted ephemerality (the usual architectural-impossibility exemption, reversed — see `ot-ics-security`).** Energy infrastructure is among the longest-lived OT in existence. Substation relays from the 1980s remain in service. Transmission RTUs commissioned in the 1990s carry IEC 60870-5-101 / -104 traffic today. Pipeline SCADA running on Windows XP / Server 2003 hosts remains operationally common. Recommendations assuming patch-fast or rebuild-on-change are operationally indefensible without an explicit compensating-control programme.
 
 ---
 
@@ -111,7 +111,7 @@ State-sponsored targeting of energy infrastructure has escalated, not plateaued.
 | US CISA ICS Joint Working Group (ICSJWG) output | Coordinated US ICS guidance across sectors | Voluntary guidance for US CI | Non-binding; high-quality but adoption uneven. The ICS-CERT advisory cadence is the most actionable output. |
 | ISO 27001:2022 + ISO/IEC 27019:2017 (energy utilities sector extension) | Generic ISMS + energy-sector extension | Organisation-level ISMS for energy | ISO/IEC 27019 predates AI-augmented HMI (2017 publication). A.8.8 vulnerability management is IT-flavoured; 27019 adds energy specifics but no AI conduit treatment. |
 
-**Cross-jurisdiction posture (per AGENTS.md rule #5):** Any energy-sector gap analysis for a multi-jurisdiction operator must cite at minimum US NERC CIP v6/v7 + TSA SD (if pipeline) + AWWA (if water) + NIST 800-82r3, EU NIS2 + NCCS-G + CER Directive, UK NIS+CAF for ESN, AU SOCI+AESCSF, JP NISC + METI, IL INCD, alongside ISO 27001:2022 + ISO/IEC 27019. US-only analysis is insufficient for any operator with European, Australian, or Asian footprint.
+**Cross-jurisdiction posture (global-first, not US-centric):** Any energy-sector gap analysis for a multi-jurisdiction operator must cite at minimum US NERC CIP v6/v7 + TSA SD (if pipeline) + AWWA (if water) + NIST 800-82r3, EU NIS2 + NCCS-G + CER Directive, UK NIS+CAF for ESN, AU SOCI+AESCSF, JP NISC + METI, IL INCD, alongside ISO 27001:2022 + ISO/IEC 27019. US-only analysis is insufficient for any operator with European, Australian, or Asian footprint.
 
 ---
 
@@ -155,7 +155,7 @@ Energy-sector TTPs span ATT&CK for ICS, ATT&CK Enterprise (for the IT side of th
 | OCPP / V2G / ISO 15118 attack surface (EV charging) | varies | varies | Limited KEV coverage | Yes — research community publishes | Mixed | Demonstrated in research; opportunistic abuse confirmed | Vendor / charge-point-operator dependent | No | Charge-point-operator side analytics; weak external detection |
 | AI-dispatch / AI-forecast poisoning (no CVE class) | n/a | risk-modelled | n/a | Demonstrated in research and 2025 incident-response engagements | n/a | Suspected | Mitigation only — design-time controls on ML pipeline | n/a | Requires ML-pipeline telemetry; almost never present at utilities |
 
-**Honest gap statement (per AGENTS.md rule #10).** This project's `data/cve-catalog.json` does not yet contain an exhaustive inventory of vendor-side energy-OT CVEs (Siemens SSAs, Rockwell SD advisories, Schneider Electric Security Notifications, ABB CSAs, GE Vernova advisories, Hitachi Energy advisories, AVEVA advisories). The authoritative source for current energy-OT CVEs is the CISA ICS-CERT advisory feed at https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories — captured in `forward_watch` for inclusion in the catalog as part of the next data refresh. Do not invent CVE IDs to fill this matrix.
+**Honest gap statement (declare what the catalog does not yet cover).** This project's `data/cve-catalog.json` does not yet contain an exhaustive inventory of vendor-side energy-OT CVEs (Siemens SSAs, Rockwell SD advisories, Schneider Electric Security Notifications, ABB CSAs, GE Vernova advisories, Hitachi Energy advisories, AVEVA advisories). The authoritative source for current energy-OT CVEs is the CISA ICS-CERT advisory feed at https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories — captured in `forward_watch` for inclusion in the catalog as part of the next data refresh. Do not invent CVE IDs to fill this matrix.
 
 ---
 
@@ -378,7 +378,7 @@ Ask: "Walk me through your IR playbook for a confirmed compromise of [pick one: 
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section (required for skills shipped on or after 2026-05-11). Maps energy-sector offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and the inverted ephemeral/AI-pipeline applicability per Hard Rule #9.
+Maps energy-sector offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and the inverted ephemeral/AI-pipeline applicability (long-lived OT inverts the usual architectural-impossibility exemption).
 
 | D3FEND ID | Technique | Purdue Layer + Energy Overlay | Least-Privilege Scope | Zero-Trust Posture | Energy-Realistic Applicability |
 |---|---|---|---|---|---|
@@ -388,7 +388,7 @@ Per AGENTS.md optional 8th section (required for skills shipped on or after 2026
 | D3-EAL | Executable Allowlisting | L2 station HMI hosts; L2 engineering workstations (PCM600, DIGSI, AcSELerator, etc.); L3 historian/MES hosts; AMI head-end servers; market-systems servers | Per-host allowlist of signed executables; vendor-tooling exceptions explicit and audited | Default-deny execution; only enumerated binaries run | Applicable to Windows/Linux engineering and HMI hosts. Cannot apply directly to L1 IEDs, smart meters, smart inverters — for those, signed-firmware enforcement (where vendor supports) is the analogue; signed-firmware support varies widely across energy vendors. |
 | D3-PSEP | Process Segment Execution Prevention | L2 station HMI hosts; L2 engineering workstations; control-center operator hosts | Per-process memory-execution policy; non-exec data segments | Memory regions verified at execution time | Applicable where host OS supports modern memory protections. Brownfield Windows 7 / Windows Server 2008 hosts have weaker support — compensating control: tighter D3-EAL + D3-NTA + isolated network. Substation engineering hosts often locked to vendor-tool-supported OS versions, constraining options. |
 
-**Inverted ephemerality posture (per Hard Rule #9, reversed — extended from `ot-ics-security`).** Energy infrastructure is among the longest-lived OT in existence. Substation relays from the 1980s remain in service; transmission RTUs from the 1990s carry IEC 60870-5-104 today; pipeline SCADA hosts running Windows XP / Server 2003 remain operationally common. Controls assuming rapid patching are unrealistic; controls assuming rebuild-on-change are catastrophic for grid stability. The energy-appropriate posture: virtual patching at L3.5 / L2 boundaries, executable allowlisting on engineering and HMI hosts, ICS-IDS detection with energy-protocol decoders as the primary control where prevention is architecturally unavailable, signed-firmware enforcement where supported, and explicit documentation of multi-decade compensating-control programmes. Recommendations that read "patch the substation relay firmware" without specifying the change window (often an annual outage), the vendor's signed-firmware support status, the protective-relay coordination re-test plan, and the rollback plan are operationally indefensible.
+**Inverted ephemerality posture (the usual architectural-impossibility exemption, reversed — extended from `ot-ics-security`).** Energy infrastructure is among the longest-lived OT in existence. Substation relays from the 1980s remain in service; transmission RTUs from the 1990s carry IEC 60870-5-104 today; pipeline SCADA hosts running Windows XP / Server 2003 remain operationally common. Controls assuming rapid patching are unrealistic; controls assuming rebuild-on-change are catastrophic for grid stability. The energy-appropriate posture: virtual patching at L3.5 / L2 boundaries, executable allowlisting on engineering and HMI hosts, ICS-IDS detection with energy-protocol decoders as the primary control where prevention is architecturally unavailable, signed-firmware enforcement where supported, and explicit documentation of multi-decade compensating-control programmes. Recommendations that read "patch the substation relay firmware" without specifying the change window (often an annual outage), the vendor's signed-firmware support status, the protective-relay coordination re-test plan, and the rollback plan are operationally indefensible.
 
 ---
 

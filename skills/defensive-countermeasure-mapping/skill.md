@@ -48,12 +48,16 @@ d3fend_refs:
   - D3-RPA
   - D3-SCP
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Defensive Countermeasure Mapping — D3FEND as the Blue-Team Counterpart to ATT&CK / ATLAS
 
 ATT&CK and ATLAS catalog what attackers do. D3FEND catalogs what defenders do, in the same technique-grain taxonomy. Most SOCs in mid-2026 maintain an ATT&CK heatmap of detection coverage; far fewer maintain a D3FEND coverage map of the controls that actually counter those techniques. Operators can articulate attacker behavior with technique-level precision but can only articulate their own defenses at framework-control granularity ("we have SI-2"), which is a category mismatch. This skill closes that mismatch. Inputs are offensive findings — a CVE, an ATT&CK or ATLAS technique, a framework control gap. Outputs are layered defensive-countermeasure maps grounded in `data/d3fend-catalog.json` and explicitly threaded through defense-in-depth, least-privilege, and zero-trust principles.
+
+## Frontmatter Scope
+
+The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally empty. This skill maps defensive countermeasures (MITRE D3FEND) rather than owning a native set of offensive techniques — its subject is the blue-team control taxonomy, not adversary TTPs. The offensive techniques it counters come from whatever finding the operator supplies at invocation time; that input domain is the union of every ATLAS/ATT&CK technique in the catalog, so pinning a fixed subset here would falsely narrow it. The authoritative technique attachment lives in the offensive skill that produced the finding.
 
 ---
 
@@ -100,13 +104,13 @@ No major compliance framework requires technique-grained defensive mapping. Each
 | Industry | PCI DSS v4.0 | Twelve requirements for cardholder data environments | Control-level. The closest technique-grain language is in 5.x (malware protection) — does not require D3FEND mapping. |
 | Industry | SOC 2 TSC | Trust Services Criteria outcome categories | Outcome-level. Auditor discretion on implementation. |
 
-The cross-framework pattern is uniform: every framework operates at control or outcome grain. D3FEND operates at technique grain. The translation layer — which technique counters which attack technique, in which D3FEND tactic, at which trust posture, at which privilege scope — is the gap this skill fills. The framework controls themselves are not wrong; they are coarser than the threat. Per AGENTS.md hard rule #2, the framework lag is structural: no framework yet operationalizes the defensive technique taxonomy.
+The cross-framework pattern is uniform: every framework operates at control or outcome grain. D3FEND operates at technique grain. The translation layer — which technique counters which attack technique, in which D3FEND tactic, at which trust posture, at which privilege scope — is the gap this skill fills. The framework controls themselves are not wrong; they are coarser than the threat. The framework lag is structural and first-class: no framework yet operationalizes the defensive technique taxonomy.
 
 ---
 
 ## TTP Mapping
 
-This is a meta-mapping skill. Its TTP coverage equals the union of: every ATLAS technique in `data/atlas-ttps.json`, every ATT&CK technique appearing in any `attack_refs` field across the skill library, and every offensive technique referenced in any `counters_attack_techniques` array inside `data/d3fend-catalog.json`. Per AGENTS.md hard rule #4, every D3FEND ID in the catalog is mapped to at least one offensive technique — there are no orphan defensive entries.
+This is a meta-mapping skill. Its TTP coverage equals the union of: every ATLAS technique in `data/atlas-ttps.json`, every ATT&CK technique appearing in any `attack_refs` field across the skill library, and every offensive technique referenced in any `counters_attack_techniques` array inside `data/d3fend-catalog.json`. Every D3FEND ID in the catalog is mapped to at least one offensive technique — there are no orphan defensive entries (no orphaned controls).
 
 The skill consumes offensive findings from these inputs and produces defensive mappings. It does not author new offensive technique entries; that is the job of the catalogs upstream and the `zeroday-gap-learn` and `threat-model-currency` skills. The cross-walk surfaces:
 
@@ -133,14 +137,14 @@ For each D3FEND ID surfaced by Analysis Procedure Step 3, the matrix records:
 |---|---|---|
 | Deployed in the org's stack? | operator input, verified against asset inventory | Is the control actually running, or only purchased / specified? |
 | Tunable per environment? | `data/d3fend-catalog.json` `implementation_examples` | Can the control be tuned for serverless vs. monolith vs. ephemeral container, or is it host-only? |
-| AI-pipeline applicable? | `data/d3fend-catalog.json` `ai_pipeline_applicability` (mandatory per AGENTS.md rule #9) | Per rule #9, if the control is architecturally impossible in serverless / container / AI pipeline contexts, the catalog declares an explicit alternative (e.g., admission-controller signature verification as the D3-EAL surrogate for serverless). The matrix surfaces that alternative. |
+| AI-pipeline applicable? | `data/d3fend-catalog.json` `ai_pipeline_applicability` (mandatory field) | If the control is architecturally impossible in serverless / container / AI pipeline contexts, the catalog declares an explicit alternative (e.g., admission-controller signature verification as the D3-EAL surrogate for serverless). The matrix surfaces that alternative. |
 | Defense-in-depth layer | computed from `data/d3fend-catalog.json` `tactic` (Model / Harden / Detect / Isolate / Deceive / Evict / Restore) | Which DiD layer the control occupies for this finding. A finding defended only in one layer is under-defended. |
 | Privilege scope | computed from `data/d3fend-catalog.json` description and from the operator's deployment context | Per-process (D3-EAL, D3-EHB), per-segment (D3-NTA, D3-NI), per-request (D3-CBAN, D3-MFA when continuously verified), or blanket (D3-PSEP / D3-ASLR — kernel-wide). |
 | Zero-trust posture | computed from D3FEND description; verifies-per-request vs. trusts-after-perimeter | A control that verifies on every request (D3-MFA continuous reauth, D3-CBAN per-call) is zero-trust. A control that authenticates once and trusts thereafter (vanilla session cookies, perimeter-only D3-NI) is implicit-trust. |
 | Framework controls partially mapped | `data/d3fend-catalog.json` `framework_controls_partially_mapped` | The framework controls that nominally cover this technique but, per `lag_notes`, fail to operationalize it at D3FEND grain. |
 | Live-tunable vs. requires deploy | operator input, joined with `implementation_examples` | Can the control be tuned without a rolling deploy (e.g., updating a Kyverno policy) or does it require image rebuilds and reboots? |
 
-If the operator cannot supply deployment-status data, the matrix surfaces "unknown deployment status — must verify against asset inventory before claiming coverage" and the skill flags the finding as undefended for reporting purposes. Per AGENTS.md hard rule #10, no fabricated deployment data.
+If the operator cannot supply deployment-status data, the matrix surfaces "unknown deployment status — must verify against asset inventory before claiming coverage" and the skill flags the finding as undefended for reporting purposes. No fabricated deployment data.
 
 ---
 
@@ -171,7 +175,7 @@ Every D3FEND mapping must carry a **trust-posture classification**:
 - **Verifies on session establishment, trusts thereafter.** Examples: vanilla TLS session resumption, perimeter D3-NI without internal traffic analysis.
 - **Assumes implicit trust on a segment.** Examples: bare D3-NI without D3-NTA inside the segment.
 
-Zero-trust-compliant defense maps to controls that verify per request. Implicit-trust controls are not invalid — they are layer-1 — but the output must label them so the operator can see the trust assumption a given control is making. Per AGENTS.md DR-1, never imply a framework control is adequate when current TTPs bypass it; the trust-posture column is the explicit corrective.
+Zero-trust-compliant defense maps to controls that verify per request. Implicit-trust controls are not invalid — they are layer-1 — but the output must label them so the operator can see the trust assumption a given control is making. Never imply a framework control is adequate when current TTPs bypass it; the trust-posture column is the explicit corrective.
 
 ### Steps
 
@@ -183,7 +187,7 @@ Zero-trust-compliant defense maps to controls that verify per request. Implicit-
 
 **Step 4 — Score each candidate countermeasure.** For each D3FEND ID surfaced in Step 3, record:
 (a) Deployment status. Operator answers: deployed / partially deployed / not deployed / unknown.
-(b) AI-pipeline applicability per AGENTS.md rule #9. Read `ai_pipeline_applicability` directly from `data/d3fend-catalog.json`. If the catalog states the control is architecturally impossible in the operator's environment, capture the explicit alternative the catalog provides.
+(b) AI-pipeline applicability. Read `ai_pipeline_applicability` directly from `data/d3fend-catalog.json`. If the catalog states the control is architecturally impossible in the operator's environment, capture the explicit alternative the catalog provides.
 (c) Defense-in-depth layer position — the D3FEND tactic the technique belongs to.
 (d) Least-privilege scope — per-process / per-segment / per-request / blanket, per the principle 2 classification.
 (e) Zero-trust posture — verifies-per-request / verifies-on-session / implicit-trust-on-segment, per the principle 3 classification.
@@ -274,9 +278,9 @@ The theater test for this skill is direct: the operator's defensive program is i
 
 A second, complementary test:
 
-> "Show your D3FEND coverage heatmap alongside your ATT&CK heatmap. If you have an ATT&CK heatmap (offensive coverage) but no D3FEND heatmap (defensive coverage at the same grain), your blue-team articulation is one-sided. The most common shape: ATT&CK heatmap exists, populated by EDR alerts; D3FEND heatmap does not exist; Harden, Isolate, Evict, and Restore tactics have no operator-known content. The org has bought defensive products and deployed framework controls, but cannot list which D3FEND technique each product implements. Per AGENTS.md DR-1, the framework controls are being treated as truth at a grain they do not address."
+> "Show your D3FEND coverage heatmap alongside your ATT&CK heatmap. If you have an ATT&CK heatmap (offensive coverage) but no D3FEND heatmap (defensive coverage at the same grain), your blue-team articulation is one-sided. The most common shape: ATT&CK heatmap exists, populated by EDR alerts; D3FEND heatmap does not exist; Harden, Isolate, Evict, and Restore tactics have no operator-known content. The org has bought defensive products and deployed framework controls, but cannot list which D3FEND technique each product implements. The framework controls are being treated as truth at a grain they do not address."
 
-A third test, specific to AI-pipeline environments per AGENTS.md hard rule #9:
+A third test, specific to AI-pipeline environments:
 
 > "Pick any AI / LLM / RAG / MCP workload in your environment. List the D3FEND controls you would deploy on an on-prem monolith for the equivalent attack surface. Now, for each, state whether the control is architecturally possible in your ephemeral/serverless/AI pipeline runtime, and if not, what the explicit alternative is per `data/d3fend-catalog.json`'s `ai_pipeline_applicability` field. If the answer is 'the framework control exists, so we are covered', the program is in theater — the framework control is architecturally impossible in the workload's runtime and the alternative was never scoped. The audit passes; the workload is undefended."
 
@@ -300,4 +304,4 @@ The cross-walks the skill maintains:
 
 - **DLP / exfil → D3FEND.** Sourced from `data/dlp-controls.json`, whose entries carry a `d3fend_refs` field linking each DLP technique to the D3FEND countermeasures that detect or isolate the corresponding exfil pattern. The DLP catalog is the dedicated link for the Detect and Isolate tactics in data-loss scenarios.
 
-When a new offensive technique is added to `data/atlas-ttps.json` or referenced in a new CVE in `data/cve-catalog.json`, the catalog steward must ensure at least one D3FEND entry covers it via `counters_attack_techniques`, or open a gap entry in `data/d3fend-catalog.json` per AGENTS.md hard rule #4 (no orphaned controls — by inversion, no orphaned attack techniques). This skill is the consumer that surfaces the inversion failure if the catalog drifts.
+When a new offensive technique is added to `data/atlas-ttps.json` or referenced in a new CVE in `data/cve-catalog.json`, the catalog steward must ensure at least one D3FEND entry covers it via `counters_attack_techniques`, or open a gap entry in `data/d3fend-catalog.json` (no orphaned controls — by inversion, no orphaned attack techniques). This skill is the consumer that surfaces the inversion failure if the catalog drifts.

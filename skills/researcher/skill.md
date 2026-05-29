@@ -25,7 +25,7 @@ atlas_refs: []
 attack_refs: []
 framework_gaps: []
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief researcher` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief researcher` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Researcher — Threat Intel Triage and Dispatch
@@ -121,7 +121,7 @@ The researcher's job is to PRODUCE this matrix from the local catalogs, not to c
 | Blast radius (affected version range) | `data/cve-catalog.json` |
 | Deterministic exploit (no race)? | `data/cve-catalog.json` |
 
-If the input is not a CVE — for example, an ATLAS TTP, a vendor advisory without a CVE, or an incident narrative — the researcher emits a degenerate matrix: "N/A; this input is not a CVE. Map to ATLAS technique and downstream skill instead." Per AGENTS.md hard rule #1, no fabricated exploit availability data. If the catalog lacks the input, flag it as "not yet in catalog — propose adding" and route to `zeroday-gap-learn` for the catalog update procedure.
+If the input is not a CVE — for example, an ATLAS TTP, a vendor advisory without a CVE, or an incident narrative — the researcher emits a degenerate matrix: "N/A; this input is not a CVE. Map to ATLAS technique and downstream skill instead." No fabricated exploit availability data — theoretical-only intel is refused. If the catalog lacks the input, flag it as "not yet in catalog — propose adding" and route to `zeroday-gap-learn` for the catalog update procedure.
 
 ---
 
@@ -157,7 +157,7 @@ Surface the full entry. Quote field values directly from the catalog. Do not par
 
 ### Step 3 — RWEP scoring
 
-If the input is a CVE present in `data/cve-catalog.json`, the RWEP score is already computed. Surface it. The CVSS score is reported alongside for compatibility per AGENTS.md hard rule #3, never as the primary signal.
+If the input is a CVE present in `data/cve-catalog.json`, the RWEP score is already computed. Surface it. The CVSS score is reported alongside for compatibility (see `lib/scoring.js`), never as the primary signal.
 
 If the input is a CVE not yet in catalog, compute RWEP per `lib/scoring.js` formula and flag the entry for addition to `data/cve-catalog.json`. The formula factors: CISA KEV (0.25), public PoC (0.20), AI-assisted weaponization (0.15), active exploitation (0.20), patch availability (-0.15), live-patch availability (-0.10), blast radius (0.15). Output the RWEP score with the factor breakdown so the operator can audit the score.
 
@@ -169,7 +169,7 @@ For a CVE, perform these joins:
 
 - Related ATLAS TTPs via the `atlas_refs` field on the CVE entry. Pull the technique descriptions from `data/atlas-ttps.json`.
 - Related framework gaps via the `framework_gaps` field on the CVE entry. Pull the full gap rationale from `data/framework-control-gaps.json`.
-- Corresponding zero-day lessons entry in `data/zeroday-lessons.json` (keyed by CVE ID). If present, surface the full attack-vector → control-gap → framework-gap → new-control-requirement chain. If absent, per AGENTS.md hard rule #6, flag that the zero-day learning loop has not yet been run for this CVE and route to `zeroday-gap-learn`.
+- Corresponding zero-day lessons entry in `data/zeroday-lessons.json` (keyed by CVE ID). If present, surface the full attack-vector → control-gap → framework-gap → new-control-requirement chain. If absent, flag that the zero-day learning loop has not yet been run for this CVE and route to `zeroday-gap-learn`.
 - Live exploit availability in `data/exploit-availability.json` (PoC URLs, weaponization status, last_verified date).
 
 For an ATLAS TTP, perform the reverse join: which CVEs in `data/cve-catalog.json` reference this TTP, and which skills declare it in `atlas_refs`.
@@ -178,7 +178,7 @@ For a framework control, perform: which CVEs in `data/cve-catalog.json` referenc
 
 ### Step 5 — Global-jurisdiction surface
 
-Per AGENTS.md hard rule #5, every threat must be evaluated against at least: EU (NIS2, DORA, EU AI Act, EU CRA), UK (NCSC CAF, Cyber Essentials Plus), Australia (ISM, ASD Essential 8, APRA CPS 234), and ISO 27001:2022. Look up the jurisdiction-specific obligations in `data/global-frameworks.json`. Surface:
+Every threat must be evaluated against at least the following jurisdictions (global-first, not US-centric): EU (NIS2, DORA, EU AI Act, EU CRA), UK (NCSC CAF, Cyber Essentials Plus), Australia (ISM, ASD Essential 8, APRA CPS 234), and ISO 27001:2022. Look up the jurisdiction-specific obligations in `data/global-frameworks.json`. Surface:
 
 - EU: which NIS2 / DORA / EU AI Act / EU CRA articles apply, and what notification timelines they impose.
 - UK: which CAF outcome the threat maps to.
@@ -186,7 +186,7 @@ Per AGENTS.md hard rule #5, every threat must be evaluated against at least: EU 
 - ISO 27001:2022: which Annex A control IDs are relevant.
 - US (NIST 800-53, NIST AI RMF, NIST CSF 2.0): for completeness, not as the primary jurisdiction.
 
-If the operator's organization operates only in one jurisdiction, surface that jurisdiction first but never omit the others. Per AGENTS.md DR-4, US-only analysis is incomplete.
+If the operator's organization operates only in one jurisdiction, surface that jurisdiction first but never omit the others. US-only analysis is incomplete.
 
 ### Step 6 — Route to specialized skill(s)
 
@@ -241,9 +241,9 @@ Multiple routes are common and expected. A new MCP CVE routes to `mcp-agent-trus
 Several triggers in `manifest.json` legitimately resolve to more than one skill. The researcher does not pick one and discard the other — it emits an ordered dispatch list. The policy:
 
 - **PROMPTSTEAL / PROMPTFLUX** route to BOTH `ai-attack-surface` AND `ai-c2-detection`. This is intentional fan-out, not a collision to resolve. `ai-attack-surface` produces the attack-class analysis (the offensive characterization, the prompt-injection mechanics, the LLM-integration abuse surface per AML.T0051 / AML.T0096); `ai-c2-detection` produces the detection-engineering response (the telemetry signatures, the egress patterns, the SIEM/EDR rule shape). The researcher emits BOTH skills as the answer to a PROMPTSTEAL/PROMPTFLUX query, ordered by the phase of the operator's question — analysis-first if the operator is scoping the threat, detection-first if the operator is hunting active intrusion. Multi-jurisdiction note: PROMPTSTEAL-class C2 over commercial AI APIs implicates EU NIS2 Art. 23 notification, DORA Art. 17 for financial entities, and ICO / CNIL guidance on AI-API data egress under GDPR Art. 32.
-- **"compliance gap"** routes primary to `framework-gap-analysis` (the analytical depth: which control, which version, which jurisdiction, which gap). `compliance-theater` is the natural secondary if the gap analysis reveals the control exists on paper but is structurally inadequate for current TTPs. Researcher emits `framework-gap-analysis` FIRST and recommends `compliance-theater` as the secondary when the operator's framing is "we 'comply' but..." (the scare quotes are the tell). Global-first applies: gap analysis always spans EU + UK + AU + ISO 27001:2022 alongside US references per AGENTS.md hard rule #5.
+- **"compliance gap"** routes primary to `framework-gap-analysis` (the analytical depth: which control, which version, which jurisdiction, which gap). `compliance-theater` is the natural secondary if the gap analysis reveals the control exists on paper but is structurally inadequate for current TTPs. Researcher emits `framework-gap-analysis` FIRST and recommends `compliance-theater` as the secondary when the operator's framing is "we 'comply' but..." (the scare quotes are the tell). Global-first applies: gap analysis always spans EU + UK + AU + ISO 27001:2022 alongside US references.
 - **"defense in depth"** routes primary to `defensive-countermeasure-mapping` (the structural D3FEND mapping: which defensive technique on which layer, which least-privilege scope, which zero-trust verification gate). `security-maturity-tiers` is the secondary if the operator is asking "where on the MVP-Practical-Overkill maturity curve does this control sit?" — `defensive-countermeasure-mapping` first to establish the structural mapping, `security-maturity-tiers` second to place it on the maturity axis. EU CRA Annex I essential-cybersecurity-requirements framing is relevant for product-side defense-in-depth questions; NIST CSF 2.0 Protect function and ISO 27001:2022 A.8.* controls are the cross-jurisdiction anchors.
-- **"zero trust"** disambiguates the same way: `defensive-countermeasure-mapping` for "what verification controls implement ZT for this attack class?", `policy-exception-gen` for "we cannot implement full ZT in our ephemeral/serverless/AI-pipeline environment — how do we document the exception with compensating controls per AGENTS.md hard rule #9?". The first question is structural, the second is exception-management. Researcher routes by which framing the operator used. Cross-jurisdiction note: NIST SP 800-207 is the US ZT anchor; UK NCSC ZT design principles and EU ENISA ZTA guidance are the parallel references and must be surfaced if the operator's jurisdiction is non-US.
+- **"zero trust"** disambiguates the same way: `defensive-countermeasure-mapping` for "what verification controls implement ZT for this attack class?", `policy-exception-gen` for "we cannot implement full ZT in our ephemeral/serverless/AI-pipeline environment — how do we document the exception with compensating controls for an environment where some controls are architecturally impossible?". The first question is structural, the second is exception-management. Researcher routes by which framing the operator used. Cross-jurisdiction note: NIST SP 800-207 is the US ZT anchor; UK NCSC ZT design principles and EU ENISA ZTA guidance are the parallel references and must be surfaced if the operator's jurisdiction is non-US.
 
 When the researcher emits a fan-out or a primary/secondary pair, the Output Format's "Routed to" block lists Primary first, then each Secondary on its own line with its one-line rationale. Operators run skills in the emitted order unless they have a specific reason to deviate.
 
@@ -303,7 +303,7 @@ US (for context): <NIST 800-53 control IDs + NIST AI RMF function if AI-related>
 
 ## Next actions
 1. Invoke <primary skill> with input <canonical reference>.
-2. If the catalog lacks this entry, open data update PR per AGENTS.md "Adding a New CVE" procedure.
+2. If the catalog lacks this entry, open a data update PR following the project's "Adding a New CVE" procedure.
 3. <Operator-specific action: live-patch within 4h / disable feature / update detection rules / etc.>
 4. If notification thresholds tripped (NIS2 24h early warning, DORA, etc.), start the regulatory clock now.
 ```
@@ -324,7 +324,7 @@ The researcher skill is dispatch, not analysis — but every dispatched finding 
 | **D3-EHB** (Executable Hash-based Allowlist) | Input is a supply-chain CVE / advisory (npm worm, PyPI malware, model-registry compromise). | Harden | Hash-pinning is the canonical counter to the AML.T0010 / T1195.001 pattern across `supply-chain-integrity`, `mcp-agent-trust`, and `mlops-security`. The dispatcher names it so the downstream skill does not re-derive the harden layer from first principles. |
 | **D3-PA** (Process Analysis) | Input is a kernel LPE, container-escape, or post-exploitation narrative. | Detect | The auditd / eBPF / EDR layer that `kernel-lpe-triage`, `container-runtime-security`, and `incident-response-playbook` all depend on. RWEP-90 LPE inputs route here before live-patch consideration. |
 
-Defense-in-depth posture: the researcher's job is to recommend the **first** D3FEND layer the downstream skill should produce evidence against. Subsequent layers are the downstream skill's responsibility. Per AGENTS.md hard rule #4 (no orphaned controls), every D3FEND mapping above resolves to a real ATLAS or ATT&CK TTP enumerated in the TTP Mapping section.
+Defense-in-depth posture: the researcher's job is to recommend the **first** D3FEND layer the downstream skill should produce evidence against. Subsequent layers are the downstream skill's responsibility. No orphaned controls: every D3FEND mapping above resolves to a real ATLAS or ATT&CK TTP enumerated in the TTP Mapping section.
 
 ---
 
@@ -332,7 +332,7 @@ Defense-in-depth posture: the researcher's job is to recommend the **first** D3F
 
 The compliance theater test for the researcher skill is itself a meta-test: does the operator's existing triage process treat all inputs at the same depth, anchored on CVSS bands?
 
-> "Pull your last 30 days of vulnerability and threat-intel tickets. Bucket them by your current triage outcome: Critical, High, Medium, Low. Now overlay each one with the corresponding RWEP score from `data/cve-catalog.json` and the CISA KEV status and the AI-discovery flag. How many of your 'Critical' tickets are RWEP ≥ 85 and CISA KEV listed? How many of your 'Medium' tickets are RWEP ≥ 85 and CISA KEV listed but happened to land at CVSS 7.x? If any Medium-bucket ticket is a CISA-KEV-listed AI-discovered LPE, your triage process is CVSS-band theater. The control nominally exists (you triage every input) but the prioritization is anchored on a severity metric, not a risk metric. Per AGENTS.md hard rule #3, CVSS is severity, not risk."
+> "Pull your last 30 days of vulnerability and threat-intel tickets. Bucket them by your current triage outcome: Critical, High, Medium, Low. Now overlay each one with the corresponding RWEP score from `data/cve-catalog.json` and the CISA KEV status and the AI-discovery flag. How many of your 'Critical' tickets are RWEP ≥ 85 and CISA KEV listed? How many of your 'Medium' tickets are RWEP ≥ 85 and CISA KEV listed but happened to land at CVSS 7.x? If any Medium-bucket ticket is a CISA-KEV-listed AI-discovered LPE, your triage process is CVSS-band theater. The control nominally exists (you triage every input) but the prioritization is anchored on a severity metric, not a risk metric. CVSS is severity, not risk."
 
 A second, complementary test:
 

@@ -128,7 +128,7 @@ This skill is response-shaped — the TTPs below name the incident classes the p
 | **AML.T0017** | Discover ML Model Ontology | Adversary mapping of deployed model family, system-prompt structure, guardrails, and training-data signal — precursor to extraction and adversarial-input crafting | Identification: anomalous inference-API usage patterns (high-volume queries, structured probing, membership-inference signatures, repeated training-data extraction prompts). Containment: rate-limit + API-key revocation + IP block. Eradication: identify attacker access surface; assess what model-ontology data was exposed. Recovery: re-key, consider model-rotation if proprietary weights are at risk; for training-data exfiltration consider differential-privacy retraining. | No standardized detection signatures; org must build custom telemetry over AI inference APIs. |
 | **AML.T0051** | LLM Prompt Injection | Prompt-injection breach as incident trigger | Identification: AI-assistant or agentic-system anomalous action (unauthorized data access, anomalous tool invocation, identity-context confusion). Containment: revoke AI-system tool scopes, disable agent autonomy, isolate affected RAG corpus. Eradication: identify injection vector (web content, email signature, document metadata, RAG corpus poisoning) and remove. Recovery: re-deploy with hardened system prompt + tool-scoping per `mcp-agent-trust`. | Detection lags; most orgs discover the incident from downstream effect (unauthorized action) rather than detection at the prompt boundary. |
 
-ATLAS pinned to v5.6.0 (May 2026) per AGENTS.md rule #12. ATT&CK pinned to v19.0 (April 2026) per the same rule; the Defense Evasion (TA0005) split into Stealth (TA0005) and Defense Impairment (TA0112) is traced via `tactic_moved_from` on affected `data/attack-techniques.json` entries and does not introduce breaking changes for the T-IDs cited above.
+ATLAS pinned to v5.6.0 (May 2026). ATT&CK pinned to v19.0 (April 2026); the Defense Evasion (TA0005) split into Stealth (TA0005) and Defense Impairment (TA0112) is traced via `tactic_moved_from` on affected `data/attack-techniques.json` entries and does not introduce breaking changes for the T-IDs cited above.
 
 ---
 
@@ -158,7 +158,7 @@ Detection-tool maturity (mid-2026):
 
 ## Analysis Procedure
 
-Before stepping through the IR program assessment, thread the three foundational design principles per AGENTS.md Skill File Format requirements.
+Before stepping through the IR program assessment, thread the three foundational design principles.
 
 **Defense in depth — IR as a multi-layer pipeline.** A real IR program is not the playbook document; it is the stack that produces the conditions for the playbook to fire and the conditions for it to succeed:
 - **Layer 1 — Preparation.** Playbook library (by ATT&CK technique + incident class + sector + jurisdiction), tabletop exercises (at least quarterly, scenarios drawn from current threat-intel feed), runbook tooling (SOAR + ticketing + comms), redundant logging (SIEM + DLP + identity + EDR + AI-system telemetry shipped to immutable store), legal and PR alignment, executive and board awareness, retainer with external IR firm.
@@ -255,7 +255,7 @@ Within 14 days of recovery (or sooner for severe incidents):
 
 ### Step 9 — Learning-loop feedback (cross-skill hand-offs)
 
-Per AGENTS.md DR-8 and the skill graph:
+Per the zero-day learning loop and the skill graph:
 - File `data/zeroday-lessons.json` entry per `zeroday-gap-learn` if a zero-day or new attack class was involved.
 - File `data/framework-control-gaps.json` entry per `framework-gap-analysis` if a control-class gap was exposed.
 - Trigger `threat-model-currency` refresh — the incident is a real-world signal that the threat model may be stale.
@@ -272,7 +272,7 @@ Per ISO 27035-1:2023 §6 and NIST 800-61r3 post-incident activity:
 - Playbook coverage percentage (incident classes with playbook vs. total observed in 24-month window).
 - AI-class incident detection latency vs. conventional-class incident detection latency — the operationally-relevant gap metric for mid-2026.
 
-**Ephemeral / serverless / AI-pipeline reality (per AGENTS.md rule #9):** Evidence preservation in serverless and container environments is the new hard problem of mid-2026 IR. NIST 800-86 forensic procedures assume the workload still exists at acquisition time. For Lambda / Cloud Run / Azure Functions / Knative / Kubernetes pods scaled to zero, the workload is gone before the SOC opens the ticket. The architecturally honest recommendation: configure continuous forensic-grade telemetry shipping pre-incident (process trees, syscall traces, network flows, container-layer diffs, AI-system prompt / response / tool-invocation logs) to an external immutable store. Treat the absence of this pipeline as a precondition for incident-evidence-loss and document it as a control gap per `framework-gap-analysis` before the first incident, not after.
+**Ephemeral / serverless / AI-pipeline reality:** Evidence preservation in serverless and container environments is the new hard problem of mid-2026 IR. NIST 800-86 forensic procedures assume the workload still exists at acquisition time. For Lambda / Cloud Run / Azure Functions / Knative / Kubernetes pods scaled to zero, the workload is gone before the SOC opens the ticket. The architecturally honest recommendation: configure continuous forensic-grade telemetry shipping pre-incident (process trees, syscall traces, network flows, container-layer diffs, AI-system prompt / response / tool-invocation logs) to an external immutable store. Treat the absence of this pipeline as a precondition for incident-evidence-loss and document it as a control gap per `framework-gap-analysis` before the first incident, not after.
 
 ---
 
@@ -510,7 +510,7 @@ A program passing all four tests is operating IR as infrastructure. A program fa
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md Skill File Format optional 8th section (required for skills shipped on or after 2026-05-11): map this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
+This section maps this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 IR consumes defensive controls across multiple D3FEND categories; the four cited below are the highest-leverage during active incident handling.
 
@@ -521,9 +521,9 @@ IR consumes defensive controls across multiple D3FEND categories; the four cited
 | **D3-IOPR** (Input/Output Profiling) | AI-API egress correlation and SaaS-egress anomaly detection. For AI-system incidents, profiling the input (prompt) and output (response) distribution is the defensive surface that can detect AML.T0051 (anomalous prompt patterns), AML.T0017 (extraction-pattern queries), and AML.T0096 (C2-channel encoded payloads). | Identification layer (primary for AI-system incidents). | Scoped to the AI-incident specialist role; raw prompts and responses may contain confidential data and must be access-controlled per data-classification policy. | Default-suspect for prompt distributions outside the baseline; do not whitelist by source identity alone — verify per request. | High applicability — D3-IOPR is the highest-leverage D3FEND technique for AI-system incident detection and is the operational complement to D3-NTA when the egress is to a legitimate AI provider. |
 | **D3-CSPP** (Client-Server Payload Profiling) | C2 protocol detection during identification; AI-API content-layer detection for AML.T0096. Where the C2 channel is HTTPS to a legitimate service (Box, OneDrive, S3, AI provider), CSPP is the content-shape detection surface that catches the abuse pattern. | Identification layer. | Scoped to the detection-engineering and IR analyst roles; payload-content access controlled. | Default-suspect for novel payload shapes against baseline; verify-not-assume that previously-good clients have not been compromised. | Applies — particularly for AI-API C2 detection where TLS termination at an enterprise proxy enables payload-shape analysis of prompts and responses. |
 
-**Explicit statement per AGENTS.md rule #4 (no orphaned controls)**: each D3FEND technique above maps to one or more incident classes in the TTP Mapping section (T1486 / T1041 / T1567 / T1078, AML.T0096 / T0017 / T0051). The defensive cross-walk in `defensive-countermeasure-mapping` covers the broader D3FEND ontology; this section names only the techniques operationally invoked during IR.
+**No orphaned controls**: each D3FEND technique above maps to one or more incident classes in the TTP Mapping section (T1486 / T1041 / T1567 / T1078, AML.T0096 / T0017 / T0051). The defensive cross-walk in `defensive-countermeasure-mapping` covers the broader D3FEND ontology; this section names only the techniques operationally invoked during IR.
 
-**AI-pipeline statement per AGENTS.md rule #9**: D3FEND coverage of AI-incident defense is concentrated in D3-IOPR (input/output profiling) and the content-layer subset of D3-CSPP. The ephemeral-compute evidence-preservation problem is largely outside the D3FEND ontology as of mid-2026; the operational fix (continuous forensic-grade telemetry shipping to immutable store) is documented in `attack-surface-pentest` and `defensive-countermeasure-mapping` as a control gap pending ontology coverage.
+**AI-pipeline statement**: D3FEND coverage of AI-incident defense is concentrated in D3-IOPR (input/output profiling) and the content-layer subset of D3-CSPP. The ephemeral-compute evidence-preservation problem is largely outside the D3FEND ontology as of mid-2026; the operational fix (continuous forensic-grade telemetry shipping to immutable store) is documented in `attack-surface-pentest` and `defensive-countermeasure-mapping` as a control gap pending ontology coverage.
 
 ---
 
@@ -532,7 +532,7 @@ IR consumes defensive controls across multiple D3FEND categories; the four cited
 IR sits downstream of detection and upstream of organizational learning. Route to the following on the indicated trigger:
 
 - **`coordinated-vuln-disclosure`** — *upstream input.* When IR identification surfaces a vulnerability against an org product (received via researcher report, bug-bounty queue, or customer escalation), hand off to the CVD intake pipeline. Conversely, when CVD output identifies a vulnerability that is being actively exploited, the resulting EU CRA Art. 11 24h clock is run by the IR team using this skill's regulator-notification matrix.
-- **`zeroday-gap-learn`** — *downstream learning loop.* Every incident with a novel attack class or a zero-day vector triggers a learning-loop entry per AGENTS.md DR-8. If IR is operating but `data/zeroday-lessons.json` entries are not being filed, the hand-off is broken.
+- **`zeroday-gap-learn`** — *downstream learning loop.* Every incident with a novel attack class or a zero-day vector triggers a learning-loop entry. If IR is operating but `data/zeroday-lessons.json` entries are not being filed, the hand-off is broken.
 - **`threat-model-currency`** — *downstream refresh trigger.* An incident is the strongest real-world signal that the threat model may be stale; trigger the currency refresh routine.
 - **`compliance-theater`** — *paper-IR detection.* The four compliance theater tests in this skill compose with the broader theater detection across frameworks; run `compliance-theater` after this skill when the org is claiming SOC 2 / ISO 27001 / NIST CSF / HIPAA maturity that the IR test results contradict.
 - **`framework-gap-analysis`** — *control-gap filing.* When an incident exposes that an existing control was insufficient to detect, prevent, or contain, file the gap under the appropriate framework entry per `data/framework-control-gaps.json`.

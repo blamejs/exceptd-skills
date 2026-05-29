@@ -129,7 +129,7 @@ Cross-cutting gap: **no security framework treats the four ransomware-specific d
 
 Shadow Copy deletion and exfil-staging via Web Service align to the parent IR playbook's `T1486` and `T1567` entries; the parent's `AML.T0096 / T0017 / T0051` entries do not apply to ransomware-as-a-class but may apply if AI-system data is exfiltrated within the ransomware operation.
 
-ATLAS pinned to v5.6.0 (May 2026) per AGENTS.md rule #12. ATT&CK pinned to v19.0 (April 2026) per the same rule.
+ATLAS pinned to v5.6.0 (May 2026). ATT&CK pinned to v19.0 (April 2026). Both are explicit version pins — never silently upgraded.
 
 ---
 
@@ -155,7 +155,7 @@ Detection-tool maturity for ransomware mid-2026:
 
 ## Analysis Procedure
 
-Apply the three foundational design principles per AGENTS.md Skill File Format requirements, then walk the ransomware-specific decision tree on top of the parent IR playbook's PICERL frame.
+Apply the three foundational design principles (defense in depth, least privilege, zero trust), then walk the ransomware-specific decision tree on top of the parent IR playbook's PICERL frame.
 
 **Defense in depth — ransomware-specific layer stack.** The parent IR playbook defines the IR layer stack (Preparation, Identification, Containment, Eradication-Recovery, Lessons). Ransomware response adds five sub-properties:
 
@@ -209,9 +209,9 @@ Execute the determined recovery path: restore from immutable backup (if Step 5 p
 
 ### Step 10 — Post-incident learning + framework-gap filing
 
-Per the parent IR playbook Step 9 + AGENTS.md DR-8: file `data/zeroday-lessons.json` entry if a new initial-access vector or family pattern was observed; file `data/framework-control-gaps.json` entries for any of the four ransomware-specific decision properties that failed to operationalize; trigger `framework-gap-analysis` for the control-class gap; schedule a ransomware-specific tabletop exercise within 90 days with sanctions-screening + decryptor-lookup + carrier-notification + immutable-backup viability as exercise injects.
+Per the parent IR playbook Step 9, run the zero-day learning loop: file a `data/zeroday-lessons.json` entry if a new initial-access vector or family pattern was observed; file `data/framework-control-gaps.json` entries for any of the four ransomware-specific decision properties that failed to operationalize; trigger `framework-gap-analysis` for the control-class gap; schedule a ransomware-specific tabletop exercise within 90 days with sanctions-screening + decryptor-lookup + carrier-notification + immutable-backup viability as exercise injects.
 
-**Ephemeral / cloud-workload ransomware (per AGENTS.md rule #9):** Ransomware against cloud workloads is increasingly hypervisor-level (ESXi-targeting families: Akira ESXi locker, ALPHV/BlackCat ESXi locker) or cloud-storage-API-driven (mass encryption of S3 / Azure Blob / GCS object storage via compromised admin credentials). Forensic preservation against ephemeral compute follows the parent playbook's recommendation: pre-incident continuous forensic-grade telemetry shipping to immutable store; absent the pre-incident pipeline, post-hoc evidence is limited to whatever shipped before workload termination and immutable object-storage versions.
+**Ephemeral / cloud-workload ransomware (where some controls are architecturally impossible):** Ransomware against cloud workloads is increasingly hypervisor-level (ESXi-targeting families: Akira ESXi locker, ALPHV/BlackCat ESXi locker) or cloud-storage-API-driven (mass encryption of S3 / Azure Blob / GCS object storage via compromised admin credentials). Forensic preservation against ephemeral compute follows the parent playbook's recommendation: pre-incident continuous forensic-grade telemetry shipping to immutable store; absent the pre-incident pipeline, post-hoc evidence is limited to whatever shipped before workload termination and immutable object-storage versions.
 
 ---
 
@@ -336,7 +336,7 @@ A program passing all four tests is operating ransomware response as infrastruct
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md Skill File Format optional 8th section: map this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
+Map this skill's findings to MITRE D3FEND IDs from `data/d3fend-catalog.json` with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 Ransomware response consumes defensive controls across multiple D3FEND categories; the four below are the highest-leverage during active ransomware handling. The parent IR playbook covers the broader IR D3FEND cross-walk; this section names the techniques operationally invoked during ransomware response specifically.
 
@@ -347,9 +347,9 @@ Ransomware response consumes defensive controls across multiple D3FEND categorie
 | **D3-IOPR** (Input/Output Profiling) | Limited direct ransomware applicability; relevant when ransomware operation includes AI-system abuse (rare in current ransomware operations but applicable to AI-pipeline data exfiltration). | Identification layer (limited). | Scoped to the IR analyst role. | Default-suspect for prompt-distribution anomalies if AI systems are within scope. | Applies only when AI systems are within the affected scope. |
 | **D3-CSPP** (Client-Server Payload Profiling) | C2 protocol detection — particularly relevant when the C2 channel is HTTPS to a legitimate service (Box / OneDrive / S3 / consumer cloud-storage) used for exfil staging. | Identification layer. | Scoped to detection-engineering and IR analyst roles; payload-content access controlled. | Default-suspect for novel payload shapes against baseline. | Limited. |
 
-**Explicit statement per AGENTS.md rule #4 (no orphaned controls):** each D3FEND technique above maps to one or more TTPs in the TTP Mapping section (T1486 / T1567 / T1078 / T1059). The defensive cross-walk in `defensive-countermeasure-mapping` covers the broader D3FEND ontology; this section names only the techniques operationally invoked during ransomware response.
+**No orphaned controls:** each D3FEND technique above maps to one or more TTPs in the TTP Mapping section (T1486 / T1567 / T1078 / T1059). The defensive cross-walk in `defensive-countermeasure-mapping` covers the broader D3FEND ontology; this section names only the techniques operationally invoked during ransomware response.
 
-**AI-pipeline statement per AGENTS.md rule #9:** Direct AI-pipeline applicability to ransomware response is limited; the parent IR playbook covers AI-class incident response separately. If a ransomware operation includes AI-system data exfiltration, hand off the AI-system-specific containment to the parent IR playbook's AI-class sub-flow.
+**AI-pipeline statement:** Direct AI-pipeline applicability to ransomware response is limited; the parent IR playbook covers AI-class incident response separately. If a ransomware operation includes AI-system data exfiltration, hand off the AI-system-specific containment to the parent IR playbook's AI-class sub-flow.
 
 ---
 
@@ -364,7 +364,7 @@ Ransomware response is a sub-flow of `incident-response-playbook` with ransomwar
 - **`sector-financial`** — *financial-entity trigger.* When the affected entity is a DORA-in-scope financial entity, hand off for the 4h initial notification chain to competent authority + ECB / EIOPA / ESMA; for NYDFS 500.17 the 24h ransom-payment notification (if payment is made and sanctions screening cleared) is routed through this skill.
 - **`framework-gap-analysis`** — *control-gap filing.* When the ransomware response surfaces that one of the four ransomware-specific decision properties (sanctions / decryptor / insurance / immutability / exfil-before-encrypt) failed to operationalize during the incident, file the gap entry against the relevant framework controls (NIST IR-4, ISO A.5.26, SOC 2 CC7.4, HIPAA 164.308(a)(7), AU E8 Backup, UK CAF D1).
 - **`compliance-theater`** — *paper-recovery detection.* The four ransomware-specific theater tests in this skill compose with the broader theater detection across frameworks. Run `compliance-theater` after this skill when the org is claiming SOC 2 / ISO 27001 / NIST CSF maturity that the four ransomware-specific tests contradict.
-- **`zeroday-gap-learn`** — *novel-vector trigger.* When the initial-access vector is a novel CVE or attack class, file the learning-loop entry per AGENTS.md DR-8.
+- **`zeroday-gap-learn`** — *novel-vector trigger.* When the initial-access vector is a novel CVE or attack class, file the learning-loop entry so the lesson lands in the catalog before the change ships.
 - **`coordinated-vuln-disclosure`** — *vendor-coordination trigger.* When the initial-access vector involves an exploited CVE in a third-party product (VPN appliance, management plane, supply-chain component), coordinate with the vendor advisory and downstream notification cascade.
-- **`threat-model-currency`** — *refresh trigger.* The ransomware incident is a real-world signal that the threat model may be stale; trigger refresh per AGENTS.md DR-8.
+- **`threat-model-currency`** — *refresh trigger.* The ransomware incident is a real-world signal that the threat model may be stale; trigger a currency refresh.
 - **`skill-update-loop`** — *meta-loop trigger.* When the incident exposes a gap in this skill (a new family with unfamiliar sanctions posture, a decryptor catalog not yet integrated, a carrier-policy clause not yet rehearsed), trigger the loop.
