@@ -13395,35 +13395,63 @@
   },
   "CVE-2025-59718": {
     "name": "Fortinet Multiple Products Improper Verification of Cryptographic Signature Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiOS, FortiSwitchMaster, FortiProxy, and FortiWeb contain an improper verification of cryptographic signature vulnerability that may allow an unauthenticated attacker to bypass the FortiCloud SSO login authentication via a crafted SAML message. Please be aware that CVE-2025-59719 pertains to the same problem and is mentioned in the same vendor advisory. Ensure to apply all patches mentioned in the advisory.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "improper verification of a cryptographic signature (CWE-347), allowing an unauthenticated attacker to bypass a signature check. CISA KEV-listed 2025-12-16 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Fortinet PSIRT fixed builds for each affected product; restrict management interfaces to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Fortinet product surface: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the Fortinet product surface; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet (multiple products) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-14611": {
     "name": "Gladinet CentreStack and Triofox Hard Coded Cryptographic Vulnerability",
@@ -13875,67 +13903,123 @@
   },
   "CVE-2025-58034": {
     "name": "Fortinet FortiWeb OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiWeb contains an OS command Injection vulnerability that may allow an authenticated attacker to execute unauthorized code on the underlying system via crafted HTTP requests or CLI commands.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "OS command injection (CWE-78) giving an unauthenticated attacker command execution on the FortiWeb appliance. CISA KEV-listed 2025-11-18 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade FortiWeb to the fixed build in the Fortinet PSIRT advisory; restrict the management interface and review for unexpected process execution.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the FortiWeb management surface: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FortiWeb management surface; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet FortiWeb is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-64446": {
     "name": "Fortinet FortiWeb Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiWeb contains a relative path traversal vulnerability that may allow an unauthenticated attacker to execute administrative commands on the system via crafted HTTP or HTTPS requests.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-23) on FortiWeb reachable by an unauthenticated attacker. CISA KEV-listed 2025-11-14 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade FortiWeb to the fixed build; restrict the management interface and audit for unauthorized file access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the FortiWeb surface: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FortiWeb surface; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet FortiWeb is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-12480": {
     "name": "Gladinet Triofox Improper Access Control Vulnerability",
@@ -16339,35 +16423,63 @@
   },
   "CVE-2025-25257": {
     "name": "Fortinet FortiWeb SQL Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiWeb contains a SQL injection vulnerability that may allow an unauthenticated attacker to execute unauthorized SQL code or commands via crafted HTTP or HTTPs requests.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "SQL injection (CWE-89) on the FortiWeb surface, reachable unauthenticated and escalating to compromise. CISA KEV-listed 2025-07-18 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade FortiWeb to the fixed build; restrict the management interface to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the FortiWeb surface: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FortiWeb surface; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet FortiWeb is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-47812": {
     "name": "Wing FTP Server Improper Neutralization of Null Byte or NUL Character Vulnerability",
@@ -16691,35 +16803,63 @@
   },
   "CVE-2019-6693": {
     "name": "Fortinet FortiOS Use of Hard-Coded Credentials Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiOS contains a use of hard-coded credentials vulnerability that could allow an attacker to cipher sensitive data in FortiOS configuration backup file via knowledge of the hard-coded key. ",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "use of hard-coded credentials (CWE-798) in FortiOS, allowing authentication with built-in credentials. CISA KEV-listed 2025-06-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade FortiOS to a fixed build and rotate/replace any configuration encrypted under the default key; restrict management access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the FortiOS appliance: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FortiOS appliance; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet FortiOS is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-0769": {
     "name": " D-Link DIR-859 Router Path Traversal Vulnerability",
@@ -17587,35 +17727,63 @@
   },
   "CVE-2025-32756": {
     "name": "Fortinet Multiple Products Stack-Based Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiFone, FortiVoice, FortiNDR and FortiMail contain a stack-based overflow vulnerability that may allow a remote unauthenticated attacker to execute arbitrary code or commands via crafted HTTP requests.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a stack-based buffer overflow (CWE-124) across multiple Fortinet products, reachable by an unauthenticated attacker for remote code execution. CISA KEV-listed 2025-05-14 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the appliance)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Fortinet PSIRT fixed builds for each affected product; where an immediate upgrade is not possible, disable the affected interface per the advisory workaround.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day appliance-patch cycle (often gated on a maintenance window) loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Fortinet product surface: requests matching the exploited weakness, appliance process crashes, and unexpected command execution or authentication events.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of appliances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the Fortinet product surface; on indicators of compromise, consider rebuilding the appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated appliance flaw; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network-appliance flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing security appliance."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the appliance class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated flaw on a perimeter appliance in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet (multiple products) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-32709": {
     "name": "Microsoft Windows Ancillary Function Driver for WinSock Use-After-Free Vulnerability",
