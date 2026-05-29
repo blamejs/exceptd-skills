@@ -127,9 +127,11 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
   }
   const BUDGET = {
     "content-quality": 12,        // 10 KEV-no-vendor-advisories + slack
-    // curated-only: draft KEV-due-passed no longer counts (it was calendar-
-    // drift noise that saturated a 260 budget). Curated actual ~20.
-    "temporal-staleness": 35,
+    // data-freshness only (source_verified / last_updated / epss_date). The
+    // calendar-driven KEV-due-passed sub-check was removed (external operator
+    // date, not catalog freshness; grew unboundedly as KEV drafts got curated).
+    // Actual 0 with fresh data; 10 leaves refresh headroom.
+    "temporal-staleness": 10,
     "logical-consistency": 5,
     "cross-ref-completeness": 5,
     "schema-evolution": 0,

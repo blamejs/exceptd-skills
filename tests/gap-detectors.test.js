@@ -78,30 +78,17 @@ test("temporal-staleness: source_verified older than threshold fires", () => {
     "source_verified > 180d must surface");
 });
 
-test("temporal-staleness: CISA KEV due-date passed without remediation surfaces", () => {
-  const cats = makeCatalogs({
-    "cve-catalog": { _meta: {}, "CVE-2026-0001": {
-      cisa_kev: true, cisa_kev_due_date: "2026-04-01", source_verified: "2026-05-15"
-    } }
-  });
-  const f = D.temporalStalenessFindings(cats, { now: new Date("2026-05-19T00:00:00Z") });
-  assert.ok(f.some((x) => x.field === "cisa_kev_due_date"),
-    "passed CISA KEV due date must surface");
-});
-
-test("temporal-staleness: a passed KEV due-date on an AUTO-IMPORTED DRAFT does NOT fire", () => {
-  // Drafts are un-curated backlog; a KEV due-date passing by calendar drift is
-  // expected noise, not an actionable finding (and would otherwise breach the
-  // budget gate on a no-op release). Scoped to curated entries only.
-  const cats = makeCatalogs({
-    "cve-catalog": { _meta: {}, "CVE-2026-0002": {
-      cisa_kev: true, cisa_kev_due_date: "2026-04-01", source_verified: "2026-05-15",
-      _auto_imported: true
-    } }
-  });
-  const f = D.temporalStalenessFindings(cats, { now: new Date("2026-05-19T00:00:00Z") });
-  assert.ok(!f.some((x) => x.field === "cisa_kev_due_date"),
-    "a draft's passed KEV due date must NOT surface as a temporal-staleness finding");
+test("temporal-staleness: a passed CISA KEV due-date is NOT a staleness finding (it's an external operator-remediation date, not catalog freshness)", () => {
+  // The KEV due-date is a fixed external date about an operator's remediation
+  // deadline; every historical KEV entry's due-date passes by calendar and says
+  // nothing about whether the catalog entry's DATA is fresh. It must not surface
+  // as temporal-staleness, for either a curated entry or a draft — otherwise the
+  // class grows without bound as the catalog ages and as KEV drafts get curated.
+  const fresh = { cisa_kev: true, cisa_kev_due_date: "2026-04-01", source_verified: "2026-05-15", last_updated: "2026-05-15" };
+  const curated = D.temporalStalenessFindings(makeCatalogs({ "cve-catalog": { _meta: {}, "CVE-2026-0001": fresh } }), { now: new Date("2026-05-19T00:00:00Z") });
+  assert.ok(!curated.some((x) => x.field === "cisa_kev_due_date"), "passed KEV due-date must not surface on a curated entry");
+  const draft = D.temporalStalenessFindings(makeCatalogs({ "cve-catalog": { _meta: {}, "CVE-2026-0002": { ...fresh, _auto_imported: true } } }), { now: new Date("2026-05-19T00:00:00Z") });
+  assert.ok(!draft.some((x) => x.field === "cisa_kev_due_date"), "passed KEV due-date must not surface on a draft either");
 });
 
 test("temporal-staleness: fresh entry does NOT fire", () => {
