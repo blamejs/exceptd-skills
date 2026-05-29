@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.10 — 2026-05-29
+
+Draft-curation pass 8 — Microsoft server-side RCE. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Exchange Server deserialization (CVE-2023-21529), Configuration Manager SQL injection (CVE-2024-43468), Windows Server Update Services deserialization (CVE-2025-59287), and the SharePoint Server "ToolShell" chain — improper authentication (CVE-2025-49706), code injection (CVE-2025-49704), and deserialization (CVE-2025-53770). The lessons stress that for these deserialization RCEs patching alone is insufficient: stolen machine keys and dropped web shells survive the patch and require explicit key rotation and web-shell hunting.
+
 ## 0.15.9 — 2026-05-29
 
 Draft-curation pass 7 — network devices and the Ivanti EPMM chain. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: D-Link DIR-823X command injection (CVE-2025-29635), router buffer overflow (CVE-2022-37055), DCS-2530L/2670L camera code execution (CVE-2020-25078) and command injection (CVE-2020-25079), DNR-322L download-without-integrity (CVE-2022-40799), and the Ivanti EPMM authentication-bypass + code-injection preauth chain (CVE-2025-4427, CVE-2025-4428). The device lessons note that end-of-life consumer hardware is unpatchable, making network isolation the load-bearing control, and that firmware implants survive a reboot without a reflash.

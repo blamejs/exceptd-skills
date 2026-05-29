@@ -7615,35 +7615,63 @@
   },
   "CVE-2023-21529": {
     "name": "Microsoft Exchange Server Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Exchange Server contains a deserialization of untrusted data that allows an authenticated attacker to achieve remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "deserialization of untrusted data (CWE-502) reachable by an attacker for remote code execution on the Exchange server. CISA KEV-listed 2026-04-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft Exchange Server security update; restrict the Exchange surface and review for web shells, a common Exchange post-exploitation persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Exchange Server: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the Exchange Server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Microsoft Exchange Server is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2023-36424": {
     "name": "Microsoft Windows Out-of-Bounds Read Vulnerability",
@@ -12127,35 +12155,63 @@
   },
   "CVE-2024-43468": {
     "name": "Microsoft Configuration Manager SQL Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Configuration Manager contains an SQL injection vulnerability. An unauthenticated attacker could exploit this vulnerability by sending specially crafted requests to the target environment which are processed in an unsafe manner enabling the attacker to execute commands on the server and/or underlying database.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "SQL injection (CWE-89) on Microsoft Configuration Manager escalating to unauthenticated remote code execution. CISA KEV-listed 2026-02-12 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft Configuration Manager security update; ConfigMgr governs endpoint management, so treat compromise as fleet-level and review managed-client integrity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Configuration Manager: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the Configuration Manager.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing Microsoft Configuration Manager is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-15556": {
     "name": "Notepad++ Download of Code Without Integrity Check Vulnerability",
@@ -14487,35 +14543,63 @@
   },
   "CVE-2025-59287": {
     "name": "Microsoft Windows Server Update Service (WSUS) Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Server Update Service (WSUS) contains a deserialization of untrusted data vulnerability that allows for remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "deserialization of untrusted data (CWE-502) in WSUS, reachable by an unauthenticated attacker for remote code execution. CISA KEV-listed 2025-10-24 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft WSUS security update; WSUS distributes updates to the fleet, so treat compromise as a supply-chain risk to managed clients and disable the WSUS role where unused pending the patch.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the WSUS server: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the WSUS server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing Microsoft Windows Server Update Services (WSUS) is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-61932": {
     "name": "Motex LANSCOPE Endpoint Manager Improper Verification of Source of a Communication Channel Vulnerability",
@@ -16663,99 +16747,183 @@
   },
   "CVE-2025-49704": {
     "name": "Microsoft SharePoint Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft SharePoint contains a code injection vulnerability that could allow an authorized attacker to execute code over a network. This vulnerability could be chained with CVE-2025-49706. CVE-2025-53770 is a patch bypass for CVE-2025-49704, and the updates for CVE-2025-53770 include more robust protection than those for CVE-2025-49704.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "code injection (CWE-94) on SharePoint Server — part of the ToolShell chain — yielding unauthenticated remote code execution. CISA KEV-listed 2025-07-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft SharePoint security update, rotate the SharePoint machine keys (the ToolShell chain steals them for persistence), and hunt for web shells under the SharePoint layouts directory.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SharePoint Server: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the SharePoint Server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Microsoft SharePoint Server is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-49706": {
     "name": "Microsoft SharePoint Improper Authentication Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft SharePoint contains an improper authentication vulnerability that allows an authorized attacker to perform spoofing over a network. Successfully exploitation could allow an attacker to view sensitive information and make some changes to disclosed information. This vulnerability could be chained with CVE-2025-49704. CVE-2025-53771 is a patch bypass for CVE-2025-49706, and the updates for CVE-2025-53771 include more robust protection than those for CVE-2025-49706.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "improper authentication (CWE-287) on SharePoint Server — the ToolShell chain entry point — letting an unauthenticated attacker reach the RCE primitives. CISA KEV-listed 2025-07-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft SharePoint security update; this is the auth-bypass half of the ToolShell chain, so confirm the RCE flaws are patched too and rotate machine keys.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SharePoint Server: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the SharePoint Server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Microsoft SharePoint Server is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-53770": {
-    "name": "Microsoft SharePoint Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Microsoft SharePoint Deserialization of Untrusted Data Vulnerability (variant: CVE-2025-53770)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft SharePoint Server on-premises contains a deserialization of untrusted data vulnerability that could allow an unauthorized attacker to execute code over a network. This vulnerability could be chained with CVE-2025-53771. CVE-2025-53770 is a patch bypass for CVE-2025-49704, and the updates for CVE-2025-53770 include more robust protection than those for CVE-2025-49704.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "deserialization of untrusted data (CWE-502) on SharePoint Server (the ToolShell chain), yielding unauthenticated remote code execution and web-shell deployment. CISA KEV-listed 2025-07-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the server)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft SharePoint security update, rotate machine keys, and hunt for web shells (e.g. spinstall0.aspx) — patching alone leaves stolen keys and shells in place.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for these deserialization RCEs, insufficient alone — stolen machine keys and dropped web shells survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SharePoint Server: exploit-shaped requests, new .aspx/web-shell files under the server's web root, unexpected process execution, and anomalous use of stolen cryptographic keys.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; the ToolShell-class chains specifically steal keys for durable access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate machine keys, hunt and remove web shells, and review for lateral movement; assume credential compromise for any account reachable from the SharePoint Server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without key rotation and web-shell hunting leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated server flaw; CISA KEV due dates are days. The ToolShell SharePoint chain was mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing enterprise server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the server class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the key-rotation/web-shell-hunt cleanup these deserialization RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Microsoft SharePoint Server is business-critical and change-controlled, so emergency patching loses to change windows; the required key-rotation and web-shell hunt is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-25257": {
     "name": "Fortinet FortiWeb SQL Injection Vulnerability",
