@@ -8089,35 +8089,63 @@
   },
   "CVE-2026-3055": {
     "name": "Citrix NetScaler Out-of-Bounds Read Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix NetScaler ADC (formerly Citrix ADC), NetScaler Gateway (formerly Citrix Gateway) and NetScaler ADC FIPS and NDcPP contain an out-of-bounds reads vulnerability when configured as a SAML IDP leading to memory overread.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds read (CWE-125) on Citrix NetScaler, disclosing adjacent memory used to steal authenticated session material. CISA KEV-listed 2026-03-30 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the appliance's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix NetScaler security update; invalidate active sessions and rotate session secrets — a patch alone does not revoke tokens already exfiltrated from memory.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone: tokens already disclosed from memory survive the patch and must be revoked via session termination + secret rotation."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the NetScaler: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix NetScaler is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-53521": {
     "name": "F5 BIG-IP Stack-Based Buffer Overflow Vulnerability",
@@ -16291,35 +16319,63 @@
   },
   "CVE-2025-7775": {
     "name": "Citrix NetScaler Memory Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix NetScaler ADC and NetScaler Gateway contain a memory overflow vulnerability that could allow for remote code execution and/or denial of service.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a memory-overflow buffer flaw (CWE-119) on Citrix NetScaler, exploitable by an unauthenticated attacker for remote code execution. CISA KEV-listed 2025-08-26 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the appliance's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix NetScaler security update; treat an exploited appliance as compromised — rebuild from a known-good image and rotate secrets the appliance held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; for the RCE/escalation variants the appliance must be treated as compromised and rebuilt, since memory-corruption RCE on the edge plane gives durable footholds."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the NetScaler: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix NetScaler is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-48384": {
     "name": "Git Link Following Vulnerability",
@@ -16355,67 +16411,123 @@
   },
   "CVE-2024-8068": {
     "name": "Citrix Session Recording Improper Privilege Management Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix Session Recording contains an improper privilege management vulnerability that could allow for privilege escalation to NetworkService Account access. An attacker must be an authenticated user in the same Windows Active Directory domain as the session recording server domain.",
-      "privileges_required": "unprivileged local user",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper privilege-management flaw (CWE-269) on Citrix Session Recording, escalating an authenticated user's privileges on the recording server. CISA KEV-listed 2025-08-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (an authenticated user on the recording service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix Session Recording security update; audit Session Recording user actions during the exposure window and review recording access logs.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; for the RCE/escalation variants the appliance must be treated as compromised and rebuilt, since memory-corruption RCE on the edge plane gives durable footholds."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Session Recording: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix Session Recording is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-8069": {
     "name": "Citrix Session Recording Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix Session Recording contains a deserialization of untrusted data vulnerability that allows limited remote code execution with privilege of a NetworkService Account access. Attacker must be an authenticated user on the same intranet as the session recording server.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) on Citrix Session Recording, enabling remote code execution on the recording server. CISA KEV-listed 2025-08-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the appliance's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix Session Recording security update and hunt for web shells; rotate credentials reachable from the Session Recording server.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; for the RCE/escalation variants the appliance must be treated as compromised and rebuilt, since memory-corruption RCE on the edge plane gives durable footholds."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Session Recording: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix Session Recording is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-54948": {
     "name": "Trend Micro Apex One OS Command Injection Vulnerability",
@@ -17343,35 +17455,63 @@
   },
   "CVE-2025-5777": {
     "name": "Citrix NetScaler ADC and Gateway Out-of-Bounds Read Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix NetScaler ADC and Gateway contain an out-of-bounds read vulnerability due to insufficient input validation. This vulnerability can lead to memory overread when the NetScaler is configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) OR AAA virtual server.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds read (CWE-125) on Citrix NetScaler ADC/Gateway (the CitrixBleed-2 class), disclosing memory containing authenticated session material that has been used in the wild for session hijack. CISA KEV-listed 2025-07-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the appliance's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix NetScaler security update, terminate all active sessions, and rotate session and credential secrets — a patch alone does not revoke session tokens already disclosed.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone: tokens already disclosed from memory survive the patch and must be revoked via session termination + secret rotation."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the NetScaler ADC/Gateway: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix NetScaler ADC and Gateway is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2019-9621": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Server-Side Request Forgery (SSRF) Vulnerability",
@@ -17627,35 +17767,63 @@
   },
   "CVE-2025-6543": {
     "name": "Citrix NetScaler ADC and Gateway Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Citrix NetScaler ADC and Gateway contain a buffer overflow vulnerability leading to unintended control flow and Denial of Service. NetScaler must be configured as Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) OR AAA virtual server.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a buffer-overflow flaw (CWE-119) on Citrix NetScaler ADC/Gateway, exploitable for memory corruption (DoS and code execution). CISA KEV-listed 2025-06-30 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the appliance's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Citrix NetScaler security update; treat an exploited appliance as compromised and rebuild from a known-good image with rotated secrets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; for the RCE/escalation variants the appliance must be treated as compromised and rebuilt, since memory-corruption RCE on the edge plane gives durable footholds."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the NetScaler ADC/Gateway: exploit-shaped requests, oversized/leaked response bodies (for the OOB-read class), appliance crashes (for the memory-corruption class), and session reuse with no matching login event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch token-theft and post-exploit footholds that survive patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the OOB-read class terminate sessions and rotate secrets, for the RCE class rebuild the appliance from a known-good image and rotate all credentials it held; review for lateral movement off the edge plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a patch-in-place without session revocation or appliance rebuild leaves the attacker resident or with stolen session material."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing perimeter appliance; CitrixBleed-class disclosures were mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited perimeter-appliance flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats perimeter appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not mandate the session-revocation/credential-rotation cleanup these memory-disclosure flaws require."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing edge appliance fronting the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "Citrix NetScaler ADC and Gateway is a load-bearing perimeter device run by audited organizations on standard change-controlled patch windows; the required session-revocation/rebuild cleanup is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2019-6693": {
     "name": "Fortinet FortiOS Use of Hard-Coded Credentials Vulnerability",

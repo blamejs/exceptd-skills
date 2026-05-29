@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.13 — 2026-05-29
+
+Draft-curation pass 11 — Citrix. Six CISA KEV-listed Citrix CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: four NetScaler ADC/Gateway appliance flaws (CVE-2026-3055 and CVE-2025-5777 — the CitrixBleed-class out-of-bounds reads that disclose authenticated session material; CVE-2025-7775 and CVE-2025-6543 memory-corruption buffer flaws) and two Session Recording flaws (CVE-2024-8069 deserialization RCE and CVE-2024-8068 privilege escalation). The CitrixBleed entries map T1552 alongside T1190 to surface session-token theft, and the lessons stress session termination + secret rotation (memory-disclosure class) and appliance rebuild (RCE class) as required steps beyond the patch.
+
 ## 0.15.12 — 2026-05-29
 
 Draft-curation pass 10 — Zimbra mail server. Seven CISA KEV-listed Synacor Zimbra Collaboration Suite (ZCS) CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the cross-site scripting cluster (CVE-2025-48700, CVE-2025-66376, CVE-2025-27915, CVE-2024-27443), the server-side request forgery pair (CVE-2020-7796, CVE-2019-9621), and the PHP remote-file-inclusion RCE (CVE-2025-68645). The lessons note ZCS is a recurring mass-exploited mail-server target where web-shell hunting and session-secret rotation are needed beyond the patch.
