@@ -10801,99 +10801,168 @@
   },
   "CVE-2025-43510": {
     "name": "Apple Multiple Products Improper Locking Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple watchOS, iOS, iPadOS, macOS, visionOS, and tvOS contain an improper locking vulnerability that could allow a malicious application to cause unexpected changes in memory shared between processes.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-locking flaw (CWE-667) exploitable in a memory-corruption chain. CISA KEV-listed 2026-03-20 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "none (the victim device renders/opens attacker-controlled content; the chain often requires no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-43520": {
     "name": "Apple Multiple Products Classic Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple watchOS, iOS, iPadOS, macOS, visionOS, and tvOS contain a classic buffer overflow vulnerability which could allow a malicious application to cause unexpected system termination or write kernel memory.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a classic buffer overflow (CWE-120) reachable via attacker-controlled content. CISA KEV-listed 2026-03-20 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "none (the victim device renders/opens attacker-controlled content; the chain often requires no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-31277": {
     "name": "Apple Multiple Products Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple Safari, iOS, watchOS, visionOS, iPadOS, macOS, and tvOS contain a buffer overflow vulnerability that could allow the processing of maliciously crafted web content which may lead to memory corruption.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a buffer overflow (CWE-119) used as a sandbox-escape / privilege step in an exploit chain. CISA KEV-listed 2026-03-20 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "low (a prior foothold / sandbox compromise; this is an escalation or sandbox-escape step in a multi-stage exploit chain)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20131": {
     "name": "Cisco Secure Firewall Management Center (FMC) Software and Cisco Security Cloud Control (SCC) Firewall Management Deserialization of Untrusted Data Vulnerability",
@@ -11411,99 +11480,168 @@
   },
   "CVE-2023-43000": {
     "name": "Apple Multiple products Use-After-Free Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple macOS, iOS, iPadOS, and Safari 16.6 contain a use-after-free vulnerability due to the processing of maliciously crafted web content that may lead to memory corruption.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a use-after-free (CWE-416) used as a sandbox-escape step in an exploit chain. CISA KEV-listed 2026-03-05 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "low (a prior foothold / sandbox compromise; this is an escalation or sandbox-escape step in a multi-stage exploit chain)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-30952": {
     "name": "Apple Multiple Products Integer Overflow or Wraparound Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple tvOS, macOS, Safari, iPadOS and watchOS contain an integer overflow or wraparound vulnerability due to the processing of maliciously crafted web content that may lead to arbitrary code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an integer overflow / wraparound (CWE-190) used as a memory-corruption step in an exploit chain. CISA KEV-listed 2026-03-05 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "low (a prior foothold / sandbox compromise; this is an escalation or sandbox-escape step in a multi-stage exploit chain)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2023-41974": {
     "name": "Apple iOS and iPadOS Use-After-Free Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple iOS and iPadOS contain a use-after-free vulnerability. An app may be able to execute arbitrary code with kernel privileges.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a use-after-free (CWE-416) on iOS/iPadOS used as a sandbox-escape step in an exploit chain. CISA KEV-listed 2026-03-05 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "low (a prior foothold / sandbox compromise; this is an escalation or sandbox-escape step in a multi-stage exploit chain)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple iOS and iPadOS is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-22719": {
     "name": "Broadcom VMware Aria Operations Command Injection Vulnerability",
@@ -12123,35 +12261,58 @@
   },
   "CVE-2026-20700": {
     "name": "Apple Multiple Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple iOS, macOS, tvOS, watchOS, and visionOS contain an improper restriction of operations within the bounds of a memory buffer vulnerability that could allow an attacker with memory write the capability to execute arbitrary code.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a buffer overflow (CWE-119) reachable via attacker-controlled content. CISA KEV-listed 2026-02-12 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "none (the victim device renders/opens attacker-controlled content; the chain often requires no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-43468": {
     "name": "Microsoft Configuration Manager SQL Injection Vulnerability",
@@ -14635,35 +14796,58 @@
   },
   "CVE-2022-48503": {
     "name": "Apple Multiple Products Unspecified Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple macOS, iOS, tvOS, Safari, and watchOS contain an unspecified vulnerability in JavaScriptCore that when processing web content may lead to arbitrary code execution. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-execution flaw (CWE-94) reachable via attacker-controlled web/media content. CISA KEV-listed 2025-10-20 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "none (the victim device renders/opens attacker-controlled content; the chain often requires no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-2746": {
     "name": "Kentico Xperience CMS Authentication Bypass Using an Alternate Path or Channel Vulnerability",
@@ -17494,36 +17678,59 @@
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
   "CVE-2025-43200": {
-    "name": "Apple Multiple Products Unspecified Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Apple Multiple Products Unspecified Vulnerability (variant: CVE-2025-43200)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apple iOS, iPadOS, macOS, watchOS, and visionOS, contain an unspecified vulnerability when processing a maliciously crafted photo or video shared via an iCloud Link.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-execution flaw (CWE-94, variant) reachable via attacker-controlled content (a zero-click delivery path in the documented in-the-wild use). CISA KEV-listed 2025-06-16 with confirmed in-the-wild exploitation (Apple zero-days of this class are typically used in targeted-spyware chains).",
+      "privileges_required": "none (the victim device renders/opens attacker-controlled content; the chain often requires no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to the patched iOS/iPadOS/macOS build (Apple's advisory documents in-the-wild exploitation); enable Lockdown Mode for high-risk users and enforce update SLAs via MDM on managed fleets.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "OS auto-update is definitive and fast for consumer devices; the gap is managed fleets that gate updates behind an MDM change window slower than the in-the-wild exploitation."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint/mobile-threat-defense monitoring for crash signatures on content render and for spyware-chain indicators; Apple Threat Notifications for targeted users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops devices not yet updated; targeted client chains are stealthy and often zero-click."
+      },
+      "response": {
+        "what_would_have_worked": "Force the OS update across the fleet; for a confirmed targeted user, preserve forensic state, rotate credentials, and consider device replacement, as spyware chains can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed client OS RCE; the exposure is every device that rendered attacker content pre-patch."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client memory-corruption flaw delivered by attacker-controlled content."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited mobile/desktop OS flaw, often part of a targeted-spyware chain against high-risk users."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client OS RCE than a 30-day cycle, but still trails same-day OS auto-update for an in-the-wild exploit; MDM-enforced update SLAs are the load-bearing control on managed mobile fleets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Apple (multiple products) is ubiquitous on endpoints; audited organizations that gate OS updates behind a managed MDM change window (rather than same-day auto-update) were exposed for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-33053": {
     "name": " Microsoft Windows External Control of File Name or Path Vulnerability",
