@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.21 — 2026-05-29
+
+Draft-curation pass 19 — legacy browser/reader client-side RCEs. Six CISA KEV-listed client-side memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Adobe Acrobat/Reader (CVE-2020-9715 use-after-free, CVE-2009-3459 heap overflow), Internet Explorer (CVE-2010-0249 the Operation Aurora zero-day, CVE-2010-0806 iepeers, CVE-2013-3893 the SetMouseCapture watering-hole flaw), and Mozilla Firefox (CVE-2010-3765). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the fixes shipped years ago, but unpatched and end-of-life estates (notably the unsupported Internet Explorer) remain exposed; retiring end-of-life browsers and application hardening (Protected Mode/View, ASR rules) are the load-bearing controls.
+
 ## 0.15.20 — 2026-05-29
 
 Draft-curation pass 18 — internet-facing network devices. Eight CISA KEV-listed unauthenticated CVEs on SOHO routers, a telephony appliance, and a firewall are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: TP-Link routers (CVE-2023-50224 authentication bypass, CVE-2025-9377 and CVE-2023-33538 command injection), DrayTek Vigor command injection (CVE-2024-12987), Sangoma FreePBX (CVE-2025-64328 command injection, CVE-2025-57819 authentication bypass + SQL injection), and WatchGuard Firebox out-of-bounds-write RCE (CVE-2025-14733, CVE-2025-9242). All map T1190, with per-class T1059 (command injection) or T1078 (auth bypass). The lessons account for the realities of edge devices: end-of-life firmware that can only be replaced, recruitment into botnets and operational-relay networks, telephony toll fraud on the PBX, and the requirement to re-flash/rebuild and rotate secrets rather than patch in place.
