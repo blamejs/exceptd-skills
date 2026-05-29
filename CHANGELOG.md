@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.7 — 2026-05-29
+
+Draft-curation pass 5 — Fortinet network appliances. Six CISA KEV-listed Fortinet CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: FortiWeb OS command injection (CVE-2025-58034), path traversal (CVE-2025-64446), and SQL injection (CVE-2025-25257); FortiOS hard-coded credentials (CVE-2019-6693); and the multi-product improper-signature-verification (CVE-2025-59718) and stack-based buffer overflow (CVE-2025-32756).
+
 ## 0.15.6 — 2026-05-29
 
 Draft-curation pass 4 — enterprise management-plane and infrastructure. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the Cisco Catalyst SD-WAN Manager cluster — incorrect privileged-API use (CVE-2026-20122), sensitive-information exposure (CVE-2026-20133), and recoverable password storage (CVE-2026-20128) — plus Microsoft SharePoint Server improper input validation (CVE-2026-32201), Fortinet FortiClient EMS improper access control (CVE-2026-35616), and Dell RecoverPoint for VMs hard-coded credentials (CVE-2026-22769).
