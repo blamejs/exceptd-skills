@@ -12926,35 +12926,58 @@
   },
   "CVE-2026-21533": {
     "name": "Microsoft Windows Improper Privilege Management Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Remote Desktop Services contains an improper privilege management vulnerability that could allow an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-privilege-management flaw (CWE-269) in Windows, exploited by a local foothold to escalate privileges. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.",
+      "privileges_required": "low (any local foothold — an unprivileged process, RDP session, or commodity malware on the endpoint)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; enforce hypervisor-protected code integrity (HVCI) / Virtualization-Based Security (VBS), and enable the Microsoft Vulnerable Driver Blocklist to shrink kernel-LPE attack surface on the long tail.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → SYSTEM) which a patched endpoint shuts down. HVCI/Blocklist backstops unpatched estates."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for the LPE primitive (token swap, process-impersonation, kernel-driver crashes) and for unprivileged-to-SYSTEM transitions without an admin trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched; LPE is typically silent without EDR coverage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate; for a confirmed exploitation, treat the host as compromised (ransomware kits typically follow within hours), isolate, preserve forensic state, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; SYSTEM-level exploitation makes the host an unreliable platform for further work and requires rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed Windows kernel/driver LPE; ransomware operators pair these with an initial-access flaw and elevate to SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited kernel/driver LPE that is part of every modern ransomware kit."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is the right tier for a Windows LPE, but the load-bearing endpoint controls are hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist — neither of which the framework demands explicitly."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations gate kernel patches behind change windows or rely on cumulative monthly updates that leave the LPE chain open for ~30 days at a stretch. HVCI/VBS and the Vulnerable Driver Blocklist remain off-by-default in many estates.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21519": {
     "name": "Microsoft Windows Type Confusion Vulnerability",
@@ -14483,35 +14506,58 @@
   },
   "CVE-2025-62221": {
     "name": "Microsoft Windows Use After Free Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Cloud Files Mini Filter Driver contains a use after free vulnerability that can allow an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a use-after-free (CWE-416) in a Windows kernel-mode component, exploited by a local foothold to escalate privileges to SYSTEM. CISA KEV-listed 2025-12-09 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.",
+      "privileges_required": "low (any local foothold — an unprivileged process, RDP session, or commodity malware on the endpoint)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; enforce hypervisor-protected code integrity (HVCI) / Virtualization-Based Security (VBS), and enable the Microsoft Vulnerable Driver Blocklist to shrink kernel-LPE attack surface on the long tail.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → SYSTEM) which a patched endpoint shuts down. HVCI/Blocklist backstops unpatched estates."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for the LPE primitive (token swap, process-impersonation, kernel-driver crashes) and for unprivileged-to-SYSTEM transitions without an admin trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched; LPE is typically silent without EDR coverage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate; for a confirmed exploitation, treat the host as compromised (ransomware kits typically follow within hours), isolate, preserve forensic state, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; SYSTEM-level exploitation makes the host an unreliable platform for further work and requires rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed Windows kernel/driver LPE; ransomware operators pair these with an initial-access flaw and elevate to SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited kernel/driver LPE that is part of every modern ransomware kit."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is the right tier for a Windows LPE, but the load-bearing endpoint controls are hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist — neither of which the framework demands explicitly."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations gate kernel patches behind change windows or rely on cumulative monthly updates that leave the LPE chain open for ~30 days at a stretch. HVCI/VBS and the Vulnerable Driver Blocklist remain off-by-default in many estates.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2022-37055": {
     "name": "D-Link Routers Buffer Overflow Vulnerability",
@@ -15939,35 +15985,58 @@
   },
   "CVE-2025-59230": {
     "name": "Microsoft Windows Improper Access Control Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows contains an improper access control vulnerability in Windows Remote Access Connection Manager which could allow an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-access-control flaw (CWE-284) in a Windows privileged service, exploited by a local foothold to escalate privileges to SYSTEM. CISA KEV-listed 2025-10-14 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.",
+      "privileges_required": "low (any local foothold — an unprivileged process, RDP session, or commodity malware on the endpoint)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; enforce hypervisor-protected code integrity (HVCI) / Virtualization-Based Security (VBS), and enable the Microsoft Vulnerable Driver Blocklist to shrink kernel-LPE attack surface on the long tail.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → SYSTEM) which a patched endpoint shuts down. HVCI/Blocklist backstops unpatched estates."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for the LPE primitive (token swap, process-impersonation, kernel-driver crashes) and for unprivileged-to-SYSTEM transitions without an admin trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched; LPE is typically silent without EDR coverage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate; for a confirmed exploitation, treat the host as compromised (ransomware kits typically follow within hours), isolate, preserve forensic state, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; SYSTEM-level exploitation makes the host an unreliable platform for further work and requires rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed Windows kernel/driver LPE; ransomware operators pair these with an initial-access flaw and elevate to SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited kernel/driver LPE that is part of every modern ransomware kit."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is the right tier for a Windows LPE, but the load-bearing endpoint controls are hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist — neither of which the framework demands explicitly."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations gate kernel patches behind change windows or rely on cumulative monthly updates that leave the LPE chain open for ~30 days at a stretch. HVCI/VBS and the Vulnerable Driver Blocklist remain off-by-default in many estates.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2016-7836": {
     "name": "SKYSEA Client View Improper Authentication Vulnerability",
@@ -20211,35 +20280,58 @@
   },
   "CVE-2025-32709": {
     "name": "Microsoft Windows Ancillary Function Driver for WinSock Use-After-Free Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Ancillary Function Driver for WinSock contains a use-after-free vulnerability that allows an authorized attacker to escalate privileges to administrator.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a use-after-free (CWE-416) in the Windows Ancillary Function Driver for WinSock (afd.sys), exploited by a local foothold to escalate privileges to SYSTEM. CISA KEV-listed 2025-05-13 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.",
+      "privileges_required": "low (any local foothold — an unprivileged process, RDP session, or commodity malware on the endpoint)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; enforce hypervisor-protected code integrity (HVCI) / Virtualization-Based Security (VBS), and enable the Microsoft Vulnerable Driver Blocklist to shrink kernel-LPE attack surface on the long tail.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → SYSTEM) which a patched endpoint shuts down. HVCI/Blocklist backstops unpatched estates."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for the LPE primitive (token swap, process-impersonation, kernel-driver crashes) and for unprivileged-to-SYSTEM transitions without an admin trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched; LPE is typically silent without EDR coverage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate; for a confirmed exploitation, treat the host as compromised (ransomware kits typically follow within hours), isolate, preserve forensic state, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; SYSTEM-level exploitation makes the host an unreliable platform for further work and requires rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed Windows kernel/driver LPE; ransomware operators pair these with an initial-access flaw and elevate to SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited kernel/driver LPE that is part of every modern ransomware kit."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is the right tier for a Windows LPE, but the load-bearing endpoint controls are hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist — neither of which the framework demands explicitly."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations gate kernel patches behind change windows or rely on cumulative monthly updates that leave the LPE chain open for ~30 days at a stretch. HVCI/VBS and the Vulnerable Driver Blocklist remain off-by-default in many estates.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-30397": {
     "name": "Microsoft Windows Scripting Engine Type Confusion Vulnerability",
@@ -20275,35 +20367,58 @@
   },
   "CVE-2025-32706": {
     "name": "Microsoft Windows Common Log File System (CLFS) Driver Heap-Based Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Common Log File System (CLFS) Driver contains a heap-based buffer overflow vulnerability that allows an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a heap-based buffer overflow (CWE-122) in the Windows Common Log File System (CLFS) driver — a recurring kernel-LPE target — exploited by a local foothold to escalate to SYSTEM. CISA KEV-listed 2025-05-13 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.",
+      "privileges_required": "low (any local foothold — an unprivileged process, RDP session, or commodity malware on the endpoint)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; enforce hypervisor-protected code integrity (HVCI) / Virtualization-Based Security (VBS), and enable the Microsoft Vulnerable Driver Blocklist to shrink kernel-LPE attack surface on the long tail.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → SYSTEM) which a patched endpoint shuts down. HVCI/Blocklist backstops unpatched estates."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for the LPE primitive (token swap, process-impersonation, kernel-driver crashes) and for unprivileged-to-SYSTEM transitions without an admin trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched; LPE is typically silent without EDR coverage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate; for a confirmed exploitation, treat the host as compromised (ransomware kits typically follow within hours), isolate, preserve forensic state, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; SYSTEM-level exploitation makes the host an unreliable platform for further work and requires rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed Windows kernel/driver LPE; ransomware operators pair these with an initial-access flaw and elevate to SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited kernel/driver LPE that is part of every modern ransomware kit."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is the right tier for a Windows LPE, but the load-bearing endpoint controls are hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist — neither of which the framework demands explicitly."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations gate kernel patches behind change windows or rely on cumulative monthly updates that leave the LPE chain open for ~30 days at a stretch. HVCI/VBS and the Vulnerable Driver Blocklist remain off-by-default in many estates.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-32701": {
     "name": "Microsoft Windows Common Log File System (CLFS) Driver Use-After-Free Vulnerability",

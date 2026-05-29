@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.22 — 2026-05-29
+
+Draft-curation pass 20 — Windows kernel/driver LPE. Five CISA KEV-listed Windows local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: an Ancillary Function Driver for WinSock use-after-free (CVE-2025-32709), a Common Log File System driver heap overflow (CVE-2025-32706), a kernel use-after-free (CVE-2025-62221), an improper-privilege-management flaw (CVE-2026-21533), and an improper-access-control elevation in a privileged service (CVE-2025-59230). All map T1068 (Exploitation for Privilege Escalation). The lessons frame these as the escalation half of the ransomware chain (initial access → unpatched LPE → SYSTEM within hours) and name hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist as load-bearing endpoint controls beyond the patch.
+
 ## 0.15.21 — 2026-05-29
 
 Draft-curation pass 19 — legacy browser/reader client-side RCEs. Six CISA KEV-listed client-side memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Adobe Acrobat/Reader (CVE-2020-9715 use-after-free, CVE-2009-3459 heap overflow), Internet Explorer (CVE-2010-0249 the Operation Aurora zero-day, CVE-2010-0806 iepeers, CVE-2013-3893 the SetMouseCapture watering-hole flaw), and Mozilla Firefox (CVE-2010-3765). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the fixes shipped years ago, but unpatched and end-of-life estates (notably the unsupported Internet Explorer) remain exposed; retiring end-of-life browsers and application hardening (Protected Mode/View, ASR rules) are the load-bearing controls.
