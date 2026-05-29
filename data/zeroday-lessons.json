@@ -7179,35 +7179,63 @@
   },
   "CVE-2025-2749": {
     "name": "Kentico Xperience Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Kentico Xperience contains a path traversal vulnerability that could allow an authenticated user's Staging Sync Server to upload arbitrary data to path relative locations.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal plus unrestricted-file-upload flaw (CWE-22/CWE-434), letting an unauthenticated attacker write a file outside the intended directory (e.g. a web shell) for code execution. CISA KEV-listed 2026-04-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Kentico Xperience update; hunt for web shells under the CMS web root and rotate application secrets — an upload primitive leaves resident persistence the patch does not remove.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Kentico Xperience CMS: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Kentico Xperience CMS for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Kentico Xperience CMS is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2023-27351": {
     "name": "PaperCut NG/MF Improper Authentication Vulnerability",
@@ -10862,35 +10890,63 @@
   },
   "CVE-2025-32432": {
     "name": "Craft CMS Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Craft CMS contains a code injection vulnerability that allows a remote attacker to execute arbitrary code.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection flaw (CWE-94) enabling unauthenticated remote code execution on the web server. CISA KEV-listed 2026-03-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Craft CMS update, rotate the Craft security key and any credentials the app held, and hunt for web shells — code-injection RCE is routinely followed by persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Craft CMS: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Craft CMS for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Craft CMS is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-54068": {
     "name": "Laravel Livewire Code Injection Vulnerability",
@@ -11477,35 +11533,63 @@
   },
   "CVE-2025-26399": {
     "name": "SolarWinds Web Help Desk Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SolarWinds Web Help Desk contain a deserialization of untrusted data vulnerability in AjaxProxy that could allow an attacker to run commands on the host machine.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) enabling unauthenticated remote code execution (the latest in the Web Help Desk deserialization chain). CISA KEV-listed 2026-03-09 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SolarWinds Web Help Desk update and rebuild if exploited; this is a repeated deserialization target, so confirm the full chain is patched and rotate service credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Web Help Desk: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Web Help Desk for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing SolarWinds Web Help Desk is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-1603": {
     "name": "Ivanti Endpoint Manager (EPM) Authentication Bypass Vulnerability",
@@ -12070,35 +12154,63 @@
   },
   "CVE-2025-49113": {
     "name": "RoundCube Webmail Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "RoundCube Webmail contains a deserialization of untrusted data vulnerability that allows remote code execution by authenticated users because the _from parameter in a URL is not validated in program/actions/settings/upload.php.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) enabling remote code execution on the Roundcube webmail server. CISA KEV-listed 2026-02-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Roundcube update, hunt for web shells, and rotate webmail/session secrets and mailbox credentials — webmail compromise targets mailbox data and persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Roundcube Webmail: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Roundcube Webmail for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Roundcube Webmail is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-68461": {
     "name": "RoundCube Webmail Cross-site Scripting Vulnerability",
@@ -13000,36 +13112,64 @@
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
   "CVE-2025-40551": {
-    "name": "SolarWinds Web Help Desk Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "SolarWinds Web Help Desk Deserialization of Untrusted Data Vulnerability (variant: CVE-2025-40551)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SolarWinds Web Help Desk contains a deserialization of untrusted data vulnerability that could lead to remote code execution, which would allow an attacker to run commands on the host machine. This could be exploited without authentication.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) enabling unauthenticated remote code execution. CISA KEV-listed 2026-02-03 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SolarWinds Web Help Desk update, hunt for web shells, and rotate service credentials; treat an exploited Help Desk as compromised given its IT-service-management reach.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Web Help Desk: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Web Help Desk for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing SolarWinds Web Help Desk is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-1281": {
     "name": "Ivanti Endpoint Manager Mobile (EPMM) Code Injection Vulnerability (variant: CVE-2026-1281)",
@@ -15129,67 +15269,123 @@
   },
   "CVE-2025-2746": {
     "name": "Kentico Xperience CMS Authentication Bypass Using an Alternate Path or Channel Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Kentico Xperience CMS contains an authentication bypass using an alternate path or channel vulnerability that could allow an attacker to control administrative objects.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an authentication bypass using an alternate path or channel (CWE-288), letting an unauthenticated attacker reach administrative functionality. CISA KEV-listed 2025-10-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Kentico Xperience update; review admin-account activity during the exposure window, since the bypass grants administrative access without credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Kentico Xperience CMS: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Kentico Xperience CMS for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Kentico Xperience CMS is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-2747": {
-    "name": "Kentico Xperience CMS Authentication Bypass Using an Alternate Path or Channel Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Kentico Xperience CMS Authentication Bypass Using an Alternate Path or Channel Vulnerability (variant: CVE-2025-2747)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Kentico Xperience CMS contains an authentication bypass using an alternate path or channel vulnerability that could allow an attacker to control administrative objects.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an authentication bypass using an alternate path or channel (CWE-288, a variant of the same bypass class), letting an unauthenticated attacker reach administrative functionality. CISA KEV-listed 2025-10-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Kentico Xperience update; review admin-account activity, as this is a second alternate-channel route to the same administrative bypass.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Kentico Xperience CMS: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Kentico Xperience CMS for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Kentico Xperience CMS is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-33073": {
     "name": "Microsoft Windows SMB Client Improper Access Control Vulnerability",
@@ -18697,36 +18893,64 @@
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
   "CVE-2024-56145": {
-    "name": "Craft CMS Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Craft CMS Code Injection Vulnerability (variant: CVE-2024-56145)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Craft CMS contains a code injection vulnerability. Users with affected versions are vulnerable to remote code execution if their php.ini configuration has `register_argc_argv` enabled.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection flaw (CWE-94, the related earlier variant) enabling unauthenticated remote code execution on the web server. CISA KEV-listed 2025-06-02 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the web application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Craft CMS update, rotate the Craft security key and credentials, and hunt for web shells; confirm both this and the related variant are patched.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, for web-app RCE/upload/auth-bypass, insufficient alone — web shells and stolen credentials/secrets survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Craft CMS: exploit-shaped requests, new web-shell files under the web root, unexpected process execution by the app, and administrative actions without a matching authenticated session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence after patching; WAF rules help but trail novel payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets and credentials, and review data accessible through the Craft CMS for exfiltration; assume compromise of any account reachable from it.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without web-shell hunting and secret rotation leaves the attacker resident."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application RCE/auth-bypass; these are mass-exploited within days of disclosure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing web applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application in or adjacent to the CDE; PCI-DSS 6.4.x WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Craft CMS is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt and secret rotation are rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2023-39780": {
     "name": "ASUS RT-AX55 Routers OS Command Injection Vulnerability",
