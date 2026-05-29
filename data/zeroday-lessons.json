@@ -7487,35 +7487,58 @@
   },
   "CVE-2009-0238": {
     "name": "Microsoft Office Remote Code Execution",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Office Excel contains a remote code execution vulnerability that could allow an attacker to take complete control of an affected system if a user opens a specially crafted Excel file that includes a malformed object.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection / memory-corruption flaw (CWE-94) in Microsoft Office document parsing, exploitable by an attacker-controlled document for code execution in the Office process. CISA KEV-listed 2026-04-14 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Office; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from Office after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Office is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-32201": {
     "name": "Microsoft SharePoint Server Improper Input Validation Vulnerability",
@@ -13584,35 +13607,58 @@
   },
   "CVE-2009-0556": {
     "name": "Microsoft Office PowerPoint Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Office PowerPoint contains a code injection vulnerability that allows remote attackers to execute arbitrary code via a PowerPoint file with an OutlineTextRefAtom containing an invalid index value that triggers memory corruption.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection / memory-corruption flaw (CWE-94) in Microsoft Office PowerPoint document parsing, exploitable by an attacker-controlled presentation for code execution in the PowerPoint process. CISA KEV-listed 2026-01-07 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Office PowerPoint; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from PowerPoint after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Office PowerPoint is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-37164": {
     "name": "Hewlett Packard Enterprise (HPE) OneView Code Injection Vulnerability",
@@ -15403,35 +15449,58 @@
   },
   "CVE-2010-3962": {
     "name": "Microsoft Internet Explorer Uninitialized Memory Corruption Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Internet Explorer contains an uninitialized memory corruption vulnerability that could allow for remote code execution. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an uninitialized-memory / use-after-free corruption flaw (CWE-94) in Internet Explorer, exploitable by an attacker-controlled web page for code execution in the browser (a landmark IE zero-day weaponized in the Operation Aurora era). CISA KEV-listed 2025-10-06 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Internet Explorer; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from Internet Explorer after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Internet Explorer is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-43226": {
     "name": "Microsoft Windows Privilege Escalation Vulnerability",
@@ -15467,67 +15536,113 @@
   },
   "CVE-2013-3918": {
     "name": "Microsoft Windows Out-of-Bounds Write Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows contains an out-of-bounds write vulnerability in the InformationCardSigninHelper Class ActiveX control, icardie.dll. An attacker could exploit the vulnerability by constructing a specially crafted webpage. When a user views the webpage, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the current user. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds write / memory-corruption flaw (CWE-94) in a Microsoft Windows component reachable from Internet Explorer (the InformationCardSigninHelper ActiveX control), exploitable by an attacker-controlled web page for code execution; used in watering-hole campaigns. CISA KEV-listed 2025-10-06 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Windows; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from Windows InformationCardSigninHelper / ActiveX after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2011-3402": {
     "name": "Microsoft Windows Remote Code Execution Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Kernel contains an unspecified vulnerability in the TrueType font parsing engine in win32k.sys in the kernel-mode drivers that allows remote attackers to execute arbitrary code via crafted font data in a Word document or web page.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a memory-corruption flaw (CWE-94) in the Windows TrueType font parsing kernel component, exploitable by an attacker-controlled embedded font for code execution at kernel privilege (the Duqu zero-day). CISA KEV-listed 2025-10-06 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Windows; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from Windows TrueType font parser after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2010-3765": {
     "name": "Mozilla Multiple Products Remote Code Execution Vulnerability",
@@ -16659,35 +16774,58 @@
   },
   "CVE-2007-0671": {
     "name": "Microsoft Office Excel Remote Code Execution Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Office Excel contains a remote code execution vulnerability that can be exploited when a specially crafted Excel file is opened. This malicious file could be delivered as an email attachment or hosted on a malicious website. An attacker could leverage this vulnerability by creating a specially crafted Excel file, which, when opened, allowing an attacker to execute remote code on the affected system.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection / memory-corruption flaw (CWE-94) in Microsoft Office Excel document parsing, exploitable by an attacker-controlled spreadsheet for code execution in the Excel process. CISA KEV-listed 2025-08-12 with confirmed in-the-wild exploitation; the legacy re-listing exists because long-tail unpatched estates remain exposed.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization (predates the AI-discovered-zeroday era)."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update for Microsoft Office Excel; enforce centralized patch management on the long tail; harden Office (Protected View, ASR rules) and disable legacy ActiveX/IE components where unused.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; legacy KEV re-listings exist because patch hygiene on the long tail is the failure mode."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR signatures for child-process execution from Excel after attacker-content open, document-exploit telemetry, and inbound-content filtering (mail/web).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched on the long tail; necessary for unmanaged or legacy estates that cannot be patched promptly."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads (document-exploit chains often drop loaders), and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; document/browser RCE typically leads to credential harvest and lateral movement, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side document/browser RCE; legacy KEV re-listings document organizations still running unpatched builds."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client RCE, and the legacy KEV re-listing exists because organizations still run vulnerable Office/IE/Windows builds."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 patch-applications (48h at ML3) is closer to the reality for a client RCE than 30 days, but legacy KEV re-listings show that long-tail unpatched estates persist; centralized update management and Office hardening are the load-bearing controls."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "basis": "Microsoft Office Excel is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (older Windows, Office, IE) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2013-3893": {
     "name": "Microsoft Internet Explorer Resource Management Errors Vulnerability",
