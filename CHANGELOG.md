@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.14 — 2026-05-29
+
+Draft-curation pass 12 — legacy Microsoft client-side RCEs. Six CISA KEV-listed older Microsoft document / browser / font-parsing RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Office (CVE-2009-0238), PowerPoint (CVE-2009-0556), Excel (CVE-2007-0671), Internet Explorer (CVE-2010-3962 — a landmark IE zero-day from the Operation Aurora era), Windows TrueType font parsing (CVE-2011-3402 — the Duqu zero-day), and Windows InformationCardSigninHelper ActiveX (CVE-2013-3918). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the patch landed years ago, but CISA re-lists because unpatched legacy estates remain exposed; centralized patch management plus Office hardening (Protected View, ASR rules) are the load-bearing controls.
+
 ## 0.15.13 — 2026-05-29
 
 Draft-curation pass 11 — Citrix. Six CISA KEV-listed Citrix CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: four NetScaler ADC/Gateway appliance flaws (CVE-2026-3055 and CVE-2025-5777 — the CitrixBleed-class out-of-bounds reads that disclose authenticated session material; CVE-2025-7775 and CVE-2025-6543 memory-corruption buffer flaws) and two Session Recording flaws (CVE-2024-8069 deserialization RCE and CVE-2024-8068 privilege escalation). The CitrixBleed entries map T1552 alongside T1190 to surface session-token theft, and the lessons stress session termination + secret rotation (memory-disclosure class) and appliance rebuild (RCE class) as required steps beyond the patch.
