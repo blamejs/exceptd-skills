@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.11 — 2026-05-29
+
+Draft-curation pass 9 — Apple client-side zero-days. Nine CISA KEV-listed Apple memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons. They map T1203 (Exploitation for Client Execution) — and T1068 for the sandbox-escape steps that act as privilege links in a multi-stage chain — rather than the network-service T1190: improper locking (CVE-2025-43510), buffer overflows (CVE-2025-43520, CVE-2025-31277, CVE-2026-20700), use-after-frees (CVE-2023-43000, CVE-2023-41974), an integer overflow (CVE-2021-30952), and two code-execution flaws (CVE-2022-48503, CVE-2025-43200). The lessons frame these as targeted-spyware-chain components and stress same-day OS update vs. MDM change windows, with Lockdown Mode for high-risk users.
+
 ## 0.15.10 — 2026-05-29
 
 Draft-curation pass 8 — Microsoft server-side RCE. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Exchange Server deserialization (CVE-2023-21529), Configuration Manager SQL injection (CVE-2024-43468), Windows Server Update Services deserialization (CVE-2025-59287), and the SharePoint Server "ToolShell" chain — improper authentication (CVE-2025-49706), code injection (CVE-2025-49704), and deserialization (CVE-2025-53770). The lessons stress that for these deserialization RCEs patching alone is insufficient: stolen machine keys and dropped web shells survive the patch and require explicit key rotation and web-shell hunting.
