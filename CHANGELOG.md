@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.15.0 — 2026-05-28
+
+Validation and gate hardening. Several catalog and skill integrity checks that had been deferred as non-blocking warnings now hard-fail the predeploy gate, and two latent gate weaknesses are closed.
+
+Catalog, skill, and playbook validation now runs in strict mode in the release gate: an unresolved cross-catalog reference (a CVE citing a CWE / ATT&CK / ATLAS / D3FEND id or framework control that doesn't exist), a CVSS vector that doesn't match a known `CVSS:(2.0|3.0|3.1|4.0)/` prefix, a `cisa_kev: true` entry missing its listing date, a public-PoC entry missing IOCs (Hard Rule #14), an incomplete skill body, or playbook enum/symmetry drift now block a release instead of scrolling past as warnings. Auto-imported drafts remain exempt.
+
+The `_meta.entry_count` drift guard now covers every catalog that declares the field, not only framework-control-gaps — closing the hole that had let the zero-day-lessons counter drift to 68 while the file held 422 (now corrected). The RWEP scoring invariants (Shape A/B/mixed factor detection and recomputed-vs-stored divergence) are now enforced against the shipped catalog by a test gate, where previously they ran only against synthetic fixtures.
+
+The `temporal-staleness` catalog-gap class now counts curated entries only. A CISA KEV due-date passing by calendar drift on the un-curated bulk-import backlog is expected and no longer accrues against the budget — which had crept to one slot of headroom and would have failed a future release with no code change. The budget is retightened to reflect the curated-only count.
+
+CLI surface cleanup. The dead handlers behind the verbs removed in 0.13.0 (`govern`, `direct`, `look`, `ingest`) are gone, and those verbs are no longer surfaced as "did you mean" suggestions. Unknown-flag rejection now covers `report`, `watch`, `framework-gap`, and `skill` (an unrecognized flag on these hard-fails with a structured envelope, matching the rest of the surface). The local-only `scan`, `dispatch`, and `currency` verbs now accept `--air-gap` / `--offline` / `--no-network` instead of rejecting the tool's own global flags. The `--format summary` evidence bundle no longer carries always-null `feeds_into` / `jurisdiction_clocks_active` keys (the populated values come from the close phase).
+
+Documentation: corrected catalog counts (427 CVEs, 173 CWEs, the full 8888-entry RFC index) and documented the `report` verb in the CLI reference.
+
 ## 0.14.28 — 2026-05-28
 
 Catalog expansion — 2025 actively-exploited perimeter and file-transfer RCE cluster. Four CISA KEV-listed, ransomware-associated entries are now fully curated with RWEP scoring, IOCs, zero-day lessons, and reverse-referenced CWE/ATT&CK/framework mappings:

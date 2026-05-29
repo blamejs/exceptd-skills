@@ -88,9 +88,28 @@ async function main() {
     case 'skill':
       runSkillContext(args);
       break;
-    case 'pipeline':
-      runPipeline(args[0] || 'manual', args[1] ? JSON.parse(args[1]) : {});
+    case 'pipeline': {
+      // pipeline is not dispatched by the bin/ CLI; it's reachable only via a
+      // direct orchestrator invocation. Guard the findings JSON.parse so
+      // malformed input emits a structured ok:false envelope instead of an
+      // uncaught SyntaxError stack trace.
+      let findings = {};
+      if (args[1]) {
+        try {
+          findings = JSON.parse(args[1]);
+        } catch (err) {
+          process.stdout.write(JSON.stringify({
+            ok: false,
+            verb: 'pipeline',
+            error: `pipeline: findings argument is not valid JSON: ${err.message}`,
+          }) + '\n');
+          safeExit(EXIT_CODES.GENERIC_FAILURE);
+          break;
+        }
+      }
+      runPipeline(args[0] || 'manual', findings);
       break;
+    }
     case 'currency':
       runCurrency();
       break;
@@ -136,6 +155,10 @@ function runFrameworkGap(rawArgs) {
   const path = require('path');
   const { gapReport, theaterCheck } = require('../lib/framework-gap');
 
+  // Reject unknown flags with the shared structured envelope. framework-gap
+  // consumes only --json; the global air-gap flags are accepted-and-ignored
+  // (the analytical path reads local catalogs, no egress).
+  if (rejectUnknownFlags('framework-gap', rawArgs, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const args = rawArgs.filter(a => !a.startsWith('--'));
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
   const jsonOut = flags.has('--json');
@@ -270,7 +293,10 @@ async function runScan() {
   // other verbs (validate-cves, watchlist, etc.). Previously this was a
   // bare `process.argv.includes('--json')`, which differed in style from
   // the verbs below and could miss `--json=true` or similar future forms.
-  if (rejectUnknownFlags('scan', args, ['--json'])) return;
+  // --air-gap / --offline / --no-network are global flags; scan does only
+  // local filesystem probing, so they're accepted-and-ignored rather than
+  // rejected (no network I/O to suppress).
+  if (rejectUnknownFlags('scan', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags } = parseFlags(process.argv.slice(2), []);
   const jsonOut = flags.has('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
@@ -308,7 +334,9 @@ async function runScan() {
 }
 
 async function runDispatch() {
-  if (rejectUnknownFlags('dispatch', args, ['--json'])) return;
+  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
+  // (see runScan).
+  if (rejectUnknownFlags('dispatch', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
   const scanResult = await scan();
@@ -356,6 +384,10 @@ function runSkillContext(rawArgs) {
   // `skill --json` passed "--json" through as args[0] and reported
   // "Skill not found: --json".
   const argList = Array.isArray(rawArgs) ? rawArgs : (rawArgs == null ? [] : [rawArgs]);
+  // Reject unknown flags with the shared structured envelope. skill consumes
+  // only --json; the global air-gap flags are accepted-and-ignored (skill
+  // context is read from local skill files, no egress).
+  if (rejectUnknownFlags('skill', argList, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = argList.includes('--json');
   const positionals = argList.filter(a => typeof a === 'string' && !a.startsWith('--'));
   const skillName = positionals[0];
@@ -415,7 +447,9 @@ function runPipeline(triggerType, payload) {
 }
 
 function runCurrency() {
-  if (rejectUnknownFlags('currency', args, ['--json'])) return;
+  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
+  // (see runScan).
+  if (rejectUnknownFlags('currency', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   const result = runCurrencyNow();
   const { currency_report, action_required, critical_count } = currencyCheck();
@@ -442,6 +476,11 @@ function runCurrency() {
 }
 
 async function runReport(format) {
+  // Reject unknown flags with the same structured envelope the other verbs
+  // emit. report takes only a format positional; --json is accepted for
+  // parity, and the global air-gap flags are accepted-and-ignored (the
+  // report path's scan() is local-only).
+  if (rejectUnknownFlags('report', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   // v0.11.6 (#98): validate format positional. Pre-0.11.6 unknown formats
   // emitted a generic "# exceptd Report" header — silently accepted any
   // string. Now: reject with structured JSON error matching other verbs.
@@ -655,6 +694,11 @@ function _acquireWatchLock() {
 }
 
 async function runWatch() {
+  // Reject unknown flags before acquiring the watch lock / starting the
+  // scheduler. --log-file is the value-taking option this verb consumes;
+  // --json is accepted for parity; the global air-gap flags are
+  // accepted-and-ignored (watch does no egress of its own).
+  if (rejectUnknownFlags('watch', args, ['--log-file', '--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags, options } = parseFlags(args, ['--log-file']);
   const logFilePath = options.get('--log-file');
   let logStream = null;

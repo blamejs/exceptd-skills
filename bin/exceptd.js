@@ -159,12 +159,7 @@ const COMMANDS = {
   cve:             () => path.join(PKG_ROOT, "lib", "cve-cli.js"),
   rfc:             () => path.join(PKG_ROOT, "lib", "rfc-cli.js"),
   // Seven-phase playbook verbs — handled in-process via lib/playbook-runner.js.
-  plan:     null,
-  govern:   null,
-  direct:   null,
-  look:     null,
   run:      null,
-  ingest:   null,
   reattest: null,
 };
 
@@ -1724,12 +1719,7 @@ function dispatchPlaybook(cmd, argv) {
 
   try {
     switch (cmd) {
-      case "plan":     return cmdPlan(runner, args, runOpts, pretty);
-      case "govern":   return cmdGovern(runner, args, runOpts, pretty);
-      case "direct":   return cmdDirect(runner, args, pretty);
-      case "look":     return cmdLook(runner, args, runOpts, pretty);
       case "run":      return cmdRun(runner, args, runOpts, pretty);
-      case "ingest":   return cmdIngest(runner, args, runOpts, pretty);
       case "reattest": return cmdReattest(runner, args, runOpts, pretty);
       case "list-attestations": return cmdListAttestations(runner, args, runOpts, pretty);
       case "attest": return cmdAttest(runner, args, runOpts, pretty);
@@ -3179,36 +3169,6 @@ function detectScopes() {
   return detected.length ? detected : ["cross-cutting"];
 }
 
-function cmdGovern(runner, args, runOpts, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("govern: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("govern", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("govern", playbookId, pretty);
-  emit(runner.govern(playbookId, directiveId, runOpts), pretty);
-}
-
-function cmdDirect(runner, args, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("direct: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("direct", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("direct", playbookId, pretty);
-  emit(runner.direct(playbookId, directiveId), pretty);
-}
-
-function cmdLook(runner, args, runOpts, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("look: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("look", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("look", playbookId, pretty);
-  emit(runner.look(playbookId, directiveId, runOpts), pretty);
-}
-
 function cmdRun(runner, args, runOpts, pretty) {
   const positional = args._[0];
 
@@ -4349,113 +4309,6 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   if (anyStorageExhausted) { process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED; return; }
   if (anySessionCollision) { process.exitCode = EXIT_CODES.SESSION_ID_COLLISION; return; }
   if (anyBlocked) { process.exitCode = EXIT_CODES.GENERIC_FAILURE; return; }
-}
-
-function cmdIngest(runner, args, runOpts, pretty) {
-  // `ingest` matches the AGENTS.md ingest contract. The submission JSON may
-  // carry playbook_id + directive_id; --domain/--directive flags override.
-  let submission = {};
-  // Auto-detect piped stdin (parity with cmdRun) so
-  // `echo '{...}' | exceptd ingest` reads the routing JSON instead of
-  // failing with "no playbook resolved" because args.evidence stays
-  // undefined.
-  // Route stdin auto-detection through hasReadableStdin() (see cmdRun for
-  // rationale). Wrapped-stdin test harnesses (Mocha/Jest, Docker
-  // stdin-passthrough) would otherwise block here forever on the
-  // readFileSync(0) call when isTTY === undefined.
-  if (!args.evidence && hasReadableStdin()) {
-    args.evidence = "-";
-  }
-  if (args.evidence) {
-    try {
-      submission = readEvidence(args.evidence);
-    } catch (e) {
-      return emitError(`ingest: failed to read evidence: ${e.message}`, { evidence: args.evidence }, pretty);
-    }
-  }
-  const playbookId = args.domain || submission.playbook_id || submission.domain;
-  if (!playbookId) return emitError("ingest: no playbook resolved — pass --domain <id> or include playbook_id in evidence JSON.", null, pretty);
-  if (refuseInvalidPlaybookId("ingest", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive
-    || submission.directive_id
-    || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("ingest", playbookId, pretty);
-
-  // Strip the routing keys so the runner only sees the contract shape it
-  // expects. precondition_checks travel on the submission (not lifted into
-  // runOpts) so run()'s mergedPCs derives them with correct "submission"
-  // provenance — the same path cmdRun uses.
-  const cleanedSubmission = {
-    artifacts: submission.artifacts || {},
-    signal_overrides: submission.signal_overrides || {},
-    signals: submission.signals || {},
-    ...(submission.precondition_checks ? { precondition_checks: submission.precondition_checks } : {}),
-  };
-
-  const result = runner.run(playbookId, directiveId, cleanedSubmission, runOpts);
-
-  // v0.12.8: route ingest's attestation persistence through persistAttestation
-  // — the same path cmdRun + cmdRunMulti use — so the session-id collision
-  // refusal AND the Ed25519 sidecar signing both apply. Pre-v0.12.8 ingest
-  // had its own inline writeFileSync with neither check, meaning two ingest
-  // calls with the same session-id silently clobbered the audit trail and no
-  // .sig sidecar was written.
-  if (result && result.ok && result.session_id) {
-    // Mirror cmdRun / cmdRunMulti: gate operator_consent persistence on
-    // classification === 'detected'. --ack is meaningful only when a
-    // jurisdiction clock is at stake; persisting consent on a
-    // not-detected ingest forges audit-trail consent for a clock that
-    // never started.
-    const ingestClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
-    const ingestConsentApplies = ingestClassification === "detected";
-    if (runOpts.operator_consent && !ingestConsentApplies) {
-      result.ack = true;
-      result.ack_applied = false;
-      result.ack_skipped_reason = `classification=${ingestClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
-    }
-    const persisted = persistAttestation({
-      sessionId: result.session_id,
-      playbookId: result.playbook_id,
-      directiveId: result.directive_id,
-      evidenceHash: result.evidence_hash,
-      operator: runOpts.operator,
-      operatorConsent: ingestConsentApplies ? runOpts.operator_consent : null,
-      submission: cleanedSubmission,
-      runOpts,
-      forceOverwrite: !!args["force-overwrite"],
-      filename: "attestation.json",
-    });
-    if (!persisted.ok) {
-      // Route every persist-failure shape through emitError so the
-      // emit() ok:false → exitCode contract applies uniformly. Three
-      // exit classes: LOCK_CONTENTION (transient), STORAGE_EXHAUSTED
-      // (infra), SESSION_ID_COLLISION (operator decision).
-      const ctx = { session_id: result.session_id, existing_path: persisted.existingPath };
-      if (persisted.lock_contention) {
-        ctx.lock_contention = true;
-        ctx.exit_code = EXIT_CODES.LOCK_CONTENTION;
-      }
-      if (persisted.storage_exhausted) {
-        ctx.storage_exhausted = true;
-        ctx.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
-      }
-      emitError(persisted.error, ctx, pretty);
-      if (persisted.lock_contention) process.exitCode = EXIT_CODES.LOCK_CONTENTION;
-      else if (persisted.storage_exhausted) process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
-      else process.exitCode = EXIT_CODES.SESSION_ID_COLLISION;
-      return;
-    }
-    if (persisted.prior_session_id) {
-      result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
-    }
-  }
-
-  if (result && result.ok === false) {
-    emit(result, pretty);
-    return;
-  }
-  emit(result, pretty);
 }
 
 /**

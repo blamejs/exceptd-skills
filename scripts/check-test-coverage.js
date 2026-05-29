@@ -272,6 +272,15 @@ function extractCliSurface(content) {
     let m;
     while ((m = re.exec(playbookBlock[1])) !== null) verbs.add(m[1]);
   }
+  // REMOVED_VERBS keys are still part of the CLI surface: invoking one returns
+  // a structured refusal envelope (a real, test-covered contract). Counting
+  // them keeps a verb in the surface set when its vestigial COMMANDS entry is
+  // dropped — otherwise removing dead COMMANDS table rows for already-retired
+  // verbs reads as a fresh "removed-but-test-remains" against the refusal test.
+  const removedBlock = content.match(/const REMOVED_VERBS = \{([\s\S]*?)\n\};/);
+  if (removedBlock) {
+    for (const m of removedBlock[1].matchAll(/^\s*"?([a-zA-Z][\w-]+)"?\s*:/gm)) verbs.add(m[1]);
+  }
   const flagRe = /(--[a-zA-Z][\w-]+)/g;
   let m;
   while ((m = flagRe.exec(content)) !== null) flags.add(m[1]);

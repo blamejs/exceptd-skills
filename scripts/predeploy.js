@@ -68,7 +68,11 @@ const GATES = [
   {
     name: "Validate CVE catalog schema + zero-day learning coverage",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-cve-catalog.js")],
+    // --strict promotes the deferred warning checks (cross-catalog ref
+    // resolution, strict CVSS-vector prefix, KEV-date-required, Hard-Rule-#14
+    // IoCs) to hard failures so they block a release rather than scrolling
+    // past. Auto-imported drafts stay exempt.
+    args: [path.join(ROOT, "lib", "validate-cve-catalog.js"), "--strict"],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   // the "validate-cves --offline --no-fail" and
@@ -89,7 +93,7 @@ const GATES = [
   {
     name: "Lint skill files",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "lint-skills.js")],
+    args: [path.join(ROOT, "lib", "lint-skills.js"), "--strict"],
     ciJobName: "Lint skill files",
   },
   {
@@ -113,7 +117,7 @@ const GATES = [
   {
     name: "Validate catalog _meta (tlp + source_confidence + freshness_policy)",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-catalog-meta.js")],
+    args: [path.join(ROOT, "lib", "validate-catalog-meta.js"), "--strict"],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
@@ -174,7 +178,7 @@ const GATES = [
     // v0.13.0 additions) all validate cleanly.
     name: "Validate playbooks (schema + cross-refs)",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-playbooks.js")],
+    args: [path.join(ROOT, "lib", "validate-playbooks.js"), "--strict"],
     ciJobName: "Validate playbooks",
   },
   {
