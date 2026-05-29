@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.5 — 2026-05-29
+
+Draft-curation pass 3 — the client-side memory-corruption class. Four CISA KEV-listed browser/document-reader RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, a matching zero-day lesson, and ATT&CK enrichment to T1203 (Exploitation for Client Execution) rather than the network-service T1190: Google Chrome Skia out-of-bounds write (CVE-2026-3909), Chrome Dawn/WebGPU use-after-free (CVE-2026-5281), Chrome V8 memory-buffer flaw (CVE-2026-3910), and Adobe Acrobat/Reader prototype pollution (CVE-2026-34621). The lessons frame remediation as endpoint/browser patch-SLA (same-day auto-update vs. managed change windows) rather than perimeter patching.
+
 ## 0.15.4 — 2026-05-29
 
 Draft-curation pass 2. Eight more CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons — the network-service authentication-bypass and code-injection class: Ivanti EPMM (CVE-2026-1281), SmarterTools SmarterMail auth bypass (CVE-2026-23760) and missing-auth (CVE-2026-24423), Cisco Unified Communications code injection (CVE-2026-20045), cPanel & WHM / WP2 missing authentication (CVE-2026-41940), Ivanti EPM authentication bypass (CVE-2026-1603), Cisco Catalyst SD-WAN improper authentication (CVE-2026-20127), and Fortinet multi-product authentication bypass (CVE-2026-24858).
