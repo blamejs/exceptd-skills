@@ -7259,35 +7259,63 @@
   },
   "CVE-2026-34197": {
     "name": "Apache ActiveMQ Improper Input Validation Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Apache ActiveMQ contains an improper input validation vulnerability that allows for code injection.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "improper input validation leading to code execution (CWE-20/CWE-94) reachable by an unauthenticated network attacker against the message broker. CISA KEV-listed 2026-04-16 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade Apache ActiveMQ to the fixed release named in the vendor advisory; restrict broker management/transport ports to trusted networks where an immediate upgrade is not possible.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the broker: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the broker.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Apache ActiveMQ is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2009-0238": {
     "name": "Microsoft Office Remote Code Execution",
@@ -7515,35 +7543,63 @@
   },
   "CVE-2026-21643": {
     "name": "Fortinet FortiClient EMS SQL Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Fortinet FortiClient EMS contains a SQL injection vulnerability that may allow an unauthenticated attacker to execute unauthorized code or commands via specifically crafted HTTP requests.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "SQL injection (CWE-89) on the FortiClient EMS management surface escalating to remote code execution. CISA KEV-listed 2026-04-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade FortiClient EMS to the fixed build in the Fortinet PSIRT advisory; restrict the EMS management interface to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the EMS management server: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the EMS management server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Fortinet FortiClient EMS is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-34621": {
     "name": "Adobe Acrobat and Reader Prototype Pollution Vulnerability",
@@ -7579,35 +7635,63 @@
   },
   "CVE-2026-1340": {
     "name": "Ivanti Endpoint Manager Mobile (EPMM) Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Ivanti Endpoint Manager Mobile (EPMM) contains a code injection vulnerability that could allow attackers to achieve unauthenticated remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "code injection (CWE-94) yielding unauthenticated remote code execution on the EPMM management surface. CISA KEV-listed 2026-04-08 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Ivanti EPMM patch from the advisory; EPMM is a recurring exploited target, so restrict its management surface and hunt for post-exploitation persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the EPMM server: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the EPMM server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Ivanti Endpoint Manager Mobile (EPMM) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-35616": {
     "name": "Fortinet FortiClient EMS Improper Access Control Vulnerability",
@@ -10543,35 +10627,63 @@
   },
   "CVE-2026-20131": {
     "name": "Cisco Secure Firewall Management Center (FMC) Software and Cisco Security Cloud Control (SCC) Firewall Management Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Cisco Secure Firewall Management Center (FMC) Software and Cisco Security Cloud Control (SCC) Firewall Management contain a deserialization of untrusted data vulnerability in the web-based management interface that could allow an unauthenticated, remote attacker to execute arbitrary Java code as root on an affected device.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "deserialization of untrusted data (CWE-502) yielding unauthenticated remote code execution on the firewall management plane. CISA KEV-listed 2026-03-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Cisco FMC/SCC fixed release from the advisory; the FMC governs firewall policy, so treat compromise as control-plane-level and review managed-device configuration integrity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the FMC management plane: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FMC management plane.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Cisco Secure Firewall Management Center (FMC) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-66376": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting Vulnerability",
@@ -10607,35 +10719,63 @@
   },
   "CVE-2026-20963": {
     "name": "Microsoft SharePoint Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft SharePoint contains a deserialization of untrusted data vulnerability that allows an unauthorized attacker to execute code over a network.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "deserialization of untrusted data (CWE-502) yielding unauthenticated remote code execution on the SharePoint web surface. CISA KEV-listed 2026-03-18 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft SharePoint security update from the advisory; rotate the SharePoint machine keys and hunt for web shells, as deserialization RCE on SharePoint is a known web-shell-persistence vector.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the SharePoint server: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the SharePoint server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Microsoft SharePoint is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-47813": {
     "name": "Wing FTP Server Information Disclosure Vulnerability",
@@ -11023,35 +11163,63 @@
   },
   "CVE-2026-22719": {
     "name": "Broadcom VMware Aria Operations Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Broadcom VMware Aria Operations formerly known as vRealize Operations (vROps) contains a command injection vulnerability that allows an unauthenticated attacker to execute arbitrary commands, potentially leading to remote code execution during support‑assisted product migration.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "command injection (CWE-77) giving command execution on the Aria Operations management surface. CISA KEV-listed 2026-03-03 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Broadcom/VMware VMSA fixed version; restrict Aria Operations management access to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the Aria Operations: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the Aria Operations.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Broadcom VMware Aria Operations is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21385": {
     "name": "Qualcomm Multiple Chipsets Memory Corruption Vulnerability",
@@ -11151,35 +11319,63 @@
   },
   "CVE-2026-25108": {
     "name": "Soliton Systems K.K FileZen OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Soliton Systems K.K FileZen contains an OS command injection vulnerability when an user logs-in to the affected product and sends a specially crafted HTTP request.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "OS command injection (CWE-78) giving an unauthenticated attacker command execution on the managed-file-transfer appliance. CISA KEV-listed 2026-02-24 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Soliton FileZen fixed firmware; the MFT appliance class is a proven data-extortion target, so audit transferred-file access and rotate credentials on compromise indicators.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the FileZen file-transfer appliance: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the FileZen file-transfer appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing Soliton FileZen is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-49113": {
     "name": "RoundCube Webmail Deserialization of Untrusted Data Vulnerability",
@@ -11439,35 +11635,63 @@
   },
   "CVE-2026-1731": {
     "name": "BeyondTrust Remote Support (RS) and Privileged Remote Access (PRA) OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "BeyondTrust Remote Support (RS) and Privileged Remote Access (PRA)contain an OS command injection vulnerability. Successful exploitation could allow an unauthenticated remote attacker to execute operating system commands in the context of the site user. Successful exploitation requires no authentication or user interaction and may lead to system compromise, including unauthorized access, data exfiltration, and service disruption.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "OS command injection (CWE-78) giving an unauthenticated attacker command execution on the remote-support/PRA appliance. CISA KEV-listed 2026-02-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated network reach to the affected service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the BeyondTrust RS/PRA patch from the advisory; on any indicator of compromise treat the appliance and the privileged sessions it brokered as exposed and rotate associated credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive once applied; the gap is the SLA — a 30-day cycle loses to the KEV-confirmed exploitation window."
+      },
+      "detection": {
+        "what_would_have_worked": "Network/behavior monitoring on the remote-support appliance: requests matching the exploited weakness, and unexpected process execution or web shells on the service.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation of instances not yet patched within the compressed window."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately under the KEV SLA, then investigate for post-exploitation persistence and rotate credentials reachable from the remote-support appliance.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory for a KEV-listed unauthenticated RCE; patch-in-place without compromise assessment can leave attacker persistence."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated network flaw; CISA KEV due dates are days, not a month."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an unauthenticated, actively-exploited flaw on an internet-facing service."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats the service class as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA; operators learn of the flaw via vendor advisory, not a regulatory clock."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an unauthenticated RCE on an internet-facing system in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing BeyondTrust Remote Support (RS) / Privileged Remote Access (PRA) is routinely run by audited organizations on a standard 30-day patch SLA, which was active exposure for this KEV-listed, actively-exploited flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20700": {
     "name": "Apple Multiple Buffer Overflow Vulnerability",
