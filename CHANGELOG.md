@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.17 — 2026-05-29
+
+Draft-curation pass 15 — Chromium browser zero-days. Five CISA KEV-listed Google Chromium client-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: V8 JavaScript engine flaws (CVE-2025-13223 and CVE-2025-6554 type confusion, CVE-2025-5419 out-of-bounds read/write), a CSS use-after-free (CVE-2026-2441), and an ANGLE/GPU sandbox escape (CVE-2025-6558). All map T1203 (Exploitation for Client Execution); the sandbox-escape entry also maps T1068. The lessons stress same-day Chrome component-updater rollout — not gating browser updates behind a managed change window — as the load-bearing control, since these are weaponized within days in targeted-spyware and watering-hole chains.
+
 ## 0.15.16 — 2026-05-29
 
 Draft-curation pass 14 — web-application server-side RCE. Eight CISA KEV-listed unauthenticated web-app CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Kentico Xperience CMS (CVE-2025-2749 path-traversal + file upload, CVE-2025-2746 and CVE-2025-2747 alternate-channel authentication bypasses), Craft CMS code injection (CVE-2025-32432 and the related CVE-2024-56145), Roundcube Webmail deserialization (CVE-2025-49113), and SolarWinds Web Help Desk deserialization (CVE-2025-26399, CVE-2025-40551). All map T1190, with per-class T1059 (code injection / deserialization), T1078 (auth bypass), or T1505.003 (upload → web shell). The lessons stress web-shell hunting and application-secret rotation as required cleanup beyond the patch.
