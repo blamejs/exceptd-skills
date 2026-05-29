@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.8 — 2026-05-29
+
+Draft-curation pass 6 — Cisco network devices. Seven CISA KEV-listed Cisco CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: SD-WAN path traversal (CVE-2022-20775), multi-product improper input validation (CVE-2025-20393), IOS/IOS XE SNMP DoS+RCE (CVE-2025-20352), the Secure Firewall ASA/FTD missing-authorization (CVE-2025-20362) and buffer-overflow (CVE-2025-20333) chain, and the Identity Services Engine injection pair (CVE-2025-20337, CVE-2025-20281). The ASA and device lessons note that network-device implants survive patching without explicit recovery steps.
+
 ## 0.15.7 — 2026-05-29
 
 Draft-curation pass 5 — Fortinet network appliances. Six CISA KEV-listed Fortinet CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: FortiWeb OS command injection (CVE-2025-58034), path traversal (CVE-2025-64446), and SQL injection (CVE-2025-25257); FortiOS hard-coded credentials (CVE-2019-6693); and the multi-product improper-signature-verification (CVE-2025-59718) and stack-based buffer overflow (CVE-2025-32756).
