@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.12 — 2026-05-29
+
+Draft-curation pass 10 — Zimbra mail server. Seven CISA KEV-listed Synacor Zimbra Collaboration Suite (ZCS) CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the cross-site scripting cluster (CVE-2025-48700, CVE-2025-66376, CVE-2025-27915, CVE-2024-27443), the server-side request forgery pair (CVE-2020-7796, CVE-2019-9621), and the PHP remote-file-inclusion RCE (CVE-2025-68645). The lessons note ZCS is a recurring mass-exploited mail-server target where web-shell hunting and session-secret rotation are needed beyond the patch.
+
 ## 0.15.11 — 2026-05-29
 
 Draft-curation pass 9 — Apple client-side zero-days. Nine CISA KEV-listed Apple memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons. They map T1203 (Exploitation for Client Execution) — and T1068 for the sandbox-escape steps that act as privilege links in a multi-stage chain — rather than the network-service T1190: improper locking (CVE-2025-43510), buffer overflows (CVE-2025-43520, CVE-2025-31277, CVE-2026-20700), use-after-frees (CVE-2023-43000, CVE-2023-41974), an integer overflow (CVE-2021-30952), and two code-execution flaws (CVE-2022-48503, CVE-2025-43200). The lessons frame these as targeted-spyware-chain components and stress same-day OS update vs. MDM change windows, with Lockdown Mode for high-risk users.

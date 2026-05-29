@@ -7243,35 +7243,63 @@
   },
   "CVE-2025-48700": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-site Scripting Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a cross-site scripting vulnerability that could allow attackers to execute arbitrary JavaScript within the user's session, potentially leading to unauthorized access to sensitive information.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) on the ZCS web client, letting an attacker run script in a victim's authenticated session for session/credential theft and mailbox access. CISA KEV-listed 2026-04-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20128": {
     "name": "Cisco Catalyst SD-WAN Manager Storing Passwords in a Recoverable Format Vulnerability",
@@ -11026,35 +11054,63 @@
   },
   "CVE-2025-66376": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a cross-site scripting vulnerability in the Classic UI where attackers could abuse Cascading Style Sheets (CSS) @import directives in email HTML.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) on the ZCS web client, letting an attacker run script in a victim's authenticated session. CISA KEV-listed 2026-03-18 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20963": {
     "name": "Microsoft SharePoint Deserialization of Untrusted Data Vulnerability",
@@ -12073,35 +12129,63 @@
   },
   "CVE-2020-7796": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Server-Side Request Forgery Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a server-side request forgery vulnerability if WebEx zimlet installed and zimlet JSP is enabled.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a server-side request forgery flaw (CWE-918) on ZCS, letting an unauthenticated attacker coerce the server into making requests to internal resources. CISA KEV-listed 2026-02-17 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-7694": {
     "name": "TeamT5 ThreatSonar Anti-Ransomware Unrestricted Upload of File with Dangerous Type Vulnerability",
@@ -13192,35 +13276,63 @@
   },
   "CVE-2025-68645": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) PHP Remote File Inclusion Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a PHP remote file inclusion vulnerability that could allow for remote attackers to craft requests to the /h/rest endpoint to influence internal request dispatching, allowing inclusion of arbitrary files from the WebRoot directory.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a PHP remote file inclusion flaw (CWE-98) on ZCS, enabling remote code execution on the mail server. CISA KEV-listed 2026-01-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-34026": {
     "name": "Versa Concerto Improper Authentication Vulnerability",
@@ -15170,36 +15282,64 @@
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
   "CVE-2025-27915": {
-    "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-site Scripting Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-site Scripting Vulnerability (variant: CVE-2025-27915)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a cross-site scripting vulnerability that exists in the Classic Web Client due to insufficient sanitization of HTML content in ICS files. When a user views an e-mail message containing a malicious ICS entry, its embedded JavaScript executes via an ontoggle event inside a tag. This allows an attacker to run arbitrary JavaScript within the victim's session, potentially leading to unauthorized actions such as setting e-mail filters to redirect messages to an attacker-controlled address. As a result, an attacker can perform unauthorized actions on the victim's account, including e-mail redirection and data exfiltration.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) on the ZCS web client, letting an attacker run script in a victim's authenticated session. CISA KEV-listed 2025-10-07 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-22555": {
     "name": "Linux Kernel Heap Out-of-Bounds Write Vulnerability",
@@ -17235,35 +17375,63 @@
   },
   "CVE-2019-9621": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Server-Side Request Forgery (SSRF) Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Synacor Zimbra Collaboration Suite (ZCS) contains a server-side request forgery (SSRF) vulnerability via the ProxyServlet component.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a server-side request forgery flaw (CWE-918/CWE-807) on ZCS, letting an unauthenticated attacker coerce server-side requests (a known chain toward RCE on ZCS). CISA KEV-listed 2025-07-07 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2019-5418": {
     "name": "Rails Ruby on Rails Path Traversal Vulnerability",
@@ -18214,35 +18382,63 @@
   },
   "CVE-2024-27443": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting (XSS) Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Zimbra Collaboration contains a cross-site scripting (XSS) vulnerability in the CalendarInvite feature of the Zimbra webmail classic user interface. An attacker can exploit this vulnerability via an email message containing a crafted calendar header, leading to the execution of arbitrary JavaScript code.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) on the ZCS web client, letting an attacker run script in a victim's authenticated session. CISA KEV-listed 2025-05-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker; XSS variants execute in a targeted user's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Zimbra ZCS security update from the advisory; restrict the ZCS web/admin surface and, for the SSRF/RFI variants, hunt for web shells and internal-recon activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; ZCS is repeatedly targeted, so the SLA gap and the lack of web-shell-hunt cleanup are the recurring failures."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on ZCS: XSS payloads in mail/requests, server-side outbound requests to internal endpoints (SSRF), inclusion/execution of remote PHP (RFI), and web shells under the ZCS web root.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on a recurring mass-exploited target."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate ZCS credentials and session secrets, and review mailbox access for exfiltration.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; ZCS compromise typically targets mailbox data and persistence, which a bare patch does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed flaw on an internet-facing mail server; ZCS is a recurring mass-exploited target."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited flaw on an internet-facing collaboration/mail server."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats mail/collaboration servers as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing mail server in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Zimbra is run by audited organizations on a standard patch SLA and is repeatedly mass-exploited within days of disclosure; web-shell hunting is rarely part of the patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-27920": {
     "name": "Srimax Output Messenger Directory Traversal Vulnerability",
