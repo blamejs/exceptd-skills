@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.4 — 2026-05-29
+
+Draft-curation pass 2. Eight more CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons — the network-service authentication-bypass and code-injection class: Ivanti EPMM (CVE-2026-1281), SmarterTools SmarterMail auth bypass (CVE-2026-23760) and missing-auth (CVE-2026-24423), Cisco Unified Communications code injection (CVE-2026-20045), cPanel & WHM / WP2 missing authentication (CVE-2026-41940), Ivanti EPM authentication bypass (CVE-2026-1603), Cisco Catalyst SD-WAN improper authentication (CVE-2026-20127), and Fortinet multi-product authentication bypass (CVE-2026-24858).
+
+The catalog-gap `temporal-staleness` class no longer counts a passed CISA KEV due-date. That date is a fixed external operator-remediation deadline, not a measure of whether a catalog entry's data is current — every historical KEV entry's due-date passes by calendar. The class now reflects only maintainer-controllable data-freshness (source verification, last-updated, and EPSS recency), so `exceptd`'s gap audit no longer reports every aged KEV entry as stale.
+
 ## 0.15.3 — 2026-05-29
 
 Draft-curation pass (1 of an ongoing series). Eight CISA KEV-listed CVE entries that were carried as auto-imported drafts are promoted to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Apache ActiveMQ (CVE-2026-34197), Microsoft SharePoint deserialization (CVE-2026-20963), BeyondTrust RS/PRA command injection (CVE-2026-1731), Fortinet FortiClient EMS SQL injection (CVE-2026-21643), Ivanti EPMM code injection (CVE-2026-1340), Cisco Secure Firewall Management Center deserialization (CVE-2026-20131), Broadcom VMware Aria Operations command injection (CVE-2026-22719), and Soliton FileZen command injection (CVE-2026-25108). The CVSS, KEV status, and vendor advisories were retained from the verified import; curation adds detection and response guidance.
