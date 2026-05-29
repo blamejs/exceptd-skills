@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.18 — 2026-05-29
+
+Draft-curation pass 16 — non-Windows kernel/driver LPE. Seven CISA KEV-listed local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Qualcomm Adreno GPU / chipset flaws (CVE-2026-21385 integer overflow, CVE-2025-21479 and CVE-2025-21480 incorrect-authorization GPU flaws used in Android targeted chains, CVE-2025-27038 use-after-free) and Linux kernel flaws (CVE-2018-14634 "Mutagen Astronomy" integer overflow, CVE-2021-22555 netfilter heap out-of-bounds write, CVE-2023-0386 OverlayFS ownership). All map T1068 (Exploitation for Privilege Escalation). The lessons give platform-correct remediation — Android Security Bulletin OTA updates and MDM-enforced SLAs for the chipset entries, distribution kernel updates or live-patching plus kernel hardening for the Linux entries — and frame these as the escalation half of the attack chain.
+
 ## 0.15.17 — 2026-05-29
 
 Draft-curation pass 15 — Chromium browser zero-days. Five CISA KEV-listed Google Chromium client-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: V8 JavaScript engine flaws (CVE-2025-13223 and CVE-2025-6554 type confusion, CVE-2025-5419 out-of-bounds read/write), a CSS use-after-free (CVE-2026-2441), and an ANGLE/GPU sandbox escape (CVE-2025-6558). All map T1203 (Exploitation for Client Execution); the sandbox-escape entry also maps T1068. The lessons stress same-day Chrome component-updater rollout — not gating browser updates behind a managed change window — as the load-bearing control, since these are weaponized within days in targeted-spyware and watering-hole chains.
