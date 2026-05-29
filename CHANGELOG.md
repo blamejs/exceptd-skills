@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.15 — 2026-05-29
+
+Draft-curation pass 13 — Windows kernel/driver LPE. Seven CISA KEV-listed Windows local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: a Common Log File System (CLFS) driver use-after-free (CVE-2025-32701 — CLFS is a recurring kernel-LPE target), a race condition (CVE-2025-62215), an untrusted-pointer dereference (CVE-2025-24990), link-following (CVE-2025-60710), a kernel out-of-bounds read primitive (CVE-2023-36424), an information-disclosure primitive (CVE-2026-20805), and improper privilege management (CVE-2021-43226). All map T1068 (Exploitation for Privilege Escalation). The lessons frame these as the second half of the ransomware chain (initial access → unpatched LPE → SYSTEM within hours) and stress hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist as load-bearing endpoint controls beyond the patch.
+
 ## 0.15.14 — 2026-05-29
 
 Draft-curation pass 12 — legacy Microsoft client-side RCEs. Six CISA KEV-listed older Microsoft document / browser / font-parsing RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Office (CVE-2009-0238), PowerPoint (CVE-2009-0556), Excel (CVE-2007-0671), Internet Explorer (CVE-2010-3962 — a landmark IE zero-day from the Operation Aurora era), Windows TrueType font parsing (CVE-2011-3402 — the Duqu zero-day), and Windows InformationCardSigninHelper ActiveX (CVE-2013-3918). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the patch landed years ago, but CISA re-lists because unpatched legacy estates remain exposed; centralized patch management plus Office hardening (Protected View, ASR rules) are the load-bearing controls.
