@@ -60,12 +60,12 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
   // the same PR. This is the no-MVP rule applied to the catalog —
   // you can't make the catalog WORSE without explicit acknowledgement.
   const BUDGET = {
-    // +5 for the 2026-05-20 legacy KEV re-listings (CVE-2008-4250 MS08-067,
-    // CVE-2009-1537, CVE-2009-3459, CVE-2010-0249 Aurora, CVE-2010-0806) added
-    // as enrichment-pending drafts: they intentionally carry no iocs block yet,
-    // matching the auto-imported KEV-intake convention. This is tracked
-    // draft-debt, not a regression — iocs land if/when a draft is curated.
-    "cve-catalog":     { iocs: 296 },
+    // Tracks the uncurated bulk-imported KEV drafts, which carry no iocs block
+    // by the auto-import intake convention. Each draft gains a behavioral iocs
+    // block when it is curated to a full entry, so this ceiling falls in step
+    // with the remaining-draft count; it is lowered to the current actual as
+    // curation proceeds. This is tracked draft-debt, not a regression.
+    "cve-catalog":     { iocs: 115 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
@@ -76,14 +76,15 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // regression — the rows are otherwise complete (title, status, obsoleted_by).
     "rfc-references":  { abstract: 31 },
     "framework-control-gaps": {},
-    // +3 for the 2025 perimeter/file-transfer RCE lessons (Ivanti Connect
-    // Secure CVE-2025-0282 / CVE-2025-22457, SAP NetWeaver CVE-2025-31324,
-    // CrushFTP CVE-2025-31161). These intentionally carry no new_control_-
-    // requirements: they reuse the existing perimeter controls NEW-CTRL-030
-    // (perimeter-device compressed patch SLA) and NEW-CTRL-032 (perimeter-
-    // compromise rebuild-not-patch), matching the CVE-2024-21762 edge-lesson
-    // convention. No new control is demanded, so the field is honestly absent.
-    "zeroday-lessons": { new_control_requirements: 255 }
+    // Lessons whose remediation reuses existing controls (perimeter/edge patch
+    // SLA, endpoint and application hardening, kernel/driver hardening) rather
+    // than demanding a new one carry no new_control_requirements — the field is
+    // honestly absent rather than padded with a fabricated control, which the
+    // no-orphaned-controls rule forbids. The count rises as such lessons are
+    // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
+    // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
+    // a novel control). Raised to the current actual when that happens.
+    "zeroday-lessons": { new_control_requirements: 258 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
