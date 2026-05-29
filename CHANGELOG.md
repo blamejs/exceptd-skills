@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.9 — 2026-05-29
+
+Draft-curation pass 7 — network devices and the Ivanti EPMM chain. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: D-Link DIR-823X command injection (CVE-2025-29635), router buffer overflow (CVE-2022-37055), DCS-2530L/2670L camera code execution (CVE-2020-25078) and command injection (CVE-2020-25079), DNR-322L download-without-integrity (CVE-2022-40799), and the Ivanti EPMM authentication-bypass + code-injection preauth chain (CVE-2025-4427, CVE-2025-4428). The device lessons note that end-of-life consumer hardware is unpatchable, making network isolation the load-bearing control, and that firmware implants survive a reboot without a reflash.
+
 ## 0.15.8 — 2026-05-29
 
 Draft-curation pass 6 — Cisco network devices. Seven CISA KEV-listed Cisco CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: SD-WAN path traversal (CVE-2022-20775), multi-product improper input validation (CVE-2025-20393), IOS/IOS XE SNMP DoS+RCE (CVE-2025-20352), the Secure Firewall ASA/FTD missing-authorization (CVE-2025-20362) and buffer-overflow (CVE-2025-20333) chain, and the Identity Services Engine injection pair (CVE-2025-20337, CVE-2025-20281). The ASA and device lessons note that network-device implants survive patching without explicit recovery steps.
