@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.6 — 2026-05-29
+
+Draft-curation pass 4 — enterprise management-plane and infrastructure. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the Cisco Catalyst SD-WAN Manager cluster — incorrect privileged-API use (CVE-2026-20122), sensitive-information exposure (CVE-2026-20133), and recoverable password storage (CVE-2026-20128) — plus Microsoft SharePoint Server improper input validation (CVE-2026-32201), Fortinet FortiClient EMS improper access control (CVE-2026-35616), and Dell RecoverPoint for VMs hard-coded credentials (CVE-2026-22769).
+
 ## 0.15.5 — 2026-05-29
 
 Draft-curation pass 3 — the client-side memory-corruption class. Four CISA KEV-listed browser/document-reader RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, a matching zero-day lesson, and ATT&CK enrichment to T1203 (Exploitation for Client Execution) rather than the network-service T1190: Google Chrome Skia out-of-bounds write (CVE-2026-3909), Chrome Dawn/WebGPU use-after-free (CVE-2026-5281), Chrome V8 memory-buffer flaw (CVE-2026-3910), and Adobe Acrobat/Reader prototype pollution (CVE-2026-34621). The lessons frame remediation as endpoint/browser patch-SLA (same-day auto-update vs. managed change windows) rather than perimeter patching.
