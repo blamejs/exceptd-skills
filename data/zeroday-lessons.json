@@ -13123,35 +13123,63 @@
   },
   "CVE-2025-64328": {
     "name": "Sangoma FreePBX OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Sangoma FreePBX Endpoint Manager contains an OS command injection vulnerability that could allow for a post-authentication command injection by an authenticated known user via the testconnection -> check_ssh_connect() function. An attacker can leverage this vulnerability to potentially obtain remote access to the system as an asterisk user. ",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an OS command-injection flaw (CWE-78) enabling unauthenticated remote command execution on the telephony server. CISA KEV-listed 2026-02-03 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Sangoma FreePBX / module update; hunt for web shells and toll-fraud (anomalous outbound SIP/calls), and rotate SIP and administrative credentials — FreePBX compromise is routinely monetized via telephony fraud.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, given the device's trust position, an exploited unit must be rebuilt and its secrets rotated — a patch in place does not evict a resident attacker."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the FreePBX: exploit-shaped requests, toll-fraud call patterns and new admin objects.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild the device from a known-good image, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing Sangoma FreePBX is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2019-19006": {
     "name": " Sangoma FreePBX Improper Authentication Vulnerability",
@@ -14032,35 +14060,63 @@
   },
   "CVE-2025-14733": {
     "name": "WatchGuard Firebox Out of Bounds Write Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "WatchGuard Fireware OS iked process contains an out of bounds write vulnerability in the OS iked process. This vulnerability may allow a remote unauthenticated attacker to execute arbitrary code and affects both the mobile user VPN with IKEv2 and the branch office VPN using IKEv2 when configured with a dynamic gateway peer.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds write (CWE-787) exploitable by an unauthenticated attacker for memory-corruption remote code execution on the firewall. CISA KEV-listed 2025-12-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the WatchGuard Fireware update; treat an exploited firewall as fully compromised — rebuild it and rotate every credential and VPN/IKE secret it held, since the firewall terminates trust for the network behind it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, given the device's trust position, an exploited unit must be rebuilt and its secrets rotated — a patch in place does not evict a resident attacker."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the Firebox firewall: exploit-shaped requests, device crashes, new processes, and credential/config changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild the device from a known-good image, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing WatchGuard Firebox is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-59374": {
     "name": "ASUS Live Update Embedded Malicious Code Vulnerability",
@@ -15010,35 +15066,63 @@
   },
   "CVE-2025-9242": {
     "name": "WatchGuard Firebox Out-of-Bounds Write Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "WatchGuard Firebox contains an out-of-bounds write vulnerability in the OS iked process that may allow a remote unauthenticated attacker to execute arbitrary code.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds write (CWE-787) in the Firebox IKE/VPN handling, exploitable by an unauthenticated attacker for memory-corruption remote code execution on the firewall. CISA KEV-listed 2025-11-12 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the WatchGuard Fireware update; treat an exploited firewall as fully compromised — rebuild it and rotate every credential and VPN/IKE secret it held, since the firewall terminates trust for the network behind it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, given the device's trust position, an exploited unit must be rebuilt and its secrets rotated — a patch in place does not evict a resident attacker."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the Firebox firewall: exploit-shaped requests, device crashes, new processes, and credential/config changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild the device from a known-good image, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing WatchGuard Firebox is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-21042": {
     "name": "Samsung Mobile Devices Out-of-Bounds Write Vulnerability",
@@ -16919,67 +17003,123 @@
   },
   "CVE-2023-50224": {
     "name": "TP-Link TL-WR841N Authentication Bypass by Spoofing Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TP-Link TL-WR841N contains an authentication bypass by spoofing vulnerability within the httpd service, which listens on TCP port 80 by default, leading to the disclose of stored credentials. The impacted products could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an authentication-bypass-by-spoofing flaw (CWE-290) letting an unauthenticated attacker bypass authentication on the router. CISA KEV-listed 2025-09-03 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor firmware update; for end-of-life devices with no fix, replace the device. After any suspected compromise, factory-reset and re-flash — router compromise persists in firmware/config, and these devices are recruited into botnets and operational-relay (ORB) infrastructure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but EOL firmware often has no fix, making replacement the only remediation; compromised devices need re-flash, not just patch."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the TL-WR841N router: exploit-shaped requests, anomalous outbound/botnet traffic and config drift.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Factory-reset and re-flash or replace the device, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing TP-Link TL-WR841N router is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-9377": {
     "name": "TP-Link Archer C7(EU) and TL-WR841N/ND(MS) OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TP-Link Archer C7(EU) and TL-WR841N/ND(MS) contain an OS command injection vulnerability that exists in the Parental Control page. The impacted products could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an OS command-injection flaw (CWE-78) enabling unauthenticated remote command execution on the router. CISA KEV-listed 2025-09-03 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor firmware update; for end-of-life devices with no fix, replace the device. After any suspected compromise, factory-reset and re-flash — router compromise persists in firmware/config, and these devices are recruited into botnets and operational-relay (ORB) infrastructure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but EOL firmware often has no fix, making replacement the only remediation; compromised devices need re-flash, not just patch."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the TP-Link router: exploit-shaped requests, anomalous outbound/botnet traffic and config drift.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Factory-reset and re-flash or replace the device, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing TP-Link Archer C7 and TL-WR841N/ND routers is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2020-24363": {
     "name": "TP-link TL-WA855RE Missing Authentication for Critical Function Vulnerability",
@@ -17047,35 +17187,63 @@
   },
   "CVE-2025-57819": {
     "name": "Sangoma FreePBX Authentication Bypass Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Sangoma FreePBX contains an authentication bypass vulnerability due to insufficiently sanitized user-supplied data allows unauthenticated access to FreePBX Administrator leading to arbitrary database manipulation and remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an authentication bypass combined with SQL injection (CWE-89/CWE-288), letting an unauthenticated attacker reach administrative functionality and the database. CISA KEV-listed 2025-08-29 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Sangoma FreePBX / module update; hunt for web shells and toll-fraud (anomalous outbound SIP/calls), and rotate SIP and administrative credentials — FreePBX compromise is routinely monetized via telephony fraud.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but, given the device's trust position, an exploited unit must be rebuilt and its secrets rotated — a patch in place does not evict a resident attacker."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the FreePBX: exploit-shaped requests, toll-fraud call patterns and new admin objects.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuild the device from a known-good image, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing Sangoma FreePBX is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-7775": {
     "name": "Citrix NetScaler Memory Overflow Vulnerability",
@@ -18835,35 +19003,63 @@
   },
   "CVE-2023-33538": {
     "name": "TP-Link Multiple Routers Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TP-Link TL-WR940N V2/V4, TL-WR841N V8/V10, and TL-WR740N V1/V2 contain a command injection vulnerability via the component /userRpm/WlanNetworkRpm. The impacted products could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a command-injection flaw (CWE-77) enabling unauthenticated remote command execution on the router. CISA KEV-listed 2025-06-16 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor firmware update; for end-of-life devices with no fix, replace the device. After any suspected compromise, factory-reset and re-flash — router compromise persists in firmware/config, and these devices are recruited into botnets and operational-relay (ORB) infrastructure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but EOL firmware often has no fix, making replacement the only remediation; compromised devices need re-flash, not just patch."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the TP-Link router: exploit-shaped requests, anomalous outbound/botnet traffic and config drift.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Factory-reset and re-flash or replace the device, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing TP-Link routers (multiple models) is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-43200": {
     "name": "Apple Multiple Products Unspecified Vulnerability (variant: CVE-2025-43200)",
@@ -19826,35 +20022,63 @@
   },
   "CVE-2024-12987": {
     "name": "DrayTek Vigor Routers OS Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "DrayTek Vigor2960, Vigor300B, and Vigor3900 routers contain an OS command injection vulnerability due to an unknown function of the file /cgi-bin/mainfunction.cgi/apmcfgupload of the component web management interface.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an OS command-injection flaw (CWE-78) enabling unauthenticated remote command execution on the router. CISA KEV-listed 2025-05-15 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the device's network interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor firmware update; for end-of-life devices with no fix, replace the device. After any suspected compromise, factory-reset and re-flash — router compromise persists in firmware/config, and these devices are recruited into botnets and operational-relay (ORB) infrastructure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but EOL firmware often has no fix, making replacement the only remediation; compromised devices need re-flash, not just patch."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the DrayTek Vigor router: exploit-shaped requests, anomalous outbound/botnet traffic and config drift.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because device compromise is often silent and persists across reboots in firmware/config."
+      },
+      "response": {
+        "what_would_have_worked": "Factory-reset and re-flash or replace the device, rotate all credentials and secrets it held, and review the network behind it for lateral movement; assume the device's trust is fully compromised.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; network-device compromise gives an attacker a durable, trusted position that patching alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network device; SOHO routers and edge appliances are mass-exploited into botnets and operational-relay (ORB) networks within days, and many run end-of-life firmware with no available fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited internet-facing device, and unmanaged/EOL devices fall outside most patch programs entirely."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats network devices/appliances as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not address end-of-life devices that can only be replaced, not patched."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network device fronting or bridging the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Internet-facing DrayTek Vigor routers is frequently unmanaged or end-of-life; audited organizations rarely track SOHO/edge-device firmware on a KEV SLA, and the required re-flash/replace and secret rotation are almost never part of a routine patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-32756": {
     "name": "Fortinet Multiple Products Stack-Based Buffer Overflow Vulnerability",
