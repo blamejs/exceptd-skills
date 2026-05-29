@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.2 — 2026-05-29
+
+Every curated catalog entry now carries detection IOCs. The 51 operator-curated CVE/MAL entries that previously lacked an `iocs` block — spanning the actively-exploited perimeter and supply-chain entries (runc, xz-utils, SolarWinds, Citrix, ConnectWise, Cisco SD-WAN, FortiOS), the AI-ecosystem cluster (MLflow, vLLM, Ollama, LangChain, the MCP SDK, Big Sleep AI-discovered bugs), the malicious-package supply-chain worms (Shai-Hulud, ultralytics, the RubyGems/PyPI stealers), and the Pwn2Own appliance chains — now ship behavioral detection indicators derived from each entry's documented vulnerability mechanics, with the indicator provenance recorded per entry. Detection coverage for the curated catalog is now complete.
+
 ## 0.15.1 — 2026-05-29
 
 Skill content and catalog hygiene.
