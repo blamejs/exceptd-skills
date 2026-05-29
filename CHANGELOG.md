@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.16 — 2026-05-29
+
+Draft-curation pass 14 — web-application server-side RCE. Eight CISA KEV-listed unauthenticated web-app CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Kentico Xperience CMS (CVE-2025-2749 path-traversal + file upload, CVE-2025-2746 and CVE-2025-2747 alternate-channel authentication bypasses), Craft CMS code injection (CVE-2025-32432 and the related CVE-2024-56145), Roundcube Webmail deserialization (CVE-2025-49113), and SolarWinds Web Help Desk deserialization (CVE-2025-26399, CVE-2025-40551). All map T1190, with per-class T1059 (code injection / deserialization), T1078 (auth bypass), or T1505.003 (upload → web shell). The lessons stress web-shell hunting and application-secret rotation as required cleanup beyond the patch.
+
 ## 0.15.15 — 2026-05-29
 
 Draft-curation pass 13 — Windows kernel/driver LPE. Seven CISA KEV-listed Windows local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: a Common Log File System (CLFS) driver use-after-free (CVE-2025-32701 — CLFS is a recurring kernel-LPE target), a race condition (CVE-2025-62215), an untrusted-pointer dereference (CVE-2025-24990), link-following (CVE-2025-60710), a kernel out-of-bounds read primitive (CVE-2023-36424), an information-disclosure primitive (CVE-2026-20805), and improper privilege management (CVE-2021-43226). All map T1068 (Exploitation for Privilege Escalation). The lessons frame these as the second half of the ransomware chain (initial access → unpatched LPE → SYSTEM within hours) and stress hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist as load-bearing endpoint controls beyond the patch.
