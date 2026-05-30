@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.25 — 2026-05-29
+
+Draft-curation pass 23 — unauthenticated network-service RCE. Five CISA KEV-listed server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung MagicINFO 9 Server (CVE-2024-7399 path traversal + file upload, CVE-2025-4632 the path-traversal patch-bypass variant), Wing FTP Server remote code execution (CVE-2025-47812, exploitable via anonymous login), VMware vCenter Server DCE/RPC out-of-bounds write (CVE-2024-37079), and the wormable Windows Server Service RPC overflow MS08-067 (CVE-2008-4250, exploited by Conficker). All map T1190, with T1505.003 for the upload-to-web-shell flaw and T1059 for the injection RCE. The lessons carry the long-tail patch-hygiene warning that MS08-067 still exemplifies, and require web-shell hunting or host rebuild beyond the patch.
+
 ## 0.15.24 — 2026-05-29
 
 Draft-curation pass 22 — IT-management and enterprise platforms. Eight CISA KEV-listed unauthenticated server-side CVEs on platforms whose compromise reaches the managed estate are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: N-able N-Central RMM (CVE-2025-8876 command injection, CVE-2025-8875 insecure deserialization), SysAid On-Prem ITSM XXE (CVE-2025-2775, CVE-2025-2776), SimpleHelp remote support (CVE-2024-57728 path traversal, CVE-2024-57726 missing authorization), Quest KACE Systems Management Appliance authentication bypass (CVE-2025-32975), and Oracle E-Business Suite remote code execution (CVE-2025-61882). All map T1190, with per-class T1059 (code injection/deserialization) or T1078 (auth bypass). The lessons stress that management-platform compromise is fleet-wide — response must rotate credentials and audit every action pushed to downstream managed systems during the exposure window, not just patch the server.
