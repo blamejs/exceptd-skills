@@ -113,6 +113,28 @@ test('orphan-allow-class: catches an unknown class and a reason-less marker', ()
   assert.equal(gate.detectOrphanAllowClass([fileGood]).length, 0, 'a valid file-level marker is fine');
 });
 
+test('bidi-codepoint-literal: live tree is clean (no raw Trojan-Source codepoints in source)', () => {
+  assert.equal(gate.detectBidiCodepointLiteral().length, 0,
+    'no raw bidi-override / zero-width / null codepoint literal in source (escape or vendor/blamejs/codepoint-class it)');
+});
+
+test('bidi-codepoint-literal: catches a raw bidi/zero-width/null literal; escape + marker exempt it', () => {
+  // \u202E in the test SOURCE becomes the literal RLO char in the fixture FILE.
+  const bidi = fixture('const x = "a\u202Eb";\n');
+  assert.equal(gate.detectBidiCodepointLiteral([bidi]).length, 1, 'a raw bidi-override literal is flagged');
+  const zw = fixture('const x = "a\u200Bb";\n');
+  assert.equal(gate.detectBidiCodepointLiteral([zw]).length, 1, 'a raw zero-width literal is flagged');
+  const nul = fixture('const x = "a' + String.fromCharCode(0) + 'b";\n');
+  assert.equal(gate.detectBidiCodepointLiteral([nul]).length, 1, 'a raw null literal is flagged');
+  // \\u202E in the test source writes the ESCAPE text (backslash-u-202E), not the char.
+  const escaped = fixture('const x = "a\\u202Eb";\n');
+  assert.equal(gate.detectBidiCodepointLiteral([escaped]).length, 0, 'a \\uXXXX escape is not a literal');
+  const clean = fixture('const x = "plain ascii";\n');
+  assert.equal(gate.detectBidiCodepointLiteral([clean]).length, 0, 'clean ASCII is not flagged');
+  const marked = fixture('const x = "a\u202Eb"; // allow:bidi-codepoint-literal — fixture\n');
+  assert.equal(gate.detectBidiCodepointLiteral([marked]).length, 0, 'an allow marker suppresses it');
+});
+
 // ---- currency check wiring ------------------------------------------------
 
 test('currency check exports a non-empty triaged upstream set + parser', () => {

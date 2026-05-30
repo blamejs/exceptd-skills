@@ -244,7 +244,7 @@ const GATES = [
     // dynamic-RegExp construction is surfaced warn-only this release. The
     // exception mechanism + the "owned elsewhere" boundary are documented in
     // the script header.
-    name: "Codebase-pattern gates (process-exit-after-stdout-write, dynamic RegExp)",
+    name: "Codebase-pattern gates (stdout-flush, dynamic RegExp, bidi codepoints, orphan markers)",
     command: process.execPath,
     args: [path.join(ROOT, "scripts", "check-codebase-patterns.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
