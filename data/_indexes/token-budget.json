@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1673904,
-    "total_approx_tokens": 418479,
+    "total_chars": 1673692,
+    "total_approx_tokens": 418426,
     "skill_count": 42
   },
   "skills": {
@@ -1080,10 +1080,10 @@
     },
     "attack-surface-pentest": {
       "path": "skills/attack-surface-pentest/skill.md",
-      "bytes": 33291,
-      "chars": 33148,
+      "bytes": 33158,
+      "chars": 33017,
       "lines": 388,
-      "approx_tokens": 8287,
+      "approx_tokens": 8254,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1092,14 +1092,14 @@
           "approx_tokens": 1173
         },
         "framework-lag-declaration": {
-          "bytes": 4563,
-          "chars": 4553,
-          "approx_tokens": 1138
+          "bytes": 4543,
+          "chars": 4533,
+          "approx_tokens": 1133
         },
         "ttp-mapping": {
-          "bytes": 2235,
-          "chars": 2214,
-          "approx_tokens": 554
+          "bytes": 2209,
+          "chars": 2188,
+          "approx_tokens": 547
         },
         "exploit-availability-matrix": {
           "bytes": 2455,
@@ -1107,9 +1107,9 @@
           "approx_tokens": 610
         },
         "analysis-procedure": {
-          "bytes": 9703,
-          "chars": 9651,
-          "approx_tokens": 2413
+          "bytes": 9656,
+          "chars": 9606,
+          "approx_tokens": 2402
         },
         "output-format": {
           "bytes": 3997,
@@ -1122,9 +1122,9 @@
           "approx_tokens": 576
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 1612,
-          "chars": 1610,
-          "approx_tokens": 403
+          "bytes": 1572,
+          "chars": 1570,
+          "approx_tokens": 393
         }
       }
     },
@@ -1735,10 +1735,10 @@
     },
     "sector-financial": {
       "path": "skills/sector-financial/skill.md",
-      "bytes": 50325,
-      "chars": 50160,
+      "bytes": 50285,
+      "chars": 50120,
       "lines": 401,
-      "approx_tokens": 12540,
+      "approx_tokens": 12530,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1762,9 +1762,9 @@
           "approx_tokens": 724
         },
         "analysis-procedure": {
-          "bytes": 8756,
-          "chars": 8726,
-          "approx_tokens": 2182
+          "bytes": 8716,
+          "chars": 8686,
+          "approx_tokens": 2172
         },
         "output-format": {
           "bytes": 3407,
@@ -2395,10 +2395,10 @@
     },
     "cloud-iam-incident": {
       "path": "skills/cloud-iam-incident/skill.md",
-      "bytes": 44474,
-      "chars": 44316,
+      "bytes": 44433,
+      "chars": 44275,
       "lines": 416,
-      "approx_tokens": 11079,
+      "approx_tokens": 11069,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2422,9 +2422,9 @@
           "approx_tokens": 842
         },
         "analysis-procedure": {
-          "bytes": 7625,
-          "chars": 7601,
-          "approx_tokens": 1900
+          "bytes": 7620,
+          "chars": 7596,
+          "approx_tokens": 1899
         },
         "output-format": {
           "bytes": 2198,
@@ -2437,9 +2437,9 @@
           "approx_tokens": 1146
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 4076,
-          "chars": 4068,
-          "approx_tokens": 1017
+          "bytes": 4040,
+          "chars": 4032,
+          "approx_tokens": 1008
         },
         "hand-off": {
           "bytes": 3173,

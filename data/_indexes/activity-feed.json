@@ -6,6 +6,14 @@
   },
   "events": [
     {
+      "date": "2026-05-30",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 427
+    },
+    {
       "date": "2026-05-27",
       "type": "catalog_update",
       "artifact": "data/rfc-references.json",
@@ -142,14 +150,6 @@
       "artifact": "email-security-anti-phishing",
       "path": "skills/email-security-anti-phishing/skill.md",
       "note": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways"
-    },
-    {
-      "date": "2026-05-18",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 427
     },
     {
       "date": "2026-05-18",

@@ -13,6 +13,18 @@
  * One suite-scoped tempdir is sufficient because tests run sequentially
  * (--test-concurrency=1) and attest-diff / attest-verify deliberately read
  * across sessions written by sibling tests in the same suite.
+ *
+ * The same suite tempdir also backs EXCEPTD_LOCK_DIR (see makeCli). Without
+ * that override the runner falls back to the host-global
+ * os.tmpdir()/exceptd-locks-<platform> mutex dir (lib/playbook-runner.js
+ * lockDir()), which is shared across every suite and every prior `npm test`
+ * run. A `run` subprocess that times out or is killed leaves a stale lock
+ * there, so a later mutex-grouped `run` (e.g. library-author <-> secrets)
+ * sees an "active lock (pid N)" and exits 1 at preflight — a non-deterministic
+ * ~1-in-3 full-suite failure that flipped the predeploy gate red. Scoping the
+ * lock dir to the suite home isolates each suite's locks (and clears them on
+ * exit) while preserving intra-suite mutex-conflict tests, which still share
+ * the one suite lock dir.
  */
 
 const path = require('node:path');
@@ -61,6 +73,7 @@ function makeCli(suiteHome) {
         EXCEPTD_UNSIGNED_WARNED: '1',
         EXCEPTD_RAW_JSON: '1',
         EXCEPTD_HOME: suiteHome,
+        EXCEPTD_LOCK_DIR: path.join(suiteHome, '_locks'),
         ...opts.env,
       },
       timeout: opts.timeout ?? 30000,

@@ -564,6 +564,31 @@ function main() {
     };
   }
 
+  // --quiet: suppress advisory stderr chatter — the "[exceptd] note:" and
+  // "[exceptd] tip:" lines, the deprecation banner, and the unsigned-
+  // attestation warning — while keeping the actual result on stdout and all
+  // errors on stderr. Narrower than --json-stdout-only, which silences ALL
+  // stderr and forces JSON output; --quiet preserves human-readable output and
+  // exit codes and only drops the non-essential advisories. Skipped when
+  // --json-stdout-only is also present (that flag already silenced everything
+  // and patched stderr first; double-wrapping would be redundant).
+  if (argv.includes("--quiet") && !argv.includes("--json-stdout-only")) {
+    global.__exceptdQuiet = true;
+    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+    process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+    const origStderrWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (chunk, encoding, cb) => {
+      // Drop only the advisory-prefixed lines. Contract-violation notes
+      // ("[exceptd run] ..."), error frames, and uncaught exceptions still
+      // surface so --quiet never hides why a run failed or exited non-zero.
+      if (typeof chunk === "string" && /^\[exceptd\] (note|tip):/.test(chunk)) {
+        if (typeof cb === "function") cb();
+        return true;
+      }
+      return origStderrWrite(chunk, encoding, cb);
+    };
+  }
+
   if (argv.length === 0) {
     printWelcome();
     process.exit(0);
@@ -752,7 +777,7 @@ function main() {
   // verbs that lack their own help handler, so spawns that do (refresh,
   // prefetch) keep their detailed usage.
   const SPAWN_HELP_USAGE = {
-    skill: "exceptd skill <name>          Show the full context document for one skill.",
+    skill: "exceptd skill <name>          Show the full context document for one skill. Run `exceptd skill` with no arguments to list all skill IDs.",
     "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD). Exit 2 when the citation won't stand up (rejected/fabricated/nonexistent/withdrawn).",
@@ -761,7 +786,7 @@ function main() {
     // to spawning the blocking daemon, hanging the operator's terminal.
     watch: "exceptd watch          Long-running forward-watch daemon (blocks; Ctrl-C to stop). For a one-shot aggregator use `exceptd watchlist`.",
     watchlist: "exceptd watchlist [--alerts] [--org-scan --org <login>] [--by-skill] [--json]   One-shot forward-watch aggregator across skills.",
-    report: "exceptd report [executive] [--json]   Structured posture report.",
+    report: "exceptd report [executive] [--json]   Structured posture report. Markdown by default; pass --json for machine-readable output.",
     scan: "exceptd scan [--json]          [legacy] Working-directory CVE/KEV scan (orchestrator). See `exceptd discover`.",
     dispatch: "exceptd dispatch [--json]      [legacy] Scan + route findings to skills (orchestrator). See `exceptd discover`.",
     currency: "exceptd currency [--json]      [legacy] Skill threat-currency report. See `exceptd doctor --currency`.",
@@ -981,7 +1006,7 @@ function asEvidenceObject(parsed) {
   return parsed;
 }
 
-function readEvidence(evidenceFlag) {
+function readEvidence(evidenceFlag, opts = {}) {
   if (!evidenceFlag) return {};
   // v0.12.12: file-path branch enforces a max size to defend against an
   // operator accidentally passing a multi-gigabyte file (binary, log, or
@@ -1017,11 +1042,20 @@ function readEvidence(evidenceFlag) {
       // certainly meant to pipe something. Don't change exit semantics;
       // the empty-payload path is still legitimately useful for posture-
       // only playbooks (govern + direct + look-only walks).
-      process.stderr.write(
-        `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
-        `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
-        `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
-      );
+      //
+      // Only nudge when `--evidence -` was EXPLICITLY requested. On the stdin
+      // auto-promotion path (no --evidence flag, just a non-TTY handle such as
+      // `run kernel </dev/null` or a CI runner) the operator never asked to
+      // read stdin, so an empty read is not a mistake to flag — and emitting to
+      // stderr there corrupted `run ... 2>&1 | jq` pipelines that worked at a
+      // TTY but broke in CI.
+      if (opts.explicit !== false) {
+        process.stderr.write(
+          `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
+          `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
+          `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
+        );
+      }
       return {};
     }
     return asEvidenceObject(JSON.parse(text));
@@ -1853,6 +1887,13 @@ function editDistance(a, b) {
 
 function printPlaybookVerbHelp(verb) {
   const cmds = {
+    recipes: `recipes [<id>] — curated multi-skill workflows (use-case → ordered skill chain).
+
+With no id: lists every recipe with its "when to use" guidance.
+With <id>:  expands that recipe's ordered skill_chain and notes.
+
+Flags:
+  --json   Machine-readable output.`,
     plan: `plan — list playbooks + directives, grouped by scope.
 
 Flags:
@@ -2884,7 +2925,8 @@ function cmdBrief(runner, args, runOpts, pretty) {
         lines.push(`  ${p.id} (${p.on_fail}): ${pdesc.length > 80 ? pdesc.slice(0, 80) + "…" : pdesc}`);
       }
     }
-    lines.push(`\nRun: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
+    lines.push(`\nCollect evidence: exceptd collect ${obj.playbook_id} | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`Run with your own evidence: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
     lines.push(`Full structured doc: --json or --pretty`);
     return lines.join("\n");
   });
@@ -3223,6 +3265,19 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Single-playbook path (existing behavior).
   const playbookId = positional;
   if (refuseInvalidPlaybookId("run", playbookId, pretty)) return;
+  // --evidence-dir is a contract input: cmdRunMulti reads one
+  // <playbook-id>.json per playbook in an --all / --scope run. With a single
+  // named playbook it was silently ignored, so `run secrets --evidence-dir ./ev`
+  // ran against EMPTY evidence and reported a clean "not_detected" verdict — a
+  // falsely-reassuring result from a security tool. Refuse loudly and point the
+  // operator at the flag that actually loads evidence for one playbook.
+  if (args["evidence-dir"]) {
+    return emitError(
+      `run ${playbookId}: --evidence-dir applies to contract runs (exceptd run --all / --scope <type>), where it reads one <playbook-id>.json per playbook. For a single playbook, pass its evidence directly: exceptd collect ${playbookId} | exceptd run ${playbookId} --evidence -  (or --evidence ${playbookId}.json).`,
+      { playbook: playbookId, provided: "--evidence-dir", use_instead: "--evidence <file|->" },
+      pretty
+    );
+  }
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return refuseNoDirectives("run", playbookId, pretty);
@@ -3286,12 +3341,16 @@ function cmdRun(runner, args, runOpts, pretty) {
   // first, then falls back to a strict isTTY===false check only on Windows
   // (where fstat on a pipe is unreliable). MSYS-bash on win32 reports
   // isTTY === false for genuine piped input, so that path still works.
-  if (!args.evidence && hasReadableStdin()) {
+  const autoStdin = !args.evidence && hasReadableStdin();
+  if (autoStdin) {
     args.evidence = "-";
   }
   if (args.evidence) {
     try {
-      submission = readEvidence(args.evidence);
+      // explicit:false on the auto-promotion path suppresses the empty-stdin
+      // nudge (which otherwise writes to stderr and breaks `run ... 2>&1 | jq`
+      // on every no-evidence CI run); an explicit `--evidence -` still nudges.
+      submission = readEvidence(args.evidence, { explicit: !autoStdin });
     } catch (e) {
       return emitError(`run: failed to read evidence: ${e.message}`, { evidence: args.evidence }, pretty);
     }
@@ -3531,7 +3590,40 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Set exitCode BEFORE emit(): emit's ok:false fallback only fires when
     // exitCode is not already set, so the BLOCKED override survives.
     process.exitCode = args.ci ? EXIT_CODES.BLOCKED : EXIT_CODES.GENERIC_FAILURE;
-    emit(result, pretty);
+    emit(result, pretty, (obj) => {
+      // Human renderer for a halted run. Without this, a blocked verdict
+      // (preflight precondition unmet, mutex conflict, stale currency,
+      // corrupt catalog) dumped the raw ok:false JSON envelope even in human
+      // mode — so a non-Linux operator's first `run` against any Linux-gated
+      // playbook was a wall of JSON instead of one line saying why it stopped
+      // and what to do. --json / --pretty still return the full envelope.
+      const v = obj.verdict || "error";
+      const tag = v === "blocked" ? "[blocked]" : "[error]";
+      const lines = [`${tag}  ${obj.playbook_id || "run"}${obj.directive_id ? ` (${obj.directive_id})` : ""}`];
+      // summary_line is already a complete sentence ("<pb>: blocked at
+      // preflight (<cause>) — <reason>"); prefer it, else fall back to reason.
+      const detail = obj.summary_line || obj.reason;
+      if (detail) lines.push(`  ${detail}`);
+      // remediation is the engine's own actionable next step when it has one;
+      // otherwise synthesize a hint from blocked_by so the operator never hits
+      // a dead end. Hints reference only current verbs (plan/direct were
+      // removed in v0.13.0; brief --all is the replacement listing verb).
+      if (obj.remediation) {
+        lines.push(`  → ${obj.remediation}`);
+      } else {
+        const hints = {
+          precondition: "→ Preconditions are not met on this host (often a platform gate, e.g. a Linux-only playbook). List playbooks that fit your platform: exceptd brief --all",
+          mutex: "→ Another run holds this playbook's mutex. Wait for it to finish, then retry.",
+          currency: "→ Threat intel is stale. Refresh sources (exceptd refresh) or re-run with --force-stale to override.",
+          catalog_corrupt: "→ The CVE catalog failed to load. Reinstall the package or run: exceptd doctor",
+          playbook_not_found: "→ Unknown playbook. List available playbooks: exceptd brief --all",
+          directive_not_found: `→ Unknown directive for this playbook. See its directives: exceptd brief ${obj.playbook_id || "<playbook>"}`,
+        };
+        if (obj.blocked_by && hints[obj.blocked_by]) lines.push(`  ${hints[obj.blocked_by]}`);
+      }
+      lines.push("  Full envelope: re-run with --json");
+      return lines.join("\n");
+    });
     return;
   }
 
@@ -6386,8 +6478,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     "json", "pretty", "fix", "air-gap",
     "signatures", "currency", "cves", "rfcs", "registry-check",
     "ai-config", "collectors", "exit-codes", "shipped-tarball",
-    // Global flags the parser may inject regardless of verb.
-    "_", "json-stdout-only", "_jsonMode",
+    // Global flags the parser may inject regardless of verb. Keep in sync
+    // with VERB_FLAG_ALLOWLIST._global in lib/flag-suggest.js — quiet/verbose
+    // are accepted on every verb, so doctor must not refuse them as typos.
+    "_", "json-stdout-only", "_jsonMode", "quiet", "verbose",
   ]);
   const unknownFlags = Object.keys(args).filter(k => !KNOWN_DOCTOR_FLAGS.has(k));
   if (unknownFlags.length > 0) {
@@ -7285,7 +7379,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     if (c.ahead) {
       return `npm registry: local v${c.local_version ?? "?"} AHEAD of published v${c.published_version ?? "?"} (unreleased / dev install)`;
     }
-    return `npm registry: check returned no comparison (raw exit=${c.exit_code ?? "?"})`;
+    return "npm registry: could not compare versions (registry unreachable, offline, or no published version yet). Run `npm view @blamejs/exceptd-skills version` to see the latest, then `npm install -g @blamejs/exceptd-skills@latest` if you are behind.";
   });
   // v0.12.9 (P3 #10): surface shipped_tarball sub-check when --shipped-tarball was used.
   if (checks.signatures?.shipped_tarball) {

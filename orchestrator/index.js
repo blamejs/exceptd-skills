@@ -393,16 +393,34 @@ function runSkillContext(rawArgs) {
   const skillName = positionals[0];
 
   if (!skillName) {
+    // Operators cannot guess the skill IDs (they are not the playbook names, and
+    // `brief --all` lists playbooks, not skills). List the real skill IDs +
+    // one-line descriptions straight from the signed manifest so `exceptd skill`
+    // is self-documenting.
+    let skills = [];
+    try {
+      skills = (require('../manifest.json').skills || [])
+        .map(s => ({ id: s.name, description: s.description || '' }))
+        .sort((a, b) => a.id.localeCompare(b.id));
+    } catch { /* fall back to the bare usage line below */ }
     if (jsonOut) {
       process.stdout.write(JSON.stringify({
         ok: false,
         verb: 'skill',
         error: 'usage: exceptd skill <skill-name>',
-        hint: 'List available skills: exceptd brief --all',
+        hint: `Pass one of the ${skills.length} skill IDs listed in "skills".`,
+        skills,
       }) + '\n');
     } else {
       console.error('Usage: exceptd skill <skill-name>');
-      console.error('       (Lists available skills: exceptd brief --all)');
+      if (skills.length) {
+        console.error(`\nAvailable skills (${skills.length}):`);
+        for (const s of skills) {
+          console.error(`  ${s.id.padEnd(36)} ${s.description.slice(0, 64)}`);
+        }
+      } else {
+        console.error('       (manifest unreadable — see skills/ for available skill IDs)');
+      }
     }
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
@@ -413,7 +431,7 @@ function runSkillContext(rawArgs) {
     // v0.13 envelope harmonization: ok:false bodies land on stdout
     // alongside successful results so a single consumer can parse the
     // verb's envelope without splitting across two streams.
-    process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
+    process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd skill` with no arguments to list all available skill IDs." }) + "\n");
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
