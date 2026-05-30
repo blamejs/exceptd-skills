@@ -236,6 +236,19 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-agents-md-collectors.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Codebase-pattern gate. Blocks the code-shape bug classes that
+    // recurred across releases: a library-callable function that writes to
+    // stdout then calls process.exit() (truncates the buffered write when
+    // piped — the stdout-flush-truncation class), and a stale/typo'd `// allow:` marker.
+    // dynamic-RegExp construction is surfaced warn-only this release. The
+    // exception mechanism + the "owned elsewhere" boundary are documented in
+    // the script header.
+    name: "Codebase-pattern gates (process-exit-after-stdout-write, dynamic RegExp)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-codebase-patterns.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

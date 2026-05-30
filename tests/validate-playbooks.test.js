@@ -517,6 +517,12 @@ function stageMirror(tmp) {
     path.join(ROOT, "lib", "validate-playbooks.js"),
     path.join(tmp, "lib", "validate-playbooks.js"),
   );
+  // validate-playbooks.js requires lib/exit-codes.js (safeExit); stage it too
+  // or the mirrored script crashes on require with empty stdout.
+  fs.copyFileSync(
+    path.join(ROOT, "lib", "exit-codes.js"),
+    path.join(tmp, "lib", "exit-codes.js"),
+  );
   fs.copyFileSync(
     path.join(ROOT, "lib", "schemas", "playbook.schema.json"),
     path.join(tmp, "lib", "schemas", "playbook.schema.json"),

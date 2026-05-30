@@ -274,6 +274,13 @@ function cmdPrepare(opts) {
   // the canonical-count guard meaningful when a release adds test files.
   _run("node", ["scripts/check-test-count.js", "--update-baseline"]);
 
+  _section("codebase-patterns currency (advisory)");
+  // Flag when the upstream pattern catalog (the sibling blamejs codebase-
+  // patterns test) has grown a class exceptd hasn't triaged yet — the same
+  // forcing function the actions/vendor currency checks give those surfaces.
+  // Advisory: never blocks; skips cleanly when the sibling repo is absent.
+  _run("node", ["scripts/check-codebase-patterns-currency.js"], { allowFail: true });
+
   console.log("\nnext: node scripts/release.js gates");
 }
 
