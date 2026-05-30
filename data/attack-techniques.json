@@ -929,7 +929,6 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2008-0015",
-      "CVE-2012-1854",
       "CVE-2014-6278",
       "CVE-2016-10033",
       "CVE-2016-7836",
@@ -1027,7 +1026,6 @@
       "CVE-2025-29635",
       "CVE-2025-30165",
       "CVE-2025-30202",
-      "CVE-2025-30397",
       "CVE-2025-31125",
       "CVE-2025-31161",
       "CVE-2025-31324",
@@ -1126,11 +1124,6 @@
       "CVE-2026-20133",
       "CVE-2026-20182",
       "CVE-2026-20963",
-      "CVE-2026-21509",
-      "CVE-2026-21510",
-      "CVE-2026-21513",
-      "CVE-2026-21514",
-      "CVE-2026-21519",
       "CVE-2026-21525",
       "CVE-2026-21643",
       "CVE-2026-21858",
@@ -1342,6 +1335,7 @@
       "CVE-2025-13223",
       "CVE-2025-14174",
       "CVE-2025-24201",
+      "CVE-2025-30397",
       "CVE-2025-31277",
       "CVE-2025-43200",
       "CVE-2025-43300",
@@ -1353,6 +1347,7 @@
       "CVE-2025-6554",
       "CVE-2025-6558",
       "CVE-2026-20700",
+      "CVE-2026-21519",
       "CVE-2026-2441",
       "CVE-2026-25592",
       "CVE-2026-34621",
@@ -4610,7 +4605,13 @@
       "IaaS"
     ],
     "stix_id": "attack-pattern--fe926152-f431-4baf-956c-4ad3cb0bf23b",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-21509",
+      "CVE-2026-21510",
+      "CVE-2026-21513",
+      "CVE-2026-21514"
+    ]
   },
   "T1216": {
     "id": "T1216",
@@ -13772,7 +13773,11 @@
     "stix_id": "attack-pattern--7e7c2fba-7cca-486c-9582-4c1bb2851961",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2026-21510",
+      "CVE-2026-21513"
+    ]
   },
   "T1553.006": {
     "id": "T1553.006",
@@ -15514,7 +15519,10 @@
     "stix_id": "attack-pattern--2fee9321-3e71-4cf4-af24-d4d40d355b34",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2012-1854"
+    ]
   },
   "T1574.004": {
     "id": "T1574.004",
