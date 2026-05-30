@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * tests/usability-fixes-v016.test.js
+ * tests/usability-fixes.test.js
  *
- * Regression coverage for the operator-usability fixes shipped in 0.16.0,
+ * Regression coverage for the operator-usability fixes for the operator-usability pass,
  * derived from the multi-agent usability audit. Each test pins a fixed
  * behavior so the gap cannot silently regress.
  */
@@ -12,7 +12,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-const home = makeSuiteHome('exceptd-usability-v016-');
+const home = makeSuiteHome('exceptd-usability-');
 const cli = makeCli(home);
 
 test('run <playbook> --evidence-dir refuses loudly instead of silently running on empty evidence', () => {
