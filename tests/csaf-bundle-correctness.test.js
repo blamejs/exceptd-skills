@@ -25,7 +25,16 @@ const test = require('node:test');
 const { describe, it } = test;
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 const { spawnSync } = require('node:child_process');
+
+// Isolated sandbox for this suite's CLI subprocesses: route attestations into a
+// throwaway EXCEPTD_HOME (so `run` does not pollute the maintainer's real
+// ~/.exceptd) and scope EXCEPTD_LOCK_DIR to it (so mutex-grouped runs do not
+// race on the host-global lock dir — the non-deterministic predeploy flake).
+const CSAF_SUITE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-csaf-'));
+process.on('exit', () => { try { fs.rmSync(CSAF_SUITE_HOME, { recursive: true, force: true }); } catch { /* non-fatal */ } });
 
 const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
 const CLI_PATH = path.resolve(__dirname, '..', 'bin', 'exceptd.js');
@@ -422,7 +431,13 @@ describe('audit CC P2-6 — SARIF ruleId carries playbook prefix', () => {
 function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 
 function cli(argv, opts = {}) {
-  const env = { ...process.env };
+  const env = {
+    ...process.env,
+    EXCEPTD_HOME: CSAF_SUITE_HOME,
+    EXCEPTD_LOCK_DIR: path.join(CSAF_SUITE_HOME, '_locks'),
+    EXCEPTD_DEPRECATION_SHOWN: '1',
+    EXCEPTD_UNSIGNED_WARNED: '1',
+  };
   delete env.EXCEPTD_PLAYBOOK_DIR;
   return spawnSync(process.execPath, [CLI_PATH, ...argv], {
     input: opts.input,
