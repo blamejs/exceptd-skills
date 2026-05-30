@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.40 — 2026-05-29
+
+Draft-curation pass 37 — unauthenticated upload-or-injection RCE. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: unrestricted file uploads in SmarterTools SmarterMail (CVE-2025-52691) and TeamT5 ThreatSonar (CVE-2024-7694), and command/argument injection in the React Native Community CLI Metro dev server (CVE-2025-11953), GNU InetUtils (CVE-2026-24061), the Smartbedded Meteobridge device (CVE-2025-4008), and Motex LANSCOPE Endpoint Manager (CVE-2025-61932). All map T1190; the uploads add T1505.003 (web shell) and the injections add T1059. The lessons flag the trust-inversion of a compromised security product (ThreatSonar), the supply-chain risk of an exposed developer build server (React Native CLI), and the fleet-wide reach of an endpoint manager (LANSCOPE) — each demanding downstream review beyond the patched host.
+
 ## 0.15.39 — 2026-05-29
 
 Draft-curation pass 36 — webmail cross-site scripting. Three CISA KEV-listed webmail XSS CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the MDaemon WorldClient webmail flaw (CVE-2024-11182) and two Roundcube Webmail flaws (CVE-2024-42009, CVE-2025-68461). Script runs in the victim's authenticated mail session the moment they view a crafted email, so they map T1190 alongside T1539 (steal web session cookie). The lessons stress that patching the specific bug is not enough — a strict Content-Security-Policy and HttpOnly+SameSite session cookies are the durable controls that stop the next XSS from exfiltrating a session — and that response must invalidate webmail sessions and review mailboxes for unauthorized access and forwarding rules, because this class is repeatedly used by espionage actors for silent mailbox theft.
