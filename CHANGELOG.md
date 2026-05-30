@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.49 — 2026-05-30
+
+Internal: a new predeploy gate, `scripts/check-codebase-patterns.js`, enforces code-shape bug classes that recurred across releases. It blocks a library-callable function that writes to stdout and then calls `process.exit()` (which truncates buffered output when the stream is piped — the class the v0.15.47 validate-cves fix addressed) and a stale or reason-less `// allow:` suppression marker, and warns on dynamic `RegExp` construction. The flagged `process.exit` sites across the catalog, playbook, package, and vendor validators were converted to the flush-safe `safeExit` form, and the dynamic-`RegExp` sites carry inline justification markers. A companion advisory, wired into the release `prepare` step, flags when the upstream pattern catalog grows a class exceptd hasn't triaged. No change to the shipped CLI surface, catalogs, or skills.
+
 ## 0.15.48 — 2026-05-30
 
 Internal: the release flow is now driven by a phased orchestrator, `scripts/release.js`. Each subcommand (prepare, gates, commit, push, watch, merge, tag, release) runs one idempotent, resumable phase and exits with a script-safe code; the tag phase enforces a GUARD against tag-on-stale-HEAD and version skew between `package.json`, `manifest.json`, and the CHANGELOG heading. No change to the shipped CLI, catalogs, or skills.
