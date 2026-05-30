@@ -375,6 +375,22 @@ function cmdWatch() {
   // run doesn't throw before we get to inspect + rerun it.
   _run("gh", ["pr", "checks", prNum, "--watch"], { allowFail: true });
 
+  // Gate on check CONCLUSIONS, not only review threads. A red required check
+  // leaves the PR BLOCKED at merge, so surfacing failures here (the whole
+  // point of the watch phase) beats advancing to "next: merge" and letting
+  // cmdMerge reject it. Bucket is gh's normalized verdict: pass / fail /
+  // pending / skipping / cancel.
+  var checksRaw = _capture("gh", ["pr", "checks", prNum, "--json", "name,bucket,link"]).stdout;
+  var checks = [];
+  try { checks = JSON.parse(checksRaw || "[]"); } catch (_e) { checks = []; }
+  var failed = checks.filter(function (c) { return c.bucket === "fail" || c.bucket === "cancel"; });
+  if (failed.length > 0) {
+    console.log("\nfailed checks (" + failed.length + "):");
+    failed.forEach(function (c) { console.log("  ✗ " + c.name + "  " + (c.link || "")); });
+    console.log("\nFix in code, push, then re-run: node scripts/release.js watch");
+    process.exit(3);
+  }
+
   var unresolved = _unresolvedThreads(prNum);
   if (unresolved.length > 0) {
     console.log("\nunresolved review threads (" + unresolved.length + "):");

@@ -55,9 +55,9 @@
     },
     "codepoint-class.js": {
       "vendored_path": "vendor/blamejs/codepoint-class.js",
-      "vendored_sha256": "e5ba56cb700fc07ac7d91b25c70326960f1b691f8bd67e1c2bc6ea4b34bdcaeb",
+      "vendored_sha256": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
       "upstream_path": "lib/codepoint-class.js",
-      "upstream_sha256_at_pin": "e5ba56cb700fc07ac7d91b25c70326960f1b691f8bd67e1c2bc6ea4b34bdcaeb",
+      "upstream_sha256_at_pin": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
       "stripped": [],
       "surface_preserved": [
         "BIDI_RE / C0_CTRL_RE / ZERO_WIDTH_RE / NULL_BYTE (classification regexes)",
