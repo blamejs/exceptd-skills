@@ -11681,35 +11681,63 @@
   },
   "CVE-2025-47813": {
     "name": "Wing FTP Server Information Disclosure Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Wing FTP Server contains a generation of error message containing sensitive information vulnerability when using a long value in the UID cookie.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "Generation of an error message containing sensitive information (CWE-209) in Wing FTP Server: an oversized or malformed UID session cookie triggers an error (on loginok.html) that discloses the installation / local file path, aiding a follow-on attack. CISA KEV-listed 2026-03-16 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none-to-low (the data is exposed through an unauthenticated diagnostic surface or a low-privilege error path)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Wing FTP update; suppress verbose error output on the production surface and rotate any session/credential material the error disclosure could reveal.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any credential or plaintext the exposure disclosed survives the patch and must be rotated/treated as breached; removing diagnostic surfaces from production is the durable control."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Wing FTP Server: requests carrying oversized or malformed UID session cookies (to loginok.html and the web interface) and error responses that disclose the installation / local file path.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch the disclosure and the downstream use of leaked secrets."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, suppress verbose error output that reveals local paths, rotate any session/credential material the disclosure aided, and review for follow-on attacks that used the leaked path.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a data-exposure flaw cannot be remediated by a patch alone because the disclosed data is already in the attacker's hands."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed sensitive-data-exposure flaw; diagnostic surfaces (heap/core dumps) and verbose errors leak credentials and plaintext data without the attacker breaking encryption, and are mass-exploited within days."
+      },
+      "NIST-800-53-SC-28-data-at-rest": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Encryption-in-transit claims do not protect data exposed in plaintext via memory dumps, diagnostic endpoints, or error messages; protecting information at rest and in memory — and not exposing it through diagnostic surfaces — is the unmet control, and a 'messages are encrypted' posture is undermined when the server holds and leaks plaintext."
+      },
+      "NIST-800-53-CM-7-least-functionality": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Diagnostic and management endpoints (Spring Boot Actuator, core-dump generation, verbose error output) left enabled in production are unnecessary functionality that should be disabled; these flaws exist because least-functionality was not enforced on the internet-facing surface."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited data-exposure flaw, and the disclosed plaintext/credentials remain compromised until rotated."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing Wing FTP Server can pass an audit while returning verbose errors that leak the local installation path to an attacker who manipulates the UID session cookie; the path disclosure aids follow-on attacks, and suppressing verbose errors plus rotating exposed material is rarely part of the patch procedure.",
+      "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-3910": {
     "name": "Google Chromium V8 Improper Restriction of Operations Within the Bounds of a Memory Buffer Vulnerability",
@@ -21072,67 +21100,123 @@
   },
   "CVE-2025-48928": {
     "name": "TeleMessage TM SGNL Exposure of Core Dump File to an Unauthorized Control Sphere Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TeleMessage TM SGNL contains an exposure of core dump file to an unauthorized control sphere Vulnerability. This vulnerability is based on a JSP application in which the heap content is roughly equivalent to a \"core dump\" in which a password previously sent over HTTP would be included in this dump.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "exposure of a core-dump file to an unauthorized control sphere (CWE-528), disclosing memory contents including plaintext messages and credentials from the TeleMessage server. CISA KEV-listed 2025-07-01 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none-to-low (the data is exposed through an unauthenticated diagnostic surface or a low-privilege error path)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the TeleMessage update; remove core-dump generation and diagnostic surfaces from the internet-facing server, rotate every credential and session secret that was in memory, and treat the confidentiality of all handled messages as breached — plaintext content was exposed.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any credential or plaintext the exposure disclosed survives the patch and must be rotated/treated as breached; removing diagnostic surfaces from production is the durable control."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the TeleMessage (Signal clone): requests to diagnostic/dump endpoints, retrieval of large memory/core artifacts, and subsequent use of disclosed credentials.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch the disclosure and the downstream use of leaked secrets."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, remove the diagnostic surface, rotate every credential and session secret that was in memory, and — where plaintext content was exposed — notify affected parties and treat that data's confidentiality as breached.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a data-exposure flaw cannot be remediated by a patch alone because the disclosed data is already in the attacker's hands."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed sensitive-data-exposure flaw; diagnostic surfaces (heap/core dumps) and verbose errors leak credentials and plaintext data without the attacker breaking encryption, and are mass-exploited within days."
+      },
+      "NIST-800-53-SC-28-data-at-rest": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Encryption-in-transit claims do not protect data exposed in plaintext via memory dumps, diagnostic endpoints, or error messages; protecting information at rest and in memory — and not exposing it through diagnostic surfaces — is the unmet control, and a 'messages are encrypted' posture is undermined when the server holds and leaks plaintext."
+      },
+      "NIST-800-53-CM-7-least-functionality": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Diagnostic and management endpoints (Spring Boot Actuator, core-dump generation, verbose error output) left enabled in production are unnecessary functionality that should be disabled; these flaws exist because least-functionality was not enforced on the internet-facing surface."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited data-exposure flaw, and the disclosed plaintext/credentials remain compromised until rotated."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing TeleMessage TM SGNL can pass an audit while leaving diagnostic surfaces (Actuator, core dumps) or verbose errors exposed; an 'encrypted' posture is undermined when the server holds and leaks plaintext, and the required secret rotation / breach handling is rarely part of the patch procedure.",
+      "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-48927": {
     "name": "TeleMessage TM SGNL Initialization of a Resource with an Insecure Default Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TeleMessage TM SGNL contains an initialization of a resource with an insecure default vulnerability. This vulnerability relies on how the Spring Boot Actuator is configured with an exposed heap dump endpoint at a /heapdump URI.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an insecure-default initialization (CWE-1188) that leaves a Spring Boot Actuator diagnostic endpoint (/heapdump) exposed, letting an unauthenticated attacker retrieve a heap dump containing plaintext messages and credentials. CISA KEV-listed 2025-07-01 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none-to-low (the data is exposed through an unauthenticated diagnostic surface or a low-privilege error path)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the TeleMessage update; disable the exposed diagnostic endpoint (Spring Boot Actuator /heapdump) on the production surface, rotate all credentials and session secrets, and treat handled-message confidentiality as breached.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any credential or plaintext the exposure disclosed survives the patch and must be rotated/treated as breached; removing diagnostic surfaces from production is the durable control."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the TeleMessage (Signal clone): requests to diagnostic/dump endpoints, retrieval of large memory/core artifacts, and subsequent use of disclosed credentials.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch the disclosure and the downstream use of leaked secrets."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, remove the diagnostic surface, rotate every credential and session secret that was in memory, and — where plaintext content was exposed — notify affected parties and treat that data's confidentiality as breached.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a data-exposure flaw cannot be remediated by a patch alone because the disclosed data is already in the attacker's hands."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed sensitive-data-exposure flaw; diagnostic surfaces (heap/core dumps) and verbose errors leak credentials and plaintext data without the attacker breaking encryption, and are mass-exploited within days."
+      },
+      "NIST-800-53-SC-28-data-at-rest": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Encryption-in-transit claims do not protect data exposed in plaintext via memory dumps, diagnostic endpoints, or error messages; protecting information at rest and in memory — and not exposing it through diagnostic surfaces — is the unmet control, and a 'messages are encrypted' posture is undermined when the server holds and leaks plaintext."
+      },
+      "NIST-800-53-CM-7-least-functionality": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Diagnostic and management endpoints (Spring Boot Actuator, core-dump generation, verbose error output) left enabled in production are unnecessary functionality that should be disabled; these flaws exist because least-functionality was not enforced on the internet-facing surface."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited data-exposure flaw, and the disclosed plaintext/credentials remain compromised until rotated."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Internet-facing TeleMessage TM SGNL can pass an audit while leaving diagnostic surfaces (Actuator, core dumps) or verbose errors exposed; an 'encrypted' posture is undermined when the server holds and leaks plaintext, and the required secret rotation / breach handling is rarely part of the patch procedure.",
+      "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-6543": {
     "name": "Citrix NetScaler ADC and Gateway Buffer Overflow Vulnerability",
