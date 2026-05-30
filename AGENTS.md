@@ -163,7 +163,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 | `exceptd run-all` | Multi-playbook batch run. `--scope <type>` filters. |
 | `exceptd ci` | Top-level CI gate for a single playbook with exit-code semantics. Preferred over `run --ci`. |
 | `exceptd discover` | Repo discovery — scans cwd and surfaces matching playbooks + collection hints. |
-| `exceptd ask <pb> <question>` | Read-only Q&A against a playbook's directives, indicators, and threat context. |
+| `exceptd ask "<question>"` | Plain-English router: all arguments are joined into one question and routed to the most relevant playbook(s). There is no per-playbook Q&A mode — pass the question, not a playbook id. |
 | `exceptd attest diff <sid>` | Replay analyze against a stored evidence bundle for drift detection. `--against <other-sid>` compares two sessions. `--playbook <id>` + `--since <ISO>` accepted with `--latest`. `exceptd reattest` remains a short-form alias — preserved (no removal scheduled). |
 | `exceptd attest verify <sid>` | Verify a persisted attestation's signature + evidence hash. |
 | `exceptd attest list` | Inventory `.exceptd/attestations/` — newest first. `--playbook <id>` filters. |

@@ -7312,7 +7312,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     if (c.ahead) {
       return `npm registry: local v${c.local_version ?? "?"} AHEAD of published v${c.published_version ?? "?"} (unreleased / dev install)`;
     }
-    return `npm registry: check returned no comparison (raw exit=${c.exit_code ?? "?"})`;
+    return "npm registry: could not compare versions (registry unreachable, offline, or no published version yet). Run `npm view @blamejs/exceptd-skills version` to see the latest, then `npm install -g @blamejs/exceptd-skills@latest` if you are behind.";
   });
   // v0.12.9 (P3 #10): surface shipped_tarball sub-check when --shipped-tarball was used.
   if (checks.signatures?.shipped_tarball) {
