@@ -557,13 +557,13 @@ Every `run` (and every per-playbook result inside a `ci` body) hoists the headli
 | `precondition_check_source` | object | Per-precondition: `submission` / `runOpts` / `merged` |
 | `phases` | object | Full per-phase outputs — `govern`, `direct`, `look`, `detect`, `analyze`, `validate`, `close` |
 
-On a blocked result (preflight halt, missing precondition), `ok` is `false` and the envelope additionally carries `blocked_by` / `reason` / `remediation` / `phase: 'preflight'` / `verdict: 'blocked'`. `evidence_completeness` reports `not-evaluated`.
+On a blocked result (preflight halt, missing precondition), `ok` is `false` and the envelope additionally carries `blocked_by` / `reason` / `remediation` / `phase: 'preflight'` / `verdict: 'blocked'`. `evidence_completeness` reports `not-evaluated`. In default human output a blocked result renders as a one-line `[blocked]` summary with the reason and a next step; `--json` / `--pretty` return the full envelope.
 
 ### Default terminal output vs `--json` / `--pretty`
 
 By default `ci`, `run`, `attest verify`, `attest diff`, and `discover` emit a human-readable digest at the terminal — verdict line, per-playbook table (for `ci`), next-step block keyed on verdict (BLOCKED → `exceptd lint <pb> -`; NO_EVIDENCE → lint + `--evidence-dir`; FAIL → `--format markdown` / `--format csaf-2.0` per detected playbook; CLOCK_STARTED → CSAF advisory), pending jurisdiction obligations grouped by `clock_start_event`, deduped session warnings, framework-gap rollup.
 
-Pass `--json` (compact) or `--pretty` (indented) to reach the structured envelope when automating. Setting `EXCEPTD_RAW_JSON=1` in the environment has the same effect.
+Pass `--json` (compact) or `--pretty` (indented) to reach the structured envelope when automating. Setting `EXCEPTD_RAW_JSON=1` in the environment has the same effect. `--quiet` keeps human output but drops advisory stderr notes (and the deprecation / unsigned-attestation banners) so `run … 2>&1 | jq` stays clean; `--json-stdout-only` goes further and silences all stderr.
 
 ## Invoking a skill from your AI assistant
 
