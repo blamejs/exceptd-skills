@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.27 — 2026-05-29
+
+Draft-curation pass 24 — mobile device exploitation. Four CISA KEV-listed mobile CVEs that together form a mobile-spyware chain are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung image-parsing-library out-of-bounds writes exploited zero-click via a malicious image (CVE-2025-21042, CVE-2025-21043) map T1203, and Android Framework local privilege escalation and an information-disclosure primitive (CVE-2025-48572, CVE-2025-48633) map T1068. The lessons frame these as the initial-access and local-escalation halves of a commercial-surveillance chain, and name OEM/carrier OTA cadence (Samsung SMR, Android Security Bulletin), MDM-enforced update SLAs, and mobile-threat-defense as the load-bearing controls — patch reach, not just patch availability, is the gap.
+
 ## 0.15.26 — 2026-05-29
 
 Draft-curation pass 23 — unauthenticated network-service RCE. Five CISA KEV-listed server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung MagicINFO 9 Server (CVE-2024-7399 path traversal + file upload, CVE-2025-4632 the path-traversal patch-bypass variant), Wing FTP Server remote code execution (CVE-2025-47812, exploitable via anonymous login), VMware vCenter Server DCE/RPC out-of-bounds write (CVE-2024-37079), and the wormable Windows Server Service RPC overflow MS08-067 (CVE-2008-4250, exploited by Conficker). All map T1190, with T1505.003 for the upload-to-web-shell flaw and T1059 for the injection RCE. The lessons carry the long-tail patch-hygiene warning that MS08-067 still exemplifies, and require web-shell hunting or host rebuild beyond the patch.
