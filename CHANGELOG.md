@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.31 — 2026-05-29
+
+Draft-curation pass 28 — internet-facing server-side web applications. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: server-side request forgery in GitLab (CVE-2021-22175, CVE-2021-39935) and Omnissa Workspace ONE UEM (CVE-2021-22054), PaperCut NG/MF authentication bypass (CVE-2023-27351), the Adobe Commerce/Magento "SessionReaper" session-takeover flaw (CVE-2025-54236), Adobe Experience Manager Forms code execution (CVE-2025-54253), and Sitecore ViewState deserialization via a known machine key (CVE-2025-53690). All map T1190, with per-class T1059 (code injection/deserialization) or T1078 (auth bypass/session takeover). The lessons separate the SSRF defense (egress filtering and cloud-metadata blocking as compensating controls) from the RCE/auth defense (web-shell hunting, machine-key rotation, and session invalidation beyond the patch).
+
 ## 0.15.30 — 2026-05-29
 
 Draft-curation pass 27 — software supply-chain code integrity. Three CISA KEV-listed CVEs where code is trusted without integrity verification are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the TrueConf client and Notepad++ download code/updates without an integrity check (CVE-2026-3502, CVE-2025-15556), and a Trivy distribution shipped embedded malicious code that runs in the trusted context of the vulnerability scanner (CVE-2026-33634). All map T1195.002 (Compromise Software Supply Chain). The lessons frame the defense as enforced signature and provenance verification — code signing, Sigstore/in-toto, SLSA build provenance, TLS-pinned update channels — rather than patching, and note that response is environment-wide because a compromised updater or scanner reaches every host it runs on.
