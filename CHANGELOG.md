@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.15.25 — 2026-05-29
+## 0.15.26 — 2026-05-29
 
 Draft-curation pass 23 — unauthenticated network-service RCE. Five CISA KEV-listed server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung MagicINFO 9 Server (CVE-2024-7399 path traversal + file upload, CVE-2025-4632 the path-traversal patch-bypass variant), Wing FTP Server remote code execution (CVE-2025-47812, exploitable via anonymous login), VMware vCenter Server DCE/RPC out-of-bounds write (CVE-2024-37079), and the wormable Windows Server Service RPC overflow MS08-067 (CVE-2008-4250, exploited by Conficker). All map T1190, with T1505.003 for the upload-to-web-shell flaw and T1059 for the injection RCE. The lessons carry the long-tail patch-hygiene warning that MS08-067 still exemplifies, and require web-shell hunting or host rebuild beyond the patch.
 
