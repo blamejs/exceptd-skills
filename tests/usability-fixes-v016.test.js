@@ -27,3 +27,16 @@ test('run <playbook> --evidence-dir refuses loudly instead of silently running o
   assert.match(text, /--evidence-dir/, 'message names the offending flag');
   assert.match(text, /--evidence\b|contract|--all|--scope/, 'message points at the correct alternative (--evidence / contract run)');
 });
+
+test('empty stdin on the auto-promotion path does NOT emit the nudge (so 2>&1 | jq stays parseable in CI)', () => {
+  // Usability P1: `run <pb>` with a non-TTY stdin auto-promotes to --evidence -,
+  // and an empty read wrote a "[exceptd] note: ... read 0 bytes" line to stderr,
+  // corrupting `run ... 2>&1 | jq` pipelines that passed at a TTY.
+  const r = cli(['run', 'secrets', '--json'], { input: '' });
+  assert.doesNotMatch(r.stderr || '', /read 0 bytes from stdin/, 'auto-promoted empty stdin must not nudge on stderr');
+});
+
+test('an EXPLICIT --evidence - with empty stdin still nudges (the operator asked to pipe)', () => {
+  const r = cli(['run', 'secrets', '--evidence', '-', '--json'], { input: '' });
+  assert.match(r.stderr || '', /read 0 bytes from stdin/, 'explicit --evidence - with empty stdin should still warn the operator');
+});

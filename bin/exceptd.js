@@ -981,7 +981,7 @@ function asEvidenceObject(parsed) {
   return parsed;
 }
 
-function readEvidence(evidenceFlag) {
+function readEvidence(evidenceFlag, opts = {}) {
   if (!evidenceFlag) return {};
   // v0.12.12: file-path branch enforces a max size to defend against an
   // operator accidentally passing a multi-gigabyte file (binary, log, or
@@ -1017,11 +1017,20 @@ function readEvidence(evidenceFlag) {
       // certainly meant to pipe something. Don't change exit semantics;
       // the empty-payload path is still legitimately useful for posture-
       // only playbooks (govern + direct + look-only walks).
-      process.stderr.write(
-        `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
-        `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
-        `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
-      );
+      //
+      // Only nudge when `--evidence -` was EXPLICITLY requested. On the stdin
+      // auto-promotion path (no --evidence flag, just a non-TTY handle such as
+      // `run kernel </dev/null` or a CI runner) the operator never asked to
+      // read stdin, so an empty read is not a mistake to flag — and emitting to
+      // stderr there corrupted `run ... 2>&1 | jq` pipelines that worked at a
+      // TTY but broke in CI.
+      if (opts.explicit !== false) {
+        process.stderr.write(
+          `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
+          `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
+          `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
+        );
+      }
       return {};
     }
     return asEvidenceObject(JSON.parse(text));
@@ -3299,12 +3308,16 @@ function cmdRun(runner, args, runOpts, pretty) {
   // first, then falls back to a strict isTTY===false check only on Windows
   // (where fstat on a pipe is unreliable). MSYS-bash on win32 reports
   // isTTY === false for genuine piped input, so that path still works.
-  if (!args.evidence && hasReadableStdin()) {
+  const autoStdin = !args.evidence && hasReadableStdin();
+  if (autoStdin) {
     args.evidence = "-";
   }
   if (args.evidence) {
     try {
-      submission = readEvidence(args.evidence);
+      // explicit:false on the auto-promotion path suppresses the empty-stdin
+      // nudge (which otherwise writes to stderr and breaks `run ... 2>&1 | jq`
+      // on every no-evidence CI run); an explicit `--evidence -` still nudges.
+      submission = readEvidence(args.evidence, { explicit: !autoStdin });
     } catch (e) {
       return emitError(`run: failed to read evidence: ${e.message}`, { evidence: args.evidence }, pretty);
     }
