@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.48 — 2026-05-30
+
+Internal: the release flow is now driven by a phased orchestrator, `scripts/release.js`. Each subcommand (prepare, gates, commit, push, watch, merge, tag, release) runs one idempotent, resumable phase and exits with a script-safe code; the tag phase enforces a GUARD against tag-on-stale-HEAD and version skew between `package.json`, `manifest.json`, and the CHANGELOG heading. No change to the shipped CLI, catalogs, or skills.
+
 ## 0.15.47 — 2026-05-30
 
 A consistency pass on error envelopes and flag handling.

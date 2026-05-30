@@ -90,6 +90,25 @@ When a framework update closes a gap:
 6. **Commit message style:** lowercase imperative. First line is a one-sentence summary; body explains *why* and *what tradeoff*. See git log for examples.
 7. **The `Lint summary` CI check is required to pass before merge** — it aggregates the skill linter results and posts a sticky comment on the PR.
 
+## Releasing (maintainers)
+
+Releases run through `scripts/release.js`, a phased, idempotent orchestrator — each subcommand performs one phase, prints what it did, and exits with a script-safe code:
+
+```bash
+node scripts/release.js prepare   # bump (patch default; --minor opt-in) + sign + indexes + snapshot + sbom + baseline
+node scripts/release.js gates     # full suite + the predeploy gates
+node scripts/release.js commit    # release branch + signed commit
+node scripts/release.js push      # push branch + open PR
+node scripts/release.js watch     # CI watch + flag unresolved review threads
+node scripts/release.js merge     # admin squash-merge once CLEAN + zero unresolved threads
+node scripts/release.js tag       # GUARD (HEAD==origin/main, three-version match, no existing tag) + signed tag
+node scripts/release.js release   # watch release.yml + verify npm / global install / shipped-tarball signature
+node scripts/release.js status    # where the current branch is in the flow
+node scripts/release.js help      # full banner
+```
+
+`prepare` refuses unless `CHANGELOG.md` already carries a `## <next-version>` heading — the release notes are written by hand (terse, behavior-change framed), not generated from a diff. `tag` refuses on a stale `HEAD`, a version-skew between `package.json` / `manifest.json` / the CHANGELOG heading, or an existing tag. Patch is the default bump; `--minor` is an explicit, deliberate choice.
+
 ## What Not To Contribute
 
 - Hypothetical or theoretical vulnerabilities without real-world grounding
