@@ -3565,7 +3565,40 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Set exitCode BEFORE emit(): emit's ok:false fallback only fires when
     // exitCode is not already set, so the BLOCKED override survives.
     process.exitCode = args.ci ? EXIT_CODES.BLOCKED : EXIT_CODES.GENERIC_FAILURE;
-    emit(result, pretty);
+    emit(result, pretty, (obj) => {
+      // Human renderer for a halted run. Without this, a blocked verdict
+      // (preflight precondition unmet, mutex conflict, stale currency,
+      // corrupt catalog) dumped the raw ok:false JSON envelope even in human
+      // mode — so a non-Linux operator's first `run` against any Linux-gated
+      // playbook was a wall of JSON instead of one line saying why it stopped
+      // and what to do. --json / --pretty still return the full envelope.
+      const v = obj.verdict || "error";
+      const tag = v === "blocked" ? "[blocked]" : "[error]";
+      const lines = [`${tag}  ${obj.playbook_id || "run"}${obj.directive_id ? ` (${obj.directive_id})` : ""}`];
+      // summary_line is already a complete sentence ("<pb>: blocked at
+      // preflight (<cause>) — <reason>"); prefer it, else fall back to reason.
+      const detail = obj.summary_line || obj.reason;
+      if (detail) lines.push(`  ${detail}`);
+      // remediation is the engine's own actionable next step when it has one;
+      // otherwise synthesize a hint from blocked_by so the operator never hits
+      // a dead end. Hints reference only current verbs (plan/direct were
+      // removed in v0.13.0; brief --all is the replacement listing verb).
+      if (obj.remediation) {
+        lines.push(`  → ${obj.remediation}`);
+      } else {
+        const hints = {
+          precondition: "→ Preconditions are not met on this host (often a platform gate, e.g. a Linux-only playbook). List playbooks that fit your platform: exceptd brief --all",
+          mutex: "→ Another run holds this playbook's mutex. Wait for it to finish, then retry.",
+          currency: "→ Threat intel is stale. Refresh sources (exceptd refresh) or re-run with --force-stale to override.",
+          catalog_corrupt: "→ The CVE catalog failed to load. Reinstall the package or run: exceptd doctor",
+          playbook_not_found: "→ Unknown playbook. List available playbooks: exceptd brief --all",
+          directive_not_found: `→ Unknown directive for this playbook. See its directives: exceptd brief ${obj.playbook_id || "<playbook>"}`,
+        };
+        if (obj.blocked_by && hints[obj.blocked_by]) lines.push(`  ${hints[obj.blocked_by]}`);
+      }
+      lines.push("  Full envelope: re-run with --json");
+      return lines.join("\n");
+    });
     return;
   }
 

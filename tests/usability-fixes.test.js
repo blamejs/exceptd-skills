@@ -66,6 +66,35 @@ test('brief <playbook> footer reveals the collect verb (so brief-first operators
   assert.match(out, /exceptd collect secrets \| exceptd run secrets --evidence -/, 'brief footer must show the collect pipeline');
 });
 
+test('a blocked run renders a human line (not a raw JSON wall) in default human mode', () => {
+  // Usability P2: a blocked verdict (preflight precondition unmet — e.g. a
+  // Linux-gated playbook on a non-Linux host) emitted the raw ok:false JSON
+  // envelope even in human mode, so an operator's first `run` was a wall of
+  // JSON. Force the block portably by submitting precondition_checks that set
+  // a required precondition false (blocks on every platform, incl. the ubuntu
+  // CI leg where kernel would otherwise auto-detect linux-platform=true).
+  const r = cli(['run', 'kernel', '--evidence', '-'], {
+    input: '{"precondition_checks":{"linux-platform":false}}',
+    env: { EXCEPTD_RAW_JSON: '' },
+  });
+  assert.notEqual(r.status, 0, 'a blocked run is non-zero');
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.doesNotMatch(r.stdout || '', /^\s*\{"ok":false/, 'human mode must NOT dump the raw ok:false JSON envelope');
+  assert.match(out, /\[blocked\]/, 'human render tags the verdict as [blocked]');
+  assert.match(out, /exceptd brief --all|re-run with --json/, 'human render points the operator at a next step');
+});
+
+test('a blocked run still returns the full JSON envelope under --json', () => {
+  const r = cli(['run', 'kernel', '--evidence', '-', '--json'], {
+    input: '{"precondition_checks":{"linux-platform":false}}',
+  });
+  assert.notEqual(r.status, 0, 'blocked is non-zero under --json too');
+  const body = tryJson(r.stdout) || {};
+  assert.equal(body.ok, false, '--json keeps the ok:false envelope for machine consumers');
+  assert.equal(body.verdict, 'blocked', 'verdict is blocked');
+  assert.equal(body.blocked_by, 'precondition', 'blocked_by names the preflight cause');
+});
+
 test('recipes --help shows real help, not the "no per-verb help available" fallback', () => {
   const r = cli(['recipes', '--help']);
   const out = (r.stdout || '') + (r.stderr || '');
