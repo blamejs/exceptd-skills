@@ -16468,35 +16468,58 @@
   },
   "CVE-2025-41244": {
     "name": "Broadcom VMware Aria Operations and VMware Tools Privilege Defined with Unsafe Actions Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Broadcom VMware Aria Operations and VMware Tools contain a privilege defined with unsafe actions vulnerability. A malicious local actor with non-administrative privileges having access to a VM with VMware Tools installed and managed by Aria Operations with SDMP enabled may exploit this vulnerability to escalate privileges to root on the same VM.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a privilege-management flaw (CWE-267) in VMware Aria Operations and VMware Tools, letting a local user in a managed guest escalate privileges. CISA KEV-listed 2025-10-30 with confirmed in-the-wild exploitation; escalation flaws of this class form the second half of an intrusion chain.",
+      "privileges_required": "low (a local foothold — an unprivileged app, user, or process on the host)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the VMware update; restrict the privileged collection account and segment management access — a guest LPE combined with management reach can pivot across the virtual estate.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → root/SYSTEM) which a patched host shuts down, with platform hardening as the backstop."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR/auditd telemetry for unprivileged-to-elevated transitions and the escalation primitive without a legitimate trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops unpatched hosts; escalation is typically silent without endpoint/identity monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch; for confirmed exploitation treat the host as compromised, isolate, preserve forensic state, rotate credentials, and review for follow-on persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; root/SYSTEM-level escalation makes the host an unreliable platform and warrants rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed local/host privilege-escalation flaw; paired with an initial-access primitive, attackers elevate to root/SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited escalation flaw, which is the second half of nearly every intrusion chain."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names OS/application patching, but the load-bearing backstops are platform-specific and unnamed: least-privilege and SELinux/seccomp on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and SMB signing / NTLM-disablement for the reflection class (the last breaks the attack regardless of patch state)."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 69,
+      "basis": "VMware Aria Operations and VMware Tools is widely deployed; audited organizations gate host/agent patches behind change windows and rarely enforce the platform-specific backstop (SELinux/seccomp, MDM OTA SLA, management-account segmentation, SMB signing), leaving the escalation chain open past the in-the-wild window.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-24893": {
     "name": "XWiki Platform Eval Injection Vulnerability",
@@ -17007,35 +17030,58 @@
   },
   "CVE-2025-33073": {
     "name": "Microsoft Windows SMB Client Improper Access Control Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows SMB Client contains an improper access control vulnerability that could allow for privilege escalation. An attacker could execute a specially crafted malicious script to coerce the victim machine to connect back to the attack system using SMB and authenticate.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-access-control flaw (CWE-284) in the Windows SMB client enabling NTLM reflection — by coercing a victim host to authenticate to an attacker-controlled server, the attacker reflects the authentication back to the victim to gain SYSTEM. CISA KEV-listed 2025-10-20 with confirmed in-the-wild exploitation; escalation flaws of this class form the second half of an intrusion chain.",
+      "privileges_required": "low (the ability to coerce a victim host to authenticate; no valid credentials on the target)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft update AND enforce SMB signing (and disable NTLM where possible); SMB signing breaks the reflection/relay regardless of patch state, so it is the durable control.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but SMB signing breaks the reflection regardless of patch state and is the durable control; NTLM disablement removes the primitive entirely."
+      },
+      "detection": {
+        "what_would_have_worked": "Detection of coerced/relayed NTLM authentication: unexpected outbound SMB from servers, authentication to attacker infrastructure, and SYSTEM actions without an admin login.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops unpatched hosts; escalation is typically silent without endpoint/identity monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch; for confirmed exploitation treat the host as compromised, isolate, preserve forensic state, rotate credentials, and enforce SMB signing fleet-wide and hunt for relay activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; root/SYSTEM-level escalation makes the host an unreliable platform and warrants rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed local/host privilege-escalation flaw; paired with an initial-access primitive, attackers elevate to root/SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited escalation flaw, which is the second half of nearly every intrusion chain."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names OS/application patching, but the load-bearing backstops are platform-specific and unnamed: least-privilege and SELinux/seccomp on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and SMB signing / NTLM-disablement for the reflection class (the last breaks the attack regardless of patch state)."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 69,
+      "basis": "Microsoft Windows SMB Client is widely deployed; audited organizations gate host/agent patches behind change windows and rarely enforce the platform-specific backstop (SELinux/seccomp, MDM OTA SLA, management-account segmentation, SMB signing), leaving the escalation chain open past the in-the-wild window.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-61884": {
     "name": "Oracle E-Business Suite Server-Side Request Forgery (SSRF) Vulnerability",
@@ -18138,35 +18184,58 @@
   },
   "CVE-2025-32463": {
     "name": "Sudo Inclusion of Functionality from Untrusted Control Sphere Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Sudo contains an inclusion of functionality from untrusted control sphere vulnerability. This vulnerability could allow local attacker to leverage sudo’s -R (--chroot) option to run arbitrary commands as root, even if they are not listed in the sudoers file.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a flaw allowing inclusion of functionality from an untrusted control sphere (CWE-829) in Sudo's chroot handling, letting a local user load attacker-controlled configuration/libraries and escalate to root. CISA KEV-listed 2025-09-29 with confirmed in-the-wild exploitation; escalation flaws of this class form the second half of an intrusion chain.",
+      "privileges_required": "low (a local foothold — an unprivileged app, user, or process on the host)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the distribution Sudo update; restrict sudo configuration and avoid the chroot feature where unneeded — local-to-root escalation turns any foothold into full host compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → root/SYSTEM) which a patched host shuts down, with platform hardening as the backstop."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR/auditd telemetry for unprivileged-to-elevated transitions and the escalation primitive without a legitimate trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops unpatched hosts; escalation is typically silent without endpoint/identity monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch; for confirmed exploitation treat the host as compromised, isolate, preserve forensic state, rotate credentials, and review for follow-on persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; root/SYSTEM-level escalation makes the host an unreliable platform and warrants rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed local/host privilege-escalation flaw; paired with an initial-access primitive, attackers elevate to root/SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited escalation flaw, which is the second half of nearly every intrusion chain."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names OS/application patching, but the load-bearing backstops are platform-specific and unnamed: least-privilege and SELinux/seccomp on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and SMB signing / NTLM-disablement for the reflection class (the last breaks the attack regardless of patch state)."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 69,
+      "basis": "Sudo is widely deployed; audited organizations gate host/agent patches behind change windows and rarely enforce the platform-specific backstop (SELinux/seccomp, MDM OTA SLA, management-account segmentation, SMB signing), leaving the escalation chain open past the in-the-wild window.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-59689": {
     "name": "Libraesva Email Security Gateway Command Injection Vulnerability",
@@ -18590,35 +18659,58 @@
   },
   "CVE-2025-48543": {
     "name": "Android Runtime Use-After-Free Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Android Runtime contains a use-after-free vulnerability potentially allowing a chrome sandbox escape leading to local privilege escalation.",
-      "privileges_required": "unprivileged local user",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a use-after-free / privilege-management flaw (CWE-269) in the Android Runtime, exploited by a local app to escalate privileges on the device (the local-escalation step after an initial-access primitive in a mobile exploit chain). CISA KEV-listed 2025-09-04 with confirmed in-the-wild exploitation; escalation flaws of this class form the second half of an intrusion chain.",
+      "privileges_required": "low (a local foothold — an unprivileged app, user, or process on the host)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Android Security Bulletin OTA update and enforce update SLAs via MDM; mobile-threat-defense backstops devices pending the fix.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive; the gap is the chain (initial access → unpatched LPE → root/SYSTEM) which a patched host shuts down, with platform hardening as the backstop."
+      },
+      "detection": {
+        "what_would_have_worked": "Mobile-threat-defense telemetry for unprivileged-to-elevated transitions and the escalation primitive without a legitimate trigger.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops unpatched hosts; escalation is typically silent without endpoint/identity monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch; for confirmed exploitation treat the host as compromised, isolate, preserve forensic state, rotate credentials, and review for follow-on persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; root/SYSTEM-level escalation makes the host an unreliable platform and warrants rebuild."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed local/host privilege-escalation flaw; paired with an initial-access primitive, attackers elevate to root/SYSTEM within hours of a foothold."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited escalation flaw, which is the second half of nearly every intrusion chain."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names OS/application patching, but the load-bearing backstops are platform-specific and unnamed: least-privilege and SELinux/seccomp on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and SMB signing / NTLM-disablement for the reflection class (the last breaks the attack regardless of patch state)."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 69,
+      "basis": "Android is widely deployed; audited organizations gate host/agent patches behind change windows and rarely enforce the platform-specific backstop (SELinux/seccomp, MDM OTA SLA, management-account segmentation, SMB signing), leaving the escalation chain open past the in-the-wild window.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-53690": {
     "name": "Sitecore Multiple Products Deserialization of Untrusted Data Vulnerability",
