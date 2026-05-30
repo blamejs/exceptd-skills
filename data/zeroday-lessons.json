@@ -13491,35 +13491,58 @@
   },
   "CVE-2026-21525": {
     "name": "Microsoft Windows NULL Pointer Dereference Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "Microsoft Windows Remote Access Connection Manager contains a NULL pointer dereference that could allow an unauthorized attacker to deny service locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a NULL pointer dereference (CWE-476) in a network-reachable Windows component, exploitable by an unauthenticated attacker; described conservatively as a network-reachable memory-safety flaw pending Microsoft's component detail. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker over the network)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft update; restrict and segment the affected network service from untrusted networks until patched.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for crafted network input that crashes or restarts the affected Windows component, and for unauthenticated requests that trigger the fault.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, segment the service, and review the affected hosts for follow-on activity given confirmed in-the-wild exploitation.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated network-reachable Windows flaw; these are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; unsafe for an actively-exploited network-reachable Windows flaw."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats Windows infrastructure as essential-function but lacks a CISA-KEV-style compressed remediation SLA; network segmentation of the affected service is the compensating control pending patch."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "The affected Windows service is reachable on audited-organization networks; without prompt patching and segmentation the unauthenticated flaw remains exploitable past the KEV due date.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21510": {
     "name": "Microsoft Windows Shell Protection Mechanism Failure Vulnerability",
@@ -17513,35 +17536,58 @@
   },
   "CVE-2025-47827": {
     "name": "IGEL OS Use of a Key Past its Expiration Date Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "IGEL OS contains a use of a key past its expiration date vulnerability that allows for Secure Boot bypass. The igel-flash-driver module improperly verifies a cryptographic signature. Ultimately, a crafted root filesystem can be mounted from an unverified SquashFS image.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "use of a key past its expiration date (CWE-324) in IGEL OS Secure Boot verification, letting an attacker bypass signature verification and boot a modified or unverified OS image (a Secure Boot / boot-trust bypass). CISA KEV-listed 2025-10-14 with confirmed in-the-wild exploitation.",
+      "privileges_required": "low-to-physical (an attacker who can place a modified image or influence boot, exploiting the bypassed signature check)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the IGEL OS update so Secure Boot verification uses a valid, unexpired key; re-provision affected thin clients and verify the boot chain integrity against a hardware root of trust.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for boot of unsigned/modified IGEL images, Secure Boot verification against an expired key, and persistence that survives re-imaging on thin clients.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, re-provision affected devices with corrected trust anchors, and verify boot-chain integrity — a boot-trust bypass can leave persistence beneath the OS that a reinstall does not remove.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SI-7-integrity": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Software/firmware integrity verification is required, but the verification used an expired key, so the Secure Boot trust anchor itself failed; integrity verification must use valid, unexpired keys and reject expired ones, which the control does not explicitly enforce."
+      },
+      "NIST-800-53-SC-7-boundary": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A boot-trust bypass lets unverified code run beneath the OS, defeating boundary and endpoint controls layered above it; the defense requires hardware root-of-trust enforcement that rejects images signed with an expired key."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined and ill-suited to a boot-integrity flaw, where a tampered boot chain can persist across reinstalls until the device is re-provisioned with corrected trust anchors."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "IGEL thin clients are deployed at scale in VDI estates; audited organizations rarely verify boot-chain integrity against a hardware root of trust, so a Secure Boot bypass via an expired key leaves below-OS persistence that endpoint controls cannot see.",
+      "theater_pattern": "secure_boot_signature_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-24990": {
     "name": "Microsoft Windows Untrusted Pointer Dereference Vulnerability",
@@ -19290,35 +19336,58 @@
   },
   "CVE-2025-55177": {
     "name": "Meta Platforms WhatsApp Incorrect Authorization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "Meta Platforms WhatsApp contains an incorrect authorization vulnerability due to an incomplete authorization of linked device synchronization messages. This vulnerability could allow an unrelated user to trigger processing of content from an arbitrary URL on a target’s device.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an incorrect-authorization flaw (CWE-863) in WhatsApp's linked-device synchronization, letting an unrelated attacker cause a target's device to process content from an attacker-controlled URL — the zero-click delivery half of a mobile-spyware chain (paired in the wild with the Apple ImageIO flaw CVE-2025-43300). CISA KEV-listed 2025-09-02 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker sends linked-device sync messages; the victim's device processes attacker-directed content with no user interaction)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update WhatsApp promptly (forced auto-update), enforce update SLAs via MDM on managed fleets, deploy mobile-threat-defense, and enable hardened/locked-down configurations (Lockdown Mode) for high-risk users.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "Mobile-threat-defense telemetry for zero-click chain indicators after inbound messaging content, vendor threat notifications for targeted users, and anomalous content-fetch behavior from the messaging app.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the app update; for a confirmed targeted device, preserve forensic state, rotate credentials and tokens on the device, and consider device replacement — spyware can persist across reboots.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited zero-click messaging-app flaw; commercial-surveillance chains weaponize these within days, and app-update reach depends on app-store/MDM cadence."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, but the load-bearing controls for a zero-click messaging flaw are forced app auto-update, MDM-enforced update SLAs, mobile-threat-defense, and hardened/locked-down configurations (e.g. Lockdown Mode) for high-risk users — none named explicitly."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; unsafe for an actively-exploited zero-click flaw whose victims are often specific high-risk individuals."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "WhatsApp is near-universal; app-update reach depends on app-store/MDM cadence, and audited organizations that do not enforce mobile update SLAs or harden high-risk-user devices remain exposed to this KEV-listed zero-click flaw.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-57819": {
     "name": "Sangoma FreePBX Authentication Bypass Vulnerability",
@@ -20142,35 +20211,58 @@
   },
   "CVE-2023-2533": {
     "name": "PaperCut NG/MF Cross-Site Request Forgery (CSRF) Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "PaperCut NG/MF contains a cross-site request forgery (CSRF) vulnerability, which, under specific conditions, could potentially enable an attacker to alter security settings or execute arbitrary code. ",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site request forgery flaw (CWE-352) in PaperCut NG/MF: an attacker who lures an authenticated administrator to a malicious page can force a state-changing request (e.g. enabling a setting that leads to code execution), part of the PaperCut exploitation chain. CISA KEV-listed 2025-07-28 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none for the attacker, but requires luring an authenticated administrator (the forged request rides the admin's session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the PaperCut update; restrict the admin interface to a trusted network so an administrator cannot be lured into a forged request, and ensure anti-CSRF tokens / SameSite cookies are enforced.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for administrative setting changes that correlate with external-content viewing rather than deliberate console actions, and unexpected enablement of code-execution-related options.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, restrict the admin interface, review and revert unauthorized setting changes, and hunt for code execution staged via the chained settings.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed PaperCut flaw; PaperCut has been repeatedly chained to ransomware staging."
+      },
+      "NIST-800-53-SC-23-session-integrity": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Anti-CSRF tokens and SameSite cookies — which prevent a forged cross-site request from riding an authenticated session — are the durable control, but the framework does not mandate them; restricting the admin interface to a trusted network also blunts the lure."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; unsafe for an actively-exploited flaw on an internet-reachable admin interface."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-reachable PaperCut admin interfaces are common; audited organizations rarely enforce anti-CSRF/SameSite and admin-plane restriction, so an administrator can be lured into a forged state-changing request that stages further compromise.",
+      "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-20337": {
     "name": "Cisco Identity Services Engine Injection Vulnerability",
@@ -21069,35 +21161,58 @@
   },
   "CVE-2014-3931": {
     "name": "Multi-Router Looking Glass (MRLG) Buffer Overflow Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "Multi-Router Looking Glass (MRLG) contains a buffer overflow vulnerability that could allow remote attackers to cause an arbitrary memory write and memory corruption.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a buffer overflow (CWE-119) in Multi-Router Looking Glass (MRLG), the Perl CGI used on looking-glass route servers, letting a remote attacker write to arbitrary memory for code execution on the looking-glass host. CISA KEV-listed 2025-07-07 with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (the looking-glass CGI is reachable; the flaw requires only crafted input to the service)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the MRLG update; restrict the looking-glass CGI input, and treat an exploited looking-glass host as compromised — rebuild and rotate any credentials it held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring of the looking-glass CGI for oversized/malformed parameters and unexpected process execution from the web server.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, rebuild an exploited host, rotate credentials, and review the network infrastructure the looking-glass server had visibility into.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated RCE on an internet-facing service; this is a long-tail flaw on infrastructure looking-glass servers."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; unsafe for an actively-exploited internet-facing service, and looking-glass servers are often unmanaged long-tail infrastructure."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing network infrastructure as essential-function but lacks a compressed remediation SLA; an exploited looking-glass host should be rebuilt, not merely patched."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing looking-glass / route servers are frequently unmanaged long-tail infrastructure; audited organizations rarely track MRLG on a KEV SLA, and rebuild rather than patch-in-place is rarely performed.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-6554": {
     "name": "Google Chromium V8 Type Confusion Vulnerability (variant: CVE-2025-6554)",
@@ -21686,35 +21801,58 @@
   },
   "CVE-2025-33053": {
     "name": " Microsoft Windows External Control of File Name or Path Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "Microsoft Windows contains an external control of file name or path vulnerability that could allow an attacker to execute code from a remote WebDAV location specified by the WorkingDirectory attribute of Internet Shortcut files.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an external-control-of-file-name-or-path flaw (CWE-73) in Windows WebDAV handling: a crafted Internet Shortcut (.url) sets the working directory to an attacker-controlled WebDAV path so that opening it executes an attacker-supplied binary (exploited by the Stealth Falcon group). CISA KEV-listed 2025-06-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens a crafted Internet Shortcut; execution follows from the attacker-controlled path)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft update; block outbound WebDAV/SMB to the internet, disable the WebClient service where unneeded, enforce Mark-of-the-Web and ASR rules, and filter inbound shortcut files.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but the named compensating controls are what hold when the patch lags or the trust mechanism itself is defeated."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR detection of binaries executed from remote WebDAV shares, outbound WebDAV/SMB after a shortcut is opened, and child-process execution following an Internet Shortcut.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the window before patching and catches the post-exploitation stage."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, isolate exploited endpoints, block the WebDAV egress path, hunt for follow-on payloads, and review for credential theft and lateral movement (Stealth Falcon is an espionage actor).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class leaves persistence or a foothold that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw delivered by a crafted shortcut; targeted-espionage actors weaponize these within days."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, but the load-bearing controls here are blocking outbound WebDAV/SMB to the internet, ASR rules, Mark-of-the-Web enforcement on downloaded shortcuts, and disabling the WebClient service where unneeded — none named explicitly."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; unsafe for an actively-exploited client-side execution flaw delivered through everyday file handling."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Windows endpoints are universal; audited organizations that allow outbound WebDAV/SMB and do not enforce Mark-of-the-Web / ASR remain exposed to this KEV-listed client-side flaw delivered by a crafted shortcut.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-24016": {
     "name": "Wazuh Server Deserialization of Untrusted Data Vulnerability",

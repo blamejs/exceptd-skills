@@ -60,12 +60,11 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
   // the same PR. This is the no-MVP rule applied to the catalog —
   // you can't make the catalog WORSE without explicit acknowledgement.
   const BUDGET = {
-    // Tracks the uncurated bulk-imported KEV drafts, which carry no iocs block
-    // by the auto-import intake convention. Each draft gains a behavioral iocs
-    // block when it is curated to a full entry, so this ceiling falls in step
-    // with the remaining-draft count; it is lowered to the current actual as
-    // curation proceeds. This is tracked draft-debt, not a regression.
-    "cve-catalog":     { iocs: 6 },
+    // The bulk-imported KEV draft backlog has been fully curated — every CVE
+    // entry now carries a behavioral iocs block, so the missing-iocs count is 0.
+    // This budget stays at 0 as a guard: any future entry shipped without iocs
+    // is a regression and fails the gate.
+    "cve-catalog":     { iocs: 0 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
