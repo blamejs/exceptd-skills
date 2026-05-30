@@ -564,6 +564,31 @@ function main() {
     };
   }
 
+  // --quiet: suppress advisory stderr chatter — the "[exceptd] note:" and
+  // "[exceptd] tip:" lines, the deprecation banner, and the unsigned-
+  // attestation warning — while keeping the actual result on stdout and all
+  // errors on stderr. Narrower than --json-stdout-only, which silences ALL
+  // stderr and forces JSON output; --quiet preserves human-readable output and
+  // exit codes and only drops the non-essential advisories. Skipped when
+  // --json-stdout-only is also present (that flag already silenced everything
+  // and patched stderr first; double-wrapping would be redundant).
+  if (argv.includes("--quiet") && !argv.includes("--json-stdout-only")) {
+    global.__exceptdQuiet = true;
+    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+    process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+    const origStderrWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (chunk, encoding, cb) => {
+      // Drop only the advisory-prefixed lines. Contract-violation notes
+      // ("[exceptd run] ..."), error frames, and uncaught exceptions still
+      // surface so --quiet never hides why a run failed or exited non-zero.
+      if (typeof chunk === "string" && /^\[exceptd\] (note|tip):/.test(chunk)) {
+        if (typeof cb === "function") cb();
+        return true;
+      }
+      return origStderrWrite(chunk, encoding, cb);
+    };
+  }
+
   if (argv.length === 0) {
     printWelcome();
     process.exit(0);
@@ -6453,8 +6478,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     "json", "pretty", "fix", "air-gap",
     "signatures", "currency", "cves", "rfcs", "registry-check",
     "ai-config", "collectors", "exit-codes", "shipped-tarball",
-    // Global flags the parser may inject regardless of verb.
-    "_", "json-stdout-only", "_jsonMode",
+    // Global flags the parser may inject regardless of verb. Keep in sync
+    // with VERB_FLAG_ALLOWLIST._global in lib/flag-suggest.js — quiet/verbose
+    // are accepted on every verb, so doctor must not refuse them as typos.
+    "_", "json-stdout-only", "_jsonMode", "quiet", "verbose",
   ]);
   const unknownFlags = Object.keys(args).filter(k => !KNOWN_DOCTOR_FLAGS.has(k));
   if (unknownFlags.length > 0) {

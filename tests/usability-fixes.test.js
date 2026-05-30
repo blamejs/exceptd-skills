@@ -95,6 +95,30 @@ test('a blocked run still returns the full JSON envelope under --json', () => {
   assert.equal(body.blocked_by, 'precondition', 'blocked_by names the preflight cause');
 });
 
+test('--quiet is a recognized global flag (accepted on run/doctor, not refused as unknown)', () => {
+  // Usability: --quiet was the one audit-list item with no implementation. It
+  // must be accepted on every verb (it lives in VERB_FLAG_ALLOWLIST._global)
+  // so the typo-defense does not refuse it. doctor keeps its own flag set, so
+  // exercise both the run-class validator and doctor's separate one.
+  const r = cli(['run', 'secrets', '--evidence', '-', '--quiet', '--json'], { input: '{}' });
+  assert.doesNotMatch((r.stdout || '') + (r.stderr || ''), /unknown flag/, '--quiet must not be refused on a run-class verb');
+  const d = cli(['doctor', '--signatures', '--quiet', '--json']);
+  assert.doesNotMatch((d.stdout || '') + (d.stderr || ''), /unknown flag/, '--quiet must not be refused on doctor');
+});
+
+test('--quiet suppresses advisory stderr notes (keeps pipelines clean) but unknown flags still refuse', () => {
+  // --quiet drops the "[exceptd] note:" advisories. The explicit-evidence
+  // empty-stdin nudge is a deterministic advisory to assert against.
+  const noisy = cli(['run', 'secrets', '--evidence', '-', '--json'], { input: '' });
+  assert.match(noisy.stderr || '', /read 0 bytes from stdin/, 'baseline: the nudge fires without --quiet');
+  const quiet = cli(['run', 'secrets', '--evidence', '-', '--quiet', '--json'], { input: '' });
+  assert.doesNotMatch(quiet.stderr || '', /read 0 bytes from stdin/, '--quiet suppresses the advisory note');
+  // --quiet must NOT weaken reject-unknown-flags: a genuine typo still refuses.
+  const bogus = cli(['run', 'secrets', '--evidence', '-', '--quiet', '--bogusflag', '--json'], { input: '{}' });
+  assert.notEqual(bogus.status, 0, 'an unknown flag is still refused even with --quiet present');
+  assert.match((bogus.stdout || '') + (bogus.stderr || ''), /unknown flag/, 'the refusal names the unknown flag');
+});
+
 test('recipes --help shows real help, not the "no per-verb help available" fallback', () => {
   const r = cli(['recipes', '--help']);
   const out = (r.stdout || '') + (r.stderr || '');
