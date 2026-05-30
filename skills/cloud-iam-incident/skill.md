@@ -188,7 +188,7 @@ This procedure threads defense in depth, least privilege, and zero trust through
 
 **Defense in depth.** Multi-layer authentication at every privilege boundary: AAL3 / FIDO2 device-bound passkey for human admins (skill `identity-assurance`); per-account SCP / Org Policy / Management Group denies; cross-account external-id on every assume-role trust; KMS / Cloud KMS / Key Vault key-policy least-privilege; resource-policy default-deny; network-layer segmentation (D3-NTA) between accounts and between zones; behavioural CloudTrail / Cloud Audit Log analytics (D3-IOPR) on top of posture tools; out-of-band confirmation on root-equivalent actions; help-desk OOB-callback for MFA resets.
 
-**Least privilege.** Per-principal scope; CWE-863 default-permissive role assignments are the dominant failing. External-id on every cross-account trust; non-wildcard subject claims on every federated OIDC trust; audience-pinned SAML; session-policy tightening on every AssumeRole / AssumeRoleWithSAML / AssumeRoleWithWebIdentity to scope-down beyond the role's permissions; KMS key-policy explicit-allow rather than IAM-policy-via-default-deny; managed-identity scope-token TTL ceilings (AGENTS.md cloud-IAM extension: <= 1 hour for non-CAE-enabled, <= 24 hours with CAE).
+**Least privilege.** Per-principal scope; CWE-863 default-permissive role assignments are the dominant failing. External-id on every cross-account trust; non-wildcard subject claims on every federated OIDC trust; audience-pinned SAML; session-policy tightening on every AssumeRole / AssumeRoleWithSAML / AssumeRoleWithWebIdentity to scope-down beyond the role's permissions; KMS key-policy explicit-allow rather than IAM-policy-via-default-deny; managed-identity scope-token TTL ceilings (scope-token TTL ceilings: <= 1 hour for non-CAE-enabled, <= 24 hours with CAE).
 
 **Zero trust.** Every action re-evaluated, not session-trusted; root / global-admin actions require step-up; cross-account assume-role chains monitored continuously; federated trust treated as untrusted-until-claim-validated; managed-identity tokens bound to instance identity where the CSP supports it; AI-channel egress (LLM API calls from instances) explicitly allowlisted on the administrative jump zone.
 
@@ -373,7 +373,7 @@ Ask: "Inventory every IAM role with a trust policy referencing token.actions.git
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md optional 8th section. Maps cloud-IAM offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
+Maps cloud-IAM offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.json`, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability.
 
 | D3FEND ID | Technique | Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|

@@ -181,7 +181,7 @@ In all three, the SCA evidence chain (the customer's authenticated session, the 
 
 ## Analysis Procedure
 
-This procedure threads the three foundational design principles required by AGENTS.md skill-format spec (defense in depth, least privilege, zero trust) through every step.
+This procedure threads the three foundational design principles (defense in depth, least privilege, zero trust) through every step.
 
 **Defense in depth.** Multi-layer authentication for high-value transactions: AAL3 / FIDO2 device-bound passkey at customer layer (skill `identity-assurance`); 4-eyes principle on payment release; SWIFT CSCF 4.1/4.2 password management plus 5.1 logical access; CSCF 1.1 secure-zone segregation; network segmentation (D3-NI) between internet-banking, core-banking, treasury, SWIFT zone, fraud-detection; transaction monitoring (D3-NTA) at multiple layers (host, network, application, payment-message); model-output review for AI-mediated transactions; out-of-band confirmation for any AI-agent-initiated payment above scoped threshold.
 
