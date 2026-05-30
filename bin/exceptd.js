@@ -3223,6 +3223,19 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Single-playbook path (existing behavior).
   const playbookId = positional;
   if (refuseInvalidPlaybookId("run", playbookId, pretty)) return;
+  // --evidence-dir is a contract input: cmdRunMulti reads one
+  // <playbook-id>.json per playbook in an --all / --scope run. With a single
+  // named playbook it was silently ignored, so `run secrets --evidence-dir ./ev`
+  // ran against EMPTY evidence and reported a clean "not_detected" verdict — a
+  // falsely-reassuring result from a security tool. Refuse loudly and point the
+  // operator at the flag that actually loads evidence for one playbook.
+  if (args["evidence-dir"]) {
+    return emitError(
+      `run ${playbookId}: --evidence-dir applies to contract runs (exceptd run --all / --scope <type>), where it reads one <playbook-id>.json per playbook. For a single playbook, pass its evidence directly: exceptd collect ${playbookId} | exceptd run ${playbookId} --evidence -  (or --evidence ${playbookId}.json).`,
+      { playbook: playbookId, provided: "--evidence-dir", use_instead: "--evidence <file|->" },
+      pretty
+    );
+  }
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return refuseNoDirectives("run", playbookId, pretty);
