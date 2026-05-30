@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.28 — 2026-05-29
+
+Draft-curation pass 25 — web applications and developer tooling. Six CISA KEV-listed unauthenticated server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Laravel Livewire code injection (CVE-2025-54068), n8n dynamic-code execution (CVE-2025-68613), JetBrains TeamCity authentication bypass via path traversal (CVE-2024-27199), and arbitrary file-read path traversals in Grafana (CVE-2021-43798), Gogs (CVE-2025-8110), and the Vite dev server (CVE-2025-31125). All map T1190, with per-class T1059 (code injection), T1078 (auth bypass), or T1552 (file reads that leak configuration/source secrets). The lessons stress that file-disclosure flaws demand rotation of every exposed secret, and that CI/developer-tool compromise (TeamCity) carries software-supply-chain risk to build artifacts beyond the server itself.
+
 ## 0.15.27 — 2026-05-29
 
 Draft-curation pass 24 — mobile device exploitation. Four CISA KEV-listed mobile CVEs that together form a mobile-spyware chain are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung image-parsing-library out-of-bounds writes exploited zero-click via a malicious image (CVE-2025-21042, CVE-2025-21043) map T1203, and Android Framework local privilege escalation and an information-disclosure primitive (CVE-2025-48572, CVE-2025-48633) map T1068. The lessons frame these as the initial-access and local-escalation halves of a commercial-surveillance chain, and name OEM/carrier OTA cadence (Samsung SMR, Android Security Bulletin), MDM-enforced update SLAs, and mobile-threat-defense as the load-bearing controls — patch reach, not just patch availability, is the gap.

@@ -7563,35 +7563,63 @@
   },
   "CVE-2024-27199": {
     "name": "JetBrains TeamCity Relative Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "JetBrains TeamCity contains a relative path traversal vulnerability that could allow limited admin actions to be performed.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a relative path-traversal flaw (CWE-23) letting an unauthenticated attacker reach restricted endpoints and bypass authentication. CISA KEV-listed 2026-04-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the JetBrains TeamCity update; the bypass grants admin/CI access, so rotate CI tokens and signing keys and review build configurations for injected steps — CI compromise is a software-supply-chain risk.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials/CI access survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the TeamCity: exploit-shaped requests, new web-shell files, unexpected process execution, and admin/CI actions without a matching session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application/CI credentials and signing keys, and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing JetBrains TeamCity is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-34197": {
     "name": "Apache ActiveMQ Improper Input Validation Vulnerability",
@@ -11136,35 +11164,63 @@
   },
   "CVE-2025-54068": {
     "name": "Laravel Livewire Code Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Laravel Livewire contain a code injection vulnerability that could allow unauthenticated attackers to achieve remote command execution in specific scenarios.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a code-injection flaw (CWE-94) enabling unauthenticated remote code execution on the web server. CISA KEV-listed 2026-03-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Laravel Livewire update; hunt for web shells and rotate the application key (APP_KEY) and secrets — code-injection RCE leaves resident persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials/CI access survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Livewire: exploit-shaped requests, new web-shell files, unexpected process execution, and admin/CI actions without a matching session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application/CI credentials and signing keys, and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Laravel Livewire is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-43510": {
     "name": "Apple Multiple Products Improper Locking Vulnerability",
@@ -11655,35 +11711,63 @@
   },
   "CVE-2025-68613": {
     "name": "n8n Improper Control of Dynamically-Managed Code Resources Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "n8n contains an improper control of dynamically managed code resources vulnerability in its workflow expression evaluation system that allows for remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-control-of-dynamically-managed-code flaw (CWE-913), enabling code execution through the workflow-automation engine. CISA KEV-listed 2026-03-11 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the n8n update; n8n executes workflows with broad credential access, so rotate stored credentials and API tokens and review executed workflows for tampering.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials/CI access survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the n8n: exploit-shaped requests, new web-shell files, unexpected process execution, and admin/CI actions without a matching session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application/CI credentials and signing keys, and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing n8n is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-22054": {
     "name": "Omnissa Workspace ONE Server-Side Request Forgery",
@@ -14054,35 +14138,63 @@
   },
   "CVE-2025-31125": {
     "name": "Vite Vitejs Improper Access Control Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Vite Vitejs contains an improper access control vulnerability that exposes content of non-allowed files using ?inline&import or ?raw?import. Only apps explicitly exposing the Vite dev server to the network (using --host or server.host config option) are affected.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-access-control flaw (CWE-200/CWE-284) in the Vite dev server, letting a remote attacker read files including source and environment secrets outside the served root. CISA KEV-listed 2026-01-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Vite update and do not expose the dev server to untrusted networks; rotate any source-tree secrets (.env, keys) the file read could have exposed.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any secret the file read disclosed survives the patch and must be rotated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Vite dev server: exploit-shaped requests, out-of-root file reads and subsequent use of disclosed secrets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate every secret reachable through the file read (config, data-source, API, .env), and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Vite is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-54313": {
     "name": "Prettier eslint-config-prettier Embedded Malicious Code Vulnerability",
@@ -14233,35 +14345,63 @@
   },
   "CVE-2025-8110": {
     "name": "Gogs Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Gogs contains a path traversal vulnerability affecting improper Symbolic link handling in the PutContents API that could allow for code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) letting an attacker read or write files outside the intended directory on the Git server. CISA KEV-listed 2026-01-12 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Gogs update; review repository and server files for tampering and rotate any credentials the Git server held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials/CI access survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Gogs: exploit-shaped requests, new web-shell files, unexpected process execution, and admin/CI actions without a matching session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application/CI credentials and signing keys, and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Gogs is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2009-0556": {
     "name": "Microsoft Office PowerPoint Code Injection Vulnerability",
@@ -16419,35 +16559,63 @@
   },
   "CVE-2021-43798": {
     "name": "Grafana Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Grafana contains a path traversal vulnerability that could allow access to local files.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) letting an unauthenticated attacker read arbitrary files including configuration and secrets. CISA KEV-listed 2025-10-09 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Grafana update; the traversal reads config and secrets, so rotate any credentials, data-source passwords, and API keys reachable from the Grafana host.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any secret the file read disclosed survives the patch and must be rotated."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Grafana: exploit-shaped requests, out-of-root file reads and subsequent use of disclosed secrets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence or credential abuse after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, rotate every secret reachable through the file read (config, data-source, API, .env), and review for downstream/supply-chain impact (CI and dev tools can taint build artifacts).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / web-shell hunting leaves the attacker resident or re-authenticable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated web-application/dev-tool flaw; these are mass-exploited within days, and CI/dev-tool compromise carries software-supply-chain risk."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing web application or developer tool."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation cleanup these RCEs and file-disclosure flaws need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing web application or developer tool in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 74,
+      "basis": "Internet-facing Grafana is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required secret rotation / web-shell hunt is rarely part of the documented patch procedure, and dev-tool/CI exposure adds software-supply-chain blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-27915": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-site Scripting Vulnerability (variant: CVE-2025-27915)",
