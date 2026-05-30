@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 425
+    "entry_count": 426
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -7658,35 +7658,58 @@
   },
   "CVE-2012-1854": {
     "name": "Microsoft Visual Basic for Applications Insecure Library Loading Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Visual Basic for Applications (VBA) contains an insecure library loading vulnerability that could allow for remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an insecure library loading flaw (CWE-426) in Microsoft Visual Basic for Applications, letting an attacker-controlled document load a malicious DLL from an unexpected path (search-order hijacking) for code execution. CISA KEV-listed 2026-04-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; because this flaw defeats a protection mechanism, do not rely on that single control — enforce defence-in-depth (ASR rules, application control, mail/web content filtering, and macro restrictions) so a bypass of SmartScreen / Mark-of-the-Web / Protected View is not a single point of failure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is required; the lasting lesson is that a single protection mechanism (the one bypassed) cannot be the only barrier — layered controls are mandatory."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for DLLs loaded from document directories / unexpected paths.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Office is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-60710": {
     "name": "Microsoft Windows Link Following Vulnerability",
@@ -12830,35 +12853,58 @@
   },
   "CVE-2026-21513": {
     "name": "Microsoft MSHTML Framework Protection Mechanism Failure Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft MSHTML Framework contains a protection mechanism failure vulnerability that could allow an unauthorized attacker to bypass a security feature over a network.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a protection-mechanism failure (CWE-693) in the MSHTML framework that bypasses the Mark-of-the-Web / trust protection, letting attacker-controlled content run without the expected security warning. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; because this flaw defeats a protection mechanism, do not rely on that single control — enforce defence-in-depth (ASR rules, application control, mail/web content filtering, and macro restrictions) so a bypass of SmartScreen / Mark-of-the-Web / Protected View is not a single point of failure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is required; the lasting lesson is that a single protection mechanism (the one bypassed) cannot be the only barrier — layered controls are mandatory."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for execution of content lacking Mark-of-the-Web provenance and security-prompt bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft MSHTML is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21525": {
     "name": "Microsoft Windows NULL Pointer Dereference Vulnerability",
@@ -12894,35 +12940,58 @@
   },
   "CVE-2026-21510": {
     "name": "Microsoft Windows Shell Protection Mechanism Failure Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Shell contains a protection mechanism failure vulnerability that could allow an unauthorized attacker to bypass a security feature over a network. ",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a protection-mechanism failure (CWE-693) in the Windows Shell that bypasses SmartScreen / Mark-of-the-Web, letting downloaded content run without the expected warning. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; because this flaw defeats a protection mechanism, do not rely on that single control — enforce defence-in-depth (ASR rules, application control, mail/web content filtering, and macro restrictions) so a bypass of SmartScreen / Mark-of-the-Web / Protected View is not a single point of failure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is required; the lasting lesson is that a single protection mechanism (the one bypassed) cannot be the only barrier — layered controls are mandatory."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for execution of content lacking Mark-of-the-Web provenance and security-prompt bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21533": {
     "name": "Microsoft Windows Improper Privilege Management Vulnerability",
@@ -12981,67 +13050,113 @@
   },
   "CVE-2026-21519": {
     "name": "Microsoft Windows Type Confusion Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Desktop Windows Manager contains a type confusion vulnerability that could allow an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a type confusion (CWE-843) in a Windows client component, exploitable by attacker-controlled content for code execution in the client. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; harden the client (Office Protected View, ASR rules, disabling legacy scripting/media components where unused) and filter inbound content.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; the gap is patch hygiene on the long tail."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for child-process execution from the opening application after attacker-content open.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21514": {
     "name": "Microsoft Office Word Reliance on Untrusted Inputs in a Security Decision Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Office Word contains a reliance on untrusted inputs in a security decision vulnerability that could allow an authorized attacker to elevate privileges locally.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a reliance on untrusted inputs in a security decision (CWE-807) in Microsoft Office Word, bypassing a document security feature (Protected View) so attacker content opens without the expected protection. CISA KEV-listed 2026-02-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; because this flaw defeats a protection mechanism, do not rely on that single control — enforce defence-in-depth (ASR rules, application control, mail/web content filtering, and macro restrictions) so a bypass of SmartScreen / Mark-of-the-Web / Protected View is not a single point of failure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is required; the lasting lesson is that a single protection mechanism (the one bypassed) cannot be the only barrier — layered controls are mandatory."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for execution of content lacking Mark-of-the-Web provenance and security-prompt bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Office is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-11953": {
     "name": "React Native Community CLI OS Command Injection Vulnerability",
@@ -13620,35 +13735,58 @@
   },
   "CVE-2026-21509": {
     "name": "Microsoft Office Security Feature Bypass Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Office contains a security feature bypass vulnerability in which reliance on untrusted inputs in a security decision in Microsoft Office could allow an unauthorized attacker to bypass a security feature locally. Some of the impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a security-feature-bypass (CWE-807) in Microsoft Office, letting attacker-controlled documents evade an Office security control. CISA KEV-listed 2026-01-26 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; because this flaw defeats a protection mechanism, do not rely on that single control — enforce defence-in-depth (ASR rules, application control, mail/web content filtering, and macro restrictions) so a bypass of SmartScreen / Mark-of-the-Web / Protected View is not a single point of failure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is required; the lasting lesson is that a single protection mechanism (the one bypassed) cannot be the only barrier — layered controls are mandatory."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for execution of content lacking Mark-of-the-Web provenance and security-prompt bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Office is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-37079": {
     "name": "Broadcom VMware vCenter Server Out-of-bounds Write Vulnerability",
@@ -20335,35 +20473,58 @@
   },
   "CVE-2025-30397": {
     "name": "Microsoft Windows Scripting Engine Type Confusion Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Microsoft Windows Scripting Engine contains a type confusion vulnerability that allows an unauthorized attacker to execute code over a network via a specially crafted URL.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a type confusion (CWE-843) in the Windows Scripting Engine, exploitable by attacker-controlled web/script content for code execution in the client. CISA KEV-listed 2025-05-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; harden the client (Office Protected View, ASR rules, disabling legacy scripting/media components where unused) and filter inbound content.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; the gap is patch hygiene on the long tail."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for child-process execution from the opening application after attacker-content open.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-32706": {
     "name": "Microsoft Windows Common Log File System (CLFS) Driver Heap-Based Buffer Overflow Vulnerability",
@@ -21835,6 +21996,61 @@
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 52,
       "basis": "Microsoft Internet Explorer is ubiquitous on endpoints; audited organizations that maintain long-tail legacy estates (end-of-life Internet Explorer, old Acrobat/Reader, unpatched browsers) are exposed even after newer estates are patched, which is why CISA re-lists these older KEV entries.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2009-1537": {
+    "name": "Microsoft DirectShow QuickTime Parsing Memory Corruption",
+    "lesson_date": "2026-05-29",
+    "attack_vector": {
+      "description": "a memory-corruption flaw (CWE-787) in the Windows DirectShow QuickTime parser, exploitable by an attacker-controlled media file for code execution when the victim opens it. CISA KEV-listed 2026-05-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the victim opens the attacker's document or visits the attacker's content)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft security update; harden the client (Office Protected View, ASR rules, disabling legacy scripting/media components where unused) and filter inbound content.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is definitive on a managed estate; the gap is patch hygiene on the long tail."
+      },
+      "detection": {
+        "what_would_have_worked": "EDR / endpoint telemetry for child-process execution from the opening application after attacker-content open.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops endpoints not yet patched and catches the post-bypass execution stage."
+      },
+      "response": {
+        "what_would_have_worked": "Force the patch across the estate, isolate exploited endpoints, hunt for follow-on payloads, and review for credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; client-side exploitation typically leads to credential harvest and lateral movement that a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, actively-exploited client-side flaw; the protection-bypass variants specifically defeat the warning that would otherwise slow the user, so the patch is the only barrier left."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited client flaw, and security-feature-bypass flaws mean a single layered control (Protected View, SmartScreen, Mark-of-the-Web) cannot be relied on alone."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential 8 names application patching, application hardening, and macro/Office controls separately, but does not require defence-in-depth for the case where the protection mechanism itself is bypassed — ASR rules, application control, and mail/web content filtering are the load-bearing layers when SmartScreen/Protected View fail."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 58,
+      "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
