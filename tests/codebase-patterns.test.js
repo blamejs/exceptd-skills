@@ -99,6 +99,18 @@ test('orphan-allow-class: catches an unknown class and a reason-less marker', ()
 
   const good = fixture('const x = 1; // allow:dynamic-regex — a real reason\n');
   assert.equal(gate.detectOrphanAllowClass([good]).length, 0, 'a registered class with a reason is fine');
+
+  // The file-level form (codebase-patterns:allow-file) is the broadest
+  // exemption and must face the same validation, or a reason-less/typo'd
+  // file-level marker would suppress every hit silently.
+  const fileNoReason = fixture('// codebase-patterns:allow-file dynamic-regex\nconst x = 1;\n');
+  assert.equal(gate.detectOrphanAllowClass([fileNoReason]).length, 1, 'a reason-less file-level marker is flagged');
+
+  const fileUnknown = fixture('// codebase-patterns:allow-file not-a-real-class — reason\nconst x = 1;\n');
+  assert.equal(gate.detectOrphanAllowClass([fileUnknown]).length, 1, 'an unknown-class file-level marker is flagged');
+
+  const fileGood = fixture('// codebase-patterns:allow-file dynamic-regex — a real reason\nconst x = 1;\n');
+  assert.equal(gate.detectOrphanAllowClass([fileGood]).length, 0, 'a valid file-level marker is fine');
 });
 
 // ---- currency check wiring ------------------------------------------------

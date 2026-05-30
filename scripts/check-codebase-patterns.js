@@ -214,14 +214,24 @@ function detectOrphanAllowClass(files) {
       const cmt = lines[i].indexOf("//");
       if (cmt === -1) continue;
       const comment = lines[i].slice(cmt);
-      const m = comment.match(/\ballow:([a-z0-9-]+)\b(.*)$/);
+      // Validate BOTH marker forms with the same class + reason rules:
+      //   per-line:    allow:<class> — <reason>
+      //   file-level:  codebase-patterns:allow-file <class> — <reason>
+      // The file-level form is the broadest exemption (it suppresses every hit
+      // of its class in the file), so a reason-less or unknown-class file-level
+      // marker must be caught here too — otherwise it would suppress silently
+      // and never reach the per-line orphan check.
+      const fileLevel = comment.match(/\bcodebase-patterns:allow-file\s+([a-z0-9-]+)\b(.*)$/);
+      const perLine = comment.match(/\ballow:([a-z0-9-]+)\b(.*)$/);
+      const m = fileLevel || perLine;
       if (!m) continue;
       const cls = m[1];
       const tail = m[2];
+      const label = fileLevel ? `allow-file ${cls}` : `allow:${cls}`;
       if (!VALID_ALLOW_CLASSES[cls]) {
         hits.push({ file: rel, line: i + 1, content: lines[i].trim(), why: `unknown allow-class "${cls}"` });
       } else if (!/[—-]\s*\S/.test(tail)) {
-        hits.push({ file: rel, line: i + 1, content: lines[i].trim(), why: `allow:${cls} is missing the "— <reason>" tail` });
+        hits.push({ file: rel, line: i + 1, content: lines[i].trim(), why: `${label} is missing the "— <reason>" tail` });
       }
     }
   }
