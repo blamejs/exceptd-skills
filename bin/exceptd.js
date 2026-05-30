@@ -752,7 +752,7 @@ function main() {
   // verbs that lack their own help handler, so spawns that do (refresh,
   // prefetch) keep their detailed usage.
   const SPAWN_HELP_USAGE = {
-    skill: "exceptd skill <name>          Show the full context document for one skill.",
+    skill: "exceptd skill <name>          Show the full context document for one skill. Run `exceptd skill` with no arguments to list all skill IDs.",
     "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
     cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD). Exit 2 when the citation won't stand up (rejected/fabricated/nonexistent/withdrawn).",

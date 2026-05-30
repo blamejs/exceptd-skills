@@ -40,3 +40,18 @@ test('an EXPLICIT --evidence - with empty stdin still nudges (the operator asked
   const r = cli(['run', 'secrets', '--evidence', '-', '--json'], { input: '' });
   assert.match(r.stderr || '', /read 0 bytes from stdin/, 'explicit --evidence - with empty stdin should still warn the operator');
 });
+
+test('exceptd skill (no args) lists every skill ID so they are discoverable', () => {
+  // Usability P1: skill IDs were undiscoverable — `skill` and its not-found
+  // error pointed at `brief --all`, which lists playbooks, not skills.
+  const manifest = require('../manifest.json');
+  const r = cli(['skill', '--json']);
+  assert.notEqual(r.status, 0, 'no-args skill is a usage error (non-zero)');
+  const body = tryJson(r.stdout) || {};
+  assert.equal(body.ok, false, 'usage envelope is ok:false');
+  assert.ok(Array.isArray(body.skills), 'lists a skills array');
+  assert.equal(body.skills.length, manifest.skills.length, 'lists every manifest skill');
+  assert.ok(body.skills.every(s => s.id && typeof s.description === 'string'), 'each entry has an id + description');
+  const human = cli(['skill']);
+  assert.match(human.stderr || '', new RegExp(`Available skills \\(${manifest.skills.length}\\)`), 'human usage shows the skill count');
+});
