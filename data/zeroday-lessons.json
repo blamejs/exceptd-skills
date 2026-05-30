@@ -8313,35 +8313,63 @@
   },
   "CVE-2026-3502": {
     "name": "TrueConf Client Download of Code Without Integrity Check Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "TrueConf Client contains a download of code without integrity check vulnerability. An attacker who is able to influence the update delivery path can substitute a tampered update payload. If the payload is executed or installed by the updater, this may result in arbitrary code execution in the context of the updating process or user.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "the TrueConf client downloads code/updates without verifying their integrity (CWE-494), letting an attacker who can influence the download channel (a hijacked update endpoint or machine-in-the-middle) substitute malicious code that runs on the client. CISA KEV-listed 2026-04-02 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker influences the download/update channel or the shipped artifact; no authentication to the victim is required)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enforce cryptographic integrity verification on all downloaded code and updates (code signing with signature verification, Sigstore/in-toto, TLS-pinned update channels); for the embedded-malicious-code case, verify build provenance (SLSA) and pin/verify the tool's release artifacts before use.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SR-11 / NIST SSDF 800-218 / SLSA",
+        "adequacy": "Signature and provenance verification is the definitive control; the flaw exists precisely because it was absent or unenforced — patching the version does not retroactively restore trust in artifacts already installed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for unexpected code/DLLs loaded by the TrueConf client, updates fetched over unauthenticated channels, and anomalous outbound connections or process execution from the tool.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because supply-chain substitution is silent — the tool runs as expected while the embedded/substituted code executes alongside it."
+      },
+      "response": {
+        "what_would_have_worked": "Pull the affected version, reinstall from a verified-signed release, rotate any credentials the compromised process could reach, and audit every host where the tool ran — a compromised updater or scanner has broad reach.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; supply-chain compromise propagates through every host that ran the tainted code, so response is environment-wide, not host-local."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SR-11": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Component authenticity / anti-counterfeit is named, but verification is not enforced at install/update time — these products fetched or shipped code without a verified signature, so the control is paper unless signed-artifact verification (Sigstore/in-toto) is mandated at the download step."
       },
-      "ISO-27001-2022-A.8.8": {
+      "NIST-SSDF-800-218-PS.2": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "The SSDF calls for protecting release integrity and providing provenance, but downstream consumers had no enforced way to verify it; without signed releases plus provenance a consumer cannot detect substitution or embedded malicious code."
+      },
+      "SLSA-build-provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build provenance and signed releases would let a consumer detect tampering or substitution; absent enforced verification at the download/update step the trust gap remains open."
+      },
+      "EU-CRA-secure-update": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The EU Cyber Resilience Act requires secure update mechanisms and shipping without known exploitable defects; an unauthenticated download path or embedded malicious code violates the secure-update and integrity expectations."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Software-distribution and update integrity is widely assumed rather than verified; audited organizations that install vendor updates or run security tooling without enforcing signature/provenance verification are exposed to substitution and embedded-malicious-code attacks — and a compromised updater or scanner reaches every host it touches.",
+      "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-5281": {
     "name": "Google Dawn Use-After-Free Vulnerability",
@@ -8492,35 +8520,63 @@
   },
   "CVE-2026-33634": {
     "name": "Aquasecurity Trivy Embedded Malicious Code Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Aquasecurity Trivy contains an embedded malicious code vulnerability that could allow an attacker to gain access to everything in the CI/CD environment, including all tokens, SSH keys, cloud credentials, database passwords, and any sensitive configuration in memory.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a Trivy distribution/component contained embedded malicious code (CWE-506), executing in the trusted context of the vulnerability scanner across every environment it runs in. CISA KEV-listed 2026-03-26 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker influences the download/update channel or the shipped artifact; no authentication to the victim is required)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enforce cryptographic integrity verification on all downloaded code and updates (code signing with signature verification, Sigstore/in-toto, TLS-pinned update channels); for the embedded-malicious-code case, verify build provenance (SLSA) and pin/verify the tool's release artifacts before use.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SR-11 / NIST SSDF 800-218 / SLSA",
+        "adequacy": "Signature and provenance verification is the definitive control; the flaw exists precisely because it was absent or unenforced — patching the version does not retroactively restore trust in artifacts already installed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for unexpected code/DLLs loaded by the Trivy scanner, updates fetched over unauthenticated channels, and anomalous outbound connections or process execution from the tool.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because supply-chain substitution is silent — the tool runs as expected while the embedded/substituted code executes alongside it."
+      },
+      "response": {
+        "what_would_have_worked": "Pull the affected version, reinstall from a verified-signed release, rotate any credentials the compromised process could reach, and audit every host where the tool ran — a compromised updater or scanner has broad reach.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; supply-chain compromise propagates through every host that ran the tainted code, so response is environment-wide, not host-local."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SR-11": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Component authenticity / anti-counterfeit is named, but verification is not enforced at install/update time — these products fetched or shipped code without a verified signature, so the control is paper unless signed-artifact verification (Sigstore/in-toto) is mandated at the download step."
       },
-      "ISO-27001-2022-A.8.8": {
+      "NIST-SSDF-800-218-PS.2": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "The SSDF calls for protecting release integrity and providing provenance, but downstream consumers had no enforced way to verify it; without signed releases plus provenance a consumer cannot detect substitution or embedded malicious code."
+      },
+      "SLSA-build-provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build provenance and signed releases would let a consumer detect tampering or substitution; absent enforced verification at the download/update step the trust gap remains open."
+      },
+      "EU-CRA-secure-update": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The EU Cyber Resilience Act requires secure update mechanisms and shipping without known exploitable defects; an unauthenticated download path or embedded malicious code violates the secure-update and integrity expectations."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Software-distribution and update integrity is widely assumed rather than verified; audited organizations that install vendor updates or run security tooling without enforcing signature/provenance verification are exposed to substitution and embedded-malicious-code attacks — and a compromised updater or scanner reaches every host it touches.",
+      "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-25592": {
     "name": "Microsoft Semantic Kernel SessionsPythonPlugin Path Traversal — Prompt-Injection to Host RCE",
@@ -13041,35 +13097,63 @@
   },
   "CVE-2025-15556": {
     "name": "Notepad++ Download of Code Without Integrity Check Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Notepad++ when using the WinGUp updater, contains a download of code without integrity check vulnerability that could allow an attacker to intercept or redirect update traffic to download and execute an attacker-controlled installer. This could lead to arbitrary code execution with the privileges of the user.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "Notepad++ downloads code/components without an integrity check (CWE-494), enabling malicious-code substitution via a tampered download or planted binary for execution on the host. CISA KEV-listed 2026-02-12 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker influences the download/update channel or the shipped artifact; no authentication to the victim is required)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enforce cryptographic integrity verification on all downloaded code and updates (code signing with signature verification, Sigstore/in-toto, TLS-pinned update channels); for the embedded-malicious-code case, verify build provenance (SLSA) and pin/verify the tool's release artifacts before use.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SR-11 / NIST SSDF 800-218 / SLSA",
+        "adequacy": "Signature and provenance verification is the definitive control; the flaw exists precisely because it was absent or unenforced — patching the version does not retroactively restore trust in artifacts already installed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for unexpected code/DLLs loaded by the Notepad++, updates fetched over unauthenticated channels, and anomalous outbound connections or process execution from the tool.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because supply-chain substitution is silent — the tool runs as expected while the embedded/substituted code executes alongside it."
+      },
+      "response": {
+        "what_would_have_worked": "Pull the affected version, reinstall from a verified-signed release, rotate any credentials the compromised process could reach, and audit every host where the tool ran — a compromised updater or scanner has broad reach.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; supply-chain compromise propagates through every host that ran the tainted code, so response is environment-wide, not host-local."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SR-11": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Component authenticity / anti-counterfeit is named, but verification is not enforced at install/update time — these products fetched or shipped code without a verified signature, so the control is paper unless signed-artifact verification (Sigstore/in-toto) is mandated at the download step."
       },
-      "ISO-27001-2022-A.8.8": {
+      "NIST-SSDF-800-218-PS.2": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "The SSDF calls for protecting release integrity and providing provenance, but downstream consumers had no enforced way to verify it; without signed releases plus provenance a consumer cannot detect substitution or embedded malicious code."
+      },
+      "SLSA-build-provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build provenance and signed releases would let a consumer detect tampering or substitution; absent enforced verification at the download/update step the trust gap remains open."
+      },
+      "EU-CRA-secure-update": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The EU Cyber Resilience Act requires secure update mechanisms and shipping without known exploitable defects; an unauthenticated download path or embedded malicious code violates the secure-update and integrity expectations."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Software-distribution and update integrity is widely assumed rather than verified; audited organizations that install vendor updates or run security tooling without enforcing signature/provenance verification are exposed to substitution and embedded-malicious-code attacks — and a compromised updater or scanner reaches every host it touches.",
+      "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-40536": {
     "name": "SolarWinds Web Help Desk Security Control Bypass Vulnerability",

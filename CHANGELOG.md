@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.30 — 2026-05-29
+
+Draft-curation pass 27 — software supply-chain code integrity. Three CISA KEV-listed CVEs where code is trusted without integrity verification are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the TrueConf client and Notepad++ download code/updates without an integrity check (CVE-2026-3502, CVE-2025-15556), and a Trivy distribution shipped embedded malicious code that runs in the trusted context of the vulnerability scanner (CVE-2026-33634). All map T1195.002 (Compromise Software Supply Chain). The lessons frame the defense as enforced signature and provenance verification — code signing, Sigstore/in-toto, SLSA build provenance, TLS-pinned update channels — rather than patching, and note that response is environment-wide because a compromised updater or scanner reaches every host it runs on.
+
 ## 0.15.29 — 2026-05-29
 
 Draft-curation pass 26 — ICS/OT devices. Four CISA KEV-listed industrial-control and operational-technology CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: OpenPLC ScadaBR SCADA/HMI (CVE-2021-26828 unrestricted file upload, CVE-2021-26829 cross-site scripting), Hikvision IP camera authentication bypass (CVE-2017-7921), and the Rockwell Automation Logix protected-credential weakness (CVE-2021-22681). All map T1190, with per-class T1505.003, T1078, or T1552. The lessons carry an OT-specific framing: these devices frequently cannot be patched on an IT cadence, so the load-bearing controls are IEC 62443 zones-and-conduits segmentation, removal of IT/internet reachability, and OT-network monitoring — and response must validate process/control-logic integrity, not just perform IT cleanup, because compromise can have physical and safety consequences.
