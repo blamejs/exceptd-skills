@@ -105,6 +105,19 @@ test('removed verbs have no allowlist entry (no dead/stale flag surface)', () =>
   }
 });
 
+test('run allowlist includes --format; typo resolves + missing-value guard can fire', () => {
+  // run documents --format and cmdRun acts on it, but the allowlist omitted
+  // it — so `run --formt` got no suggestion and `run --format` (no value)
+  // silently proceeded (format IS in REQUIRES_VALUE). Both now covered.
+  assert.ok(flagsFor('run').includes('format'), 'run must accept --format');
+  assert.equal(suggestFlag('formt', flagsFor('run')), 'format', 'a --format typo resolves');
+});
+
+test('collect allowlist includes --air-gap (documented + consumed, was missing)', () => {
+  assert.ok(flagsFor('collect').includes('air-gap'), 'collect must accept --air-gap');
+  assert.equal(suggestFlag('air-gp', flagsFor('collect')), 'air-gap', 'an --air-gap typo resolves on collect');
+});
+
 test('doctor allowlist includes --air-gap (kept in sync with KNOWN_DOCTOR_FLAGS in bin)', () => {
   // The doctor allowlist here and the KNOWN_DOCTOR_FLAGS set in
   // bin/exceptd.js are two operator-facing lists for the same verb; they

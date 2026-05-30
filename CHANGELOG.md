@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.47 — 2026-05-30
+
+A consistency pass on error envelopes and flag handling.
+
+An invalid `--session-id`, `--attestation-root`, `--session-key`, `--mode`, or `--operator` passed to `ci`, `run-all`, or `ai-run` now reports the verb you actually ran instead of always saying "run:", and the error envelope carries the matching `verb` field. `brief --ack` — and every "irrelevant flag" refusal — now carries `flag` and `error_class` consistently for machine consumers.
+
+`run --format` with no value now refuses instead of silently proceeding, and `--format` / `--air-gap` typos are suggested on `run` / `collect`. `discover --help` documents `--cwd`. The `framework-gap` unknown-framework error carries `verb`. `validate-cves --offline` exits through the flush-safe path so its final summary line is never truncated when piped.
+
 ## 0.15.46 — 2026-05-30
 
 A correctness and help-accuracy pass.

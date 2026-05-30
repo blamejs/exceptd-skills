@@ -1416,8 +1416,8 @@ function dispatchPlaybook(cmd, argv) {
     const r = validateIdComponent(sid, "session");
     if (!r.ok) {
       return emitError(
-        `run: --session-id ${r.reason}. Path separators and '..' are rejected.`,
-        { provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
+        `${cmd}: --session-id ${r.reason}. Path separators and '..' are rejected.`,
+        { verb: cmd, provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
         pretty
       );
     }
@@ -1430,13 +1430,13 @@ function dispatchPlaybook(cmd, argv) {
     // happens in resolveAttestationRoot — this is the input-validation layer.
     const ar = args["attestation-root"];
     if (typeof ar !== "string" || ar.length === 0) {
-      return emitError("run: --attestation-root must be a non-empty string.", { provided: typeof ar }, pretty);
+      return emitError(`${cmd}: --attestation-root must be a non-empty string.`, { verb: cmd, provided: typeof ar }, pretty);
     }
     const arSegments = ar.split(/[\\/]/);
     if (arSegments.some(seg => seg === "..")) {
       return emitError(
-        "run: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.",
-        { provided: ar.slice(0, 200) },
+        `${cmd}: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.`,
+        { verb: cmd, provided: ar.slice(0, 200) },
         pretty
       );
     }
@@ -1449,8 +1449,8 @@ function dispatchPlaybook(cmd, argv) {
     // every collapsed-equivalent shape.
     if (arSegments.some(seg => seg.length > 0 && /^\.+$/.test(seg))) {
       return emitError(
-        "run: --attestation-root path segment cannot consist entirely of dots (rejected: '.', '..', '...', etc.). Pass an absolute path or a project-relative path without traversal.",
-        { provided: ar.slice(0, 200) },
+        `${cmd}: --attestation-root path segment cannot consist entirely of dots (rejected: '.', '..', '...', etc.). Pass an absolute path or a project-relative path without traversal.`,
+        { verb: cmd, provided: ar.slice(0, 200) },
         pretty
       );
     }
@@ -1461,10 +1461,10 @@ function dispatchPlaybook(cmd, argv) {
     // silently accepted; HMAC signing then either failed silently or produced
     // an unverifiable signature.
     if (!/^[0-9a-fA-F]+$/.test(args["session-key"])) {
-      return emitError("run: --session-key must be hex characters only (0-9, a-f). Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"", { provided_length: args["session-key"].length }, pretty);
+      return emitError(`${cmd}: --session-key must be hex characters only (0-9, a-f). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`, { verb: cmd, provided_length: args["session-key"].length }, pretty);
     }
     if (args["session-key"].length < 16) {
-      return emitError("run: --session-key is too short (need at least 16 hex chars / 64 bits of entropy).", { provided_length: args["session-key"].length }, pretty);
+      return emitError(`${cmd}: --session-key is too short (need at least 16 hex chars / 64 bits of entropy).`, { verb: cmd, provided_length: args["session-key"].length }, pretty);
     }
     runOpts.session_key = args["session-key"];
   }
@@ -1477,8 +1477,8 @@ function dispatchPlaybook(cmd, argv) {
       const dym = suggestFlag(String(args.mode), VALID_MODES);
       const hint = dym ? ` Did you mean "${dym}"?` : '';
       return emitError(
-        `run: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.${hint}`,
-        { provided: args.mode, accepted: VALID_MODES, did_you_mean: dym ? [dym] : [] },
+        `${cmd}: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.${hint}`,
+        { verb: cmd, provided: args.mode, accepted: VALID_MODES, did_you_mean: dym ? [dym] : [] },
         pretty,
       );
     }
@@ -1496,27 +1496,27 @@ function dispatchPlaybook(cmd, argv) {
   // chars (\x00-\x1F + \x7F), cap length at 256, reject if all-whitespace.
   if (args.operator !== undefined) {
     if (typeof args.operator !== "string") {
-      return emitError("run: --operator must be a string.", { provided: typeof args.operator }, pretty);
+      return emitError(`${cmd}: --operator must be a string.`, { verb: cmd, provided: typeof args.operator }, pretty);
     }
     // eslint-disable-next-line no-control-regex
     if (/[\x00-\x1F\x7F]/.test(args.operator)) {
       return emitError(
-        "run: --operator contains ASCII control characters (newline, tab, NUL, etc.). Refusing — these would corrupt attestation export shape and enable forgery via multi-line injection.",
-        { provided_length: args.operator.length },
+        `${cmd}: --operator contains ASCII control characters (newline, tab, NUL, etc.). Refusing — these would corrupt attestation export shape and enable forgery via multi-line injection.`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (args.operator.length > 256) {
       return emitError(
-        `run: --operator too long: ${args.operator.length} chars (limit 256). Use a stable identifier (email, service-account name) — not a free-form description.`,
-        { provided_length: args.operator.length },
+        `${cmd}: --operator too long: ${args.operator.length} chars (limit 256). Use a stable identifier (email, service-account name) — not a free-form description.`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (args.operator.trim().length === 0) {
       return emitError(
-        "run: --operator is empty or whitespace-only. Pass a meaningful identifier or omit the flag.",
-        null,
+        `${cmd}: --operator is empty or whitespace-only. Pass a meaningful identifier or omit the flag.`,
+        { verb: cmd },
         pretty
       );
     }
@@ -1539,15 +1539,15 @@ function dispatchPlaybook(cmd, argv) {
     try { normalized = args.operator.normalize("NFC"); }
     catch (e) {
       return emitError(
-        `run: --operator failed Unicode NFC normalisation: ${e.message}`,
-        { provided_length: args.operator.length },
+        `${cmd}: --operator failed Unicode NFC normalisation: ${e.message}`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (normalized.length === 0) {
       return emitError(
-        "run: --operator is empty after Unicode NFC normalisation. Pass a meaningful identifier or omit the flag.",
-        null,
+        `${cmd}: --operator is empty after Unicode NFC normalisation. Pass a meaningful identifier or omit the flag.`,
+        { verb: cmd },
         pretty
       );
     }
@@ -1562,8 +1562,8 @@ function dispatchPlaybook(cmd, argv) {
         }
       }
       return emitError(
-        `run: --operator contains a Unicode control / format / private-use / unassigned codepoint (${offending}). Bidi overrides (U+202E), zero-width joiners (U+200B–D), and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
-        { provided_length: args.operator.length, offending_codepoint: offending },
+        `${cmd}: --operator contains a Unicode control / format / private-use / unassigned codepoint (${offending}). Bidi overrides (U+202E), zero-width joiners (U+200B–D), and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
+        { verb: cmd, provided_length: args.operator.length, offending_codepoint: offending },
         pretty
       );
     }
@@ -1744,7 +1744,7 @@ function dispatchPlaybook(cmd, argv) {
     if (!ACK_RELEVANT_VERBS.has(cmd)) {
       return emitError(
         `${cmd}: --ack is irrelevant on this verb (no jurisdiction clock at stake). --ack only applies to verbs that drive phases 5-7: ${[...ACK_RELEVANT_VERBS].sort().join(", ")}. Re-invoke without --ack, or use \`exceptd run ${cmd === "brief" ? args._[0] || "<playbook>" : "<playbook>"} --ack\` once you're past the briefing step.`,
-        { verb: cmd, accepted_verbs: [...ACK_RELEVANT_VERBS].sort() },
+        { verb: cmd, flag: "ack", error_class: "irrelevant-flag", accepted_verbs: [...ACK_RELEVANT_VERBS].sort() },
         pretty
       );
     }
@@ -2087,6 +2087,7 @@ on Linux reads /etc/os-release to detect host distro. Emits a list of
 recommended exceptd playbooks tailored to what was found.
 
 Flags:
+  --cwd <dir>             Scan <dir> instead of the current directory.
   --scan-only             Also include legacy \`scan\` output under legacy_scan.
   --json                  Emit JSON (default is human-readable text).
   --pretty                Indented JSON output (implies --json).

@@ -234,7 +234,7 @@ Examples:
     if (!matchesFramework) {
       const sorted = knownFrameworks.slice().sort();
       const msg = `[framework-gap] unknown framework "${args[0]}". No catalog control gaps reference it. Known frameworks: ${sorted.join(', ')}. Use "all" to analyze every framework.`;
-      if (jsonOut) console.log(JSON.stringify({ ok: false, error: msg, known_frameworks: sorted }, null, 2));
+      if (jsonOut) console.log(JSON.stringify({ ok: false, verb: 'framework-gap', error: msg, known_frameworks: sorted }, null, 2));
       else console.error(msg);
       safeExit(EXIT_CODES.GENERIC_FAILURE);
       return;
@@ -973,7 +973,7 @@ async function runValidateCves(rawArgs = []) {
       );
     }
     console.log(`\n[validate-cves] offline mode — no network calls made. ${cveIds.length} entries listed from local catalog.`);
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS);
     return;
   }
 
@@ -993,7 +993,7 @@ async function runValidateCves(rawArgs = []) {
     if (e.code === 'MODULE_NOT_FOUND') {
       console.warn('[validate-cves] validator module unavailable (MODULE_NOT_FOUND); falling back to offline mode.');
       console.log(`\n[validate-cves] offline mode (forced by missing validators) — ${cveIds.length} entries listed from local catalog.`);
-      process.exit(0);
+      safeExit(EXIT_CODES.SUCCESS);
       return;
     }
     throw e;
