@@ -14753,35 +14753,63 @@
   },
   "CVE-2025-54313": {
     "name": "Prettier eslint-config-prettier Embedded Malicious Code Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "Prettier eslint-config-prettier contains an embedded malicious code vulnerability. Installing an affected package executes an install.js file that launches the node-gyp.dll malware on Windows.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "embedded malicious code (CWE-506) published in compromised versions of the eslint-config-prettier npm package (maintainer-account compromise), executing on developer and CI machines that installed the tainted versions. CISA KEV-listed 2026-01-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the malicious code is delivered through a trusted update channel or package; no authentication to the victim is required)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enforce cryptographic integrity and provenance verification on all installed/updated code (code signing with verification, Sigstore/in-toto, SLSA provenance), pin dependencies to verified versions, and require multi-factor and review gates on package-publishing/maintainer accounts.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SR-11 / NIST SSDF 800-218 / SLSA",
+        "adequacy": "Signature and provenance verification is the definitive control; the compromise succeeded precisely because the trusted channel was trusted without independent verification."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for unexpected install/post-install script execution and outbound connections during npm install on developer/CI machines, and version-pinning alerts on dependency changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because supply-chain compromise runs in a trusted context — the anomaly is the unexpected code execution alongside the legitimate tool."
+      },
+      "response": {
+        "what_would_have_worked": "Pin and upgrade to a clean eslint-config-prettier version, delete node_modules and reinstall from a verified lockfile, rotate any credentials reachable from developer/CI machines that installed the tainted version, and verify build artifacts produced during the exposure window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; supply-chain compromise propagates through every host that installed the tainted code, so response is environment-wide and includes build-artifact verification."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SR-11": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Component authenticity / anti-counterfeit is named, but verification is not enforced at install/update time — the tainted code shipped through a trusted channel without consumer-side signature/provenance verification, so the control is paper unless signed-artifact verification (Sigstore/in-toto) is mandated."
       },
-      "ISO-27001-2022-A.8.8": {
+      "NIST-SSDF-800-218-PS.2": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "The SSDF calls for protecting release integrity and providing provenance, but downstream consumers had no enforced way to verify it; without signed releases plus provenance a consumer cannot detect maliciously-published or substituted code."
+      },
+      "SLSA-build-provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build provenance and signed releases would let a consumer detect a maliciously-published version; absent enforced verification at the install/update step, a compromised maintainer account or update channel propagates the malicious code unchecked."
+      },
+      "EU-CRA-secure-update": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The EU Cyber Resilience Act requires secure update mechanisms and shipping without known exploitable defects; an update channel or package registry that ships embedded malicious code violates the secure-update and integrity expectations."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "eslint-config-prettier (npm) is trusted by default; audited organizations that install vendor updates or npm dependencies without enforcing signature/provenance verification or pinning are exposed to maliciously-published code, and the compromise reaches every host that installed it.",
+      "theater_pattern": "maintainer_account_integrity_assumed_without_evidence"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20045": {
     "name": "Cisco Unified Communications Products Code Injection Vulnerability",
@@ -15195,35 +15223,63 @@
   },
   "CVE-2025-59374": {
     "name": "ASUS Live Update Embedded Malicious Code Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-30",
     "attack_vector": {
-      "description": "ASUS Live Update contains an embedded malicious code vulnerability client were distributed with unauthorized modifications introduced through a supply chain compromise. The modified builds could cause devices meeting specific targeting conditions to perform unintended actions. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "embedded malicious code (CWE-506) in the ASUS Live Update software/update channel, executing on the ASUS endpoint in the trusted context of the vendor update utility. CISA KEV-listed 2025-12-17 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the malicious code is delivered through a trusted update channel or package; no authentication to the victim is required)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enforce cryptographic integrity and provenance verification on all installed/updated code (code signing with verification, Sigstore/in-toto, SLSA provenance), pin dependencies to verified versions, and require multi-factor and review gates on package-publishing/maintainer accounts.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SR-11 / NIST SSDF 800-218 / SLSA",
+        "adequacy": "Signature and provenance verification is the definitive control; the compromise succeeded precisely because the trusted channel was trusted without independent verification."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring for the update utility fetching/executing unsigned payloads and behaving anomalously, and version-pinning alerts on dependency changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because supply-chain compromise runs in a trusted context — the anomaly is the unexpected code execution alongside the legitimate tool."
+      },
+      "response": {
+        "what_would_have_worked": "Remove or upgrade ASUS Live Update to a known-good signed version, verify the update-channel integrity, and audit ASUS endpoints that ran the tainted updater for follow-on payloads and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; supply-chain compromise propagates through every host that installed the tainted code, so response is environment-wide and includes build-artifact verification."
+      }
     },
     "framework_coverage": {
-      "NIST-800-53-SI-2": {
+      "NIST-800-53-SR-11": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "Component authenticity / anti-counterfeit is named, but verification is not enforced at install/update time — the tainted code shipped through a trusted channel without consumer-side signature/provenance verification, so the control is paper unless signed-artifact verification (Sigstore/in-toto) is mandated."
       },
-      "ISO-27001-2022-A.8.8": {
+      "NIST-SSDF-800-218-PS.2": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "The SSDF calls for protecting release integrity and providing provenance, but downstream consumers had no enforced way to verify it; without signed releases plus provenance a consumer cannot detect maliciously-published or substituted code."
+      },
+      "SLSA-build-provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SLSA build provenance and signed releases would let a consumer detect a maliciously-published version; absent enforced verification at the install/update step, a compromised maintainer account or update channel propagates the malicious code unchecked."
+      },
+      "EU-CRA-secure-update": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The EU Cyber Resilience Act requires secure update mechanisms and shipping without known exploitable defects; an update channel or package registry that ships embedded malicious code violates the secure-update and integrity expectations."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "ASUS Live Update is trusted by default; audited organizations that install vendor updates or npm dependencies without enforcing signature/provenance verification or pinning are exposed to maliciously-published code, and the compromise reaches every host that installed it.",
+      "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-40602": {
     "name": "SonicWall SMA1000 Missing Authorization Vulnerability",
