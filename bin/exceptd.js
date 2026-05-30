@@ -761,7 +761,7 @@ function main() {
     // to spawning the blocking daemon, hanging the operator's terminal.
     watch: "exceptd watch          Long-running forward-watch daemon (blocks; Ctrl-C to stop). For a one-shot aggregator use `exceptd watchlist`.",
     watchlist: "exceptd watchlist [--alerts] [--org-scan --org <login>] [--by-skill] [--json]   One-shot forward-watch aggregator across skills.",
-    report: "exceptd report [executive] [--json]   Structured posture report.",
+    report: "exceptd report [executive] [--json]   Structured posture report. Markdown by default; pass --json for machine-readable output.",
     scan: "exceptd scan [--json]          [legacy] Working-directory CVE/KEV scan (orchestrator). See `exceptd discover`.",
     dispatch: "exceptd dispatch [--json]      [legacy] Scan + route findings to skills (orchestrator). See `exceptd discover`.",
     currency: "exceptd currency [--json]      [legacy] Skill threat-currency report. See `exceptd doctor --currency`.",
@@ -1862,6 +1862,13 @@ function editDistance(a, b) {
 
 function printPlaybookVerbHelp(verb) {
   const cmds = {
+    recipes: `recipes [<id>] — curated multi-skill workflows (use-case → ordered skill chain).
+
+With no id: lists every recipe with its "when to use" guidance.
+With <id>:  expands that recipe's ordered skill_chain and notes.
+
+Flags:
+  --json   Machine-readable output.`,
     plan: `plan — list playbooks + directives, grouped by scope.
 
 Flags:

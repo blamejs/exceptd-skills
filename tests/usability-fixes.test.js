@@ -65,3 +65,16 @@ test('brief <playbook> footer reveals the collect verb (so brief-first operators
   const out = (r.stdout || '') + (r.stderr || '');
   assert.match(out, /exceptd collect secrets \| exceptd run secrets --evidence -/, 'brief footer must show the collect pipeline');
 });
+
+test('recipes --help shows real help, not the "no per-verb help available" fallback', () => {
+  const r = cli(['recipes', '--help']);
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.doesNotMatch(out, /no per-verb help available/, 'recipes must have real per-verb help');
+  assert.match(out, /recipes/i, 'recipes help mentions the verb');
+});
+
+test('report --help states the default output format (Markdown), not just --json', () => {
+  const r = cli(['report', '--help']);
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.match(out, /Markdown/i, 'report --help must state the Markdown default so operators do not pipe Markdown into a JSON tool');
+});
