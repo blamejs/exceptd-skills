@@ -15280,35 +15280,63 @@
   },
   "CVE-2025-58360": {
     "name": "OSGeo GeoServer Improper Restriction of XML External Entity Reference Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "OSGeo GeoServer contains an improper restriction of XML external entity reference vulnerability that occurs when the application accepts XML input through a specific endpoint /geoserver/wms operation GetMap and could allow an attacker to define external entities within the XML request.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an XML external entity (XXE) flaw (CWE-611) in OSGeo GeoServer, letting an unauthenticated attacker read server files and coerce server-side requests. CISA KEV-listed 2025-12-11 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the GeoServer update; disable external-entity resolution, restrict outbound access, and review which internal resources and files the XXE reached.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; egress filtering, metadata-endpoint blocking, and disabling external entities are the compensating controls that limit SSRF/XXE impact."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the GeoServer: exploit-shaped requests, server-side outbound requests to internal/metadata endpoints and out-of-root file reads.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict egress, disable external entities, and review what internal resources/files the flaw reached, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing OSGeo GeoServer is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-6218": {
     "name": "RARLAB WinRAR Path Traversal Vulnerability",
@@ -15519,35 +15547,63 @@
   },
   "CVE-2025-55182": {
     "name": "Meta React Server Components Remote Code Execution Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Meta React Server Components contains a remote code execution vulnerability that could allow unauthenticated remote code execution by exploiting a flaw in how React decodes payloads sent to React Server Function endpoints. Please note CVE-2025-66478 has been rejected, but it is associated with CVE-2025- 55182.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a remote-code-execution flaw (CWE-94) in Meta's React Server Components, enabling code execution via crafted server-component input. CISA KEV-listed 2025-12-05 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update React Server Components in every app that uses it; hunt for web shells and rotate application secrets — framework-level RCE reaches every consumer.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials survive the patch; framework-level flaws require updating every consumer."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the React Server Components: exploit-shaped requests, new web-shell files and unexpected child-process execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets/credentials, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Meta React Server Components is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-26828": {
     "name": "OpenPLC ScadaBR Unrestricted Upload of File with Dangerous Type Vulnerability",
@@ -16398,35 +16454,63 @@
   },
   "CVE-2025-24893": {
     "name": "XWiki Platform Eval Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "XWiki Platform contains an eval injection vulnerability that could allow any guest to perform arbitrary remote code execution through a request to SolrSearch.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an eval-injection flaw (CWE-95) in XWiki Platform, enabling unauthenticated remote code execution via a crafted document or search request. CISA KEV-listed 2025-10-30 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the XWiki update; hunt for web shells and rotate credentials — wiki RCE is routinely used to deploy cryptominers and backdoors.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials survive the patch; framework-level flaws require updating every consumer."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the XWiki: exploit-shaped requests, new web-shell files and unexpected child-process execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets/credentials, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing XWiki Platform is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-6204": {
     "name": "Dassault Systèmes DELMIA Apriso Code Injection Vulnerability",
@@ -16909,35 +16993,63 @@
   },
   "CVE-2025-61884": {
     "name": "Oracle E-Business Suite Server-Side Request Forgery (SSRF) Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Oracle E-Business Suite contains a server-side request forgery (SSRF) vulnerability in the Runtime component of Oracle Configurator. This vulnerability is remotely exploitable without authentication.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a server-side request forgery flaw (CWE-918) in Oracle E-Business Suite, letting an unauthenticated attacker coerce server-side requests to internal resources. CISA KEV-listed 2025-10-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Oracle E-Business Suite update; enforce egress filtering and metadata-endpoint blocking, and review for internal-resource access — EBS sits adjacent to financial data.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; egress filtering, metadata-endpoint blocking, and disabling external entities are the compensating controls that limit SSRF/XXE impact."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Oracle E-Business Suite: exploit-shaped requests, server-side outbound requests to internal/metadata endpoints and out-of-root file reads.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict egress, disable external entities, and review what internal resources/files the flaw reached, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "basis": "Internet-facing Oracle E-Business Suite is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-54253": {
     "name": "Adobe Experience Manager Forms Code Execution Vulnerability",
@@ -18192,35 +18304,63 @@
   },
   "CVE-2021-21311": {
     "name": "Adminer Server-Side Request Forgery Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Adminer contains a server-side request forgery vulnerability that, when exploited, allows a remote attacker to obtain potentially sensitive information.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a server-side request forgery flaw (CWE-918) in Adminer, letting an unauthenticated attacker coerce the server into making requests to internal resources. CISA KEV-listed 2025-09-29 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Adminer update or restrict access to it; enforce egress filtering and block cloud-metadata endpoints, and review for internal-resource access via the SSRF.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; egress filtering, metadata-endpoint blocking, and disabling external entities are the compensating controls that limit SSRF/XXE impact."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Adminer: exploit-shaped requests, server-side outbound requests to internal/metadata endpoints and out-of-root file reads.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict egress, disable external entities, and review what internal resources/files the flaw reached, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing Adminer is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-20362": {
     "name": "Cisco Secure Firewall Adaptive Security (ASA) Appliance and Secure Firewall Threat Defense (FTD) Missing Authorization Vulnerability",
@@ -20918,35 +21058,63 @@
   },
   "CVE-2025-24016": {
     "name": "Wazuh Server Deserialization of Untrusted Data Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Wazuh contains a deserialization of untrusted data vulnerability that allows for remote code execution on Wazuh servers.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) on the Wazuh server API, enabling unauthenticated remote code execution on the security-monitoring server. CISA KEV-listed 2025-06-10 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Wazuh update urgently and hunt for web shells — a compromised SIEM/XDR server can blind detection across the estate, so treat it as high-priority and rotate its credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials survive the patch; framework-level flaws require updating every consumer."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Wazuh server: exploit-shaped requests, new web-shell files and unexpected child-process execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets/credentials, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing Wazuh Server is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-42009": {
     "name": "RoundCube Webmail Cross-Site Scripting Vulnerability",
@@ -21870,35 +22038,63 @@
   },
   "CVE-2025-42999": {
     "name": "SAP NetWeaver Deserialization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SAP NetWeaver Visual Composer Metadata Uploader contains a deserialization vulnerability that allows a privileged attacker to compromise the confidentiality, integrity, and availability of the host system by deserializing untrusted or malicious content.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a deserialization-of-untrusted-data flaw (CWE-502) on SAP NetWeaver (Visual Composer), enabling unauthenticated remote code execution on the application server. CISA KEV-listed 2025-05-15 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SAP NetWeaver update; hunt for web shells and rotate credentials — NetWeaver is business-critical and a compromise pivots into the ERP estate.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells and stolen credentials survive the patch; framework-level flaws require updating every consumer."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SAP NetWeaver: exploit-shaped requests, new web-shell files and unexpected child-process execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate application secrets/credentials, and review for lateral movement; for a compromised monitoring server (Wazuh) assume detection was blinded during the window.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without cleanup leaves the attacker resident or with a usable internal-access pivot."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated server-side flaw that processes untrusted data; deserialization/eval RCE and SSRF/XXE chains are mass-exploited within days."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application — and framework-level flaws (React Server Components) require updating every consumer."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / secret-rotation / egress-restriction cleanup these flaws need — a compromised SIEM (Wazuh) additionally blinds the detection the framework assumes."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application in or adjacent to the CDE (SAP/Oracle EBS sit adjacent to financial data); WAF coverage is partial mitigation, not remediation."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 75,
+      "basis": "Internet-facing SAP NetWeaver is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, secret rotation, or egress/XXE hardening is rarely part of the documented patch procedure.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-12987": {
     "name": "DrayTek Vigor Routers OS Command Injection Vulnerability",
