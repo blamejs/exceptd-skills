@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.29 — 2026-05-29
+
+Draft-curation pass 26 — ICS/OT devices. Four CISA KEV-listed industrial-control and operational-technology CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: OpenPLC ScadaBR SCADA/HMI (CVE-2021-26828 unrestricted file upload, CVE-2021-26829 cross-site scripting), Hikvision IP camera authentication bypass (CVE-2017-7921), and the Rockwell Automation Logix protected-credential weakness (CVE-2021-22681). All map T1190, with per-class T1505.003, T1078, or T1552. The lessons carry an OT-specific framing: these devices frequently cannot be patched on an IT cadence, so the load-bearing controls are IEC 62443 zones-and-conduits segmentation, removal of IT/internet reachability, and OT-network monitoring — and response must validate process/control-logic integrity, not just perform IT cleanup, because compromise can have physical and safety consequences.
+
 ## 0.15.28 — 2026-05-29
 
 Draft-curation pass 25 — web applications and developer tooling. Six CISA KEV-listed unauthenticated server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Laravel Livewire code injection (CVE-2025-54068), n8n dynamic-code execution (CVE-2025-68613), JetBrains TeamCity authentication bypass via path traversal (CVE-2024-27199), and arbitrary file-read path traversals in Grafana (CVE-2021-43798), Gogs (CVE-2025-8110), and the Vite dev server (CVE-2025-31125). All map T1190, with per-class T1059 (code injection), T1078 (auth bypass), or T1552 (file reads that leak configuration/source secrets). The lessons stress that file-disclosure flaws demand rotation of every exposed secret, and that CI/developer-tool compromise (TeamCity) carries software-supply-chain risk to build artifacts beyond the server itself.
