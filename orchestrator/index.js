@@ -729,8 +729,12 @@ async function runWatch() {
       fsMod.mkdirSync(pathMod.dirname(pathMod.resolve(logFilePath)), { recursive: true });
       logStream = fsMod.createWriteStream(pathMod.resolve(logFilePath), { flags: 'a' });
     } catch (err) {
+      // A filesystem error opening the log target (ENOENT/EACCES/EROFS) is a
+      // generic operational failure, not a detected-finding escalation — code
+      // 2 is DETECTED_ESCALATE and would misroute a CI gate. Use the same
+      // GENERIC_FAILURE every other error site in this function uses.
       console.error(`[orchestrator] --log-file ${logFilePath}: ${err.message}`);
-      process.exitCode = 2;
+      safeExit(EXIT_CODES.GENERIC_FAILURE);
       return;
     }
     const origWrite = process.stdout.write.bind(process.stdout);

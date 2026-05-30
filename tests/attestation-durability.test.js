@@ -86,7 +86,7 @@ test("run blocks (blocked_by:mutex) when a live foreign process holds the run lo
       JSON.stringify({ pid: process.pid, started_at: new Date().toISOString(), playbook: "secrets" }, null, 2));
     const r = cli(["run", "secrets", "--evidence", "-", "--session-id", "mx1", "--json"],
       { input: "{}", env: { EXCEPTD_HOME: home, EXCEPTD_LOCK_DIR: lockDir } });
-    assert.notEqual(r.status, 0, "a run blocked on a live foreign mutex holder must exit non-zero"); // allow-notEqual: blocked is any non-zero; shape asserted below
+    assert.equal(r.status, 1, "a mutex-blocked run exits 1 (GENERIC_FAILURE via emit() ok:false) without --ci; the structured shape is asserted below");
     const body = tryJson(r.stdout) || tryJson(r.stderr);
     assert.ok(body && body.ok === false, "must emit a structured blocked result");
     assert.equal(body.blocked_by, "mutex", "must identify the mutex as the blocker");

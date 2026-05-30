@@ -28,17 +28,14 @@ const path = require('node:path');
 const { ROOT } = require('./_helpers/cli');
 const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
-// The function is internal to the runner module; not on its public export
-// surface. Resolve it by name from the module's exports (newer runner
-// versions may expose helpers under `_internal`); skip with a clear
-// message if the boundary isn't reachable.
-const vulnIdToUrn =
-  runner.vulnIdToUrn ||
-  (runner._internal && runner._internal.vulnIdToUrn) ||
-  null;
+// The function is internal to the runner module, exported under the `_`-prefix
+// convention the module uses for test-only helpers. Pin its presence so this
+// non-CVE-leak boundary can never go dark again (it previously skipped
+// permanently because the export was missing).
+const vulnIdToUrn = runner._vulnIdToUrn;
+assert.equal(typeof vulnIdToUrn, 'function', 'runner must export _vulnIdToUrn');
 
 test('vulnIdToUrn routes each advisory prefix to its registered URN namespace',
-  { skip: !vulnIdToUrn && 'vulnIdToUrn not on runner exports (see _internal)' },
   () => {
     const cases = [
       { id: 'GHSA-1111-2222-3333', expectedPrefix: 'urn:ghsa:' },
@@ -65,7 +62,6 @@ test('vulnIdToUrn routes each advisory prefix to its registered URN namespace',
   });
 
 test('vulnIdToUrn falls back to private namespace for unknown prefixes',
-  { skip: !vulnIdToUrn && 'vulnIdToUrn not on runner exports' },
   () => {
     const urn = vulnIdToUrn('UNKNOWN-2026-0001');
     assert.equal(typeof urn, 'string');

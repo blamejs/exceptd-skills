@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.46 — 2026-05-30
+
+A correctness and help-accuracy pass.
+
+`exceptd help <verb>` for a verb removed in v0.13.0 — `plan`, `govern`, `direct`, `look`, `ingest` — now refuses with the replacement command and a non-zero exit, matching what the bare verb already did, instead of printing stale help for a command that no longer runs.
+
+Help text now matches behavior: `brief --help` documents `--flat`, `attest --help` lists the `prune` subverb, and `ai-run --help` shows the correct exit code for a session-id collision. `doctor` accepts `--air-gap` consistently across its flag-validation paths. Error messages and accepted-verb lists no longer recommend removed verbs.
+
+A failure opening the `watch --log-file` target now exits with the generic-failure code instead of the detected-escalation code, so a filesystem error no longer trips a CI gate keyed on escalation. The worst-of active-exploitation reduction used in finding drafts now ranks a "theoretical" CVE correctly instead of dropping it or overstating an empty set as "unknown".
+
+Validator warnings describe their `--strict` / predeploy enforcement rather than promising an already-shipped version.
+
 ## 0.15.45 — 2026-05-30
 
 An operator-experience pass.

@@ -58,17 +58,17 @@ test('flagsFor(verb) prepends global flags before verb-specific', () => {
   }
 });
 
-test('per-verb scoping: --operator typo on `plan` is rejected (plan does not consume --operator)', () => {
-  // VERB_FLAG_ALLOWLIST has no entry for 'plan' (it is an alias for
-  // `brief --all`). flagsFor('plan') returns the global flags only.
-  // suggestFlag('opetator', plan-scope) must NOT suggest 'operator'
-  // because the verb does not consume it.
-  const planFlags = flagsFor('plan');
-  assert.ok(!planFlags.includes('operator'),
-    'plan verb must not list operator in its allowlist');
-  const s = suggestFlag('opetator', planFlags);
+test('per-verb scoping: --operator typo on `brief` is rejected (brief does not consume --operator)', () => {
+  // VERB_FLAG_ALLOWLIST.brief is ['all','scope','directives','flat','phase'] —
+  // no 'operator'. flagsFor('brief') returns those plus the global flags.
+  // suggestFlag('opetator', brief-scope) must NOT suggest 'operator' because
+  // the verb does not consume it.
+  const briefFlags = flagsFor('brief');
+  assert.ok(!briefFlags.includes('operator'),
+    'brief verb must not list operator in its allowlist');
+  const s = suggestFlag('opetator', briefFlags);
   assert.equal(s, null,
-    'suggestion against plan-scoped allowlist must not resolve to "operator" (verb does not accept it)');
+    'suggestion against brief-scoped allowlist must not resolve to "operator" (verb does not accept it)');
 });
 
 test('per-verb scoping: --operator on `run` IS suggested (run consumes it)', () => {
@@ -93,4 +93,23 @@ test('suggestFlag handles empty allowlist and non-string inputs gracefully', () 
   assert.equal(suggestFlag('', ['help']), null, 'empty input → null');
   assert.equal(suggestFlag(null, ['help']), null, 'non-string input → null');
   assert.equal(suggestFlag('foo', null), null, 'non-array allowlist → null');
+});
+
+test('removed verbs have no allowlist entry (no dead/stale flag surface)', () => {
+  // `ingest` is a removed verb; its allowlist block was dead (flagsFor only
+  // runs for live PLAYBOOK_VERBS) and stale. plan/govern/direct/look likewise
+  // have no entry — flagsFor returns globals for any unknown verb.
+  for (const removed of ['ingest', 'plan', 'govern', 'direct', 'look']) {
+    assert.equal(VERB_FLAG_ALLOWLIST[removed], undefined,
+      `${removed} is a removed verb and must not carry a flag allowlist entry`);
+  }
+});
+
+test('doctor allowlist includes --air-gap (kept in sync with KNOWN_DOCTOR_FLAGS in bin)', () => {
+  // The doctor allowlist here and the KNOWN_DOCTOR_FLAGS set in
+  // bin/exceptd.js are two operator-facing lists for the same verb; they
+  // drifted on --air-gap (a real doctor flag). Pin the shared flag so
+  // `doctor --bogus` and `doctor --evidence x` list the same accepted set.
+  assert.ok(flagsFor('doctor').includes('air-gap'),
+    'doctor must accept --air-gap (real flag; was missing from this allowlist)');
 });

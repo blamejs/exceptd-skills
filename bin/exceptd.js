@@ -28,13 +28,10 @@
  * Seven-phase playbook contract (govern → direct → look → detect →
  * analyze → validate → close):
  *
- *   plan                  List playbooks + directives for session planning.
- *   govern <playbook>     Phase 1: load GRC context.
- *   direct <playbook>     Phase 2: scope the investigation.
- *   look <playbook>       Phase 3: emit artifact-collection spec for agent.
+ *   brief [--all]         Phases 1-3 (govern/direct/look) in one info doc.
+ *     <playbook>          Add --phase govern|direct|look for a single phase.
  *   run <playbook>        Phases 4-7 (detect/analyze/validate/close) from
  *                         agent submission JSON.
- *   ingest                Alias for `run` matching AGENTS.md terminology.
  *   reattest <session>    Re-run a prior session and diff evidence_hash.
  *
  *   help, --help, -h      This help.
@@ -169,7 +166,7 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
   "framework-gap", "framework-gap-analysis",
 ]);
 
-// Cycle 17 P2 S13 (v0.12.37): Levenshtein-1 did-you-mean for unknown verbs.
+// Levenshtein-1 did-you-mean for unknown verbs.
 // Catches common single-char / transposition typos against the COMMANDS
 // table without false-positive flood: only suggests verbs within distance
 // 1 (one insert / delete / substitute / transpose). For typed-distance 2+
@@ -385,6 +382,7 @@ Canonical verbs
                              --all                  every playbook
                              --scope <type>         system | code | service | cross-cutting
                              --directives           expand directive metadata
+                             --flat                 ungrouped list (omit scope grouping)
                              --phase <name>         emit only one phase (legacy compat)
 
   run [playbook]             Phases 4-7. Auto-detects cwd context when no
@@ -433,7 +431,7 @@ Canonical verbs
                              2 detected/escalate, 3 ran-but-no-evidence,
                              4 blocked (ok:false), 5 jurisdiction clock started.
                              (Codes 6/7/8/9 surface on attest verify / run /
-                             ai-run / ingest, not ci.)
+                             ai-run, not ci.)
                              --all | --scope <type> | (auto-detect)
                              --max-rwep <n>         cap below playbook default
                              --block-on-jurisdiction-clock
@@ -597,13 +595,25 @@ function main() {
   const rest = argv.slice(1);
 
   if (cmd === "help" || cmd === "--help" || cmd === "-h") {
-    // Cycle 11 F4 (v0.12.32): `exceptd help <verb>` previously dropped the
+    // `exceptd help <verb>` previously dropped the
     // verb argument and printed the top-level help. Route through the same
     // printPlaybookVerbHelp() that `exceptd <verb> --help` already uses so
     // operators get a consistent verb-specific help surface regardless of
     // which way they reached it.
     if (rest.length > 0 && typeof rest[0] === 'string' && rest[0].length > 0) {
       const verb = rest[0];
+      // A removed verb has no live help. Refuse with the same structured
+      // removal error the bare verb emits, so `help <removed>` and
+      // `<removed> --help` agree (both exit non-zero, both name the
+      // replacement) instead of printing stale help for a verb that no
+      // longer dispatches.
+      if (REMOVED_VERBS[verb]) {
+        emitError(
+          `'${verb}' was removed in v0.13.0. Use \`exceptd ${REMOVED_VERBS[verb]}\` instead.`,
+          { verb, removed_in: "0.13.0", replacement: REMOVED_VERBS[verb] }
+        );
+        return;
+      }
       if (printPlaybookVerbHelp(verb)) {
         process.exit(0);
       }
@@ -730,7 +740,7 @@ function main() {
     // UNKNOWN_COMMAND (10) afterwards. Cycle 9 split this away from
     // DETECTED_ESCALATE (2) — the two semantics had collided since v0.12.24.
     //
-    // Cycle 17 P2 S13 (v0.12.37): add a did-you-mean suggestion when the
+    // add a did-you-mean suggestion when the
     // unknown verb is within Levenshtein-1 of a real verb (catches the
     // common single-char typos: `discoer` → `discover`, `attst` → `attest`,
     // `valdiate-cves` → `validate-cves`).
@@ -1034,7 +1044,7 @@ function readEvidence(evidenceFlag, opts = {}) {
     }
     const text = Buffer.concat(chunks).toString("utf8");
     if (!text.trim()) {
-      // Cycle 17 P1 S4 (v0.12.37): pre-fix empty stdin silently became {}
+      // pre-fix empty stdin silently became {}
       // — operator got a "successful" run on no evidence with no warning,
       // and the evidence_hash for `{}` is deterministic so subsequent
       // runs didn't even reveal the mistake. Emit a stderr nudge so the
@@ -1138,7 +1148,7 @@ function hasReadableStdin() {
   // PowerShell / MSYS pipes working (isTTY === false when piped). Do NOT
   // gate on size > 0 here: a Windows pipe with bytes queued reports as
   // a regular file with size 0, and gating would silently skip every
-  // `echo {...} | exceptd run|ingest|ai-run` invocation.
+  // `echo {...} | exceptd run|ai-run` invocation.
   if (process.platform === "win32" && process.stdin.isTTY === false) return true;
   return false;
 }
@@ -1561,16 +1571,15 @@ function dispatchPlaybook(cmd, argv) {
   }
 
   // --csaf-status and --publisher-namespace shape the CSAF bundle emitted by
-  // phases 5-7. Verbs that don't drive those phases (brief, plan, govern,
-  // direct, look, attest, list-attestations, discover, doctor, lint, ask,
-  // verify-attestation, reattest) never assemble a bundle, so silently
-  // consuming these flags is a UX trap. Refuse on those verbs so the
-  // operator knows the flag was discarded — same pattern as --ack. Error
-  // message templates and emitError prefixes use the in-scope `cmd` verb so
-  // a brief invocation says "brief:" rather than misattributing the flag
-  // to run.
+  // phases 5-7. Verbs that don't drive those phases (brief, attest,
+  // list-attestations, discover, doctor, lint, ask, verify-attestation,
+  // reattest) never assemble a bundle, so silently consuming these flags is
+  // a UX trap. Refuse on those verbs so the operator knows the flag was
+  // discarded — same pattern as --ack. Error message templates and emitError
+  // prefixes use the in-scope `cmd` verb so a brief invocation says "brief:"
+  // rather than misattributing the flag to run.
   const BUNDLE_FLAG_RELEVANT_VERBS = new Set([
-    "run", "ci", "run-all", "ai-run", "ingest",
+    "run", "ci", "run-all", "ai-run",
   ]);
 
   // --publisher-namespace <url> threads into the CSAF
@@ -1722,15 +1731,14 @@ function dispatchPlaybook(cmd, argv) {
   // consent was explicit vs. implicit. AGENTS.md says the AI should surface
   // and wait for ack — this is how the ack gets recorded.
   //
-  // --ack only makes sense on verbs that drive phases 5-7 (run / ingest /
-  // ai-run / ci / run-all / reattest). Info-only verbs (brief, plan,
-  // govern, direct, look, attest, list-attestations, discover, doctor,
-  // lint, ask, verify-attestation) never consume an attestation clock —
-  // accepting --ack silently is a UX trap where operators believe they have
-  // recorded consent. Refuse on those verbs so the operator knows the flag
-  // is irrelevant.
+  // --ack only makes sense on verbs that drive phases 5-7 (run / ai-run /
+  // ci / run-all / reattest). Info-only verbs (brief, attest,
+  // list-attestations, discover, doctor, lint, ask, verify-attestation)
+  // never consume an attestation clock — accepting --ack silently is a UX
+  // trap where operators believe they have recorded consent. Refuse on those
+  // verbs so the operator knows the flag is irrelevant.
   const ACK_RELEVANT_VERBS = new Set([
-    "run", "ingest", "ai-run", "ci", "run-all", "reattest",
+    "run", "ai-run", "ci", "run-all", "reattest",
   ]);
   if (args.ack) {
     if (!ACK_RELEVANT_VERBS.has(cmd)) {
@@ -1894,44 +1902,6 @@ With <id>:  expands that recipe's ordered skill_chain and notes.
 
 Flags:
   --json   Machine-readable output.`,
-    plan: `plan — list playbooks + directives, grouped by scope.
-
-Flags:
-  --playbook <id> ...     Filter to one or more playbook IDs.
-  --scope <type>          Filter by scope: system | code | service | cross-cutting | all
-  --flat                  Disable grouped-by-scope output; emit flat list.
-  --directives            Include directive id + title + applies_to per playbook.
-  --session-id <id>       Reuse a specific session ID for the planning output.
-  --mode <m>              Investigation mode forwarded into govern.
-  --pretty                Indented JSON output.`,
-    govern: `govern <playbook> — phase 1, load GRC context for a playbook.
-
-Args / flags:
-  <playbook>              Playbook ID. Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --mode <m>              Investigation mode forwarded into govern policy.
-  --air-gap               Honor _meta.air_gap_mode + air_gap_alternative paths.
-  --pretty                Indented JSON output.
-
-Output: jurisdiction_obligations, theater_fingerprints, framework_context, skill_preload.`,
-    direct: `direct <playbook> — phase 2, threat context + skill chain + token budget.
-
-Args / flags:
-  <playbook>              Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --pretty                Indented JSON output.`,
-    look: `look <playbook> — phase 3, artifact-collection spec the host AI executes.
-
-Args / flags:
-  <playbook>              Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --air-gap               Honor air_gap_alternative paths.
-  --pretty                Indented JSON output.
-
-Output includes a 'preconditions' array — the host AI MUST verify each
-precondition with its own probes and declare results back in the submission as:
-  { "precondition_checks": { "<id>": true | false } }
-The runner refuses the run if a precondition with on_fail=halt is unverified.`,
     run: `run [playbook] — phases 4-7 (detect → analyze → validate → close).
 
 Invocation modes:
@@ -2047,36 +2017,6 @@ Other operator-facing flags (full list in source; surfaced here for grep):
   --attestation-root <p>  Override .exceptd/ root for this run.
   --mode <m>              Investigation mode (self_service | authorized_pentest
                           | ir_response | ctf | research | compliance_audit).`,
-    ingest: `ingest — alias for 'run' matching AGENTS.md terminology.
-
-Flags:
-  --domain <id>           Playbook ID (overrides submission.playbook_id).
-  --directive <id>        Directive ID (overrides submission.directive_id).
-  --evidence <file|->     Submission JSON. May include playbook_id/directive_id.
-  --session-id <id>       Reuse a specific session id (must satisfy
-                          /^[A-Za-z0-9._-]{1,64}$/).
-  --force-overwrite       Override session-id collision refusal.
-  --operator <name>       Bind attestation to a specific identity.
-  --ack                   Explicit operator consent for jurisdiction clock.
-  --attestation-root <p>  Override .exceptd/ root for this ingest.
-  --mode <m>              Investigation mode (self_service | authorized_pentest
-                          | ir_response | ctf | research | compliance_audit).
-  --air-gap               Honor air_gap_alternative paths.
-  --force-stale           Override threat_currency_score<50 gate.
-  --csaf-status <s>       CSAF tracking.status for the close.evidence_package
-                          bundle. One of: draft | interim (default) | final.
-                          'final' commits to CSAF §3.1.11.3.5.1 immutability —
-                          set this only after operator review of the advisory.
-  --publisher-namespace <url>
-                          CSAF document.publisher.namespace (§3.1.7.4). The
-                          operator's organisation URL, NOT the tooling vendor.
-                          Must be an http://… or https://… URL, ≤256 chars.
-  --bundle-deterministic  Emit byte-stable bundles (frozen timestamps).
-  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
-  --pretty                Indented JSON output.
-
-Exit codes: 0 PASS, 1 framework, 4 blocked, 7 SESSION_ID_COLLISION,
-8 LOCK_CONTENTION, 9 STORAGE_EXHAUSTED.`,
     reattest: `reattest [<session-id> | --latest] — replay a prior session and diff the evidence_hash.
 
 Args / flags:
@@ -2102,7 +2042,7 @@ Lists every attestation under .exceptd/attestations/<session_id>/, sorted
 newest-first, with truncated evidence_hash + capture timestamp + file path.`,
     attest: `attest <subverb> <session-id> — auditor-facing attestation operations.
 
-Subverbs (list | show | export | verify | diff):
+Subverbs (list | show | export | verify | diff | prune):
   attest show <sid>       Emit the full (unredacted) attestation.
   attest list             Inventory every prior attestation under
                           ~/.exceptd/attestations/ (or EXCEPTD_HOME when set).
@@ -2126,6 +2066,9 @@ Subverbs (list | show | export | verify | diff):
                           for the same playbook, or against --against <other-sid>
                           for an explicit pair. Reports unchanged | drifted |
                           resolved per evidence_hash + classification deltas.
+  attest prune            GC stale sessions: delete attestations older than
+                          --all-older-than <ISO>. --dry-run previews the set
+                          without deleting.
 
 All subverbs honor --pretty for indented JSON output.
 
@@ -2241,7 +2184,7 @@ Flags:
 Exit codes:
   0  done                  Run completed; emitted {"event":"done","ok":true}.
   1  framework error       Engine threw or stdin parse failure.
-  3  SESSION_ID_COLLISION  --session-id duplicate; pass --force-overwrite or fresh id.
+  7  SESSION_ID_COLLISION  --session-id duplicate; pass --force-overwrite or fresh id.
   8  LOCK_CONTENTION       Concurrent persistAttestation lock held.
   9  STORAGE_EXHAUSTED     Disk/quota/RO filesystem on attestation write.
 
@@ -2352,7 +2295,7 @@ Exit codes:
                            etc.) and the operator has not acked.
 
 (ci does not persist attestations per-run; exit codes 6/7/8/9 surface on
-\`attest verify\` and on \`run\` / \`ai-run\` / \`ingest\`, not on \`ci\`.)
+\`attest verify\` and on \`run\` / \`ai-run\`, not on \`ci\`.)
 
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
@@ -2373,9 +2316,10 @@ Flags:
                           submission, not a human digest).`,
     brief: `brief [playbook] — unified info doc (v0.11.0).
 
-Collapses the three info-only phases plan + govern + direct + look into a
-single document. Phases 1-3 of the seven-phase contract are entirely
-informational; brief reads them in one CLI invocation instead of three.
+Collapses the info-only phases govern + direct + look into a single document,
+and replaces the removed plan / govern / direct / look verbs. Phases 1-3 of
+the seven-phase contract are entirely informational; brief reads them in one
+CLI invocation instead of three.
 
 Modes:
   brief                   Auto-detect playbooks for the cwd. Returns a list.
@@ -2389,6 +2333,8 @@ Modes:
 
 Flags:
   --directives            Expand directive metadata per playbook.
+  --flat                  Ungrouped playbook list (omit grouped_by_scope +
+                          scope_summary). Use with --all / --scope.
   --pretty                Indented JSON output.
   --json                  Force single-line JSON.
 
@@ -2431,7 +2377,7 @@ Flags (selected — see \`exceptd run --help\` for the full list):
   --bundle-deterministic  Emit byte-stable bundles across the multi-run set.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.`,
   };
-  // Cycle 11 F4 (v0.12.32): return whether a verb-specific help block was
+  // return whether a verb-specific help block was
   // found so the `exceptd help <verb>` caller can decide whether to fall
   // through to the top-level help (verb unknown) or stop here (verb known).
   if (cmds[verb]) {
@@ -2988,7 +2934,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
     }
   }
   emit(plan, pretty, (obj) => {
-    // Human renderer for `brief` / `brief --all` / `plan`. Pre-fix this
+    // Human renderer for `brief` / `brief --all`. Pre-fix this
     // verb dumped 36+ KB of JSON to the terminal — operators running
     // `exceptd brief` to explore had no scannable view.
     const lines = [];
@@ -4380,9 +4326,11 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // the aggregate JSON emitted above is allowed to fully drain.
   //
   // Aggregate exit-code precedence: LOCK_CONTENTION > STORAGE_EXHAUSTED >
-  // BLOCKED. Lock contention is transient (retry-from-outside fixes it);
-  // storage exhaustion is an infra event requiring operator action;
-  // ok:false in a per-playbook result is the BLOCKED case. Surfacing the
+  // SESSION_ID_COLLISION > GENERIC_FAILURE. Lock contention is transient
+  // (retry-from-outside fixes it); storage exhaustion is an infra event
+  // requiring operator action; a session-id collision mirrors the single-run
+  // code; any remaining ok:false per-playbook result yields GENERIC_FAILURE
+  // (exit 1) — distinct from the single-run BLOCKED (4) path. Surfacing the
   // most-specific code first means a CI gate can branch on the right
   // remediation without parsing the body.
   const anyLockBusy = results.some(r => r.attestation_persist && r.attestation_persist.lock_contention === true);
@@ -7506,7 +7454,7 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
   }
   // Enumerate sessions across both v0.11.0 default root and legacy cwd-
   // relative root, so operators with prior attestations still see them.
-  // Cycle 11 F5 (v0.12.32): also track candidate roots that didn't exist
+  // also track candidate roots that didn't exist
   // so operators can tell whether the directory was scanned-and-empty or
   // simply never created. Pre-fix the human output said "(no attestations
   // under )" with no path — operators couldn't see where the verb looked.
@@ -7593,7 +7541,7 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     limit: limitN,
     filter: { playbook: playbookFilter ? [...playbookFilter] : null, since: args.since || null },
     roots_searched: [...seenRoots],
-    // Cycle 11 F5 (v0.12.32): every candidate root + whether it existed,
+    // every candidate root + whether it existed,
     // so JSON consumers can distinguish scanned-and-empty from never-created.
     // The human renderer below also surfaces this rather than printing
     // "(no attestations under )" with an empty path list.
@@ -8395,7 +8343,7 @@ function cmdCi(runner, args, runOpts, pretty) {
   // --scope and --all. Operators specifying an explicit set get exactly that
   // set, no more, no less. Pre-0.11.9 the flag was silently ignored.
   let ids;
-  // Cycle 11 F1 (v0.12.31): positional args (`exceptd ci kernel cred-stores`)
+  // positional args (`exceptd ci kernel cred-stores`)
   // were silently ignored and the cwd-autodetect path ran instead. Operators
   // got a green PASS for playbooks that were never actually executed. Treat
   // positional args as an inline --required, with the same unknown-id refusal.
@@ -8531,7 +8479,7 @@ function cmdCi(runner, args, runOpts, pretty) {
   let clockStartedReasons = [];
 
   for (const id of ids) {
-    // Cycle 9 B4: defense-in-depth — validate id even though the catalog-iter
+    // defense-in-depth — validate id even though the catalog-iter
     // upstream is trusted. A corrupt catalog returning a malformed id would
     // otherwise reach loadPlaybook unchecked. Matches the cmdRunMulti pattern.
     const idCheck = validateIdComponent(id, "playbook");
