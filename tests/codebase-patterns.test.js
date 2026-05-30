@@ -56,6 +56,11 @@ test('VALID_ALLOW_CLASSES holds exactly the markable detector classes', () => {
   const markable = gate.CLASSES.filter(c => c.id !== 'orphan-allow-class').map(c => c.id).sort();
   assert.deepEqual(Object.keys(gate.VALID_ALLOW_CLASSES).sort(), markable,
     'VALID_ALLOW_CLASSES must equal the set of markable detector ids');
+  // filesUnder is the shared source-walk the detectors share; it must return
+  // a sorted array of repo-relative paths and exclude *.test.js.
+  const libFiles = gate.filesUnder(['lib']);
+  assert.ok(Array.isArray(libFiles) && libFiles.length > 0, 'filesUnder([lib]) returns a non-empty array');
+  assert.ok(libFiles.every(f => !/\.test\.js$/.test(f)), 'filesUnder excludes *.test.js');
 });
 
 // ---- each detector catches a planted violation + is suppressed -----------
@@ -102,6 +107,8 @@ test('currency check exports a non-empty triaged upstream set + parser', () => {
   assert.ok(Array.isArray(currency.UPSTREAM_TRIAGED), 'UPSTREAM_TRIAGED is an array');
   assert.ok(currency.UPSTREAM_TRIAGED.length >= 40, 'records the triaged upstream catalog');
   assert.equal(typeof currency.upstreamClasses, 'function', 'exports the registry parser');
+  assert.equal(typeof currency.upstreamPatternsPath, 'function', 'exports the upstream-path resolver');
+  assert.equal(typeof currency.upstreamPatternsPath(), 'string', 'resolves to a path string');
   // The two classes exceptd actually adopted must be in the triaged set.
   for (const adopted of ['process-exit', 'dynamic-regex']) {
     assert.ok(currency.UPSTREAM_TRIAGED.includes(adopted), `${adopted} is recorded as triaged`);
