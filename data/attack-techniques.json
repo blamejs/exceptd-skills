@@ -958,7 +958,6 @@
     "name": "Exploit Public-Facing Application",
     "version": "v19",
     "cve_refs": [
-      "CVE-2008-0015",
       "CVE-2008-4250",
       "CVE-2014-6278",
       "CVE-2015-7755",
@@ -1098,7 +1097,6 @@
       "CVE-2025-4632",
       "CVE-2025-47812",
       "CVE-2025-47827",
-      "CVE-2025-48384",
       "CVE-2025-48700",
       "CVE-2025-48703",
       "CVE-2025-48927",
@@ -1365,6 +1363,7 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2007-0671",
+      "CVE-2008-0015",
       "CVE-2009-0238",
       "CVE-2009-0556",
       "CVE-2009-1537",
@@ -1397,8 +1396,10 @@
       "CVE-2025-43529",
       "CVE-2025-4919",
       "CVE-2025-5419",
+      "CVE-2025-6218",
       "CVE-2025-6554",
       "CVE-2025-6558",
+      "CVE-2025-8088",
       "CVE-2026-20700",
       "CVE-2026-21519",
       "CVE-2026-2441",
@@ -10776,7 +10777,10 @@
     "stix_id": "attack-pattern--232b7f21-adf9-4b42-b936-b9d6f7df856e",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2025-48384"
+    ]
   },
   "T1204.003": {
     "id": "T1204.003",
@@ -13054,7 +13058,11 @@
     "stix_id": "attack-pattern--9efb1ea7-c37b-4595-9640-b7680cd84279",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2025-6218",
+      "CVE-2025-8088"
+    ]
   },
   "T1547.002": {
     "id": "T1547.002",
