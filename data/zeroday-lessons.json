@@ -7023,67 +7023,123 @@
   },
   "CVE-2024-57728": {
     "name": "SimpleHelp Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SimpleHelp contains a path traversal vulnerability that allows admin users to upload arbitrary files anywhere on the file system by uploading a crafted zip file (i.e. zip slip). This can be exploited to execute arbitrary code on the host in the context of the SimpleHelp server user.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) letting an unauthenticated attacker read or write files outside the intended directory on the remote-support server. CISA KEV-listed 2026-04-24 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SimpleHelp security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SimpleHelp: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing SimpleHelp is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-57726": {
     "name": "SimpleHelp Missing Authorization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SimpleHelp contains a missing authorization vulnerability that could allow low-privileged technicians to create API keys with excessive permissions. These API keys can be used to escalate privileges to the server admin role.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a missing-authorization flaw (CWE-862) letting a low-privileged or unauthenticated attacker reach privileged functionality on the remote-support server. CISA KEV-listed 2026-04-24 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SimpleHelp security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SimpleHelp: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing SimpleHelp is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-20122": {
     "name": "Cisco Catalyst SD-WAN Manager Incorrect Use of Privileged APIs Vulnerability",
@@ -7419,35 +7475,63 @@
   },
   "CVE-2025-32975": {
     "name": "Quest KACE Systems Management Appliance (SMA) Improper Authentication Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Quest KACE Systems Management Appliance (SMA) contains an improper authentication vulnerability that could allow attackers to impersonate legitimate users without valid credentials.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-authentication flaw (CWE-287) letting an unauthenticated attacker bypass authentication on the endpoint-management appliance. CISA KEV-listed 2026-04-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Quest KACE Systems Management Appliance security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Quest KACE SMA: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing Quest KACE Systems Management Appliance is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-27199": {
     "name": "JetBrains TeamCity Relative Path Traversal Vulnerability",
@@ -16632,35 +16716,63 @@
   },
   "CVE-2025-61882": {
     "name": "Oracle E-Business Suite Unspecified Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Oracle E-Business Suite contains an unspecified vulnerability in the BI Publisher Integration component. The vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Concurrent Processing. Successful attacks can result in takeover of Oracle Concurrent Processing.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an unauthenticated code-injection / remote code execution flaw (CWE-94), mass-exploited in a data-theft extortion campaign. CISA KEV-listed 2025-10-06 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Oracle E-Business Suite security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Oracle E-Business Suite: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 75,
-      "basis": "Known ransomware-campaign use; passing orgs typically still exposed when patch deployment lags KEV due date.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing Oracle E-Business Suite is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2014-6278": {
     "name": "GNU Bash OS Command Injection Vulnerability",
@@ -17744,67 +17856,123 @@
   },
   "CVE-2025-8876": {
     "name": "N-able N-Central Command Injection Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "N-able N-Central contains a command injection vulnerability via improper sanitization of user input.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a command-injection flaw (CWE-94) enabling unauthenticated remote command execution on the RMM server. CISA KEV-listed 2025-08-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the N-able N-Central security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the N-Central: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing N-able N-Central is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-8875": {
     "name": "N-able N-Central Insecure Deserialization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "N-able N-Central contains an insecure deserialization vulnerability that could lead to command execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an insecure-deserialization flaw (CWE-94) enabling unauthenticated remote code execution on the RMM server. CISA KEV-listed 2025-08-13 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the N-able N-Central security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the N-Central: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing N-able N-Central is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-8088": {
     "name": "RARLAB WinRAR Path Traversal Vulnerability",
@@ -18282,67 +18450,123 @@
   },
   "CVE-2025-2775": {
     "name": "SysAid On-Prem Improper Restriction of XML External Entity Reference Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SysAid On-Prem contains an improper restriction of XML external entity reference vulnerability in the Checkin processing functionality, allowing for administrator account takeover and file read primitives.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an XML external entity (XXE) flaw (CWE-611) letting an unauthenticated attacker read server files and coerce server-side requests (a step toward administrator takeover and code execution). CISA KEV-listed 2025-07-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SysAid On-Prem security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SysAid: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing SysAid On-Prem is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-2776": {
-    "name": "SysAid On-Prem Improper Restriction of XML External Entity Reference Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "SysAid On-Prem Improper Restriction of XML External Entity Reference Vulnerability (variant: CVE-2025-2776)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SysAid On-Prem contains an improper restriction of XML external entity reference vulnerability in the Server URL processing functionality, allowing for administrator account takeover and file read primitives.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an XML external entity (XXE) flaw (CWE-611) at a second injection point, letting an unauthenticated attacker read server files and coerce server-side requests. CISA KEV-listed 2025-07-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the platform's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SysAid On-Prem security update; hunt for web shells, rotate credentials and secrets, and review downstream managed/integrated systems — management platforms reach the whole estate, so treat compromise as fleet-wide.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — web shells, stolen credentials, and pushed tasking survive the patch and require explicit cleanup across managed systems."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SysAid: exploit-shaped requests, new web-shell files, unexpected process execution, administrative actions without a matching session, and anomalous jobs/scripts pushed to managed endpoints.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch resident persistence and downstream tasking after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, hunt and remove web shells, rotate all platform and integration credentials, and audit every action the platform pushed to managed systems during the exposure window; assume downstream compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a management-platform compromise can re-establish itself through the very systems it administers, so downstream review is non-negotiable."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated IT-management/enterprise platform RCE; these are mass-exploited within days, and RMM/ITSM/endpoint-management compromise reaches the entire managed estate."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing management platform whose compromise is fleet-wide."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats management platforms as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / credential-rotation / downstream-review cleanup these RCEs need given their managed-estate reach."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing management platform that can administer systems in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 79,
+      "basis": "Internet-facing SysAid On-Prem is run by audited organizations on a standard patch SLA and is mass-exploited within days; the required web-shell hunt, credential rotation, and downstream-estate review are rarely part of the documented patch procedure, and the management reach amplifies the blast radius.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-6558": {
     "name": "Google Chromium ANGLE and GPU Improper Input Validation Vulnerability",
