@@ -65,7 +65,7 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // block when it is curated to a full entry, so this ceiling falls in step
     // with the remaining-draft count; it is lowered to the current actual as
     // curation proceeds. This is tracked draft-debt, not a regression.
-    "cve-catalog":     { iocs: 58 },
+    "cve-catalog":     { iocs: 50 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
