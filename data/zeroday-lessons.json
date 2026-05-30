@@ -12703,35 +12703,63 @@
   },
   "CVE-2025-68461": {
     "name": "RoundCube Webmail Cross-site Scripting Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "RoundCube Webmail contains a cross-site scripting vulnerability via the animate tag in an SVG document.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) in Roundcube Webmail (a later variant), letting an attacker run script in a victim's authenticated session via a crafted email. CISA KEV-listed 2026-02-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker sends an email; the victim's act of viewing it triggers the script in their authenticated session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the webmail update; enforce a strict Content-Security-Policy, HttpOnly+SameSite session cookies, and robust output encoding so a stored/reflected XSS cannot exfiltrate the session — these flaws are favored by espionage actors for silent mailbox access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch closes the specific bug; CSP and HttpOnly/SameSite cookies are the durable controls that keep the next XSS from stealing a session."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Roundcube Webmail: emails carrying XSS payloads, webmail sessions making outbound requests to unexpected hosts, and mailbox access from anomalous sources.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because the exploit fires silently when the victim opens the email; the anomaly is the session exfiltration and out-of-pattern mailbox access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, invalidate all webmail sessions and force re-authentication, review mailboxes for unauthorized access and forwarding rules, and rotate credentials for affected users.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a webmail-XSS compromise targets mailbox data and persistent access (forwarding rules), which a patch alone does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed webmail XSS; these are favored by espionage actors for silent mailbox access and weaponized within days of disclosure."
+      },
+      "NIST-800-53-SI-10-output-encoding": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Output encoding / input validation is named, but the durable compensating controls — a strict Content-Security-Policy and HttpOnly+SameSite session cookies that prevent a stored/reflected XSS from exfiltrating the session — are not mandated, leaving the session stealable even when an encoding bug slips through."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited, internet-facing webmail server holding high-value mailbox data."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing mail as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not require the session-invalidation / mailbox-access review a webmail-XSS compromise needs."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing webmail is run by audited organizations on a standard patch SLA and is repeatedly targeted by espionage actors; the durable controls (CSP, HttpOnly/SameSite cookies) and the session-invalidation / mailbox-review response are rarely part of the documented procedure.",
+      "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2021-22175": {
     "name": "GitLab Server-Side Request Forgery (SSRF) Vulnerability",
@@ -21358,35 +21386,63 @@
   },
   "CVE-2024-42009": {
     "name": "RoundCube Webmail Cross-Site Scripting Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "RoundCube Webmail contains a cross-site scripting vulnerability. This vulnerability could allow a remote attacker to steal and send emails of a victim via a crafted e-mail message that abuses a Desanitization issue in message_body() in program/actions/mail/show.php.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) in Roundcube Webmail, letting an attacker run script in a victim's authenticated session via a crafted email (exploited in espionage credential-theft campaigns). CISA KEV-listed 2025-06-09 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker sends an email; the victim's act of viewing it triggers the script in their authenticated session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the webmail update; enforce a strict Content-Security-Policy, HttpOnly+SameSite session cookies, and robust output encoding so a stored/reflected XSS cannot exfiltrate the session — these flaws are favored by espionage actors for silent mailbox access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch closes the specific bug; CSP and HttpOnly/SameSite cookies are the durable controls that keep the next XSS from stealing a session."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Roundcube Webmail: emails carrying XSS payloads, webmail sessions making outbound requests to unexpected hosts, and mailbox access from anomalous sources.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because the exploit fires silently when the victim opens the email; the anomaly is the session exfiltration and out-of-pattern mailbox access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, invalidate all webmail sessions and force re-authentication, review mailboxes for unauthorized access and forwarding rules, and rotate credentials for affected users.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a webmail-XSS compromise targets mailbox data and persistent access (forwarding rules), which a patch alone does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed webmail XSS; these are favored by espionage actors for silent mailbox access and weaponized within days of disclosure."
+      },
+      "NIST-800-53-SI-10-output-encoding": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Output encoding / input validation is named, but the durable compensating controls — a strict Content-Security-Policy and HttpOnly+SameSite session cookies that prevent a stored/reflected XSS from exfiltrating the session — are not mandated, leaving the session stealable even when an encoding bug slips through."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited, internet-facing webmail server holding high-value mailbox data."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing mail as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not require the session-invalidation / mailbox-access review a webmail-XSS compromise needs."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing webmail is run by audited organizations on a standard patch SLA and is repeatedly targeted by espionage actors; the durable controls (CSP, HttpOnly/SameSite cookies) and the session-invalidation / mailbox-review response are rarely part of the documented procedure.",
+      "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-32433": {
     "name": "Erlang Erlang/OTP SSH Server Missing Authentication for Critical Function Vulnerability",
@@ -22182,35 +22238,63 @@
   },
   "CVE-2024-11182": {
     "name": "MDaemon Email Server Cross-Site Scripting (XSS) Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "MDaemon Email Server contains a cross-site scripting (XSS) vulnerability that allows a remote attacker to load arbitrary JavaScript code via an HTML e-mail message.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a cross-site scripting flaw (CWE-79) in the MDaemon webmail (WorldClient), letting an attacker run script in a victim's authenticated session when they view a crafted email — used to steal session credentials and access the mailbox. CISA KEV-listed 2025-05-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the attacker sends an email; the victim's act of viewing it triggers the script in their authenticated session)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the webmail update; enforce a strict Content-Security-Policy, HttpOnly+SameSite session cookies, and robust output encoding so a stored/reflected XSS cannot exfiltrate the session — these flaws are favored by espionage actors for silent mailbox access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch closes the specific bug; CSP and HttpOnly/SameSite cookies are the durable controls that keep the next XSS from stealing a session."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the MDaemon WorldClient webmail: emails carrying XSS payloads, webmail sessions making outbound requests to unexpected hosts, and mailbox access from anomalous sources.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because the exploit fires silently when the victim opens the email; the anomaly is the session exfiltration and out-of-pattern mailbox access."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, invalidate all webmail sessions and force re-authentication, review mailboxes for unauthorized access and forwarding rules, and rotate credentials for affected users.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; a webmail-XSS compromise targets mailbox data and persistent access (forwarding rules), which a patch alone does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed webmail XSS; these are favored by espionage actors for silent mailbox access and weaponized within days of disclosure."
+      },
+      "NIST-800-53-SI-10-output-encoding": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Output encoding / input validation is named, but the durable compensating controls — a strict Content-Security-Policy and HttpOnly+SameSite session cookies that prevent a stored/reflected XSS from exfiltrating the session — are not mandated, leaving the session stealable even when an encoding bug slips through."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard reading is unsafe for an actively-exploited, internet-facing webmail server holding high-value mailbox data."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing mail as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA and does not require the session-invalidation / mailbox-access review a webmail-XSS compromise needs."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Internet-facing webmail is run by audited organizations on a standard patch SLA and is repeatedly targeted by espionage actors; the durable controls (CSP, HttpOnly/SameSite cookies) and the session-invalidation / mailbox-review response are rarely part of the documented procedure.",
+      "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-4428": {
     "name": "Ivanti Endpoint Manager Mobile (EPMM) Code Injection Vulnerability (variant: CVE-2025-4428)",

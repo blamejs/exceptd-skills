@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.39 — 2026-05-29
+
+Draft-curation pass 36 — webmail cross-site scripting. Three CISA KEV-listed webmail XSS CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the MDaemon WorldClient webmail flaw (CVE-2024-11182) and two Roundcube Webmail flaws (CVE-2024-42009, CVE-2025-68461). Script runs in the victim's authenticated mail session the moment they view a crafted email, so they map T1190 alongside T1539 (steal web session cookie). The lessons stress that patching the specific bug is not enough — a strict Content-Security-Policy and HttpOnly+SameSite session cookies are the durable controls that stop the next XSS from exfiltrating a session — and that response must invalidate webmail sessions and review mailboxes for unauthorized access and forwarding rules, because this class is repeatedly used by espionage actors for silent mailbox theft.
+
 ## 0.15.38 — 2026-05-29
 
 Draft-curation pass 35 — path traversal file access. Four CISA KEV-listed unauthenticated path-traversal CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Ruby on Rails Action View arbitrary file read (CVE-2019-5418), Srimax Output Messenger directory traversal chained to code execution (CVE-2025-27920), ZKTeco BioTime arbitrary file read (CVE-2023-38950), and the end-of-life D-Link DIR-859 router configuration disclosure (CVE-2024-0769). All map T1190; the secret-leaking file-read variants also map T1552. The lessons stress that patching does not undo the disclosure — every secret a traversal read must be rotated — that file-write traversals require hunting for dropped payloads, and that an end-of-life device (DIR-859) can only be replaced, not patched.
