@@ -63,6 +63,7 @@ const PKG_ROOT = path.resolve(__dirname, "..");
 const { EXIT_CODES, listExitCodes } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
 const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
 const { suggestFlag, flagsFor, VERB_FLAG_ALLOWLIST } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+const codepointClass = require(path.join(PKG_ROOT, "vendor", "blamejs", "codepoint-class.js"));
 
 // Union of every flag known to ANY verb. A flag that is valid somewhere but
 // not on the active verb (e.g. `--csaf-status` on `brief`) is cross-verb
@@ -1524,6 +1525,7 @@ function dispatchPlaybook(cmd, argv) {
     // Cc / Cf / Co / Cn — bidi overrides (U+202E "RTL OVERRIDE"),
     // zero-width joiners (U+200B-D), invisible format chars, private-use
     // codepoints, unassigned codepoints. An operator string like
+    // allow:bidi-codepoint-literal — illustrative bidi-forgery example in the --operator reject-path doc comment
     // "alice‮evilbob" renders as "alicebobevila" in any UI that respects
     // bidi — a forgery surface where the attested name looks like Bob but the
     // bytes are Alice. Reject anything outside a positive allowlist of
@@ -1552,18 +1554,27 @@ function dispatchPlaybook(cmd, argv) {
       );
     }
     if (/\p{C}/u.test(normalized)) {
-      // Find the offending codepoint to surface a useful hint without
-      // round-tripping the raw bytes into the error body.
+      // \p{C} (Cc/Cf/Cs/Co/Cn) is the reject gate — it is strictly broader
+      // than the named family regexes (bidi / C0-control / zero-width / null),
+      // so it stays the backstop and catches the divergent remainder the
+      // family tables miss (U+007F, U+0080-009F, private-use, unassigned).
+      // The vendored codepoint tables only CLASSIFY the first offending
+      // codepoint into a human family name for the hint.
       let offending = "";
+      let family = "control / format / private-use / unassigned codepoint";
       for (const cp of normalized) {
         if (/\p{C}/u.test(cp)) {
           offending = "U+" + cp.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+          if (codepointClass.BIDI_RE.test(cp)) family = "bidirectional-override codepoint";
+          else if (codepointClass.ZERO_WIDTH_RE.test(cp)) family = "zero-width / invisible codepoint";
+          else if (cp === codepointClass.NULL_BYTE) family = "null byte";
+          else if (codepointClass.C0_CTRL_RE.test(cp)) family = "C0 control character";
           break;
         }
       }
       return emitError(
-        `${cmd}: --operator contains a Unicode control / format / private-use / unassigned codepoint (${offending}). Bidi overrides (U+202E), zero-width joiners (U+200B–D), and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
-        { verb: cmd, provided_length: args.operator.length, offending_codepoint: offending },
+        `${cmd}: --operator contains a Unicode ${family} (${offending}). Bidi overrides, zero-width joiners, and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
+        { verb: cmd, provided_length: args.operator.length, offending_codepoint: offending, offending_family: family },
         pretty
       );
     }

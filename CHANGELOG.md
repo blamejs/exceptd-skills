@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.50 — 2026-05-30
+
+Hardening: `--operator` validation and the operator-text sanitizer now classify and strip Unicode threat codepoints — Trojan-Source bidirectional overrides (CVE-2021-42574), zero-width/invisible marks, C0 controls, and null — through a shared vendored codepoint-threat table, and the `--operator` rejection now names the specific codepoint family (for example "bidirectional-override codepoint") instead of a generic message. Unicode General Category C remains the reject/strip backstop, so the broader control / private-use / unassigned set is still refused.
+
+Internal: a new codebase-pattern gate class, `bidi-codepoint-literal`, blocks raw bidi-override / zero-width / null codepoints embedded literally in source (invisible-in-review code reordering — the Trojan-Source class); source must escape them or route through the shared table.
+
 ## 0.15.49 — 2026-05-30
 
 Internal: a new predeploy gate, `scripts/check-codebase-patterns.js`, enforces code-shape bug classes that recurred across releases. It blocks a library-callable function that writes to stdout and then calls `process.exit()` (which truncates buffered output when the stream is piped — the class the v0.15.47 validate-cves fix addressed) and a stale or reason-less `// allow:` suppression marker, and warns on dynamic `RegExp` construction. The flagged `process.exit` sites across the catalog, playbook, package, and vendor validators were converted to the flush-safe `safeExit` form, and the dynamic-`RegExp` sites carry inline justification markers. A companion advisory, wired into the release `prepare` step, flags when the upstream pattern catalog grows a class exceptd hasn't triaged. No change to the shipped CLI surface, catalogs, or skills.

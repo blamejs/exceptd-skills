@@ -41,6 +41,7 @@ const ROOT = path.resolve(__dirname, "..");
 const VALID_ALLOW_CLASSES = Object.freeze({
   "process-exit-after-stdout-write": true,
   "dynamic-regex": true,
+  "bidi-codepoint-literal": true,
 });
 
 const EXCLUDE_DIRS = new Set([
@@ -205,6 +206,39 @@ function detectDynamicRegex(files) {
   return filterMarkers(hits, "dynamic-regex");
 }
 
+// Raw bidi-override / zero-width / invisible / null codepoints embedded as
+// literals in source — the Trojan-Source class (CVE-2021-42574). A literal
+// such codepoint is invisible in review and can reorder or hide code. Source
+// should emit them programmatically (via vendor/blamejs/codepoint-class) or
+// escape them (\uXXXX), never type them literally. The range table holds only
+// numeric codepoints + the regex is built from escapes, so this detector's own
+// source is clean (and the file self-skips below regardless).
+const _BIDI_LITERAL_RANGES = [
+  [0x202A, 0x202E], [0x2066, 0x2069], 0x200E, 0x200F, 0x061C, // bidi overrides + isolates
+  0x200B, 0x200C, 0x200D, 0x00AD, 0x2060, 0xFEFF,             // zero-width / invisible
+  0x0000,                                                      // null
+];
+function _bidiLiteralRe() {
+  const body = _BIDI_LITERAL_RANGES.map((r) =>
+    Array.isArray(r)
+      ? "\\u" + r[0].toString(16).padStart(4, "0") + "-\\u" + r[1].toString(16).padStart(4, "0")
+      : "\\u" + r.toString(16).padStart(4, "0")
+  ).join("");
+  return new RegExp("[" + body + "]"); // allow:dynamic-regex — codepoints from a static literal range table, not operator input
+}
+function detectBidiCodepointLiteral(files) {
+  const re = _bidiLiteralRe();
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue; // holds the range table itself
+    const lines = readLines(rel);
+    for (let i = 0; i < lines.length; i++) {
+      if (re.test(lines[i])) hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
+    }
+  }
+  return filterMarkers(hits, "bidi-codepoint-literal");
+}
+
 function detectOrphanAllowClass(files) {
   const hits = [];
   for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
@@ -252,6 +286,12 @@ const CLASSES = [
     hint: "RegExp from operator input is a ReDoS sink — anchor + length-cap, or `// allow:dynamic-regex — <reason>` when the pattern is a trusted bundled schema",
   },
   {
+    id: "bidi-codepoint-literal",
+    run: detectBidiCodepointLiteral,
+    warnOnly: false,
+    hint: "raw bidi/zero-width/null codepoint in source — emit it via vendor/blamejs/codepoint-class tables or a \\uXXXX escape, or `// allow:bidi-codepoint-literal — <reason>` if the literal is load-bearing test/illustrative data",
+  },
+  {
     id: "orphan-allow-class",
     run: detectOrphanAllowClass,
     warnOnly: false,
@@ -289,6 +329,7 @@ module.exports = {
   CLASSES,
   detectProcessExitAfterStdout,
   detectDynamicRegex,
+  detectBidiCodepointLiteral,
   detectOrphanAllowClass,
   filesUnder,
 };
