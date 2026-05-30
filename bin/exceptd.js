@@ -2893,7 +2893,8 @@ function cmdBrief(runner, args, runOpts, pretty) {
         lines.push(`  ${p.id} (${p.on_fail}): ${pdesc.length > 80 ? pdesc.slice(0, 80) + "…" : pdesc}`);
       }
     }
-    lines.push(`\nRun: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
+    lines.push(`\nCollect evidence: exceptd collect ${obj.playbook_id} | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`Run with your own evidence: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
     lines.push(`Full structured doc: --json or --pretty`);
     return lines.join("\n");
   });

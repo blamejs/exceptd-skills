@@ -55,3 +55,13 @@ test('exceptd skill (no args) lists every skill ID so they are discoverable', ()
   const human = cli(['skill']);
   assert.match(human.stderr || '', new RegExp(`Available skills \\(${manifest.skills.length}\\)`), 'human usage shows the skill count');
 });
+
+test('brief <playbook> footer reveals the collect verb (so brief-first operators do not run on empty evidence)', () => {
+  // Usability P1: brief ended with `Run: exceptd run <pb> --evidence <file|->`
+  // but never said where that file comes from — the collect verb was invisible.
+  // brief renders human output unless EXCEPTD_RAW_JSON is set (the harness sets
+  // it for determinism); clear it here so we exercise the human footer.
+  const r = cli(['brief', 'secrets'], { env: { EXCEPTD_RAW_JSON: '' } });
+  const out = (r.stdout || '') + (r.stderr || '');
+  assert.match(out, /exceptd collect secrets \| exceptd run secrets --evidence -/, 'brief footer must show the collect pipeline');
+});
