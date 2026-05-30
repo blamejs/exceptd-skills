@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 426
+    "entry_count": 427
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -6991,35 +6991,63 @@
   },
   "CVE-2024-7399": {
     "name": "Samsung MagicINFO 9 Server Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Samsung MagicINFO 9 Server contains a path traversal vulnerability that could allow an attacker to write arbitrary files as system authority.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal plus unrestricted-file-upload flaw (CWE-22/CWE-434), letting an unauthenticated attacker upload a file (e.g. a web shell) and traverse to it for code execution. CISA KEV-listed 2026-04-24 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the service's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Samsung MagicINFO 9 Server security update; hunt for web shells under the service's root and rotate service credentials — an upload/injection primitive leaves resident persistence the patch does not remove.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; the recurring failure is the SLA gap and the lack of web-shell-hunt / rebuild cleanup, plus long-tail unpatched estates (the MS08-067 lesson)."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the MagicINFO Server: exploit-shaped requests, new web-shell files, unexpected process execution, and service crashes consistent with memory corruption.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on an internet-facing service."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the upload/injection variants hunt and remove web shells and rotate credentials, for the memory-corruption variants rebuild the host; review for lateral movement.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an internet-facing RCE typically yields persistence and a pivot, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network service; these are mass-exploited within days, and MS08-067/Conficker is the canonical example of long-tail exposure persisting for years on unpatched estates."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing service, and legacy KEV re-listings show unpatched long-tail estates remain exposed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing services as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / rebuild cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network service in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Samsung MagicINFO 9 Server is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt / rebuild is rarely part of the documented patch procedure, and long-tail unpatched estates persist (the MS08-067 pattern).",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-57728": {
     "name": "SimpleHelp Path Traversal Vulnerability",
@@ -13874,35 +13902,63 @@
   },
   "CVE-2024-37079": {
     "name": "Broadcom VMware vCenter Server Out-of-bounds Write Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Broadcom VMware vCenter Server contains an out-of-bounds write vulnerability in the implementation of the DCERPC protocol. This could allow a malicious actor with network access to vCenter Server to send specially crafted network packets, potentially leading to remote code execution.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an out-of-bounds write (CWE-787) in the vCenter Server DCE/RPC protocol implementation, exploitable by an unauthenticated attacker for remote code execution. CISA KEV-listed 2026-01-23 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the service's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the VMware vCenter Server security update; for a memory-corruption RCE on a network service, treat an exploited host as compromised and rebuild, rotating any credentials it held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; the recurring failure is the SLA gap and the lack of web-shell-hunt / rebuild cleanup, plus long-tail unpatched estates (the MS08-067 lesson)."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the vCenter Server: exploit-shaped requests, new web-shell files, unexpected process execution, and service crashes consistent with memory corruption.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on an internet-facing service."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the upload/injection variants hunt and remove web shells and rotate credentials, for the memory-corruption variants rebuild the host; review for lateral movement.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an internet-facing RCE typically yields persistence and a pivot, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network service; these are mass-exploited within days, and MS08-067/Conficker is the canonical example of long-tail exposure persisting for years on unpatched estates."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing service, and legacy KEV re-listings show unpatched long-tail estates remain exposed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing services as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / rebuild cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network service in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing VMware vCenter Server is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt / rebuild is rarely part of the documented patch procedure, and long-tail unpatched estates persist (the MS08-067 pattern).",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-68645": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) PHP Remote File Inclusion Vulnerability",
@@ -18897,35 +18953,63 @@
   },
   "CVE-2025-47812": {
     "name": "Wing FTP Server Improper Neutralization of Null Byte or NUL Character Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Wing FTP Server contains an improper neutralization of null byte or NUL character vulnerability that can allow injection of arbitrary Lua code into user session files. This can be used to execute arbitrary system commands with the privileges of the FTP service (root or SYSTEM by default).",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an improper-neutralization null-byte flaw (CWE-158) letting an unauthenticated attacker inject Lua/commands for remote code execution (exploitable even via anonymous login). CISA KEV-listed 2025-07-14 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the service's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Wing FTP Server security update; hunt for web shells under the service's root and rotate service credentials — an upload/injection primitive leaves resident persistence the patch does not remove.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; the recurring failure is the SLA gap and the lack of web-shell-hunt / rebuild cleanup, plus long-tail unpatched estates (the MS08-067 lesson)."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Wing FTP Server: exploit-shaped requests, new web-shell files, unexpected process execution, and service crashes consistent with memory corruption.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on an internet-facing service."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the upload/injection variants hunt and remove web shells and rotate credentials, for the memory-corruption variants rebuild the host; review for lateral movement.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an internet-facing RCE typically yields persistence and a pivot, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network service; these are mass-exploited within days, and MS08-067/Conficker is the canonical example of long-tail exposure persisting for years on unpatched estates."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing service, and legacy KEV re-listings show unpatched long-tail estates remain exposed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing services as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / rebuild cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network service in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Wing FTP Server is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt / rebuild is rarely part of the documented patch procedure, and long-tail unpatched estates persist (the MS08-067 pattern).",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-5777": {
     "name": "Citrix NetScaler ADC and Gateway Out-of-Bounds Read Vulnerability",
@@ -20181,36 +20265,64 @@
     "_intake_method": "v0.13.17-bulk-cisa-kev-import"
   },
   "CVE-2025-4632": {
-    "name": "Samsung MagicINFO 9 Server Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "name": "Samsung MagicINFO 9 Server Path Traversal Vulnerability (variant: CVE-2025-4632)",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Samsung MagicINFO 9 Server contains a path traversal vulnerability that allows an attacker to write arbitrary file as system authority.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22, a patch-bypass variant) letting an unauthenticated attacker write or read files outside the intended directory for code execution. CISA KEV-listed 2025-05-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the service's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Samsung MagicINFO 9 Server security update; for a memory-corruption RCE on a network service, treat an exploited host as compromised and rebuild, rotating any credentials it held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; the recurring failure is the SLA gap and the lack of web-shell-hunt / rebuild cleanup, plus long-tail unpatched estates (the MS08-067 lesson)."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the MagicINFO Server: exploit-shaped requests, new web-shell files, unexpected process execution, and service crashes consistent with memory corruption.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on an internet-facing service."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the upload/injection variants hunt and remove web shells and rotate credentials, for the memory-corruption variants rebuild the host; review for lateral movement.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an internet-facing RCE typically yields persistence and a pivot, which a bare patch does not remediate."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network service; these are mass-exploited within days, and MS08-067/Conficker is the canonical example of long-tail exposure persisting for years on unpatched estates."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing service, and legacy KEV re-listings show unpatched long-tail estates remain exposed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing services as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / rebuild cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network service in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Samsung MagicINFO 9 Server is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt / rebuild is rarely part of the documented patch procedure, and long-tail unpatched estates persist (the MS08-067 pattern).",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2023-38950": {
     "name": "ZKTeco BioTime Path Traversal Vulnerability",
@@ -22275,6 +22387,66 @@
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 58,
       "basis": "Microsoft Windows is ubiquitous on endpoints; audited organizations that lean on a single protection (SmartScreen, Protected View, Mark-of-the-Web) without layered controls are exposed when that mechanism is bypassed, and long-tail patch hygiene leaves a window for the memory-corruption variants.",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2008-4250": {
+    "name": "Microsoft Windows Server Service RPC Buffer Overflow (MS08-067)",
+    "lesson_date": "2026-05-29",
+    "attack_vector": {
+      "description": "a buffer overflow (CWE-119) in the Windows Server Service RPC handling, exploitable by an unauthenticated attacker for wormable remote code execution (the MS08-067 flaw exploited by Conficker). CISA KEV-listed 2026-05-20 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the service's public interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Microsoft Windows security update; for a memory-corruption RCE on a network service, treat an exploited host as compromised and rebuild, rotating any credentials it held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; the recurring failure is the SLA gap and the lack of web-shell-hunt / rebuild cleanup, plus long-tail unpatched estates (the MS08-067 lesson)."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Windows Server Service (RPC): exploit-shaped requests, new web-shell files, unexpected process execution, and service crashes consistent with memory corruption.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and resident persistence on an internet-facing service."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately; for the upload/injection variants hunt and remove web shells and rotate credentials, for the memory-corruption variants rebuild the host; review for lateral movement.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an internet-facing RCE typically yields persistence and a pivot, which a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed unauthenticated flaw on an internet-facing network service; these are mass-exploited within days, and MS08-067/Conficker is the canonical example of long-tail exposure persisting for years on unpatched estates."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing service, and legacy KEV re-listings show unpatched long-tail estates remain exposed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing services as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the web-shell-hunt / rebuild cleanup these RCEs need."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing network service in or adjacent to the CDE."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Microsoft Windows is run by audited organizations on a standard patch SLA and is mass-exploited within days of disclosure; the required web-shell hunt / rebuild is rarely part of the documented patch procedure, and long-tail unpatched estates persist (the MS08-067 pattern).",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,

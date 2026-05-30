@@ -65,7 +65,7 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // block when it is curated to a full entry, so this ceiling falls in step
     // with the remaining-draft count; it is lowered to the current actual as
     // curation proceeds. This is tracked draft-debt, not a regression.
-    "cve-catalog":     { iocs: 94 },
+    "cve-catalog":     { iocs: 89 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
@@ -84,7 +84,7 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
     // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
     // a novel control). Raised to the current actual when that happens.
-    "zeroday-lessons": { new_control_requirements: 259 }
+    "zeroday-lessons": { new_control_requirements: 260 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
