@@ -11683,7 +11683,7 @@
     "name": "Wing FTP Server Information Disclosure Vulnerability",
     "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "generation of an error message containing sensitive information (CWE-209), disclosing server paths and session-related data that aids further attack. CISA KEV-listed 2026-03-16 with confirmed in-the-wild exploitation.",
+      "description": "Generation of an error message containing sensitive information (CWE-209) in Wing FTP Server: an oversized or malformed UID session cookie triggers an error (on loginok.html) that discloses the installation / local file path, aiding a follow-on attack. CISA KEV-listed 2026-03-16 with confirmed in-the-wild exploitation.",
       "privileges_required": "none-to-low (the data is exposed through an unauthenticated diagnostic surface or a low-privilege error path)",
       "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
       "ai_factor": "No AI involvement documented in discovery or weaponization."
@@ -11696,13 +11696,13 @@
         "adequacy": "Patch is necessary but insufficient alone — any credential or plaintext the exposure disclosed survives the patch and must be rotated/treated as breached; removing diagnostic surfaces from production is the durable control."
       },
       "detection": {
-        "what_would_have_worked": "Monitoring on the Wing FTP Server: requests to diagnostic/dump endpoints, retrieval of large memory/core artifacts, and subsequent use of disclosed credentials.",
+        "what_would_have_worked": "Monitoring on the Wing FTP Server: requests carrying oversized or malformed UID session cookies (to loginok.html and the web interface) and error responses that disclose the installation / local file path.",
         "was_this_required": false,
         "framework_requiring_it": null,
         "adequacy": "Necessary to catch the disclosure and the downstream use of leaked secrets."
       },
       "response": {
-        "what_would_have_worked": "Patch, remove the diagnostic surface, rotate every credential and session secret that was in memory, and — where plaintext content was exposed — notify affected parties and treat that data's confidentiality as breached.",
+        "what_would_have_worked": "Patch, suppress verbose error output that reveals local paths, rotate any session/credential material the disclosure aided, and review for follow-on attacks that used the leaked path.",
         "was_this_required": true,
         "framework_requiring_it": "NIST 800-53 IR-4",
         "adequacy": "Mandatory; a data-exposure flaw cannot be remediated by a patch alone because the disclosed data is already in the attacker's hands."
@@ -11732,7 +11732,7 @@
     },
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 72,
-      "basis": "Internet-facing Wing FTP Server can pass an audit while leaving diagnostic surfaces (Actuator, core dumps) or verbose errors exposed; an 'encrypted' posture is undermined when the server holds and leaks plaintext, and the required secret rotation / breach handling is rarely part of the patch procedure.",
+      "basis": "Internet-facing Wing FTP Server can pass an audit while returning verbose errors that leak the local installation path to an attacker who manipulates the UID session cookie; the path disclosure aids follow-on attacks, and suppressing verbose errors plus rotating exposed material is rarely part of the patch procedure.",
       "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
