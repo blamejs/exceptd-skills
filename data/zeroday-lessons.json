@@ -13348,35 +13348,63 @@
   },
   "CVE-2025-40536": {
     "name": "SolarWinds Web Help Desk Security Control Bypass Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SolarWinds Web Help Desk contains a security control bypass vulnerability that could allow an unauthenticated attacker to gain access to certain restricted functionality.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a security-control-bypass flaw (CWE-693) on SolarWinds Web Help Desk, letting an unauthenticated attacker bypass an intended security control to reach protected functionality. CISA KEV-listed 2026-02-12 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker and defeats the access-control mechanism)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SolarWinds Web Help Desk update; review privileged-function access during the exposure window and rotate service credentials — Web Help Desk has been a repeated exploitation target.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; restricting the management plane to a trusted network is the compensating control when the access-control enforcement is itself bypassed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Web Help Desk: requests exercising the bypass, administrative actions without a matching authentication event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because a bypass produces access that looks authorized; the anomaly is the absence of a legitimate authentication event."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict the management plane, rotate credentials and keys, review configuration/account changes during the exposure window, and audit privileged actions and (for file-transfer/secure-access) data exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an access-control bypass typically leaves administrative persistence or a code-execution foothold that a patch alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed access-control/security-control bypass on an internet-facing system; these grant unauthorized access to protected functionality and are mass-exploited within days."
+      },
+      "NIST-800-53-AC-3-enforcement": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-enforcement is required, but these flaws defeat the enforcement mechanism itself (alternate channel, missing authorization check, security-control bypass, assumed-immutable parameter); restricting the management plane to a trusted network is the load-bearing compensating control when enforcement fails."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or appliance whose access control is bypassed."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application or appliance (file-transfer / secure-access / help-desk) in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Internet-facing SolarWinds Web Help Desk is run by audited organizations whose access-control posture is irrelevant when the enforcement mechanism is bypassed; without management-plane restriction and prompt patching the system is exposed, and the required privileged-action review / web-shell hunt is rarely documented.",
+      "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2026-21513": {
     "name": "Microsoft MSHTML Framework Protection Mechanism Failure Vulnerability",
@@ -15171,35 +15199,63 @@
   },
   "CVE-2025-40602": {
     "name": "SonicWall SMA1000 Missing Authorization Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "SonicWall SMA1000 contains a missing authorization vulnerability that could allow for privilege escalation appliance management console (AMC) of affected devices.",
-      "privileges_required": "unprivileged local user",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a missing-authorization flaw (CWE-862/CWE-250) on the SonicWall SMA1000 secure-access appliance, letting an attacker reach functionality with unnecessary privileges without proper authorization. CISA KEV-listed 2025-12-17 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker and defeats the access-control mechanism)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SonicWall SMA1000 update and restrict management access; treat an exposed secure-access appliance as high-value — review sessions and rotate secrets, since it fronts remote access to the internal network.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; restricting the management plane to a trusted network is the compensating control when the access-control enforcement is itself bypassed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the SMA1000 appliance: requests exercising the bypass, administrative actions without a matching authentication event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because a bypass produces access that looks authorized; the anomaly is the absence of a legitimate authentication event."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict the management plane, rotate credentials and keys, review configuration/account changes during the exposure window, and audit privileged actions and (for file-transfer/secure-access) data exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an access-control bypass typically leaves administrative persistence or a code-execution foothold that a patch alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed access-control/security-control bypass on an internet-facing system; these grant unauthorized access to protected functionality and are mass-exploited within days."
+      },
+      "NIST-800-53-AC-3-enforcement": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-enforcement is required, but these flaws defeat the enforcement mechanism itself (alternate channel, missing authorization check, security-control bypass, assumed-immutable parameter); restricting the management plane to a trusted network is the load-bearing compensating control when enforcement fails."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or appliance whose access control is bypassed."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application or appliance (file-transfer / secure-access / help-desk) in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Internet-facing SonicWall SMA1000 is run by audited organizations whose access-control posture is irrelevant when the enforcement mechanism is bypassed; without management-plane restriction and prompt patching the system is exposed, and the required privileged-action review / web-shell hunt is rarely documented.",
+      "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-20393": {
     "name": "Cisco Multiple Products Improper Input Validation Vulnerability",
@@ -20329,35 +20385,63 @@
   },
   "CVE-2025-54309": {
     "name": " CrushFTP Unprotected Alternate Channel Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "CrushFTP contains an unprotected alternate channel vulnerability. When the DMZ proxy feature is not used, mishandles AS2 validation and consequently allows remote attackers to obtain admin access via HTTPS.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an unprotected-alternate-channel flaw (CWE-420) letting an unauthenticated attacker reach administrative functionality via the alternate (AS2) path and gain admin control of the file-transfer server. CISA KEV-listed 2025-07-22 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker and defeats the access-control mechanism)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the CrushFTP update, restrict the admin interface to a trusted network, rotate admin credentials, and review for unauthorized admin actions and transferred-file exposure — MFT compromise targets data in transit.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary; restricting the management plane to a trusted network is the compensating control when the access-control enforcement is itself bypassed."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the CrushFTP: requests exercising the bypass, administrative actions without a matching authentication event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because a bypass produces access that looks authorized; the anomaly is the absence of a legitimate authentication event."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict the management plane, rotate credentials and keys, review configuration/account changes during the exposure window, and audit privileged actions and (for file-transfer/secure-access) data exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an access-control bypass typically leaves administrative persistence or a code-execution foothold that a patch alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed access-control/security-control bypass on an internet-facing system; these grant unauthorized access to protected functionality and are mass-exploited within days."
+      },
+      "NIST-800-53-AC-3-enforcement": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-enforcement is required, but these flaws defeat the enforcement mechanism itself (alternate channel, missing authorization check, security-control bypass, assumed-immutable parameter); restricting the management plane to a trusted network is the load-bearing compensating control when enforcement fails."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or appliance whose access control is bypassed."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application or appliance (file-transfer / secure-access / help-desk) in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Internet-facing CrushFTP is run by audited organizations whose access-control posture is irrelevant when the enforcement mechanism is bypassed; without management-plane restriction and prompt patching the system is exposed, and the required privileged-action review / web-shell hunt is rarely documented.",
+      "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2025-49704": {
     "name": "Microsoft SharePoint Code Injection Vulnerability",
@@ -22014,35 +22098,63 @@
   },
   "CVE-2025-35939": {
     "name": "Craft CMS External Control of Assumed-Immutable Web Parameter Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Craft CMS contains an external control of assumed-immutable web parameter vulnerability. This vulnerability could allow an unauthenticated client to introduce arbitrary values, such as PHP code, to a known local file location on the server. This vulnerability could be chained with CVE-2024-58136 as represented by CVE-2025-32432.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "an external-control-of-assumed-immutable-web-parameter flaw (CWE-472) in Craft CMS, letting an unauthenticated attacker tamper with a parameter the application assumes is fixed (a step in a chain toward code execution). CISA KEV-listed 2025-06-02 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker and defeats the access-control mechanism)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Craft CMS update, rotate the Craft security key, and hunt for web shells — this parameter flaw is chained with the Craft code-injection RCE in the wild.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — the parameter flaw is chained to code execution, so web-shell hunting and key rotation are required cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Craft CMS: requests exercising the bypass, tampered parameters followed by web shells or unexpected process execution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because a bypass produces access that looks authorized; the anomaly is the absence of a legitimate authentication event."
+      },
+      "response": {
+        "what_would_have_worked": "Patch immediately, restrict the management plane, rotate credentials and keys, review configuration/account changes during the exposure window, and hunt for web shells from the chained RCE.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; an access-control bypass typically leaves administrative persistence or a code-execution foothold that a patch alone does not remove."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed access-control/security-control bypass on an internet-facing system; these grant unauthorized access to protected functionality and are mass-exploited within days."
+      },
+      "NIST-800-53-AC-3-enforcement": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-enforcement is required, but these flaws defeat the enforcement mechanism itself (alternate channel, missing authorization check, security-control bypass, assumed-immutable parameter); restricting the management plane to a trusted network is the load-bearing compensating control when enforcement fails."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or appliance whose access control is bypassed."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application or appliance (file-transfer / secure-access / help-desk) in or adjacent to the CDE."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
-      "theater_pattern": "patch_management"
+      "percent_audit_passing_orgs_still_exposed": 77,
+      "basis": "Internet-facing Craft CMS is run by audited organizations whose access-control posture is irrelevant when the enforcement mechanism is bypassed; without management-plane restriction and prompt patching the system is exposed, and the required privileged-action review / web-shell hunt is rarely documented.",
+      "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-56145": {
     "name": "Craft CMS Code Injection Vulnerability (variant: CVE-2024-56145)",
