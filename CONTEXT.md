@@ -228,7 +228,7 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 - `data/global-frameworks.json` — load for multi-jurisdiction questions
 - `data/atlas-ttps.json`, `data/attack-techniques.json` — load for TTP-driven work
 - Individual skill files — 15–40 KB each; load on match, not preemptively
-- Playbook JSON — load on demand via `exceptd direct/look`; the engine handles phase orchestration
+- Playbook JSON — load on demand via `exceptd brief <playbook>` (or `--phase look` for just the artifact spec); the engine handles phase orchestration
 
 ### What This Repo Does Not Contain
 

@@ -101,7 +101,11 @@ test('chains.json contains CVE + CWE chains with the expected shape', () => {
     const c = j[id];
     assert.ok(Array.isArray(c.referencing_skills));
     assert.ok(Array.isArray(c.related_cves));
-    assert.ok(c.chain);
+    // chain is a structured object, not merely truthy — a bare assert.ok would
+    // pass for a string/number regression in this "expected shape" test.
+    assert.equal(typeof c.chain, 'object', 'chain must be a structured object');
+    assert.ok(c.chain && !Array.isArray(c.chain) && Object.keys(c.chain).length > 0,
+      'chain must be a non-empty object');
   }
 });
 

@@ -473,6 +473,21 @@ test('P3-8: watch --log-file tees stdout to the named file', (t, done) => {
   }, 10000).unref();
 });
 
+test('watch --log-file open failure exits 1 (GENERIC_FAILURE), not 2 (DETECTED_ESCALATE)', () => {
+  // A filesystem error opening the log target is a generic operational
+  // failure, not a detected-finding escalation — code 2 would misroute a CI
+  // gate. Force the open to fail by pointing --log-file at a path whose
+  // parent is an existing FILE (so mkdirSync of the parent throws).
+  const parentFile = path.join(SUITE_HOME, `notadir-${Date.now()}`);
+  fs.writeFileSync(parentFile, 'x');
+  const badLog = path.join(parentFile, 'sub.log'); // parent is a file → open fails
+  const r = spawnSync(process.execPath, [ORCH, 'watch', '--log-file', badLog], {
+    env: childEnv(), encoding: 'utf8', timeout: 15000,
+  });
+  assert.equal(r.status, 1, `--log-file open failure must exit 1 (GENERIC_FAILURE); got ${r.status}`);
+  assert.match(r.stderr || '', /--log-file/, 'stderr must name the --log-file error');
+});
+
 // --- P3-9 — cache size guard -----------------------------------------------
 
 test('P3-9: validateAllCvesPreferCache refuses cache files over 50 MB', () => {
