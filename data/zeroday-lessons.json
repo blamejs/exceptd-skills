@@ -20585,35 +20585,63 @@
   },
   "CVE-2019-5418": {
     "name": "Rails Ruby on Rails Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Rails Ruby on Rails contains a path traversal vulnerability in Action View. Specially crafted accept headers in combination with calls to `render file:` can cause arbitrary files on the target server to be rendered, disclosing the file contents.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) in Ruby on Rails Action View (crafted Accept header), letting an unauthenticated attacker read arbitrary files including configuration and secrets. CISA KEV-listed 2025-07-07 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application/device interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Rails update; rotate any credentials, secret_key_base, and data-source passwords the file read could disclose, and restrict the app's filesystem access.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any secret the traversal disclosed survives the patch and must be rotated; an EOL device must be replaced."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Rails: requests containing traversal sequences, reads of credential/secret files and subsequent use of disclosed secrets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and the secret-disclosure or file-write consequence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch (or replace an EOL device); rotate every secret reachable through the file read, and review for follow-on access using disclosed material.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / file cleanup leaves the attacker with a usable foothold."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated path-traversal flaw; arbitrary file read leaks secrets that enable follow-on access, and EOL devices (DIR-859) cannot be patched at all."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or device, and the disclosed-secret exposure persists until the secrets are rotated."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications/devices as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the secret-rotation cleanup a file-read flaw needs or the replacement an EOL device needs."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application/device whose file-read can disclose CDE-adjacent secrets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Ruby on Rails is run by audited organizations on a standard patch SLA and is exploited within days; the required secret rotation (or EOL-device replacement) is rarely part of the documented patch procedure, leaving disclosed credentials usable.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2016-10033": {
     "name": "PHPMailer Command Injection Vulnerability",
@@ -20948,35 +20976,63 @@
   },
   "CVE-2024-0769": {
     "name": " D-Link DIR-859 Router Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "D-Link DIR-859 routers contain a path traversal vulnerability in the file /hedwig.cgi of the component HTTP POST Request Handler. Manipulation of the argument service with the input ../../../../htdocs/webinc/getcfg/DHCPS6.BRIDGE-1.xml allows for the leakage of session data potentially enabling privilege escalation and unauthorized control of the device. This vulnerability affects legacy D-Link products. All associated hardware revisions have reached their end-of-life (EOL) or end-of-service (EOS) life cycle and should be retired and replaced per vendor instructions.",
-      "privileges_required": "unprivileged local user",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) on the D-Link DIR-859 router, letting an attacker read sensitive files including credentials from the device configuration. CISA KEV-listed 2025-06-25 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application/device interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "The DIR-859 is end-of-life; replace it. Where still deployed, restrict management access and rotate device/Wi-Fi credentials — EOL routers are recruited into botnets via flaws like this.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any secret the traversal disclosed survives the patch and must be rotated; an EOL device must be replaced."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the DIR-859 router: requests containing traversal sequences, reads of credential/secret files and subsequent use of disclosed secrets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and the secret-disclosure or file-write consequence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch (or replace an EOL device); rotate every secret reachable through the file read, and review for follow-on access using disclosed material.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / file cleanup leaves the attacker with a usable foothold."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated path-traversal flaw; arbitrary file read leaks secrets that enable follow-on access, and EOL devices (DIR-859) cannot be patched at all."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or device, and the disclosed-secret exposure persists until the secrets are rotated."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications/devices as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the secret-rotation cleanup a file-read flaw needs or the replacement an EOL device needs."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application/device whose file-read can disclose CDE-adjacent secrets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing D-Link DIR-859 router is run by audited organizations on a standard patch SLA and is exploited within days; the required secret rotation (or EOL-device replacement) is rarely part of the documented patch procedure, leaving disclosed credentials usable.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-54085": {
     "name": "AMI MegaRAC SPx Authentication Bypass by Spoofing Vulnerability",
@@ -21946,35 +22002,63 @@
   },
   "CVE-2023-38950": {
     "name": "ZKTeco BioTime Path Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "ZKTeco BioTime contains a path traversal vulnerability in the iclock API that allows an unauthenticated attacker to read arbitrary files via supplying a crafted payload.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a path-traversal flaw (CWE-22) in ZKTeco BioTime, letting an unauthenticated attacker read arbitrary files on the biometric time-attendance server. CISA KEV-listed 2025-05-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application/device interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the ZKTeco BioTime update; rotate database and application credentials the read could disclose, and restrict access to the management interface — biometric data is sensitive.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — any secret the traversal disclosed survives the patch and must be rotated; an EOL device must be replaced."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the ZKTeco BioTime: requests containing traversal sequences, reads of credential/secret files and subsequent use of disclosed secrets.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and the secret-disclosure or file-write consequence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch (or replace an EOL device); rotate every secret reachable through the file read, and review for follow-on access using disclosed material.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / file cleanup leaves the attacker with a usable foothold."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated path-traversal flaw; arbitrary file read leaks secrets that enable follow-on access, and EOL devices (DIR-859) cannot be patched at all."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or device, and the disclosed-secret exposure persists until the secrets are rotated."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications/devices as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the secret-rotation cleanup a file-read flaw needs or the replacement an EOL device needs."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application/device whose file-read can disclose CDE-adjacent secrets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing ZKTeco BioTime is run by audited organizations on a standard patch SLA and is exploited within days; the required secret rotation (or EOL-device replacement) is rarely part of the documented patch procedure, leaving disclosed credentials usable.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-27443": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting (XSS) Vulnerability",
@@ -22038,35 +22122,63 @@
   },
   "CVE-2025-27920": {
     "name": "Srimax Output Messenger Directory Traversal Vulnerability",
-    "lesson_date": "2026-05-18",
+    "lesson_date": "2026-05-29",
     "attack_vector": {
-      "description": "Srimax Output Messenger contains a directory traversal vulnerability that allows an attacker to access sensitive files outside the intended directory, potentially leading to configuration leakage or arbitrary file access.",
-      "privileges_required": "network attacker (no authentication required)",
-      "complexity": "moderate (bulk-import default)",
-      "ai_factor": "Bulk-imported — AI-discovery provenance not surfaced in KEV. Detection method that surfaces this class: ADVISORIES_SOURCE (12 primary-source feeds) + CISA-KEV poller. Refine when researcher writeup publishes."
+      "description": "a directory-traversal flaw (CWE-22) in Srimax Output Messenger, letting an unauthenticated attacker read or write files outside the intended directory (used in the wild to write to startup paths for code execution). CISA KEV-listed 2025-05-19 with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application/device interface)",
+      "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Output Messenger update; hunt for files written to startup/autorun paths and web shells, and rotate server credentials — the traversal was chained to code execution.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "Patch is necessary but insufficient alone — files the traversal wrote (startup payloads, web shells) survive the patch and require explicit cleanup."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitoring on the Output Messenger: requests containing traversal sequences, files written outside the intended directory and execution of newly-dropped payloads.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation and the secret-disclosure or file-write consequence after patching."
+      },
+      "response": {
+        "what_would_have_worked": "Patch (or replace an EOL device); remove files written via the traversal and hunt for web shells, and review for follow-on access using disclosed material.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; patch-in-place without secret rotation / file cleanup leaves the attacker with a usable foothold."
+      }
     },
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
         "adequate": false,
-        "gap": "30-day SLA inadequate for KEV-listed actively-exploited CVE; KEV due date is the operational clock."
+        "gap": "The 30-day flaw-remediation SLA is far longer than the observed exploitation window for a KEV-listed, unauthenticated path-traversal flaw; arbitrary file read leaks secrets that enable follow-on access, and EOL devices (DIR-859) cannot be patched at all."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
         "adequate": false,
-        "gap": "Standard does not differentiate routinely-disclosed CVE from KEV-listed actively-exploited CVE."
+        "gap": "'Appropriate timescales' is undefined; the standard 30-day reading is unsafe for an actively-exploited, internet-facing application or device, and the disclosed-secret exposure persists until the secrets are rotated."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats internet-facing applications/devices as essential-function infrastructure but lacks a CISA-KEV-style compressed remediation SLA, and does not require the secret-rotation cleanup a file-read flaw needs or the replacement an EOL device needs."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day critical-patch window is exploitation acceptance for an internet-facing application/device whose file-read can disclose CDE-adjacent secrets."
       }
     },
     "compliance_exposure_score": {
-      "percent_audit_passing_orgs_still_exposed": 55,
-      "basis": "KEV-listed but not yet ransomware-attributed; exposure concentrated in orgs whose patch SLA defaults to NIST 30 days.",
+      "percent_audit_passing_orgs_still_exposed": 73,
+      "basis": "Internet-facing Srimax Output Messenger is run by audited organizations on a standard patch SLA and is exploited within days; the required secret rotation (or EOL-device replacement) is rarely part of the documented patch procedure, leaving disclosed credentials usable.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_assist_factor": "none",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.17-bulk-cisa-kev-import"
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   },
   "CVE-2024-11182": {
     "name": "MDaemon Email Server Cross-Site Scripting (XSS) Vulnerability",

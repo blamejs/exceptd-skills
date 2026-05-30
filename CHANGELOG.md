@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.38 — 2026-05-29
+
+Draft-curation pass 35 — path traversal file access. Four CISA KEV-listed unauthenticated path-traversal CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Ruby on Rails Action View arbitrary file read (CVE-2019-5418), Srimax Output Messenger directory traversal chained to code execution (CVE-2025-27920), ZKTeco BioTime arbitrary file read (CVE-2023-38950), and the end-of-life D-Link DIR-859 router configuration disclosure (CVE-2024-0769). All map T1190; the secret-leaking file-read variants also map T1552. The lessons stress that patching does not undo the disclosure — every secret a traversal read must be rotated — that file-write traversals require hunting for dropped payloads, and that an end-of-life device (DIR-859) can only be replaced, not patched.
+
 ## 0.15.37 — 2026-05-29
 
 Draft-curation pass 34 — local and host privilege escalation. Four CISA KEV-listed escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons, spanning four platforms: the Sudo chroot-handling local-to-root flaw (CVE-2025-32463), an Android Runtime privilege escalation (CVE-2025-48543), a VMware Aria Operations / VMware Tools guest privilege-management flaw (CVE-2025-41244), and the Windows SMB client NTLM-reflection-to-SYSTEM flaw (CVE-2025-33073). All map T1068; the SMB-client case also maps T1557.001 (NTLM relay). The lessons frame these as the escalation half of an intrusion chain and name the platform-specific backstops the frameworks leave unstated — SELinux/seccomp and least privilege on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and — most importantly — SMB signing plus NTLM disablement for the reflection class, which breaks the attack regardless of patch state.
