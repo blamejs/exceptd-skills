@@ -20,7 +20,7 @@ test('run <playbook> --evidence-dir refuses loudly instead of silently running o
   // input), so `run secrets --evidence-dir ./ev` reported a clean verdict
   // against EMPTY evidence — a falsely-reassuring result from a security tool.
   const r = cli(['run', 'secrets', '--evidence-dir', home, '--json']);
-  assert.notEqual(r.status, 0, 'must NOT exit 0 — silently ignoring --evidence-dir produced a false all-clear');
+  assert.equal(r.status, 1, 'refuses with GENERIC_FAILURE (1) instead of a false all-clear exit 0');
   const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
   assert.equal(body.ok, false, 'error envelope must carry ok:false');
   const text = (r.stdout || '') + (r.stderr || '');
@@ -46,7 +46,7 @@ test('exceptd skill (no args) lists every skill ID so they are discoverable', ()
   // error pointed at `brief --all`, which lists playbooks, not skills.
   const manifest = require('../manifest.json');
   const r = cli(['skill', '--json']);
-  assert.notEqual(r.status, 0, 'no-args skill is a usage error (non-zero)');
+  assert.equal(r.status, 1, 'no-args skill is a usage error (exit 1)');
   const body = tryJson(r.stdout) || {};
   assert.equal(body.ok, false, 'usage envelope is ok:false');
   assert.ok(Array.isArray(body.skills), 'lists a skills array');
@@ -77,7 +77,7 @@ test('a blocked run renders a human line (not a raw JSON wall) in default human 
     input: '{"precondition_checks":{"linux-platform":false}}',
     env: { EXCEPTD_RAW_JSON: '' },
   });
-  assert.notEqual(r.status, 0, 'a blocked run is non-zero');
+  assert.equal(r.status, 1, 'a blocked run exits 1 (GENERIC_FAILURE) without --ci');
   const out = (r.stdout || '') + (r.stderr || '');
   assert.doesNotMatch(r.stdout || '', /^\s*\{"ok":false/, 'human mode must NOT dump the raw ok:false JSON envelope');
   assert.match(out, /\[blocked\]/, 'human render tags the verdict as [blocked]');
@@ -88,7 +88,7 @@ test('a blocked run still returns the full JSON envelope under --json', () => {
   const r = cli(['run', 'kernel', '--evidence', '-', '--json'], {
     input: '{"precondition_checks":{"linux-platform":false}}',
   });
-  assert.notEqual(r.status, 0, 'blocked is non-zero under --json too');
+  assert.equal(r.status, 1, 'blocked exits 1 under --json too (no --ci)');
   const body = tryJson(r.stdout) || {};
   assert.equal(body.ok, false, '--json keeps the ok:false envelope for machine consumers');
   assert.equal(body.verdict, 'blocked', 'verdict is blocked');
@@ -115,7 +115,7 @@ test('--quiet suppresses advisory stderr notes (keeps pipelines clean) but unkno
   assert.doesNotMatch(quiet.stderr || '', /read 0 bytes from stdin/, '--quiet suppresses the advisory note');
   // --quiet must NOT weaken reject-unknown-flags: a genuine typo still refuses.
   const bogus = cli(['run', 'secrets', '--evidence', '-', '--quiet', '--bogusflag', '--json'], { input: '{}' });
-  assert.notEqual(bogus.status, 0, 'an unknown flag is still refused even with --quiet present');
+  assert.equal(bogus.status, 1, 'an unknown flag is still refused (exit 1) even with --quiet present');
   assert.match((bogus.stdout || '') + (bogus.stderr || ''), /unknown flag/, 'the refusal names the unknown flag');
 });
 

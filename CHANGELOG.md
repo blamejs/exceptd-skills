@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.15.45 — 2026-05-30
+
+An operator-experience pass.
+
+Running a platform-gated playbook on a host it does not target — for example a Linux-only kernel playbook on macOS or Windows — now prints a one-line blocked summary with the reason and the next step instead of dumping the raw JSON envelope. `--json` and `--pretty` still return the full body for machine consumers, and the exit code is unchanged.
+
+A single named playbook given `--evidence-dir` (a contract-run input) now refuses loudly rather than running against empty evidence and reporting a false all-clear: pass `--evidence <file|->` for one playbook, or run a contract over a directory of evidence. Piping empty stdin into `run <playbook>` no longer writes an advisory note that corrupted `run ... 2>&1 | jq`; an explicit `--evidence -` with empty input still warns.
+
+Skills are discoverable. `exceptd skill` with no arguments lists every skill ID and description, and the not-found hint points there instead of at the playbook list. `brief <playbook>` ends with the `collect | run` pipeline so brief-first operators see where evidence comes from. `recipes --help` and `report --help` show real per-verb help, and `report --help` states that its default output is Markdown.
+
+New global `--quiet` flag suppresses advisory stderr chatter — notes, tips, and the deprecation and unsigned-attestation banners — while keeping the result on stdout and all errors on stderr. It is narrower than `--json-stdout-only`, which silences all stderr and forces JSON.
+
+`doctor --registry-check` prints an actionable message when it cannot compare versions instead of an internal "raw exit=?" token. The `refresh` help text describes the OSV/GHSA import surface as it actually is — one advisory ID per invocation, no bulk import — rather than advertising unbuilt work.
+
 ## 0.15.44 — 2026-05-30
 
 Final pass; the bulk-imported KEV draft backlog is now fully curated. Six remaining CISA KEV-listed CVEs, each a distinct vulnerability class, are promoted from auto-imported drafts to fully-curated entries with mechanism-specific behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the WhatsApp linked-device zero-click authorization flaw used as the delivery half of a mobile-spyware chain (CVE-2025-55177, T1190), the IGEL OS expired-key Secure Boot signature bypass (CVE-2025-47827, T1553), the Windows WebDAV Internet-Shortcut remote-code-execution flaw exploited by Stealth Falcon (CVE-2025-33053, T1203 + T1204.002), a network-reachable Windows NULL-pointer dereference (CVE-2026-21525, T1190), the PaperCut NG/MF cross-site request forgery used in its exploitation chain (CVE-2023-2533, T1190), and the Multi-Router Looking Glass buffer overflow on route servers (CVE-2014-3931, T1190 + T1059). With this pass every CVE entry in the catalog carries behavioral IOCs, an ATT&CK mapping, and a defense-chain zero-day lesson.
