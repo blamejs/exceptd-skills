@@ -220,7 +220,20 @@ function _unresolvedThreads(prNum) {
 function cmdPrepare(opts) {
   _section("prepare");
   if (!_gitOnMain()) throw new Error("release: prepare must run on main (on " + _gitBranch() + ")");
-  if (!_gitClean()) throw new Error("release: prepare requires a clean working tree");
+  // The documented flow is: write the `## <next>` CHANGELOG entry by hand,
+  // THEN run prepare. That edit makes the tree dirty, so requiring a fully
+  // clean tree here would make the first phase unusable as documented. Allow
+  // a CHANGELOG.md-only dirty tree; refuse if anything else is uncommitted
+  // (prepare is about to bump versions + regenerate artifacts — it must start
+  // from an otherwise-clean main so the release commit captures only the
+  // intended change set).
+  var dirty = _capture("git", ["status", "--porcelain"]).stdout
+    .split(/\r?\n/)
+    .filter(function (l) { return l.trim() && !/\bCHANGELOG\.md$/.test(l); });
+  if (dirty.length) {
+    throw new Error("release: prepare requires a clean working tree (CHANGELOG.md may be pre-edited). Also uncommitted:\n  " +
+      dirty.join("\n  "));
+  }
 
   var current = _readJsonVersion("package.json");
   var next = _bump(current, opts.minor ? "minor" : "patch");
@@ -432,17 +445,23 @@ function cmdTag() {
   }
   _ok("GUARD passed (HEAD==origin/main, 3-version match, no existing tag)");
 
-  _run("git", ["tag", "-a", tag, "-m", tag]);
-  _run("git", ["push", "origin", tag]);
-  _ok("tagged + pushed " + tag);
-
+  // `-s` forces a signed tag regardless of whether tag.gpgsign is set in
+  // config; `-a` would silently produce an UNSIGNED annotated tag when the
+  // config is absent, and main's tag ruleset / the release provenance both
+  // expect a signature. Verify BEFORE pushing so an unsigned tag never
+  // reaches origin (the v* ruleset blocks tag rewrites, so a bad push would
+  // burn the version slot).
+  _run("git", ["tag", "-s", tag, "-m", tag]);
   var verify = _capture("git", ["tag", "-v", tag]);
   if (verify.stderr.indexOf("Good") === -1 && verify.stdout.indexOf("Good") === -1) {
-    console.error("warning: `git tag -v " + tag + "` did not report a Good signature:");
-    console.error(verify.stderr || verify.stdout);
-  } else {
-    _ok("tag signature: Good");
+    _run("git", ["tag", "-d", tag], { allowFail: true });
+    throw new Error("release: tag " + tag + " is not a Good signature — refusing to push.\n" +
+      "Check SSH tag signing (tag.gpgsign=true + gpg.format=ssh + the public key registered as a GitHub signing key).\n" +
+      (verify.stderr || verify.stdout));
   }
+  _ok("tag signature: Good (verified before push)");
+  _run("git", ["push", "origin", tag]);
+  _ok("tagged + pushed " + tag);
   console.log("\nnext: node scripts/release.js release");
 }
 
@@ -469,20 +488,37 @@ function cmdRelease() {
   var npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
   console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") + "   (expected " + next + ")");
   if (npmVersion === next) _ok("npm matches " + next);
-  else console.error("warning: npm version mismatch — workflow may still be in flight");
+  // A mismatch is asserted as a hard failure at the end of the phase (after
+  // the tarball verify), so a stalled publish can't read as a clean release.
 
   _section("fresh-tarball signature verify");
   // Verify against the EXACT bytes a downstream consumer installs — the
   // source-tree verify is necessary-but-insufficient (the v0.11.x signature
   // regression was invisible until a fresh install). Packs, extracts, and
-  // runs lib/verify.js against the extracted tree.
+  // runs lib/verify.js against the extracted tree. This is the load-bearing
+  // post-publish check: a broken artifact/signature here means the release
+  // is broken, so it is a HARD gate — _run (no allowFail) throws on failure
+  // and the phase exits non-zero rather than reporting a clean release.
   var wrapper = path.join(ROOT, "scripts", "verify-shipped-tarball.js");
   if (fs.existsSync(wrapper)) {
-    _run("node", [wrapper], { allowFail: true });
+    _run("node", [wrapper]);
+    _ok("shipped-tarball signature verified");
+  } else {
+    throw new Error("release: scripts/verify-shipped-tarball.js missing — cannot verify the shipped artifact");
+  }
+
+  // An npm-version mismatch after the workflow finished is not mere
+  // propagation lag — fail so a stalled/failed publish can't read as a
+  // completed release. (A genuinely in-flight publish is caught by the
+  // workflow-conclusion check above; by the time we query npm post-watch the
+  // version should be live.)
+  if (npmVersion && npmVersion !== next) {
+    throw new Error("release: npm shows " + npmVersion + " but expected " + next +
+      " — publish did not complete; re-check release.yml before treating the release as done");
   }
 
   console.log("\nThe landing site auto-injects the version from jsDelivr @latest — no manual deploy.");
-  console.log("Release complete once npm shows " + next + " and the tarball verify is N/N.");
+  console.log("Release complete: npm shows " + next + " and the shipped tarball verifies.");
 }
 
 function cmdAll(opts) {

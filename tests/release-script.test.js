@@ -73,6 +73,41 @@ test('tag GUARD enforces HEAD==origin/main, the 3-version match, and no-existing
   assert.match(tagFn, /index\.lock/, 'clears a stale git index lock first');
 });
 
+test('tag creates a SIGNED tag (-s) and verifies the signature BEFORE pushing', () => {
+  // codex P1: `git tag -a` only signs when tag.gpgsign is configured; -s
+  // forces it. And the signature must be verified before the push, since the
+  // v* ruleset blocks rewriting a bad pushed tag.
+  const tagFn = SRC.slice(SRC.indexOf('function cmdTag'), SRC.indexOf('function cmdRelease'));
+  assert.match(tagFn, /\["tag",\s*"-s",\s*tag,\s*"-m",\s*tag\]/, 'uses git tag -s (signed), not -a');
+  assert.doesNotMatch(tagFn, /\["tag",\s*"-a",\s*tag/, 'does not use the unsigned -a form');
+  // verify (tag -v) must appear before the push (tag -v index < push index).
+  const verifyIdx = tagFn.indexOf('"tag", "-v"');
+  const pushIdx = tagFn.indexOf('"push", "origin", tag');
+  assert.ok(verifyIdx > -1 && pushIdx > -1 && verifyIdx < pushIdx,
+    'signature is verified before the tag is pushed');
+  assert.match(tagFn, /refusing to push|not a Good signature/, 'refuses to push an unsigned tag');
+});
+
+test('release HARD-fails on a broken shipped-tarball verify or an npm version mismatch', () => {
+  // codex P1: a broken artifact must not read as a clean release. The
+  // tarball verify runs without allowFail (so _run throws), and an
+  // npm-version mismatch throws too.
+  const relFn = SRC.slice(SRC.indexOf('function cmdRelease'), SRC.indexOf('function cmdAll'));
+  const verifyLine = relFn.split('\n').find(l => l.includes('verify-shipped-tarball.js') && l.includes('_run')) ||
+    relFn.slice(relFn.indexOf('_run("node", [wrapper'), relFn.indexOf('_run("node", [wrapper') + 60);
+  assert.doesNotMatch(relFn.slice(relFn.indexOf('fresh-tarball')), /\[wrapper\][^\n]*allowFail/,
+    'the shipped-tarball verify is a hard gate (no allowFail)');
+  assert.match(relFn, /npm shows[^\n]*but expected/, 'an npm version mismatch throws');
+});
+
+test('prepare allows a CHANGELOG-only dirty tree (the operator writes notes first)', () => {
+  // codex P2: requiring a fully clean tree aborted on the very CHANGELOG edit
+  // the documented flow requires before prepare.
+  const prepFn = SRC.slice(SRC.indexOf('function cmdPrepare'), SRC.indexOf('function cmdGates'));
+  assert.match(prepFn, /CHANGELOG\\\.md\$/, 'filters CHANGELOG.md out of the dirty-tree check');
+  assert.doesNotMatch(prepFn, /if \(!_gitClean\(\)\) throw/, 'no longer hard-requires a fully clean tree');
+});
+
 test('patch is the default bump; --minor is opt-in only', () => {
   // The project default is patch-only; minor must be an explicit flag.
   assert.match(SRC, /minor:\s*process\.argv[^\n]*indexOf\("--minor"\)/, '--minor is parsed as an explicit opt-in');
