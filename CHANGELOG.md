@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.3 — 2026-05-31
+
+For an indicator-driven detection with no matched CVE, a run's `top_finding` now names the indicator that actually drove the verdict instead of repeating the verdict word, so the summary line reads (for example) `library-author: detected (rwep=10, release-workflow-non-frozen-install, evidence=complete)` rather than duplicating `detected`.
+
 ## 0.16.2 — 2026-05-31
 
 The default evidence bundle for the secrets, credential-store, runtime, and citation-hygiene playbooks is now a real structured-JSON document instead of an "Unknown format" placeholder, and `json` is a generally selectable bundle format for any playbook.
