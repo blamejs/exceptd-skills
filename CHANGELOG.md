@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.1 — 2026-05-31
+
+Supply-chain, library-author, and MCP scans no longer emit a spurious "precondition not met" warning when the scanned directory clearly satisfies it: the collectors now attest the gates they can verify from what they collected (a lockfile satisfies the package-manager gate, a package manifest or publish workflow satisfies the publishable-artifact gate, a present assistant config satisfies the AI-assistant gate) — so a `collect --cwd <repo> | run` against a target directory reports them as met rather than unverified. The library-author publish-workflow detector no longer mis-classifies a CI workflow whose only mention of a publish command sits inside a comment. And a blocked run on an intent/ownership precondition (for example the CI/CD playbook's fleet-ownership gate) now states the specific gate and how to satisfy it, instead of guessing a platform mismatch.
+
 ## 0.16.0 — 2026-05-31
 
 Supply-chain playbook gains reachability-aware triage and publisher-identity detection. A CVE-reachability demoter flags a matched-CVE dependency whose vulnerable module is never imported on a path from your own code, supporting exploit-priority triage of the runtime-vs-build-only distinction — it over-approximates toward reachable (any dynamic / plugin / reflective load counts as reachable) so it only demotes a match when reachability is explicitly attested, and the CVE matcher itself is unchanged. A publisher-identity-change detector flags an account-takeover precursor: a dependency whose publishing account, maintainer set, or provenance identity changed across an update while its capability surface stayed identical — the silent ownership-handoff release that precedes a payload, which the capability-creep detector cannot see.
