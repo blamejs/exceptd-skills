@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.0 — 2026-05-31
+
+Supply-chain playbook gains reachability-aware triage and publisher-identity detection. A CVE-reachability demoter flags a matched-CVE dependency whose vulnerable module is never imported on a path from your own code, supporting exploit-priority triage of the runtime-vs-build-only distinction — it over-approximates toward reachable (any dynamic / plugin / reflective load counts as reachable) so it only demotes a match when reachability is explicitly attested, and the CVE matcher itself is unchanged. A publisher-identity-change detector flags an account-takeover precursor: a dependency whose publishing account, maintainer set, or provenance identity changed across an update while its capability surface stayed identical — the silent ownership-handoff release that precedes a payload, which the capability-creep detector cannot see.
+
+Two compliance-theater fingerprints are added — a declared license policy that no build gate actually enforces against the resolved tree, and a declared publisher-trust control (maintainer vetting / MFA-on-publish / registry cooldown) that no intake gate blocks on.
+
 ## 0.15.53 — 2026-05-30
 
 Catalog: package-class entries can now carry an optional package-confidence signal — a 0–100 supply-chain trustworthiness score with inverse polarity to RWEP (high = trustworthy provenance, low = behaves like malware), derived from maintainer, code-quality, behavioral, and provenance sub-signals. It is surfaced alongside RWEP and never feeds or replaces it: RWEP answers "how urgently must I act on this known vulnerability," while package-confidence answers "how much do I trust this package's provenance." Populated on the supply-chain malware entries (the MOIKA dependency-confusion campaign, TrapDoor, Shai-Hulud, the node-ipc credential-stealer, and the node-ipc protestware incident).

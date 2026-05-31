@@ -56,11 +56,14 @@ test('dependency-confusion resolution check correlates to MOIKA and gates on res
   assert.ok(FPP.find((x) => x.indicator_id === 'dependency-confusion-internal-scope-public-resolution'));
 });
 
-test('all three new indicators are distinct ids and the playbook advanced to 1.3.1', () => {
+test('all three new indicators are distinct ids and the playbook carries the 1.3.1 detection-depth rung', () => {
   const ids = ['dependency-name-typosquat', 'package-content-obfuscation-screen', 'dependency-confusion-internal-scope-public-resolution'];
   assert.equal(new Set(ids).size, 3, 'three distinct new indicator ids');
-  assert.equal(PB._meta.version, '1.3.1');
+  // Version only advances past 1.3.1 as later passes add detectors — assert the
+  // 1.3.1 rung exists + version >= 1.3.1 by tuple, never pin the exact live version.
   assert.ok(PB._meta.changelog.some((c) => c.version === '1.3.1'), 'a 1.3.1 changelog rung must document the detection-depth pass');
+  const [maj, min, pat] = String(PB._meta.version).split('.').map(Number);
+  assert.ok(maj > 1 || (maj === 1 && (min > 3 || (min === 3 && pat >= 1))), `playbook _meta.version (${PB._meta.version}) must be >= 1.3.1`);
   // cve_ref on the dep-confusion indicator must resolve to a real catalog entry.
   const cat = require(path.join(__dirname, '..', 'data', 'cve-catalog.json'));
   assert.ok(cat['MAL-2026-MOIKA-DEPCONFUSION'], 'the dep-confusion cve_ref must resolve to a real catalog entry');
