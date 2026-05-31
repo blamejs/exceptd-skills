@@ -168,6 +168,21 @@ test('selected_remediation prefers the path that addresses a fired signal (and f
     { force_replay: true, mode: 'test' }
   );
   assert.equal(none.phases.validate.selected_remediation.id, 'rotate-to-pqc-hybrid-kem', 'no fired signal falls back to priority-1');
+
+  // A fired-signal-relevant path must win over a satisfied-but-UNRELATED path:
+  // here rotate-to-pqc-hybrid-kem's preconditions are satisfied, but the FIPS
+  // finding is what fired, so activate-fips (which addresses it) is selected
+  // rather than the ready-but-irrelevant priority-1 path.
+  const satisfiedUnrelated = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    {
+      signal_overrides: { 'fips-claim-without-runtime-activation': 'hit' },
+      signals: { ml_kem_implementation_available_for_language: true, api_stability_promise_permits_default_change: true },
+    },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(satisfiedUnrelated.phases.validate.selected_remediation.id, 'activate-fips-provider-or-retract-claim', 'relevance outranks a satisfied-but-unrelated path');
 });
 
 test('a blocked-preflight summary_line truncates on a word boundary with an ellipsis, not mid-token', () => {
