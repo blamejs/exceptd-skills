@@ -3570,7 +3570,7 @@ function cmdRun(runner, args, runOpts, pretty) {
         lines.push(`  → ${obj.remediation}`);
       } else {
         const hints = {
-          precondition: "→ Preconditions are not met on this host (often a platform gate, e.g. a Linux-only playbook). List playbooks that fit your platform: exceptd brief --all",
+          precondition: "→ A required precondition is unmet — the reason above names the specific gate. It may be a platform mismatch, OR an attestation/evidence the run needs (submit it in your evidence JSON's precondition_checks). For a platform mismatch, list applicable playbooks: exceptd brief --all",
           mutex: "→ Another run holds this playbook's mutex. Wait for it to finish, then retry.",
           currency: "→ Threat intel is stale. Refresh sources (exceptd refresh) or re-run with --force-stale to override.",
           catalog_corrupt: "→ The CVE catalog failed to load. Reinstall the package or run: exceptd doctor",
