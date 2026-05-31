@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.7 — 2026-05-31
+
+The default (human) run output now lists collector notices — for example a file skipped for exceeding the scan-size limit — under a "Collector notices" section, instead of carrying them only in `--json`. Previously a human reader saw "evidence: complete" with no indication that part of the tree was not scanned.
+
 ## 0.16.6 — 2026-05-31
 
 `collect --help` now documents the `--attest-ownership` flag — it attests that you own (or hold written authorisation for) the asset being scanned, satisfying an ownership precondition such as the CI/CD playbook's fleet-ownership gate so a run does not block at preflight. The flag already worked and is what the precondition-block remediation points to; it was simply missing from the help text.
