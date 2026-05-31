@@ -63,13 +63,22 @@ test('library-author does NOT classify a CI workflow as publish from a comment-o
   assert.ok(!/ci\.yml/.test(pw), 'a CI workflow whose only publish mention is a comment is NOT classified as publish');
 });
 
-test('mcp collector attests any-ai-coding-assistant-installed from a found vendor config (and false on a bare home)', () => {
-  const home = mkfx();
-  fs.mkdirSync(path.join(home, '.cursor'), { recursive: true });
-  fs.writeFileSync(path.join(home, '.cursor', 'mcp.json'), '{}');
-  assert.equal(mcp.collect({ env: { HOME: home, USERPROFILE: home } }).precondition_checks['any-ai-coding-assistant-installed'], true);
+test('mcp collector attests any-ai-coding-assistant-installed from a config OR an install dir, and never submits false', () => {
+  // (a) a vendor config FILE present -> true
+  const cfg = mkfx();
+  fs.mkdirSync(path.join(cfg, '.cursor'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, '.cursor', 'mcp.json'), '{}');
+  assert.equal(mcp.collect({ env: { HOME: cfg, USERPROFILE: cfg } }).precondition_checks['any-ai-coding-assistant-installed'], true);
+  // (b) an install DIRECTORY present but NO config file yet -> still true
+  //     (the precondition treats the dir as satisfying the gate; submitting
+  //     false here would wrongly skip the detect phase — codex P2).
+  const dirOnly = mkfx();
+  fs.mkdirSync(path.join(dirOnly, '.config', 'Code'), { recursive: true });
+  assert.equal(mcp.collect({ env: { HOME: dirOnly, USERPROFILE: dirOnly } }).precondition_checks['any-ai-coding-assistant-installed'], true);
+  // (c) nothing present -> the key is OMITTED (never false), leaving the
+  //     skip_phase gate to the host-side resolver rather than force-skipping.
   const bare = mkfx();
-  assert.equal(mcp.collect({ env: { HOME: bare, USERPROFILE: bare } }).precondition_checks['any-ai-coding-assistant-installed'], false);
+  assert.equal('any-ai-coding-assistant-installed' in mcp.collect({ env: { HOME: bare, USERPROFILE: bare } }).precondition_checks, false);
 });
 
 test('explicit-false precondition halt carries a specific remediation, not the generic platform hint', () => {
