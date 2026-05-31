@@ -2312,7 +2312,7 @@ Exit codes:
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
 results[].`,
-    collect: `collect <playbook> [--cwd <dir>] [--resolve] [--air-gap] [--json]
+    collect: `collect <playbook> [--cwd <dir>] [--attest-ownership] [--resolve] [--air-gap] [--json]
 
 Scan the working directory (or --cwd <dir>) and emit an evidence submission
 for <playbook>, ready to pipe into \`run\`:
@@ -2321,6 +2321,10 @@ for <playbook>, ready to pipe into \`run\`:
 
 Flags:
   --cwd <dir>             Scan <dir> instead of the current directory.
+  --attest-ownership      Attest that you own (or hold written authorisation
+                          for) the asset being scanned, satisfying an ownership
+                          precondition (e.g. cicd-pipeline-compromise's
+                          operator-owns-ci-fleet gate) so run does not block.
   --resolve               (citation-hygiene) resolve uncatalogued CVE/RFC
                           citations found during the scan.
   --air-gap               Do not touch the network during collection.
