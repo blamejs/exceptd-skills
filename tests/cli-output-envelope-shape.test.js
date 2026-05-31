@@ -12,7 +12,7 @@
  * This test pins the top-level key set per verb. When a field is added or
  * removed intentionally, the contributor must update the expected key
  * list here — that's the entire point. The test ALWAYS uses
- * `assert.deepEqual(sortedKeys, expected)` per CLAUDE.md anti-coincidence
+ * `assert.deepEqual(sortedKeys, expected)` per anti-coincidence
  * rule, never `assert.ok(field)`.
  *
  * Coverage scope is intentionally narrow at v0.12.33 introduction:

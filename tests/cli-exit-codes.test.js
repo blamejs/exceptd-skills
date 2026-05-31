@@ -72,7 +72,7 @@ test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', { sk
 
   // Run verify against the tampered attestation.
   const r = cli(['attest', 'verify', sid, '--json']);
-  // Exact-exit assertion per CLAUDE.md "coincidence-passing tests" rule —
+  // Exact-exit assertion per the "coincidence-passing tests" rule —
   // tamper must yield 6, not just non-zero.
   assert.equal(r.status, 6,
     `attest verify on a tampered attestation must exit 6 (TAMPERED). Got status=${r.status}. stdout=${r.stdout.slice(0,400)} stderr=${r.stderr.slice(0,400)}`);

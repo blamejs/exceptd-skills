@@ -11,7 +11,7 @@
  * audit log from blocking CI on a session whose attestation itself is
  * still intact.
  *
- * Four cases (CLAUDE.md anti-coincidence rule: each pins an exact code):
+ * Four cases (anti-coincidence rule: each pins an exact code):
  *   1. clean session (1 attestation, 0 replays) → exit 0, no warnings.
  *   2. 1 attestation + 3 valid replays → exit 0, all verified.
  *   3. 1 attestation + 1 tampered replay → exit 0 + warnings + replay_tamper:true.

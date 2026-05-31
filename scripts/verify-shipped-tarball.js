@@ -344,7 +344,7 @@ try {
     // itself report 0/38 on any tree where line-ending normalization
     // touched the source between sign and pack — a Windows contributor
     // with `core.autocrlf=true`, or a tool like Prettier between sign and
-    // pack. CLAUDE.md flags this as the recurring CRLF-bypass class.
+    // pack. This is the recurring CRLF/line-ending-bypass class.
     const rawContent = fs.readFileSync(skillPath);
     const normalizedContent = normalizeSkillBytes(rawContent);
     const ok = crypto.verify(null, normalizedContent, pubKey, Buffer.from(s.signature, "base64"));

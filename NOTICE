@@ -45,7 +45,7 @@ URL:         https://atlas.mitre.org
 Version:     v5.1.0 (November 2025)
 Used for:    Adversarial Threat Landscape for AI Systems — TTP IDs cited in
              skills/*, data/atlas-ttps.json, and manifest.json. Pinned per
-             CLAUDE.md hard rule #12.
+             AGENTS.md Hard Rule #12 (external data version pinning).
 Notice:      ATLAS is © The MITRE Corporation, released under the terms at
              https://atlas.mitre.org/resources/terms-of-use.
 --------------------------------------------------------------------------------

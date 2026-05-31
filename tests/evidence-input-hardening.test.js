@@ -21,7 +21,7 @@
  *        own-key iteration explicitly skips `__proto__` / `constructor` /
  *        `prototype` keys.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * exit code or value, never `assert.notEqual(0)` or wildcard match.
  */
 

@@ -198,7 +198,7 @@ function readMaybe(p) {
 // / .editorconfig are tooling). Edits here never need a regression test.
 const DOCS_ALWAYS_GREEN = new Set([
   "CONTRIBUTING.md", "LICENSE", "NOTICE", "CODE_OF_CONDUCT.md",
-  "CLAUDE.md", "SUPPORT.md", ".gitignore", ".npmrc", ".editorconfig",
+  "SUPPORT.md", ".gitignore", ".npmrc", ".editorconfig",
 ]);
 
 // Operator-facing docs (release notes, install instructions, security
@@ -497,7 +497,7 @@ function coversCveIoc(corpus, cveId) {
 
 // --- Class-level lint: ban coincidence-passing notEqual(r.status, 0) --------
 //
-// CLAUDE.md anti-coincidence rule: every exit-code assertion must pin the
+// Anti-coincidence rule: every exit-code assertion must pin the
 // EXACT code. `assert.notEqual(r.status, 0)` silently passes when an
 // unrelated failure produces ANY non-zero exit, hiding the regression the
 // test was meant to catch. This lint walks tests/*.test.js and rejects the
@@ -635,7 +635,7 @@ function analyze(opts) {
       file: f.file,
       kind: "coincidence-assert",
       surface: f.snippet,
-      change: `line ${f.line}: pin to exact exit code; see CLAUDE.md anti-coincidence rule. Opt out only with \`// allow-notEqual: <reason>\` on the same line for genuine refusal-pins.`,
+      change: `line ${f.line}: pin to exact exit code (anti-coincidence rule). Opt out only with \`// allow-notEqual: <reason>\` on the same line for genuine refusal-pins.`,
     });
   }
 

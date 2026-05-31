@@ -38,17 +38,19 @@ test("current tree has no new version-tag regressions vs. baseline", () => {
 
 test("a synthetic new version-tag comment in an unsanctioned file is caught", () => {
   // Drop a fake .js file under scripts/ with a version-tagged comment.
-  // The check must FAIL because this is a new file (not in the
-  // baseline) carrying a tag. The literal is string-constructed so
-  // the scanner doesn't flag THIS test file as a violation.
-  const fakePath = path.join(ROOT, "scripts", ".__fake_version_tag_test__.js");
+  // The check must FAIL because this is a new file (not in the baseline)
+  // carrying a tag. The filename must NOT be git-ignored (the gate skips
+  // ignored files): an untracked-but-shippable new file is exactly what it
+  // guards. The literal is string-constructed so the scanner doesn't flag
+  // THIS test file as a violation.
+  const fakePath = path.join(ROOT, "scripts", "_fake_version_tag_probe.js");
   const fakeTag = "v" + "0." + "99." + "99";
   fs.writeFileSync(fakePath, `// ${fakeTag} fake comment\nmodule.exports = {};\n`);
   try {
     const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8", cwd: ROOT });
     assert.equal(r.status, 1,
       `check must fail on a new version-tag comment; got status=${r.status}, stderr=${r.stderr.slice(0, 400)}`);
-    assert.match(r.stderr, /scripts[\\/]\.__fake_version_tag_test__\.js/,
+    assert.match(r.stderr, /scripts[\\/]_fake_version_tag_probe\.js/,
       "check must name the offending file path");
     assert.match(r.stderr, /comment-level version-tag count grew/,
       "check must explain WHY the violation matters");

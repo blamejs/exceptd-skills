@@ -14,7 +14,7 @@
  *
  *   P2 — `exceptd skill` (no arg) printed
  *        "Usage: node orchestrator/index.js skill <skill-name>"
- *        — an internal narrative leak (CLAUDE.md global rule).
+ *        — an internal narrative leak (the operator-facing global rule).
  *        Operator-facing surface must reference the canonical
  *        `exceptd skill <name>` form.
  *
@@ -24,7 +24,7 @@
  *        at `exceptd doctor --fix` first, with the lib script as a
  *        fallback for contributor checkouts.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * substring match or count.
  */
 

@@ -3031,7 +3031,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
 // in `run --scope nonsense` produced `count: 0` + exit 0 (cmd reports
 // "ran 0 playbooks") and in `ci --scope nonsense` silently ran only the
 // cross-cutting set (the union with `framework` produced a false-positive
-// PASS). Both are operator-intent loss patterns CLAUDE.md flags as the
+// PASS). Both are operator-intent loss patterns of the
 // "field-present, content-wrong" class.
 const VALID_SCOPES = ["system", "code", "service", "cross-cutting", "all"];
 

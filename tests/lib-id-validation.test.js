@@ -20,8 +20,8 @@
  *
  * Each adversarial case asserts the EXACT `reason` string so a regression
  * that swaps one rejection class for another (length vs charset vs
- * all-dots) surfaces here. coincidence-passing tests are forbidden — see
- * CLAUDE.md.
+ * all-dots) surfaces here. coincidence-passing tests are forbidden by the
+ * anti-coincidence rule.
  */
 
 const test = require('node:test');

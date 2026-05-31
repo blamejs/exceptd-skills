@@ -14,7 +14,7 @@
  *            callers (refresh-network, verify-shipped-tarball, downstream
  *            consumers) can no longer bypass the pin.
  *
- * Per CLAUDE.md "coincidence-passing tests" rule: every exit-code assertion
+ * Per the "coincidence-passing tests" rule: every exit-code assertion
  * is EXACT (assert.equal(r.status, 6)), never notEqual(0).
  */
 

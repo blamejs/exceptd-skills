@@ -23,7 +23,7 @@
  *        (alignment with discover/doctor convention).
  *   F7 — lib/scoring.js compare() surfaces "no scoring signal" distinctly
  *        from "broadly aligned" when both rwep and cvss are zero/null
- *        (coincidence-passing fix per CLAUDE.md pitfall).
+ *        (coincidence-passing fix per the common-pitfall list).
  *   F8 — lib/playbook-runner.js normalizeSubmission clones submission
  *        before pushing to _runErrors (prevents TypeError on frozen input).
  */

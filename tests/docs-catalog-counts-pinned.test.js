@@ -17,7 +17,7 @@
  * advances beyond 5.4.0, a doc mention that remains on 5.4.0 must also
  * fail this gate.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * value or asserts the empty-set property "no mismatching pin found."
  */
 

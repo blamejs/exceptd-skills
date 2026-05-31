@@ -771,7 +771,7 @@ test("gate 13: validate-package.js fires when a files-allowlist entry is missing
 // `npm install` against the SHIPPED tarball produces 0/38. The cause is
 // keys/public.pem being swapped between sign and pack (the test that
 // did it lived in `tests/operator-bugs.test.js` and synchronously
-// regenerated keys mid-suite — see CLAUDE.md's pitfall list).
+// regenerated keys mid-suite — see the common-pitfalls list).
 //
 // The simulated regression here: sign the skill against PRIVATE_KEY_A
 // (the original ceremony), then post-sign tamper the skill body but

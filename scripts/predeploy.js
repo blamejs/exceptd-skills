@@ -249,6 +249,19 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-codebase-patterns.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Release-notes extract + quality gate. Runs the same `## <version>`
+    // CHANGELOG extraction the release workflow publishes as the GitHub
+    // Release body, and lints it for operator-facing quality (no internal
+    // phase/pass/slice narrative, no agent-dispatch / conversation residue,
+    // no tautological green claims). A malformed or internal-narrative section
+    // fails here rather than shipping as the public release body / falling
+    // back to the generic "Release of v<version>." line.
+    name: "Release-notes extract + operator-facing lint (CHANGELOG section)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-changelog-extract.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

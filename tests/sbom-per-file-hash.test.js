@@ -8,7 +8,7 @@
  *   - components[].type === 'file'  one per shipped file with SHA-256
  *   - metadata.tools[0].name        not the legacy "hand-written" placeholder
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks the EXACT
+ * Per the anti-coincidence rule, every assertion checks the EXACT
  * value the fix produces (set-equality on the file allowlist, exact alg
  * string, exact tool name) — never `assert.ok(field)` or
  * `assert.notEqual(0)`.

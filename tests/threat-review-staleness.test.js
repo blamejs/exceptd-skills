@@ -18,7 +18,7 @@
  * added the field to cve-catalog, cwe-catalog, d3fend-catalog, and
  * dlp-controls; this test ensures it stays present.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * day-count threshold rather than `assert.ok(diff < N)`.
  */
 

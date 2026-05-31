@@ -72,9 +72,13 @@ test('both capability indicators carry a paired false_positive_profile entry', (
   }
 });
 
-test('sbom playbook _meta.version advanced to 1.3.0 with a matching changelog rung', () => {
-  assert.equal(PB._meta.version, '1.3.0', 'playbook semver must reflect the capability-signal additions');
+test('sbom playbook carries the 1.3.0 capability-taxonomy changelog rung (version only advances)', () => {
   assert.ok(Array.isArray(PB._meta.changelog), 'playbook must carry a changelog');
   assert.ok(PB._meta.changelog.some((c) => c.version === '1.3.0'),
-    'a 1.3.0 changelog rung must document the capability taxonomy');
+    'the 1.3.0 changelog rung must document the capability taxonomy');
+  // Version monotonically advances past 1.3.0 as later passes add detectors —
+  // assert >= 1.3.0 by numeric tuple, never pin the exact live version.
+  const [maj, min, pat] = String(PB._meta.version).split('.').map(Number);
+  assert.ok(maj > 1 || (maj === 1 && (min > 3 || (min === 3 && pat >= 0))),
+    `playbook _meta.version (${PB._meta.version}) must be >= 1.3.0`);
 });

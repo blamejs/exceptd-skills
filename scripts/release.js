@@ -254,6 +254,11 @@ function cmdPrepare(opts) {
     process.exit(2);
   }
 
+  // The `## <next>` heading exists; confirm the section extracts cleanly and
+  // passes the operator-facing lint (the release workflow publishes it verbatim
+  // as the GitHub Release body). Fail fast here rather than at the gates phase.
+  _run("node", ["scripts/check-changelog-extract.js", next]);
+
   _writeJsonVersion("package.json", next);
   _writeJsonVersion("manifest.json", next);
   _ok("bumped package.json + manifest.json → " + next);

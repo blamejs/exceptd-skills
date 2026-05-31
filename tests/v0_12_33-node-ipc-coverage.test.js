@@ -12,7 +12,7 @@
  * with its headline novel control NEW-CTRL-047 PACKAGE-MAINTAINER-DOMAIN-
  * EXPIRY-MONITORING.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * value (boolean, string, RWEP score, partition sum) — never `assert.ok`
  * on a field-presence check alone. Field-presence assertions are paired
  * with content-shape assertions.
@@ -96,7 +96,7 @@ test(`v0.12.33 intake: ${ENTRY_ID} catalog entry shape (kev_scope_note, rwep Sha
   );
   // Content-shape pairing: at least the payload_artifacts category exists
   // and is a non-empty array — paired with the field-presence check above
-  // per the CLAUDE.md "field-present ≠ field-populated" pitfall rule.
+  // per the "field-present ≠ field-populated" pitfall rule.
   assert.equal(
     Array.isArray(entry.iocs.payload_artifacts),
     true,
