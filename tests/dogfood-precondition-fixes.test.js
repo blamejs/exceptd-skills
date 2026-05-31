@@ -87,7 +87,14 @@ test('explicit-false precondition halt carries a specific remediation, not the g
   const j = tryJson(cli(['run', 'cicd-pipeline-compromise', '--evidence', '-', '--json'], { input: ev }).stdout);
   assert.equal(j.blocked_by, 'precondition');
   assert.equal(typeof j.remediation, 'string');
-  assert.ok(/submitted as false|attest-ownership/.test(j.remediation), 'remediation names the specific gate, not a platform guess');
+  assert.ok(/submitted as false/.test(j.remediation), 'remediation names the specific gate, not a platform guess');
+  // The universal satisfaction mechanism (submit the precondition true) must
+  // be named — it works for every playbook regardless of which verb blocked.
+  assert.ok(/precondition_checks/.test(j.remediation), 'remediation points at the precondition_checks submission mechanism');
+  assert.ok(j.remediation.includes('"operator-owns-ci-fleet": true'), 'remediation shows the exact attestation to submit');
+  // The flag example must be attributed to the collect verb (it is a collect
+  // flag; the block surfaces at run, where passing it is silently ignored).
+  assert.ok(/collect cicd-pipeline-compromise --attest-ownership/.test(j.remediation), 'the --attest-ownership example names the collect verb');
   const human = cli(['run', 'cicd-pipeline-compromise', '--evidence', '-'], { input: ev });
   assert.equal(/Linux-only playbook/.test(human.stdout), false, 'the misleading platform-gate hint must not appear on an intent-gate halt');
 });

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.2 — 2026-05-31
+
+The default evidence bundle for the secrets, credential-store, runtime, and citation-hygiene playbooks is now a real structured-JSON document instead of an "Unknown format" placeholder, and `json` is a generally selectable bundle format for any playbook.
+
+A crypto-codebase scan of a source repository no longer emits a spurious "precondition not met" warning for its source-tree check: the collector now attests that gate from the files it walked, matching how the supply-chain and library-author collectors already self-attest.
+
+When a run is blocked on a precondition you submitted as false, the remediation now names the exact way to satisfy it — submit `precondition_checks {"<id>": true}` in your evidence, or pass the owning collector's attestation flag at collect time (for example `collect cicd-pipeline-compromise --attest-ownership`) — instead of an ambiguous hint that could be read as a flag on the wrong verb.
+
 ## 0.16.1 — 2026-05-31
 
 Supply-chain, library-author, and MCP scans no longer emit a spurious "precondition not met" warning when the scanned directory clearly satisfies it: the collectors now attest the gates they can verify from what they collected (a lockfile satisfies the package-manager gate, a package manifest or publish workflow satisfies the publishable-artifact gate, a present assistant config satisfies the AI-assistant gate) — so a `collect --cwd <repo> | run` against a target directory reports them as met rather than unverified. The library-author publish-workflow detector no longer mis-classifies a CI workflow whose only mention of a publish command sits inside a comment. And a blocked run on an intent/ownership precondition (for example the CI/CD playbook's fleet-ownership gate) now states the specific gate and how to satisfy it, instead of guessing a platform mismatch.
