@@ -16,6 +16,7 @@ const path = require('node:path');
 
 const scoring = require(path.join(__dirname, '..', 'lib', 'scoring.js'));
 const CAT = require(path.join(__dirname, '..', 'data', 'cve-catalog.json'));
+const { resolveCve } = require(path.join(__dirname, '..', 'lib', 'citation-resolve.js'));
 const PCS_ENTRIES = [
   'MAL-2026-MOIKA-DEPCONFUSION', 'MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM',
   'CVE-2022-23812', 'MAL-2026-SHAI-HULUD-OSS', 'MAL-2026-NODE-IPC-STEALER',
@@ -60,6 +61,32 @@ test('PCS does not perturb RWEP — every annotated entry still has rwep_score =
     const sum = Object.values(e.rwep_factors).reduce((a, b) => a + b, 0);
     assert.equal(e.rwep_score, sum, `${key}: PCS must not change the RWEP sum invariant`);
   }
+});
+
+test('polarity is enum-enforced by the actual validator (risk rejected, trust accepted)', () => {
+  // codex P2: the inline validator implements `enum` but NOT `const`, so the
+  // guard must be `enum: ["trust"]`, and the validator must actually reject an
+  // inverse-polarity PCS that would be confused with RWEP.
+  const schema = require(path.join(__dirname, '..', 'lib', 'schemas', 'cve-catalog.schema.json'));
+  const pcSchema = schema.properties.package_confidence;
+  assert.deepEqual(pcSchema.properties.polarity, { enum: ['trust'] }, 'polarity must be enum (validator handles enum, not const)');
+  const { validate } = require(path.join(__dirname, '..', 'lib', 'validate-cve-catalog.js'));
+  const bad = validate({ score: 5, polarity: 'risk' }, pcSchema, 'pc', 'pc');
+  assert.ok(bad.length > 0, "polarity 'risk' must be rejected by the validator");
+  const good = validate({ score: 5, polarity: 'trust' }, pcSchema, 'pc', 'pc');
+  assert.equal(good.length, 0, "polarity 'trust' must validate");
+});
+
+test('resolveCve resolves a folded-in CVE alias to its campaign entry offline', async () => {
+  // codex P2: CVE-2026-44484 is catalogued only as an alias of the Shai-Hulud
+  // wave; it must still resolve offline, or `exceptd cve CVE-2026-44484` reports
+  // unknown for an incident the catalog actually covers.
+  const r = await resolveCve('CVE-2026-44484', { airGap: true });
+  assert.equal(r.from, 'catalog-alias', 'must resolve via the alias index, not fall through to offline/unknown');
+  assert.equal(r.aliased_to, 'MAL-2026-SHAI-HULUD-OSS');
+  // Exact pin (anti-coincidence): the alias inherits the campaign entry's
+  // status — "published" via the e.status || "published" default — NOT "unknown".
+  assert.equal(r.status, 'published', 'a catalogued-by-alias id resolves with the campaign status, not offline/unknown');
 });
 
 test('Shai-Hulud entry covers the PyPI lightning sub-incident', () => {
