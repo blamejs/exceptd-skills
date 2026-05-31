@@ -77,6 +77,14 @@ function makeCli(suiteHome) {
         ...opts.env,
       },
       timeout: opts.timeout ?? 30000,
+      // run-all / run --all aggregate 24 playbooks into one JSON document.
+      // On Linux the platform-targeted playbooks (kernel / hardening / runtime
+      // / cred-stores) execute fully instead of blocking, so the aggregate can
+      // exceed spawnSync's 1 MiB default maxBuffer — which truncates stdout to
+      // invalid JSON (a Linux-only test failure invisible on Windows, where
+      // those playbooks block to small stubs). Cap generously so a valid-but-
+      // large CLI document is never silently clipped.
+      maxBuffer: 64 * 1024 * 1024,
     });
   };
 }
