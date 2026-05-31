@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.51 — 2026-05-30
+
+Catalog: three new supply-chain entries. CVE-2022-23812 — the node-ipc "peacenotwar" protestware incident, where a trusted maintainer shipped a geo-targeted file-wiper in the package main module, so `--ignore-scripts` (the usual npm-supply-chain mitigation) does not stop it. TrapDoor — a cross-ecosystem (npm / PyPI / crates.io) credential-stealer campaign whose novel vector plants zero-width-Unicode instructions in `.cursorrules` / `CLAUDE.md` files to subvert AI coding assistants into discovering and exfiltrating local secrets. MOIKA — the catalog's first dependency-confusion entry: public packages published under squatted internal scopes at inflated versions, with a postinstall stager that exfiltrates the full process environment. Each carries its paired zero-day lesson and new framework-lag controls (main-module-payload detection, AI-assistant config-file poisoning detection, internal-scope→registry pinning).
+
+Supply-chain playbook: a package-capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary) as a CVE-independent screening lens. Two new detectors flag a dependency that gains a capability across a version bump, and a no-CVE package whose install-script combines with shell / network / env access (the credential-harvesting delivery shape) — both gated by false-positive checks for the build-tooling and native-addon class.
+
 ## 0.15.50 — 2026-05-30
 
 Hardening: `--operator` validation and the operator-text sanitizer now classify and strip Unicode threat codepoints — Trojan-Source bidirectional overrides (CVE-2021-42574), zero-width/invisible marks, C0 controls, and null — through a shared vendored codepoint-threat table, and the `--operator` rejection now names the specific codepoint family (for example "bidirectional-override codepoint") instead of a generic message. Unicode General Category C remains the reject/strip backstop, so the broader control / private-use / unassigned set is still refused.

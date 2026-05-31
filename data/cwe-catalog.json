@@ -429,7 +429,8 @@
       "CVE-2026-45829",
       "CVE-2026-5760",
       "CVE-2026-6973",
-      "MAL-2026-3083"
+      "MAL-2026-3083",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1425,7 +1426,10 @@
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "CVE-2022-23812",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -1745,7 +1749,9 @@
       "CVE-2025-54136",
       "CVE-2025-64496",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -2021,7 +2027,9 @@
       "CVE-2024-3094",
       "CVE-2026-30615",
       "CVE-2026-45321",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -3177,7 +3185,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-MOIKA-DEPCONFUSION"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,

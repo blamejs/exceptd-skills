@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 427
+    "entry_count": 430
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -24854,5 +24854,255 @@
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none"
+  },
+  "CVE-2022-23812": {
+    "name": "node-ipc geo-targeted file-wiper protestware (RU/BY heart-emoji overwrite; peacenotwar dropper in 11.0.0+)",
+    "lesson_date": "2026-05-30",
+    "attack_vector": {
+      "description": "A trusted, legitimate package maintainer (node-ipc, ~1M weekly downloads, transitive via Vue CLI) authored a destructive payload directly into published versions 10.1.1/10.1.2 (2022-03-07/08): on require('node-ipc') the code resolved the host's public-IP geolocation and, for Russia/Belarus, recursively overwrote writable files with a heart character; a follow-on bundled the peacenotwar dropper (WITH-LOVE-FROM-AMERICA.txt, NVD-scoped into 11.0.0+). The payload ships in the MAIN MODULE, not a postinstall hook, so --ignore-scripts — the canonical post-Shai-Hulud npm mitigation — does NOT mitigate. Class: insider-maintainer protestware/sabotage, distinct from account-recovery takeover (node-ipc 2026 stealer) and typosquat.",
+      "privileges_required": "downstream consumer runs install resolving 10.1.1/10.1.2 (directly or transitively); payload fires automatically on require('node-ipc')",
+      "complexity": "low for downstream consumers (automatic on module load); trivial for the maintainer (any owner with publish rights can author it)",
+      "ai_factor": "Not AI-discovered, not AI-built. Hand-authored geo-gated wiper; the novelty is the trust-abuse + main-module delivery, not algorithmic."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Strict-lockfile installs (npm ci) against a lockfile predating 2022-03-07; pinning critical-path dependencies and gating upgrades on a review window; treating high-reach single-maintainer packages as a concentration risk.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "--ignore-scripts does NOT help (main-module payload). Lockfile pinning helps only if the lockfile predates the malicious publish AND npm ci (not npm install) is used."
+      },
+      "detection": {
+        "what_would_have_worked": "Behavioral telemetry on developer/CI hosts: an outbound geolocation lookup followed by recursive filesystem writes within a Node process's lifetime is a near-deterministic IoC for a main-module wiper. File-write telemetry on broad path globs at module-load time catches the class even when --ignore-scripts is set.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Most endpoints and CI runners do not retain process-level file-write telemetry; the geo-gating means absence of harm on a non-RU/BY host does not prove the payload was absent."
+      },
+      "response": {
+        "what_would_have_worked": "npm removed 10.1.1/10.1.2; consumers upgraded to 10.1.3+. For the 11.0.0+ peacenotwar range, pin to a pre-11.0.0 line or a maintained fork. Restore any overwritten files from backup on affected RU/BY hosts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Yank closes new exposure but does not restore wiped files; the destructive action is irreversible without backups."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Reused-component controls assume maintainer good-faith; no coverage of trusted-maintainer sabotage."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SBOM records what resolved; a pinned malicious version is SBOM-compliant."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No main-module-vs-postinstall payload distinction; no maintainer-intent risk."
+      },
+      "UK-CAF-B4-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Outcome-based principle does not prescribe insider-maintainer-sabotage defense."
+      },
+      "ANY-FRAMEWORK": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No major framework treats a trusted maintainer shipping a geo-targeted destructive main-module payload as a distinct supply-chain class. NEW-CTRL-114 is the headline novel control."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-114",
+        "name": "MAIN-MODULE-PAYLOAD-DETECTION",
+        "description": "Supply-chain controls must not assume --ignore-scripts mitigates malicious dependencies. A payload shipped in the package main module (executing on require/import, not via a lifecycle hook) bypasses --ignore-scripts entirely. Detect via process-level behavioral telemetry: geolocation/IP lookups, broad recursive filesystem writes, or credential-path reads occurring at module-load time within a dependency. Pair with strict-lockfile installs (npm ci) and a publish-to-consume review window on high-reach single-maintainer packages.",
+        "evidence": "CVE-2022-23812 — node-ipc 10.1.1/10.1.2 shipped a geo-targeted file-wiper in the MAIN MODULE; --ignore-scripts (the canonical npm-supply-chain mitigation since Shai-Hulud) did not mitigate because the payload was not in a postinstall hook.",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "NIS2-Art21-supply-chain",
+          "EU-CRA-Art13",
+          "ANY-FRAMEWORK"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "Most npm-hygiene programs lean on --ignore-scripts and SBOM, neither of which addresses a main-module payload from a trusted maintainer. Lockfile pinning helps only with npm ci and a pre-2022-03-07 lockfile.",
+      "theater_pattern": "ignore_scripts_assumed_sufficient_for_all_supply_chain_payloads"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2022-03-15",
+    "ai_assist_factor": "low"
+  },
+  "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM": {
+    "name": "TrapDoor cross-ecosystem crypto-stealer + AI-assistant poisoning campaign (npm/PyPI/crates.io)",
+    "lesson_date": "2026-05-30",
+    "attack_vector": {
+      "description": "Cross-ecosystem (npm/PyPI/crates.io) coordinated malicious-package campaign (\"TrapDoor\", anchor OSV MAL-2026-4207 / GHSA-7r6r-hqg7-f6mq) using lure packages themed as security/crypto/AI tooling. npm: postinstall executes trap-core.js. PyPI: import-time node -e pulls JS from attacker GitHub Pages. crates.io: build.rs runs at compile time. All variants harvest cloud/SSH/GitHub credentials + crypto-wallet data and exfiltrate via a dynamic GitHub-Pages C2. The genuinely novel vector: the payload plants .cursorrules and CLAUDE.md files containing zero-width-Unicode-hidden instructions designed to trick AI coding assistants (Cursor, Claude Code) into running a fake \"security scan\" that self-exfiltrates local secrets — AI-assistant prompt-injection as a supply-chain weaponization channel.",
+      "privileges_required": "developer/CI runs install (npm postinstall), import (PyPI), or compile (crates build.rs); AI-assistant poisoning additionally fires when a developer opens the repo in an LLM coding assistant",
+      "complexity": "low — consumer-side execution is automatic on install/import/compile; --ignore-scripts mitigates only the npm postinstall path, not PyPI import-time or crates build-time triggers",
+      "ai_factor": "AI-ASSISTED WEAPONIZATION (not AI-discovered). The .cursorrules/CLAUDE.md zero-width-Unicode prompt-injection that subverts an AI coding assistant into exfiltrating secrets is the differentiator — maps ATLAS AML.T0051 (LLM prompt injection). Ties directly to the Trojan-Source codepoint-threat surface (CVE-2021-42574) the catalog already tracks."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Scope-pinning + provenance on dependencies; --ignore-scripts (npm path only); scanning .cursorrules/CLAUDE.md and other AI-assistant config files for zero-width Unicode before an assistant reads them; treating AI-assistant config as untrusted input.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "No framework treats AI-coding-assistant config files as a prompt-injection attack surface. --ignore-scripts is partial (misses import-time + compile-time triggers)."
+      },
+      "detection": {
+        "what_would_have_worked": "Install/import/compile-time egress monitoring (the GitHub-Pages C2 + Gist exfil); a zero-width-Unicode scan over repo config files (.cursorrules, CLAUDE.md) — the same codepoint-class the catalog flags for Trojan-Source; behavioral detection of a credential scan over ~/.aws, ~/.ssh, browser wallet stores following a package resolution.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "PyPI variant pulls live JS at import time, so the on-disk package may not contain the final payload — network/DNS capture to the C2 is required to prove exfil. Zero-width Unicode in repo config is invisible in normal review."
+      },
+      "response": {
+        "what_would_have_worked": "Remove the named packages; rotate ALL credentials reachable from any host that installed/imported/compiled them; audit .cursorrules/CLAUDE.md for hidden instructions; block egress to the C2.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Registry takedown was partial (some versions live at reporting time); crates.io ids not yet in OSV. Rotation is the only reliable response once secrets are harvested."
+      }
+    },
+    "framework_coverage": {
+      "EU-AI-Act-Art15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "AI robustness/accuracy controls do not address adversarial prompt-injection planted in repo config files that subvert a developer AI assistant."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No coverage of cross-ecosystem coordinated campaigns or AI-assistant config-file poisoning as a supply-chain vector."
+      },
+      "DORA-ICT-third-party": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ICT third-party risk assumes vendor relationships, not transitive OSS lure-packages auto-executing on import/build."
+      },
+      "UK-CAF-B4-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not cover build-time (build.rs) or import-time auto-execution distinct from install-time hooks."
+      },
+      "ANY-FRAMEWORK": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework treats AI-coding-assistant config-file prompt-injection as a supply-chain exfiltration vector. NEW-CTRL-115/116 are the headline novel controls."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-115",
+        "name": "AI-ASSISTANT-CONFIG-POISONING-DETECTION",
+        "description": "Scan AI-coding-assistant configuration files (.cursorrules, CLAUDE.md, .github/copilot-instructions.md, and equivalents) for zero-width / bidirectional / invisible Unicode codepoints and for instructions that direct the assistant to read credential paths, run \"security scans\", or perform network egress. Treat AI-assistant config as untrusted input on dependency intake; render it through a codepoint-normalizer (the Trojan-Source class, CVE-2021-42574) before any assistant consumes it.",
+        "evidence": "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM — the payload planted .cursorrules and CLAUDE.md with zero-width-Unicode-hidden instructions to trick Cursor/Claude Code into discovering and exfiltrating local secrets.",
+        "gap_closes": [
+          "EU-AI-Act-Art15",
+          "NIS2-Art21-supply-chain",
+          "ANY-FRAMEWORK"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-116",
+        "name": "MULTI-TRIGGER-DEPENDENCY-EXECUTION-POLICY",
+        "description": "Dependency-execution policy must cover install-time (npm postinstall), import-time (PyPI module load / node -e), AND compile-time (crates build.rs) execution — not install hooks alone. --ignore-scripts addresses only the npm postinstall path. Enforce egress allowlists during install/import/compile in CI and monitor for second-stage fetches from dynamic config hosts.",
+        "evidence": "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM — npm postinstall, PyPI import-time node -e, and crates.io build.rs were three distinct execution triggers; --ignore-scripts mitigated only the first.",
+        "gap_closes": [
+          "NIS2-Art21-supply-chain",
+          "UK-CAF-B4-supply-chain",
+          "DORA-ICT-third-party"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 96,
+      "basis": "AI-coding-assistant config files are not in scope for any current supply-chain or AI-governance control; near-total exposure. Multi-trigger execution (import/compile) is uncovered by the install-hook-centric --ignore-scripts mitigation most programs rely on.",
+      "theater_pattern": "ai_assistant_config_treated_as_trusted"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-25",
+    "ai_assist_factor": "high"
+  },
+  "MAL-2026-MOIKA-DEPCONFUSION": {
+    "name": "oob.moika.tech dependency-confusion credential-exfiltration campaign (internal-scope namespace squat)",
+    "lesson_date": "2026-05-30",
+    "attack_vector": {
+      "description": "Dependency-confusion / internal-scope namespace-squat campaign (C2 oob.moika.tech, OSV MAL-2026-4952/4978/5032). The attacker published public npm packages under organizational scopes that mirror targets internal namespaces (@cloudplatform-single-spa, @mlspace, @sber-ecom-core, etc.) at inflated semver (99.99.99 etc.) so default npm resolution prefers the public package when no scope->registry pin exists. A 7-13 KB obfuscated postinstall stager fetches a second stage from oob.moika.tech/payload (header X-Secret: l95HdDaz3kQx1Zsg3WxH6HvKANf51RY1) and POSTs the full process.env (NPM_TOKEN, AWS keys, GITHUB_TOKEN, DB URLs) + host fingerprint to oob.moika.tech/report. Microsoft documents a server-side toggle gating second-stage escalation, but the /report env-exfil is live. Class: dependency-confusion with postinstall second-stage staging — the catalog had zero dependency-confusion entries before this.",
+      "privileges_required": "developer/CI runs npm install against a project referencing a squatted internal scope with no scope->registry pin; postinstall fires automatically",
+      "complexity": "low — automatic on install; --ignore-scripts DOES mitigate (postinstall-gated, unlike the node-ipc main-module class). Attacker-side precondition (knowing internal scope names) is low: scope names leak via public source, CI logs, and job postings.",
+      "ai_factor": "Not AI-discovered, not AI-built. Targets ML-tooling scopes (@mlspace, @data-science) among others, but the payload is conventional obfuscated JavaScript."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Scope->registry pinning in .npmrc (@scope:registry=) for every internal scope — the structural fix for the entire dependency-confusion class; this prevents public-registry resolution regardless of version inflation. --ignore-scripts blocks the postinstall stager specifically.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Scope-pinning fully prevents the class but must be configured BEFORE exposure. No framework mandates it; default npm resolution silently prefers the higher public version."
+      },
+      "detection": {
+        "what_would_have_worked": "Install-time egress monitoring (the oob.moika.tech C2); detection of a raw process.env serialization immediately followed by an outbound POST (the credential-harvest fingerprint); lockfile audit for any internal scope resolved to a PUBLIC-registry tarball at an inflated version (99.99.99 / 5.7.1 / 99.5.x).",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A postinstall POST to /report proves exfil; postinstall execution alone does not. Most CI runners do not monitor install-time egress."
+      },
+      "response": {
+        "what_would_have_worked": "Pin internal scopes to the private registry in project + CI .npmrc; rotate every credential exposed as an env var on any host that ran an affected install during the exposure windows; block egress to oob.moika.tech and the t-in-one lure domains.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Per-package yank is reactive — any attacker can re-publish an inflated version under an unpinned internal scope. Scope-pinning is the only durable fix."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-218-SSDF": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component-provenance controls assume the consumed package is the intended one; SSDF does not mandate scope->registry pinning, so a confused resolution is SSDF-conformant."
+      },
+      "EU-CRA-Art13": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SBOM records what resolved, not whether resolution should have gone to a private registry; a confused public package is SBOM-listed and CRA-compliant."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No requirement for scope-registry pinning, postinstall-hook policy, or internal-namespace-squat monitoring on public registries."
+      },
+      "SLSA-v1.0-Provenance": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Provenance attests who built an artifact; it cannot assert the resolver selected the artifact the org intended — orthogonal to dependency confusion."
+      },
+      "ANY-FRAMEWORK": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No major framework mandates internal-scope->registry pinning as a dependency-confusion control. NEW-CTRL-117 is the headline novel control."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-117",
+        "name": "PACKAGE-INTERNAL-SCOPE-REGISTRY-PINNING",
+        "description": "Every internal/private package scope must be pinned to its private registry in project and CI .npmrc (@scope:registry=https://private-registry/), so public-registry resolution can never win regardless of version inflation. Continuously monitor public registries for newly published packages under the organization internal scope names (namespace-squat detection). Lockfile-audit for any internal scope resolved to a public-registry tarball. This is the structural fix for the dependency-confusion class, which no current framework prescribes.",
+        "evidence": "MAL-2026-MOIKA-DEPCONFUSION — ~164-179 public npm packages were published under squatted internal scopes at inflated versions (99.99.99 etc.) so default resolution preferred them; a postinstall stager exfiltrated full process.env. Scope->registry pinning would have prevented every install.",
+        "gap_closes": [
+          "NIST-800-218-SSDF",
+          "NIS2-Art21-supply-chain",
+          "EU-CRA-Art13",
+          "ANY-FRAMEWORK"
+        ]
+      }
+    ],
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Scope->registry pinning is a non-default npm configuration that no framework mandates; most organizations using internal scopes have not pinned them, leaving the public registry able to win resolution on an inflated version.",
+      "theater_pattern": "default_registry_resolution_assumed_safe"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-05-28",
+    "ai_assist_factor": "low"
   }
 }
