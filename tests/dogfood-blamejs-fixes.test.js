@@ -55,6 +55,21 @@ test('a playbook declaring bundle_format "json" builds a populated json bundle, 
   assert.equal(ep.bundles_by_format.json.format, 'json', 'bundles_by_format.json is the json bundle');
 });
 
+test('top_finding names the dominant fired indicator (not the verdict string), and summary_line states the verdict once', () => {
+  const res = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(res.verdict, 'detected', 'a forced indicator hit drives a detected verdict');
+  // top_finding must name the indicator that fired, not echo the verdict word.
+  assert.equal(res.top_finding, 'release-workflow-non-frozen-install', 'top_finding is the dominant fired indicator id');
+  // The verdict word appears exactly once in the summary line — no
+  // "detected (rwep=…, detected, …)" duplication.
+  assert.equal((res.summary_line.match(/detected/g) || []).length, 1, 'summary_line states the verdict once, not duplicated');
+});
+
 test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
   // A manifest marker -> true.
   const withManifest = mkfx();
