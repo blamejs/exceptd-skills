@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.4 — 2026-05-31
+
+A `collect | run` result now surfaces non-fatal collector notices as a `collector_warnings` field — for example a file skipped for exceeding the scan size limit — so a consumer can see what the collector could not scan. The verdict and evidence completeness are unchanged; the field is omitted when the collector reported nothing.
+
+For an indicator-driven detection, `top_finding` now names the indicator that actually drove the RWEP score (the highest-weighted fired signal) rather than the highest-confidence hit, so the summary headline explains the number shown beside it. It falls back to the dominant fired indicator when no weighted signal fired.
+
+A playbook's event-based regression triggers now report their condition string in `regression_event_triggers` instead of null.
+
 ## 0.16.3 — 2026-05-31
 
 For an indicator-driven detection with no matched CVE, a run's `top_finding` now names the indicator that actually drove the verdict instead of repeating the verdict word, so the summary line reads (for example) `library-author: detected (rwep=10, release-workflow-non-frozen-install, evidence=complete)` rather than duplicating `detected`.

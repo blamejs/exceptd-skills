@@ -82,6 +82,69 @@ test('top_finding names the dominant fired indicator (not the verdict string), a
   assert.equal(miss.top_finding, null, 'a non-detection verdict carries no top_finding');
 });
 
+test('top_finding prefers the indicator that drove the RWEP score (and falls back to the dominant hit when none is weighted)', () => {
+  // Both a weighted rwep-input (sbom-absent-or-unsigned, weight 10) and a
+  // higher-confidence-but-unweighted hit fire: top_finding must name the
+  // weighted driver so the headline explains the rwep number beside it.
+  const driven = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'sbom-absent-or-unsigned': 'hit', 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(driven.verdict, 'detected');
+  assert.equal(driven.rwep_score, 10, 'the weighted signal sets rwep=10');
+  assert.equal(driven.top_finding, 'sbom-absent-or-unsigned', 'top_finding names the rwep driver, not the higher-confidence unweighted hit');
+  // When only a non-weighted hit fires (rwep=0), fall back to that indicator.
+  const fallback = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(fallback.rwep_score, 0, 'the unweighted hit leaves rwep at 0');
+  assert.equal(fallback.top_finding, 'release-workflow-non-frozen-install', 'with no weighted driver, top_finding falls back to the dominant hit');
+});
+
+test('run() surfaces collector_errors as an advisory collector_warnings field (and omits it when there are none)', () => {
+  const warned = runner.run(
+    'secrets',
+    'full-repo-secret-scan',
+    {
+      precondition_checks: { 'repo-context': true },
+      signal_overrides: {},
+      collector_errors: [{ kind: 'file_too_large_skipped', reason: 'big.json: exceeds limit' }],
+    },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.ok(Array.isArray(warned.collector_warnings), 'collector_warnings is present when the collector skipped something');
+  assert.equal(warned.collector_warnings.length, 1);
+  assert.equal(warned.collector_warnings[0].kind, 'file_too_large_skipped', 'the skip reason is carried through verbatim');
+  // Advisory only — the run still completes and the verdict is unaffected.
+  assert.equal(warned.ok, true);
+  // No collector_errors submitted -> no collector_warnings key (not an empty array).
+  const clean = runner.run(
+    'secrets',
+    'full-repo-secret-scan',
+    { precondition_checks: { 'repo-context': true }, signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal('collector_warnings' in clean, false, 'collector_warnings is omitted when the collector reported nothing');
+});
+
+test('regression_event_triggers carry the condition string (not null) from a playbook keyed on `condition`', () => {
+  const res = runner.run(
+    'ai-api',
+    'all-ai-api-and-credential-exposure',
+    { signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  const triggers = res.phases.validate.regression_event_triggers || [];
+  assert.ok(triggers.length >= 1, 'the playbook declares on_event regression triggers');
+  assert.ok(triggers.every((t) => typeof t.trigger === 'string' && t.trigger.length > 0), 'every on_event trigger carries its condition string, not null');
+  assert.equal(triggers[0].trigger, 'new_ai_vendor_added_to_allowlist', 'the first trigger is the playbook condition verbatim');
+});
+
 test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
   // A manifest marker -> true.
   const withManifest = mkfx();
