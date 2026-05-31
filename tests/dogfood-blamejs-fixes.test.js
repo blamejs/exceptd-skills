@@ -68,6 +68,18 @@ test('top_finding names the dominant fired indicator (not the verdict string), a
   // The verdict word appears exactly once in the summary line — no
   // "detected (rwep=…, detected, …)" duplication.
   assert.equal((res.summary_line.match(/detected/g) || []).length, 1, 'summary_line states the verdict once, not duplicated');
+
+  // Gate: a non-detection verdict must NOT advertise a top_finding (the
+  // indicator branch is gated on a real detection classification, so a stray
+  // hit on an inconclusive / not-detected run cannot leak a finding).
+  const miss = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'miss' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(miss.verdict, 'not_detected', 'all-miss drives a not_detected verdict');
+  assert.equal(miss.top_finding, null, 'a non-detection verdict carries no top_finding');
 });
 
 test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
