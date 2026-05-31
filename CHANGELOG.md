@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.53 — 2026-05-30
+
+Catalog: package-class entries can now carry an optional package-confidence signal — a 0–100 supply-chain trustworthiness score with inverse polarity to RWEP (high = trustworthy provenance, low = behaves like malware), derived from maintainer, code-quality, behavioral, and provenance sub-signals. It is surfaced alongside RWEP and never feeds or replaces it: RWEP answers "how urgently must I act on this known vulnerability," while package-confidence answers "how much do I trust this package's provenance." Populated on the supply-chain malware entries (the MOIKA dependency-confusion campaign, TrapDoor, Shai-Hulud, the node-ipc credential-stealer, and the node-ipc protestware incident).
+
+The Shai-Hulud worm entry now also covers the PyTorch Lightning PyPI compromise (CVE-2026-44484 / `lightning` 2.6.2–2.6.3) as the PyPI side of the same Mini Shai-Hulud wave, with its Bun-runtime infostealer indicators and disclosure sources.
+
 ## 0.15.52 — 2026-05-30
 
 Supply-chain playbook: three new detection-depth checks. Typosquat / homoglyph detection flags a direct dependency whose name impersonates a popular package by edit-distance or a visually-confusable Unicode substitution (reusing the Trojan-Source codepoint tables) — a lure signal that precedes any payload. A static content red-flag screen flags packages that ship only minified/obfuscated source, carry a high ratio of high-entropy strings, are a trivial shell that nonetheless runs an install script or opens the network, or combine dynamic `eval` with dynamic `require` (CWE/ATT&CK T1027) — orthogonal to the capability screens. A dependency-confusion resolution check flags an internal-looking package name served from the public registry, or an inflated-version public squat that wins resolution over the private package — the resolution-source signature that precedes execution, correlated to the MOIKA campaign. Each ships with a paired evidence artifact and false-positive profile.
