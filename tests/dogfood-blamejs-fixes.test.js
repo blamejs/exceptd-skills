@@ -23,6 +23,7 @@ const path = require('node:path');
 
 const runner = require('../lib/playbook-runner.js');
 const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const { makeSuiteHome, makeCli } = require('./_helpers/cli');
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
 process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
@@ -183,6 +184,16 @@ test('selected_remediation prefers the path that addresses a fired signal (and f
     { force_replay: true, mode: 'test' }
   );
   assert.equal(satisfiedUnrelated.phases.validate.selected_remediation.id, 'activate-fips-provider-or-retract-claim', 'relevance outranks a satisfied-but-unrelated path');
+});
+
+test('collect --help documents the --attest-ownership flag it accepts', () => {
+  // The flag is allowlisted and consumed by the collector, and the
+  // precondition-block remediation tells operators to use it — so collect's
+  // own help must list it (otherwise an operator following the hint cannot
+  // discover the flag).
+  const cli = makeCli(makeSuiteHome());
+  const out = cli(['collect', '--help']).stdout || '';
+  assert.ok(/--attest-ownership/.test(out), 'collect --help lists the --attest-ownership flag');
 });
 
 test('a blocked-preflight summary_line truncates on a word boundary with an ellipsis, not mid-token', () => {

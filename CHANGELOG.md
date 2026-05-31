@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.6 — 2026-05-31
+
+`collect --help` now documents the `--attest-ownership` flag — it attests that you own (or hold written authorisation for) the asset being scanned, satisfying an ownership precondition such as the CI/CD playbook's fleet-ownership gate so a run does not block at preflight. The flag already worked and is what the precondition-block remediation points to; it was simply missing from the help text.
+
 ## 0.16.5 — 2026-05-31
 
 `selected_remediation` now matches the finding. Each `remediation_path` can declare an optional `for_signals` linkage naming the detect indicators it addresses; when no remediation's preconditions are verified (the common static-scan case), the recommendation is the highest-priority path that addresses a fired indicator instead of always defaulting to priority-1. So a FIPS-claim-without-runtime-activation finding now recommends activating the FIPS provider rather than an unrelated post-quantum migration. The linkage is populated across the playbook set, and each entry in `remediation_options_considered` gains an `addresses_fired_signal` flag.
