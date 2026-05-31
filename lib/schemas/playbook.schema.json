@@ -521,6 +521,11 @@
                     "examples": [["live_patch_available == true"], ["reboot_window_within_4h == true"], ["compensating_control_deployed == true"]]
                   },
                   "priority": { "type": "integer", "minimum": 1, "description": "Lower number is preferred. 1 is the recommended path when its preconditions hold." },
+                  "for_signals": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Optional. detect.indicators ids this remediation addresses. When no path's preconditions are satisfied, selected_remediation prefers the highest-priority path whose for_signals includes a fired indicator, so the recommendation matches the finding instead of always defaulting to priority-1. Omit (or leave empty) for generic/fallback paths."
+                  },
                   "compensating_controls": { "type": "array", "items": { "type": "string" } },
                   "estimated_time_hours": { "type": "number" }
                 }

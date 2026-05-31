@@ -145,6 +145,44 @@ test('regression_event_triggers carry the condition string (not null) from a pla
   assert.equal(triggers[0].trigger, 'new_ai_vendor_added_to_allowlist', 'the first trigger is the playbook condition verbatim');
 });
 
+test('selected_remediation prefers the path that addresses a fired signal (and falls back to priority-1 when none is linked)', () => {
+  // Only the FIPS-claim indicator fired: the recommendation must be the
+  // remediation that addresses it (for_signals linkage), NOT the unrelated
+  // priority-1 PQC migration.
+  const fips = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    { signal_overrides: { 'fips-claim-without-runtime-activation': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  const sel = fips.phases.validate.selected_remediation;
+  assert.equal(sel.id, 'activate-fips-provider-or-retract-claim', 'the fired-signal-linked remediation is selected, not priority-1');
+  const fipsPath = fips.phases.validate.remediation_options_considered.find((c) => c.id === 'activate-fips-provider-or-retract-claim');
+  assert.equal(fipsPath.addresses_fired_signal, true, 'the considered trace flags the path as addressing a fired signal');
+  // Backward-compat: with no fired signal (no for_signals match), the
+  // priority-1 path is the fallback — unchanged from prior behavior.
+  const none = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    { signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(none.phases.validate.selected_remediation.id, 'rotate-to-pqc-hybrid-kem', 'no fired signal falls back to priority-1');
+});
+
+test('a blocked-preflight summary_line truncates on a word boundary with an ellipsis, not mid-token', () => {
+  const res = runner.run(
+    'cicd-pipeline-compromise',
+    'all-pipelines-and-runners',
+    { precondition_checks: { 'operator-owns-ci-fleet': false } },
+    { force_replay: true, mode: 'test' }
+  );
+  const sl = res.summary_line;
+  assert.ok(sl.length <= 240, 'summary stays within the 240-char cap');
+  assert.equal(sl.endsWith('…'), true, 'a truncated summary is marked with an ellipsis');
+  assert.equal(/[A-Za-z0-9]$/.test(sl), false, 'the cut does not split a word mid-token');
+});
+
 test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
   // A manifest marker -> true.
   const withManifest = mkfx();

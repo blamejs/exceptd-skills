@@ -672,6 +672,7 @@
             "deploy_window_within_72h == true"
           ],
           "priority": 1,
+          "for_signals": ["workflow-injection-sink","pull-request-target-with-pr-checkout","secret-exposed-to-fork-pr"],
           "compensating_controls": [
             "env_pinning_lint_added_to_ci",
             "fork_pr_workflow_blocked_until_remediated"
@@ -686,6 +687,7 @@
             "ci_throughput_can_absorb_pin_updates == true"
           ],
           "priority": 2,
+          "for_signals": ["actions-floating-tag-pin"],
           "compensating_controls": [
             "sha_pin_drift_alert_configured",
             "maintenance_cadence_recorded_in_change_management"
@@ -700,6 +702,7 @@
             "production_environments_can_be_introduced_to_ci_workflow == true"
           ],
           "priority": 3,
+          "for_signals": ["wildcarded-oidc-sub-claim"],
           "compensating_controls": [
             "oidc_trust_policy_recorded_in_iac",
             "environment_approval_gate_active"
@@ -714,6 +717,7 @@
             "downstream_consumers_can_verify_keyless_or_developer_signature == true"
           ],
           "priority": 3,
+          "for_signals": ["runner-scoped-signing-key"],
           "compensating_controls": [
             "signing_trust_documented_in_release_runbook",
             "verification_step_added_to_runner_workflow"
@@ -728,6 +732,7 @@
             "ci_throughput_can_absorb_per_job_startup_cost == true"
           ],
           "priority": 3,
+          "for_signals": ["self-hosted-runner-non-ephemeral"],
           "compensating_controls": [
             "ephemeral_runner_orchestration_recorded_in_iac",
             "runner_image_provenance_tracked"
