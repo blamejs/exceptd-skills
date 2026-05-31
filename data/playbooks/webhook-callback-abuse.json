@@ -653,6 +653,7 @@
             "downstream_consumers_can_be_updated_in_rotation_window == true"
           ],
           "priority": 1,
+          "for_signals": ["leaked-incoming-webhook-url","webhook-secret-shared-across-apps","long-lived-callback-token-in-ci-log"],
           "compensating_controls": [
             "rotation_recorded_in_secret_store_audit_log",
             "synthetic_event_validates_new_secret"
@@ -667,6 +668,7 @@
             "deploy_window_within_72h == true"
           ],
           "priority": 2,
+          "for_signals": ["missing-webhook-signature-validation","missing-webhook-replay-window","missing-state-parameter"],
           "compensating_controls": [
             "behaviour_test_added_to_ci",
             "deploy_recorded_in_change_management"
@@ -681,6 +683,7 @@
             "downstream_app_can_tolerate_temporary_callback_outage == true"
           ],
           "priority": 3,
+          "for_signals": ["wildcard-redirect-uri"],
           "compensating_controls": [
             "redirect_uri_allowlist_recorded_in_secret_store",
             "callback_handler_logs_rejected_origins"

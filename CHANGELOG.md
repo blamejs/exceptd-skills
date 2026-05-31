@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.5 — 2026-05-31
+
+`selected_remediation` now matches the finding. Each `remediation_path` can declare an optional `for_signals` linkage naming the detect indicators it addresses; when no remediation's preconditions are verified (the common static-scan case), the recommendation is the highest-priority path that addresses a fired indicator instead of always defaulting to priority-1. So a FIPS-claim-without-runtime-activation finding now recommends activating the FIPS provider rather than an unrelated post-quantum migration. The linkage is populated across the playbook set, and each entry in `remediation_options_considered` gains an `addresses_fired_signal` flag.
+
+A blocked-preflight `summary_line` is now truncated on a word boundary with an ellipsis instead of cut mid-word.
+
 ## 0.16.4 — 2026-05-31
 
 A `collect | run` result now surfaces non-fatal collector notices as a `collector_warnings` field — for example a file skipped for exceeding the scan size limit — so a consumer can see what the collector could not scan. The verdict and evidence completeness are unchanged; the field is omitted when the collector reported nothing.

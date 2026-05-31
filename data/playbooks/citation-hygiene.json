@@ -556,6 +556,7 @@
             "fabricated_citations_inventoried == true"
           ],
           "priority": 1,
+          "for_signals": ["fabricated-cve-id"],
           "compensating_controls": [
             "lint_rule_rejecting_non_canonical_cve_form_in_comments_and_docs",
             "ci_check_cross_referencing_cited_cves_against_an_authoritative_catalog"
@@ -569,6 +570,7 @@
             "rejected_disputed_citations_inventoried == true"
           ],
           "priority": 2,
+          "for_signals": ["rejected-or-disputed-cve"],
           "compensating_controls": [
             "ci_check_flagging_citations_to_catalog_rejected_disputed_entries",
             "documentation_review_step_requiring_status_disclosure"
@@ -582,6 +584,7 @@
             "rfc_title_mismatches_inventoried == true"
           ],
           "priority": 3,
+          "for_signals": ["rfc-number-title-mismatch"],
           "compensating_controls": [
             "ci_check_matching_cited_rfc_numbers_to_index_titles",
             "implementation_re_review_against_corrected_rfc"
@@ -595,6 +598,7 @@
             "external_lookup_available == true"
           ],
           "priority": 4,
+          "for_signals": ["cve-citation-needs-external-verification","draft-mislabeled-as-rfc"],
           "compensating_controls": [
             "scheduled_re_verification_when_catalog_refreshes",
             "needs_verification_register_maintained_until_resolved"

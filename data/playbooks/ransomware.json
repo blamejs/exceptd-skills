@@ -947,6 +947,7 @@
             "forensic_acquisition_tooling_available == true"
           ],
           "priority": 1,
+          "for_signals": ["mass-file-extension-change-event","shadow-copy-deletion-no-iac-ticket","encrypted-file-extension-growth-rate","cobaltstrike-beacon-signature","large-outbound-transfer-pre-encryption","bloodhound-class-ad-recon","ad-admin-count-modification-event"],
           "compensating_controls": [
             "out-of-band-comms-on-signal-or-wickr",
             "incident-commander-named",

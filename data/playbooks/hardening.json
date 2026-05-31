@@ -742,6 +742,7 @@
             "ops_authorization_for_sysctl_changes == true"
           ],
           "priority": 1,
+          "for_signals": ["kptr-restrict-disabled","unprivileged-userns-enabled","unprivileged-bpf-allowed","yama-ptrace-permissive","core-pid-dumpable"],
           "compensating_controls": [
             "change-management-ticket",
             "regression-test-suite-passed"
@@ -756,6 +757,7 @@
             "reboot_window_within_72h == true"
           ],
           "priority": 2,
+          "for_signals": ["kaslr-disabled-at-boot","mitigations-off","kernel-lockdown-none"],
           "compensating_controls": [
             "change-management-ticket",
             "post-boot-cmdline-verification"
@@ -770,6 +772,7 @@
             "workload_compatible_with_enforcing == true"
           ],
           "priority": 1,
+          "for_signals": ["selinux-not-enforcing"],
           "compensating_controls": [
             "audit-log-baseline-captured",
             "regression-test-suite-passed"
@@ -784,6 +787,7 @@
             "ssh_key_or_mfa_already_deployed == true"
           ],
           "priority": 1,
+          "for_signals": ["sshd-permitrootlogin-yes","sshd-password-auth-enabled"],
           "compensating_controls": [
             "second-session-verified",
             "break-glass-console-access-confirmed"

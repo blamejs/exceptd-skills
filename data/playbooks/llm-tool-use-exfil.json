@@ -669,6 +669,7 @@
             "developer_workflow_can_tolerate_approval_friction == true"
           ],
           "priority": 1,
+          "for_signals": ["auto-approve-on-high-impact-tool","rubber-stamp-approval-pattern","unprompted-tool-chain"],
           "compensating_controls": [
             "approval_decision_recorded_in_audit_log",
             "approval_pattern_baseline_monitored"
@@ -683,6 +684,7 @@
             "model_supports_trust_zone_pattern == true"
           ],
           "priority": 2,
+          "for_signals": ["instruction-coercion-in-tool-response","unprompted-tool-chain"],
           "compensating_controls": [
             "trust_zone_test_battery_in_ci",
             "system_prompt_versioned_in_source_control"
@@ -697,6 +699,7 @@
             "agent_egress_traffic_routable_through_inspection == true"
           ],
           "priority": 2,
+          "for_signals": ["agent-egress-to-non-allowlisted-destination","credential-shadow-in-tool-args"],
           "compensating_controls": [
             "inspection_rules_recorded_in_iac",
             "false_positive_baseline_established"
@@ -711,6 +714,7 @@
             "alternative_content_sources_available_for_removed_externals == true"
           ],
           "priority": 2,
+          "for_signals": ["rag-source-from-untrusted-origin","instruction-coercion-in-tool-response"],
           "compensating_controls": [
             "rag_source_inventory_recorded",
             "integrity_control_evidence_per_source"

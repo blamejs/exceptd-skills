@@ -959,6 +959,7 @@
             "api_stability_promise_permits_default_change == true OR major_version_bump_planned == true"
           ],
           "priority": 1,
+          "for_signals": ["no-ml-kem-implementation","rsa-1024-anywhere","tls-old-protocol"],
           "compensating_controls": [
             "config_flag_for_classical_only_fallback_with_deprecation_warning",
             "downstream_consumer_migration_guide_published"
@@ -973,6 +974,7 @@
             "downstream_consumer_compat_path_planned == true"
           ],
           "priority": 2,
+          "for_signals": ["ecdsa-without-pqc-roadmap"],
           "compensating_controls": [
             "dual_signature_envelope_during_migration",
             "explicit_algorithm_identifier_in_signed_payload"
@@ -986,6 +988,7 @@
             "weak_hash_call_sites_inventoried == true"
           ],
           "priority": 3,
+          "for_signals": ["weak-hash-import","weak-cipher-mode"],
           "compensating_controls": [
             "deprecation_warning_emitted_when_legacy_hash_method_invoked",
             "telemetry_to_track_legacy_method_consumer_usage"
@@ -1000,6 +1003,7 @@
             "performance_regression_acceptable_in_current_release == true"
           ],
           "priority": 4,
+          "for_signals": ["pbkdf2-under-iterated","bcrypt-cost-low"],
           "compensating_controls": [
             "kdf_parameter_floor_enforced_at_runtime_not_just_default",
             "consumer_documentation_about_password_rehash_on_login_for_legacy_storage"
@@ -1013,6 +1017,7 @@
             "rng_call_sites_inventoried == true"
           ],
           "priority": 5,
+          "for_signals": ["math-random-in-security-path"],
           "compensating_controls": [
             "linter_rule_added_to_ci",
             "data_flow_analysis_for_residual_paths"
@@ -1026,6 +1031,7 @@
             "fips_provider_available_in_target_dep == true"
           ],
           "priority": 6,
+          "for_signals": ["fips-claim-without-runtime-activation"],
           "compensating_controls": [
             "fips_runtime_assertion_in_init_path",
             "ci_job_running_against_fips_provider_config"
@@ -1039,6 +1045,7 @@
             "vendored_crypto_inventoried == true"
           ],
           "priority": 7,
+          "for_signals": ["vendored-pqc-no-provenance"],
           "compensating_controls": [
             "vendored_copy_pinned_to_release_tag_not_branch",
             "automated_upstream_security_advisory_subscription"
@@ -1052,6 +1059,7 @@
             "api_change_acceptable_in_next_major == true"
           ],
           "priority": 8,
+          "for_signals": ["no-crypto-agility-abstraction"],
           "compensating_controls": [
             "deprecation_path_for_old_api",
             "migration_guide_published"
