@@ -544,7 +544,8 @@
     "opened_date": "2026-05-13",
     "evidence_cves": [
       "CVE-2026-45321",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -907,7 +908,9 @@
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "CVE-2022-23812",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -2057,7 +2060,9 @@
     "evidence_cves": [
       "CVE-2026-45321",
       "MAL-2026-3083",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-NODE-IPC-STEALER",
+      "CVE-2022-23812",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -2098,7 +2103,8 @@
       "CVE-2025-30154",
       "CVE-2026-48027",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "atlas_refs": [
       "AML.T0010"
@@ -3668,7 +3674,8 @@
       "CVE-2026-45321",
       "MAL-2026-3083",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -5900,7 +5907,10 @@
       "CVE-2026-46333",
       "CVE-2026-5760",
       "CVE-2026-9082",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "CVE-2022-23812",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6116,7 +6126,10 @@
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "CVE-2022-23812",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -6707,7 +6720,9 @@
       "CVE-2025-68665",
       "CVE-2025-6965",
       "CVE-2026-22778",
-      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
+      "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "theater_test": {
       "claim": "We are compliant with Art-15 (Accuracy, robustness, and cybersecurity of high-risk AI systems) because we follow the documented requirement: Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption",
@@ -7519,7 +7534,10 @@
     "opened_at": "2026-05-18",
     "evidence_cves": [
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
-      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "CVE-2022-23812",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "theater_test": {
       "claim": "We are compliant with A.5.21 (Managing information security in the ICT supply chain) because we follow the documented requirement: Annex A.5.21 — processes and procedures to manage information security risks associated with the ICT supply chain. Anchored on initial vendor / supplier assessment, contractual security clauses, and o",
@@ -8052,7 +8070,8 @@
     "opened_date": "2026-05-28",
     "evidence_cves": [
       "CVE-2025-30066",
-      "CVE-2026-48027"
+      "CVE-2026-48027",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "atlas_refs": [
       "AML.T0010"

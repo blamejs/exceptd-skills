@@ -1,7 +1,7 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "last_threat_review": "2026-05-13",
     "threat_currency_score": 96,
     "changelog": [
@@ -43,6 +43,16 @@
           "nis2-art21-2d",
           "dora-art28"
         ]
+      },
+      {
+        "version": "1.2.1",
+        "date": "2026-05-30",
+        "summary": "Add capability-creep behavioral detector: flags a dependency that gains network / filesystem-write / shell-spawn / credential-access / install-script capability across a version bump (pre-disclosure supply-chain signal), with five false-positive checks and a matching false-positive profile."
+      },
+      {
+        "version": "1.3.0",
+        "date": "2026-05-30",
+        "summary": "Add a package-capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary): a package-capability-surface evidence artifact plus an absolute capability-surface screen that flags a no-CVE package whose install-script combines with shell/network/env/eval (the credential-harvesting delivery shape), complementing the across-version-bump capability-creep detector."
       }
     ],
     "owner": "@blamejs/supply-chain",
@@ -602,6 +612,13 @@
           "source": "Read .github/workflows/*.yml and *.yaml — extract `on:` triggers, `permissions:`, and `uses: actions/cache@*` step references",
           "description": "CVE-2026-45321 architectural pre-condition check — detects pull_request_target + id-token:write + shared actions/cache co-residency in the same repo.",
           "required": false
+        },
+        {
+          "id": "package-capability-surface",
+          "type": "config_file",
+          "source": "For each installed/locked npm + PyPI package, read its manifest to enumerate declared/observable capabilities: package.json scripts (preinstall/install/postinstall), bin, gypfile/binding.gyp (native-binary build), and dependencies on known network/child-process modules; PyPI setup.py/pyproject.toml build hooks + .so/.pyd payloads. Classify each package into the capability vocabulary: network, filesystem, shell, env, eval, install-script, telemetry, native-binary.",
+          "description": "Package-capability surface per dependency, using a capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary). Complements the CVE-match register: a package with no catalogued CVE can still carry an outsized capability surface (an install-script that spawns a shell and reads env is the Shai-Hulud delivery shape). Capability is a property of the package, independent of any known vulnerability.",
+          "required": false
         }
       ],
       "collection_scope": {
@@ -800,6 +817,38 @@
           "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `before=72h` (npm 11+) or `minimumReleaseAge=4320` minutes. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
           "confidence": "high",
           "deterministic": false
+        },
+        {
+          "id": "dependency-capability-creep-across-version-bump",
+          "type": "behavioral_signal",
+          "value": "For any dependency present in repo-lockfiles, npm-global-packages, or container-image-layers whose resolved version advanced since the last recorded inventory (or across two lockfile revisions in scope), compare the package's capability surface between the two versions. CAPABILITY SURFACE = (a) network egress (new fetch/http/https/net/dgram/ws imports or new outbound hosts), (b) filesystem write beyond the package's own dir, (c) process/shell spawn (child_process/exec/spawn, os/system, subprocess, Runtime.exec), (d) environment / credential access (process.env enumeration, reads of ~/.aws ~/.ssh ~/.npmrc ~/.kube ~/.config, keychain/secrets API), (e) install-lifecycle scripts newly present or newly non-trivial (preinstall/install/postinstall, setup.py/cfg build hooks, gem extensions, Cargo build.rs). FIRES when a version bump GAINS one or more capability categories the prior in-scope version did not exercise — a capability the dependent never opted into when it first selected the package.",
+          "description": "Capability-creep — a dependency that suddenly gains network / filesystem-write / shell-spawn / credential-access / install-script capability across a version bump. Models the core behavioral supply-chain signal: most maintainer-account takeovers and protestware injections surface first as a new capability class in an otherwise-unchanged package, before any CVE is catalogued. Pre-disclosure detector — fires on behavior delta, not on a known-CVE match.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.001",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "Confirm the new capability is not explained by a documented feature in the version's release notes / CHANGELOG that the dependent intentionally upgraded to consume (e.g. a logging library that added an opt-in OTLP-over-HTTP exporter). A capability gain matching a documented, in-changelog feature the operator pulled deliberately is benign — demote to inconclusive and record the changelog citation.",
+            "Distinguish a genuine capability gain from a refactor that merely RELOCATED an existing capability (the prior version already spawned a child process via a transitive dep; the new version inlines it). Diff the EFFECTIVE capability of the prior resolved tree (package + its own deps), not the single package file — relocation across the package boundary is not a gain. Demote when the capability was already present transitively.",
+            "Exclude build-time / dev-time-only dependencies whose new capability never reaches a runtime-loaded path (e.g. a test runner gaining child_process). Confirm runtime reachability before elevating; build/dev-only capability gain demotes to low.",
+            "Rule out the package's own first-party major-version migration where the maintainer key, publish provenance (SLSA / npm --provenance), and signing identity are UNCHANGED across the bump and the version follows the project's normal release cadence (not a sub-72h fresh publish). Unchanged provenance + normal cadence + documented breaking-change major demotes; an unchanged-version-string-but-changed-content republish, a new/rotated maintainer key, or a provenance attestation that regressed from present-to-absent ELEVATES (re-publication-over / account-takeover signature).",
+            "For install-lifecycle scripts: confirm the script is newly present OR newly non-trivial versus the prior version — many packages have always shipped a postinstall (e.g. native-addon compile via node-gyp). A long-standing, content-stable lifecycle script is not creep; only a newly-added or newly-mutated one fires."
+          ]
+        },
+        {
+          "id": "package-capability-creep",
+          "type": "config_value",
+          "value": "Within the package-capability-surface artifact: any direct or transitive package combines an install-time hook (install-script: preinstall/install/postinstall, or PyPI build hook) with at least one high-trust capability (shell, network, env, or eval). Capability vocabulary: network / filesystem / shell / env / eval / install-script / telemetry / native-binary. The install-script+shell+network+env quadruple is the credential-harvesting delivery shape (CVE-2026-45321 Mini Shai-Hulud, CVE-2024-3094 XZ class); install-script+native-binary is the compiled-payload shape.",
+          "description": "Capability-surface screen — flags packages whose capability surface is disproportionate to their declared function, independent of CVE match. A no-CVE package that runs an install-script which spawns a shell, opens the network, and reads env vars is the supply-chain delivery primitive even when the catalog shows zero matched CVEs. Surfaces alongside, not in place of, package-matches-catalogued-cve; absolute-surface complement to the across-version-bump capability-creep detector.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Build-tooling and native-addon packages legitimately need install-script + native-binary (node-gyp, sass-embedded, esbuild, sharp, bcrypt, prebuild-install, electron, playwright, puppeteer). If the package is on the operator documented build-dependency allowlist AND its publisher identity / provenance attestation matches the expected one, demote — capability presence is expected for this class.",
+            "Confirm the install-script actually exercises the high-trust capability at install time, not merely that the package transitively depends on a network/shell module used only at runtime in an unrelated code path. Read the referenced script: a postinstall that only runs node-gyp rebuild is native-binary, not network+shell+env. Demote when the capability is declared-but-not-install-reachable.",
+            "Telemetry-only capability (a postinstall that pings an analytics endpoint with no env/credential read) is a noise/consent concern, not a credential-exfil primitive. Demote network+telemetry-without-env to informational unless env or filesystem-credential-path access co-occurs.",
+            "If the capability surface was read from a stale or non-build lockfile (archive/ or pre-migration/ subdir), it does not reflect what installs. Confirm against the build-consumed lockfile path before firing (same stale-lockfile check as lockfile-no-integrity)."
+          ]
         }
       ],
       "false_positive_profile": [
@@ -817,6 +866,16 @@
           "indicator_id": "ai-code-no-provenance",
           "benign_pattern": "Org has documented internal commit-trailer convention (Co-Authored-By:, Generated-By:, AI-Model:) but it isn't reflected in machine-readable SBOM.",
           "distinguishing_test": "Sample 20 commits in the repo. If commit-trailer convention is consistently used, downgrade to medium and recommend SBOM integration rather than flagging absence outright."
+        },
+        {
+          "indicator_id": "dependency-capability-creep-across-version-bump",
+          "benign_pattern": "A widely-used package legitimately adds a capability in a feature release — e.g. an HTTP client adds optional HTTP/2 (new net surface), an ORM adds a CLI migration runner (new child_process), a telemetry SDK adds an opt-in exporter (new egress host). The capability is documented, the maintainer key and publish provenance are unchanged, and the release follows normal cadence.",
+          "distinguishing_test": "Pull the version release notes / CHANGELOG and the npm/PyPI provenance attestation. Benign when ALL hold: (1) the new capability is documented as an intended feature, (2) the signing/maintainer identity is unchanged across the bump, (3) provenance present-before is still present, and (4) publish age exceeds the registry-cooldown threshold (not a sub-72h fresh publish). Malicious-leaning when ANY of: capability is undocumented, maintainer key rotated, provenance regressed from present-to-absent, content changed under an unchanged version string, or the gain is credential-path reads / outbound to a never-before-seen host."
+        },
+        {
+          "indicator_id": "package-capability-creep",
+          "benign_pattern": "Native-addon and build-tooling packages (node-gyp, sass-embedded, esbuild, sharp, bcrypt, prebuild-install, electron, playwright, puppeteer) legitimately carry install-script + native-binary + (sometimes) network capability — the prebuilt-binary download is network + install-script by design.",
+          "distinguishing_test": "Cross-reference the flagged package against the operator documented build-dependency allowlist and its npm/PyPI provenance attestation. If the package is a known build/native-addon dependency AND its publisher identity matches the expected signed publisher, downgrade to medium/informational. Reserve high confidence for packages whose capability surface is unexplained by their stated function (a date-formatting utility that opens the network and reads env)."
         }
       ],
       "minimum_signal": {
