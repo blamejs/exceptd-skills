@@ -55,13 +55,35 @@ test('a playbook declaring bundle_format "json" builds a populated json bundle, 
   assert.equal(ep.bundles_by_format.json.format, 'json', 'bundles_by_format.json is the json bundle');
 });
 
-test('crypto-codebase collector attests repo-has-source-tree from a walked source file (and false on an empty tree)', () => {
-  const withSrc = mkfx();
-  fs.writeFileSync(path.join(withSrc, 'index.js'), 'const crypto = require("crypto"); crypto.createHash("sha256");\n');
-  const got = cryptoCodebase.collect({ cwd: withSrc }).precondition_checks;
-  assert.equal(got['repo-has-source-tree'], true, 'a repo with source files attests the gate true');
-  assert.equal('repo-context' in got, false, 'the playbook-unknown repo-context key must not be emitted');
+test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
+  // A manifest marker -> true.
+  const withManifest = mkfx();
+  fs.writeFileSync(path.join(withManifest, 'package.json'), '{"name":"x","version":"1.0.0"}');
+  const m = cryptoCodebase.collect({ cwd: withManifest }).precondition_checks;
+  assert.equal(m['repo-has-source-tree'], true, 'a package manifest marker attests the gate true');
+  assert.equal('repo-context' in m, false, 'the playbook-unknown repo-context key must not be emitted');
 
+  // An src/ directory marker (no manifest, no extension-matched files yet) -> true.
+  const withSrcDir = mkfx();
+  fs.mkdirSync(path.join(withSrcDir, 'src'), { recursive: true });
+  assert.equal(
+    cryptoCodebase.collect({ cwd: withSrcDir }).precondition_checks['repo-has-source-tree'],
+    true,
+    'an src/ directory marker attests the gate true even before any source file exists'
+  );
+
+  // Source files by extension but NONE of the gate's markers -> false: the
+  // attestation mirrors the gate's exists_any(markers) predicate, not the
+  // collector's SOURCE_EXTS file count.
+  const looseSourceOnly = mkfx();
+  fs.writeFileSync(path.join(looseSourceOnly, 'script.py'), 'import hashlib\n');
+  assert.equal(
+    cryptoCodebase.collect({ cwd: looseSourceOnly }).precondition_checks['repo-has-source-tree'],
+    false,
+    'a loose source file with no source-tree marker attests false, matching the gate'
+  );
+
+  // No markers at all -> false.
   const empty = mkfx();
   assert.equal(
     cryptoCodebase.collect({ cwd: empty }).precondition_checks['repo-has-source-tree'],
