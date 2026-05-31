@@ -21,7 +21,7 @@
  *   Cross-format CVE consistency: CSAF + OpenVEX + SARIF emitters must
  *     agree on the catalogued-CVE set per playbook run.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * value (deep-equality or specific count).
  */
 

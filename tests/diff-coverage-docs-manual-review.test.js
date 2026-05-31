@@ -11,11 +11,11 @@
  * at least sees that an operator-facing surface changed.
  *
  * Mechanical / contributor-only docs (CONTRIBUTING, LICENSE, NOTICE,
- * CODE_OF_CONDUCT, SUPPORT, CLAUDE.md, .gitignore, .npmrc, .editorconfig)
+ * CODE_OF_CONDUCT, SUPPORT, .gitignore, .npmrc, .editorconfig)
  * stay always-green: their content has no operator-facing semantic surface
  * and edits there genuinely don't need any reviewer attention.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks the EXACT
+ * Per the anti-coincidence rule, every assertion checks the EXACT
  * value the categorize() function returns.
  */
 
@@ -31,7 +31,7 @@ const cov = require(path.join(ROOT, 'scripts', 'check-test-coverage.js'));
 // the categorization for one of these files, this test catches it.
 const EXPECTED_ALWAYS_GREEN = [
   'CONTRIBUTING.md', 'LICENSE', 'NOTICE', 'CODE_OF_CONDUCT.md',
-  'CLAUDE.md', 'SUPPORT.md', '.gitignore', '.npmrc', '.editorconfig',
+  'SUPPORT.md', '.gitignore', '.npmrc', '.editorconfig',
 ];
 const EXPECTED_MANUAL_REVIEW = [
   'CHANGELOG.md', 'README.md', 'SECURITY.md', 'MIGRATING.md', 'AGENTS.md',

@@ -4,7 +4,7 @@
  * Audit-VV trust-boundary fixes (KK P1-1..P1-5 + MM P1-D).
  *
  * Each test pins an EXACT exit code (assert.equal(r.status, N)) and pairs
- * every field-presence check with a content-shape check, per CLAUDE.md's
+ * every field-presence check with a content-shape check, per the project's
  * coincidence-passing-tests rule. notEqual(r.status, 0) is forbidden — a
  * coincidence-passing test blocks future regressions while letting the
  * current one through.

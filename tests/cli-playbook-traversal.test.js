@@ -11,7 +11,7 @@
  * asserts the exact refusal code (1) and a message that names the
  * validation class — "must match", "invalid", or "traversal".
  *
- * Pinning the exact status (1) follows the CLAUDE.md anti-coincidence
+ * Pinning the exact status (1) follows the anti-coincidence
  * rule: notEqual(0) would silently pass if a future regression made the
  * verb crash with exit 2 or 137 before reaching the validation gate.
  */

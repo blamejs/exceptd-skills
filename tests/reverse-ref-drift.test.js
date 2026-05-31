@@ -12,7 +12,7 @@
  * the catalog's stored value. Any drift means scripts/refresh-reverse-refs.js
  * was not run after a forward-ref change in a skill manifest entry.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks the EXACT
+ * Per the anti-coincidence rule, every assertion checks the EXACT
  * value — exact set-equality (sorted-array deep-equal), never `assert.ok()`
  * or partial-match.
  */

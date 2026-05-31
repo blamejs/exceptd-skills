@@ -34,6 +34,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { execFileSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 const BASELINE_PATH = path.join(ROOT, "tests", ".version-tag-baseline.json");
@@ -64,9 +65,32 @@ const COMMENT_EXEMPT = new Set([
   "CHANGELOG.md",
   "lib/version-pins.js",
   "scripts/check-version-tags.js",
-  // Gitignored local-only contributor docs — never shipped.
-  "CLAUDE.md",
+  // The release-notes-extract gate test asserts version-based CHANGELOG
+  // extraction + the shorter-vs-longer prefix-collision guard, so its fixtures
+  // MUST embed real `## X.Y.Z` headings (e.g. 0.15.5 vs 0.15.50) — load-bearing
+  // test data, not sprinkled release tags.
+  "tests/check-changelog-extract.test.js",
 ]);
+
+// Git-ignored files (a contributor's local-only working docs, scratch) are
+// never scanned — the gate enforces on the would-be-shipped surface, with no
+// need to name individual local-only files. Untracked-but-NOT-ignored files
+// ARE still scanned: a new file a contributor is about to commit is exactly
+// what the gate must catch. Computed via `git check-ignore` over the walked set.
+function gitIgnoredSet(relPaths) {
+  if (!relPaths.length) return new Set();
+  try {
+    const out = execFileSync("git", ["check-ignore", "--stdin"], {
+      cwd: ROOT, input: relPaths.join("\n"), encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+    });
+    return new Set(out.split(/\r?\n/).filter(Boolean));
+  } catch (e) {
+    // `git check-ignore --stdin` exits 1 when NO path is ignored (not an
+    // error); any paths it did match are on stdout. Absent that, none ignored.
+    const out = e && e.stdout ? String(e.stdout) : "";
+    return new Set(out.split(/\r?\n/).filter(Boolean));
+  }
+}
 
 // Pattern: project version like `v0.13.22` or bare `0.13.22`. Matches
 // our pre-1.0 release range. External package versions like ATLAS
@@ -119,9 +143,14 @@ function countCommentViolations(rel) {
 
 function scanCurrent() {
   const files = walk(ROOT);
+  const ignored = gitIgnoredSet(files);
   const byFile = {};
   const filenameViolations = [];
   for (const rel of files) {
+    // Skip git-ignored, local-only files (a contributor's private working notes
+    // that `git clone` never ships). Untracked-but-not-ignored files are still
+    // scanned — a new file about to be committed is what the gate guards.
+    if (ignored.has(rel)) continue;
     if (FILENAME_VERSION_RE.test(rel)) filenameViolations.push(rel);
     const n = countCommentViolations(rel);
     if (n > 0) byFile[rel] = n;

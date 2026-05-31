@@ -34,7 +34,7 @@ test('shipped tarball verifies against its embedded public key', { skip: !HAS_PR
     encoding: 'utf8',
     timeout: 120000,
   });
-  // Pin exact exit code (0 = pass). Pre-CLAUDE.md "coincidence-passing"
+  // Pin exact exit code (0 = pass). Pre-anti-coincidence-rule "coincidence-passing"
   // rule a notEqual(0) would have silently absorbed an exit 2 from the
   // npm-pack step.
   assert.equal(r.status, 0,

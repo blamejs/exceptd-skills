@@ -12,7 +12,7 @@
  *            the generic exit 1 that emit() applies to every other ok:false
  *            body. Body carries lock_contention:true AND exit_code:8.
  *
- * Per CLAUDE.md: each assertion checks the EXACT value the fix produces. No
+ * Per the anti-coincidence rule: each assertion checks the EXACT value the fix produces. No
  * assert.notEqual(0) / assert.ok(field) coincidence-passers.
  */
 

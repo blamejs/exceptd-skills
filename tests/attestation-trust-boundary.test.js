@@ -17,7 +17,7 @@
  *            regardless of host private-key state.
  *
  * All exit-code assertions are EXACT (assert.equal(r.status, 6)), never
- * notEqual(0) — per CLAUDE.md's coincidence-passing-tests rule. Every
+ * notEqual(0) — per the coincidence-passing-tests rule. Every
  * field-presence check is paired with a content-shape check.
  */
 

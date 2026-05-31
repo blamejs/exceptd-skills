@@ -44,7 +44,7 @@ exports). Missing references become findings.
 Changes in these locations are accepted without a covering test:
 
 - `*.md` outside `data/`, `.gitignore`, `.npmrc`, `.editorconfig`
-- `CHANGELOG.md` / `README.md` / `CONTRIBUTING.md` / `SECURITY.md` / `LICENSE` / `NOTICE` / `CODE_OF_CONDUCT.md` / `AGENTS.md` / `CLAUDE.md`
+- `CHANGELOG.md` / `README.md` / `CONTRIBUTING.md` / `SECURITY.md` / `LICENSE` / `NOTICE` / `CODE_OF_CONDUCT.md` / `AGENTS.md`
 - Whitespace-only diffs (detected via `git diff --ignore-all-space --ignore-blank-lines`)
 - Any file under `tests/` (no test-of-tests recursion)
 - `skills/<name>/skill.md` (signature gate already covers content integrity)

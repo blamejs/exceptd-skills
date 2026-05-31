@@ -1591,7 +1591,7 @@ test('audit-3 B.4: doctor refuses unknown flags with structured error + known_fl
   assert.ok(err.known_flags.includes('--signatures'),
     'known_flags must include --signatures (sanity)');
   // Refusal must exit GENERIC_FAILURE (1), not 0. Pinning exact: per the
-  // anti-coincidence rule (CLAUDE.md), a status !== 0 check would have
+  // anti-coincidence rule, a status !== 0 check would have
   // passed on any non-success exit including 2 (DETECTED_ESCALATE) or
   // 10 (UNKNOWN_COMMAND) — both of which would be the wrong code path.
   assert.equal(r.status, 1, 'unknown-flag refusal must exit 1 (GENERIC_FAILURE)');

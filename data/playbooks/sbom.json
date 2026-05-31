@@ -1,7 +1,7 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "last_threat_review": "2026-05-13",
     "threat_currency_score": 96,
     "changelog": [
@@ -53,6 +53,11 @@
         "version": "1.3.0",
         "date": "2026-05-30",
         "summary": "Add a package-capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary): a package-capability-surface evidence artifact plus an absolute capability-surface screen that flags a no-CVE package whose install-script combines with shell/network/env/eval (the credential-harvesting delivery shape), complementing the across-version-bump capability-creep detector."
+      },
+      {
+        "version": "1.3.1",
+        "date": "2026-05-30",
+        "summary": "Add three supply-chain detection-depth indicators: typosquat/homoglyph package-name detection (reusing the vendored codepoint-class confusable tables), a static content red-flag screen (obfuscation / high-entropy / trivial-package / eval+dynamic-require, T1027), and a dependency-confusion resolution-source check (internal scope served by the public registry / inflated-version squat, correlating to MAL-2026-MOIKA-DEPCONFUSION) — each with a paired look artifact and false-positive profile."
       }
     ],
     "owner": "@blamejs/supply-chain",
@@ -619,6 +624,27 @@
           "source": "For each installed/locked npm + PyPI package, read its manifest to enumerate declared/observable capabilities: package.json scripts (preinstall/install/postinstall), bin, gypfile/binding.gyp (native-binary build), and dependencies on known network/child-process modules; PyPI setup.py/pyproject.toml build hooks + .so/.pyd payloads. Classify each package into the capability vocabulary: network, filesystem, shell, env, eval, install-script, telemetry, native-binary.",
           "description": "Package-capability surface per dependency, using a capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary). Complements the CVE-match register: a package with no catalogued CVE can still carry an outsized capability surface (an install-script that spawns a shell and reads env is the Shai-Hulud delivery shape). Capability is a property of the package, independent of any known vulnerability.",
           "required": false
+        },
+        {
+          "id": "package-name-similarity-surface",
+          "type": "config_file",
+          "source": "For each direct dependency, capture {package name, resolved registry host, a download/popularity signal where available} and compute (a) the Levenshtein edit-distance to a set of high-download popular package names and (b) a homoglyph-normalized / confusable-folded form of the name (via vendor/blamejs/codepoint-class.js) to surface visually-confusable substitutions. Record the closest popular-name match + distance per dependency.",
+          "description": "Package-name similarity surface — the evidence the typosquat/homoglyph detector reads. Captures edit-distance and confusable-normalized name forms so name-impersonation is computable offline without a registry call (the popularity set is a static bundled list; absence of a live download count degrades to edit-distance + homoglyph only).",
+          "required": false
+        },
+        {
+          "id": "package-source-content-surface",
+          "type": "config_file",
+          "source": "For each installed/locked package, statically read its shipped source and record: readable-source-present vs minified-only, sourcemap presence, high-entropy-string ratio (Shannon entropy over string literals), effective LOC count, and dynamic eval / dynamic require/import usage. No execution — static read of the on-disk package files only.",
+          "description": "Package source-content surface — the static evidence the obfuscation screen reads. Distinct from package-capability-surface (which classifies declared/observable capabilities); this captures source SHAPE (minification, entropy, size, dynamic-eval) for the content red-flag screen.",
+          "required": false
+        },
+        {
+          "id": "dep-confusion-resolution-config",
+          "type": "config_file",
+          "source": "Read scope-to-registry resolution config: .npmrc + $HOME/.npmrc (@scope:registry= lines, registry=, always-auth), .yarnrc.yml (npmScopes), pip.conf / pip.ini (index-url, extra-index-url), and any private-registry manifest listing internal @scopes / package names. Cross with repo-lockfiles resolved URLs to determine which registry actually served each internal-scope name.",
+          "description": "Resolution-source configuration — distinguishes an internal-namespace package correctly pinned to a private registry (safe) from one resolvable off the public registry (dependency-confusion exposed). Without it the indicator can only see inflated-version heuristics; with it the resolution-source check becomes high-confidence.",
+          "required": false
         }
       ],
       "collection_scope": {
@@ -849,6 +875,55 @@
             "Telemetry-only capability (a postinstall that pings an analytics endpoint with no env/credential read) is a noise/consent concern, not a credential-exfil primitive. Demote network+telemetry-without-env to informational unless env or filesystem-credential-path access co-occurs.",
             "If the capability surface was read from a stale or non-build lockfile (archive/ or pre-migration/ subdir), it does not reflect what installs. Confirm against the build-consumed lockfile path before firing (same stale-lockfile check as lockfile-no-integrity)."
           ]
+        },
+        {
+          "id": "dependency-name-typosquat",
+          "type": "behavioral_signal",
+          "value": "For each DIRECT dependency name in repo-lockfiles / npm-global-packages / pip-packages, flag when the name is within Levenshtein edit-distance 1-2 of a SPECIFIC high-download popular package it is NOT (typosquat — e.g. lodahs vs lodash, crossenv vs cross-env), OR uses a homoglyph / visually-confusable Unicode substitution of a popular name (route the name through the vendored vendor/blamejs/codepoint-class.js confusable/bidi detection — a Latin/Cyrillic/Greek lookalike codepoint inside an otherwise-ASCII clone of a popular name is a near-certain lure), OR is a scope/namespace lookalike of a well-known org scope. FIRES on name-confusability independent of any CVE match — the typosquat lure precedes payload execution.",
+          "description": "Typosquat / homoglyph package-name detector. Flags a direct dependency whose NAME impersonates a popular package by edit-distance or visually-confusable codepoint substitution, a pre-disclosure lure signal that no CVE-match or capability screen catches. Reuses the vendored codepoint-class confusable detection (added v0.15.50). Distinct axis from the dependency-confusion resolution check (name-similarity vs resolution-source).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "The package IS the popular one: confirm via download-count / publish-history that the flagged name is not itself the canonical high-download package before treating proximity as a squat. Demote when the package is the legitimate target it resembles.",
+            "Intentional short-name alias or sanctioned scoped fork the operator deliberately consumes (e.g. an internal mirror named close to upstream). Cross-check the operator documented dependency allowlist; demote when the near-name is a known sanctioned alias.",
+            "Common-word collision: short generic names (ms, qs, fs) sit within edit-distance of many strings by chance. Require a SPECIFIC high-download package the flagged dep plausibly impersonates, not any string within distance 2; demote incidental proximity with no plausible impersonation target.",
+            "Homoglyph false alarm: confirm the confusable/non-ASCII codepoint actually substitutes for an ASCII letter in a known popular package name (a Cyrillic a inside an ASCII clone), not an incidental legitimately-non-Latin name that has no popular ASCII twin. Demote names with no ASCII-lookalike target."
+          ]
+        },
+        {
+          "id": "package-content-obfuscation-screen",
+          "type": "config_value",
+          "value": "Within package-source-content-surface: flag a package that ships ONLY minified/obfuscated source with no readable source and no sourcemap, OR a high ratio of high-entropy string literals (packed/encrypted payload), OR is a trivial package (under ~10 effective LOC) that NONETHELESS declares an install-script or network capability (a thin shell wrapping a payload), OR combines dynamic eval with dynamic require/import. These are CONTENT red-flags orthogonal to the capability taxonomy — a package can be capability-light yet content-obfuscated.",
+          "description": "Static content red-flag screen — obfuscation / high-entropy / minified-only / trivial-package / eval+dynamic-require. Complements (does not duplicate) the capability-surface screens: capability is WHAT the package can do, content is HOW its source is shaped. Maps T1027 (Obfuscated Files or Information).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1027",
+          "false_positive_checks_required": [
+            "Legitimate minified dist bundle: many front-end packages ship a minified dist/ alongside readable src/ or a sourcemap. Confirm there is NO readable source AND no sourcemap anywhere in the package before flagging minified-only; demote when readable source or a .map file exists.",
+            "Known-good build-output / WASM / native-addon packages legitimately carry high-entropy blobs (embedded WASM, prebuilt binaries, fixtures). Cross-check the operator build-dependency allowlist + publisher provenance; demote expected high-entropy classes.",
+            "Trivial-package false alarm: a genuinely tiny utility (is-number) is trivial WITHOUT an install-script or network capability. Only elevate trivial packages that ALSO declare install-script or network capability (the co-occurrence is the signal); demote trivial-but-inert packages.",
+            "eval / dynamic-require in a legitimate plugin loader or config system (some established frameworks use dynamic require by design). Confirm the eval+dynamic-require pair is in a freshly-published or low-trust package, not a long-standing well-known framework; demote established frameworks with documented dynamic loading."
+          ]
+        },
+        {
+          "id": "dependency-confusion-internal-scope-public-resolution",
+          "type": "config_value",
+          "value": "Within repo-lockfiles + dep-confusion-resolution-config: a dependency whose scope/name matches an organizational-internal naming pattern (a @scope that ALSO appears in the org private-registry manifests, .npmrc/.yarnrc scope-to-registry maps, or pip internal extra-index-url) resolved from the PUBLIC registry (registry.npmjs.org / pypi.org) rather than the internal one — AND/OR a resolved version is anomalously inflated (e.g. 99.x.x, a major far above the package real release history) such that default resolution prefers the public package. The defining condition is RESOLUTION-SOURCE confusion: an internal-namespace identifier served by the public registry, regardless of payload.",
+          "description": "Dependency-confusion / namespace-squat resolution check. Fires when an internal-looking package name is satisfied from the public registry, or an inflated semver indicates a public squat outranking the private package — the resolution-layer signature that precedes any payload. Generalizes MAL-2026-MOIKA-DEPCONFUSION to any internal-scope squat; complements the capability-surface screens (postinstall stager) and the catalog CVE-match (specific known names). Distinct axis from the typosquat name-similarity detector.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.001",
+          "atlas_ref": "AML.T0010",
+          "cve_ref": "MAL-2026-MOIKA-DEPCONFUSION",
+          "false_positive_checks_required": [
+            "Confirm the @scope is genuinely an INTERNAL/private namespace for this org (present in a private-registry manifest, .npmrc scope-to-registry map, or internal pip index), not a public org scope the org legitimately consumes from npmjs (@types, @babel, @aws-sdk are public-by-design and not confusion). Demote when the scope is a known public namespace.",
+            "Verify an actual private package of the same name exists that the public one could shadow. A public-only package under a coincidentally org-like scope, with no private counterpart, is not dependency-confusion — there is nothing to confuse it with. Demote to inconclusive absent a private same-name package.",
+            "Confirm install config does not already pin the internal scope to the private registry (.npmrc @scope:registry=, always-auth, pip --index-url with no public fallthrough). A correctly-pinned scope cannot be confused; the public squat exists but cannot win resolution. Demote when resolution is pinned.",
+            "Distinguish an inflated version that reflects a real (if unusual) upstream release from a squat. Check the package real release history on the AUTHORITATIVE registry for this scope: a genuine 99.x maintained release is not a squat. Demote when the inflated version is the legitimate publisher actual latest on the correct registry.",
+            "Confirm the resolved artifact actually came from the public registry for this run (lockfile resolved/resolution URL host = registry.npmjs.org / files.pythonhosted.org), not the private mirror that merely proxies public names. A private proxy serving a vetted copy under the internal scope is not confusion-exposed. Demote when the resolution host is the internal/proxy registry."
+          ]
         }
       ],
       "false_positive_profile": [
@@ -876,6 +951,21 @@
           "indicator_id": "package-capability-creep",
           "benign_pattern": "Native-addon and build-tooling packages (node-gyp, sass-embedded, esbuild, sharp, bcrypt, prebuild-install, electron, playwright, puppeteer) legitimately carry install-script + native-binary + (sometimes) network capability — the prebuilt-binary download is network + install-script by design.",
           "distinguishing_test": "Cross-reference the flagged package against the operator documented build-dependency allowlist and its npm/PyPI provenance attestation. If the package is a known build/native-addon dependency AND its publisher identity matches the expected signed publisher, downgrade to medium/informational. Reserve high confidence for packages whose capability surface is unexplained by their stated function (a date-formatting utility that opens the network and reads env)."
+        },
+        {
+          "indicator_id": "dependency-name-typosquat",
+          "benign_pattern": "A short or generic package name sits within edit-distance of a popular one by coincidence (ms, qs), or the operator deliberately consumes a sanctioned near-name (an internal mirror, a scoped fork), or a legitimately non-Latin package name has no popular ASCII twin.",
+          "distinguishing_test": "Typosquat-likely only when ALL hold: the name is within edit-distance 1-2 of (or a homoglyph substitution within) a SPECIFIC high-download package it is NOT, the flagged package is far lower download/younger than that target, and it is not on the operator sanctioned-alias allowlist. Any one failing demotes to medium/informational."
+        },
+        {
+          "indicator_id": "package-content-obfuscation-screen",
+          "benign_pattern": "A front-end package ships a minified dist/ with a sourcemap or alongside readable src/; a native-addon/WASM package carries legitimate high-entropy binary blobs; an established framework uses documented dynamic require for plugin loading.",
+          "distinguishing_test": "Content-malicious-leaning only when the obfuscation co-occurs with risk: minified-only AND no sourcemap AND no readable source; OR trivial-LOC AND (install-script OR network); OR eval+dynamic-require in a fresh/low-trust package. A minified bundle WITH a sourcemap, or high-entropy in an allowlisted native-addon, or dynamic-require in a known framework, demotes to informational."
+        },
+        {
+          "indicator_id": "dependency-confusion-internal-scope-public-resolution",
+          "benign_pattern": "An org legitimately consumes a public scoped package (@types/*, @babel/*, @aws-sdk/*) that superficially resembles an internal naming convention; OR an internal scope is already correctly pinned to the private registry so the public squat cannot win resolution.",
+          "distinguishing_test": "Resolve each flagged @scope against (1) the org private-registry internal-scope list and (2) the .npmrc/.yarnrc/pip index scope-to-registry mapping. Dependency-confusion-exposed only when ALL hold: the scope is an internal namespace, a same-name private package exists, the scope is NOT pinned to the private registry, and the lockfile resolved host is the public registry. If any fails, downgrade to medium/informational."
         }
       ],
       "minimum_signal": {

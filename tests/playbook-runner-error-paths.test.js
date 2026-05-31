@@ -24,7 +24,7 @@
  *   HH P1-1  release.yml declares a top-level permissions: block.
  *   HH P1-2  refresh.yml declares a top-level permissions: block.
  *
- * Per CLAUDE.md: each assertion checks the EXACT condition the fix produces.
+ * Per the anti-coincidence rule: each assertion checks the EXACT condition the fix produces.
  * No assert.notEqual(0) / assert.ok(field) coincidence-passers.
  */
 
@@ -284,7 +284,7 @@ test('DD P1-1: cross-ref-api cache invalidates when source file mtime changes', 
 test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
   // The lock body uses `const MAX_RETRIES = 10;` inside the persistAttestation
   // function. Anchor on the function name itself rather than a slot-token
-  // comment ("DD P1-2") — those comments are operator-noise per CLAUDE.md
+  // comment ("DD P1-2") — those comments are operator-noise per the operator-facing rule
   // and may be cleaned up by future rewrites, while the function name is
   // a stable structural landmark.
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
