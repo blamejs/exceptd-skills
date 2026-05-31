@@ -4018,6 +4018,20 @@ function cmdRun(runner, args, runOpts, pretty) {
         if (e.remediation) lines.push(`    → ${e.remediation}`);
       }
     }
+    // Surface collector_warnings (e.g. a file skipped for exceeding the
+    // scan-size limit) on the default human surface too. Without this an
+    // operator reading the render sees "evidence: complete" with no hint that
+    // the collector could not scan part of the tree — the skip lives only in
+    // --json's collector_warnings, invisible to the human reader.
+    const collectorWarnings = obj.collector_warnings || [];
+    if (collectorWarnings.length) {
+      lines.push(`\nCollector notices (${collectorWarnings.length}):`);
+      for (const w of collectorWarnings) {
+        const rawReason = w.reason || w.message || "(no detail)";
+        const reason = rawReason.length > 180 ? rawReason.slice(0, 177) + "..." : rawReason;
+        lines.push(`  [${w.kind || "notice"}] ${reason}`);
+      }
+    }
     lines.push(`\nFull structured result: --json (or --pretty for indented).`);
     return lines.join("\n");
   });

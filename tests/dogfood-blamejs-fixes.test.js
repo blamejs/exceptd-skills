@@ -186,6 +186,20 @@ test('selected_remediation prefers the path that addresses a fired signal (and f
   assert.equal(satisfiedUnrelated.phases.validate.selected_remediation.id, 'activate-fips-provider-or-retract-claim', 'relevance outranks a satisfied-but-unrelated path');
 });
 
+test('the run human render surfaces collector_warnings so a skip is not hidden behind "evidence: complete"', () => {
+  // EXCEPTD_RAW_JSON='' forces the human render (the helper defaults it to '1').
+  const cli = makeCli(makeSuiteHome());
+  const ev = JSON.stringify({
+    precondition_checks: { 'repo-context': true },
+    signal_overrides: {},
+    collector_errors: [{ kind: 'file_too_large_skipped', reason: 'api-snapshot.json: 1469464 bytes exceeds 1048576-byte scan limit; not scanned' }],
+  });
+  const human = cli(['run', 'secrets', '--evidence', '-'], { input: ev, env: { EXCEPTD_RAW_JSON: '' } });
+  assert.ok(/Collector notices \(1\)/.test(human.stdout), 'human render lists collector notices');
+  assert.ok(/file_too_large_skipped/.test(human.stdout), 'the skip kind is shown to the human reader');
+  assert.ok(/api-snapshot\.json/.test(human.stdout), 'the skipped file is named');
+});
+
 test('collect --help documents the --attest-ownership flag it accepts', () => {
   // The flag is allowlisted and consumed by the collector, and the
   // precondition-block remediation tells operators to use it — so collect's
