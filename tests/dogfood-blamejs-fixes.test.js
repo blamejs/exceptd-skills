@@ -23,6 +23,7 @@ const path = require('node:path');
 
 const runner = require('../lib/playbook-runner.js');
 const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const containersCollector = require('../lib/collectors/containers.js');
 const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
@@ -198,6 +199,18 @@ test('the run human render surfaces collector_warnings so a skip is not hidden b
   assert.ok(/Collector notices \(1\)/.test(human.stdout), 'human render lists collector notices');
   assert.ok(/file_too_large_skipped/.test(human.stdout), 'the skip kind is shown to the human reader');
   assert.ok(/api-snapshot\.json/.test(human.stdout), 'the skipped file is named');
+});
+
+test('containers.hasContainerArtifacts finds Dockerfiles/compose anywhere in the tree, by filename variant', () => {
+  const fx = mkfx();
+  fs.mkdirSync(path.join(fx, 'examples', 'wiki'), { recursive: true });
+  fs.writeFileSync(path.join(fx, 'examples', 'wiki', 'Dockerfile'), 'FROM node:latest\n');
+  fs.writeFileSync(path.join(fx, 'docker-compose.test.yml'), 'services:\n  app:\n    image: x\n');
+  const found = containersCollector.hasContainerArtifacts(fx);
+  assert.ok(found.some((r) => /Dockerfile$/i.test(r)), 'finds the subdir Dockerfile');
+  assert.ok(found.some((r) => /docker-compose\.test\.yml$/.test(r)), 'finds the compose variant');
+  // An empty tree yields no artifacts.
+  assert.deepEqual(containersCollector.hasContainerArtifacts(mkfx()), [], 'no container files -> empty list');
 });
 
 test('discover recommends containers for a subdir Dockerfile / compose variant (not just a root exact-name file)', () => {
