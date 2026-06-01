@@ -3,7 +3,7 @@
 /**
  * Regression test for the containers collector's multi-stage FROM handling.
  *
- * Surfaced by dogfooding the `containers` playbook against the repo's own
+ * Surfaced by running the `containers` playbook against the repo's own
  * docker/test.Dockerfile: a `FROM base AS predeploy` line references a
  * previously-declared build STAGE (FROM <image> AS base), not a registry
  * image — but the collector flagged it as dockerfile-from-latest /

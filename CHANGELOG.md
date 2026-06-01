@@ -3635,7 +3635,7 @@ Adds detection for the npm supply-chain worm disclosed 2026-05-11 (84 malicious 
 
 - `skills/supply-chain-integrity/SKILL.md` — adds the CVE-2026-45321 case at the top of Threat Context with the chained-primitives explanation and the new SLSA-L3-insufficient framing.
 
-### Eating own dogfood
+### Self-applied supply-chain hardening
 
 - `.npmrc` — adds `before=72h` + `minimumReleaseAge=4320` so this repo refuses fresh-publish installs. Survives downgrade to older npm via both flags.
 

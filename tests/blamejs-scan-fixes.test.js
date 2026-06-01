@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * tests/dogfood-blamejs-fixes.test.js
+ * tests/blamejs-scan-fixes.test.js
  *
- * Pins the fixes a dogfood scan of a sibling repo surfaced:
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
  *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
  *    runtime / citation-hygiene) now build a real structured-JSON evidence
  *    bundle instead of falling through to the "Unknown format" placeholder;
