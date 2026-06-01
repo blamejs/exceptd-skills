@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * tests/dogfood-precondition-fixes.test.js
+ * tests/collector-precondition-fixes.test.js
  *
- * Pins the fixes the blamejs dogfood surfaced:
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
  *  - collectors auto-attest the preconditions they can verify from collected
  *    evidence (so `collect --cwd <repo> | run` doesn't spuriously warn on a
  *    repo that clearly has a lockfile / manifest / assistant config — the
