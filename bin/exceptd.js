@@ -6258,8 +6258,24 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   const hasRust = detected.includes("Cargo.toml");
   const hasGo = detected.includes("go.mod");
   const hasProject = hasNode || hasPython || hasRust || hasGo;
+  // Container artifacts ANYWHERE in the tree (subdir Dockerfiles, compose
+  // variants like docker-compose.test.yml) — not just a root-level exact-name
+  // file. The root-only `probe()`s above miss them, so mirror exactly what the
+  // containers collector walks/classifies, otherwise discover under-recommends
+  // `containers` and an operator silently skips a relevant playbook.
+  let containerArtifacts = [];
+  try {
+    const containersMod = require(path.join(PKG_ROOT, "lib", "collectors", "containers.js"));
+    if (typeof containersMod.hasContainerArtifacts === "function") {
+      containerArtifacts = containersMod.hasContainerArtifacts(cwd);
+    }
+  } catch { /* best-effort detection; never break discover on a walk error */ }
+  if (containerArtifacts.length && !detected.includes("Dockerfile")
+      && !detected.includes("docker-compose.yml") && !detected.includes("docker-compose.yaml")) {
+    detected.push(`container-config (${containerArtifacts[0]})`);
+  }
   const hasContainers = detected.includes("Dockerfile") || detected.includes("docker-compose.yml")
-    || detected.includes("docker-compose.yaml");
+    || detected.includes("docker-compose.yaml") || containerArtifacts.length > 0;
   const isLinux = hostPlatform === "linux";
 
   // .github/workflows/ directory probe — surfaces the CI/CD posture

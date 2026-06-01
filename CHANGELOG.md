@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.8 — 2026-05-31
+
+`discover` now recommends the `containers` playbook whenever a Dockerfile, Containerfile, or compose file exists anywhere in the tree — a Dockerfile in a subdirectory, or a compose variant like `docker-compose.test.yml` — matching exactly the surface the containers collector scans. Previously it probed only for a root-level `Dockerfile` / `docker-compose.yml`, so a repository whose container config lived in a subdirectory or used a variant filename was never told to run the container security review and its Dockerfile findings went unsurfaced.
+
 ## 0.16.7 — 2026-05-31
 
 The default (human) run output now lists collector notices — for example a file skipped for exceeding the scan-size limit — under a "Collector notices" section, instead of carrying them only in `--json`. Previously a human reader saw "evidence: complete" with no indication that part of the tree was not scanned.
