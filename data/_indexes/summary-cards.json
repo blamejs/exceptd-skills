@@ -1983,6 +1983,46 @@
         "sector-financial",
         "sector-telecom"
       ]
+    },
+    "vc-wallet-trust": {
+      "description": "Verifiable-credential / digital-wallet verifier trust for mid-2026 — SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID resolution, OAuth Token Status List revocation, OpenID Federation trust anchors, and the EUDI wallet (eIDAS 2.0) acceptance path",
+      "threat_context_excerpt": "A credential verifier is a trust boundary: every verifiable credential it accepts grants whatever the credential asserts — age, residency, employment, professional licence, payment authority. With the EU Digital Identity Wallet (eIDAS 2.0) rolling out and ISO 18013-5 mobile driving licences in production, verifiers across payments, age-gating, and onboarding now accept SD-JWT-VC, OID4VP, and mdoc presentations from wallets they do not control. The dominant abuse is not breaking the cryptography but exploiting a missing trust check: an issuer key the verifier never pinned to an anchor, a ...",
+      "produces": "Report per accepted credential format, listing each trust check as enforced / missing / inconclusive (visibility gap). For every missing check, state the credential types and downstream entitlements it gates, whether the verifier is internet-facing, and the resulting blast radius. Distinguish a production-reachable gap from a test-only resolver. Provide the prioritised remediation (pin issuer anchors, enforce revocation fail-closed, bind presentations to nonce+audience, verify mdoc device-auth, enforce an algorithm allowlist, filter to requested claims) and the negative validation tests that p ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-347",
+          "CWE-290",
+          "CWE-863",
+          "CWE-200",
+          "CWE-672"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-63B-rev4",
+          "NIST-800-53-IA-5-Federated",
+          "ISO-27001-2022-A.5.16-Federated",
+          "NIS2-Art-21-Federated-Identity",
+          "UK-CAF-B2"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1556",
+          "T1606",
+          "T1550"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 18,
+      "atlas_count": 0,
+      "attack_count": 3,
+      "framework_gap_count": 5,
+      "cwe_count": 5,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/vc-wallet-trust/skill.md",
+      "handoff_targets": []
     }
   }
 }

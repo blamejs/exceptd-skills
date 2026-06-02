@@ -533,6 +533,7 @@
       "cloud-security",
       "dlp-gap-analysis",
       "sector-healthcare",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "evidence_cves": [
@@ -1527,7 +1528,8 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "vc-wallet-trust"
     ],
     "evidence_cves": [
       "CVE-2026-46300",
@@ -1833,6 +1835,7 @@
       "identity-assurance",
       "idp-incident-response",
       "sector-financial",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "evidence_cves": [
@@ -2565,7 +2568,10 @@
       "CVE-2025-59718"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import."
+    "notes": "Added v0.13.17 KEV bulk-import.",
+    "skills_referencing": [
+      "vc-wallet-trust"
+    ]
   },
   "CWE-476": {
     "id": "CWE-476",
@@ -2922,7 +2928,10 @@
       "CVE-2024-54085"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import round 2."
+    "notes": "Added v0.13.17 KEV bulk-import round 2.",
+    "skills_referencing": [
+      "vc-wallet-trust"
+    ]
   },
   "CWE-399": {
     "id": "CWE-399",

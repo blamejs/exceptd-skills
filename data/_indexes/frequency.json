@@ -36,9 +36,10 @@
         ]
       },
       "CWE-672": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "kernel-lpe-triage"
+          "kernel-lpe-triage",
+          "vc-wallet-trust"
         ]
       },
       "CWE-787": {
@@ -214,13 +215,14 @@
         ]
       },
       "CWE-200": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "cloud-security",
           "dlp-gap-analysis",
           "sector-healthcare",
+          "vc-wallet-trust",
           "webapp-security"
         ]
       },
@@ -300,13 +302,14 @@
         ]
       },
       "CWE-863": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "api-security",
           "cloud-iam-incident",
           "identity-assurance",
           "idp-incident-response",
           "sector-financial",
+          "vc-wallet-trust",
           "webapp-security"
         ]
       },
@@ -328,6 +331,18 @@
         "count": 1,
         "skills": [
           "idp-incident-response"
+        ]
+      },
+      "CWE-347": {
+        "count": 1,
+        "skills": [
+          "vc-wallet-trust"
+        ]
+      },
+      "CWE-290": {
+        "count": 1,
+        "skills": [
+          "vc-wallet-trust"
         ]
       }
     },
@@ -851,9 +866,10 @@
         ]
       },
       "NIST-800-63B-rev4": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "identity-assurance"
+          "identity-assurance",
+          "vc-wallet-trust"
         ]
       },
       "PSD2-RTS-SCA": {
@@ -1023,15 +1039,17 @@
         ]
       },
       "NIST-800-53-IA-5-Federated": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "idp-incident-response"
+          "idp-incident-response",
+          "vc-wallet-trust"
         ]
       },
       "ISO-27001-2022-A.5.16-Federated": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "idp-incident-response"
+          "idp-incident-response",
+          "vc-wallet-trust"
         ]
       },
       "SOC2-CC6-OAuth-Consent": {
@@ -1053,9 +1071,10 @@
         ]
       },
       "NIS2-Art-21-Federated-Identity": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "idp-incident-response"
+          "idp-incident-response",
+          "vc-wallet-trust"
         ]
       },
       "DORA-Art-19-IdP-4h": {
@@ -1068,6 +1087,12 @@
         "count": 1,
         "skills": [
           "idp-incident-response"
+        ]
+      },
+      "UK-CAF-B2": {
+        "count": 1,
+        "skills": [
+          "vc-wallet-trust"
         ]
       }
     },
@@ -1330,10 +1355,11 @@
         ]
       },
       "T1556": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "identity-assurance",
-          "sector-telecom"
+          "sector-telecom",
+          "vc-wallet-trust"
         ]
       },
       "T1110": {
@@ -1461,6 +1487,18 @@
         "count": 1,
         "skills": [
           "idp-incident-response"
+        ]
+      },
+      "T1606": {
+        "count": 1,
+        "skills": [
+          "vc-wallet-trust"
+        ]
+      },
+      "T1550": {
+        "count": 1,
+        "skills": [
+          "vc-wallet-trust"
         ]
       }
     },
@@ -1672,6 +1710,19 @@
         ]
       },
       {
+        "id": "CWE-200",
+        "count": 7,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "cloud-security",
+          "dlp-gap-analysis",
+          "sector-healthcare",
+          "vc-wallet-trust",
+          "webapp-security"
+        ]
+      },
+      {
         "id": "CWE-798",
         "count": 7,
         "skills": [
@@ -1694,6 +1745,19 @@
           "identity-assurance",
           "sector-financial",
           "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-863",
+        "count": 7,
+        "skills": [
+          "api-security",
+          "cloud-iam-incident",
+          "identity-assurance",
+          "idp-incident-response",
+          "sector-financial",
+          "vc-wallet-trust",
           "webapp-security"
         ]
       },
@@ -1734,18 +1798,6 @@
         ]
       },
       {
-        "id": "CWE-200",
-        "count": 6,
-        "skills": [
-          "age-gates-child-safety",
-          "api-security",
-          "cloud-security",
-          "dlp-gap-analysis",
-          "sector-healthcare",
-          "webapp-security"
-        ]
-      },
-      {
         "id": "CWE-269",
         "count": 6,
         "skills": [
@@ -1766,18 +1818,6 @@
           "cloud-security",
           "container-runtime-security",
           "identity-assurance",
-          "webapp-security"
-        ]
-      },
-      {
-        "id": "CWE-863",
-        "count": 6,
-        "skills": [
-          "api-security",
-          "cloud-iam-incident",
-          "identity-assurance",
-          "idp-incident-response",
-          "sector-financial",
           "webapp-security"
         ]
       }
@@ -2226,15 +2266,16 @@
         ]
       },
       {
-        "id": "T0855",
-        "count": 2,
+        "id": "T1556",
+        "count": 3,
         "skills": [
-          "ot-ics-security",
-          "sector-energy"
+          "identity-assurance",
+          "sector-telecom",
+          "vc-wallet-trust"
         ]
       },
       {
-        "id": "T0883",
+        "id": "T0855",
         "count": 2,
         "skills": [
           "ot-ics-security",
@@ -2364,8 +2405,9 @@
     "cwe_refs": [
       "CWE-20",
       "CWE-284",
+      "CWE-290",
       "CWE-327",
-      "CWE-672"
+      "CWE-347"
     ],
     "d3fend_refs": [
       "D3-CAA",
@@ -2391,18 +2433,14 @@
       "FCC-Cyber-Incident-Notification-2024",
       "FedRAMP-IL5-IAM-Federated",
       "GSMA-NESAS-Deployment",
-      "ISO-27001-2022-A.5.16-Federated",
       "ISO-27017-Cloud-IAM",
       "ITU-T-X.805",
       "Immutable-Backup-Recovery",
       "Insurance-Carrier-24h-Notification",
       "NIS2-Annex-I-Telecom",
-      "NIS2-Art-21-Federated-Identity",
       "NIST-800-53-AC-2-Cross-Account",
-      "NIST-800-53-IA-5-Federated",
       "NIST-800-53-SI-12",
       "NIST-800-53-SI-2",
-      "NIST-800-63B-rev4",
       "OFAC-SDN-Payment-Block",
       "OFAC-Sanctions-Threat-Actor-Negotiation",
       "OWASP-LLM-Top-10-2025-LLM02",
@@ -2414,6 +2452,7 @@
       "SOC2-CC6-Access-Key-Leak-Public-Repo",
       "SOC2-CC6-OAuth-Consent",
       "SPDX-v3.0-SBOM",
+      "UK-CAF-B2",
       "UK-CAF-B2-Cloud-IAM",
       "UK-CAF-B2-IdP-Tenant",
       "UK-CAF-B5",
@@ -2432,6 +2471,7 @@
       "T1505",
       "T1538",
       "T1548.001",
+      "T1550",
       "T1552",
       "T1552.005",
       "T1556.007",
@@ -2440,6 +2480,7 @@
       "T1566.003",
       "T1568",
       "T1580",
+      "T1606",
       "T1606.002",
       "T1610",
       "T1611"
@@ -2505,7 +2546,6 @@
       "CWE-282",
       "CWE-285",
       "CWE-288",
-      "CWE-290",
       "CWE-305",
       "CWE-310",
       "CWE-312",
@@ -2520,7 +2560,6 @@
       "CWE-338",
       "CWE-340",
       "CWE-346",
-      "CWE-347",
       "CWE-35",
       "CWE-353",
       "CWE-367",
@@ -3324,7 +3363,6 @@
       "SLSA-3",
       "SLSA-v1.0-Source-L3",
       "UK-CAF-A1",
-      "UK-CAF-B2",
       "UK-CAF-B4",
       "UK-CAF-C1",
       "UK-CAF-D1"

@@ -1626,5 +1626,59 @@
   ],
   "tenant compromise": [
     "idp-incident-response"
+  ],
+  "verifiable credential": [
+    "vc-wallet-trust"
+  ],
+  "digital wallet": [
+    "vc-wallet-trust"
+  ],
+  "sd-jwt-vc": [
+    "vc-wallet-trust"
+  ],
+  "oid4vp": [
+    "vc-wallet-trust"
+  ],
+  "oid4vci": [
+    "vc-wallet-trust"
+  ],
+  "mdoc": [
+    "vc-wallet-trust"
+  ],
+  "mdl": [
+    "vc-wallet-trust"
+  ],
+  "iso 18013-5": [
+    "vc-wallet-trust"
+  ],
+  "eudi wallet": [
+    "vc-wallet-trust"
+  ],
+  "eidas 2.0": [
+    "vc-wallet-trust"
+  ],
+  "did:web": [
+    "vc-wallet-trust"
+  ],
+  "status list": [
+    "vc-wallet-trust"
+  ],
+  "credential revocation": [
+    "vc-wallet-trust"
+  ],
+  "openid federation": [
+    "vc-wallet-trust"
+  ],
+  "trust anchor": [
+    "vc-wallet-trust"
+  ],
+  "credential verifier": [
+    "vc-wallet-trust"
+  ],
+  "presentation exchange": [
+    "vc-wallet-trust"
+  ],
+  "dcql": [
+    "vc-wallet-trust"
   ]
 }

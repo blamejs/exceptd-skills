@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // citation-hygiene (validates a codebase's own cited CVE/RFC references
-  // against the shipped catalogs) brings the canonical set to 24.
+  // vc-wallet-trust (verifiable-credential / digital-wallet verifier trust)
+  // brings the canonical set to 25.
   assert.equal(
     playbooks.length,
-    24,
-    `expected 24 shipped playbooks, found ${playbooks.length}`,
+    25,
+    `expected 25 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {
