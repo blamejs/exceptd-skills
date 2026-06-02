@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 176,
+      "entry_count": 177,
       "sample_keys": [
         "CWE-20",
         "CWE-22",

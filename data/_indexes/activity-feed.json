@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 61
+    "event_count": 62
   },
   "events": [
     {
@@ -55,6 +55,13 @@
       "note": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service"
     },
     {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "log-injection-telemetry",
+      "path": "skills/log-injection-telemetry/skill.md",
+      "note": "Telemetry-pipeline integrity for mid-2026 — CR/LF log-injection neutralization across every sink, secret/PII redaction before shipping, authenticated metrics endpoints, and exporter destination allowlisting, secret-store credentials, verified TLS, and webhook SSRF guarding"
+    },
+    {
       "date": "2026-06-01",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
@@ -68,7 +75,7 @@
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 176
+      "entry_count": 177
     },
     {
       "date": "2026-06-01",
@@ -321,7 +328,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 49 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 50 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",

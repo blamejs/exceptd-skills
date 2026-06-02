@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.18 — 2026-06-02
+
+New `log-injection-telemetry` playbook and skill audit the integrity and confidentiality of the telemetry pipeline itself, which "we centralize all logs" does not cover: CR/LF log injection that forges or splits entries on every sink except syslog, secrets and PII logged without a redaction pass, unauthenticated `/metrics` and debug endpoints leaking internal state, telemetry exporters shipping to un-inventoried or input-derived destinations (exfiltration), embedded exporter credentials, plaintext or unverified-TLS export, and webhook log sinks usable for SSRF. It maps to ATT&CK T1565.001 / T1530 / T1213 and to NIST 800-53 AU-9 / SI-11, ISO 27001 A.8.15, NIS2 Art.21, UK CAF B4, and AU ISM. CWE-117 (improper output neutralization for logs) is added to the catalog to back it. Run it with `exceptd brief log-injection-telemetry` or `exceptd run log-injection-telemetry`.
+
 ## 0.16.17 — 2026-06-02
 
 New `decompression-dos` playbook and skill audit the input-amplification denial-of-service class a single small crafted input can trigger — which input-format validation, a WAF, and autoscaling do not bound: unbounded archive decompression (zip bomb) and nested-archive bombs, Zip Slip path traversal on extraction, XML entity expansion (billion laughs) / XXE, catastrophic-backtracking regular expressions (ReDoS), recursive parsing with no depth limit, and length-field-driven unbounded allocation in binary parsers (ASN.1/DER, CBOR, MIME, protobuf). It maps to ATT&CK T1499 / T1499.001 / T1059 and to NIST 800-53 SI-10 / SC-5, ISO 27001 A.8.26, NIS2 Art.21, UK CAF B4, and AU ISM. Two weaknesses are added to the catalog to back it: CWE-409 (data amplification) and CWE-1333 (inefficient regular-expression complexity). Run it with `exceptd brief decompression-dos` or `exceptd run decompression-dos`.

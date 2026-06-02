@@ -32,6 +32,9 @@
         "playbook_id": "framework",
         "condition": "analyze.compliance_theater_check.verdict == 'theater'"
       }
+    ],
+    "fed_by": [
+      "log-injection-telemetry"
     ]
   },
   "domain": {

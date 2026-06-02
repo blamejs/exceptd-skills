@@ -79,6 +79,7 @@
     "CWE-918": [
       "api-security",
       "attack-surface-pentest",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "network-trust",
       "sector-telecom",
@@ -140,6 +141,7 @@
       "api-security",
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
       "sector-healthcare",
       "vc-wallet-trust",
       "webapp-security"
@@ -270,6 +272,12 @@
     ],
     "CWE-834": [
       "decompression-dos"
+    ],
+    "CWE-117": [
+      "log-injection-telemetry"
+    ],
+    "CWE-532": [
+      "log-injection-telemetry"
     ]
   },
   "d3fend_refs": {
@@ -395,6 +403,7 @@
       "audit-log-integrity",
       "decompression-dos",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mail-server-hardening"
     ],
     "ISO-27001-2022-A.8.8": [
@@ -640,6 +649,7 @@
     ],
     "AU-ISM-1556": [
       "decompression-dos",
+      "log-injection-telemetry",
       "multitenancy-isolation",
       "sector-telecom",
       "self-update-integrity"
@@ -728,6 +738,7 @@
     "NIS2-Art21-network-security": [
       "audit-log-integrity",
       "decompression-dos",
+      "log-injection-telemetry",
       "mail-server-hardening",
       "multitenancy-isolation",
       "network-trust",
@@ -738,12 +749,14 @@
     ],
     "UK-CAF-B4": [
       "decompression-dos",
+      "log-injection-telemetry",
       "multitenancy-isolation",
       "network-trust",
       "self-update-integrity"
     ],
     "ISO-27001-2022-A.8.15": [
-      "audit-log-integrity"
+      "audit-log-integrity",
+      "log-injection-telemetry"
     ],
     "NIST-800-53-SR-11": [
       "self-update-integrity"
@@ -913,11 +926,13 @@
     "T1530": [
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
       "multitenancy-isolation",
       "sector-healthcare"
     ],
     "T1213": [
-      "dlp-gap-analysis"
+      "dlp-gap-analysis",
+      "log-injection-telemetry"
     ],
     "T1041": [
       "dlp-gap-analysis",
@@ -1024,7 +1039,8 @@
       "audit-log-integrity"
     ],
     "T1565.001": [
-      "audit-log-integrity"
+      "audit-log-integrity",
+      "log-injection-telemetry"
     ],
     "T1562.008": [
       "audit-log-integrity"

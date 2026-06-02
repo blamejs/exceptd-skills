@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // decompression-dos (decompression bomb / parser-DoS / ReDoS) brings the
-  // canonical set to 31.
+  // log-injection-telemetry (telemetry-pipeline integrity) brings the
+  // canonical set to 32.
   assert.equal(
     playbooks.length,
-    31,
-    `expected 31 shipped playbooks, found ${playbooks.length}`,
+    32,
+    `expected 32 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

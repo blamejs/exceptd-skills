@@ -1976,5 +1976,50 @@
   ],
   "input amplification": [
     "decompression-dos"
+  ],
+  "log injection": [
+    "log-injection-telemetry"
+  ],
+  "crlf injection": [
+    "log-injection-telemetry"
+  ],
+  "log forging": [
+    "log-injection-telemetry"
+  ],
+  "telemetry integrity": [
+    "log-injection-telemetry"
+  ],
+  "secrets in logs": [
+    "log-injection-telemetry"
+  ],
+  "log redaction": [
+    "log-injection-telemetry"
+  ],
+  "metrics endpoint exposure": [
+    "log-injection-telemetry"
+  ],
+  "prometheus exposure": [
+    "log-injection-telemetry"
+  ],
+  "otlp exporter": [
+    "log-injection-telemetry"
+  ],
+  "cloudwatch": [
+    "log-injection-telemetry"
+  ],
+  "webhook sink": [
+    "log-injection-telemetry"
+  ],
+  "exporter ssrf": [
+    "log-injection-telemetry"
+  ],
+  "observability security": [
+    "log-injection-telemetry"
+  ],
+  "log sink": [
+    "log-injection-telemetry"
+  ],
+  "telemetry exfiltration": [
+    "log-injection-telemetry"
   ]
 }
