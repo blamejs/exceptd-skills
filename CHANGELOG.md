@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.10 — 2026-06-02
+
+RWEP scoring no longer emits a spurious validation warning when a CVE carries the `theoretical` active-exploitation status — a value the catalog vocabulary and the scorer already accept and score. The guided curation questionnaire now prompts for `ai_assisted_weaponization`, a required field it previously skipped, so a curated entry cannot silently omit it. The `prefetch` verb no longer double-counts a global flag, and `lint --strict` is now documented in its own `--help`.
+
 ## 0.16.9 — 2026-06-01
 
 The catalog now covers a set of real, vendor-patched protocol-layer flaws it previously did not name, so scans, triage, and reports surface them with RWEP scoring and behavioral indicators:

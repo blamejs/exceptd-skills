@@ -19,6 +19,11 @@
  *       VALID_ALLOW_CLASSES, or is missing the `— <reason>` tail. A typo'd
  *       marker suppresses nothing, so the underlying violation would ship
  *       unflagged — this meta-guard keeps the marker mechanism trustworthy.
+ *   - unsorted-marked-array : a flat string array tagged `// keep-sorted` that
+ *       drifted out of alphabetical order. Opt-in — only marked arrays are
+ *       checked, so a one-time allowlist sort becomes a standing guarantee.
+ *   - misaligned-marked-run : a `// keep-aligned` const/weight table whose
+ *       `=`/`:` assignment columns are not all equal. Opt-in, same shape.
  *
  * Exceptions live at the violation site, not in this file:
  *   - file-level, in the first 50 lines:  // codebase-patterns:allow-file <class> — <reason>
@@ -42,6 +47,8 @@ const VALID_ALLOW_CLASSES = Object.freeze({
   "process-exit-after-stdout-write": true,
   "dynamic-regex": true,
   "bidi-codepoint-literal": true,
+  "unsorted-marked-array": true,
+  "misaligned-marked-run": true,
 });
 
 const EXCLUDE_DIRS = new Set([
@@ -272,6 +279,91 @@ function detectOrphanAllowClass(files) {
   return hits;
 }
 
+// ---- opt-in readability detectors (preventative) -------------------------
+// These fire ONLY on sites that explicitly opt in via a marker, so unmarked
+// code is never flagged. They turn a one-time cleanup (sorting an allowlist,
+// aligning a const table) into a standing guarantee: mark the cleaned site and
+// the gate keeps it clean.
+
+// `// keep-sorted` marks a flat string-literal array that must stay
+// alphabetically sorted (e.g. an allowlist). Only arrays whose opening line
+// carries the marker are checked; arrays containing object/nested elements are
+// skipped (not a flat string list).
+function scanUnsortedMarkedArray(rel, lines) {
+  const hits = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/\/\/\s*keep-sorted\b/.test(lines[i])) continue;
+    const openIdx = lines[i].indexOf("[");
+    if (openIdx === -1) continue;
+    let depth = 0, started = false, body = "";
+    for (let j = i; j < lines.length; j++) {
+      const seg = (j === i) ? lines[j].slice(openIdx) : lines[j];
+      for (const ch of seg) {
+        if (ch === "[") { depth++; started = true; }
+        else if (ch === "]") { depth--; }
+      }
+      body += " " + seg;
+      if (started && depth <= 0) break;
+    }
+    if (/[{]/.test(body)) continue; // object/nested elements — not a flat string array
+    const strs = [];
+    const re = /(['"])((?:\\.|(?!\1).)*)\1/g;
+    let m;
+    while ((m = re.exec(body)) !== null) strs.push(m[2]);
+    if (strs.length < 2) continue;
+    const sorted = [...strs].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    if (strs.join(" ") !== sorted.join(" ")) {
+      const k = strs.findIndex((s, idx) => idx > 0 && strs[idx - 1] > s);
+      hits.push({ file: rel, line: i + 1, content: lines[i].trim(), why: `marked // keep-sorted but "${strs[k]}" is out of alphabetical order` });
+    }
+  }
+  return hits;
+}
+function detectUnsortedMarkedArray(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue; // holds the detector + its own marker prose
+    hits.push(...scanUnsortedMarkedArray(rel, readLines(rel)));
+  }
+  return hits;
+}
+
+// `// keep-aligned` marks a contiguous run of `IDENT = value` / `IDENT: value`
+// lines (a const/weight table) whose assignment columns must all line up. The
+// run is the lines immediately after the marker, until a blank or non-assignment
+// line. Opt-in, so only deliberately-aligned tables are enforced.
+function scanMisalignedMarkedRun(rel, lines) {
+  const hits = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/\/\/\s*keep-aligned\b/.test(lines[i])) continue;
+    const run = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      if (/^\s*$/.test(lines[j])) break;
+      const code = stripLineComment(lines[j]).replace(/\s+$/, "");
+      const m = code.match(/^(\s*[A-Za-z_$][\w$.'"-]*\s*)([:=])\s/);
+      if (!m) break;
+      run.push({ lineNo: j + 1, col: m[1].length, op: m[2], content: lines[j].trim() });
+    }
+    if (run.length < 2) continue;
+    const op = run[0].op;
+    const cols = run.filter((r) => r.op === op).map((r) => r.col);
+    const target = Math.max(...cols);
+    const bad = run.find((r) => r.op === op && r.col !== target);
+    if (bad) {
+      hits.push({ file: rel, line: bad.lineNo, content: bad.content, why: `marked // keep-aligned but the '${op}' columns are not all equal` });
+    }
+  }
+  return hits;
+}
+function detectMisalignedMarkedRun(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue;
+    hits.push(...scanMisalignedMarkedRun(rel, readLines(rel)));
+  }
+  return hits;
+}
+
 const CLASSES = [
   {
     id: "process-exit-after-stdout-write",
@@ -282,8 +374,20 @@ const CLASSES = [
   {
     id: "dynamic-regex",
     run: detectDynamicRegex,
-    warnOnly: true, // flip to false next release once the known sites carry markers
+    warnOnly: false,
     hint: "RegExp from operator input is a ReDoS sink — anchor + length-cap, or `// allow:dynamic-regex — <reason>` when the pattern is a trusted bundled schema",
+  },
+  {
+    id: "unsorted-marked-array",
+    run: detectUnsortedMarkedArray,
+    warnOnly: false,
+    hint: "a flat string array tagged `// keep-sorted` drifted out of alphabetical order — re-sort it, or drop the marker if the order is intentional",
+  },
+  {
+    id: "misaligned-marked-run",
+    run: detectMisalignedMarkedRun,
+    warnOnly: false,
+    hint: "a `// keep-aligned` const/weight table has uneven assignment columns — realign the `=`/`:` columns, or drop the marker",
   },
   {
     id: "bidi-codepoint-literal",
@@ -331,6 +435,10 @@ module.exports = {
   detectDynamicRegex,
   detectBidiCodepointLiteral,
   detectOrphanAllowClass,
+  detectUnsortedMarkedArray,
+  detectMisalignedMarkedRun,
+  scanUnsortedMarkedArray,
+  scanMisalignedMarkedRun,
   filesUnder,
 };
 

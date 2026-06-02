@@ -30,7 +30,7 @@ const ROOT = path.resolve(__dirname, "..");
 // Every key here was classified (adopted / already-owned / helper-dependent /
 // out-of-scope). A class appearing upstream but absent here is NEW and wants
 // triage. Refresh this list (and re-triage the delta) when this check fires.
-const UPSTREAM_TRIAGED = Object.freeze([
+const UPSTREAM_TRIAGED = Object.freeze([ // keep-sorted
   "ai-disclosure-on-request-without-requested-gate",
   "archive-gz-without-safedecompress",
   "archive-wrap-partial-recipient",
@@ -59,7 +59,6 @@ const UPSTREAM_TRIAGED = Object.freeze([
   "math-random-noncrypto",
   "nfinity",
   "no-number-money-arithmetic",
-  "numeric-opt-no-bounds-check",
   "primitive-unreachable",
   "process-exit",
   "raw-byte-literal",
