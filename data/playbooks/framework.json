@@ -65,6 +65,7 @@
       "post-quantum-migration",
       "ransomware",
       "sbom",
+      "self-update-integrity",
       "supply-chain-recovery",
       "vc-wallet-trust",
       "webhook-callback-abuse"

@@ -1141,7 +1141,9 @@
       "CAPEC-75",
       "CAPEC-39"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "self-update-integrity"
+    ],
     "evidence_cves": [
       "CVE-2026-32202"
     ],
@@ -1324,6 +1326,7 @@
     ],
     "skills_referencing": [
       "mcp-agent-trust",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "evidence_cves": [
@@ -1754,6 +1757,7 @@
     ],
     "skills_referencing": [
       "sector-federal-government",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "evidence_cves": [
@@ -2579,6 +2583,7 @@
     "skills_referencing": [
       "audit-log-integrity",
       "network-trust",
+      "self-update-integrity",
       "vc-wallet-trust"
     ]
   },

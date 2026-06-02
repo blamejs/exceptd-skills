@@ -1833,5 +1833,53 @@
   ],
   "audit trail": [
     "audit-log-integrity"
+  ],
+  "self update": [
+    "self-update-integrity"
+  ],
+  "auto update": [
+    "self-update-integrity"
+  ],
+  "update integrity": [
+    "self-update-integrity"
+  ],
+  "anti rollback": [
+    "self-update-integrity"
+  ],
+  "downgrade attack": [
+    "self-update-integrity"
+  ],
+  "code signing verification": [
+    "self-update-integrity"
+  ],
+  "key pinning": [
+    "self-update-integrity"
+  ],
+  "subresource integrity": [
+    "self-update-integrity"
+  ],
+  "sri": [
+    "self-update-integrity"
+  ],
+  "import map integrity": [
+    "self-update-integrity"
+  ],
+  "c2pa": [
+    "self-update-integrity"
+  ],
+  "content credentials": [
+    "self-update-integrity"
+  ],
+  "scitt": [
+    "self-update-integrity"
+  ],
+  "transparency log": [
+    "self-update-integrity"
+  ],
+  "software supply chain consumer": [
+    "self-update-integrity"
+  ],
+  "update channel": [
+    "self-update-integrity"
   ]
 }

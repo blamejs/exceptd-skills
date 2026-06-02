@@ -115,9 +115,10 @@
         ]
       },
       "CWE-494": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "mcp-agent-trust",
+          "self-update-integrity",
           "supply-chain-integrity"
         ]
       },
@@ -249,9 +250,10 @@
         ]
       },
       "CWE-829": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "sector-federal-government",
+          "self-update-integrity",
           "supply-chain-integrity"
         ]
       },
@@ -341,10 +343,11 @@
         ]
       },
       "CWE-347": {
-        "count": 3,
+        "count": 4,
         "skills": [
           "audit-log-integrity",
           "network-trust",
+          "self-update-integrity",
           "vc-wallet-trust"
         ]
       },
@@ -377,6 +380,12 @@
         "count": 1,
         "skills": [
           "audit-log-integrity"
+        ]
+      },
+      "CWE-353": {
+        "count": 1,
+        "skills": [
+          "self-update-integrity"
         ]
       }
     },
@@ -971,9 +980,10 @@
         ]
       },
       "AU-ISM-1556": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "sector-telecom"
+          "sector-telecom",
+          "self-update-integrity"
         ]
       },
       "GSMA-NESAS-Deployment": {
@@ -1136,11 +1146,12 @@
         ]
       },
       "NIS2-Art21-network-security": {
-        "count": 3,
+        "count": 4,
         "skills": [
           "audit-log-integrity",
           "mail-server-hardening",
-          "network-trust"
+          "network-trust",
+          "self-update-integrity"
         ]
       },
       "ISO-27001-2022-A.8.21": {
@@ -1150,15 +1161,22 @@
         ]
       },
       "UK-CAF-B4": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "network-trust"
+          "network-trust",
+          "self-update-integrity"
         ]
       },
       "ISO-27001-2022-A.8.15": {
         "count": 1,
         "skills": [
           "audit-log-integrity"
+        ]
+      },
+      "NIST-800-53-SR-11": {
+        "count": 1,
+        "skills": [
+          "self-update-integrity"
         ]
       }
     },
@@ -1409,8 +1427,9 @@
         ]
       },
       "T1195.002": {
-        "count": 1,
+        "count": 2,
         "skills": [
+          "self-update-integrity",
           "supply-chain-integrity"
         ]
       },
@@ -1604,6 +1623,12 @@
         "count": 1,
         "skills": [
           "audit-log-integrity"
+        ]
+      },
+      "T1574": {
+        "count": 1,
+        "skills": [
+          "self-update-integrity"
         ]
       }
     },
@@ -2139,6 +2164,16 @@
         ]
       },
       {
+        "id": "NIS2-Art21-network-security",
+        "count": 4,
+        "skills": [
+          "audit-log-integrity",
+          "mail-server-hardening",
+          "network-trust",
+          "self-update-integrity"
+        ]
+      },
+      {
         "id": "NIS2-Art21-patch-management",
         "count": 4,
         "skills": [
@@ -2146,16 +2181,6 @@
           "kernel-lpe-triage",
           "ot-ics-security",
           "sector-energy"
-        ]
-      },
-      {
-        "id": "SLSA-v1.0-Build-L3",
-        "count": 4,
-        "skills": [
-          "container-runtime-security",
-          "mlops-security",
-          "sector-federal-government",
-          "supply-chain-integrity"
         ]
       }
     ],
@@ -2514,6 +2539,7 @@
     "cwe_refs": [
       "CWE-20",
       "CWE-327",
+      "CWE-353",
       "CWE-400",
       "CWE-611",
       "CWE-778",
@@ -2529,7 +2555,6 @@
       "3GPP-TR-33.926",
       "ALL-MCP-TOOL-TRUST",
       "AU-ISM-1546-Cloud-Service-Account",
-      "AU-ISM-1556",
       "AU-ISM-1559-IdP",
       "AWS-Security-Hub-Coverage-Gap",
       "CISA-Snowflake-AA24-IdP-Cloud",
@@ -2552,6 +2577,7 @@
       "NIS2-Annex-I-Telecom",
       "NIST-800-53-AC-2-Cross-Account",
       "NIST-800-53-SI-12",
+      "NIST-800-53-SR-11",
       "OFAC-SDN-Payment-Block",
       "OFAC-Sanctions-Threat-Actor-Negotiation",
       "OWASP-LLM-Top-10-2025-LLM02",
@@ -2565,7 +2591,6 @@
       "UK-CAF-B2",
       "UK-CAF-B2-Cloud-IAM",
       "UK-CAF-B2-IdP-Tenant",
-      "UK-CAF-B4",
       "UK-CAF-B5",
       "VEX-CSAF-v2.1"
     ],
@@ -2580,7 +2605,6 @@
       "T1102",
       "T1110",
       "T1133",
-      "T1195.002",
       "T1213",
       "T1505",
       "T1538",
@@ -2595,6 +2619,7 @@
       "T1566.002",
       "T1566.003",
       "T1568",
+      "T1574",
       "T1580",
       "T1606",
       "T1606.002",
@@ -2677,7 +2702,6 @@
       "CWE-340",
       "CWE-346",
       "CWE-35",
-      "CWE-353",
       "CWE-367",
       "CWE-377",
       "CWE-384",
@@ -3440,7 +3464,6 @@
       "NIST-800-53-SC-5",
       "NIST-800-53-SI-10",
       "NIST-800-53-SI-4",
-      "NIST-800-53-SR-11",
       "NIST-800-53-SR-3",
       "NIST-AI-RMF-MAP-3.4",
       "NIST-AI-RMF-MEASURE-2.7",

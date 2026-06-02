@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 58
+    "event_count": 59
   },
   "events": [
     {
@@ -32,6 +32,13 @@
       "artifact": "audit-log-integrity",
       "path": "skills/audit-log-integrity/skill.md",
       "note": "Audit-log integrity for mid-2026 — tamper-evident hash-chaining, off-host signing, compliance-mode WORM immutability, legal-hold-vs-retention enforcement, writer/custodian separation, and deception (honeytoken) coverage that resist the privileged attacker most likely to tamper with the trail"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "self-update-integrity",
+      "path": "skills/self-update-integrity/skill.md",
+      "note": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts"
     },
     {
       "date": "2026-06-01",
@@ -300,7 +307,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 46 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 47 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",

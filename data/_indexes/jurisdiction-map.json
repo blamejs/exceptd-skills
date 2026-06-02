@@ -40,6 +40,7 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
@@ -49,7 +50,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 46
+    "skill_count": 47
   },
   "UK": {
     "skills": [
@@ -90,6 +91,7 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
@@ -99,7 +101,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 44
+    "skill_count": 45
   },
   "AU": {
     "skills": [
@@ -139,6 +141,7 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
@@ -147,7 +150,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 42
+    "skill_count": 43
   },
   "SG": {
     "skills": [
@@ -247,11 +250,12 @@
       "sector-financial",
       "sector-healthcare",
       "sector-telecom",
+      "self-update-integrity",
       "skill-update-loop",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 18
+    "skill_count": 19
   },
   "BR": {
     "skills": [
