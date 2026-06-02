@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.17 — 2026-06-02
+
+New `decompression-dos` playbook and skill audit the input-amplification denial-of-service class a single small crafted input can trigger — which input-format validation, a WAF, and autoscaling do not bound: unbounded archive decompression (zip bomb) and nested-archive bombs, Zip Slip path traversal on extraction, XML entity expansion (billion laughs) / XXE, catastrophic-backtracking regular expressions (ReDoS), recursive parsing with no depth limit, and length-field-driven unbounded allocation in binary parsers (ASN.1/DER, CBOR, MIME, protobuf). It maps to ATT&CK T1499 / T1499.001 / T1059 and to NIST 800-53 SI-10 / SC-5, ISO 27001 A.8.26, NIS2 Art.21, UK CAF B4, and AU ISM. Two weaknesses are added to the catalog to back it: CWE-409 (data amplification) and CWE-1333 (inefficient regular-expression complexity). Run it with `exceptd brief decompression-dos` or `exceptd run decompression-dos`.
+
 ## 0.16.16 — 2026-06-02
 
 New `multitenancy-isolation` playbook and skill audit two linked failure classes on shared multitenant infrastructure that "we have authorization" and "the cloud autoscales" do not cover. Isolation: a tenant identifier trusted from a client-controlled field, queries not scoped at the data layer (no row-level security), an RLS policy bypassable by the request connection's role, and cache/pub-sub/queue keys not namespaced by tenant — each a cross-tenant data path from a single authenticated account. Availability: HTTP/2 Rapid Reset (CVE-2023-44487) uncapped, no per-tenant rate/byte quota (noisy-neighbour), unbounded per-request allocation, distributed locks without fencing, and missing circuit breakers. It maps to ATT&CK T1078/T1499/T1499.001/T1530 and to NIST 800-53 AC-3/SC-6, ISO 27001 A.8.31, NIS2 Art.21, UK CAF B4, AU ISM, and SOC 2 CC6. Run it with `exceptd brief multitenancy-isolation` or `exceptd run multitenancy-isolation`.

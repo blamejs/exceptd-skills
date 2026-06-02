@@ -54,6 +54,7 @@
       "cloud-iam-incident",
       "crypto",
       "crypto-codebase",
+      "decompression-dos",
       "identity-sso-compromise",
       "idp-incident",
       "kernel",

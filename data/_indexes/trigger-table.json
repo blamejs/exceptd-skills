@@ -1926,9 +1926,55 @@
     "multitenancy-isolation"
   ],
   "resource exhaustion": [
+    "decompression-dos",
     "multitenancy-isolation"
   ],
   "denial of service": [
     "multitenancy-isolation"
+  ],
+  "decompression bomb": [
+    "decompression-dos"
+  ],
+  "zip bomb": [
+    "decompression-dos"
+  ],
+  "zip slip": [
+    "decompression-dos"
+  ],
+  "redos": [
+    "decompression-dos"
+  ],
+  "regular expression denial of service": [
+    "decompression-dos"
+  ],
+  "catastrophic backtracking": [
+    "decompression-dos"
+  ],
+  "billion laughs": [
+    "decompression-dos"
+  ],
+  "xml entity expansion": [
+    "decompression-dos"
+  ],
+  "xxe": [
+    "decompression-dos"
+  ],
+  "parser dos": [
+    "decompression-dos"
+  ],
+  "amplification attack": [
+    "decompression-dos"
+  ],
+  "nested archive": [
+    "decompression-dos"
+  ],
+  "recursion depth": [
+    "decompression-dos"
+  ],
+  "length field allocation": [
+    "decompression-dos"
+  ],
+  "input amplification": [
+    "decompression-dos"
   ]
 }

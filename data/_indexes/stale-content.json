@@ -15,7 +15,7 @@
       "severity": "medium",
       "category": "researcher_claim_drift",
       "artifact": "skills/researcher/skill.md",
-      "detail": "claims 41 specialized skills downstream; live count is 47"
+      "detail": "claims 41 specialized skills downstream; live count is 48"
     }
   ]
 }

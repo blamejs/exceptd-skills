@@ -88,6 +88,7 @@
     "skills_referencing": [
       "api-security",
       "attack-surface-pentest",
+      "decompression-dos",
       "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
@@ -3071,6 +3072,7 @@
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
     "skills_referencing": [
+      "decompression-dos",
       "mail-server-hardening",
       "multitenancy-isolation"
     ]
@@ -3780,6 +3782,7 @@
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
     "skills_referencing": [
+      "decompression-dos",
       "multitenancy-isolation"
     ]
   },
@@ -3819,7 +3822,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos"
+    ]
   },
   "CWE-778": {
     "id": "CWE-778",
@@ -3879,7 +3885,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos"
+    ]
   },
   "CWE-835": {
     "id": "CWE-835",
@@ -4554,5 +4563,43 @@
       "CVE-2023-51765",
       "CVE-2023-51766"
     ]
+  },
+  "CWE-409": {
+    "id": "CWE-409",
+    "name": "Improper Handling of Highly Compressed Data (Data Amplification)",
+    "abstraction": "Base",
+    "category": "Resource Management",
+    "description": "The product does not handle or incorrectly handles a compressed input with a very high compression ratio that produces a large output. MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/409.html. Backs the decompression-bomb / zip-bomb / nested-archive class (no decompressed-size or ratio cap).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-197"
+    ],
+    "skills_referencing": [
+      "decompression-dos"
+    ],
+    "evidence_cves": []
+  },
+  "CWE-1333": {
+    "id": "CWE-1333",
+    "name": "Inefficient Regular Expression Complexity",
+    "abstraction": "Base",
+    "category": "Resource Management",
+    "description": "The product uses a regular expression with inefficient, possibly exponential worst-case complexity on a value that can be controlled by an actor, enabling catastrophic backtracking (ReDoS). MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/1333.html.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-492"
+    ],
+    "skills_referencing": [
+      "decompression-dos"
+    ],
+    "evidence_cves": []
   }
 }

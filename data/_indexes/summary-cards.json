@@ -2216,6 +2216,47 @@
       "last_threat_review": "2026-06-02",
       "path": "skills/multitenancy-isolation/skill.md",
       "handoff_targets": []
+    },
+    "decompression-dos": {
+      "description": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service",
+      "threat_context_excerpt": "Amplification denial of service turns a tiny, structurally-valid input into ruinous server work. A 42 KB zip bomb expands to petabytes; a few lines of nested XML entities expand to gigabytes (the billion-laughs attack); a crafted string pins a CPU core for seconds-to-minutes on a backtracking regular expression (ReDoS); a binary parser that reads a declared 2 GB length field allocates a 2 GB buffer from a 10-byte message. A Zip Slip archive entry named `../../x` escapes the extraction directory to overwrite a binary on the execution path. Input-format validation passes all of these because ...",
+      "produces": "Report per parser/decompression path, marking each resource bound enforced / missing / inconclusive (visibility gap). For every missing bound, state whether the ingest is internet-facing and whether a single crafted input could exhaust the instance (or, for Zip Slip, write outside the target). Distinguish a bound enforced at a lower layer (streaming runtime, RE2 engine, size-limited proxy) from an absent one, and a path that ingests only trusted fixed-size input from one that ingests attacker input. Provide the prioritised remediation (cap decompression size/ratio/nesting, confine extraction p ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-409",
+          "CWE-1333",
+          "CWE-400",
+          "CWE-776",
+          "CWE-22",
+          "CWE-834",
+          "CWE-770"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4",
+          "AU-ISM-1556"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1499",
+          "T1499.001",
+          "T1059"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 16,
+      "atlas_count": 0,
+      "attack_count": 3,
+      "framework_gap_count": 4,
+      "cwe_count": 7,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/decompression-dos/skill.md",
+      "handoff_targets": []
     }
   }
 }
