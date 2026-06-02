@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.20 — 2026-06-02
+
+CVE curation now accepts three operator-supplied fields it previously dropped or rejected: `ai_discovery_source` (the AI-discovery provenance category — vendor research, AI-augmented bug bounty, academic fuzzing, threat-actor-built, human, or unknown), `vendor_update_paths` (the restart-required vendor remediation steps), and the `theoretical` value of `active_exploitation` (a published proof-of-concept with no observed in-the-wild use). All three are already valid in the catalog and factored by RWEP scoring, so a curated entry that supplies them is no longer stripped of its provenance or remediation detail before being written.
+
 ## 0.16.19 — 2026-06-02
 
 New `privacy-consent-ops` playbook and skill audit where privacy and sanctions controls become paper despite existing: sanctions screening that does not normalize confusable / homoglyph Unicode (or lacks alias + transliteration + fuzzy matching), so a listed name spelled with lookalikes evades it; IAB TCF / MSPA consent signals acted on without an integrity binding to the consent log of record and not re-validated against withdrawal or expiry at processing time; data-subject erasure marked "completed" without per-store proof and not propagated to backups, indexes, warehouses, and processors; and a GDPR Record of Processing Activities that drifts from actual processing. It maps to ATT&CK T1036 / T1565.001 / T1070 and to NIST 800-53 SI-10, ISO 27001 A.5.34, NIS2 Art.21, UK CAF B4, and AU ISM. Run it with `exceptd brief privacy-consent-ops` or `exceptd run privacy-consent-ops`.
