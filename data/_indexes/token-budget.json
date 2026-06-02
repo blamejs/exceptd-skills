@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1690237,
-    "total_approx_tokens": 422562,
-    "skill_count": 44
+    "total_chars": 1697609,
+    "total_approx_tokens": 424405,
+    "skill_count": 45
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -2600,6 +2600,56 @@
           "bytes": 822,
           "chars": 820,
           "approx_tokens": 205
+        }
+      }
+    },
+    "network-trust": {
+      "path": "skills/network-trust/skill.md",
+      "bytes": 7376,
+      "chars": 7372,
+      "lines": 82,
+      "approx_tokens": 1843,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 770,
+          "chars": 768,
+          "approx_tokens": 192
+        },
+        "framework-lag-declaration": {
+          "bytes": 714,
+          "chars": 714,
+          "approx_tokens": 179
+        },
+        "ttp-mapping": {
+          "bytes": 746,
+          "chars": 746,
+          "approx_tokens": 187
+        },
+        "exploit-availability-matrix": {
+          "bytes": 747,
+          "chars": 747,
+          "approx_tokens": 187
+        },
+        "analysis-procedure": {
+          "bytes": 910,
+          "chars": 910,
+          "approx_tokens": 228
+        },
+        "output-format": {
+          "bytes": 829,
+          "chars": 829,
+          "approx_tokens": 207
+        },
+        "compliance-theater-check": {
+          "bytes": 715,
+          "chars": 715,
+          "approx_tokens": 179
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 816,
+          "chars": 816,
+          "approx_tokens": 204
         }
       }
     }

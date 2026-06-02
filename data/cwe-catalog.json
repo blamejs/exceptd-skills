@@ -1070,7 +1070,8 @@
     ],
     "skills_referencing": [
       "idp-incident-response",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "network-trust"
     ],
     "evidence_cves": [
       "CVE-2023-51764",
@@ -1904,6 +1905,7 @@
       "api-security",
       "attack-surface-pentest",
       "mcp-agent-trust",
+      "network-trust",
       "sector-telecom",
       "webapp-security"
     ],
@@ -2573,6 +2575,7 @@
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import.",
     "skills_referencing": [
+      "network-trust",
       "vc-wallet-trust"
     ]
   },
@@ -2936,6 +2939,7 @@
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import round 2.",
     "skills_referencing": [
+      "network-trust",
       "vc-wallet-trust"
     ]
   },

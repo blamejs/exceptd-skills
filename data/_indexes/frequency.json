@@ -88,10 +88,11 @@
         ]
       },
       "CWE-345": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "idp-incident-response",
-          "mcp-agent-trust"
+          "mcp-agent-trust",
+          "network-trust"
         ]
       },
       "CWE-352": {
@@ -129,11 +130,12 @@
         ]
       },
       "CWE-918": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "api-security",
           "attack-surface-pentest",
           "mcp-agent-trust",
+          "network-trust",
           "sector-telecom",
           "webapp-security"
         ]
@@ -337,14 +339,16 @@
         ]
       },
       "CWE-347": {
-        "count": 1,
+        "count": 2,
         "skills": [
+          "network-trust",
           "vc-wallet-trust"
         ]
       },
       "CWE-290": {
-        "count": 1,
+        "count": 2,
         "skills": [
+          "network-trust",
           "vc-wallet-trust"
         ]
       },
@@ -581,9 +585,10 @@
         ]
       },
       "NIST-800-53-SC-8": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "kernel-lpe-triage",
+          "network-trust",
           "pqc-first"
         ]
       },
@@ -1120,9 +1125,22 @@
         ]
       },
       "NIS2-Art21-network-security": {
+        "count": 2,
+        "skills": [
+          "mail-server-hardening",
+          "network-trust"
+        ]
+      },
+      "ISO-27001-2022-A.8.21": {
         "count": 1,
         "skills": [
-          "mail-server-hardening"
+          "network-trust"
+        ]
+      },
+      "UK-CAF-B4": {
+        "count": 1,
+        "skills": [
+          "network-trust"
         ]
       }
     },
@@ -1386,9 +1404,10 @@
         ]
       },
       "T1556": {
-        "count": 3,
+        "count": 4,
         "skills": [
           "identity-assurance",
+          "network-trust",
           "sector-telecom",
           "vc-wallet-trust"
         ]
@@ -1539,9 +1558,16 @@
         ]
       },
       "T1557": {
+        "count": 2,
+        "skills": [
+          "mail-server-hardening",
+          "network-trust"
+        ]
+      },
+      "T1071.004": {
         "count": 1,
         "skills": [
-          "mail-server-hardening"
+          "network-trust"
         ]
       }
     },
@@ -2284,6 +2310,16 @@
         ]
       },
       {
+        "id": "T1556",
+        "count": 4,
+        "skills": [
+          "identity-assurance",
+          "network-trust",
+          "sector-telecom",
+          "vc-wallet-trust"
+        ]
+      },
+      {
         "id": "T1068",
         "count": 3,
         "skills": [
@@ -2308,15 +2344,6 @@
           "cloud-security",
           "dlp-gap-analysis",
           "sector-healthcare"
-        ]
-      },
-      {
-        "id": "T1556",
-        "count": 3,
-        "skills": [
-          "identity-assurance",
-          "sector-telecom",
-          "vc-wallet-trust"
         ]
       },
       {
@@ -2450,9 +2477,7 @@
     "cwe_refs": [
       "CWE-20",
       "CWE-284",
-      "CWE-290",
       "CWE-327",
-      "CWE-347",
       "CWE-400",
       "CWE-611",
       "CWE-93"
@@ -2481,12 +2506,12 @@
       "FCC-Cyber-Incident-Notification-2024",
       "FedRAMP-IL5-IAM-Federated",
       "GSMA-NESAS-Deployment",
+      "ISO-27001-2022-A.8.21",
       "ISO-27017-Cloud-IAM",
       "ITU-T-X.805",
       "Immutable-Backup-Recovery",
       "Insurance-Carrier-24h-Notification",
       "NIS2-Annex-I-Telecom",
-      "NIS2-Art21-network-security",
       "NIST-800-53-AC-2-Cross-Account",
       "NIST-800-53-SI-12",
       "OFAC-SDN-Payment-Block",
@@ -2502,6 +2527,7 @@
       "UK-CAF-B2",
       "UK-CAF-B2-Cloud-IAM",
       "UK-CAF-B2-IdP-Tenant",
+      "UK-CAF-B4",
       "UK-CAF-B5",
       "VEX-CSAF-v2.1"
     ],
@@ -2510,6 +2536,7 @@
     ],
     "attack_refs": [
       "T1071.003",
+      "T1071.004",
       "T1098",
       "T1102",
       "T1110",
@@ -2523,7 +2550,6 @@
       "T1552",
       "T1552.005",
       "T1556.007",
-      "T1557",
       "T1566.001",
       "T1566.002",
       "T1566.003",
@@ -3346,7 +3372,6 @@
       "ISO-27001-2022-A.7.10",
       "ISO-27001-2022-A.8.13",
       "ISO-27001-2022-A.8.15",
-      "ISO-27001-2022-A.8.21",
       "ISO-27001-2022-A.8.22",
       "ISO-27001-2022-A.8.24",
       "ISO-27001-2022-A.8.7",
@@ -3408,7 +3433,6 @@
       "SLSA-3",
       "SLSA-v1.0-Source-L3",
       "UK-CAF-A1",
-      "UK-CAF-B4",
       "UK-CAF-C1",
       "UK-CAF-D1"
     ],

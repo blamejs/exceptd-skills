@@ -1734,5 +1734,56 @@
   ],
   "smtp listener": [
     "mail-server-hardening"
+  ],
+  "network trust": [
+    "network-trust"
+  ],
+  "adversary in the middle": [
+    "network-trust"
+  ],
+  "aitm": [
+    "network-trust"
+  ],
+  "dnssec": [
+    "network-trust"
+  ],
+  "dane": [
+    "network-trust"
+  ],
+  "tlsa": [
+    "network-trust"
+  ],
+  "tsig": [
+    "network-trust"
+  ],
+  "mtls pinning": [
+    "network-trust"
+  ],
+  "certificate pinning": [
+    "network-trust"
+  ],
+  "http message signature": [
+    "network-trust"
+  ],
+  "rfc 9421": [
+    "network-trust"
+  ],
+  "dns rebinding": [
+    "network-trust"
+  ],
+  "nts": [
+    "network-trust"
+  ],
+  "authenticated time": [
+    "network-trust"
+  ],
+  "ntp spoofing": [
+    "network-trust"
+  ],
+  "public suffix list": [
+    "network-trust"
+  ],
+  "name resolution trust": [
+    "network-trust"
   ]
 }
