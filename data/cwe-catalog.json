@@ -673,6 +673,7 @@
       "CAPEC-19"
     ],
     "skills_referencing": [
+      "audit-log-integrity",
       "idp-incident-response"
     ],
     "evidence_cves": [
@@ -1069,6 +1070,7 @@
       "CAPEC-148"
     ],
     "skills_referencing": [
+      "audit-log-integrity",
       "idp-incident-response",
       "mcp-agent-trust",
       "network-trust"
@@ -2575,6 +2577,7 @@
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import.",
     "skills_referencing": [
+      "audit-log-integrity",
       "network-trust",
       "vc-wallet-trust"
     ]
@@ -3822,7 +3825,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "audit-log-integrity"
+    ]
   },
   "CWE-779": {
     "id": "CWE-779",

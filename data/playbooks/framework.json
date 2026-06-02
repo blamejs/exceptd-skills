@@ -48,6 +48,7 @@
     "fed_by": [
       "ai-api",
       "ai-discovered-cve-triage",
+      "audit-log-integrity",
       "cicd-pipeline-compromise",
       "citation-hygiene",
       "cloud-iam-incident",

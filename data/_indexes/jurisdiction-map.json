@@ -7,6 +7,7 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "audit-log-integrity",
       "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
@@ -48,7 +49,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 45
+    "skill_count": 46
   },
   "UK": {
     "skills": [

@@ -1785,5 +1785,53 @@
   ],
   "name resolution trust": [
     "network-trust"
+  ],
+  "audit log integrity": [
+    "audit-log-integrity"
+  ],
+  "tamper evident logging": [
+    "audit-log-integrity"
+  ],
+  "hash chain": [
+    "audit-log-integrity"
+  ],
+  "worm": [
+    "audit-log-integrity"
+  ],
+  "object lock": [
+    "audit-log-integrity"
+  ],
+  "immutable storage": [
+    "audit-log-integrity"
+  ],
+  "legal hold": [
+    "audit-log-integrity"
+  ],
+  "retention": [
+    "audit-log-integrity"
+  ],
+  "honeytoken": [
+    "audit-log-integrity"
+  ],
+  "canary token": [
+    "audit-log-integrity"
+  ],
+  "break glass": [
+    "audit-log-integrity"
+  ],
+  "dual control": [
+    "audit-log-integrity"
+  ],
+  "anti forensics": [
+    "audit-log-integrity"
+  ],
+  "log deletion": [
+    "audit-log-integrity"
+  ],
+  "separation of duties": [
+    "audit-log-integrity"
+  ],
+  "audit trail": [
+    "audit-log-integrity"
   ]
 }

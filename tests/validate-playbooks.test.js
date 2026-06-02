@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // network-trust (AiTM-resistance: DNS / TLS-pinning / time) brings the
-  // canonical set to 27.
+  // audit-log-integrity (tamper-evidence + WORM + deception) brings the
+  // canonical set to 28.
   assert.equal(
     playbooks.length,
-    27,
-    `expected 27 shipped playbooks, found ${playbooks.length}`,
+    28,
+    `expected 28 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {
