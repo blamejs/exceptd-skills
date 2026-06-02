@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.16 — 2026-06-02
+
+New `multitenancy-isolation` playbook and skill audit two linked failure classes on shared multitenant infrastructure that "we have authorization" and "the cloud autoscales" do not cover. Isolation: a tenant identifier trusted from a client-controlled field, queries not scoped at the data layer (no row-level security), an RLS policy bypassable by the request connection's role, and cache/pub-sub/queue keys not namespaced by tenant — each a cross-tenant data path from a single authenticated account. Availability: HTTP/2 Rapid Reset (CVE-2023-44487) uncapped, no per-tenant rate/byte quota (noisy-neighbour), unbounded per-request allocation, distributed locks without fencing, and missing circuit breakers. It maps to ATT&CK T1078/T1499/T1499.001/T1530 and to NIST 800-53 AC-3/SC-6, ISO 27001 A.8.31, NIS2 Art.21, UK CAF B4, AU ISM, and SOC 2 CC6. Run it with `exceptd brief multitenancy-isolation` or `exceptd run multitenancy-isolation`.
+
 ## 0.16.15 — 2026-06-02
 
 New `self-update-integrity` playbook and skill audit the receiving end of the software supply chain — the consumer-side checks that publisher signing and SBOM/SLSA posture do not cover: a self-update applied without verifying a signature before swapping the new code in, a signature checked against a key the update channel itself supplies, a signed-but-older version accepted (downgrade with no anti-rollback) that re-opens a patched CVE, an update fetched over an unauthenticated channel as the sole control, browser modules served without Subresource Integrity, unverified C2PA content credentials or SCITT/TSA transparency receipts, and an apply step that does not gate on the verifier result. It maps to ATT&CK T1195.002 / T1574 and to NIST 800-53 SR-11, NIS2 Art.21, UK CAF B4, AU ISM, and the EU CRA secure-update obligations. Run it with `exceptd brief self-update-integrity` or `exceptd run self-update-integrity`.

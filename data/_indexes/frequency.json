@@ -309,13 +309,14 @@
         ]
       },
       "CWE-863": {
-        "count": 8,
+        "count": 9,
         "skills": [
           "api-security",
           "cloud-iam-incident",
           "identity-assurance",
           "idp-incident-response",
           "mail-server-hardening",
+          "multitenancy-isolation",
           "sector-financial",
           "vc-wallet-trust",
           "webapp-security"
@@ -371,9 +372,10 @@
         ]
       },
       "CWE-400": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "mail-server-hardening"
+          "mail-server-hardening",
+          "multitenancy-isolation"
         ]
       },
       "CWE-778": {
@@ -386,6 +388,24 @@
         "count": 1,
         "skills": [
           "self-update-integrity"
+        ]
+      },
+      "CWE-639": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "CWE-770": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "CWE-668": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
         ]
       }
     },
@@ -980,8 +1000,9 @@
         ]
       },
       "AU-ISM-1556": {
-        "count": 2,
+        "count": 3,
         "skills": [
+          "multitenancy-isolation",
           "sector-telecom",
           "self-update-integrity"
         ]
@@ -1146,10 +1167,11 @@
         ]
       },
       "NIS2-Art21-network-security": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "audit-log-integrity",
           "mail-server-hardening",
+          "multitenancy-isolation",
           "network-trust",
           "self-update-integrity"
         ]
@@ -1161,8 +1183,9 @@
         ]
       },
       "UK-CAF-B4": {
-        "count": 2,
+        "count": 3,
         "skills": [
+          "multitenancy-isolation",
           "network-trust",
           "self-update-integrity"
         ]
@@ -1177,6 +1200,12 @@
         "count": 1,
         "skills": [
           "self-update-integrity"
+        ]
+      },
+      "NIST-800-53-AC-3": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
         ]
       }
     },
@@ -1376,7 +1405,7 @@
         ]
       },
       "T1078": {
-        "count": 13,
+        "count": 14,
         "skills": [
           "age-gates-child-safety",
           "api-security",
@@ -1386,6 +1415,7 @@
           "email-security-anti-phishing",
           "identity-assurance",
           "incident-response-playbook",
+          "multitenancy-isolation",
           "ransomware-response",
           "sector-energy",
           "sector-financial",
@@ -1406,10 +1436,11 @@
         ]
       },
       "T1530": {
-        "count": 3,
+        "count": 4,
         "skills": [
           "cloud-security",
           "dlp-gap-analysis",
+          "multitenancy-isolation",
           "sector-healthcare"
         ]
       },
@@ -1630,6 +1661,18 @@
         "skills": [
           "self-update-integrity"
         ]
+      },
+      "T1499": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "T1499.001": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
       }
     },
     "rfc_refs": {
@@ -1841,13 +1884,14 @@
       },
       {
         "id": "CWE-863",
-        "count": 8,
+        "count": 9,
         "skills": [
           "api-security",
           "cloud-iam-incident",
           "identity-assurance",
           "idp-incident-response",
           "mail-server-hardening",
+          "multitenancy-isolation",
           "sector-financial",
           "vc-wallet-trust",
           "webapp-security"
@@ -2123,6 +2167,17 @@
         ]
       },
       {
+        "id": "NIS2-Art21-network-security",
+        "count": 5,
+        "skills": [
+          "audit-log-integrity",
+          "mail-server-hardening",
+          "multitenancy-isolation",
+          "network-trust",
+          "self-update-integrity"
+        ]
+      },
+      {
         "id": "SOC2-CC7-anomaly-detection",
         "count": 5,
         "skills": [
@@ -2161,16 +2216,6 @@
           "dlp-gap-analysis",
           "mlops-security",
           "threat-modeling-methodology"
-        ]
-      },
-      {
-        "id": "NIS2-Art21-network-security",
-        "count": 4,
-        "skills": [
-          "audit-log-integrity",
-          "mail-server-hardening",
-          "network-trust",
-          "self-update-integrity"
         ]
       },
       {
@@ -2299,6 +2344,26 @@
     ],
     "attack_refs": [
       {
+        "id": "T1078",
+        "count": 14,
+        "skills": [
+          "age-gates-child-safety",
+          "api-security",
+          "attack-surface-pentest",
+          "cloud-iam-incident",
+          "cloud-security",
+          "email-security-anti-phishing",
+          "identity-assurance",
+          "incident-response-playbook",
+          "multitenancy-isolation",
+          "ransomware-response",
+          "sector-energy",
+          "sector-financial",
+          "sector-healthcare",
+          "sector-telecom"
+        ]
+      },
+      {
         "id": "T1190",
         "count": 14,
         "skills": [
@@ -2316,25 +2381,6 @@
           "sector-financial",
           "sector-telecom",
           "webapp-security"
-        ]
-      },
-      {
-        "id": "T1078",
-        "count": 13,
-        "skills": [
-          "age-gates-child-safety",
-          "api-security",
-          "attack-surface-pentest",
-          "cloud-iam-incident",
-          "cloud-security",
-          "email-security-anti-phishing",
-          "identity-assurance",
-          "incident-response-playbook",
-          "ransomware-response",
-          "sector-energy",
-          "sector-financial",
-          "sector-healthcare",
-          "sector-telecom"
         ]
       },
       {
@@ -2372,6 +2418,16 @@
         ]
       },
       {
+        "id": "T1530",
+        "count": 4,
+        "skills": [
+          "cloud-security",
+          "dlp-gap-analysis",
+          "multitenancy-isolation",
+          "sector-healthcare"
+        ]
+      },
+      {
         "id": "T1556",
         "count": 4,
         "skills": [
@@ -2397,15 +2453,6 @@
           "incident-response-playbook",
           "ransomware-response",
           "sector-financial"
-        ]
-      },
-      {
-        "id": "T1530",
-        "count": 3,
-        "skills": [
-          "cloud-security",
-          "dlp-gap-analysis",
-          "sector-healthcare"
         ]
       },
       {
@@ -2540,8 +2587,10 @@
       "CWE-20",
       "CWE-327",
       "CWE-353",
-      "CWE-400",
       "CWE-611",
+      "CWE-639",
+      "CWE-668",
+      "CWE-770",
       "CWE-778",
       "CWE-93"
     ],
@@ -2576,6 +2625,7 @@
       "Insurance-Carrier-24h-Notification",
       "NIS2-Annex-I-Telecom",
       "NIST-800-53-AC-2-Cross-Account",
+      "NIST-800-53-AC-3",
       "NIST-800-53-SI-12",
       "NIST-800-53-SR-11",
       "OFAC-SDN-Payment-Block",
@@ -2606,6 +2656,8 @@
       "T1110",
       "T1133",
       "T1213",
+      "T1499",
+      "T1499.001",
       "T1505",
       "T1538",
       "T1548.001",
@@ -2734,14 +2786,12 @@
       "CWE-601",
       "CWE-613",
       "CWE-614",
-      "CWE-639",
       "CWE-640",
       "CWE-641",
       "CWE-642",
       "CWE-643",
       "CWE-648",
       "CWE-667",
-      "CWE-668",
       "CWE-669",
       "CWE-680",
       "CWE-693",
@@ -2753,7 +2803,6 @@
       "CWE-755",
       "CWE-759",
       "CWE-760",
-      "CWE-770",
       "CWE-772",
       "CWE-776",
       "CWE-779",
@@ -3451,7 +3500,6 @@
       "NIST-800-218-SSDF-PO.4.2",
       "NIST-800-218-SSDF-PW.4",
       "NIST-800-218-SSDF-PW.7.1",
-      "NIST-800-53-AC-3",
       "NIST-800-53-AC-6",
       "NIST-800-53-AU-9",
       "NIST-800-53-CM-3",

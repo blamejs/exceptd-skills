@@ -27,6 +27,7 @@
       "mail-server-hardening",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
       "network-trust",
       "ot-ics-security",
       "policy-exception-gen",
@@ -50,7 +51,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 47
+    "skill_count": 48
   },
   "UK": {
     "skills": [
@@ -78,6 +79,7 @@
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
       "network-trust",
       "ot-ics-security",
       "policy-exception-gen",
@@ -101,7 +103,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 45
+    "skill_count": 46
   },
   "AU": {
     "skills": [
@@ -129,6 +131,7 @@
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
@@ -150,7 +153,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 43
+    "skill_count": 44
   },
   "SG": {
     "skills": [

@@ -1119,7 +1119,8 @@
     "api-security"
   ],
   "bola": [
-    "api-security"
+    "api-security",
+    "multitenancy-isolation"
   ],
   "bfla": [
     "api-security"
@@ -1881,5 +1882,53 @@
   ],
   "update channel": [
     "self-update-integrity"
+  ],
+  "multitenancy isolation": [
+    "multitenancy-isolation"
+  ],
+  "multi tenant": [
+    "multitenancy-isolation"
+  ],
+  "cross tenant": [
+    "multitenancy-isolation"
+  ],
+  "tenant isolation": [
+    "multitenancy-isolation"
+  ],
+  "row level security": [
+    "multitenancy-isolation"
+  ],
+  "rls": [
+    "multitenancy-isolation"
+  ],
+  "broken object level authorization": [
+    "multitenancy-isolation"
+  ],
+  "idor": [
+    "multitenancy-isolation"
+  ],
+  "noisy neighbour": [
+    "multitenancy-isolation"
+  ],
+  "rapid reset": [
+    "multitenancy-isolation"
+  ],
+  "rate limit": [
+    "multitenancy-isolation"
+  ],
+  "per tenant quota": [
+    "multitenancy-isolation"
+  ],
+  "circuit breaker": [
+    "multitenancy-isolation"
+  ],
+  "distributed lock fencing": [
+    "multitenancy-isolation"
+  ],
+  "resource exhaustion": [
+    "multitenancy-isolation"
+  ],
+  "denial of service": [
+    "multitenancy-isolation"
   ]
 }

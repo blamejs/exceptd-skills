@@ -60,7 +60,8 @@
       }
     ],
     "fed_by": [
-      "identity-sso-compromise"
+      "identity-sso-compromise",
+      "multitenancy-isolation"
     ]
   },
   "domain": {
@@ -976,7 +977,15 @@
             "rotation_ownership_identified == true"
           ],
           "priority": 1,
-          "for_signals": ["root_login_from_new_asn","iam_access_key_created_no_iac_ticket","mass_iam_user_creation_outside_iac","cross_account_assume_role_anomaly","kms_key_policy_self_grant","s3_bucket_policy_public_grant","cloudtrail_logging_disabled_event"],
+          "for_signals": [
+            "root_login_from_new_asn",
+            "iam_access_key_created_no_iac_ticket",
+            "mass_iam_user_creation_outside_iac",
+            "cross_account_assume_role_anomaly",
+            "kms_key_policy_self_grant",
+            "s3_bucket_policy_public_grant",
+            "cloudtrail_logging_disabled_event"
+          ],
           "compensating_controls": [
             "session-revocation",
             "audit-log-review-for-misuse-window",
@@ -992,7 +1001,15 @@
             "iam_read_only_across_org == true"
           ],
           "priority": 2,
-          "for_signals": ["cross_account_assume_role_anomaly","mass_iam_user_creation_outside_iac","iam_access_key_created_no_iac_ticket","kms_key_policy_self_grant","s3_bucket_policy_public_grant","gpu_instance_creation_spike","unused_region_resource_creation"],
+          "for_signals": [
+            "cross_account_assume_role_anomaly",
+            "mass_iam_user_creation_outside_iac",
+            "iam_access_key_created_no_iac_ticket",
+            "kms_key_policy_self_grant",
+            "s3_bucket_policy_public_grant",
+            "gpu_instance_creation_spike",
+            "unused_region_resource_creation"
+          ],
           "compensating_controls": [
             "iam-event-review-completed",
             "scp-tightened",
@@ -1007,7 +1024,9 @@
             "imdsv2_migration_blocker_inventory_complete == true"
           ],
           "priority": 2,
-          "for_signals": ["imds_v1_legacy_access"],
+          "for_signals": [
+            "imds_v1_legacy_access"
+          ],
           "compensating_controls": [
             "imdsv2-enforced-org-wide",
             "scp-deny-imdsv1-launch"
@@ -1021,7 +1040,9 @@
             "federated_trust_inventory_complete == true"
           ],
           "priority": 2,
-          "for_signals": ["cross_account_assume_role_anomaly"],
+          "for_signals": [
+            "cross_account_assume_role_anomaly"
+          ],
           "compensating_controls": [
             "federated-trust-tightened",
             "conditional-access-mfa-required-on-admin"

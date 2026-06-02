@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 59
+    "event_count": 60
   },
   "events": [
     {
@@ -39,6 +39,13 @@
       "artifact": "self-update-integrity",
       "path": "skills/self-update-integrity/skill.md",
       "note": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "multitenancy-isolation",
+      "path": "skills/multitenancy-isolation/skill.md",
+      "note": "Application multitenancy isolation and availability/DoS resilience for mid-2026 — principal-bound tenant identity, data-layer row-level-security under a non-bypass role, cross-tenant cache/queue namespacing, per-tenant rate/byte quotas, HTTP/2 Rapid Reset caps, bounded allocation, distributed-lock fencing, and circuit breakers"
     },
     {
       "date": "2026-06-01",
@@ -307,7 +314,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 47 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 48 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",

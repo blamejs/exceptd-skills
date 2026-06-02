@@ -4722,6 +4722,91 @@
           "h3_count": 0
         }
       ]
+    },
+    "multitenancy-isolation": {
+      "path": "skills/multitenancy-isolation/skill.md",
+      "total_bytes": 7794,
+      "total_lines": 84,
+      "frontmatter": {
+        "line_start": 1,
+        "line_end": 49,
+        "byte_start": 0,
+        "byte_end": 1201
+      },
+      "sections": [
+        {
+          "name": "Threat Context (mid-2026)",
+          "normalized_name": "threat-context",
+          "line": 53,
+          "byte_start": 1270,
+          "byte_end": 2091,
+          "bytes": 821,
+          "h3_count": 0
+        },
+        {
+          "name": "Framework Lag Declaration",
+          "normalized_name": "framework-lag-declaration",
+          "line": 57,
+          "byte_start": 2091,
+          "byte_end": 2910,
+          "bytes": 819,
+          "h3_count": 0
+        },
+        {
+          "name": "TTP Mapping",
+          "normalized_name": "ttp-mapping",
+          "line": 61,
+          "byte_start": 2910,
+          "byte_end": 3713,
+          "bytes": 803,
+          "h3_count": 0
+        },
+        {
+          "name": "Exploit Availability Matrix",
+          "normalized_name": "exploit-availability-matrix",
+          "line": 65,
+          "byte_start": 3713,
+          "byte_end": 4438,
+          "bytes": 725,
+          "h3_count": 0
+        },
+        {
+          "name": "Analysis Procedure",
+          "normalized_name": "analysis-procedure",
+          "line": 69,
+          "byte_start": 4438,
+          "byte_end": 5337,
+          "bytes": 899,
+          "h3_count": 0
+        },
+        {
+          "name": "Output Format",
+          "normalized_name": "output-format",
+          "line": 73,
+          "byte_start": 5337,
+          "byte_end": 6219,
+          "bytes": 882,
+          "h3_count": 0
+        },
+        {
+          "name": "Compliance Theater Check",
+          "normalized_name": "compliance-theater-check",
+          "line": 77,
+          "byte_start": 6219,
+          "byte_end": 6970,
+          "bytes": 751,
+          "h3_count": 0
+        },
+        {
+          "name": "Defensive Countermeasure Mapping",
+          "normalized_name": "defensive-countermeasure-mapping",
+          "line": 81,
+          "byte_start": 6970,
+          "byte_end": 7794,
+          "bytes": 824,
+          "h3_count": 0
+        }
+      ]
     }
   }
 }

@@ -26,6 +26,7 @@
     "mail-server-hardening",
     "mcp-agent-trust",
     "mlops-security",
+    "multitenancy-isolation",
     "network-trust",
     "ot-ics-security",
     "policy-exception-gen",
@@ -523,7 +524,8 @@
     "mail-server-hardening": [],
     "network-trust": [],
     "audit-log-integrity": [],
-    "self-update-integrity": []
+    "self-update-integrity": [],
+    "multitenancy-isolation": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -552,6 +554,7 @@
     "mail-server-hardening": 0,
     "mcp-agent-trust": 22,
     "mlops-security": 6,
+    "multitenancy-isolation": 0,
     "network-trust": 0,
     "ot-ics-security": 4,
     "policy-exception-gen": 16,
@@ -601,6 +604,7 @@
     "mail-server-hardening": 0,
     "mcp-agent-trust": 7,
     "mlops-security": 10,
+    "multitenancy-isolation": 0,
     "network-trust": 0,
     "ot-ics-security": 14,
     "policy-exception-gen": 0,
