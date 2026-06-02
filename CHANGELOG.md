@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.14 — 2026-06-02
+
+New `audit-log-integrity` playbook and skill audit whether the system-of-record audit trail survives the privileged or insider attacker most likely to tamper with it: a hash chain that is written but never verified on read, audit entries unsigned or signed with a key co-located with the log writer, WORM storage in governance/override mode (a privileged role can still delete) rather than compliance mode, legal holds that annotate but do not block the retention purge, the log-writing identity also able to delete its own log, and missing or untriaged honeytokens plus unwitnessed break-glass access. It maps to NIST 800-53 SI-2, ISO 27001 A.8.15, NIS2 Art.21, and SOC 2 CC7. Run it with `exceptd brief audit-log-integrity` or `exceptd run audit-log-integrity`. The recently added `vc-wallet-trust`, `mail-server-hardening`, and `network-trust` playbooks now also map UK CAF and AU ISM, so their framework-gap output is complete on multi-jurisdiction runs.
+
 ## 0.16.13 — 2026-06-02
 
 New `network-trust` playbook and skill audit the trust-anchor validation beneath TLS that adversary-in-the-middle attacks exploit: DNSSEC not validated end-to-end, DANE/TLSA not checked on capable peers, zone operations without TSIG, mTLS trusting a broad CA bundle instead of a pinned private CA, RFC 9421 HTTP message signatures unverified or under-scoped, DNS rebinding unguarded (SSRF into internal addresses), and unauthenticated NTP whose clock shift can revive expired certificates or shift TOTP windows. It maps to the DNSSEC resolver-DoS catalog entries (KeyTrap, NSEC3) and to NIST 800-53 SC-8, ISO 27001 A.8.21, NIS2 Art.21, and UK-CAF B4. Run it with `exceptd brief network-trust` or `exceptd run network-trust`.

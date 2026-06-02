@@ -1,0 +1,637 @@
+{
+  "_meta": {
+    "id": "audit-log-integrity",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase audit-log integrity playbook — tamper-evidence, WORM immutability, and deception posture. Covers the controls that determine whether an audit trail survives the privileged attacker most likely to tamper with it: hash-chain continuity actually VERIFIED on read, audit entries independently signed with a key held off the log-writing host, WORM/Object-Lock in compliance (not governance/override) mode, legal holds that actually block the retention purge, honeytokens seeded AND their trips alerted/triaged, dual-control + audit on break-glass, and separation of the log writer from the log custodian. citation-hygiene covers CITATION integrity; this covers audit-LOG integrity. Maps to NIST 800-53 AU-9/AU-10 intent via SI-2, ISO 27001 A.8.15, NIS2 Art.21, and SOC 2 CC7."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "audit-subsystem-source-or-config-read",
+        "description": "Agent must read the operator's audit-logging source and/or runtime configuration to inspect chaining, signing, WORM/retention, deception, and break-glass. A host with neither marks the playbook visibility_gap=no_audit_subsystem_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_audit_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.includes_signing_key_colocation == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Audit-log integrity (tamper-evidence, WORM, deception)",
+    "attack_class": "cloud-misconfig",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1070",
+      "T1565.001",
+      "T1562.008"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-345",
+      "CWE-347",
+      "CWE-284",
+      "CWE-778"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "soc2",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "audit_subsystem_inventory",
+            "tamper_or_deletion_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "spoliation / legal-hold duty",
+          "obligation": "preserve_evidence",
+          "window_hours": 0,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "legal_hold_state",
+            "records_at_risk_of_purge"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "we-log-everything",
+          "claim": "We log everything, so we have an audit trail.",
+          "fast_detection_test": "Logging volume is not integrity. Ask whether the chain is VERIFIED on read, signed with an off-host key, and stored compliance-WORM — a complete log a privileged attacker can rewrite is not a trail."
+        },
+        {
+          "pattern_id": "immutable-storage-checkbox",
+          "claim": "Our log storage is immutable / WORM.",
+          "fast_detection_test": "Ask which MODE — governance/override (an admin can delete) or compliance (no one can until expiry). Governance-mode immutability falls to the compromised admin credential."
+        },
+        {
+          "pattern_id": "legal-hold-flag",
+          "claim": "Records under legal hold are preserved.",
+          "fast_detection_test": "Confirm the PURGE job consults the hold and refuses deletion. A hold flag that does not gate the lifecycle job preserves nothing."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org logging controls require that events are recorded and monitored, equating log presence with an audit trail. None require the integrity model — verified hash-chain continuity, off-host signing, compliance-WORM, writer/custodian separation — that resists the privileged or insider attacker most likely to tamper with the trail.",
+        "lag_score": 73,
+        "per_framework_gaps": [
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.8.15",
+            "designed_for": "logging of activities",
+            "insufficient_because": "attested by \"we log and protect logs\" without verifying hash-chain continuity, independent signing, or immutability against a privileged attacker."
+          },
+          {
+            "framework": "soc2",
+            "control_id": "CC7.2",
+            "designed_for": "monitoring of controls",
+            "insufficient_because": "satisfied by logs + alerts; does not require the trail be immutable to the privileged identity most likely to tamper with it."
+          }
+        ]
+      },
+      "skill_preload": [
+        "audit-log-integrity",
+        "incident-response-playbook",
+        "cloud-security",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "An audit trail is a control only if it survives the attacker who wants it gone. Anti-forensic tampering (T1070) and stored-data manipulation (T1565.001) target exactly the log that would expose the intrusion. The high-value gaps are not missing logs but missing INTEGRITY: a hash chain never verified, a signing key on the same host as the writer, governance-mode WORM a compromised admin can delete, a legal hold that does not block the purge, and no honeytoken to catch the access in the first place. These are posture gaps, not CVEs.",
+      "rwep_threshold": {
+        "escalate": 55,
+        "monitor": 35,
+        "close": 20
+      },
+      "framework_lag_declaration": "A clean \"we log and monitor\" audit is NON-EVIDENCE for audit-log integrity; it confirms log presence and alerting, not verified-chain continuity, off-host signing, compliance-WORM, or writer/custodian separation.",
+      "skill_chain": [
+        {
+          "skill": "audit-log-integrity",
+          "purpose": "enumerate the tamper-evidence / WORM / deception / separation checks"
+        },
+        {
+          "skill": "incident-response-playbook",
+          "purpose": "frame the evidence-preservation and spoliation obligations the trail must meet"
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "separate \"we log everything / it is immutable\" claims from verified integrity"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the A.8.15 / CC7 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 12000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4000,
+          "detect": 3800,
+          "analyze": 1500,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "audit-chain-and-signing-config",
+          "type": "audit_trail",
+          "source": "grep for audit-chain / chain-writer / audit-sign / prior_hash / Ed25519 / checkpoint across the audit subsystem and config.",
+          "description": "How the audit log is chained and signed, and where the signing key lives relative to the writer.",
+          "required": true,
+          "air_gap_alternative": "Inspect the audit-chain source for a verification path and the signing-key location."
+        },
+        {
+          "id": "worm-and-retention-config",
+          "type": "audit_trail",
+          "source": "grep for worm / object-lock / immutab / retention / legal-hold / compliance-mode / governance-mode across the storage and lifecycle config.",
+          "description": "Whether the evidence store is compliance-mode immutable and whether legal holds block the purge job.",
+          "required": true,
+          "air_gap_alternative": "Inspect the storage lifecycle config for Object-Lock mode and the purge job for a legal-hold gate."
+        },
+        {
+          "id": "deception-config",
+          "type": "audit_trail",
+          "source": "grep for honeytoken / canary / decoy / tripped across the deception layer and alert routing.",
+          "description": "Whether honeytokens are seeded on high-value surfaces and whether a trip is alerted + triaged.",
+          "required": false,
+          "air_gap_alternative": "Inspect the honeytoken module for seeded canaries and the alert-routing for trip handling."
+        },
+        {
+          "id": "break-glass-and-duty-separation",
+          "type": "audit_trail",
+          "source": "grep for break-glass / dual-control / emergency access / separation of duties / append-only across the privileged-access and log-permission config.",
+          "description": "Whether break-glass requires dual control + audit, and whether the log writer is separated from the log custodian.",
+          "required": false,
+          "air_gap_alternative": "Inspect the break-glass + dual-control modules and the log-store permission model."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current audit-subsystem configuration + source state (point-in-time posture audit)",
+        "asset_scope": "the system-of-record audit trail, its storage lifecycle, the deception layer, and the privileged-access (break-glass) path"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The operator maintains a system-of-record audit trail (not only ephemeral operational logs).",
+          "if_false": "If only ephemeral operational logs exist with no audit/compliance obligation, the WORM/legal-hold/signing indicators are reduced-scope; focus on writer/custodian separation."
+        },
+        {
+          "assumption": "Audit-subsystem source or config is readable.",
+          "if_false": "Mark visibility_gap=no_audit_subsystem_inventory and report only what the audit-write path reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "deception-config",
+          "fallback_action": "If no deception layer is intended, note honeytokens as a recommended addition rather than a finding-by-default on low-value systems.",
+          "confidence_impact": "low"
+        },
+        {
+          "artifact_id": "break-glass-and-duty-separation",
+          "fallback_action": "If no break-glass mechanism exists, skip that indicator and focus on writer/custodian separation.",
+          "confidence_impact": "none"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "audit-hash-chain-not-verified",
+          "type": "config_value",
+          "value": "The append-only audit log maintains a hash chain (each entry chained to the prior) but the chain is never VERIFIED on read/replay, so a break or rewrite is not detected.",
+          "description": "A hash chain only provides tamper-EVIDENCE if it is checked. An attacker who rewrites history and recomputes the chain — or simply truncates it — goes undetected if nothing verifies continuity.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm a verification path actually walks the chain (entry N hash == prior-hash field of N+1) on read/replay/export and fails closed on a break — a chain that is written but never verified is the finding.",
+            "A log shipped to an external WORM/notarisation service that verifies continuity there is safe; the finding is no verification anywhere in the consumer path."
+          ]
+        },
+        {
+          "id": "audit-log-not-signed-or-key-colocated",
+          "type": "config_value",
+          "value": "Audit entries (or chain checkpoints) are not cryptographically signed, OR the signing key is stored on the same host/identity that writes the log it signs.",
+          "description": "Without an independent signature an insider or a host-compromise can forge or rewrite entries; a co-located signing key means whoever controls the log also controls its signature.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm the audit chain is signed (e.g. Ed25519 checkpoints) AND the signing key is held by a separate identity/KMS/HSM, not the log-writing process — a self-signed log under the writer's own key is the finding.",
+            "A log whose integrity is anchored externally (transparency log / notary / external WORM) does not need a co-located key; verify the external anchor exists."
+          ]
+        },
+        {
+          "id": "worm-immutability-not-enforced",
+          "type": "config_value",
+          "value": "The audit/evidence store is configured WORM/immutable in a governance/override mode (deletable by a privileged role) rather than a compliance mode that even the root account cannot shorten or delete before the retention period.",
+          "description": "Governance-mode WORM is reversible by a sufficiently privileged compromised credential, defeating the immutability the audit trail depends on; only compliance-mode Object-Lock resists a privileged attacker.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1070",
+          "false_positive_checks_required": [
+            "Confirm the store uses compliance-mode immutability (no role, including root/admin, can delete or shorten the retention before expiry) — governance-mode that an admin can override is the finding.",
+            "A store with no immutability requirement (ephemeral operational logs, not the system-of-record audit trail) is not in scope for this indicator."
+          ]
+        },
+        {
+          "id": "legal-hold-not-blocking-purge",
+          "type": "config_value",
+          "value": "A legal hold is advisory (a flag/annotation) and does not actually block the retention/lifecycle purge job from deleting held records.",
+          "description": "If the hold does not gate the purge, records under legal hold are deleted on the normal retention schedule — destroying evidence that must be preserved (spoliation) and removing audit history.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm the retention/purge job consults the legal-hold state and refuses to delete held records (fail-closed) — a hold that only annotates without blocking the purge is the finding.",
+            "A system with no legal-hold requirement (no regulatory preservation obligation) is not in scope."
+          ]
+        },
+        {
+          "id": "honeytoken-not-deployed",
+          "type": "config_value",
+          "value": "No honeytokens / canary credentials are seeded across the high-value surfaces (canary API keys, session tokens, decoy URLs, decoy row IDs) where an attacker would forage.",
+          "description": "Honeytokens are a high-fidelity detection control: a single read/use is near-zero-false-positive evidence of unauthorized access. Their absence removes the cheapest tripwire for exactly the access that precedes log tampering.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1070",
+          "false_positive_checks_required": [
+            "Confirm canary tokens are seeded in the credential stores / databases / object stores an intruder would touch — a deployment with zero honeytokens on its high-value surfaces is the finding.",
+            "A small, low-value system where deception adds no detection benefit may legitimately omit it; the finding is a high-value surface with no tripwire."
+          ]
+        },
+        {
+          "id": "honeytoken-trip-not-triaged",
+          "type": "config_value",
+          "value": "Honeytokens exist but a tripped canary does not emit a routed, alerted, triaged signal (it is logged silently or to a channel no one watches).",
+          "description": "A canary that fires into the void provides no detection. The tripwire only works if the trip is alerted and triaged with the observing actor's identity/context for a SOC pivot.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1070",
+          "false_positive_checks_required": [
+            "Confirm a honeytoken trip raises an alert routed to a monitored channel with the 5-W context (who/what/when/where/how) — a trip that only writes a log line is the finding.",
+            "A deployment with no honeytokens at all is covered by the prior indicator, not this one."
+          ]
+        },
+        {
+          "id": "break-glass-no-dual-control-or-audit",
+          "type": "config_value",
+          "value": "Break-glass / emergency-privileged access is not gated by dual control (two-person) and/or its use is not independently audited and alerted.",
+          "description": "Unwitnessed, unaudited break-glass access is the standing path to disable logging or tamper with the audit trail with legitimate-looking privilege.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1562.008",
+          "false_positive_checks_required": [
+            "Confirm break-glass requires dual control (or at minimum independent approval) AND every use raises an immediate audited alert to a separate party — single-actor, unalerted break-glass is the finding.",
+            "A system with no privileged break-glass mechanism has no such path; not in scope."
+          ]
+        },
+        {
+          "id": "audit-log-deletable-by-writing-identity",
+          "type": "config_value",
+          "value": "The application identity/role that WRITES the audit log also has delete/rotate/truncate permission on the same log store (no separation of duties between writer and custodian).",
+          "description": "If the writer can also delete, a compromise of the application identity erases its own trail — there is no independent custodian to preserve the record.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1070",
+          "false_positive_checks_required": [
+            "Confirm the log-writing identity is append-only and a SEPARATE custodian identity/role holds delete/rotate rights (or the store is compliance-WORM) — a writer that can also delete its own log is the finding.",
+            "A store that is compliance-mode immutable makes delete impossible for anyone, satisfying this regardless of the writer's nominal permission."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "audit-hash-chain-not-verified",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm a verification path actually walks the chain (entry N hash == prior-hash field of N+1) on read/replay/export and fails closed on a break — a chain that is written but never verified is the finding."
+        },
+        {
+          "indicator_id": "audit-log-not-signed-or-key-colocated",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm the audit chain is signed (e.g. Ed25519 checkpoints) AND the signing key is held by a separate identity/KMS/HSM, not the log-writing process — a self-signed log under the writer's own key is the finding."
+        },
+        {
+          "indicator_id": "worm-immutability-not-enforced",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm the store uses compliance-mode immutability (no role, including root/admin, can delete or shorten the retention before expiry) — governance-mode that an admin can override is the finding."
+        },
+        {
+          "indicator_id": "legal-hold-not-blocking-purge",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm the retention/purge job consults the legal-hold state and refuses to delete held records (fail-closed) — a hold that only annotates without blocking the purge is the finding."
+        },
+        {
+          "indicator_id": "honeytoken-not-deployed",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm canary tokens are seeded in the credential stores / databases / object stores an intruder would touch — a deployment with zero honeytokens on its high-value surfaces is the finding."
+        },
+        {
+          "indicator_id": "honeytoken-trip-not-triaged",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm a honeytoken trip raises an alert routed to a monitored channel with the 5-W context (who/what/when/where/how) — a trip that only writes a log line is the finding."
+        },
+        {
+          "indicator_id": "break-glass-no-dual-control-or-audit",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm break-glass requires dual control (or at minimum independent approval) AND every use raises an immediate audited alert to a separate party — single-actor, unalerted break-glass is the finding."
+        },
+        {
+          "indicator_id": "audit-log-deletable-by-writing-identity",
+          "benign_pattern": "A control enforced externally (external WORM/notary, KMS-held signing key, compliance-mode Object-Lock) or a surface where the control is genuinely not required.",
+          "distinguishing_test": "Confirm the log-writing identity is append-only and a SEPARATE custodian identity/role holds delete/rotate rights (or the store is compliance-WORM) — a writer that can also delete its own log is the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one integrity control on the system-of-record trail is absent — chain unverified, log unsigned or key co-located, governance-mode (not compliance) WORM, legal hold not blocking purge, or the writer can delete its own log.",
+        "inconclusive": "A control is enforced by external infrastructure the audit could not read (external WORM/notary, KMS) — record as visibility_gap, not a clean result.",
+        "not_detected": "The trail verifies its hash chain on read, is signed with an off-host key, is stored compliance-WORM, blocks purge under legal hold, separates writer from custodian, and (on high-value surfaces) seeds + triages honeytokens."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "worm-immutability-not-enforced",
+          "rwep_factor": "blast_radius",
+          "weight": 20
+        },
+        {
+          "signal_id": "audit-hash-chain-not-verified",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "audit-log-deletable-by-writing-identity",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Does the gap let a single compromised privileged/application identity rewrite or delete the system-of-record trail without detection?",
+        "scoring_rubric": [
+          {
+            "condition": "A single compromised identity can rewrite/delete the trail AND there is no honeytoken or external anchor to catch it",
+            "blast_radius_score": 5,
+            "description": "Full anti-forensic erasure with no tripwire"
+          },
+          {
+            "condition": "Trail is tamperable but a partial control (external anchor / honeytoken / alerting) would surface it",
+            "blast_radius_score": 3,
+            "description": "Tampering is possible but detectable after the fact"
+          },
+          {
+            "condition": "Only low-value operational logs affected; system-of-record trail is protected",
+            "blast_radius_score": 2,
+            "description": "Limited forensic impact"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We log everything to immutable storage with legal holds, so the audit trail is trustworthy.",
+        "audit_evidence": "Log volume dashboards, an \"immutable storage\" checkbox, a legal-hold flag.",
+        "reality_test": "Verify the chain is checked on read, the signing key is off-host, the WORM mode is compliance (admin cannot delete), and the purge job honors the hold. If a privileged identity can rewrite or delete the trail undetected, the logging is not an audit trail.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "worm-immutability-not-enforced",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.15 (logging)",
+          "actual_gap": "A.8.15 requires logs be protected, not that immutability resist the privileged admin via compliance-mode Object-Lock."
+        },
+        {
+          "finding_id": "audit-hash-chain-not-verified",
+          "framework": "soc2",
+          "claimed_control": "CC7.2 (monitoring)",
+          "actual_gap": "CC7 monitoring is satisfied by logs + alerts; it does not require the chain be verified for continuity."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "A single compromised identity can rewrite/delete the system-of-record trail undetected",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Records under legal hold are reachable by the retention purge",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "verify-chain-and-sign-off-host",
+          "description": "Verify the audit hash chain on every read/replay/export and fail closed on a break; sign chain checkpoints with a key held by a separate identity / KMS / HSM, not the log-writing process.",
+          "preconditions": [
+            "operator controls the audit subsystem"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "audit-hash-chain-not-verified",
+            "audit-log-not-signed-or-key-colocated"
+          ]
+        },
+        {
+          "id": "compliance-worm-and-hold-gate",
+          "description": "Move the evidence store to compliance-mode immutability (no role can delete before expiry) and make the retention purge consult and honor legal holds (fail closed).",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "worm-immutability-not-enforced",
+            "legal-hold-not-blocking-purge"
+          ]
+        },
+        {
+          "id": "separate-writer-from-custodian",
+          "description": "Make the log-writing identity append-only and assign delete/rotate rights to a separate custodian identity (or rely on compliance-WORM so deletion is impossible for anyone).",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "audit-log-deletable-by-writing-identity"
+          ]
+        },
+        {
+          "id": "deploy-and-triage-honeytokens",
+          "description": "Seed honeytokens (canary keys/sessions/URLs/row IDs) across high-value surfaces and route a trip to an alerted, triaged channel with full actor context.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "honeytoken-not-deployed",
+            "honeytoken-trip-not-triaged"
+          ]
+        },
+        {
+          "id": "dual-control-break-glass",
+          "description": "Gate break-glass / emergency access behind dual control and raise an immediate independent audited alert on every use.",
+          "preconditions": [],
+          "priority": 3,
+          "for_signals": [
+            "break-glass-no-dual-control-or-audit"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "chain-break-detected",
+          "test": "Rewrite or truncate an entry in a copy of the audit log and run the verification path.",
+          "expected_result": "Verification fails closed and flags the break; the rewritten log is not accepted as valid.",
+          "test_type": "negative"
+        },
+        {
+          "id": "privileged-delete-refused",
+          "test": "As the highest-privileged role, attempt to delete an in-retention record from the compliance-WORM store.",
+          "expected_result": "Deletion is refused — compliance-mode immutability holds against root/admin.",
+          "test_type": "negative"
+        },
+        {
+          "id": "hold-blocks-purge",
+          "test": "Place a record under legal hold and run the retention purge job past its normal expiry.",
+          "expected_result": "The held record is preserved; the purge skips it.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-write-and-verify",
+          "test": "Append a normal audit entry and run the verification + signing path.",
+          "expected_result": "Entry is chained, signed, and verifies — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Collusion between the separated writer and custodian, or compromise of the off-host signing key / WORM authority, can still defeat the trail.",
+        "why_remains": "Separation and immutability raise the bar to multi-party or anchor compromise; they do not eliminate a sufficiently privileged collusion, which is handled by key-management and oversight.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The chain-verification, signing-key location, WORM mode, legal-hold gate, deception, and writer/custodian permission configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the chain-break / privileged-delete / hold-blocks-purge negative tests plus the legitimate-write functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A change to the audit store, signing key, retention policy, or privileged-access model",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of audit-log integrity posture",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "audit-subsystem config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Anti-forensic tampering or deletion of the system-of-record audit trail by a privileged/insider identity, undetected because the trail lacked verified integrity, compliance-WORM, or a honeytoken tripwire.",
+          "control_gap": "Audit trail not chain-verified / off-host-signed / compliance-WORM, or the writer can delete its own log.",
+          "framework_gap": "ISO A.8.15 + SOC 2 CC7 + NIS2 Art.21 require logging and monitoring but not integrity against the privileged attacker.",
+          "new_control_requirement": "The system-of-record trail MUST be chain-verified, signed off-host, compliance-WORM, and separated writer-from-custodian."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "US/spoliation / legal-hold duty 0h",
+          "deadline": "immediate on detect_confirmed",
+          "recipient": "legal / records custodian",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy log store cannot adopt compliance-WORM immediately (e.g. a third-party SaaS log sink).",
+        "exception_template": {
+          "scope": "the specific log store",
+          "duration": "90 days",
+          "compensating_controls": [
+            "ship a signed copy to an external WORM/notary",
+            "separate the delete-capable custodian from the writer",
+            "honeytoken + alerting on the surface"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any audit-store / retention / privileged-access change",
+        "trigger": "change to the audit subsystem, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-audit-trail-integrity",
+      "title": "Inventory + integrity-test the system-of-record audit trail end to end",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "anti-forensic-tamper-sweep",
+      "title": "Targeted sweep for anti-forensic tamperability of the audit trail",
+      "applies_to": {
+        "attack_technique": "T1070"
+      }
+    }
+  ]
+}

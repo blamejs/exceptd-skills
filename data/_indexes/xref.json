@@ -47,6 +47,7 @@
       "webapp-security"
     ],
     "CWE-345": [
+      "audit-log-integrity",
       "idp-incident-response",
       "mcp-agent-trust",
       "network-trust"
@@ -214,9 +215,11 @@
       "idp-incident-response"
     ],
     "CWE-284": [
+      "audit-log-integrity",
       "idp-incident-response"
     ],
     "CWE-347": [
+      "audit-log-integrity",
       "network-trust",
       "vc-wallet-trust"
     ],
@@ -232,6 +235,9 @@
     ],
     "CWE-400": [
       "mail-server-hardening"
+    ],
+    "CWE-778": [
+      "audit-log-integrity"
     ]
   },
   "d3fend_refs": {
@@ -354,6 +360,7 @@
   },
   "framework_gaps": {
     "NIST-800-53-SI-2": [
+      "audit-log-integrity",
       "kernel-lpe-triage",
       "mail-server-hardening"
     ],
@@ -500,6 +507,7 @@
     ],
     "SOC2-CC7-anomaly-detection": [
       "ai-c2-detection",
+      "audit-log-integrity",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "incident-response-playbook"
@@ -682,6 +690,7 @@
       "vc-wallet-trust"
     ],
     "NIS2-Art21-network-security": [
+      "audit-log-integrity",
       "mail-server-hardening",
       "network-trust"
     ],
@@ -690,6 +699,9 @@
     ],
     "UK-CAF-B4": [
       "network-trust"
+    ],
+    "ISO-27001-2022-A.8.15": [
+      "audit-log-integrity"
     ]
   },
   "atlas_refs": {
@@ -955,6 +967,15 @@
     ],
     "T1071.004": [
       "network-trust"
+    ],
+    "T1070": [
+      "audit-log-integrity"
+    ],
+    "T1565.001": [
+      "audit-log-integrity"
+    ],
+    "T1562.008": [
+      "audit-log-integrity"
     ]
   },
   "rfc_refs": {

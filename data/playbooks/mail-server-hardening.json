@@ -65,7 +65,9 @@
       "iso-27001-2022",
       "nis2",
       "pci-dss-4",
-      "soc2"
+      "soc2",
+      "uk-caf",
+      "au-ism"
     ]
   },
   "phases": {

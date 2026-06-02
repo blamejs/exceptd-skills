@@ -60,7 +60,8 @@
       "iso-27001-2022",
       "nis2",
       "eu-cra",
-      "uk-caf"
+      "uk-caf",
+      "au-ism"
     ]
   },
   "phases": {
