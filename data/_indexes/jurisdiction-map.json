@@ -34,6 +34,7 @@
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -53,7 +54,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 50
+    "skill_count": 51
   },
   "UK": {
     "skills": [
@@ -88,6 +89,7 @@
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -107,7 +109,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 48
+    "skill_count": 49
   },
   "AU": {
     "skills": [
@@ -141,6 +143,7 @@
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -159,7 +162,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 46
+    "skill_count": 47
   },
   "SG": {
     "skills": [

@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 62
+    "event_count": 63
   },
   "events": [
     {
@@ -60,6 +60,13 @@
       "artifact": "log-injection-telemetry",
       "path": "skills/log-injection-telemetry/skill.md",
       "note": "Telemetry-pipeline integrity for mid-2026 — CR/LF log-injection neutralization across every sink, secret/PII redaction before shipping, authenticated metrics endpoints, and exporter destination allowlisting, secret-store credentials, verified TLS, and webhook SSRF guarding"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "privacy-consent-ops",
+      "path": "skills/privacy-consent-ops/skill.md",
+      "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
     },
     {
       "date": "2026-06-01",
@@ -328,7 +335,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 50 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 51 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",

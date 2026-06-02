@@ -2021,5 +2021,53 @@
   ],
   "telemetry exfiltration": [
     "log-injection-telemetry"
+  ],
+  "privacy operations": [
+    "privacy-consent-ops"
+  ],
+  "consent integrity": [
+    "privacy-consent-ops"
+  ],
+  "sanctions screening": [
+    "privacy-consent-ops"
+  ],
+  "ofac screening": [
+    "privacy-consent-ops"
+  ],
+  "homoglyph evasion": [
+    "privacy-consent-ops"
+  ],
+  "confusable normalization": [
+    "privacy-consent-ops"
+  ],
+  "iab tcf": [
+    "privacy-consent-ops"
+  ],
+  "mspa": [
+    "privacy-consent-ops"
+  ],
+  "consent string": [
+    "privacy-consent-ops"
+  ],
+  "dsr": [
+    "privacy-consent-ops"
+  ],
+  "right to erasure": [
+    "privacy-consent-ops"
+  ],
+  "right to be forgotten": [
+    "privacy-consent-ops"
+  ],
+  "gdpr article 17": [
+    "privacy-consent-ops"
+  ],
+  "ropa": [
+    "privacy-consent-ops"
+  ],
+  "record of processing": [
+    "privacy-consent-ops"
+  ],
+  "data subject request": [
+    "privacy-consent-ops"
   ]
 }

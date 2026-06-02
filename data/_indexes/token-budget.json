@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1736061,
-    "total_approx_tokens": 434018,
-    "skill_count": 50
+    "total_chars": 1743803,
+    "total_approx_tokens": 435954,
+    "skill_count": 51
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -2900,6 +2900,56 @@
           "bytes": 848,
           "chars": 848,
           "approx_tokens": 212
+        }
+      }
+    },
+    "privacy-consent-ops": {
+      "path": "skills/privacy-consent-ops/skill.md",
+      "bytes": 7758,
+      "chars": 7742,
+      "lines": 81,
+      "approx_tokens": 1936,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 916,
+          "chars": 914,
+          "approx_tokens": 229
+        },
+        "framework-lag-declaration": {
+          "bytes": 830,
+          "chars": 828,
+          "approx_tokens": 207
+        },
+        "ttp-mapping": {
+          "bytes": 870,
+          "chars": 862,
+          "approx_tokens": 216
+        },
+        "exploit-availability-matrix": {
+          "bytes": 728,
+          "chars": 726,
+          "approx_tokens": 182
+        },
+        "analysis-procedure": {
+          "bytes": 855,
+          "chars": 855,
+          "approx_tokens": 214
+        },
+        "output-format": {
+          "bytes": 822,
+          "chars": 822,
+          "approx_tokens": 206
+        },
+        "compliance-theater-check": {
+          "bytes": 728,
+          "chars": 728,
+          "approx_tokens": 182
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 843,
+          "chars": 843,
+          "approx_tokens": 211
         }
       }
     }

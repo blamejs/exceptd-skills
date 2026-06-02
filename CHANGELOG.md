@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.19 — 2026-06-02
+
+New `privacy-consent-ops` playbook and skill audit where privacy and sanctions controls become paper despite existing: sanctions screening that does not normalize confusable / homoglyph Unicode (or lacks alias + transliteration + fuzzy matching), so a listed name spelled with lookalikes evades it; IAB TCF / MSPA consent signals acted on without an integrity binding to the consent log of record and not re-validated against withdrawal or expiry at processing time; data-subject erasure marked "completed" without per-store proof and not propagated to backups, indexes, warehouses, and processors; and a GDPR Record of Processing Activities that drifts from actual processing. It maps to ATT&CK T1036 / T1565.001 / T1070 and to NIST 800-53 SI-10, ISO 27001 A.5.34, NIS2 Art.21, UK CAF B4, and AU ISM. Run it with `exceptd brief privacy-consent-ops` or `exceptd run privacy-consent-ops`.
+
 ## 0.16.18 — 2026-06-02
 
 New `log-injection-telemetry` playbook and skill audit the integrity and confidentiality of the telemetry pipeline itself, which "we centralize all logs" does not cover: CR/LF log injection that forges or splits entries on every sink except syslog, secrets and PII logged without a redaction pass, unauthenticated `/metrics` and debug endpoints leaking internal state, telemetry exporters shipping to un-inventoried or input-derived destinations (exfiltration), embedded exporter credentials, plaintext or unverified-TLS export, and webhook log sinks usable for SSRF. It maps to ATT&CK T1565.001 / T1530 / T1213 and to NIST 800-53 AU-9 / SI-11, ISO 27001 A.8.15, NIS2 Art.21, UK CAF B4, and AU ISM. CWE-117 (improper output neutralization for logs) is added to the catalog to back it. Run it with `exceptd brief log-injection-telemetry` or `exceptd run log-injection-telemetry`.

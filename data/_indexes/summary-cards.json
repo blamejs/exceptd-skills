@@ -2296,6 +2296,44 @@
       "last_threat_review": "2026-06-02",
       "path": "skills/log-injection-telemetry/skill.md",
       "handoff_targets": []
+    },
+    "privacy-consent-ops": {
+      "description": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing",
+      "threat_context_excerpt": "Privacy and sanctions controls fail operationally even when they exist on paper. A sanctions screen that compares raw strings is evaded by a listed name spelled with confusable Unicode (Cyrillic/Latin lookalikes, combining marks, zero-width characters) — or simply by an alias or transliteration the screen does not cover. A consent signal (IAB TCF / MSPA or first-party) trusted from the client with no integrity binding to a server-side consent_log is forgeable and stale-by-default, and continuing to process on a cached signal after withdrawal is unlawful. A data-subject erasure marked ...",
+      "produces": "Report per control (sanctions screening, consent, DSR erasure, ROPA), marking each enforced / missing / inconclusive (visibility gap). For every missing control, state whether a prohibited party could clear screening, whether personal data is unlawfully processed or un-erased, and the affected population. Distinguish a control enforced by a dedicated layer (a confusable-folding screen, a consent platform, an evidence-gated workflow) from an absent one. Provide the prioritised remediation (normalize + alias/fuzzy screen, server-bind + re-validate consent, evidence-gate + propagate erasure, reco ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-807",
+          "CWE-345",
+          "CWE-778",
+          "CWE-672"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4",
+          "AU-ISM-1556"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1036",
+          "T1565.001",
+          "T1070"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 16,
+      "atlas_count": 0,
+      "attack_count": 3,
+      "framework_gap_count": 4,
+      "cwe_count": 4,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/privacy-consent-ops/skill.md",
+      "handoff_targets": []
     }
   }
 }

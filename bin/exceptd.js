@@ -3129,6 +3129,7 @@ const POLICY_SKIPPED_PLAYBOOKS = new Set([
   "multitenancy-isolation",
   "network-trust",
   "post-quantum-migration",
+  "privacy-consent-ops",
   "ransomware",
   "self-update-integrity",
   "supply-chain-recovery",
@@ -7071,7 +7072,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         "post-quantum-migration", "webhook-callback-abuse",
         "vc-wallet-trust", "mail-server-hardening", "network-trust",
         "audit-log-integrity", "self-update-integrity", "multitenancy-isolation",
-        "decompression-dos", "log-injection-telemetry",
+        "decompression-dos", "log-injection-telemetry", "privacy-consent-ops",
       ];
       const playbookFiles = fs.readdirSync(playbookDir)
         .filter(f => f.endsWith(".json") && !f.startsWith("_"))

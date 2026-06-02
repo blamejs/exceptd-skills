@@ -1,0 +1,605 @@
+{
+  "_meta": {
+    "id": "privacy-consent-ops",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase privacy / consent / sanctions operational-integrity playbook. Covers where these controls become paper despite existing: sanctions screening that does not normalize confusable / homoglyph Unicode (or lacks alias + transliteration + fuzzy matching) so a lookalike-spelled listed name evades it; IAB TCF / MSPA consent signals acted on without an integrity binding to the consent_log of record (forgeable/tamperable) and not re-validated against withdrawal/expiry at processing time; DSR / right-to-erasure requests marked complete without per-store proof and not propagated to downstream copies and processors; and a GDPR ROPA that drifts from actual processing. Distinct from global-grc (advisory mapping) and the framework correlation playbook. Maps to ATT&CK T1036 / T1565.001 / T1070 and CWE-807/345/778/672, and to NIST 800-53 SI-10, ISO 27001 A.5.34, NIS2 Art.21, UK CAF B4, and AU ISM. The sanctions-normalization check reuses the vendored Unicode confusable / codepoint-class tooling."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "privacy-source-or-config-read",
+        "description": "Agent must read the operator's sanctions-screening, consent, and DSR/erasure source and/or configuration to inspect normalization, integrity binding, re-validation, erasure-completion evidence, and ROPA reconciliation. A host with neither marks the playbook visibility_gap=no_privacy_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_privacy_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Privacy / consent / sanctions operational integrity",
+    "attack_class": "compliance-theater",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1036",
+      "T1565.001",
+      "T1070"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-807",
+      "CWE-345",
+      "CWE-778",
+      "CWE-672"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.17 / Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_data_subjects",
+            "incomplete_erasure_or_consent_scope"
+          ]
+        },
+        {
+          "jurisdiction": "US",
+          "regulation": "OFAC sanctions reporting",
+          "obligation": "notify_regulator",
+          "window_hours": 240,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "screening_bypass_evidence",
+            "prohibited_party_exposure"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "we-screen-against-ofac",
+          "claim": "We screen all parties against the OFAC list.",
+          "fast_detection_test": "Test it with a homoglyph (Cyrillic-lookalike) spelling of a listed name. If it passes, the screen compares raw strings without confusable normalization — the screening is bypassable."
+        },
+        {
+          "pattern_id": "we-capture-consent",
+          "claim": "We capture user consent.",
+          "fast_detection_test": "Ask whether the consent signal is integrity-bound to a server-side consent_log and re-checked at processing time. A client-presented consent string with no server record is forgeable and stale-by-default."
+        },
+        {
+          "pattern_id": "erasure-is-completed",
+          "claim": "Erasure requests are completed.",
+          "fast_detection_test": "Ask for the per-store completion evidence and the downstream-propagation map. A \"completed\" flag with no proof leaves records live in indexes, backups, and processors."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org privacy/sanctions controls are attested by having the process — a screen, a consent capture, a DSR workflow, a ROPA. None require the operational integrity that makes them real: confusable normalization before screening, an integrity-bound and re-validated consent record, evidence-backed and propagated erasure, and a ROPA reconciled against reality.",
+        "lag_score": 71,
+        "per_framework_gaps": [
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.34",
+            "designed_for": "privacy and protection of PII",
+            "insufficient_because": "attested by having consent + DSR processes; does not require the consent signal be integrity-bound or the erasure be evidence-backed and propagated."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-10",
+            "designed_for": "input validation",
+            "insufficient_because": "does not require Unicode confusable normalization before a sanctions-screening decision, so a homoglyph-spelled name evades it."
+          }
+        ]
+      },
+      "skill_preload": [
+        "privacy-consent-ops",
+        "global-grc",
+        "sector-financial",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Privacy and sanctions controls fail operationally even when they exist on paper. A sanctions screen that compares raw strings is evaded by a homoglyph-spelled listed name; a consent signal trusted from the client with no server-bound record is forgeable and stale; an erasure marked \"completed\" without per-store evidence and downstream propagation leaves live personal data behind; a ROPA that drifts hides undocumented processing. The adversary masquerades (T1036) or manipulates the stored compliance record (T1565.001) — the control reports success while the obligation is unmet.",
+      "rwep_threshold": {
+        "escalate": 50,
+        "monitor": 30,
+        "close": 15
+      },
+      "framework_lag_declaration": "A clean \"we screen against OFAC / capture consent / complete DSRs / maintain a ROPA\" audit is NON-EVIDENCE for operational integrity; it confirms the processes exist, not that screening normalizes confusables, consent is integrity-bound and re-validated, erasure is evidence-backed and propagated, and the ROPA matches reality.",
+      "skill_chain": [
+        {
+          "skill": "privacy-consent-ops",
+          "purpose": "enumerate the sanctions-normalization / consent-binding / erasure-evidence / ROPA-reconciliation checks"
+        },
+        {
+          "skill": "global-grc",
+          "purpose": "frame the multi-jurisdiction privacy + sanctions obligations the controls must meet"
+        },
+        {
+          "skill": "sector-financial",
+          "purpose": "cross-reference the sanctions-screening obligation for financial entities"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the SI-10 / A.5.34 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 12000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4000,
+          "detect": 3800,
+          "analyze": 1500,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "sanctions-screening-config",
+          "type": "config_file",
+          "source": "grep for compliance-sanctions-fuzzy / compliance-sanctions-aliases / compliance-sanctions / normalize / confusable / NFKC / codepoint-class across the screening path.",
+          "description": "Whether sanctions screening normalizes confusables/homoglyphs and applies alias + transliteration + fuzzy matching before deciding.",
+          "required": true,
+          "air_gap_alternative": "Inspect the screening source for Unicode normalization + alias/fuzzy layers."
+        },
+        {
+          "id": "consent-config",
+          "type": "config_file",
+          "source": "grep for consent.js / iab-tcf / iab-mspa / consent string / consent_log / signature / lawful basis across the consent path.",
+          "description": "Whether the consent signal is integrity-bound to a server-side consent_log and re-validated at processing time.",
+          "required": true,
+          "air_gap_alternative": "Inspect the consent source for the binding to the consent_log and the processing-time re-check."
+        },
+        {
+          "id": "dsr-erasure-config",
+          "type": "config_file",
+          "source": "grep for dsr.js / erasure / right to be forgotten / completion / propagate / processor / backup across the DSR workflow.",
+          "description": "Whether erasure records per-store completion evidence and propagates to all downstream copies and processors.",
+          "required": true,
+          "air_gap_alternative": "Inspect the DSR workflow for completion-evidence gating and downstream propagation tracking."
+        },
+        {
+          "id": "ropa-and-dark-patterns",
+          "type": "config_file",
+          "source": "grep for gdpr-ropa / data-act / record of processing / dark-patterns across the privacy-governance surface.",
+          "description": "Whether the ROPA is reconciled against actual processing (drift) and how the consent UI is constructed.",
+          "required": false,
+          "air_gap_alternative": "Inspect the ROPA source/reconciliation cadence and the consent-capture flow."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current sanctions / consent / DSR / ROPA configuration + source state (point-in-time posture audit)",
+        "asset_scope": "the sanctions-screening path, the consent capture + enforcement path, the DSR/erasure workflow, and the ROPA"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The operator performs sanctions screening and/or processes personal data under a consent / lawful-basis regime.",
+          "if_false": "If no sanctions screening applies, skip those indicators; if no personal data is processed, the consent/DSR/ROPA indicators are out of scope."
+        },
+        {
+          "assumption": "Privacy/sanctions source or config is readable.",
+          "if_false": "Mark visibility_gap=no_privacy_inventory and report only what the screening/consent/DSR source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "sanctions-screening-config",
+          "fallback_action": "If the operator does no sanctions screening, skip the homoglyph and alias indicators.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "ropa-and-dark-patterns",
+          "fallback_action": "If no ROPA obligation applies, skip the ROPA-drift indicator.",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "sanctions-screening-homoglyph-evasion",
+          "type": "config_value",
+          "value": "Sanctions / watchlist screening matches names without first normalizing confusable / homoglyph Unicode (e.g. Cyrillic/Latin lookalikes, combining marks, zero-width characters), so a name spelled with lookalikes evades the match.",
+          "description": "An adversary spells a sanctioned (OFAC/EU/UN) name with visually identical but distinct code points; the screen returns no hit and the prohibited party is onboarded or paid — a sanctions-control bypass with severe legal exposure.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1036",
+          "false_positive_checks_required": [
+            "Confirm the screen normalizes to a canonical skeleton (NFKC + confusable folding, e.g. via the vendored codepoint-class) BEFORE matching — screening that compares raw bytes / unnormalized strings is the finding.",
+            "A screen that already runs Unicode confusable folding + transliteration before fuzzy match is safe; test it with a known homoglyph variant of a listed name."
+          ]
+        },
+        {
+          "id": "sanctions-screening-alias-transliteration-gap",
+          "type": "config_value",
+          "value": "Sanctions screening is exact-match (or narrow fuzzy) only, with no alias list, transliteration variants, or edit-distance tolerance for the listed name.",
+          "description": "Listed parties appear under aliases, transliterations (Arabic/Cyrillic→Latin), and minor spelling variants; an exact-match screen misses all of them, passing a sanctioned entity that any alias-aware screen would catch.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1036",
+          "false_positive_checks_required": [
+            "Confirm screening applies the sanction list's alias entries + transliteration + bounded edit-distance fuzzy match — exact-string-only screening is the finding.",
+            "A screen tuned with documented alias/fuzzy coverage and a false-positive review process is safe; the finding is exact-match with no alias/fuzzy layer."
+          ]
+        },
+        {
+          "id": "consent-record-no-integrity-binding",
+          "type": "config_value",
+          "value": "An IAB TCF / MSPA (or first-party) consent string is accepted and acted on without an integrity binding to the consent_log of record (no signature/HMAC, no server-side log the signal is checked against).",
+          "description": "A consent signal with no integrity binding can be forged or tampered (a client asserts consent it never gave, or replays another user's), and there is no authoritative record to reconcile against — defeating the lawful-basis evidence.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm the consent signal is bound to a server-side consent_log (signed/HMAC'd or reconciled against the authoritative record) before it authorizes processing — acting on a client-presented consent string with no server reconciliation is the finding.",
+            "A consent string cryptographically bound to a server-issued, logged token is safe; the finding is trusting a mutable client-presented signal."
+          ]
+        },
+        {
+          "id": "consent-not-revalidated-at-processing",
+          "type": "config_value",
+          "value": "Consent is captured once and cached, with no re-check at processing time, so a withdrawn or expired consent continues to authorize processing.",
+          "description": "Once consent is withdrawn (or its purpose/duration expires), continuing to process on the stale cached signal is unlawful processing — operating on a permission that no longer holds.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm processing re-checks the current consent state (and its purpose/expiry) at use time, not just at capture — processing on a cached consent with no withdrawal/expiry re-check is the finding.",
+            "A system that propagates withdrawal to all processing paths in real time (event-driven invalidation) is safe."
+          ]
+        },
+        {
+          "id": "dsr-erasure-no-completion-proof",
+          "type": "config_value",
+          "value": "A data-subject erasure / DSR request is marked \"completed\" without proof that every store actually erased the records (the status is a manual flag, not evidence-backed).",
+          "description": "A \"completed\" erasure that did not actually erase leaves the data subject's records live while the org asserts compliance — a false compliance claim and a GDPR Art.17 / CCPA violation that surfaces on audit or re-request.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm the erasure workflow records per-store completion evidence (a verifiable deletion receipt / re-query returning empty) before marking the ticket complete — a manually-flagged \"completed\" with no per-store proof is the finding.",
+            "A workflow that gates \"completed\" on confirmed per-store erasure evidence is safe; the finding is an unverified status flag."
+          ]
+        },
+        {
+          "id": "dsr-erasure-not-propagated-downstream",
+          "type": "config_value",
+          "value": "Erasure is applied to the primary store but not propagated to all downstream copies — backups, replicas, search indexes, caches, data-warehouse exports, and third-party processors.",
+          "description": "Records erased from the primary but surviving in a search index, warehouse, or processor are still live personal data; the erasure is incomplete and the org's \"erased\" claim is false for every un-propagated copy.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1070",
+          "false_positive_checks_required": [
+            "Confirm the erasure propagates to (or is tracked against) every downstream copy + processor on a maintained data-map — erasure of only the primary store with no downstream propagation/tracking is the finding.",
+            "A documented data-map with confirmed propagation (or a defensible backup-expiry exception) is safe; the finding is untracked downstream copies."
+          ]
+        },
+        {
+          "id": "ropa-drifts-from-actual-processing",
+          "type": "config_value",
+          "value": "The GDPR Record of Processing Activities (ROPA) / data-act inventory drifts from the actual processing — new data flows, purposes, or third-party processors are not reflected.",
+          "description": "Processing not in the ROPA is undocumented processing: it escapes the lawful-basis, retention, and DSR-scope analysis the ROPA drives, so consent/erasure controls silently fail to cover it.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm the ROPA is reconciled against the actual data flows / processor list on a cadence (drift surfaces new processing) — a ROPA that has not been reconciled against the live system is the finding.",
+            "A ROPA generated from or reconciled against the live processing inventory is safe; the finding is a hand-maintained ROPA that drifted."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "sanctions-screening-homoglyph-evasion",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm the screen normalizes to a canonical skeleton (NFKC + confusable folding, e.g. via the vendored codepoint-class) BEFORE matching — screening that compares raw bytes / unnormalized strings is the finding."
+        },
+        {
+          "indicator_id": "sanctions-screening-alias-transliteration-gap",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm screening applies the sanction list's alias entries + transliteration + bounded edit-distance fuzzy match — exact-string-only screening is the finding."
+        },
+        {
+          "indicator_id": "consent-record-no-integrity-binding",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm the consent signal is bound to a server-side consent_log (signed/HMAC'd or reconciled against the authoritative record) before it authorizes processing — acting on a client-presented consent string with no server reconciliation is the finding."
+        },
+        {
+          "indicator_id": "consent-not-revalidated-at-processing",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm processing re-checks the current consent state (and its purpose/expiry) at use time, not just at capture — processing on a cached consent with no withdrawal/expiry re-check is the finding."
+        },
+        {
+          "indicator_id": "dsr-erasure-no-completion-proof",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm the erasure workflow records per-store completion evidence (a verifiable deletion receipt / re-query returning empty) before marking the ticket complete — a manually-flagged \"completed\" with no per-store proof is the finding."
+        },
+        {
+          "indicator_id": "dsr-erasure-not-propagated-downstream",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm the erasure propagates to (or is tracked against) every downstream copy + processor on a maintained data-map — erasure of only the primary store with no downstream propagation/tracking is the finding."
+        },
+        {
+          "indicator_id": "ropa-drifts-from-actual-processing",
+          "benign_pattern": "A control enforced by a dedicated layer (a confusable-folding screen, a server-bound consent token, an evidence-gated erasure workflow, a generated ROPA) or a genuinely out-of-scope surface.",
+          "distinguishing_test": "Confirm the ROPA is reconciled against the actual data flows / processor list on a cadence (drift surfaces new processing) — a ROPA that has not been reconciled against the live system is the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one control is operationally bypassable — sanctions screening without confusable normalization or alias/fuzzy matching, a consent signal not integrity-bound or not re-validated, an erasure marked complete without evidence or downstream propagation, or a drifted ROPA.",
+        "inconclusive": "A control is enforced by a layer the audit could not read (a dedicated screening service, a consent platform) — record as visibility_gap, not a clean result.",
+        "not_detected": "Sanctions screening normalizes confusables and applies alias/fuzzy matching, consent is integrity-bound + re-validated at processing, erasure is evidence-backed + propagated downstream, and the ROPA is reconciled against actual processing."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "sanctions-screening-homoglyph-evasion",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "dsr-erasure-no-completion-proof",
+          "rwep_factor": "blast_radius",
+          "weight": 15
+        },
+        {
+          "signal_id": "consent-record-no-integrity-binding",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Does the gap let a prohibited party through the sanctions screen, or leave personal data unlawfully processed / un-erased across the data estate?",
+        "scoring_rubric": [
+          {
+            "condition": "Sanctions screening evadable by a trivial homoglyph on a payment/onboarding path (prohibited-party admission with legal exposure)",
+            "blast_radius_score": 5,
+            "description": "Sanctions-control bypass with regulatory + legal consequence"
+          },
+          {
+            "condition": "Erasure incomplete / consent forgeable across all data subjects",
+            "blast_radius_score": 4,
+            "description": "Systemic unlawful processing / false compliance across the data estate"
+          },
+          {
+            "condition": "ROPA drift or single-purpose consent staleness",
+            "blast_radius_score": 2,
+            "description": "Localised compliance gap"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We screen against OFAC, capture consent, complete DSRs, and maintain a ROPA — privacy and sanctions are handled.",
+        "audit_evidence": "A screening vendor, a consent banner, a DSR ticket queue, a ROPA document.",
+        "reality_test": "Test the screen with a homoglyph name; check whether consent is server-bound and re-validated; ask for per-store erasure evidence + the propagation map; reconcile the ROPA against live data flows. If any control reports success while the obligation is unmet, the processes are paper.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "sanctions-screening-homoglyph-evasion",
+          "framework": "nist-800-53",
+          "claimed_control": "SI-10 (input validation)",
+          "actual_gap": "SI-10 validates format; it does not require Unicode confusable normalization before the screening decision."
+        },
+        {
+          "finding_id": "dsr-erasure-no-completion-proof",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.34 (privacy / PII)",
+          "actual_gap": "A.5.34 is attested by having a DSR process; it does not require per-store erasure evidence before \"completed\"."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "Sanctions screening is evadable by a homoglyph on a live onboarding/payment path",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Erasure is marked complete with no per-store evidence across the data subject base",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "normalize-and-fuzzy-screen",
+          "description": "Normalize names to a canonical confusable-folded skeleton (NFKC + Unicode confusable folding via the vendored codepoint-class) and apply the list's aliases + transliteration + bounded edit-distance fuzzy match before deciding.",
+          "preconditions": [
+            "operator performs sanctions screening"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "sanctions-screening-homoglyph-evasion",
+            "sanctions-screening-alias-transliteration-gap"
+          ]
+        },
+        {
+          "id": "bind-and-revalidate-consent",
+          "description": "Bind the consent signal to a server-side consent_log (signed/HMAC or reconciled), and re-check current consent (purpose + expiry + withdrawal) at processing time, not just at capture.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "consent-record-no-integrity-binding",
+            "consent-not-revalidated-at-processing"
+          ]
+        },
+        {
+          "id": "evidence-gate-and-propagate-erasure",
+          "description": "Gate erasure \"completed\" on per-store deletion evidence (a re-query returning empty / a deletion receipt) and propagate erasure to every downstream copy + processor on a maintained data-map.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "dsr-erasure-no-completion-proof",
+            "dsr-erasure-not-propagated-downstream"
+          ]
+        },
+        {
+          "id": "reconcile-ropa",
+          "description": "Reconcile the ROPA against the actual data flows / processor inventory on a cadence so new processing surfaces and is brought under the consent/retention/DSR analysis.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "ropa-drifts-from-actual-processing"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "homoglyph-name-screened",
+          "test": "Submit a sanctioned name spelled with confusable Unicode (e.g. Cyrillic lookalikes) to the screen.",
+          "expected_result": "The screen normalizes and flags it as a match — the homoglyph variant does not evade.",
+          "test_type": "negative"
+        },
+        {
+          "id": "forged-consent-rejected",
+          "test": "Present a consent string asserting consent with no matching server-side consent_log entry.",
+          "expected_result": "Processing is refused — the signal must reconcile to the authoritative record.",
+          "test_type": "negative"
+        },
+        {
+          "id": "erasure-completion-gated",
+          "test": "Mark a DSR erasure complete while a downstream store still holds the records.",
+          "expected_result": "The workflow refuses \"completed\" until per-store evidence (including downstream) confirms deletion.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-flows-work",
+          "test": "Screen a clean party, capture + use a validly-bound consent, and complete an erasure with full evidence.",
+          "expected_result": "All proceed normally — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A determined adversary using a novel transliteration the alias list does not cover can still evade screening; and a processor that silently retains data outside the data-map remains a blind spot.",
+        "why_remains": "Normalization + fuzzy matching raise the bar but cannot enumerate every name variant; downstream propagation depends on the completeness of the data-map.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The screening normalization/alias/fuzzy config, consent-binding + re-validation logic, erasure evidence-gating + propagation map, and ROPA reconciliation cadence as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the homoglyph-screen / forged-consent / erasure-completion negative tests plus the legitimate-flow functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new data flow, processor, consent purpose, or sanctions-list update",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of privacy/consent/sanctions operational integrity",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "privacy/sanctions config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "A prohibited party evading a sanctions screen via homoglyph spelling, a forged/stale consent authorizing unlawful processing, or a falsely \"completed\" erasure leaving live personal data — the control reported success while the obligation was unmet.",
+          "control_gap": "Sanctions screening lacks confusable normalization / alias-fuzzy matching; consent is not integrity-bound or re-validated; erasure is not evidence-gated or propagated; ROPA drifts.",
+          "framework_gap": "NIST SI-10 + ISO A.5.34 attest the process exists but not its operational integrity.",
+          "new_control_requirement": "Sanctions screening MUST normalize confusables before matching; consent MUST be server-bound + re-validated; erasure MUST be evidence-gated + propagated downstream."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/GDPR Art.17 / Art.33 72h",
+          "deadline": "72h from detect_confirmed",
+          "recipient": "data protection authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "US/OFAC sanctions reporting 240h",
+          "deadline": "per OFAC reporting timeline from detect_confirmed",
+          "recipient": "OFAC / compliance counsel",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy screen or store cannot adopt normalization / evidence-gating immediately.",
+        "exception_template": {
+          "scope": "the specific screen / store",
+          "duration": "90 days",
+          "compensating_controls": [
+            "manual confusable review of near-miss screening results",
+            "reconcile consent against the server log out of band",
+            "manual downstream-erasure attestation"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new data flow / processor / sanctions-list update",
+        "trigger": "change to the screening / consent / DSR / ROPA surfaces, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-privacy-sanctions-controls",
+      "title": "Inventory + integrity-test the sanctions-screening, consent, DSR, and ROPA controls",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "sanctions-homoglyph-sweep",
+      "title": "Targeted homoglyph / alias sanctions-screening-evasion sweep",
+      "applies_to": {
+        "attack_technique": "T1036"
+      }
+    }
+  ]
+}

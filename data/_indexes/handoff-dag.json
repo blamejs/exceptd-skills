@@ -33,6 +33,7 @@
     "ot-ics-security",
     "policy-exception-gen",
     "pqc-first",
+    "privacy-consent-ops",
     "rag-pipeline-security",
     "ransomware-response",
     "researcher",
@@ -529,7 +530,8 @@
     "self-update-integrity": [],
     "multitenancy-isolation": [],
     "decompression-dos": [],
-    "log-injection-telemetry": []
+    "log-injection-telemetry": [],
+    "privacy-consent-ops": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -565,6 +567,7 @@
     "ot-ics-security": 4,
     "policy-exception-gen": 16,
     "pqc-first": 6,
+    "privacy-consent-ops": 0,
     "rag-pipeline-security": 9,
     "ransomware-response": 1,
     "researcher": 1,
@@ -617,6 +620,7 @@
     "ot-ics-security": 14,
     "policy-exception-gen": 0,
     "pqc-first": 3,
+    "privacy-consent-ops": 0,
     "rag-pipeline-security": 6,
     "ransomware-response": 10,
     "researcher": 41,
