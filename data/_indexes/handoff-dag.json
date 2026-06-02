@@ -12,6 +12,7 @@
     "compliance-theater",
     "container-runtime-security",
     "coordinated-vuln-disclosure",
+    "decompression-dos",
     "defensive-countermeasure-mapping",
     "dlp-gap-analysis",
     "email-security-anti-phishing",
@@ -525,7 +526,8 @@
     "network-trust": [],
     "audit-log-integrity": [],
     "self-update-integrity": [],
-    "multitenancy-isolation": []
+    "multitenancy-isolation": [],
+    "decompression-dos": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -540,6 +542,7 @@
     "compliance-theater": 30,
     "container-runtime-security": 4,
     "coordinated-vuln-disclosure": 12,
+    "decompression-dos": 0,
     "defensive-countermeasure-mapping": 18,
     "dlp-gap-analysis": 15,
     "email-security-anti-phishing": 6,
@@ -590,6 +593,7 @@
     "compliance-theater": 12,
     "container-runtime-security": 18,
     "coordinated-vuln-disclosure": 12,
+    "decompression-dos": 0,
     "defensive-countermeasure-mapping": 6,
     "dlp-gap-analysis": 4,
     "email-security-anti-phishing": 6,

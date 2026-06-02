@@ -13,6 +13,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -51,7 +52,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 48
+    "skill_count": 49
   },
   "UK": {
     "skills": [
@@ -66,6 +67,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -103,7 +105,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 46
+    "skill_count": 47
   },
   "AU": {
     "skills": [
@@ -118,6 +120,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -153,7 +156,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 44
+    "skill_count": 45
   },
   "SG": {
     "skills": [

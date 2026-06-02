@@ -42,6 +42,7 @@
     "CWE-22": [
       "api-security",
       "attack-surface-pentest",
+      "decompression-dos",
       "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
@@ -238,6 +239,7 @@
       "mail-server-hardening"
     ],
     "CWE-400": [
+      "decompression-dos",
       "mail-server-hardening",
       "multitenancy-isolation"
     ],
@@ -251,10 +253,23 @@
       "multitenancy-isolation"
     ],
     "CWE-770": [
+      "decompression-dos",
       "multitenancy-isolation"
     ],
     "CWE-668": [
       "multitenancy-isolation"
+    ],
+    "CWE-409": [
+      "decompression-dos"
+    ],
+    "CWE-1333": [
+      "decompression-dos"
+    ],
+    "CWE-776": [
+      "decompression-dos"
+    ],
+    "CWE-834": [
+      "decompression-dos"
     ]
   },
   "d3fend_refs": {
@@ -378,6 +393,7 @@
   "framework_gaps": {
     "NIST-800-53-SI-2": [
       "audit-log-integrity",
+      "decompression-dos",
       "kernel-lpe-triage",
       "mail-server-hardening"
     ],
@@ -623,6 +639,7 @@
       "sector-telecom"
     ],
     "AU-ISM-1556": [
+      "decompression-dos",
       "multitenancy-isolation",
       "sector-telecom",
       "self-update-integrity"
@@ -710,6 +727,7 @@
     ],
     "NIS2-Art21-network-security": [
       "audit-log-integrity",
+      "decompression-dos",
       "mail-server-hardening",
       "multitenancy-isolation",
       "network-trust",
@@ -719,6 +737,7 @@
       "network-trust"
     ],
     "UK-CAF-B4": [
+      "decompression-dos",
       "multitenancy-isolation",
       "network-trust",
       "self-update-integrity"
@@ -822,6 +841,7 @@
     "T1059": [
       "ai-attack-surface",
       "attack-surface-pentest",
+      "decompression-dos",
       "mcp-agent-trust",
       "ransomware-response",
       "webapp-security"
@@ -1013,9 +1033,11 @@
       "self-update-integrity"
     ],
     "T1499": [
+      "decompression-dos",
       "multitenancy-isolation"
     ],
     "T1499.001": [
+      "decompression-dos",
       "multitenancy-isolation"
     ]
   },

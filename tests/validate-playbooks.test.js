@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // multitenancy-isolation (cross-tenant isolation + availability/DoS) brings
-  // the canonical set to 30.
+  // decompression-dos (decompression bomb / parser-DoS / ReDoS) brings the
+  // canonical set to 31.
   assert.equal(
     playbooks.length,
-    30,
-    `expected 30 shipped playbooks, found ${playbooks.length}`,
+    31,
+    `expected 31 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

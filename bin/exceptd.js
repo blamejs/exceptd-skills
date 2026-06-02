@@ -3119,6 +3119,7 @@ function refuseNoDirectives(verb, playbookId, pretty) {
 const POLICY_SKIPPED_PLAYBOOKS = new Set([
   "ai-discovered-cve-triage",
   "audit-log-integrity",
+  "decompression-dos",
   "cloud-iam-incident",
   "idp-incident",
   "identity-sso-compromise",
@@ -7069,6 +7070,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         "post-quantum-migration", "webhook-callback-abuse",
         "vc-wallet-trust", "mail-server-hardening", "network-trust",
         "audit-log-integrity", "self-update-integrity", "multitenancy-isolation",
+        "decompression-dos",
       ];
       const playbookFiles = fs.readdirSync(playbookDir)
         .filter(f => f.endsWith(".json") && !f.startsWith("_"))
