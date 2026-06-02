@@ -169,10 +169,12 @@
       "CVE-2026-5760",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may gain initial access to a system by compromising the unique portions of the AI supply chain. This could include [Hardware](/techniques/AML.T0010.000), [Data](/techniques/AML.T0010.002) and its annotations, parts of the AI [AI Software](/techniques/AML.T0010.001) stack, or the [Model](/techniques/AML.T0010.003) itself. In some instances the attacker will need secondary access to fully carry out an attack using compromised components of the supply chain.",
     "platforms": [
@@ -342,7 +344,9 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may attempt to poison datasets used by an AI model by modifying the underlying data or its labels. This allows the adversary to embed vulnerabilities in AI models trained on the data that may not be easily detectable. Data poisoning attacks may or may not require modifying the labels. The embedded vulnerability is activated at a later time by data samples with an [Insert Backdoor Trigger](/techniques/AML.T0043.004) Poisoned data can be introduced via [AI Supply Chain Compromise](/techniques/AML.T0010) or the data may be poisoned after the adversary gains [Initial Access](/tactics/AML.TA0004) to the system.",
     "platforms": [
@@ -569,7 +573,8 @@
       "CVE-2026-25592",
       "CVE-2026-30615",
       "CVE-2026-39884",
-      "CVE-2026-39987"
+      "CVE-2026-39987",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "An adversary may craft malicious prompts as inputs to an LLM that cause the LLM to act in unintended ways. These \"prompt injections\" are often designed to cause the model to ignore aspects of its original instructions and follow the adversary's instructions instead. Prompt Injections can be an initial access vector to the LLM that provides the adversary with a foothold to carry out other steps in their operation. They may be designed to bypass defenses in the LLM, or allow the adversary to issue privileged commands. The effects of a prompt injection can persist throughout an interactive session with an LLM. Malicious prompts may be injected directly by the adversary ([Direct](/techniques/AML.T0051.000)) either to leverage the LLM to generate harmful content or to gain a foothold on the system and lead to further effects. Prompts may also be injected indirectly when as part of its normal operation the LLM ingests the malicious prompt from another data source ([Indirect](/techniques/AML.T0051.001)). This type of injection can be used by the adversary to a foothold on the system or to target the user of the LLM. Malicious prompts may also be [Triggered](/techniques/AML.T0051.002) user actions or system events.",
     "platforms": [

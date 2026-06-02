@@ -6,12 +6,28 @@
   },
   "events": [
     {
-      "date": "2026-05-30",
+      "date": "2026-06-01",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 430
+      "entry_count": 439
+    },
+    {
+      "date": "2026-06-01",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 174
+    },
+    {
+      "date": "2026-06-01",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 439
     },
     {
       "date": "2026-05-27",
@@ -103,14 +119,6 @@
     {
       "date": "2026-05-19",
       "type": "catalog_update",
-      "artifact": "data/cwe-catalog.json",
-      "path": "data/cwe-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 173
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
       "artifact": "data/d3fend-catalog.json",
       "path": "data/d3fend-catalog.json",
       "schema_version": "1.0.0",
@@ -158,14 +166,6 @@
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
       "entry_count": 194
-    },
-    {
-      "date": "2026-05-18",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 430
     },
     {
       "date": "2026-05-17",

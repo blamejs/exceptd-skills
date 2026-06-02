@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-05-18",
+    "last_updated": "2026-06-01",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 430
+    "entry_count": 439
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -25104,5 +25104,530 @@
     "ai_discovery_source": "vendor_research",
     "ai_discovery_date": "2026-05-28",
     "ai_assist_factor": "low"
+  },
+  "CVE-2023-51764": {
+    "name": "Postfix SMTP smuggling (non-standard end-of-data sequence enables sender spoofing past SPF/DKIM/DMARC)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "SMTP smuggling: the MTA accepts a non-standard end-of-data sequence, letting an attacker smuggle a second message that inherits the outer connection's SPF/DKIM/DMARC pass and delivers a spoofed sender. Disclosed Dec 2023 (SEC Consult).",
+      "privileges_required": "none (unauthenticated inbound SMTP connection to the MTA)",
+      "complexity": "low — public technique and tooling; integrity (spoofing) impact, not RCE.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade the MTA to the fixed release and set the strict end-of-data handling option (Postfix smtpd_forbid_unauth_pipelining + discard CHUNKING; Sendmail srv_features 'o'; Exim 4.97.1). Align inbound end-of-data interpretation with the rest of the mail path.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and largely sufficient — the fix closes the parsing differential. DMARC/SPF/DKIM alone do NOT help: smuggling passes them on the outer envelope."
+      },
+      "detection": {
+        "what_would_have_worked": "Probe inbound MTAs for acceptance of <LF>.<LF> / <LF>.<CR><LF> end-of-data; alert on delivered messages containing a second smuggled envelope that inherited an authentication pass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the parsing differential directly; sender-authentication telemetry will not flag it because the spoof passes authentication."
+      },
+      "response": {
+        "what_would_have_worked": "Patch/reconfigure, then review delivered mail in the exposure window for spoofed senders that passed DMARC, and warn recipients of any phishing/BEC delivered through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required — the spoofing channel delivers authenticated-looking phishing until the parsing differential is closed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA leaves a spoofing-capable MTA live for weeks; the fix is partly a configuration change the standard patch process does not surface."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an active phishing-delivery channel."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Assumes SPF/DKIM/DMARC are sufficient anti-spoofing; SMTP smuggling bypasses all three on the outer envelope."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A BEC delivery vector in front of CDE personnel; 30-day window is acceptance of a phishing channel."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Organizations that pass audits run mainstream MTAs on standard patch SLAs and rely on SPF/DKIM/DMARC, which SMTP smuggling defeats; the end-of-data configuration hardening is rarely in the documented patch procedure.",
+      "theater_pattern": "email_authentication_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-51765": {
+    "name": "Sendmail SMTP smuggling (non-standard end-of-data sequence enables sender spoofing past SPF/DKIM/DMARC)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "SMTP smuggling: the MTA accepts a non-standard end-of-data sequence, letting an attacker smuggle a second message that inherits the outer connection's SPF/DKIM/DMARC pass and delivers a spoofed sender. Disclosed Dec 2023 (SEC Consult).",
+      "privileges_required": "none (unauthenticated inbound SMTP connection to the MTA)",
+      "complexity": "low — public technique and tooling; integrity (spoofing) impact, not RCE.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade the MTA to the fixed release and set the strict end-of-data handling option (Postfix smtpd_forbid_unauth_pipelining + discard CHUNKING; Sendmail srv_features 'o'; Exim 4.97.1). Align inbound end-of-data interpretation with the rest of the mail path.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and largely sufficient — the fix closes the parsing differential. DMARC/SPF/DKIM alone do NOT help: smuggling passes them on the outer envelope."
+      },
+      "detection": {
+        "what_would_have_worked": "Probe inbound MTAs for acceptance of <LF>.<LF> / <LF>.<CR><LF> end-of-data; alert on delivered messages containing a second smuggled envelope that inherited an authentication pass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the parsing differential directly; sender-authentication telemetry will not flag it because the spoof passes authentication."
+      },
+      "response": {
+        "what_would_have_worked": "Patch/reconfigure, then review delivered mail in the exposure window for spoofed senders that passed DMARC, and warn recipients of any phishing/BEC delivered through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required — the spoofing channel delivers authenticated-looking phishing until the parsing differential is closed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA leaves a spoofing-capable MTA live for weeks; the fix is partly a configuration change the standard patch process does not surface."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an active phishing-delivery channel."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Assumes SPF/DKIM/DMARC are sufficient anti-spoofing; SMTP smuggling bypasses all three on the outer envelope."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A BEC delivery vector in front of CDE personnel; 30-day window is acceptance of a phishing channel."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Organizations that pass audits run mainstream MTAs on standard patch SLAs and rely on SPF/DKIM/DMARC, which SMTP smuggling defeats; the end-of-data configuration hardening is rarely in the documented patch procedure.",
+      "theater_pattern": "email_authentication_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-51766": {
+    "name": "Exim SMTP smuggling (non-standard end-of-data sequence enables sender spoofing past SPF/DKIM/DMARC)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "SMTP smuggling: the MTA accepts a non-standard end-of-data sequence, letting an attacker smuggle a second message that inherits the outer connection's SPF/DKIM/DMARC pass and delivers a spoofed sender. Disclosed Dec 2023 (SEC Consult).",
+      "privileges_required": "none (unauthenticated inbound SMTP connection to the MTA)",
+      "complexity": "low — public technique and tooling; integrity (spoofing) impact, not RCE.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade the MTA to the fixed release and set the strict end-of-data handling option (Postfix smtpd_forbid_unauth_pipelining + discard CHUNKING; Sendmail srv_features 'o'; Exim 4.97.1). Align inbound end-of-data interpretation with the rest of the mail path.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and largely sufficient — the fix closes the parsing differential. DMARC/SPF/DKIM alone do NOT help: smuggling passes them on the outer envelope."
+      },
+      "detection": {
+        "what_would_have_worked": "Probe inbound MTAs for acceptance of <LF>.<LF> / <LF>.<CR><LF> end-of-data; alert on delivered messages containing a second smuggled envelope that inherited an authentication pass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the parsing differential directly; sender-authentication telemetry will not flag it because the spoof passes authentication."
+      },
+      "response": {
+        "what_would_have_worked": "Patch/reconfigure, then review delivered mail in the exposure window for spoofed senders that passed DMARC, and warn recipients of any phishing/BEC delivered through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required — the spoofing channel delivers authenticated-looking phishing until the parsing differential is closed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA leaves a spoofing-capable MTA live for weeks; the fix is partly a configuration change the standard patch process does not surface."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an active phishing-delivery channel."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Assumes SPF/DKIM/DMARC are sufficient anti-spoofing; SMTP smuggling bypasses all three on the outer envelope."
+      },
+      "PCI-DSS-4.0-6.3.3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A BEC delivery vector in front of CDE personnel; 30-day window is acceptance of a phishing channel."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Organizations that pass audits run mainstream MTAs on standard patch SLAs and rely on SPF/DKIM/DMARC, which SMTP smuggling defeats; the end-of-data configuration hardening is rarely in the documented patch procedure.",
+      "theater_pattern": "email_authentication_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2021-38371": {
+    "name": "Exim STARTTLS response injection (pre-handshake buffer not drained on the sending MTA path)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "STARTTLS command/response injection: the server/client does not discard bytes buffered before the TLS handshake, so an on-path attacker injects plaintext SMTP commands/responses that are processed inside the encrypted session. Part of the NO STARTTLS research lineage (2011 Postfix → 2021 multi-MTA).",
+      "privileges_required": "on-path / adversary-in-the-middle position on the SMTP path (no account required)",
+      "complexity": "high — requires an on-path position; once positioned, injection is reliable.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to the fixed release that drains the pre-STARTTLS receive buffer at the upgrade, and reject any trailing payload on the STARTTLS line. Prefer implicit TLS (465/993) over opportunistic STARTTLS where possible.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and sufficient — the fix is the buffer drain. TLS cipher strength is irrelevant; the bytes cross the boundary before TLS applies."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on plaintext commands queued before STARTTLS being processed after the handshake; monitor for an unexpected command/response immediately following a STARTTLS upgrade.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the buffering defect directly; TLS monitoring will not flag it because the session is genuinely encrypted."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, then assume any mail routed/redirected during the exposure window on an MITM-reachable path may have been tampered; rotate any credentials exposed through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required where an on-path adversary was plausible; otherwise the patch closes the window."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA assumes opportunistic TLS protects the session; the injection executes attacker plaintext after the handshake regardless of cipher."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Standard 30-day reading unsafe for an on-path command-injection defect; cryptographic controls are present but defeated by the buffering defect."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats TLS as the boundary; the pre-handshake buffer means the boundary is crossed before TLS applies."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 45,
+      "basis": "STARTTLS injection requires an on-path position, so fewer audit-passing orgs are practically exposed, but those relying on opportunistic STARTTLS without the buffer-drain fix remain vulnerable to a network-positioned adversary.",
+      "theater_pattern": "transport_encryption_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2021-33515": {
+    "name": "Dovecot lib-smtp STARTTLS command injection (submission service)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "STARTTLS command/response injection: the server/client does not discard bytes buffered before the TLS handshake, so an on-path attacker injects plaintext SMTP commands/responses that are processed inside the encrypted session. Part of the NO STARTTLS research lineage (2011 Postfix → 2021 multi-MTA).",
+      "privileges_required": "on-path / adversary-in-the-middle position on the SMTP path (no account required)",
+      "complexity": "high — requires an on-path position; once positioned, injection is reliable.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to the fixed release that drains the pre-STARTTLS receive buffer at the upgrade, and reject any trailing payload on the STARTTLS line. Prefer implicit TLS (465/993) over opportunistic STARTTLS where possible.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and sufficient — the fix is the buffer drain. TLS cipher strength is irrelevant; the bytes cross the boundary before TLS applies."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on plaintext commands queued before STARTTLS being processed after the handshake; monitor for an unexpected command/response immediately following a STARTTLS upgrade.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the buffering defect directly; TLS monitoring will not flag it because the session is genuinely encrypted."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, then assume any mail routed/redirected during the exposure window on an MITM-reachable path may have been tampered; rotate any credentials exposed through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required where an on-path adversary was plausible; otherwise the patch closes the window."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA assumes opportunistic TLS protects the session; the injection executes attacker plaintext after the handshake regardless of cipher."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Standard 30-day reading unsafe for an on-path command-injection defect; cryptographic controls are present but defeated by the buffering defect."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats TLS as the boundary; the pre-handshake buffer means the boundary is crossed before TLS applies."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 45,
+      "basis": "STARTTLS injection requires an on-path position, so fewer audit-passing orgs are practically exposed, but those relying on opportunistic STARTTLS without the buffer-drain fix remain vulnerable to a network-positioned adversary.",
+      "theater_pattern": "transport_encryption_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2011-0411": {
+    "name": "Postfix STARTTLS plaintext command injection (I/O buffering not reset across TLS handshake)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "STARTTLS command/response injection: the server/client does not discard bytes buffered before the TLS handshake, so an on-path attacker injects plaintext SMTP commands/responses that are processed inside the encrypted session. Part of the NO STARTTLS research lineage (2011 Postfix → 2021 multi-MTA).",
+      "privileges_required": "on-path / adversary-in-the-middle position on the SMTP path (no account required)",
+      "complexity": "high — requires an on-path position; once positioned, injection is reliable.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to the fixed release that drains the pre-STARTTLS receive buffer at the upgrade, and reject any trailing payload on the STARTTLS line. Prefer implicit TLS (465/993) over opportunistic STARTTLS where possible.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary and sufficient — the fix is the buffer drain. TLS cipher strength is irrelevant; the bytes cross the boundary before TLS applies."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on plaintext commands queued before STARTTLS being processed after the handshake; monitor for an unexpected command/response immediately following a STARTTLS upgrade.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Catches the buffering defect directly; TLS monitoring will not flag it because the session is genuinely encrypted."
+      },
+      "response": {
+        "what_would_have_worked": "Patch, then assume any mail routed/redirected during the exposure window on an MITM-reachable path may have been tampered; rotate any credentials exposed through the channel.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Required where an on-path adversary was plausible; otherwise the patch closes the window."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch SLA assumes opportunistic TLS protects the session; the injection executes attacker plaintext after the handshake regardless of cipher."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Standard 30-day reading unsafe for an on-path command-injection defect; cryptographic controls are present but defeated by the buffering defect."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treats TLS as the boundary; the pre-handshake buffer means the boundary is crossed before TLS applies."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 45,
+      "basis": "STARTTLS injection requires an on-path position, so fewer audit-passing orgs are practically exposed, but those relying on opportunistic STARTTLS without the buffer-drain fix remain vulnerable to a network-positioned adversary.",
+      "theater_pattern": "transport_encryption_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-50387": {
+    "name": "KeyTrap — DNSSEC validating-resolver CPU exhaustion via crafted DNSKEY/RRSIG combinations",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "DNSSEC validating-resolver CPU exhaustion: a single crafted DNSSEC response forces worst-case signature/hash work (KeyTrap key-tag collisions; NSEC3 iteration enumeration), stalling the resolver for all clients. Co-disclosed Feb 2024.",
+      "privileges_required": "none (a single crafted response or connection; no authentication)",
+      "complexity": "low — single cheap request triggers unbounded server work; high-profile coordinated disclosure.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade the validating resolver to the release that bounds DNSKEY/RRSIG evaluation (KeyTrap) and NSEC3 iteration/closest-encloser work; cap validation effort per response.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary — the fix bounds the asymmetric work. Capacity headroom alone does not help because cost is asymmetric (one cheap request → unbounded server work)."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on resolver CPU saturation correlated with DNSSEC validation of zones presenting many DNSKEY/RRSIG records or high NSEC3 iterations.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation in progress; rate/CPU telemetry is the signal, since each individual request looks valid."
+      },
+      "response": {
+        "what_would_have_worked": "Patch the resolver fleet and, if under active load, fail over to patched resolvers; the flaw is availability, not data compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Mandatory under load — without the work-bounding fix the service stays exhaustible."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A mass-triggerable CPU-exhaustion DoS; 30-day patch window far exceeds the time to take the service offline."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an availability flaw on shared infrastructure."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability of essential-function infrastructure is in scope but lacks a compressed SLA for single-packet/single-connection amplification DoS."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability protection presumes capacity headroom, which an algorithmic-complexity DoS defeats."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited orgs run validating resolvers on standard patch SLAs; the KeyTrap/NSEC3 work-bounding fixes shipped in a coordinated window but resolver fleets patch slowly.",
+      "theater_pattern": "availability_capacity_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-50868": {
+    "name": "DNSSEC NSEC3 closest-encloser proof CPU exhaustion (excessive SHA-1 iterations)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "DNSSEC validating-resolver CPU exhaustion: a single crafted DNSSEC response forces worst-case signature/hash work (KeyTrap key-tag collisions; NSEC3 iteration enumeration), stalling the resolver for all clients. Co-disclosed Feb 2024.",
+      "privileges_required": "none (a single crafted response or connection; no authentication)",
+      "complexity": "low — single cheap request triggers unbounded server work; high-profile coordinated disclosure.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade the validating resolver to the release that bounds DNSKEY/RRSIG evaluation (KeyTrap) and NSEC3 iteration/closest-encloser work; cap validation effort per response.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary — the fix bounds the asymmetric work. Capacity headroom alone does not help because cost is asymmetric (one cheap request → unbounded server work)."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on resolver CPU saturation correlated with DNSSEC validation of zones presenting many DNSKEY/RRSIG records or high NSEC3 iterations.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation in progress; rate/CPU telemetry is the signal, since each individual request looks valid."
+      },
+      "response": {
+        "what_would_have_worked": "Patch the resolver fleet and, if under active load, fail over to patched resolvers; the flaw is availability, not data compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Mandatory under load — without the work-bounding fix the service stays exhaustible."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A mass-triggerable CPU-exhaustion DoS; 30-day patch window far exceeds the time to take the service offline."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an availability flaw on shared infrastructure."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability of essential-function infrastructure is in scope but lacks a compressed SLA for single-packet/single-connection amplification DoS."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability protection presumes capacity headroom, which an algorithmic-complexity DoS defeats."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited orgs run validating resolvers on standard patch SLAs; the KeyTrap/NSEC3 work-bounding fixes shipped in a coordinated window but resolver fleets patch slowly.",
+      "theater_pattern": "availability_capacity_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-44487": {
+    "name": "HTTP/2 Rapid Reset — stream open-then-RST_STREAM flood (record-breaking DDoS)",
+    "lesson_date": "2026-06-01",
+    "attack_vector": {
+      "description": "HTTP/2 Rapid Reset: a client opens streams and immediately resets them, exhausting server per-stream work at near-zero client cost — a record-breaking DDoS primitive co-disclosed Oct 2023 and KEV-listed.",
+      "privileges_required": "none (a single crafted response or connection; no authentication)",
+      "complexity": "low — single cheap request triggers unbounded server work; mass-exploited (KEV).",
+      "ai_factor": "No AI involvement documented in discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the per-implementation rapid-reset patch that caps client-initiated stream resets per connection and closes abusive connections; pair with an upstream DDoS-absorbing CDN/WAF.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2 (flaw remediation)",
+        "adequacy": "Necessary — the fix bounds the asymmetric work. Capacity headroom alone does not help because cost is asymmetric (one cheap request → unbounded server work)."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on HTTP/2 connections whose stream-open/reset churn far exceeds response throughput; track per-connection RST_STREAM rate.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary to catch exploitation in progress; rate/CPU telemetry is the signal, since each individual request looks valid."
+      },
+      "response": {
+        "what_would_have_worked": "Patch the affected servers/proxies, enable rapid-reset accounting, and engage upstream DDoS mitigation; the flaw is an availability event, not a compromise.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4 (incident handling)",
+        "adequacy": "Mandatory under load — without the work-bounding fix the service stays exhaustible."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A mass-triggerable CPU-exhaustion DoS; 30-day patch window far exceeds the time to take the service offline."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Appropriate timescales' undefined for an availability flaw on shared infrastructure."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability of essential-function infrastructure is in scope but lacks a compressed SLA for single-packet/single-connection amplification DoS."
+      },
+      "DORA-Art-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Availability protection presumes capacity headroom, which an algorithmic-complexity DoS defeats."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 70,
+      "basis": "Audited orgs run HTTP/2 front-doors on standard patch SLAs; Rapid Reset was mass-exploited within the disclosure window and the per-implementation reset-accounting fix is not always part of the documented patch step.",
+      "theater_pattern": "availability_capacity_assumed_sufficient"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
   }
 }

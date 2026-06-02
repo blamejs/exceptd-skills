@@ -1,22 +1,22 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:cfb319bf-ccba-404e-ad9e-48c4fcede2a4",
+  "serialNumber": "urn:uuid:7cbe47c5-3d4f-4160-a176-1967c9b23f78",
   "version": 1,
   "metadata": {
-    "timestamp": "2136-06-04T06:20:47.000Z",
+    "timestamp": "2092-04-26T17:49:57.000Z",
     "tools": [
       {
         "vendor": "blamejs",
         "name": "scripts/refresh-sbom.js",
-        "version": "0.16.8"
+        "version": "0.16.9"
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.16.8",
+      "bom-ref": "pkg:npm/@blamejs/exceptd-skills@0.16.9",
       "type": "application",
       "name": "@blamejs/exceptd-skills",
-      "version": "0.16.8",
+      "version": "0.16.9",
       "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 42 skills, 11 catalogs (427 CVEs / 173 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 8888 RFCs), 35 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
       "licenses": [
         {
@@ -25,17 +25,17 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.16.8",
+      "purl": "pkg:npm/%40blamejs/exceptd-skills@0.16.9",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "23bf90f88c9fe912d2b34455227dde6e9159bca9da7c0ed4104d6183372c17b6"
+          "content": "a878765de519ea80b2e3045ac8934e38b30d87bbc11eb7b3ad1f63bfdf6b9b74"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.16.8"
+          "url": "https://www.npmjs.com/package/@blamejs/exceptd-skills/v/0.16.9"
         },
         {
           "type": "vcs",
@@ -116,11 +116,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "fbaa5d4d34420f2825171dce497e293cdd21d55c22067a98ca1931cf6099f420"
+          "content": "4e6bb9d2ecea4da80bb73e0d5f3540dbe1d5eb6f7fa4e3671d04080930b55b0e"
         },
         {
           "alg": "SHA3-512",
-          "content": "8562868f452f35b0b8a4050788c0c31052fb8ab02abaa8857db921e7a68c24b3415bed229cb11357f4def5d4e8f0cfe80feb71531d5b6cf2a2fbc1321712c0bd"
+          "content": "da628d1b4e0df048c16efdd0fc3c6be5699c1a425bfa03be4fa00d0483850398270d47f991757c77ac1971dc9677d1c37141a372adb3bd0f58f28bc27fed478a"
         }
       ]
     },
@@ -296,11 +296,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "878b4a08bb73c8d20396d85cf433a88f2bc5e7a8cbf7f6ab773ce7ede0a11251"
+          "content": "f66b456cf82a3c20575d8479de41f7b11b7ee5693eb1fcf64a67e162ae1b88a2"
         },
         {
           "alg": "SHA3-512",
-          "content": "d7e91c15d5fcfb02a9b69847255e1413e091defff35d28bb430a5203771256228bd4bd3abd0e596509ecd43dd727666fddd30dc22781b9c5825afae194f8d5df"
+          "content": "ac0a2fb2d7ecfd6dee341a59decaba6392c537c828ff03418f8b981dfbd5ed5e1d832ad1080c2b928444e8cb8d611de602064df278ab56a9bee235e4e180256e"
         }
       ]
     },
@@ -311,11 +311,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "318bf8e9c5aee1d0a4a1dc37c4b211f2fbc937bf332a401a22483cc7d0547252"
+          "content": "c39f28e3402ef13ad9b7076819f63fda67a22f97e3e375cfe01c4a4e0beff7c9"
         },
         {
           "alg": "SHA3-512",
-          "content": "d929874af7a8091416f2adc116fcfe98383325c83ece819a3e07320e29b4d8645b27256a662a6fff3267156ff70cfe2f53d7b0a82b5f249902c495f5d668b962"
+          "content": "3a28ad5f73ae2db91948756336ba523c2158b3c0000676c12db8309daca3d601103d4231e7e5ad4a3788c06c7d98257bc3b38c797a200ca7f88b5ff059d3a8d2"
         }
       ]
     },
@@ -326,11 +326,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1aac7e75eae24ece2ef09d1c63977bdd7a1f81a9f11609ebb966109be316426c"
+          "content": "8264da4534d39c9493cfcd18acf7e38ed47ce2a81be15afd5a3f4baf1d504929"
         },
         {
           "alg": "SHA3-512",
-          "content": "24df35aa1e38b1d24d29957e06da86e71cce646d6b21a1e5b326e752803cca5441a0d618a763f5648a10cbda50728d8fc28e94dcee3e54eab4a081ee3ebdb156"
+          "content": "9cc4838794d659360d86b85f03ca8eebd7233c5a4f50ff83bccd6c962efedc3f9ca7c63cb7c35fef3e798cbca6d35d914da560bf02d63739c01007d0f56edb9a"
         }
       ]
     },
@@ -341,11 +341,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b0e4d8f90b655b2b35b1e91c682ee66f2aa51ae5d38efb14f0e1b77f75ec5f7b"
+          "content": "5def8d82bbe51382ec55fc7186722974077e1289194e4ea002df0e3c52c6a017"
         },
         {
           "alg": "SHA3-512",
-          "content": "ac9ca3b420093c62dd5a53b0349f1d5e9f10f90c958d0ab921654bd0bcf674d3aef478fc5bc3d359a224b03cd26b32578fe162f55ba2423c37c0061aaa80c862"
+          "content": "59c7a63a85811aa46842b2a7888998e61983752bc3975ac65b69cf54ebea5a16d4f553690b4c2bc8afadf995d32435cdcbe5b77dc9825de2f7fccf0bb4c02fe7"
         }
       ]
     },
@@ -401,11 +401,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "49cfbcaf0f27662db7e12340839c29f05d4ae31bc255dc9fa49ad1b4a45d0fa3"
+          "content": "3f9ad83198da40d920e70933e615ac14ade4add037e1c664586c2ee3524edec4"
         },
         {
           "alg": "SHA3-512",
-          "content": "677e753faee573812cfcb3b33e351b36430b38d36c409149a471b0561139ba1dccc23f1a15c9b836f0c5c7384abaa5dc7a56b3f0d8c747fc7d5f216f03911028"
+          "content": "f4dd727e8d0b14ffc17e60437cd4904158242938c00d6b1217a528925a2628bae4783bdfa912da4776102d8a42634857e3cdcd600bd7691e1cfeb9efcd24f60e"
         }
       ]
     },
@@ -806,11 +806,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c7419ef8265a8385ab29e37e3f3237f120dd2fa448692f9dc1aa2fd79339fc76"
+          "content": "b6403d31f06e8f081217c338d2d5c515f8352295fbf58395f3c571cd95a05de0"
         },
         {
           "alg": "SHA3-512",
-          "content": "7aea30cb368c94ff5e9fa3d1d6e60a71f81a1c36d5b358310b372b99d1e448ff5c19c34f2fb33316841906e3f988bc305a8c9c158d9fb33c62b91538a56fcde5"
+          "content": "20acd5641af244666e023470670fd6dede0c58a0d750ff013e0fcf9b003a19d85abaf9803a414509642d2f8f6d6eba7e229ac506e112165c9db4471c4d8fcaea"
         }
       ]
     },
@@ -1751,11 +1751,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0825ef3b994fdd539cd0ab3104e953ef4c176178b557d67ccf9e480d1eb246bb"
+          "content": "3dab3ebc6c86b2318f956da3e343ad7b470f05dd30e2afbee5a8e3b3a845a926"
         },
         {
           "alg": "SHA3-512",
-          "content": "757238fcd49b3e35868485d383b72c210c2608f2963c957ff4c9c758fbd7826240121dfe417a8a2f7f265bcd51d3fc27c1eb0ae03baad165cc8730303b77a539"
+          "content": "21f67b36206d0202a8c25045ded464d5cc36d7d97e5e4146ccce28ca08e31609fd579a4c65cbec27b10a03b61a84e80172c20886e1890052e92b80d306126f4b"
         }
       ]
     },

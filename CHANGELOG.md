@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.16.9 — 2026-06-01
+
+The catalog now covers a set of real, vendor-patched protocol-layer flaws it previously did not name, so scans, triage, and reports surface them with RWEP scoring and behavioral indicators:
+
+- **SMTP smuggling** — CVE-2023-51764 (Postfix), CVE-2023-51765 (Sendmail), CVE-2023-51766 (Exim): a mail server that accepts a non-standard end-of-data sequence lets an attacker smuggle a second message that passes SPF, DKIM, and DMARC on the outer envelope and spoofs the sender. The fix is an end-of-data hardening setting (or upgrade), not a control sender-authentication can supply.
+- **STARTTLS command/response injection** — CVE-2021-38371 (Exim), CVE-2021-33515 (Dovecot), CVE-2011-0411 (Postfix): a server that does not discard bytes buffered before the TLS handshake executes attacker-supplied plaintext inside the encrypted session. Transport encryption strength is irrelevant — the bytes cross the boundary before TLS applies.
+- **DNSSEC validating-resolver CPU exhaustion** — CVE-2023-50387 (KeyTrap) and CVE-2023-50868 (NSEC3): a single crafted DNSSEC response forces worst-case signature evaluation or NSEC3 hash iteration and stalls the resolver for every client.
+- **HTTP/2 Rapid Reset** — CVE-2023-44487 (CISA KEV, confirmed exploited): rapid stream open-then-reset cycles exhaust the server at near-zero cost to the attacker.
+
+CWE-93 (CRLF injection) is added to the weakness catalog to back the SMTP-smuggling class.
+
 ## 0.16.8 — 2026-05-31
 
 `discover` now recommends the `containers` playbook whenever a Dockerfile, Containerfile, or compose file exists anywhere in the tree — a Dockerfile in a subdirectory, or a compose variant like `docker-compose.test.yml` — matching exactly the surface the containers collector scans. Previously it probed only for a root-level `Dockerfile` / `docker-compose.yml`, so a repository whose container config lived in a subdirectory or used a variant filename was never told to run the container security review and its Dockerfile findings went unsurfaced.

@@ -53,7 +53,7 @@
       "path": "data/cve-catalog.json",
       "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-30",
+      "last_updated": "2026-06-01",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 430,
+      "entry_count": 439,
       "sample_keys": [
         "CVE-2022-23812",
         "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
@@ -75,7 +75,7 @@
       "path": "data/cwe-catalog.json",
       "purpose": "MITRE CWE entries used by the project (subset with skill citations), with severity hint and category. Pinned to a CWE catalog version.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-06-01",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 173,
+      "entry_count": 174,
       "sample_keys": [
         "CWE-20",
         "CWE-22",
@@ -229,7 +229,7 @@
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
       "schema_version": "1.1.0",
-      "last_updated": "2026-05-18",
+      "last_updated": "2026-06-01",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 430,
+      "entry_count": 439,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",
