@@ -204,6 +204,7 @@
       "identity-assurance",
       "idp-incident-response",
       "mail-server-hardening",
+      "multitenancy-isolation",
       "sector-financial",
       "vc-wallet-trust",
       "webapp-security"
@@ -237,13 +238,23 @@
       "mail-server-hardening"
     ],
     "CWE-400": [
-      "mail-server-hardening"
+      "mail-server-hardening",
+      "multitenancy-isolation"
     ],
     "CWE-778": [
       "audit-log-integrity"
     ],
     "CWE-353": [
       "self-update-integrity"
+    ],
+    "CWE-639": [
+      "multitenancy-isolation"
+    ],
+    "CWE-770": [
+      "multitenancy-isolation"
+    ],
+    "CWE-668": [
+      "multitenancy-isolation"
     ]
   },
   "d3fend_refs": {
@@ -612,6 +623,7 @@
       "sector-telecom"
     ],
     "AU-ISM-1556": [
+      "multitenancy-isolation",
       "sector-telecom",
       "self-update-integrity"
     ],
@@ -699,6 +711,7 @@
     "NIS2-Art21-network-security": [
       "audit-log-integrity",
       "mail-server-hardening",
+      "multitenancy-isolation",
       "network-trust",
       "self-update-integrity"
     ],
@@ -706,6 +719,7 @@
       "network-trust"
     ],
     "UK-CAF-B4": [
+      "multitenancy-isolation",
       "network-trust",
       "self-update-integrity"
     ],
@@ -714,6 +728,9 @@
     ],
     "NIST-800-53-SR-11": [
       "self-update-integrity"
+    ],
+    "NIST-800-53-AC-3": [
+      "multitenancy-isolation"
     ]
   },
   "atlas_refs": {
@@ -857,6 +874,7 @@
       "email-security-anti-phishing",
       "identity-assurance",
       "incident-response-playbook",
+      "multitenancy-isolation",
       "ransomware-response",
       "sector-energy",
       "sector-financial",
@@ -875,6 +893,7 @@
     "T1530": [
       "cloud-security",
       "dlp-gap-analysis",
+      "multitenancy-isolation",
       "sector-healthcare"
     ],
     "T1213": [
@@ -992,6 +1011,12 @@
     ],
     "T1574": [
       "self-update-integrity"
+    ],
+    "T1499": [
+      "multitenancy-isolation"
+    ],
+    "T1499.001": [
+      "multitenancy-isolation"
     ]
   },
   "rfc_refs": {

@@ -3124,6 +3124,7 @@ const POLICY_SKIPPED_PLAYBOOKS = new Set([
   "identity-sso-compromise",
   "llm-tool-use-exfil",
   "mail-server-hardening",
+  "multitenancy-isolation",
   "network-trust",
   "post-quantum-migration",
   "ransomware",
@@ -7067,7 +7068,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         "llm-tool-use-exfil", "supply-chain-recovery",
         "post-quantum-migration", "webhook-callback-abuse",
         "vc-wallet-trust", "mail-server-hardening", "network-trust",
-        "audit-log-integrity", "self-update-integrity",
+        "audit-log-integrity", "self-update-integrity", "multitenancy-isolation",
       ];
       const playbookFiles = fs.readdirSync(playbookDir)
         .filter(f => f.endsWith(".json") && !f.startsWith("_"))

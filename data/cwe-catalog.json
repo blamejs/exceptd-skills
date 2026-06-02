@@ -1844,6 +1844,7 @@
       "identity-assurance",
       "idp-incident-response",
       "mail-server-hardening",
+      "multitenancy-isolation",
       "sector-financial",
       "vc-wallet-trust",
       "webapp-security"
@@ -3070,7 +3071,8 @@
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
     "skills_referencing": [
-      "mail-server-hardening"
+      "mail-server-hardening",
+      "multitenancy-isolation"
     ]
   },
   "CWE-285": {
@@ -3577,7 +3579,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "CWE-640": {
     "id": "CWE-640",
@@ -3773,7 +3778,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "CWE-772": {
     "id": "CWE-772",
@@ -4462,7 +4470,10 @@
       "CVE-2024-21626"
     ],
     "last_verified": "2026-05-19",
-    "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry."
+    "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry.",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "CWE-340": {
     "id": "CWE-340",

@@ -156,7 +156,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 29 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
+| `exceptd brief --all` | Grouped-by-scope summary of all 30 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
@@ -455,6 +455,7 @@ When in doubt, ship the playbook without a collector and open the gap as a follo
 | network trust, adversary in the middle, aitm, dnssec, dane, tlsa, tsig, mtls pinning, http message signature, dns rebinding, nts, authenticated time | network-trust |
 | audit log integrity, tamper evident logging, hash chain, worm, object lock, legal hold, honeytoken, break glass, dual control, anti forensics, separation of duties | audit-log-integrity |
 | self update, auto update, update integrity, anti rollback, downgrade attack, key pinning, subresource integrity, sri, c2pa, scitt, transparency log, update channel | self-update-integrity |
+| multitenancy isolation, cross tenant, tenant isolation, row level security, rls, bola, idor, noisy neighbour, rapid reset, per tenant quota, circuit breaker, denial of service | multitenancy-isolation |
 | ot security, ics security, scada, plc, iec 62443, nist 800-82, nerc cip | ot-ics-security |
 | cvd, vdp, bug bounty, iso 29147, iso 30111, csaf, security.txt | coordinated-vuln-disclosure |
 | threat model, stride, pasta, linddun, kill chain, diamond model, unified kill chain | threat-modeling-methodology |

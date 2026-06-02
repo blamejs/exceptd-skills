@@ -61,6 +61,7 @@
       "llm-tool-use-exfil",
       "mail-server-hardening",
       "mcp",
+      "multitenancy-isolation",
       "network-trust",
       "post-quantum-migration",
       "ransomware",

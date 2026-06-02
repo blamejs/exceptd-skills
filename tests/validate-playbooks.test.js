@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // self-update-integrity (consumer-side update-channel integrity) brings the
-  // canonical set to 29.
+  // multitenancy-isolation (cross-tenant isolation + availability/DoS) brings
+  // the canonical set to 30.
   assert.equal(
     playbooks.length,
-    29,
-    `expected 29 shipped playbooks, found ${playbooks.length}`,
+    30,
+    `expected 30 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

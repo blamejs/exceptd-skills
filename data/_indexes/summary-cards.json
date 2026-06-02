@@ -2176,6 +2176,46 @@
       "last_threat_review": "2026-06-02",
       "path": "skills/self-update-integrity/skill.md",
       "handoff_targets": []
+    },
+    "multitenancy-isolation": {
+      "description": "Application multitenancy isolation and availability/DoS resilience for mid-2026 — principal-bound tenant identity, data-layer row-level-security under a non-bypass role, cross-tenant cache/queue namespacing, per-tenant rate/byte quotas, HTTP/2 Rapid Reset caps, bounded allocation, distributed-lock fencing, and circuit breakers",
+      "threat_context_excerpt": "Shared multitenant infrastructure has two linked failure classes. Isolation: if the tenant identifier is trusted from a client-controlled header/parameter/claim, or the tenant filter lives in per-query application discipline rather than the data layer, a single authenticated user of one tenant reads or writes another tenant's data — broken object-level authorization (CWE-639), the most common and highest-impact SaaS vulnerability class. Cache, pub/sub, and queue keys leak the same way when not tenant-namespaced. Availability: asymmetric denial of service — HTTP/2 Rapid Reset (CVE-2023-44487), ...",
+      "produces": "Report per surface, marking each isolation and availability control enforced / missing / inconclusive (visibility gap). For every missing control, state whether a single authenticated user could read another tenant's data or a single client could deny service to all tenants. Distinguish a control enforced at a lower layer (data-layer RLS, CDN/WAF quotas) from an absent one, and a dedicated single-tenant deployment (cross-tenant indicators not applicable) from a shared one. Provide the prioritised remediation (bind tenant to principal + data-layer RLS under a non-bypass role, namespace shared k ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-639",
+          "CWE-770",
+          "CWE-863",
+          "CWE-668",
+          "CWE-400"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-53-AC-3",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4",
+          "AU-ISM-1556"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1078",
+          "T1499",
+          "T1499.001",
+          "T1530"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 17,
+      "atlas_count": 0,
+      "attack_count": 4,
+      "framework_gap_count": 4,
+      "cwe_count": 5,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/multitenancy-isolation/skill.md",
+      "handoff_targets": []
     }
   }
 }
