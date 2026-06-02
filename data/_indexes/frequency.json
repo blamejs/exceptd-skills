@@ -133,10 +133,11 @@
         ]
       },
       "CWE-918": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "api-security",
           "attack-surface-pentest",
+          "log-injection-telemetry",
           "mcp-agent-trust",
           "network-trust",
           "sector-telecom",
@@ -222,12 +223,13 @@
         ]
       },
       "CWE-200": {
-        "count": 7,
+        "count": 8,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "cloud-security",
           "dlp-gap-analysis",
+          "log-injection-telemetry",
           "sector-healthcare",
           "vc-wallet-trust",
           "webapp-security"
@@ -434,6 +436,18 @@
         "skills": [
           "decompression-dos"
         ]
+      },
+      "CWE-117": {
+        "count": 1,
+        "skills": [
+          "log-injection-telemetry"
+        ]
+      },
+      "CWE-532": {
+        "count": 1,
+        "skills": [
+          "log-injection-telemetry"
+        ]
       }
     },
     "d3fend_refs": {
@@ -619,11 +633,12 @@
     },
     "framework_gaps": {
       "NIST-800-53-SI-2": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "audit-log-integrity",
           "decompression-dos",
           "kernel-lpe-triage",
+          "log-injection-telemetry",
           "mail-server-hardening"
         ]
       },
@@ -1028,9 +1043,10 @@
         ]
       },
       "AU-ISM-1556": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "decompression-dos",
+          "log-injection-telemetry",
           "multitenancy-isolation",
           "sector-telecom",
           "self-update-integrity"
@@ -1196,10 +1212,11 @@
         ]
       },
       "NIS2-Art21-network-security": {
-        "count": 6,
+        "count": 7,
         "skills": [
           "audit-log-integrity",
           "decompression-dos",
+          "log-injection-telemetry",
           "mail-server-hardening",
           "multitenancy-isolation",
           "network-trust",
@@ -1213,18 +1230,20 @@
         ]
       },
       "UK-CAF-B4": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "decompression-dos",
+          "log-injection-telemetry",
           "multitenancy-isolation",
           "network-trust",
           "self-update-integrity"
         ]
       },
       "ISO-27001-2022-A.8.15": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "audit-log-integrity"
+          "audit-log-integrity",
+          "log-injection-telemetry"
         ]
       },
       "NIST-800-53-SR-11": {
@@ -1468,18 +1487,20 @@
         ]
       },
       "T1530": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "cloud-security",
           "dlp-gap-analysis",
+          "log-injection-telemetry",
           "multitenancy-isolation",
           "sector-healthcare"
         ]
       },
       "T1213": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "dlp-gap-analysis"
+          "dlp-gap-analysis",
+          "log-injection-telemetry"
         ]
       },
       "T1041": {
@@ -1677,9 +1698,10 @@
         ]
       },
       "T1565.001": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "audit-log-integrity"
+          "audit-log-integrity",
+          "log-injection-telemetry"
         ]
       },
       "T1562.008": {
@@ -1933,12 +1955,13 @@
       },
       {
         "id": "CWE-200",
-        "count": 7,
+        "count": 8,
         "skills": [
           "age-gates-child-safety",
           "api-security",
           "cloud-security",
           "dlp-gap-analysis",
+          "log-injection-telemetry",
           "sector-healthcare",
           "vc-wallet-trust",
           "webapp-security"
@@ -1967,6 +1990,19 @@
           "identity-assurance",
           "sector-financial",
           "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "CWE-918",
+        "count": 7,
+        "skills": [
+          "api-security",
+          "attack-surface-pentest",
+          "log-injection-telemetry",
+          "mcp-agent-trust",
+          "network-trust",
+          "sector-telecom",
           "webapp-security"
         ]
       },
@@ -2015,18 +2051,6 @@
           "decompression-dos",
           "mail-server-hardening",
           "mcp-agent-trust",
-          "webapp-security"
-        ]
-      },
-      {
-        "id": "CWE-269",
-        "count": 6,
-        "skills": [
-          "attack-surface-pentest",
-          "cloud-iam-incident",
-          "container-runtime-security",
-          "identity-assurance",
-          "idp-incident-response",
           "webapp-security"
         ]
       }
@@ -2165,6 +2189,19 @@
         ]
       },
       {
+        "id": "NIS2-Art21-network-security",
+        "count": 7,
+        "skills": [
+          "audit-log-integrity",
+          "decompression-dos",
+          "log-injection-telemetry",
+          "mail-server-hardening",
+          "multitenancy-isolation",
+          "network-trust",
+          "self-update-integrity"
+        ]
+      },
+      {
         "id": "NIST-800-53-AC-2",
         "count": 7,
         "skills": [
@@ -2190,14 +2227,13 @@
         ]
       },
       {
-        "id": "NIS2-Art21-network-security",
-        "count": 6,
+        "id": "AU-ISM-1556",
+        "count": 5,
         "skills": [
-          "audit-log-integrity",
           "decompression-dos",
-          "mail-server-hardening",
+          "log-injection-telemetry",
           "multitenancy-isolation",
-          "network-trust",
+          "sector-telecom",
           "self-update-integrity"
         ]
       },
@@ -2213,6 +2249,17 @@
         ]
       },
       {
+        "id": "NIST-800-53-SI-2",
+        "count": 5,
+        "skills": [
+          "audit-log-integrity",
+          "decompression-dos",
+          "kernel-lpe-triage",
+          "log-injection-telemetry",
+          "mail-server-hardening"
+        ]
+      },
+      {
         "id": "SOC2-CC7-anomaly-detection",
         "count": 5,
         "skills": [
@@ -2224,12 +2271,13 @@
         ]
       },
       {
-        "id": "AU-ISM-1556",
-        "count": 4,
+        "id": "UK-CAF-B4",
+        "count": 5,
         "skills": [
           "decompression-dos",
+          "log-injection-telemetry",
           "multitenancy-isolation",
-          "sector-telecom",
+          "network-trust",
           "self-update-integrity"
         ]
       },
@@ -2241,26 +2289,6 @@
           "compliance-theater",
           "sector-federal-government",
           "supply-chain-integrity"
-        ]
-      },
-      {
-        "id": "ISO-27001-2022-A.8.16",
-        "count": 4,
-        "skills": [
-          "ai-c2-detection",
-          "dlp-gap-analysis",
-          "email-security-anti-phishing",
-          "incident-response-playbook"
-        ]
-      },
-      {
-        "id": "ISO-IEC-42001-2023-clause-6.1.2",
-        "count": 4,
-        "skills": [
-          "ai-risk-management",
-          "dlp-gap-analysis",
-          "mlops-security",
-          "threat-modeling-methodology"
         ]
       }
     ],
@@ -2444,6 +2472,17 @@
         ]
       },
       {
+        "id": "T1530",
+        "count": 5,
+        "skills": [
+          "cloud-security",
+          "dlp-gap-analysis",
+          "log-injection-telemetry",
+          "multitenancy-isolation",
+          "sector-healthcare"
+        ]
+      },
+      {
         "id": "T1195.001",
         "count": 4,
         "skills": [
@@ -2451,16 +2490,6 @@
           "mlops-security",
           "sector-federal-government",
           "supply-chain-integrity"
-        ]
-      },
-      {
-        "id": "T1530",
-        "count": 4,
-        "skills": [
-          "cloud-security",
-          "dlp-gap-analysis",
-          "multitenancy-isolation",
-          "sector-healthcare"
         ]
       },
       {
@@ -2620,11 +2649,13 @@
   },
   "orphan_adjacent": {
     "cwe_refs": [
+      "CWE-117",
       "CWE-1333",
       "CWE-20",
       "CWE-327",
       "CWE-353",
       "CWE-409",
+      "CWE-532",
       "CWE-611",
       "CWE-639",
       "CWE-668",
@@ -2656,7 +2687,6 @@
       "FCC-Cyber-Incident-Notification-2024",
       "FedRAMP-IL5-IAM-Federated",
       "GSMA-NESAS-Deployment",
-      "ISO-27001-2022-A.8.15",
       "ISO-27001-2022-A.8.21",
       "ISO-27017-Cloud-IAM",
       "ITU-T-X.805",
@@ -2694,7 +2724,6 @@
       "T1102",
       "T1110",
       "T1133",
-      "T1213",
       "T1505",
       "T1538",
       "T1548.001",
@@ -2703,7 +2732,6 @@
       "T1552.005",
       "T1556.007",
       "T1562.008",
-      "T1565.001",
       "T1566.001",
       "T1566.002",
       "T1566.003",
@@ -2811,7 +2839,6 @@
       "CWE-521",
       "CWE-525",
       "CWE-528",
-      "CWE-532",
       "CWE-539",
       "CWE-540",
       "CWE-547",

@@ -60,6 +60,7 @@
       "kernel",
       "library-author",
       "llm-tool-use-exfil",
+      "log-injection-telemetry",
       "mail-server-hardening",
       "mcp",
       "multitenancy-isolation",

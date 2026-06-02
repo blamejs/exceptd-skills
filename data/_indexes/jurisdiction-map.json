@@ -25,6 +25,7 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mail-server-hardening",
       "mcp-agent-trust",
       "mlops-security",
@@ -52,7 +53,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 49
+    "skill_count": 50
   },
   "UK": {
     "skills": [
@@ -79,6 +80,7 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "mlops-security",
       "multitenancy-isolation",
@@ -105,7 +107,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 47
+    "skill_count": 48
   },
   "AU": {
     "skills": [
@@ -132,6 +134,7 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "mlops-security",
       "multitenancy-isolation",
@@ -156,7 +159,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 45
+    "skill_count": 46
   },
   "SG": {
     "skills": [

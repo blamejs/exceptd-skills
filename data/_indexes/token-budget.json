@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1728352,
-    "total_approx_tokens": 432091,
-    "skill_count": 49
+    "total_chars": 1736061,
+    "total_approx_tokens": 434018,
+    "skill_count": 50
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -2850,6 +2850,56 @@
           "bytes": 843,
           "chars": 843,
           "approx_tokens": 211
+        }
+      }
+    },
+    "log-injection-telemetry": {
+      "path": "skills/log-injection-telemetry/skill.md",
+      "bytes": 7725,
+      "chars": 7709,
+      "lines": 81,
+      "approx_tokens": 1927,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 881,
+          "chars": 877,
+          "approx_tokens": 219
+        },
+        "framework-lag-declaration": {
+          "bytes": 823,
+          "chars": 823,
+          "approx_tokens": 206
+        },
+        "ttp-mapping": {
+          "bytes": 765,
+          "chars": 759,
+          "approx_tokens": 190
+        },
+        "exploit-availability-matrix": {
+          "bytes": 730,
+          "chars": 728,
+          "approx_tokens": 182
+        },
+        "analysis-procedure": {
+          "bytes": 911,
+          "chars": 909,
+          "approx_tokens": 227
+        },
+        "output-format": {
+          "bytes": 836,
+          "chars": 836,
+          "approx_tokens": 209
+        },
+        "compliance-theater-check": {
+          "bytes": 740,
+          "chars": 740,
+          "approx_tokens": 185
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 848,
+          "chars": 848,
+          "approx_tokens": 212
         }
       }
     }

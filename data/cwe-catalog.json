@@ -535,6 +535,7 @@
       "api-security",
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
       "sector-healthcare",
       "vc-wallet-trust",
       "webapp-security"
@@ -1912,6 +1913,7 @@
     "skills_referencing": [
       "api-security",
       "attack-surface-pentest",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "network-trust",
       "sector-telecom",
@@ -3388,7 +3390,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "log-injection-telemetry"
+    ]
   },
   "CWE-539": {
     "id": "CWE-539",
@@ -4599,6 +4604,26 @@
     ],
     "skills_referencing": [
       "decompression-dos"
+    ],
+    "evidence_cves": []
+  },
+  "CWE-117": {
+    "id": "CWE-117",
+    "name": "Improper Output Neutralization for Logs",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product does not neutralize or incorrectly neutralizes output that is written to logs. MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/117.html. Backs the CRLF log-injection / log-forging class on telemetry sinks (forged or split log entries via un-sanitized control characters).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-93",
+      "CAPEC-268"
+    ],
+    "skills_referencing": [
+      "log-injection-telemetry"
     ],
     "evidence_cves": []
   }
