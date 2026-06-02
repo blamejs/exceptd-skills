@@ -11,7 +11,7 @@
  *
  * Usage:
  *   node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline
- *   node scripts/release.js gates               # npm test + 18-gate predeploy
+ *   node scripts/release.js gates               # npm test + 20-gate predeploy
  *   node scripts/release.js commit              # release branch + signed commit
  *   node scripts/release.js push                # push branch + open PR
  *   node scripts/release.js watch               # CI watch + flag unresolved review threads
@@ -576,7 +576,7 @@ function cmdHelp() {
   console.log("");
   console.log("Usage:");
   console.log("  node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline");
-  console.log("  node scripts/release.js gates               # npm test + 18-gate predeploy");
+  console.log("  node scripts/release.js gates               # npm test + 20-gate predeploy");
   console.log("  node scripts/release.js commit              # release branch + signed commit");
   console.log("  node scripts/release.js push                # push branch + open PR");
   console.log("  node scripts/release.js watch               # CI watch + flag unresolved review threads");
