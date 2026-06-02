@@ -83,7 +83,7 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
     // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
     // a novel control). Raised to the current actual when that happens.
-    "zeroday-lessons": { new_control_requirements: 260 }
+    "zeroday-lessons": { new_control_requirements: 269 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
