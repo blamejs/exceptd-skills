@@ -59,7 +59,7 @@ function readJson(p) {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
-function countDataCatalogs(dir) {
+function listDataCatalogs(dir) {
   return fs
     .readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
@@ -274,7 +274,7 @@ function vendorComponents(prov) {
 function buildSbom() {
   const pkg = readJson(PACKAGE_PATH);
   const manifest = readJson(MANIFEST_PATH);
-  const catalogs = countDataCatalogs(DATA_DIR);
+  const catalogs = listDataCatalogs(DATA_DIR);
   const skillCount = Array.isArray(manifest.skills) ? manifest.skills.length : 0;
   const catalogCount = catalogs.length;
   const vendorProv = loadVendorProvenance();
