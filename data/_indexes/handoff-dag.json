@@ -40,6 +40,7 @@
     "supply-chain-integrity",
     "threat-model-currency",
     "threat-modeling-methodology",
+    "vc-wallet-trust",
     "webapp-security",
     "zeroday-gap-learn"
   ],
@@ -513,7 +514,8 @@
       "sector-federal-government",
       "sector-financial",
       "sector-telecom"
-    ]
+    ],
+    "vc-wallet-trust": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -556,6 +558,7 @@
     "supply-chain-integrity": 17,
     "threat-model-currency": 6,
     "threat-modeling-methodology": 4,
+    "vc-wallet-trust": 0,
     "webapp-security": 3,
     "zeroday-gap-learn": 8
   },
@@ -600,6 +603,7 @@
     "supply-chain-integrity": 4,
     "threat-model-currency": 5,
     "threat-modeling-methodology": 9,
+    "vc-wallet-trust": 0,
     "webapp-security": 10,
     "zeroday-gap-learn": 6
   }

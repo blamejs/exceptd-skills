@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.11 — 2026-06-02
+
+New `vc-wallet-trust` playbook and skill audit the verifiable-credential / digital-wallet verifier trust boundary — the checks a service must make before it accepts an SD-JWT-VC, OID4VP, or ISO 18013-5 mdoc presentation from a wallet it does not control. It detects an issuer key not pinned to a trust anchor, revocation/status-list not enforced, `did:web` resolution left unpinned, presentations accepted without nonce/audience key-binding (replayable), mdoc device authentication skipped, open signature-algorithm sets, and over-disclosure beyond the requested claims — mapping each to the framework controls (NIST 800-63B, NIST 800-53 IA-5, ISO 27001 A.5.16, NIS2, eIDAS 2.0 / EUDI wallet) that do not cover the wallet acceptance path. Run it with `exceptd brief vc-wallet-trust` or `exceptd run vc-wallet-trust`.
+
 ## 0.16.10 — 2026-06-02
 
 RWEP scoring no longer emits a spurious validation warning when a CVE carries the `theoretical` active-exploitation status — a value the catalog vocabulary and the scorer already accept and score. The guided curation questionnaire now prompts for `ai_assisted_weaponization`, a required field it previously skipped, so a curated entry cannot silently omit it. The `prefetch` verb no longer double-counts a global flag, and `lint --strict` is now documented in its own `--help`.

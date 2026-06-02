@@ -2,9 +2,16 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 54
+    "event_count": 55
   },
   "events": [
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "vc-wallet-trust",
+      "path": "skills/vc-wallet-trust/skill.md",
+      "note": "Verifiable-credential / digital-wallet verifier trust for mid-2026 — SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID resolution, OAuth Token Status List revocation, OpenID Federation trust anchors, and the EUDI wallet (eIDAS 2.0) acceptance path"
+    },
     {
       "date": "2026-06-01",
       "type": "catalog_update",
@@ -272,7 +279,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 42 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 43 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",
