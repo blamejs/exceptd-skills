@@ -39,6 +39,7 @@
     "sector-healthcare",
     "sector-telecom",
     "security-maturity-tiers",
+    "self-update-integrity",
     "skill-update-loop",
     "supply-chain-integrity",
     "threat-model-currency",
@@ -521,7 +522,8 @@
     "vc-wallet-trust": [],
     "mail-server-hardening": [],
     "network-trust": [],
-    "audit-log-integrity": []
+    "audit-log-integrity": [],
+    "self-update-integrity": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -563,6 +565,7 @@
     "sector-healthcare": 6,
     "sector-telecom": 2,
     "security-maturity-tiers": 1,
+    "self-update-integrity": 0,
     "skill-update-loop": 3,
     "supply-chain-integrity": 17,
     "threat-model-currency": 6,
@@ -611,6 +614,7 @@
     "sector-healthcare": 13,
     "sector-telecom": 0,
     "security-maturity-tiers": 3,
+    "self-update-integrity": 0,
     "skill-update-loop": 21,
     "supply-chain-integrity": 4,
     "threat-model-currency": 5,

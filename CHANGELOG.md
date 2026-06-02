@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.15 — 2026-06-02
+
+New `self-update-integrity` playbook and skill audit the receiving end of the software supply chain — the consumer-side checks that publisher signing and SBOM/SLSA posture do not cover: a self-update applied without verifying a signature before swapping the new code in, a signature checked against a key the update channel itself supplies, a signed-but-older version accepted (downgrade with no anti-rollback) that re-opens a patched CVE, an update fetched over an unauthenticated channel as the sole control, browser modules served without Subresource Integrity, unverified C2PA content credentials or SCITT/TSA transparency receipts, and an apply step that does not gate on the verifier result. It maps to ATT&CK T1195.002 / T1574 and to NIST 800-53 SR-11, NIS2 Art.21, UK CAF B4, AU ISM, and the EU CRA secure-update obligations. Run it with `exceptd brief self-update-integrity` or `exceptd run self-update-integrity`.
+
 ## 0.16.14 — 2026-06-02
 
 New `audit-log-integrity` playbook and skill audit whether the system-of-record audit trail survives the privileged or insider attacker most likely to tamper with it: a hash chain that is written but never verified on read, audit entries unsigned or signed with a key co-located with the log writer, WORM storage in governance/override mode (a privileged role can still delete) rather than compliance mode, legal holds that annotate but do not block the retention purge, the log-writing identity also able to delete its own log, and missing or untriaged honeytokens plus unwitnessed break-glass access. It maps to NIST 800-53 SI-2, ISO 27001 A.8.15, NIS2 Art.21, and SOC 2 CC7. Run it with `exceptd brief audit-log-integrity` or `exceptd run audit-log-integrity`. The recently added `vc-wallet-trust`, `mail-server-hardening`, and `network-trust` playbooks now also map UK CAF and AU ISM, so their framework-gap output is complete on multi-jurisdiction runs.

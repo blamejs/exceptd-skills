@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // audit-log-integrity (tamper-evidence + WORM + deception) brings the
-  // canonical set to 28.
+  // self-update-integrity (consumer-side update-channel integrity) brings the
+  // canonical set to 29.
   assert.equal(
     playbooks.length,
-    28,
-    `expected 28 shipped playbooks, found ${playbooks.length}`,
+    29,
+    `expected 29 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

@@ -2139,6 +2139,43 @@
       "last_threat_review": "2026-06-02",
       "path": "skills/audit-log-integrity/skill.md",
       "handoff_targets": []
+    },
+    "self-update-integrity": {
+      "description": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts",
+      "threat_context_excerpt": "The self-update loop is the highest-privilege code path most products ship: it fetches code and runs it as the application. Publisher-side posture — code signing, SBOM, SLSA attestations — is necessary but useless if the receiving client does not enforce it. The consumer-side failures are an update applied without verifying a signature, a signature verified against a key the update channel itself supplied, a signed-but-older version accepted (downgrade / no anti-rollback) that re-opens a patched CVE, an update fetched over an unauthenticated channel as the sole control, browser modules served ...",
+      "produces": "Report per update path, marking each consumer-side control enforced / missing / inconclusive (visibility gap). For every missing control, state whether a channel compromise would yield arbitrary-code execution and across how much of the installed base. Distinguish a control delegated to a verifying mechanism (OS package manager, gated verifier) from an absent one. Provide the prioritised remediation (verify signature against a pinned key before apply, enforce anti-rollback, pin the channel, enforce SRI on modules, verify provenance/transparency) and the negative validation tests that prove eac ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-494",
+          "CWE-829",
+          "CWE-353",
+          "CWE-347"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-53-SR-11",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4",
+          "AU-ISM-1556"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1195.002",
+          "T1574"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 16,
+      "atlas_count": 0,
+      "attack_count": 2,
+      "framework_gap_count": 4,
+      "cwe_count": 4,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/self-update-integrity/skill.md",
+      "handoff_targets": []
     }
   }
 }

@@ -66,6 +66,7 @@
     ],
     "CWE-494": [
       "mcp-agent-trust",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "CWE-77": [
@@ -155,6 +156,7 @@
     ],
     "CWE-829": [
       "sector-federal-government",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "CWE-287": [
@@ -221,6 +223,7 @@
     "CWE-347": [
       "audit-log-integrity",
       "network-trust",
+      "self-update-integrity",
       "vc-wallet-trust"
     ],
     "CWE-290": [
@@ -238,6 +241,9 @@
     ],
     "CWE-778": [
       "audit-log-integrity"
+    ],
+    "CWE-353": [
+      "self-update-integrity"
     ]
   },
   "d3fend_refs": {
@@ -606,7 +612,8 @@
       "sector-telecom"
     ],
     "AU-ISM-1556": [
-      "sector-telecom"
+      "sector-telecom",
+      "self-update-integrity"
     ],
     "GSMA-NESAS-Deployment": [
       "sector-telecom"
@@ -692,16 +699,21 @@
     "NIS2-Art21-network-security": [
       "audit-log-integrity",
       "mail-server-hardening",
-      "network-trust"
+      "network-trust",
+      "self-update-integrity"
     ],
     "ISO-27001-2022-A.8.21": [
       "network-trust"
     ],
     "UK-CAF-B4": [
-      "network-trust"
+      "network-trust",
+      "self-update-integrity"
     ],
     "ISO-27001-2022-A.8.15": [
       "audit-log-integrity"
+    ],
+    "NIST-800-53-SR-11": [
+      "self-update-integrity"
     ]
   },
   "atlas_refs": {
@@ -873,6 +885,7 @@
       "incident-response-playbook"
     ],
     "T1195.002": [
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "T1554": [
@@ -976,6 +989,9 @@
     ],
     "T1562.008": [
       "audit-log-integrity"
+    ],
+    "T1574": [
+      "self-update-integrity"
     ]
   },
   "rfc_refs": {
