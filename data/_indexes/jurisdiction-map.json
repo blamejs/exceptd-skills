@@ -23,6 +23,7 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "mlops-security",
       "ot-ics-security",
@@ -46,7 +47,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 43
+    "skill_count": 44
   },
   "UK": {
     "skills": [
@@ -499,11 +500,12 @@
   },
   "NO": {
     "skills": [
+      "mail-server-hardening",
       "sector-energy",
       "skill-update-loop"
     ],
     "example_excerpts": {},
-    "skill_count": 2
+    "skill_count": 3
   },
   "MX": {
     "skills": [

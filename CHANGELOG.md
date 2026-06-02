@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.12 — 2026-06-02
+
+New `mail-server-hardening` playbook and skill audit the inbound mail-server protocol surface that sender authentication (SPF/DKIM/DMARC) and transport TLS do not protect: SMTP smuggling via a non-standard end-of-data sequence, STARTTLS receive-buffer command/response injection, IMAP/POP3 bare-CR-LF and ManageSieve PUTSCRIPT injection, uncapped Sieve `redirect` used as a mail-routing exfiltration primitive, an unauthenticated open relay, mailbox-DAV (CalDAV/CardDAV) path traversal and XXE, and cleartext AUTH offered before STARTTLS. It maps to the SMTP-smuggling (CVE-2023-51764/51766) and STARTTLS-injection (CVE-2021-38371/33515) catalog families and to NIST 800-53 SI-2, ISO 27001 A.8.8, NIS2 Art.21, and PCI-DSS 4.0 6.3.3. Run it with `exceptd brief mail-server-hardening` or `exceptd run mail-server-hardening`.
+
 ## 0.16.11 — 2026-06-02
 
 New `vc-wallet-trust` playbook and skill audit the verifiable-credential / digital-wallet verifier trust boundary — the checks a service must make before it accepts an SD-JWT-VC, OID4VP, or ISO 18013-5 mdoc presentation from a wallet it does not control. It detects an issuer key not pinned to a trust anchor, revocation/status-list not enforced, `did:web` resolution left unpinned, presentations accepted without nonce/audience key-binding (replayable), mdoc device authentication skipped, open signature-algorithm sets, and over-disclosure beyond the requested claims — mapping each to the framework controls (NIST 800-63B, NIST 800-53 IA-5, ISO 27001 A.5.16, NIS2, eIDAS 2.0 / EUDI wallet) that do not cover the wallet acceptance path. Run it with `exceptd brief vc-wallet-trust` or `exceptd run vc-wallet-trust`.

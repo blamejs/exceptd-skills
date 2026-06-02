@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // vc-wallet-trust (verifiable-credential / digital-wallet verifier trust)
-  // brings the canonical set to 25.
+  // mail-server-hardening (inbound mail-protocol hardening) brings the
+  // canonical set to 26.
   assert.equal(
     playbooks.length,
-    25,
-    `expected 25 shipped playbooks, found ${playbooks.length}`,
+    26,
+    `expected 26 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

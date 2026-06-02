@@ -1680,5 +1680,59 @@
   ],
   "dcql": [
     "vc-wallet-trust"
+  ],
+  "mail server hardening": [
+    "mail-server-hardening"
+  ],
+  "smtp smuggling": [
+    "mail-server-hardening"
+  ],
+  "starttls injection": [
+    "mail-server-hardening"
+  ],
+  "open relay": [
+    "mail-server-hardening"
+  ],
+  "imap command injection": [
+    "mail-server-hardening"
+  ],
+  "managesieve": [
+    "mail-server-hardening"
+  ],
+  "sieve redirect": [
+    "mail-server-hardening"
+  ],
+  "mailbox dav": [
+    "mail-server-hardening"
+  ],
+  "caldav": [
+    "mail-server-hardening"
+  ],
+  "carddav": [
+    "mail-server-hardening"
+  ],
+  "pop3": [
+    "mail-server-hardening"
+  ],
+  "mx hardening": [
+    "mail-server-hardening"
+  ],
+  "rfc 5321": [
+    "mail-server-hardening"
+  ],
+  "rfc 9051": [
+    "mail-server-hardening"
+  ],
+  "rfc 5804": [
+    "mail-server-hardening"
+  ],
+  "mail protocol": [
+    "mail-server-hardening"
+  ],
+  "inbound mail": [
+    "mail-server-hardening"
+  ],
+  "smtp listener": [
+    "mail-server-hardening"
   ]
 }
