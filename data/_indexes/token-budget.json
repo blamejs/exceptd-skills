@@ -3,9 +3,9 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1682784,
-    "total_approx_tokens": 420699,
-    "skill_count": 43
+    "total_chars": 1690237,
+    "total_approx_tokens": 422562,
+    "skill_count": 44
   },
   "skills": {
     "kernel-lpe-triage": {
@@ -2550,6 +2550,56 @@
           "bytes": 776,
           "chars": 774,
           "approx_tokens": 194
+        }
+      }
+    },
+    "mail-server-hardening": {
+      "path": "skills/mail-server-hardening/skill.md",
+      "bytes": 7461,
+      "chars": 7453,
+      "lines": 85,
+      "approx_tokens": 1863,
+      "approx_chars_per_token": 4,
+      "sections": {
+        "threat-context": {
+          "bytes": 828,
+          "chars": 826,
+          "approx_tokens": 207
+        },
+        "framework-lag-declaration": {
+          "bytes": 709,
+          "chars": 707,
+          "approx_tokens": 177
+        },
+        "ttp-mapping": {
+          "bytes": 847,
+          "chars": 847,
+          "approx_tokens": 212
+        },
+        "exploit-availability-matrix": {
+          "bytes": 754,
+          "chars": 754,
+          "approx_tokens": 189
+        },
+        "analysis-procedure": {
+          "bytes": 806,
+          "chars": 806,
+          "approx_tokens": 202
+        },
+        "output-format": {
+          "bytes": 781,
+          "chars": 781,
+          "approx_tokens": 195
+        },
+        "compliance-theater-check": {
+          "bytes": 715,
+          "chars": 715,
+          "approx_tokens": 179
+        },
+        "defensive-countermeasure-mapping": {
+          "bytes": 822,
+          "chars": 820,
+          "approx_tokens": 205
         }
       }
     }

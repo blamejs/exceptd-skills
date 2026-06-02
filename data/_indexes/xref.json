@@ -42,6 +42,7 @@
     "CWE-22": [
       "api-security",
       "attack-surface-pentest",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
@@ -67,6 +68,7 @@
     ],
     "CWE-77": [
       "api-security",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
@@ -196,6 +198,7 @@
       "cloud-iam-incident",
       "identity-assurance",
       "idp-incident-response",
+      "mail-server-hardening",
       "sector-financial",
       "vc-wallet-trust",
       "webapp-security"
@@ -216,6 +219,15 @@
     ],
     "CWE-290": [
       "vc-wallet-trust"
+    ],
+    "CWE-93": [
+      "mail-server-hardening"
+    ],
+    "CWE-611": [
+      "mail-server-hardening"
+    ],
+    "CWE-400": [
+      "mail-server-hardening"
     ]
   },
   "d3fend_refs": {
@@ -338,14 +350,17 @@
   },
   "framework_gaps": {
     "NIST-800-53-SI-2": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "mail-server-hardening"
     ],
     "ISO-27001-2022-A.8.8": [
       "coordinated-vuln-disclosure",
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "mail-server-hardening"
     ],
     "PCI-DSS-4.0-6.3.3": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "mail-server-hardening"
     ],
     "NIS2-Art21-patch-management": [
       "attack-surface-pentest",
@@ -660,6 +675,9 @@
     ],
     "UK-CAF-B2": [
       "vc-wallet-trust"
+    ],
+    "NIS2-Art21-network-security": [
+      "mail-server-hardening"
     ]
   },
   "atlas_refs": {
@@ -762,6 +780,7 @@
       "cloud-security",
       "container-runtime-security",
       "fuzz-testing-strategy",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "ot-ics-security",
       "sector-energy",
@@ -913,6 +932,12 @@
     ],
     "T1550": [
       "vc-wallet-trust"
+    ],
+    "T1071.003": [
+      "mail-server-hardening"
+    ],
+    "T1557": [
+      "mail-server-hardening"
     ]
   },
   "rfc_refs": {

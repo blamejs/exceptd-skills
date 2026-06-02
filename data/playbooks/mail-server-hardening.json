@@ -1,0 +1,700 @@
+{
+  "_meta": {
+    "id": "mail-server-hardening",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 93,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase inbound mail-server protocol-hardening playbook. Covers the server-side protocol trust failures that sender-authentication (SPF/DKIM/DMARC) does not address: SMTP smuggling via non-standard end-of-data, STARTTLS receive-buffer command/response injection, IMAP/POP3 bare-CR-LF and ManageSieve PUTSCRIPT injection, uncapped Sieve redirect mail-routing exfiltration, unauthenticated open relay, mailbox-DAV path traversal + XXE, cleartext AUTH before STARTTLS, and missing auth rate-limiting / greylisting. Distinct from the email-security-anti-phishing skill (which covers sender authentication, not inbound protocol hardening). Maps to the SMTP-smuggling (CVE-2023-51764/51765/51766) and STARTTLS-injection (CVE-2021-38371/33515) catalog entries. Closes the GRC loop against NIST 800-53 SI-2, ISO 27001 A.8.8, NIS2 Art.21 network-security, and PCI-DSS 4.0 6.3.3."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "mail-server-source-or-config-read",
+        "description": "Agent must read the operator's mail-server source and/or runtime configuration to inspect SMTP/IMAP/POP3/ManageSieve protocol handling, STARTTLS, relay authorization, Sieve, and mailbox-DAV. A host with neither marks the playbook visibility_gap=no_mail_server_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_mail_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "secrets",
+        "condition": "finding.includes_cleartext_credential_exposure == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Inbound mail-server protocol hardening",
+    "attack_class": "email-phishing",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1190",
+      "T1071.003",
+      "T1557",
+      "T1040",
+      "T1110",
+      "T1114"
+    ],
+    "cve_refs": [
+      "CVE-2023-51764",
+      "CVE-2023-51766",
+      "CVE-2021-38371",
+      "CVE-2021-33515"
+    ],
+    "cwe_refs": [
+      "CWE-77",
+      "CWE-93",
+      "CWE-22",
+      "CWE-611",
+      "CWE-863",
+      "CWE-400"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "pci-dss-4",
+      "soc2"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "mail_listener_inventory",
+            "open_relay_or_spoofing_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "mailbox_data_exposure_estimate",
+            "sieve_redirect_exfil_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "spf-dkim-dmarc-equals-secure-mail",
+          "claim": "We have SPF, DKIM, and DMARC, so our mail server is secure.",
+          "fast_detection_test": "Those are SENDER-authentication controls. Ask whether the inbound listener rejects non-standard end-of-data (SMTP smuggling) and drains the STARTTLS buffer — sender-auth is bypassed at the protocol layer."
+        },
+        {
+          "pattern_id": "tls-enabled-equals-no-cleartext",
+          "claim": "STARTTLS is enabled, so credentials are protected.",
+          "fast_detection_test": "Opportunistic STARTTLS still allows AUTH before the handshake unless explicitly gated. Confirm AUTH is refused until TLS is active and the pre-handshake buffer is drained."
+        },
+        {
+          "pattern_id": "not-an-open-relay-because-config-says-so",
+          "claim": "Relay is restricted in our config.",
+          "fast_detection_test": "Test it: from an unauthenticated session, RCPT TO an external domain. A config flag is not evidence the listener enforces it."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org mail controls center on sender authentication (SPF/DKIM/DMARC) and transport TLS. None prescribe the server-side protocol hardening — strict end-of-data, STARTTLS buffer drain, relay authorization, command-injection refusal — that SMTP smuggling, STARTTLS injection, and open-relay abuse exploit.",
+        "lag_score": 70,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-2",
+            "designed_for": "flaw remediation via patch cadence",
+            "insufficient_because": "mail-protocol hardening is configuration posture (end-of-data handling, buffer drain, relay rules) the patch process does not surface."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)",
+            "designed_for": "network security of essential services",
+            "insufficient_because": "assumes SPF/DKIM/DMARC + TLS suffice; SMTP smuggling and STARTTLS injection defeat them at the protocol layer."
+          }
+        ]
+      },
+      "skill_preload": [
+        "mail-server-hardening",
+        "email-security-anti-phishing",
+        "webapp-security",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "A mail server's inbound protocol surface is a trust boundary that sender-authentication does not protect. SMTP smuggling (non-standard end-of-data) delivers spoofed mail past SPF/DKIM/DMARC; STARTTLS injection executes attacker plaintext after the handshake; an open relay lends the operator's reputation to spammers; uncapped Sieve redirect silently exfiltrates mail; mailbox-DAV traversal/XXE reads the store. These are configuration and parser-hardening gaps, not CVEs to patch.",
+      "rwep_threshold": {
+        "escalate": 55,
+        "monitor": 35,
+        "close": 20
+      },
+      "framework_lag_declaration": "SPF/DKIM/DMARC + TLS audits are NON-EVIDENCE for inbound protocol hardening; they cover sender authentication and transport encryption, not end-of-data handling, STARTTLS buffer drain, relay authorization, or command-injection refusal.",
+      "skill_chain": [
+        {
+          "skill": "mail-server-hardening",
+          "purpose": "enumerate the inbound protocol-hardening checks per RFC 5321/9051/5804/5228"
+        },
+        {
+          "skill": "email-security-anti-phishing",
+          "purpose": "confirm the sender-auth layer that smuggling bypasses, for context"
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "separate SPF/DKIM/DMARC/TLS claims from enforced protocol hardening"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the SI-2 / Art.21 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 13000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4500,
+          "detect": 4000,
+          "analyze": 1800,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "mail-listener-inventory",
+          "type": "config_file",
+          "source": "Enumerate listening mail ports + their handlers: grep for mail-server-{mx,submission,imap,jmap,pop3,managesieve,tls}.js and the bound ports (25/465/587/143/993/110/995/4190) across source and config.",
+          "description": "Which mail protocols the operator terminates and on which ports (implicit-TLS vs opportunistic-STARTTLS).",
+          "required": true,
+          "air_gap_alternative": "If only source is available, enumerate the listener modules wired in; mark runtime port-binding as inventory_gap."
+        },
+        {
+          "id": "smtp-command-guard",
+          "type": "config_file",
+          "source": "grep for guard-smtp-command / end-of-data / <LF>.<LF> / smtpd_forbid / relay / RCPT handling across the SMTP receive path.",
+          "description": "How the SMTP listener handles end-of-data termination and unauthenticated relay.",
+          "required": true,
+          "air_gap_alternative": "Inspect the SMTP receive-path source for the end-of-data + relay-authorization checks."
+        },
+        {
+          "id": "imap-pop3-managesieve-guards",
+          "type": "config_file",
+          "source": "grep for guard-imap-command / guard-pop3-command / guard-managesieve-command / bare-CR / literal / PUTSCRIPT across the IMAP/POP3/ManageSieve parsers.",
+          "description": "How the mailbox-protocol parsers handle bare-CR/LF, literal injection, and PUTSCRIPT bounds.",
+          "required": true,
+          "air_gap_alternative": "Inspect the command-parser source for CRLF enforcement + literal-length validation."
+        },
+        {
+          "id": "starttls-and-auth-config",
+          "type": "config_file",
+          "source": "grep for STARTTLS / drain / buffer / AUTHENTICATE / require-tls / cleartext across the listeners.",
+          "description": "Whether STARTTLS drains the pre-handshake buffer and whether AUTH is gated on an active TLS session.",
+          "required": true,
+          "air_gap_alternative": "Inspect the STARTTLS upgrade handler for a receive-buffer clear and the AUTH gate."
+        },
+        {
+          "id": "sieve-and-dav-config",
+          "type": "config_file",
+          "source": "grep for safe-sieve / mail-sieve / redirect / mail-dav / PROPFIND / xml across the Sieve engine and CalDAV/CardDAV endpoint.",
+          "description": "Whether Sieve redirect is capped and whether the mailbox-DAV endpoint refuses traversal and disables XXE.",
+          "required": false,
+          "air_gap_alternative": "Inspect the Sieve engine for a redirect cap and the DAV XML parser for entity-expansion settings."
+        },
+        {
+          "id": "mail-abuse-controls",
+          "type": "config_file",
+          "source": "grep for mail-server-rate-limit / greylist / mail-rbl / lockout across the listeners.",
+          "description": "Whether rate limiting, greylisting, and RBL checks are active on the auth and inbound surfaces.",
+          "required": false,
+          "air_gap_alternative": "Inspect the listener config for a rate-limit / greylist / RBL policy."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current mail-server configuration + source state (point-in-time posture audit)",
+        "asset_scope": "every host terminating an inbound mail protocol (SMTP MX/submission, IMAP, JMAP, POP3, ManageSieve, mailbox-DAV)"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The operator runs an inbound mail server (terminates SMTP/IMAP/POP3/ManageSieve), not only an outbound client.",
+          "if_false": "If the operator only SENDS mail via a third-party API, the inbound protocol indicators do not apply; pivot to sender-auth posture (email-security-anti-phishing) only."
+        },
+        {
+          "assumption": "Mail-server source or runtime config is readable.",
+          "if_false": "Mark visibility_gap=no_mail_server_inventory and report only what the receive-path source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "sieve-and-dav-config",
+          "fallback_action": "If no Sieve engine or mailbox-DAV endpoint is present, skip the redirect-exfil and DAV-traversal indicators.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "mail-abuse-controls",
+          "fallback_action": "If rate-limiting is enforced by an upstream gateway, inspect that policy instead.",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "smtp-smuggling-end-of-data-accepted",
+          "type": "config_value",
+          "value": "The inbound SMTP listener accepts a non-standard end-of-data sequence (<LF>.<LF> or <LF>.<CR><LF>) as end-of-message instead of requiring the RFC 5321 <CR><LF>.<CR><LF>.",
+          "description": "A server that interprets non-standard end-of-data lets an attacker smuggle a second message that inherits the outer connection's SPF/DKIM/DMARC pass, delivering a spoofed sender (the CVE-2023-51764/51765/51766 class).",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1071.003",
+          "false_positive_checks_required": [
+            "Send a DATA probe terminated with <LF>.<LF> and confirm the server treats it as end-of-message and accepts a smuggled follow-on envelope — a server that rejects the non-standard terminator is safe; a comment or doc that merely mentions the sequence is not a hit.",
+            "Confirm the listener is the INBOUND (receiving) path; an outbound relay's own end-of-data handling is not the smuggling-receiver finding."
+          ]
+        },
+        {
+          "id": "starttls-receive-buffer-not-drained",
+          "type": "config_value",
+          "value": "The SMTP/IMAP/POP3/ManageSieve listener does not discard bytes buffered before the STARTTLS handshake, so plaintext commands pipelined before STARTTLS are executed after the TLS upgrade.",
+          "description": "An on-path attacker injects commands/responses that cross the STARTTLS boundary (the CVE-2021-38371 / CVE-2021-33515 class) — transport encryption is genuine but the pre-handshake bytes are trusted.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1557",
+          "false_positive_checks_required": [
+            "Pipeline a plaintext command immediately before STARTTLS and confirm it is processed after the handshake — a listener that clears the receive buffer at the STARTTLS upgrade is safe.",
+            "Implicit-TLS ports (465/993/995) do not have a STARTTLS step and are not in scope for this indicator; only opportunistic-STARTTLS ports (25/587/143/110/4190)."
+          ]
+        },
+        {
+          "id": "imap-command-literal-injection",
+          "type": "config_value",
+          "value": "The IMAP/JMAP command parser accepts bare CR or bare LF, or a mid-line non-synchronizing literal {n} that injects a second command, instead of enforcing the RFC 9051 grammar.",
+          "description": "Bare-CR/LF and mid-line literal injection let an attacker smuggle a second IMAP command past the front-end, enabling command injection against the mailbox service.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the parser refuses bare-CR / bare-LF and validates non-synchronizing literal lengths against the declared {n} — a parser that already rejects these (RFC 9051 §2.2.2) is safe.",
+            "A documented test fixture containing an injection string is not a hit; the finding is the live parser accepting it."
+          ]
+        },
+        {
+          "id": "managesieve-putscript-unbounded",
+          "type": "config_value",
+          "value": "The ManageSieve (RFC 5804) listener accepts PUTSCRIPT with an unbounded literal byte count, or accepts a script name containing slash/backslash/NUL, or permits AUTHENTICATE PLAIN/LOGIN over cleartext before STARTTLS.",
+          "description": "An unbounded PUTSCRIPT is a resource-exhaustion and storage-backend path-collision vector; cleartext AUTHENTICATE leaks credentials (the listener trusts a name/size it should bound).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm PUTSCRIPT caps the literal byte size, rejects script names with slash/backslash/NUL, and refuses AUTHENTICATE over cleartext (RFC 5804 §1.1 + RFC 4954 §4) — a listener enforcing all three is safe.",
+            "A managed/hosted ManageSieve fronted by a proxy that enforces these is not the finding; inspect the listener that terminates the protocol."
+          ]
+        },
+        {
+          "id": "sieve-redirect-uncapped",
+          "type": "config_value",
+          "value": "Sieve script execution (RFC 5228) permits the `redirect` action with no per-script cap on redirect count or destination allowlist.",
+          "description": "An attacker who can store a Sieve script (or exploit a stored-script flaw) uses uncapped `redirect` as a mail-routing exfiltration primitive, silently forwarding a victim's mail to an external address.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1114",
+          "false_positive_checks_required": [
+            "Confirm Sieve execution bounds redirect count per script and/or enforces a redirect-destination policy — an engine with a gas counter + redirect cap is safe.",
+            "A Sieve engine that does not implement `redirect` at all, or restricts it to internal addresses only, is not the finding."
+          ]
+        },
+        {
+          "id": "inbound-open-relay",
+          "type": "config_value",
+          "value": "The SMTP listener accepts RCPT TO an external (non-local) domain from an unauthenticated peer — an open relay.",
+          "description": "An open relay lets any sender route mail through the operator's infrastructure, abusing its reputation for spam/phishing delivery and bypassing the recipient's sender controls.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1071.003",
+          "false_positive_checks_required": [
+            "From an unauthenticated session, issue MAIL FROM + RCPT TO an external domain and confirm the server rejects the relay — a server that requires authentication or restricts relay to local domains is safe.",
+            "A submission service (587) that relays for AUTHENTICATED users is not an open relay; the finding is relay for UNAUTHENTICATED peers on the inbound MX (25)."
+          ]
+        },
+        {
+          "id": "pop3-command-injection",
+          "type": "config_value",
+          "value": "The POP3 command parser accepts bare CR or bare LF in commands instead of enforcing canonical CRLF termination.",
+          "description": "Bare-CR/LF acceptance in POP3 enables command smuggling against the mailbox-retrieval service the same way it does in SMTP/IMAP.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the POP3 parser refuses bare-CR / bare-LF — a parser enforcing CRLF is safe.",
+            "POP3 may be disabled entirely; if no POP3 listener exists this indicator is not-in-scope, not a hit."
+          ]
+        },
+        {
+          "id": "mailbox-dav-path-traversal-xxe",
+          "type": "config_value",
+          "value": "The CalDAV/CardDAV (mailbox-DAV) endpoint does not refuse `..` / `%2e%2e` / NUL in request URLs, or parses PROPFIND/REPORT XML bodies without disabling external entities (XXE).",
+          "description": "Path traversal reads/writes outside the mailbox store; XXE on the DAV XML body exfiltrates local files or performs SSRF from the mail server.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1190",
+          "false_positive_checks_required": [
+            "Confirm the DAV endpoint rejects encoded/decoded `..` and NUL in the request path AND that its XML parser disables DTDs/external entities — a hardened endpoint is safe.",
+            "A DAV library that resolves the path against a chroot/jail and uses a non-resolving XML parser is not the finding even if `..` appears in a raw URL."
+          ]
+        },
+        {
+          "id": "cleartext-auth-before-starttls",
+          "type": "config_value",
+          "value": "The submission/IMAP/POP3 listener offers and accepts AUTHENTICATE/AUTH PLAIN or LOGIN before STARTTLS (no require-TLS-before-auth).",
+          "description": "Credentials are transmitted in cleartext on the wire before encryption, sniffable by any on-path observer.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1040",
+          "false_positive_checks_required": [
+            "Confirm the listener advertises and accepts AUTH only after STARTTLS (or only on implicit-TLS ports) — a listener that gates AUTH on an active TLS session is safe.",
+            "On an implicit-TLS port (465/993/995) the session is already encrypted, so pre-STARTTLS AUTH is not applicable."
+          ]
+        },
+        {
+          "id": "mail-auth-no-rate-limit",
+          "type": "config_value",
+          "value": "The mail listeners enforce no per-IP/per-account rate limit, greylisting, or RBL check on authentication attempts and inbound connections.",
+          "description": "Absence of rate limiting / greylisting leaves the auth surface open to credential brute-force and the inbound surface open to spam-flood abuse.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1110",
+          "false_positive_checks_required": [
+            "Confirm a per-IP or per-account auth rate-limit (and/or greylist / RBL) is active on the listeners — a server with lockout + connection throttling is safe.",
+            "A mail service fronted by a rate-limiting gateway / WAF that enforces this upstream is not the finding; inspect the effective enforced policy, not just the listener default."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "smtp-smuggling-end-of-data-accepted",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Send a DATA probe terminated with <LF>.<LF> and confirm the server treats it as end-of-message and accepts a smuggled follow-on envelope — a server that rejects the non-standard terminator is safe; a comment or doc that merely mentions the sequence is not a hit."
+        },
+        {
+          "indicator_id": "starttls-receive-buffer-not-drained",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Pipeline a plaintext command immediately before STARTTLS and confirm it is processed after the handshake — a listener that clears the receive buffer at the STARTTLS upgrade is safe."
+        },
+        {
+          "indicator_id": "imap-command-literal-injection",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm the parser refuses bare-CR / bare-LF and validates non-synchronizing literal lengths against the declared {n} — a parser that already rejects these (RFC 9051 §2.2.2) is safe."
+        },
+        {
+          "indicator_id": "managesieve-putscript-unbounded",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm PUTSCRIPT caps the literal byte size, rejects script names with slash/backslash/NUL, and refuses AUTHENTICATE over cleartext (RFC 5804 §1.1 + RFC 4954 §4) — a listener enforcing all three is safe."
+        },
+        {
+          "indicator_id": "sieve-redirect-uncapped",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm Sieve execution bounds redirect count per script and/or enforces a redirect-destination policy — an engine with a gas counter + redirect cap is safe."
+        },
+        {
+          "indicator_id": "inbound-open-relay",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "From an unauthenticated session, issue MAIL FROM + RCPT TO an external domain and confirm the server rejects the relay — a server that requires authentication or restricts relay to local domains is safe."
+        },
+        {
+          "indicator_id": "pop3-command-injection",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm the POP3 parser refuses bare-CR / bare-LF — a parser enforcing CRLF is safe."
+        },
+        {
+          "indicator_id": "mailbox-dav-path-traversal-xxe",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm the DAV endpoint rejects encoded/decoded `..` and NUL in the request path AND that its XML parser disables DTDs/external entities — a hardened endpoint is safe."
+        },
+        {
+          "indicator_id": "cleartext-auth-before-starttls",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm the listener advertises and accepts AUTH only after STARTTLS (or only on implicit-TLS ports) — a listener that gates AUTH on an active TLS session is safe."
+        },
+        {
+          "indicator_id": "mail-auth-no-rate-limit",
+          "benign_pattern": "A documented test fixture, comment, or upstream-proxy-enforced control that mentions the protocol shape without the live listener exhibiting it.",
+          "distinguishing_test": "Confirm a per-IP or per-account auth rate-limit (and/or greylist / RBL) is active on the listeners — a server with lockout + connection throttling is safe."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one inbound mail listener accepts a protocol shape it should refuse (non-standard end-of-data, undrained STARTTLS buffer, command-literal injection, unauthenticated relay, uncapped Sieve redirect, DAV traversal/XXE, or cleartext AUTH) on a production-reachable port.",
+        "inconclusive": "A protocol check is enforced by an upstream proxy the audit could not read — record as visibility_gap, not a clean result.",
+        "not_detected": "Every inbound listener enforces canonical CRLF + standard end-of-data, drains the STARTTLS buffer, gates AUTH on active TLS, refuses unauthenticated relay, caps Sieve redirect, and hardens the mailbox-DAV parser."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "smtp-smuggling-end-of-data-accepted",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "inbound-open-relay",
+          "rwep_factor": "blast_radius",
+          "weight": 25
+        },
+        {
+          "signal_id": "starttls-receive-buffer-not-drained",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Is the affected listener internet-facing, and does the gap enable spoofing/relay (reputation + phishing delivery) or mailbox data exposure?",
+        "scoring_rubric": [
+          {
+            "condition": "Internet-facing inbound MX with SMTP smuggling or open relay (spoofing / reputation abuse at internet scale)",
+            "blast_radius_score": 5,
+            "description": "Spoofed authentication-passing mail or relayed spam delivered at scale"
+          },
+          {
+            "condition": "Internet-facing mailbox protocol (IMAP/DAV) with command-injection / traversal exposing mailbox data",
+            "blast_radius_score": 4,
+            "description": "Mailbox contents readable or routable to an attacker"
+          },
+          {
+            "condition": "Internal-only mail listener behind network controls",
+            "blast_radius_score": 2,
+            "description": "Exploitation requires prior network access"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We have SPF/DKIM/DMARC and TLS, so our mail server is secure.",
+        "audit_evidence": "DMARC policy records, a TLS certificate, a config flag asserting relay restrictions.",
+        "reality_test": "Probe the inbound listener: non-standard end-of-data acceptance, STARTTLS buffer drain, unauthenticated relay, cleartext AUTH. If any succeeds, sender-auth and TLS did not protect the protocol layer.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "smtp-smuggling-end-of-data-accepted",
+          "framework": "nist-800-53",
+          "claimed_control": "SI-2 (flaw remediation)",
+          "actual_gap": "SI-2 expects a patch; the smuggling fix is end-of-data configuration the patch process does not surface."
+        },
+        {
+          "finding_id": "inbound-open-relay",
+          "framework": "nis2",
+          "claimed_control": "Art.21(2) (network security)",
+          "actual_gap": "Art.21 names essential-service network security but not relay-authorization posture on the inbound MX."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "An internet-facing inbound MX accepts non-standard end-of-data (smuggling) or relays for unauthenticated peers",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Sieve redirect is uncapped on a multi-tenant mailbox service (mail-exfil primitive)",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "enforce-standard-end-of-data",
+          "description": "Reject non-standard end-of-data sequences on the inbound SMTP listener (and upgrade the MTA to the smuggling-fixed release); require canonical <CR><LF>.<CR><LF>.",
+          "preconditions": [
+            "operator controls the inbound MTA configuration"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "smtp-smuggling-end-of-data-accepted"
+          ]
+        },
+        {
+          "id": "drain-starttls-buffer-and-gate-auth",
+          "description": "Discard bytes buffered before the STARTTLS handshake on every opportunistic-STARTTLS listener, and refuse AUTHENTICATE/AUTH until TLS is active.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "starttls-receive-buffer-not-drained",
+            "cleartext-auth-before-starttls"
+          ]
+        },
+        {
+          "id": "harden-command-parsers",
+          "description": "Refuse bare-CR/LF and validate literal lengths in the IMAP/POP3 parsers; cap PUTSCRIPT bytes and reject slash/backslash/NUL script names in ManageSieve.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "imap-command-literal-injection",
+            "pop3-command-injection",
+            "managesieve-putscript-unbounded"
+          ]
+        },
+        {
+          "id": "restrict-relay-and-cap-sieve",
+          "description": "Restrict SMTP relay to authenticated users / local domains, and cap Sieve redirect count + enforce a redirect-destination policy.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "inbound-open-relay",
+            "sieve-redirect-uncapped"
+          ]
+        },
+        {
+          "id": "harden-dav-and-add-rate-limits",
+          "description": "Refuse encoded/decoded traversal + NUL on the mailbox-DAV endpoint and disable XML external entities; add per-IP/per-account auth rate limiting + greylisting.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "mailbox-dav-path-traversal-xxe",
+            "mail-auth-no-rate-limit"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "smuggling-rejected",
+          "test": "Send a DATA probe terminated with <LF>.<LF> from an external client.",
+          "expected_result": "Server rejects the non-standard terminator; no smuggled second message is delivered.",
+          "test_type": "negative"
+        },
+        {
+          "id": "relay-rejected",
+          "test": "From an unauthenticated session, MAIL FROM + RCPT TO an external domain.",
+          "expected_result": "Server refuses the relay (requires auth / local-domain).",
+          "test_type": "negative"
+        },
+        {
+          "id": "starttls-injection-rejected",
+          "test": "Pipeline a plaintext command before STARTTLS and complete the handshake.",
+          "expected_result": "Buffered pre-TLS command is discarded, not executed post-handshake.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-mail-flows",
+          "test": "Send and retrieve a normal, well-formed message over the hardened listeners.",
+          "expected_result": "Mail flows normally — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A compromised authenticated account can still relay or store a malicious Sieve script within its own authorization.",
+        "why_remains": "Protocol hardening authenticates and bounds the protocol, not the trustworthiness of an authenticated user; account compromise is handled by identity controls.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The inbound-listener end-of-data, STARTTLS-drain, relay-authorization, parser, Sieve-cap, DAV, and rate-limit configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the smuggling / relay / STARTTLS-injection negative tests plus the legitimate-flow functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new mail listener / protocol is enabled or the MTA is replaced",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of inbound mail protocol posture",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "mail-listener inventory",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Inbound mail-server protocol abuse — SMTP smuggling, STARTTLS injection, open relay, command-literal injection, uncapped Sieve redirect, or mailbox-DAV traversal/XXE — that sender-authentication and transport TLS do not prevent.",
+          "control_gap": "Inbound listener lacks strict end-of-data handling / STARTTLS buffer drain / relay authorization / parser hardening.",
+          "framework_gap": "NIST SI-2 + NIS2 Art.21 cover patching and network security but not mail-protocol hardening posture.",
+          "new_control_requirement": "Inbound mail listeners MUST enforce canonical end-of-data, drain the STARTTLS buffer, gate AUTH on active TLS, and refuse unauthenticated relay."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "72h from detect_confirmed",
+          "recipient": "data protection authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy listener cannot be hardened immediately (e.g. a third-party MTA awaiting a vendor fix).",
+        "exception_template": {
+          "scope": "the specific listener + port",
+          "duration": "90 days",
+          "compensating_controls": [
+            "front the listener with a hardened SMTP/IMAP proxy",
+            "restrict the port to known networks",
+            "enhanced logging of relay + AUTH attempts"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new mail listener / MTA change",
+        "trigger": "change to mail listeners / protocols, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-inbound-mail-listeners",
+      "title": "Inventory + protocol-test every inbound mail listener",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "smtp-smuggling-sweep",
+      "title": "Targeted SMTP-smuggling + STARTTLS-injection sweep on internet-facing MX",
+      "applies_to": {
+        "attack_technique": "T1071.003"
+      }
+    }
+  ]
+}

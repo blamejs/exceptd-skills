@@ -58,6 +58,7 @@
       "kernel",
       "library-author",
       "llm-tool-use-exfil",
+      "mail-server-hardening",
       "mcp",
       "post-quantum-migration",
       "ransomware",
