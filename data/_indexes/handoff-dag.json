@@ -25,6 +25,7 @@
     "mail-server-hardening",
     "mcp-agent-trust",
     "mlops-security",
+    "network-trust",
     "ot-ics-security",
     "policy-exception-gen",
     "pqc-first",
@@ -517,7 +518,8 @@
       "sector-telecom"
     ],
     "vc-wallet-trust": [],
-    "mail-server-hardening": []
+    "mail-server-hardening": [],
+    "network-trust": []
   },
   "in_degree": {
     "age-gates-child-safety": 1,
@@ -545,6 +547,7 @@
     "mail-server-hardening": 0,
     "mcp-agent-trust": 22,
     "mlops-security": 6,
+    "network-trust": 0,
     "ot-ics-security": 4,
     "policy-exception-gen": 16,
     "pqc-first": 6,
@@ -591,6 +594,7 @@
     "mail-server-hardening": 0,
     "mcp-agent-trust": 7,
     "mlops-security": 10,
+    "network-trust": 0,
     "ot-ics-security": 14,
     "policy-exception-gen": 0,
     "pqc-first": 3,

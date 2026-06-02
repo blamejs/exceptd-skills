@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // mail-server-hardening (inbound mail-protocol hardening) brings the
-  // canonical set to 26.
+  // network-trust (AiTM-resistance: DNS / TLS-pinning / time) brings the
+  // canonical set to 27.
   assert.equal(
     playbooks.length,
-    26,
-    `expected 26 shipped playbooks, found ${playbooks.length}`,
+    27,
+    `expected 27 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.13 — 2026-06-02
+
+New `network-trust` playbook and skill audit the trust-anchor validation beneath TLS that adversary-in-the-middle attacks exploit: DNSSEC not validated end-to-end, DANE/TLSA not checked on capable peers, zone operations without TSIG, mTLS trusting a broad CA bundle instead of a pinned private CA, RFC 9421 HTTP message signatures unverified or under-scoped, DNS rebinding unguarded (SSRF into internal addresses), and unauthenticated NTP whose clock shift can revive expired certificates or shift TOTP windows. It maps to the DNSSEC resolver-DoS catalog entries (KeyTrap, NSEC3) and to NIST 800-53 SC-8, ISO 27001 A.8.21, NIS2 Art.21, and UK-CAF B4. Run it with `exceptd brief network-trust` or `exceptd run network-trust`.
+
 ## 0.16.12 — 2026-06-02
 
 New `mail-server-hardening` playbook and skill audit the inbound mail-server protocol surface that sender authentication (SPF/DKIM/DMARC) and transport TLS do not protect: SMTP smuggling via a non-standard end-of-data sequence, STARTTLS receive-buffer command/response injection, IMAP/POP3 bare-CR-LF and ManageSieve PUTSCRIPT injection, uncapped Sieve `redirect` used as a mail-routing exfiltration primitive, an unauthenticated open relay, mailbox-DAV (CalDAV/CardDAV) path traversal and XXE, and cleartext AUTH offered before STARTTLS. It maps to the SMTP-smuggling (CVE-2023-51764/51766) and STARTTLS-injection (CVE-2021-38371/33515) catalog families and to NIST 800-53 SI-2, ISO 27001 A.8.8, NIS2 Art.21, and PCI-DSS 4.0 6.3.3. Run it with `exceptd brief mail-server-hardening` or `exceptd run mail-server-hardening`.

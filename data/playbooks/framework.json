@@ -60,6 +60,7 @@
       "llm-tool-use-exfil",
       "mail-server-hardening",
       "mcp",
+      "network-trust",
       "post-quantum-migration",
       "ransomware",
       "sbom",

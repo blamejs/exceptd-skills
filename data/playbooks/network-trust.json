@@ -1,0 +1,646 @@
+{
+  "_meta": {
+    "id": "network-trust",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 93,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase network-layer trust (AiTM-resistance) playbook. Covers the trust-anchor checks below the application that TLS alone does not provide: DNSSEC validation, DANE/TLSA certificate pinning on capable peers, TSIG on zone operations, mTLS private-CA pinning, RFC 9421 HTTP message-signature verification, DNS-rebinding/SSRF guarding, authenticated time (NTS vs unauthenticated NTP) and its effect on certificate-validity windows and TOTP, and Public-Suffix-List currency for cookie/domain boundaries. Maps to the DNSSEC resolver-DoS catalog entries (KeyTrap CVE-2023-50387, NSEC3 CVE-2023-50868) for the validation surface. Distinct from crypto / post-quantum-migration (primitive strength) — this is trust-anchor VALIDATION, not algorithm choice. Closes the GRC loop against NIST 800-53 SC-8 / SC-20, ISO 27001 A.8.21, NIS2 Art.21, and UK-CAF B4."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "network-config-or-source-read",
+        "description": "Agent must read the operator's network-layer source and/or runtime configuration to inspect DNS resolution, DANE/TSIG, time synchronisation, mTLS trust, and request-signature verification. A host with neither marks the playbook visibility_gap=no_network_trust_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_network_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "crypto",
+        "condition": "finding.includes_tls_primitive_weakness == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Network-layer trust (AiTM-resistance: DNS / TLS-pinning / time)",
+    "attack_class": "cloud-misconfig",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1557",
+      "T1071.004",
+      "T1556"
+    ],
+    "cve_refs": [
+      "CVE-2023-50387",
+      "CVE-2023-50868"
+    ],
+    "cwe_refs": [
+      "CWE-345",
+      "CWE-918",
+      "CWE-290",
+      "CWE-347"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "uk-caf"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "network_trust_inventory",
+            "aitm_or_dns_forgery_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "eIDAS Art.19",
+          "obligation": "notify_supervisory_body",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_trust_service",
+            "time_or_cert_trust_impact"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "tls-equals-authenticated-peer",
+          "claim": "We use TLS everywhere, so the peer is authenticated.",
+          "fast_detection_test": "TLS authenticates against a CA bundle, not the EXPECTED peer. Ask whether DANE/TLSA (server-to-server) or a pinned private CA (mTLS) confirms the specific peer key — web-PKI alone admits any mis-issued cert."
+        },
+        {
+          "pattern_id": "validating-resolver-somewhere",
+          "claim": "We use a DNSSEC-validating resolver.",
+          "fast_detection_test": "Confirm the APPLICATION path trusts the AD flag (or validates) end-to-end. A validating resolver upstream is moot if the app accepts any answer over an unauthenticated hop."
+        },
+        {
+          "pattern_id": "time-is-just-ntp",
+          "claim": "Time sync is handled (NTP).",
+          "fast_detection_test": "Unauthenticated NTP is attacker-steerable. Ask whether NTS or an authenticated source is used, and whether cert-validity / TOTP depend on that clock."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org network controls equate TLS with peer authenticity and assume DNS and time are trustworthy. None require the trust-anchor VALIDATION layer — DNSSEC, DANE/TLSA, TSIG, mTLS pinning, authenticated time — that adversary-in-the-middle attacks exploit beneath TLS.",
+        "lag_score": 71,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-20",
+            "designed_for": "secure name/address resolution",
+            "insufficient_because": "commonly attested by \"we use a validating resolver\" without confirming the application path validates/trusts DNSSEC end-to-end."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-8",
+            "designed_for": "transmission confidentiality and integrity",
+            "insufficient_because": "satisfied by TLS to a CA bundle; does not require DANE pinning, DNSSEC, or authenticated time, so a valid-but-wrong cert or forged DNS answer passes."
+          }
+        ]
+      },
+      "skill_preload": [
+        "network-trust",
+        "pqc-first",
+        "identity-assurance",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Below the application, TLS authenticates a certificate against a CA bundle — not the specific peer you intend to reach, and not the DNS answer or clock that got you there. Adversary-in-the-middle attacks exploit the missing trust-anchor validation: forge a DNS answer (no DNSSEC), present a mis-issued-but-valid cert (no DANE/TLSA or CA pin), shift the clock (no NTS) to revive an expired cert or TOTP window, or rebind a name to an internal address. These are validation-posture gaps, not primitive-strength issues.",
+      "rwep_threshold": {
+        "escalate": 55,
+        "monitor": 35,
+        "close": 20
+      },
+      "framework_lag_declaration": "A clean TLS / \"validating resolver\" / NTP audit is NON-EVIDENCE for network-trust posture; it confirms encryption and a CA bundle, not end-to-end DNSSEC validation, DANE/TLSA or mTLS pinning, or authenticated time.",
+      "skill_chain": [
+        {
+          "skill": "network-trust",
+          "purpose": "enumerate the DNS / DANE / TSIG / time / mTLS / message-signature trust checks"
+        },
+        {
+          "skill": "pqc-first",
+          "purpose": "cross-check the transport crypto posture the trust layer sits on"
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "separate \"we use TLS / a validating resolver / NTP\" claims from enforced trust validation"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the SC-8 / SC-20 / Art.21 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 13000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4500,
+          "detect": 4000,
+          "analyze": 1800,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "dns-trust-config",
+          "type": "config_file",
+          "source": "grep for network-dnssec / network-dns-resolver / network-dns / safe-dns / AD flag / DNSSEC / DoT / DoH across the resolver path and config.",
+          "description": "Whether the resolver validates DNSSEC (or trusts a validated upstream over an authenticated channel) and how it handles private-range answers.",
+          "required": true,
+          "air_gap_alternative": "Inspect the resolver source for DNSSEC validation / AD-flag trust and the rebinding guard."
+        },
+        {
+          "id": "dane-tsig-config",
+          "type": "config_file",
+          "source": "grep for network-dane / TLSA / network-tsig / AXFR / IXFR / zone transfer / dynamic update across the network layer.",
+          "description": "Whether outbound TLS checks DANE/TLSA on capable peers and whether zone operations require TSIG.",
+          "required": false,
+          "air_gap_alternative": "Inspect the DANE and TSIG modules for enforcement; if no authoritative zones exist, TSIG is not-in-scope."
+        },
+        {
+          "id": "time-trust-config",
+          "type": "config_file",
+          "source": "grep for network-nts / ntp-check / NTS / time source / clock across the time-sync path.",
+          "description": "Whether time is synchronised over authenticated NTS or an authenticated source, vs unauthenticated NTP.",
+          "required": true,
+          "air_gap_alternative": "Inspect the time-sync config for NTS / authenticated source."
+        },
+        {
+          "id": "mtls-trust-config",
+          "type": "config_file",
+          "source": "grep for mtls-ca / mtls-engine / ca bundle / pin / SPKI / verify client cert across the mTLS engine.",
+          "description": "Whether mTLS pins the expected private CA / SPKI vs trusting a broad public CA bundle.",
+          "required": false,
+          "air_gap_alternative": "Inspect the mTLS engine for the trust-anchor / CA-pin configuration."
+        },
+        {
+          "id": "message-signature-and-psl-config",
+          "type": "config_file",
+          "source": "grep for http-message-signature / RFC 9421 / Signature-Input / content-digest / public-suffix across the inbound request path and cookie layer.",
+          "description": "Whether inbound HTTP message signatures are verified with adequate covered-components, and whether the PSL is current.",
+          "required": false,
+          "air_gap_alternative": "Inspect the request-verify path for signature verification + covered-components, and the PSL currency."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current network-layer configuration + source state (point-in-time posture audit)",
+        "asset_scope": "every service whose security depends on DNS authenticity, peer-certificate identity, accurate time, or request-signature integrity"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The service makes outbound connections and/or resolves names whose authenticity matters.",
+          "if_false": "A fully air-gapped service with fixed pinned IPs and no name resolution has a reduced surface; restrict to the time-trust and message-signature indicators."
+        },
+        {
+          "assumption": "Network-layer source or config is readable.",
+          "if_false": "Mark visibility_gap=no_network_trust_inventory and report only what the resolver/transport source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "dane-tsig-config",
+          "fallback_action": "If the operator is not authoritative for any DNS zone and does not run an MTA, skip the TSIG and DANE indicators.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "mtls-trust-config",
+          "fallback_action": "If no mTLS is used, skip the CA-pinning indicator.",
+          "confidence_impact": "none"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "dnssec-validation-not-enforced",
+          "type": "config_value",
+          "value": "The resolver path does not validate DNSSEC — it does not require/trust the AD (Authenticated Data) flag from a validating resolver and does not validate DS/DNSKEY/RRSIG itself, so unsigned or forged answers are accepted as authentic.",
+          "description": "Without DNSSEC validation an on-path or cache-poisoning attacker forges DNS answers (e.g. redirecting an MX, an OCSP endpoint, or an issuer host) and the application trusts them — the foundation of many AiTM chains.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1071.004",
+          "false_positive_checks_required": [
+            "A stub resolver that trusts a validated AD flag from a DNSSEC-validating upstream over an authenticated channel (e.g. DoT/DoH to a trusted resolver) is safe; the finding is a path that neither validates locally nor trusts a validated upstream.",
+            "Names in non-DNSSEC-signed zones cannot be validated regardless; the finding is the resolver ignoring DNSSEC where the zone IS signed (or not preferring signed answers)."
+          ]
+        },
+        {
+          "id": "dane-tlsa-not-checked",
+          "type": "config_value",
+          "value": "Outbound TLS to peers that publish DANE/TLSA records (notably MTA-to-MTA SMTP, and any DANE-pinned service) does not check TLSA, relying only on web-PKI CA trust.",
+          "description": "Web-PKI alone lets any CA-issued (or mis-issued) certificate pass; DANE/TLSA pins the expected key via DNSSEC. Skipping it leaves an AiTM with a valid-but-wrong cert undetected on DANE-capable peers.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1557",
+          "false_positive_checks_required": [
+            "DANE applies where the peer publishes TLSA AND the resolver validates DNSSEC; a peer with no TLSA record is web-PKI-only and not this finding.",
+            "For browser-facing HTTPS (no DANE adoption) this indicator is not-in-scope; it targets MTA-STS/DANE-capable server-to-server TLS."
+          ]
+        },
+        {
+          "id": "unauthenticated-ntp-no-nts",
+          "type": "config_value",
+          "value": "Time is synchronised over unauthenticated NTP (no NTS / Network Time Security), so a network attacker can shift the host clock.",
+          "description": "A shifted clock revives expired/revoked certificates (validity windows), shifts TOTP/HOTP windows (auth bypass), and breaks short-lived-token and Kerberos assumptions — time is a silent trust input.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1557",
+          "false_positive_checks_required": [
+            "A host with an authenticated time source (NTS, a GPS/PTP appliance, or an authenticated internal time service) is safe; the finding is network-NTP-only with no authentication.",
+            "A host whose clock is hardware-disciplined and never network-steered is not exposed to NTP time-shift."
+          ]
+        },
+        {
+          "id": "tsig-absent-on-zone-operations",
+          "type": "config_value",
+          "value": "DNS zone transfers (AXFR/IXFR) or dynamic updates are served/accepted without TSIG (or SIG(0)) authentication.",
+          "description": "Unauthenticated AXFR leaks the full zone (recon); unauthenticated dynamic update lets an attacker inject or overwrite records, hijacking name resolution for the zone.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1071.004",
+          "false_positive_checks_required": [
+            "A nameserver that restricts AXFR to TSIG-keyed secondaries (or to no external peers at all) is safe; the finding is AXFR/update reachable without TSIG.",
+            "A host that is not authoritative for any zone (pure resolver) has no zone-transfer surface — not-in-scope."
+          ]
+        },
+        {
+          "id": "mtls-ca-not-pinned",
+          "type": "config_value",
+          "value": "The mTLS engine accepts any certificate chaining to a broad/public CA bundle instead of pinning the specific internal/private CA (or SPKI) expected for the peer.",
+          "description": "A broad trust bundle means any certificate from any trusted CA authenticates as the peer; an attacker with a cert from any bundled CA impersonates the service in a mesh.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1557",
+          "false_positive_checks_required": [
+            "A service mesh / internal mTLS that pins the private issuing CA (or peer SPKI) is safe; the finding is mTLS validating against the full public CA bundle where a private CA is expected.",
+            "A genuinely public-client mTLS scenario (many independent client CAs by design) is not this finding — confirm the expected trust scope."
+          ]
+        },
+        {
+          "id": "http-message-signature-not-verified",
+          "type": "config_value",
+          "value": "Inbound requests carrying an HTTP Message Signature (RFC 9421) are accepted without verifying the signature, or the signature does not cover the security-critical components (method, target-URI, content-digest, created/expires).",
+          "description": "An unverified or under-scoped message signature provides no integrity/authenticity guarantee — a tampered or replayed request passes as signed.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "Confirm the verifier checks the signature AND that the covered-components include method, @target-uri, content-digest, and a created/expires window — a verifier that accepts unsigned, or whose signature omits the body digest, is the finding.",
+            "An endpoint that does not use message signatures at all (relies on mTLS / bearer tokens) is not this finding."
+          ]
+        },
+        {
+          "id": "dns-rebinding-unguarded",
+          "type": "config_value",
+          "value": "Outbound/SSRF-relevant DNS resolution is not guarded against rebinding — the resolved address is re-resolved between the security check and the connection, or a name resolving to a private/link-local/loopback address is followed.",
+          "description": "DNS rebinding lets a name that first resolves to a public address re-resolve to an internal one, turning an allowlist check into an SSRF into internal services.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1557",
+          "false_positive_checks_required": [
+            "A resolver that pins the checked IP for the lifetime of the connection AND refuses private/link-local/loopback/metadata addresses is safe; the finding is re-resolution or unfiltered private-range answers.",
+            "A client that only ever connects to a fixed pinned IP (no name re-resolution) is not exposed to rebinding."
+          ]
+        },
+        {
+          "id": "public-suffix-list-stale",
+          "type": "config_value",
+          "value": "The Public Suffix List used for cookie-scope and same-site/domain-boundary decisions is stale or absent, so the registrable-domain boundary is computed incorrectly.",
+          "description": "A wrong PSL boundary lets a cookie be set or read across an organizational boundary (super-cookie / cross-tenant session scoping), weakening the same-origin trust the auth layer assumes.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "A PSL refreshed within its currency window (or pinned to a recent vendored copy with a refresh job) is safe; the finding is a years-stale or absent PSL driving cookie/domain decisions.",
+            "A service that does not make registrable-domain decisions (single fixed host, no wildcard cookies) is not exposed to PSL staleness."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "dnssec-validation-not-enforced",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A stub resolver that trusts a validated AD flag from a DNSSEC-validating upstream over an authenticated channel (e.g. DoT/DoH to a trusted resolver) is safe; the finding is a path that neither validates locally nor trusts a validated upstream."
+        },
+        {
+          "indicator_id": "dane-tlsa-not-checked",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "DANE applies where the peer publishes TLSA AND the resolver validates DNSSEC; a peer with no TLSA record is web-PKI-only and not this finding."
+        },
+        {
+          "indicator_id": "unauthenticated-ntp-no-nts",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A host with an authenticated time source (NTS, a GPS/PTP appliance, or an authenticated internal time service) is safe; the finding is network-NTP-only with no authentication."
+        },
+        {
+          "indicator_id": "tsig-absent-on-zone-operations",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A nameserver that restricts AXFR to TSIG-keyed secondaries (or to no external peers at all) is safe; the finding is AXFR/update reachable without TSIG."
+        },
+        {
+          "indicator_id": "mtls-ca-not-pinned",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A service mesh / internal mTLS that pins the private issuing CA (or peer SPKI) is safe; the finding is mTLS validating against the full public CA bundle where a private CA is expected."
+        },
+        {
+          "indicator_id": "http-message-signature-not-verified",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "Confirm the verifier checks the signature AND that the covered-components include method, @target-uri, content-digest, and a created/expires window — a verifier that accepts unsigned, or whose signature omits the body digest, is the finding."
+        },
+        {
+          "indicator_id": "dns-rebinding-unguarded",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A resolver that pins the checked IP for the lifetime of the connection AND refuses private/link-local/loopback/metadata addresses is safe; the finding is re-resolution or unfiltered private-range answers."
+        },
+        {
+          "indicator_id": "public-suffix-list-stale",
+          "benign_pattern": "A configuration where the trust check is enforced upstream (validating resolver, authenticated time appliance, pinned private CA) or is genuinely not-in-scope for the deployment.",
+          "distinguishing_test": "A PSL refreshed within its currency window (or pinned to a recent vendored copy with a refresh job) is safe; the finding is a years-stale or absent PSL driving cookie/domain decisions."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one network-trust anchor is unvalidated on a production path — DNSSEC not enforced, DANE/TLSA unchecked on a capable peer, time unauthenticated, TSIG absent on exposed zone ops, mTLS unpinned, message signatures unverified, or DNS rebinding unguarded.",
+        "inconclusive": "A trust check is enforced by infrastructure the audit could not read (a validating-resolver appliance, a time appliance) — record as visibility_gap, not a clean result.",
+        "not_detected": "The application path validates DNSSEC (or trusts a validated upstream over an authenticated channel), checks DANE/TLSA where published, uses authenticated time, requires TSIG on zone ops, pins the expected mTLS CA, verifies adequately-scoped message signatures, and guards against DNS rebinding."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "dnssec-validation-not-enforced",
+          "rwep_factor": "blast_radius",
+          "weight": 25
+        },
+        {
+          "signal_id": "dane-tlsa-not-checked",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        },
+        {
+          "signal_id": "unauthenticated-ntp-no-nts",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "How many trust decisions (peer auth, name resolution, cert validity, TOTP) ride on the unvalidated anchor, and is the path internet-exposed?",
+        "scoring_rubric": [
+          {
+            "condition": "An internet-facing path where forged DNS or a mis-issued cert redirects authentication / credential / payment traffic",
+            "blast_radius_score": 5,
+            "description": "AiTM yields credential capture or traffic redirection at scale"
+          },
+          {
+            "condition": "Time-trust gap affecting cert-validity / TOTP across many hosts",
+            "blast_radius_score": 4,
+            "description": "Clock shift revives expired certs or shifts auth windows fleet-wide"
+          },
+          {
+            "condition": "Internal-only path behind strong network segmentation",
+            "blast_radius_score": 2,
+            "description": "Exploitation requires an on-path position inside the perimeter"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We use TLS everywhere, a validating resolver, and NTP, so the network is trustworthy.",
+        "audit_evidence": "TLS certificates, a resolver configured with DNSSEC, an NTP client.",
+        "reality_test": "Confirm the application path validates DNSSEC end-to-end, checks DANE/TLSA on capable peers (or pins the mTLS CA), and uses authenticated time. If a forged DNS answer, a mis-issued cert, or a time shift would be accepted, TLS did not make the network trustworthy.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "dnssec-validation-not-enforced",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-20 (secure name resolution)",
+          "actual_gap": "SC-20 names DNSSEC but is attested by a resolver setting, not end-to-end application trust of validated answers."
+        },
+        {
+          "finding_id": "dane-tlsa-not-checked",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-8 (transmission integrity)",
+          "actual_gap": "SC-8 is satisfied by TLS to a CA bundle; it does not require DANE pinning, so a mis-issued valid cert passes."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "An internet-facing authentication / payment path resolves names without DNSSEC and pins no peer cert (DANE/mTLS)",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Unauthenticated time drives cert-validity or TOTP on production auth",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "enforce-dnssec-and-rebinding-guard",
+          "description": "Validate DNSSEC end-to-end (or trust a validating upstream over DoT/DoH), prefer signed answers, and pin the resolved IP for the connection lifetime while refusing private/link-local/metadata addresses.",
+          "preconditions": [
+            "resolver path is operator-controlled"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "dnssec-validation-not-enforced",
+            "dns-rebinding-unguarded"
+          ]
+        },
+        {
+          "id": "pin-peer-certificates",
+          "description": "Check DANE/TLSA on DANE-capable peers (server-to-server / MTA) and pin the expected private CA or SPKI on mTLS instead of trusting the full public CA bundle.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "dane-tlsa-not-checked",
+            "mtls-ca-not-pinned"
+          ]
+        },
+        {
+          "id": "authenticate-time",
+          "description": "Synchronise time over NTS or an authenticated source, and treat the clock as a trust input for cert-validity and TOTP verification.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "unauthenticated-ntp-no-nts"
+          ]
+        },
+        {
+          "id": "require-tsig-and-verify-signatures",
+          "description": "Require TSIG (or SIG(0)) on AXFR/IXFR and dynamic updates, and verify RFC 9421 HTTP message signatures with method + @target-uri + content-digest + created/expires in the covered components.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "tsig-absent-on-zone-operations",
+            "http-message-signature-not-verified"
+          ]
+        },
+        {
+          "id": "refresh-public-suffix-list",
+          "description": "Pin a recent Public Suffix List with a refresh job so cookie-scope and domain-boundary decisions use a current registrable-domain table.",
+          "preconditions": [],
+          "priority": 3,
+          "for_signals": [
+            "public-suffix-list-stale"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "forged-dns-rejected",
+          "test": "Serve a forged answer for a DNSSEC-signed name the application resolves.",
+          "expected_result": "Resolution fails validation; the forged answer is not used.",
+          "test_type": "negative"
+        },
+        {
+          "id": "mis-issued-cert-rejected",
+          "test": "Present a valid CA-issued certificate for a DANE-pinned (or mTLS-pinned) peer that does not match the published TLSA / pinned CA.",
+          "expected_result": "Connection refused — peer identity does not match the pin.",
+          "test_type": "negative"
+        },
+        {
+          "id": "time-shift-does-not-revive-cert",
+          "test": "Shift the host clock (where unauthenticated) and present an expired certificate.",
+          "expected_result": "With authenticated time, the clock cannot be shifted and the expired cert is refused.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-traffic-flows",
+          "test": "Resolve and connect to a legitimate, correctly-pinned peer over the hardened path.",
+          "expected_result": "Connection succeeds — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A compromise of the DNSSEC signing key, the pinned CA, or the time authority itself still yields a trusted-but-forged answer.",
+        "why_remains": "Trust-anchor validation moves trust to the anchor; compromise of the anchor is handled by key-management and monitoring, not by the validating client.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The DNSSEC, DANE/TSIG, time-sync, mTLS-pin, message-signature, and PSL configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the forged-DNS / mis-issued-cert / time-shift negative tests plus the legitimate-path functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new resolver / CA / time source / DANE-capable peer is introduced",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of network-trust posture",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "network-trust config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Adversary-in-the-middle beneath TLS — forged DNS (no DNSSEC), mis-issued cert (no DANE/mTLS pin), shifted clock (no NTS), or DNS rebinding — accepted because the trust anchor was not validated.",
+          "control_gap": "Application path does not validate DNSSEC / DANE-TLSA / authenticated time / mTLS pin / message signatures.",
+          "framework_gap": "NIST SC-8 + SC-20 + NIS2 Art.21 equate TLS with peer authenticity and assume DNS/time are trustworthy.",
+          "new_control_requirement": "The path MUST validate DNS authenticity (DNSSEC), pin the expected peer (DANE/mTLS), and use authenticated time."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/eIDAS Art.19 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "trust-service supervisory body",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A peer or zone cannot adopt DNSSEC/DANE in time (e.g. a third party with no signed zone).",
+        "exception_template": {
+          "scope": "the specific peer / resolution path",
+          "duration": "90 days",
+          "compensating_controls": [
+            "mTLS or SPKI pin to the specific peer",
+            "authenticated-channel resolver (DoT/DoH to a trusted resolver)",
+            "enhanced logging of certificate + DNS-answer changes"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new resolver / CA / time source change",
+        "trigger": "change to DNS/time/CA trust anchors, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-network-trust-paths",
+      "title": "Inventory + validate every DNS / TLS-peer / time / message-signature trust anchor",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "aitm-resistance-sweep",
+      "title": "Targeted AiTM-resistance sweep (DNSSEC + DANE + authenticated time) on internet-facing paths",
+      "applies_to": {
+        "attack_technique": "T1557"
+      }
+    }
+  ]
+}

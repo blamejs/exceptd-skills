@@ -156,7 +156,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 26 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
+| `exceptd brief --all` | Grouped-by-scope summary of all 27 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
@@ -452,6 +452,7 @@ When in doubt, ship the playbook without a collector and open the gap as a follo
 | identity assurance, aal, ial, fal, fido2, webauthn, passkey, oidc, saml | identity-assurance |
 | verifiable credential, digital wallet, sd-jwt-vc, oid4vp, mdoc, eudi wallet, eidas 2.0, did:web, status list, credential verifier | vc-wallet-trust |
 | mail server hardening, smtp smuggling, starttls injection, open relay, imap command injection, managesieve, sieve redirect, mailbox dav, pop3, mx hardening | mail-server-hardening |
+| network trust, adversary in the middle, aitm, dnssec, dane, tlsa, tsig, mtls pinning, http message signature, dns rebinding, nts, authenticated time | network-trust |
 | ot security, ics security, scada, plc, iec 62443, nist 800-82, nerc cip | ot-ics-security |
 | cvd, vdp, bug bounty, iso 29147, iso 30111, csaf, security.txt | coordinated-vuln-disclosure |
 | threat model, stride, pasta, linddun, kill chain, diamond model, unified kill chain | threat-modeling-methodology |

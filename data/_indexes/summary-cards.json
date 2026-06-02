@@ -2063,6 +2063,44 @@
       "last_threat_review": "2026-06-02",
       "path": "skills/mail-server-hardening/skill.md",
       "handoff_targets": []
+    },
+    "network-trust": {
+      "description": "Network-layer trust and adversary-in-the-middle resistance for mid-2026 — DNSSEC validation, DANE/TLSA pinning, TSIG, mTLS private-CA pinning, RFC 9421 HTTP message signatures, DNS-rebinding/SSRF guarding, and authenticated time (NTS) and its effect on certificate validity and TOTP",
+      "threat_context_excerpt": "Below the application, TLS authenticates a certificate against a CA bundle — not the specific peer you intended to reach, and not the DNS answer or the clock that got you there. Adversary-in-the-middle attacks exploit the trust-anchor validation TLS does not perform: forge a DNS answer where DNSSEC is not validated; present a mis-issued-but-CA-valid certificate where DANE/TLSA or an mTLS CA pin is not checked; shift an unauthenticated clock to revive an expired certificate or a TOTP window; or rebind a name from a public to an internal address. The DNSSEC validation surface itself carries ...",
+      "produces": "Report per trust anchor (DNS, peer certificate, time, message signature), marking each enforced / missing / inconclusive (visibility gap). For every missing check, state whether the path is internet-facing and which trust decisions (peer auth, name resolution, cert validity, TOTP) depend on it. Distinguish a genuinely-not-in-scope anchor (no DANE-capable peer, no authoritative zone, fixed pinned IP) from an unvalidated one. Provide the prioritised remediation (validate DNSSEC + guard rebinding, pin peer certificates via DANE/mTLS, authenticate time, require TSIG + verify message signatures, re ...",
+      "key_xrefs": {
+        "cwe_refs": [
+          "CWE-345",
+          "CWE-918",
+          "CWE-290",
+          "CWE-347"
+        ],
+        "d3fend_refs": [],
+        "framework_gaps": [
+          "NIST-800-53-SC-8",
+          "ISO-27001-2022-A.8.21",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4"
+        ],
+        "atlas_refs": [],
+        "attack_refs": [
+          "T1557",
+          "T1071.004",
+          "T1556"
+        ],
+        "rfc_refs": [],
+        "dlp_refs": []
+      },
+      "trigger_count": 17,
+      "atlas_count": 0,
+      "attack_count": 3,
+      "framework_gap_count": 4,
+      "cwe_count": 4,
+      "d3fend_count": 0,
+      "rfc_count": 0,
+      "last_threat_review": "2026-06-02",
+      "path": "skills/network-trust/skill.md",
+      "handoff_targets": []
     }
   }
 }
