@@ -14,6 +14,7 @@
     ],
     "CWE-672": [
       "kernel-lpe-triage",
+      "privacy-consent-ops",
       "vc-wallet-trust"
     ],
     "CWE-787": [
@@ -51,7 +52,8 @@
       "audit-log-integrity",
       "idp-incident-response",
       "mcp-agent-trust",
-      "network-trust"
+      "network-trust",
+      "privacy-consent-ops"
     ],
     "CWE-352": [
       "api-security",
@@ -246,7 +248,8 @@
       "multitenancy-isolation"
     ],
     "CWE-778": [
-      "audit-log-integrity"
+      "audit-log-integrity",
+      "privacy-consent-ops"
     ],
     "CWE-353": [
       "self-update-integrity"
@@ -278,6 +281,9 @@
     ],
     "CWE-532": [
       "log-injection-telemetry"
+    ],
+    "CWE-807": [
+      "privacy-consent-ops"
     ]
   },
   "d3fend_refs": {
@@ -404,7 +410,8 @@
       "decompression-dos",
       "kernel-lpe-triage",
       "log-injection-telemetry",
-      "mail-server-hardening"
+      "mail-server-hardening",
+      "privacy-consent-ops"
     ],
     "ISO-27001-2022-A.8.8": [
       "coordinated-vuln-disclosure",
@@ -651,6 +658,7 @@
       "decompression-dos",
       "log-injection-telemetry",
       "multitenancy-isolation",
+      "privacy-consent-ops",
       "sector-telecom",
       "self-update-integrity"
     ],
@@ -742,6 +750,7 @@
       "mail-server-hardening",
       "multitenancy-isolation",
       "network-trust",
+      "privacy-consent-ops",
       "self-update-integrity"
     ],
     "ISO-27001-2022-A.8.21": [
@@ -752,6 +761,7 @@
       "log-injection-telemetry",
       "multitenancy-isolation",
       "network-trust",
+      "privacy-consent-ops",
       "self-update-integrity"
     ],
     "ISO-27001-2022-A.8.15": [
@@ -1036,11 +1046,13 @@
       "network-trust"
     ],
     "T1070": [
-      "audit-log-integrity"
+      "audit-log-integrity",
+      "privacy-consent-ops"
     ],
     "T1565.001": [
       "audit-log-integrity",
-      "log-injection-telemetry"
+      "log-injection-telemetry",
+      "privacy-consent-ops"
     ],
     "T1562.008": [
       "audit-log-integrity"
@@ -1055,6 +1067,9 @@
     "T1499.001": [
       "decompression-dos",
       "multitenancy-isolation"
+    ],
+    "T1036": [
+      "privacy-consent-ops"
     ]
   },
   "rfc_refs": {

@@ -66,6 +66,7 @@
       "multitenancy-isolation",
       "network-trust",
       "post-quantum-migration",
+      "privacy-consent-ops",
       "ransomware",
       "sbom",
       "self-update-integrity",

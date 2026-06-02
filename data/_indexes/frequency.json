@@ -36,9 +36,10 @@
         ]
       },
       "CWE-672": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "kernel-lpe-triage",
+          "privacy-consent-ops",
           "vc-wallet-trust"
         ]
       },
@@ -89,12 +90,13 @@
         ]
       },
       "CWE-345": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "audit-log-integrity",
           "idp-incident-response",
           "mcp-agent-trust",
-          "network-trust"
+          "network-trust",
+          "privacy-consent-ops"
         ]
       },
       "CWE-352": {
@@ -383,9 +385,10 @@
         ]
       },
       "CWE-778": {
-        "count": 1,
+        "count": 2,
         "skills": [
-          "audit-log-integrity"
+          "audit-log-integrity",
+          "privacy-consent-ops"
         ]
       },
       "CWE-353": {
@@ -447,6 +450,12 @@
         "count": 1,
         "skills": [
           "log-injection-telemetry"
+        ]
+      },
+      "CWE-807": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
         ]
       }
     },
@@ -633,13 +642,14 @@
     },
     "framework_gaps": {
       "NIST-800-53-SI-2": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "audit-log-integrity",
           "decompression-dos",
           "kernel-lpe-triage",
           "log-injection-telemetry",
-          "mail-server-hardening"
+          "mail-server-hardening",
+          "privacy-consent-ops"
         ]
       },
       "ISO-27001-2022-A.8.8": {
@@ -1043,11 +1053,12 @@
         ]
       },
       "AU-ISM-1556": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "decompression-dos",
           "log-injection-telemetry",
           "multitenancy-isolation",
+          "privacy-consent-ops",
           "sector-telecom",
           "self-update-integrity"
         ]
@@ -1212,7 +1223,7 @@
         ]
       },
       "NIS2-Art21-network-security": {
-        "count": 7,
+        "count": 8,
         "skills": [
           "audit-log-integrity",
           "decompression-dos",
@@ -1220,6 +1231,7 @@
           "mail-server-hardening",
           "multitenancy-isolation",
           "network-trust",
+          "privacy-consent-ops",
           "self-update-integrity"
         ]
       },
@@ -1230,12 +1242,13 @@
         ]
       },
       "UK-CAF-B4": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "decompression-dos",
           "log-injection-telemetry",
           "multitenancy-isolation",
           "network-trust",
+          "privacy-consent-ops",
           "self-update-integrity"
         ]
       },
@@ -1692,16 +1705,18 @@
         ]
       },
       "T1070": {
-        "count": 1,
-        "skills": [
-          "audit-log-integrity"
-        ]
-      },
-      "T1565.001": {
         "count": 2,
         "skills": [
           "audit-log-integrity",
-          "log-injection-telemetry"
+          "privacy-consent-ops"
+        ]
+      },
+      "T1565.001": {
+        "count": 3,
+        "skills": [
+          "audit-log-integrity",
+          "log-injection-telemetry",
+          "privacy-consent-ops"
         ]
       },
       "T1562.008": {
@@ -1728,6 +1743,12 @@
         "skills": [
           "decompression-dos",
           "multitenancy-isolation"
+        ]
+      },
+      "T1036": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
         ]
       }
     },
@@ -2175,6 +2196,20 @@
     ],
     "framework_gaps": [
       {
+        "id": "NIS2-Art21-network-security",
+        "count": 8,
+        "skills": [
+          "audit-log-integrity",
+          "decompression-dos",
+          "log-injection-telemetry",
+          "mail-server-hardening",
+          "multitenancy-isolation",
+          "network-trust",
+          "privacy-consent-ops",
+          "self-update-integrity"
+        ]
+      },
+      {
         "id": "NIST-800-218-SSDF",
         "count": 8,
         "skills": [
@@ -2186,19 +2221,6 @@
           "supply-chain-integrity",
           "threat-modeling-methodology",
           "webapp-security"
-        ]
-      },
-      {
-        "id": "NIS2-Art21-network-security",
-        "count": 7,
-        "skills": [
-          "audit-log-integrity",
-          "decompression-dos",
-          "log-injection-telemetry",
-          "mail-server-hardening",
-          "multitenancy-isolation",
-          "network-trust",
-          "self-update-integrity"
         ]
       },
       {
@@ -2215,6 +2237,18 @@
         ]
       },
       {
+        "id": "AU-ISM-1556",
+        "count": 6,
+        "skills": [
+          "decompression-dos",
+          "log-injection-telemetry",
+          "multitenancy-isolation",
+          "privacy-consent-ops",
+          "sector-telecom",
+          "self-update-integrity"
+        ]
+      },
+      {
         "id": "ISO-27001-2022-A.8.28",
         "count": 6,
         "skills": [
@@ -2227,13 +2261,26 @@
         ]
       },
       {
-        "id": "AU-ISM-1556",
-        "count": 5,
+        "id": "NIST-800-53-SI-2",
+        "count": 6,
+        "skills": [
+          "audit-log-integrity",
+          "decompression-dos",
+          "kernel-lpe-triage",
+          "log-injection-telemetry",
+          "mail-server-hardening",
+          "privacy-consent-ops"
+        ]
+      },
+      {
+        "id": "UK-CAF-B4",
+        "count": 6,
         "skills": [
           "decompression-dos",
           "log-injection-telemetry",
           "multitenancy-isolation",
-          "sector-telecom",
+          "network-trust",
+          "privacy-consent-ops",
           "self-update-integrity"
         ]
       },
@@ -2249,17 +2296,6 @@
         ]
       },
       {
-        "id": "NIST-800-53-SI-2",
-        "count": 5,
-        "skills": [
-          "audit-log-integrity",
-          "decompression-dos",
-          "kernel-lpe-triage",
-          "log-injection-telemetry",
-          "mail-server-hardening"
-        ]
-      },
-      {
         "id": "SOC2-CC7-anomaly-detection",
         "count": 5,
         "skills": [
@@ -2268,17 +2304,6 @@
           "dlp-gap-analysis",
           "email-security-anti-phishing",
           "incident-response-playbook"
-        ]
-      },
-      {
-        "id": "UK-CAF-B4",
-        "count": 5,
-        "skills": [
-          "decompression-dos",
-          "log-injection-telemetry",
-          "multitenancy-isolation",
-          "network-trust",
-          "self-update-integrity"
         ]
       },
       {
@@ -2521,11 +2546,12 @@
         ]
       },
       {
-        "id": "T0855",
-        "count": 2,
+        "id": "T1565.001",
+        "count": 3,
         "skills": [
-          "ot-ics-security",
-          "sector-energy"
+          "audit-log-integrity",
+          "log-injection-telemetry",
+          "privacy-consent-ops"
         ]
       }
     ],
@@ -2660,7 +2686,7 @@
       "CWE-639",
       "CWE-668",
       "CWE-776",
-      "CWE-778",
+      "CWE-807",
       "CWE-834",
       "CWE-93"
     ],
@@ -2717,7 +2743,7 @@
       "AML.T0040"
     ],
     "attack_refs": [
-      "T1070",
+      "T1036",
       "T1071.003",
       "T1071.004",
       "T1098",
@@ -2869,7 +2895,6 @@
       "CWE-760",
       "CWE-772",
       "CWE-779",
-      "CWE-807",
       "CWE-822",
       "CWE-835",
       "CWE-843",

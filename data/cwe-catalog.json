@@ -1075,7 +1075,8 @@
       "audit-log-integrity",
       "idp-incident-response",
       "mcp-agent-trust",
-      "network-trust"
+      "network-trust",
+      "privacy-consent-ops"
     ],
     "evidence_cves": [
       "CVE-2023-51764",
@@ -1539,6 +1540,7 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [
       "kernel-lpe-triage",
+      "privacy-consent-ops",
       "vc-wallet-trust"
     ],
     "evidence_cves": [
@@ -2710,7 +2712,10 @@
       "CVE-2026-21514"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import."
+    "notes": "Added v0.13.17 KEV bulk-import.",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "CWE-822": {
     "id": "CWE-822",
@@ -3851,7 +3856,8 @@
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
     "skills_referencing": [
-      "audit-log-integrity"
+      "audit-log-integrity",
+      "privacy-consent-ops"
     ]
   },
   "CWE-779": {

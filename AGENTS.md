@@ -156,7 +156,7 @@ Cross-cutting playbook `framework` is the natural correlation layer — many pla
 
 | Verb | What it does |
 |---|---|
-| `exceptd brief --all` | Grouped-by-scope summary of all 32 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
+| `exceptd brief --all` | Grouped-by-scope summary of all 33 playbooks. `--scope <type>` filters. `--directives` expands directive IDs/titles per playbook. `--flat` for non-grouped. `exceptd plan` was removed in v0.13.0; invoking it returns a structured `ok:false` refusal pointing at this command. |
 | `exceptd brief <pb>` | Phase 2 threat-context briefing — threat context, RWEP thresholds, skill chain, token budget, jurisdiction obligations. |
 | `exceptd run <pb> --evidence <file>` | Phases 5-7 (analyze + validate + close) from agent evidence. Auto-detect cwd when no playbook positional. `--vex <file>` drops CycloneDX/OpenVEX `not_affected` CVEs. `--diff-from-latest` for drift mode. `--force-stale` overrides currency hard-block. |
 | `exceptd ai-run <pb>` | Streaming variant of `run` for AI agents; emits phase-by-phase NDJSON. |
@@ -458,6 +458,7 @@ When in doubt, ship the playbook without a collector and open the gap as a follo
 | multitenancy isolation, cross tenant, tenant isolation, row level security, rls, bola, idor, noisy neighbour, rapid reset, per tenant quota, circuit breaker, denial of service | multitenancy-isolation |
 | decompression bomb, zip bomb, zip slip, redos, catastrophic backtracking, billion laughs, xml entity expansion, parser dos, amplification attack, nested archive, recursion depth | decompression-dos |
 | log injection, crlf injection, log forging, telemetry integrity, secrets in logs, metrics endpoint exposure, otlp exporter, webhook sink, exporter ssrf, observability security | log-injection-telemetry |
+| privacy operations, consent integrity, sanctions screening, ofac screening, homoglyph evasion, iab tcf, mspa, dsr, right to erasure, gdpr article 17, ropa, record of processing | privacy-consent-ops |
 | ot security, ics security, scada, plc, iec 62443, nist 800-82, nerc cip | ot-ics-security |
 | cvd, vdp, bug bounty, iso 29147, iso 30111, csaf, security.txt | coordinated-vuln-disclosure |
 | threat model, stride, pasta, linddun, kill chain, diamond model, unified kill chain | threat-modeling-methodology |
