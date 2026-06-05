@@ -159,7 +159,13 @@ jobs:
           fi
           # --from-cache + --swarm: source fetches run in parallel against
           # the warm cache, never touching upstream a second time.
-          node lib/refresh-external.js --from-cache .cache/upstream --swarm $SOURCE_ARG 2>&1 | tee refresh-dry.log
+          # --force-stale: the cache was prefetched seconds ago in THIS job by
+          # a runner that (correctly) has no signing key, so the Ed25519 cache
+          # signature can never exist here. The signature guards a cache that
+          # crosses a trust boundary; this one never leaves the ephemeral
+          # runner, and everything applied from it reaches main only through
+          # the auto-PR with full CI + review.
+          node lib/refresh-external.js --from-cache .cache/upstream --swarm --force-stale $SOURCE_ARG 2>&1 | tee refresh-dry.log
           DRY_EXIT=${PIPESTATUS[0]}
           echo "exit_code=$DRY_EXIT" >> "$GITHUB_OUTPUT"
           # Count diffs across all sources to drive PR-open decision.
@@ -191,8 +197,11 @@ jobs:
             SOURCE_ARG="--source $SOURCE_INPUT"
           fi
           # Apply from the same warm cache. --apply triggers an automatic
-          # build-indexes rebuild after writing upserts.
-          node lib/refresh-external.js --apply --from-cache .cache/upstream --swarm $SOURCE_ARG
+          # build-indexes rebuild after writing upserts. --force-stale for the
+          # same reason as the dry-run step: the same-job cache is unsigned by
+          # design on a keyless runner, and the apply only ever lands on main
+          # via the auto-PR.
+          node lib/refresh-external.js --apply --from-cache .cache/upstream --swarm --force-stale $SOURCE_ARG
 
       - name: Predeploy gate (verifies the apply produced a consistent state)
         if: |
