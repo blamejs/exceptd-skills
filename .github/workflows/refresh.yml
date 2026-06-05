@@ -65,7 +65,10 @@ jobs:
           # requested without a lock file.
 
       - name: Install dependencies
-        run: npm install
+        # --no-package-lock: the repo intentionally ships no lock file, and a
+        # generated one would be swept into the data-mutation bundle by the
+        # `git status --porcelain` capture below and land in auto-PRs.
+        run: npm install --no-package-lock
 
       - name: Warm upstream cache (single fan-out fetch)
         # Prefetch caches every upstream snapshot once at job start. The

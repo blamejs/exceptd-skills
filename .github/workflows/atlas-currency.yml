@@ -29,7 +29,8 @@ jobs:
           # requested without a lock file.
 
       - name: Install dependencies
-        run: npm install
+        # --no-package-lock: the repo intentionally ships no lock file.
+        run: npm install --no-package-lock
 
       - name: Run currency report
         id: currency
