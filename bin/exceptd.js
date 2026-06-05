@@ -243,21 +243,6 @@ const REMOVED_VERBS = {
   ingest: "run",
 };
 
-// Renamed but functionally-routed verbs (orchestrator-side dispatch still
-// handles them as of v0.13). Distinct from REMOVED_VERBS — these aren't
-// refused; they're just a soft hint that the rename happened. No banner
-// is emitted post-v0.13.
-const RENAMED_VERBS_HINT = {
-  scan: "discover --scan-only",
-  dispatch: "discover",
-  currency: "doctor --currency",
-  verify: "doctor --signatures",
-  "validate-cves": "doctor --cves",
-  "validate-rfcs": "doctor --rfcs",
-  prefetch: "refresh --no-network",
-  "build-indexes": "refresh --indexes-only",
-};
-
 /**
  * v0.13.5: Windows ACL audit helper for `doctor --ai-config`. Replaces
  * the v0.13.3 "manual review" placeholder with a real check.
@@ -515,7 +500,7 @@ surfaces.
   [DEPRECATED] verify            → doctor --signatures
   [DEPRECATED] validate-cves     → doctor --cves
   [DEPRECATED] validate-rfcs     → doctor --rfcs
-  [DEPRECATED] prefetch          → refresh --no-network
+  [DEPRECATED] prefetch          → refresh --prefetch
   [DEPRECATED] build-indexes     → refresh --indexes-only
 
 Accepted short forms (canonical — not deprecated):

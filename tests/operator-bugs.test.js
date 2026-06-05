@@ -273,6 +273,22 @@ test('#65 refresh --no-network routes to prefetch', () => {
 });
 
 // ===================================================================
+test('help deprecation pointer for prefetch names the cache-population equivalent', () => {
+  // `prefetch.js --no-network` is a report-only dry run, so a deprecation
+  // pointer reading `prefetch → refresh --no-network` sent operators to a
+  // command that populates nothing. The behavior-equivalent replacement is
+  // `refresh --prefetch` (dispatch strips the alias flag and runs the same
+  // cache population as bare `prefetch`). Pin the corrected pointer so a
+  // future help-text edit can't reintroduce the dry-run pointer.
+  const r = cli(['help']);
+  const out = `${r.stdout}${r.stderr}`;
+  assert.doesNotMatch(out, /prefetch\s+→\s+refresh --no-network/,
+    'help must not point prefetch users at the report-only dry-run form');
+  assert.match(out, /prefetch\s+→\s+refresh --prefetch/,
+    'help must point prefetch users at refresh --prefetch, the cache-population equivalent');
+});
+
+// ===================================================================
 test('#71 detect canonicalizes no_hit to miss (flat-shape submission)', () => {
   const sub = {
     observations: {
