@@ -203,6 +203,17 @@ jobs:
           # via the auto-PR.
           node lib/refresh-external.js --apply --from-cache .cache/upstream --swarm --force-stale $SOURCE_ARG
 
+      - name: Refresh SBOM over the applied data
+        if: |
+          steps.dry.outputs.upsert_diffs != '0' &&
+          (github.event_name == 'schedule' || inputs.apply == 'true')
+        # sbom.cdx.json records content hashes for the data catalogs the apply
+        # just rewrote; without regenerating it the predeploy gate's SBOM
+        # currency test fails on hash drift, and the auto-PR would ship data
+        # the SBOM no longer describes. The regenerated SBOM is swept into the
+        # same data-mutation bundle as the files it hashes.
+        run: npm run refresh-sbom
+
       - name: Predeploy gate (verifies the apply produced a consistent state)
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&

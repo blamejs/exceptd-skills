@@ -21,24 +21,37 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+const path = require("node:path");
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
 
 const cli = makeCli(makeSuiteHome("exceptd-bundledoc-"));
 
-// sbom + package-matches-catalogued-cve fires CVE-2026-45321, which is
-// active_exploitation:confirmed but cisa_kev:false — the exact case the
-// CSAF threats text mis-attributed.
+// sbom + package-matches-catalogued-cve fires CVE-2026-45321. The CSAF
+// threats text once hard-coded "(CISA KEV)" for any confirmed-exploitation
+// CVE; the invariant under test is that the attribution tracks the entry's
+// live cisa_kev flag. The flag itself churns with reality (the automated
+// KEV refresh flips it when CISA lists the CVE), so the assertion reads the
+// catalog instead of pinning one value — pinning false broke the day CISA
+// added the CVE to KEV.
 const SBOM_CVE = JSON.stringify({ signal_overrides: { "package-matches-catalogued-cve": "hit" } });
+const CVE_CATALOG = require(path.join(ROOT, "data", "cve-catalog.json"));
+const MATCHED_ENTRY = CVE_CATALOG["CVE-2026-45321"];
 
-test("CSAF threats text omits '(CISA KEV)' for a confirmed-exploitation CVE that is not in KEV", () => {
+test("CSAF threats text attributes '(CISA KEV)' if and only if the entry's cisa_kev flag is set", () => {
   const r = cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE });
   const doc = tryJson(r.stdout);
   assert.ok(doc && doc.document, "expected a CSAF document");
   const v = (doc.vulnerabilities || [])[0];
   assert.ok(v, "expected a vulnerability for the matched CVE");
   const details = (v.threats || []).map(t => t.details).join(" | ");
-  assert.match(details, /Active exploitation confirmed/, "must state confirmed exploitation");
-  assert.doesNotMatch(details, /CISA KEV/, "must NOT attribute to CISA KEV when cisa_kev is false");
+  if (MATCHED_ENTRY.active_exploitation === "confirmed") {
+    assert.match(details, /Active exploitation confirmed/, "must state confirmed exploitation");
+  }
+  if (MATCHED_ENTRY.cisa_kev === true) {
+    assert.match(details, /CISA KEV/, "must attribute to CISA KEV when cisa_kev is true");
+  } else {
+    assert.doesNotMatch(details, /CISA KEV/, "must NOT attribute to CISA KEV when cisa_kev is false");
+  }
 });
 
 test("SARIF cve_match result carries locations and renders 'not assessed' for null blast_radius", () => {
