@@ -150,9 +150,17 @@ test('manifest.json carries the same ATT&CK version pin', () => {
 test('sources/index.json version pointers track the canonical catalog pins', () => {
   const sources = JSON.parse(fs.readFileSync(path.join(ROOT, 'sources', 'index.json'), 'utf8'));
   const atlasMeta = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.json'), 'utf8'));
+  const cweMeta = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cwe-catalog.json'), 'utf8'));
+  const d3fendMeta = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'd3fend-catalog.json'), 'utf8'));
   const canonicalAtlas = atlasMeta._meta.atlas_version;
+  const canonicalCwe = cweMeta._meta.cwe_version;
+  const canonicalD3fend = d3fendMeta._meta.d3fend_version;
   assert.equal(sources.sources.attack.current_version, CANONICAL_ATTACK,
     `sources/index.json attack.current_version must equal canonical ATT&CK v${CANONICAL_ATTACK}.`);
   assert.equal(sources.sources.atlas.current_version, canonicalAtlas,
     `sources/index.json atlas.current_version must equal canonical ATLAS v${canonicalAtlas}.`);
+  assert.equal(sources.sources.cwe.current_version, canonicalCwe,
+    `sources/index.json cwe.current_version must equal canonical CWE v${canonicalCwe} (data/cwe-catalog.json._meta.cwe_version).`);
+  assert.equal(sources.sources.d3fend.current_version, canonicalD3fend,
+    `sources/index.json d3fend.current_version must equal canonical D3FEND v${canonicalD3fend} (data/d3fend-catalog.json._meta.d3fend_version).`);
 });

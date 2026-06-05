@@ -550,3 +550,51 @@ function readGoodPlaybook() {
     fs.readFileSync(path.join(ROOT, "data", "playbooks", "kernel.json"), "utf8"),
   );
 }
+
+function crossRefFindings(pb) {
+  const ctx = loadContext();
+  const playbookIds = new Set(
+    loadPlaybooks().filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  return checkCrossRefs(pb, ctx, playbookIds);
+}
+
+test("escalation condition rooted at an unavailable phase result is an error", () => {
+  const pb = goodKernel();
+  pb.phases.analyze.escalation_criteria = [
+    { condition: "validate.tests_passed == true", action: "raise_severity" },
+  ];
+  const matched = crossRefFindings(pb).filter((f) =>
+    /escalation_criteria\[0\]\.condition: path root "validate\." is not resolvable/.test(f.message),
+  );
+  assert.equal(matched.length, 1, "exactly one unresolvable-root error for the escalation condition");
+  assert.equal(matched[0].severity, "error");
+});
+
+test("feeds_into condition rooted at an unavailable phase result is an error", () => {
+  const pb = goodKernel();
+  pb._meta.feeds_into = [
+    { playbook_id: "sbom", condition: "detect.classification == 'detected'" },
+  ];
+  const matched = crossRefFindings(pb).filter((f) =>
+    /feeds_into\[0\]\.condition: path root "detect\." is not resolvable/.test(f.message),
+  );
+  assert.equal(matched.length, 1, "exactly one unresolvable-root error for the feeds_into condition");
+  assert.equal(matched[0].severity, "error");
+});
+
+test("escalation/feeds_into conditions rooted at resolvable phase results pass", () => {
+  const pb = goodKernel();
+  pb.phases.analyze.escalation_criteria = [
+    { condition: "analyze.compliance_theater_check.verdict == 'theater'", action: "notify_legal" },
+    { condition: "finding.severity == 'critical'", action: "raise_severity" },
+  ];
+  pb._meta.feeds_into = [
+    { playbook_id: "sbom", condition: "validate.residual_risk == 'high'" },
+  ];
+  assert.equal(
+    crossRefFindings(pb).filter((f) => /is not resolvable in the (escalation|feeds_into) context/.test(f.message)).length,
+    0,
+    "analyze/finding roots in escalations and analyze/validate/finding roots in feeds_into are resolvable",
+  );
+});

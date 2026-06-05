@@ -145,5 +145,5 @@ Research and validate new threat intelligence — CVEs, attack campaigns, new AT
 
 - Does not write directly to data files — that is the skill-updater's job after source-validator approval
 - Does not include direct exploit links in output
-- Does not make compliance recommendations — that is the framework-analyst's job
+- Does not apply framework gap updates itself — gap findings ship as part of the handoff package; the skill-updater applies them after source-validator approval
 - Does not score risk — RWEP calculation is in lib/scoring.js

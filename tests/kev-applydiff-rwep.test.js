@@ -135,3 +135,59 @@ test('an entry without rwep_factors gets the flag but no synthesized factors', a
   assert.equal('rwep_factors' in e, false, 'must not fabricate a factors object the curator never wrote');
   assert.equal('rwep_score' in e, false, 'must not fabricate a score');
 });
+
+test('a KEV de-listing (true→false) clears the now-orphaned cisa_kev_date', async () => {
+  // After a CVE leaves KEV, its listing date is stale intel. The upstream
+  // diff producer only emits a date diff when upstream HAS a date — a
+  // de-listed CVE no longer does — so the applyDiff branch must clear the
+  // date itself, or the entry ships cisa_kev:false alongside a stale date.
+  const p = makeCatalog({
+    cisa_kev: true,
+    cisa_kev_date: '2026-01-01',
+    cisa_kev_due_date: '2026-01-22',
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, blast_radius: 10 },
+    rwep_score: scoring.RWEP_WEIGHTS.cisa_kev + 10,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: true, after: false },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, false, 'flag flipped to de-listed');
+  assert.equal(e.cisa_kev_date, null, 'orphaned listing date cleared');
+  assert.equal(e.cisa_kev_due_date, null, 'orphaned due date cleared');
+  assert.equal(e.rwep_factors.cisa_kev, 0, 'KEV factor zeroed');
+  assert.equal(e.rwep_score, 10, 'rwep_score drops by exactly the KEV weight');
+});
+
+test('a KEV listing (false→true) does not null a date the diff will set separately', async () => {
+  // The date-clear must only fire on de-listing. A fresh listing keeps any
+  // existing date untouched here; the paired cisa_kev_date diff sets it.
+  const p = makeCatalog({
+    cisa_kev: false,
+    cisa_kev_date: null,
+    rwep_factors: { cisa_kev: 0, blast_radius: 10 },
+    rwep_score: 10,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: false, after: true },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, true, 'flag flipped to listed');
+  assert.equal(e.cisa_kev_date, null, 'listing-direction flip leaves the date for its own diff');
+  assert.equal(e.rwep_factors.cisa_kev, scoring.RWEP_WEIGHTS.cisa_kev, 'KEV factor added');
+});
+
+test('de-listing an entry that never carried a date leaves no spurious key', async () => {
+  const p = makeCatalog({
+    cisa_kev: true,
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, blast_radius: 5 },
+    rwep_score: scoring.RWEP_WEIGHTS.cisa_kev + 5,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: true, after: false },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, false, 'flag flipped');
+  assert.equal('cisa_kev_date' in e, false, 'must not introduce a date key that was never present');
+  assert.equal('cisa_kev_due_date' in e, false, 'must not introduce a due-date key that was never present');
+});

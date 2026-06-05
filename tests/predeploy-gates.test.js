@@ -183,6 +183,13 @@ test("gate 7: lint-skills.js fires on a skill missing the Threat Context section
       path.join(tmp, "lib", "lint-skills.js")
     );
     copyExitCodes(tmp);
+    // lint-skills.js loads its frontmatter schema at module load — stage it
+    // alongside (same reason copyExitCodes exists: a missing require/read
+    // crashes before any lint output, yielding empty stdout).
+    copyFile(
+      path.join(ROOT, "lib", "schemas", "skill-frontmatter.schema.json"),
+      path.join(tmp, "lib", "schemas", "skill-frontmatter.schema.json")
+    );
     // lint-skills.js loads data/atlas-ttps.json and
     // data/framework-control-gaps.json unconditionally; the optional
     // catalogs (rfc, cwe, d3fend, dlp) are loaded only if present.

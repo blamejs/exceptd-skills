@@ -48,6 +48,27 @@ test('manifest last_threat_review mirrors each skill frontmatter', () => {
     `manifest last_threat_review out of sync — run \`node scripts/sync-manifest-metadata.js\`:\n  ${drift.join('\n  ')}`);
 });
 
+test('manifest cwe_refs covers every frontmatter-declared CWE', () => {
+  // cwe_refs is enrichment-richer on the manifest side (many entries carry
+  // manifest-only refs, which is fine), but a CWE declared in a skill's
+  // frontmatter MUST appear in its manifest entry — the derived indexes and
+  // the reverse-ref refresh read the manifest, so a frontmatter-only ref
+  // silently vanishes from every cross-reference surface.
+  const drift = [];
+  for (const entry of manifest.skills) {
+    const id = entry.id || entry.name;
+    const fm = frontmatterOf(id);
+    if (!fm || !Array.isArray(fm.cwe_refs) || fm.cwe_refs.length === 0) continue;
+    const have = new Set(Array.isArray(entry.cwe_refs) ? entry.cwe_refs : []);
+    const missing = fm.cwe_refs.filter((c) => !have.has(c));
+    if (missing.length) {
+      drift.push(`${id}: frontmatter declares ${missing.join(', ')} but the manifest entry omits ${missing.length > 1 ? 'them' : 'it'}`);
+    }
+  }
+  assert.equal(drift.length, 0,
+    `manifest cwe_refs missing frontmatter-declared CWEs — add them to the manifest entry and re-run refresh-reverse-refs:\n  ${drift.join('\n  ')}`);
+});
+
 test('manifest forward_watch mirrors each skill frontmatter', () => {
   const drift = [];
   for (const entry of manifest.skills) {

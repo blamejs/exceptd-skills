@@ -133,6 +133,16 @@ describe('listPlaybooks / loadPlaybook / plan', () => {
     assert.throws(() => runner.loadPlaybook('does-not-exist'), /Playbook not found/);
   });
 
+  it('loadPlaybook rejects path-traversal ids before touching the filesystem', () => {
+    for (const bad of ['../../../etc/passwd', '..\\..\\manifest', 'a/b', 'a\\b', '.']) {
+      assert.throws(
+        () => runner.loadPlaybook(bad),
+        (e) => e.code === 'EXCEPTD_INVALID_ID',
+        `loadPlaybook must reject ${JSON.stringify(bad)} with EXCEPTD_INVALID_ID`,
+      );
+    }
+  });
+
   it('plan returns the seven-phase contract banner and per-playbook summaries', () => {
     const p = runner.plan({ playbookIds: ['kernel'], session_id: 'fixed-test-session' });
     assert.match(p.contract, /seven-phase/);
@@ -713,6 +723,27 @@ describe('analyze', () => {
     assert.equal(sbom.action, 'trigger_playbook');
   });
 
+  it("escalation conditions resolve analyze.* paths against the assembled result (theater verdict fires notify_legal)", () => {
+    // cloud-iam-incident declares "analyze.compliance_theater_check.verdict
+    // == 'theater'" → notify_legal. The escalation eval context must expose
+    // the assembled analyze result under the `analyze` root (same contract
+    // as close()'s feeds_into context) for this to ever fire.
+    const detRes = runner.detect('cloud-iam-incident', 'aws-root-account-compromise', {});
+    const an = runner.analyze('cloud-iam-incident', 'aws-root-account-compromise', detRes, { theater_verdict: 'theater' });
+    assert.equal(an.compliance_theater_check.verdict, 'theater');
+    const notifyLegal = an.escalations.find(e => e.action === 'notify_legal');
+    assert.ok(notifyLegal, "notify_legal escalation fires on analyze.compliance_theater_check.verdict == 'theater'");
+    assert.match(notifyLegal.condition, /analyze\.compliance_theater_check\.verdict/);
+  });
+
+  it('analyze-path escalation stays silent when the theater verdict is clear', () => {
+    const detRes = runner.detect('cloud-iam-incident', 'aws-root-account-compromise', {});
+    const an = runner.analyze('cloud-iam-incident', 'aws-root-account-compromise', detRes, { theater_verdict: 'clear' });
+    assert.equal(an.compliance_theater_check.verdict, 'clear');
+    assert.ok(!an.escalations.some(e => e.action === 'notify_legal'),
+      'notify_legal must not fire on a clear verdict');
+  });
+
   it('rwep.threshold is taken from the resolved direct phase (directive-aware)', () => {
     const detRes = runner.detect('kernel', 'copy-fail-specific', {});
     const an = runner.analyze('kernel', 'copy-fail-specific', detRes);
@@ -853,6 +884,33 @@ describe('close', () => {
     const dora = c.notification_actions.find(n => n.obligation_ref === 'EU/DORA Art.19 4h');
     assert.ok(dora);
     assert.equal(dora.deadline, 'pending_clock_start_event');
+  });
+
+  it('notify-type govern obligations without a declared notification_action are synthesized into jurisdiction_notifications', () => {
+    // cloud-iam-incident's govern phase declares the AU Privacy Act NDB
+    // notification obligation (720h) but close.notification_actions has no
+    // entry for it. The record must be synthesized — enriched exactly like
+    // an authored one — so the regulatory clock stays visible to operators.
+    const det = runner.detect('cloud-iam-incident', 'aws-root-account-compromise', {});
+    const an = runner.analyze('cloud-iam-incident', 'aws-root-account-compromise', det);
+    const v = runner.validate('cloud-iam-incident', 'aws-root-account-compromise', an, {});
+    const c = runner.close('cloud-iam-incident', 'aws-root-account-compromise', an, v, {});
+    const synthesized = c.jurisdiction_notifications.filter(n => n.synthesized_from_obligation === true);
+    assert.equal(synthesized.length, 1, 'exactly one notify-type govern obligation lacks a declared action in this playbook');
+    const au = synthesized[0];
+    assert.equal(au.jurisdiction, 'AU');
+    assert.equal(au.window_hours, 720);
+    assert.equal(typeof au.regulation, 'string');
+    assert.ok(au.regulation.length > 0, 'regulation enriched from the govern obligation');
+    assert.equal(au.obligation_ref, `AU/${au.regulation} 720h`);
+    assert.equal(au.deadline, 'pending_clock_start_event');
+    assert.equal(au.draft_notification, null);
+    assert.ok(Array.isArray(au.evidence_required) && au.evidence_required.length > 0,
+      'evidence checklist carried forward from the obligation');
+    // Playbook-authored records are untouched by the synthesis.
+    const authored = c.jurisdiction_notifications.filter(n => !n.synthesized_from_obligation);
+    assert.equal(authored.length, 9);
+    assert.ok(authored.every(n => n.obligation_ref !== au.obligation_ref));
   });
 
   it('draft_notification interpolates ${matched_cve_ids} / ${kev_listed_count}', () => {

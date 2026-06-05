@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="public/img/logo/exceptd-logo-dark.svg">
-  <img src="public/img/logo/exceptd-logo-primary.svg" alt="exceptd" width="220" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/blamejs/exceptd-skills/main/public/img/logo/exceptd-logo-dark.svg">
+  <img src="https://raw.githubusercontent.com/blamejs/exceptd-skills/main/public/img/logo/exceptd-logo-primary.svg" alt="exceptd" width="220" />
 </picture>
 
 # exceptd Security
@@ -77,7 +77,7 @@ Generate defensible policy exceptions for architectural realities frameworks don
 ### Risk Intelligence
 
 **[exploit-scoring](skills/exploit-scoring/skill.md)**
-Real-World Exploit Priority (RWEP) scoring beyond CVSS. Factors: CISA KEV status (0.25), public PoC (0.20), AI-assisted weaponization (0.15), active exploitation (0.20), patch availability (-0.15), live-patch availability (-0.10), blast radius (0.15). Pre-calculated RWEP scores for all CVEs in `data/cve-catalog.json`. Outputs RWEP alongside CVSS with plain-language priority guidance.
+Real-World Exploit Priority (RWEP) scoring beyond CVSS. Factors: CISA KEV status (0.25), public PoC (0.20), AI-assisted weaponization (0.15), active exploitation (0.20), patch availability (-0.15), live-patch availability (-0.10), blast radius (0.30). Pre-calculated RWEP scores for all CVEs in `data/cve-catalog.json`. Outputs RWEP alongside CVSS with plain-language priority guidance.
 
 **[threat-model-currency](skills/threat-model-currency/skill.md)**
 Score how current an organization's threat model is against 2026 threat reality. Checklist of 14 current threat classes against documented model coverage. Outputs: currency percentage, specific missing threat classes, recommended additions with ATLAS/ATT&CK references, prioritized update roadmap.

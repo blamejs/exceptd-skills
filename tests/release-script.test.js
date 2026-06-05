@@ -89,7 +89,7 @@ test('tag creates a SIGNED tag (-s) and verifies the signature BEFORE pushing', 
 });
 
 test('release HARD-fails on a broken shipped-tarball verify or an npm version mismatch', () => {
-  // codex P1: a broken artifact must not read as a clean release. The
+  // A broken artifact must not read as a clean release. The
   // tarball verify runs without allowFail (so _run throws), and an
   // npm-version mismatch throws too.
   const relFn = SRC.slice(SRC.indexOf('function cmdRelease'), SRC.indexOf('function cmdAll'));
@@ -98,6 +98,37 @@ test('release HARD-fails on a broken shipped-tarball verify or an npm version mi
   assert.doesNotMatch(relFn.slice(relFn.indexOf('fresh-tarball')), /\[wrapper\][^\n]*allowFail/,
     'the shipped-tarball verify is a hard gate (no allowFail)');
   assert.match(relFn, /npm shows[^\n]*but expected/, 'an npm version mismatch throws');
+});
+
+test('release requires a POSITIVE publish confirmation — unconfirmable publish throws, not warns', () => {
+  // An unconfirmed publish (release.yml not success, no run found, or an
+  // empty `npm view`) must FAIL the phase rather than print a success line.
+  const relFn = SRC.slice(SRC.indexOf('function cmdRelease'), SRC.indexOf('function cmdAll'));
+
+  // A non-success release.yml conclusion throws (it must not merely warn).
+  const conclThrow = relFn.slice(relFn.indexOf('concl !== "success"'),
+    relFn.indexOf('concl !== "success"') + 240);
+  assert.match(conclThrow, /throw new Error/,
+    'a non-success release.yml conclusion throws');
+  assert.doesNotMatch(relFn, /console\.error\("warning: release\.yml conclusion/,
+    'the workflow-conclusion check no longer downgrades to a warning');
+
+  // A missing release.yml run throws (the publish workflow never started).
+  assert.match(relFn, /no release\.yml run found[\s\S]*?throw new Error/,
+    'a missing release.yml run throws rather than printing a propagation note');
+
+  // The final npm-version gate requires positive equality: an empty stdout
+  // (failed query) is a mismatch, not a skip. The earlier truthy-gated form
+  // `npmVersion && npmVersion !== next` let an empty query slip through.
+  assert.match(relFn, /if \(npmVersion !== next\)/,
+    'the npm confirmation requires npmVersion === next (empty query is a failure)');
+  assert.doesNotMatch(relFn, /if \(npmVersion && npmVersion !== next\)/,
+    'the npm gate no longer short-circuits on an empty (falsy) npm view result');
+
+  // The success message reports the value actually queried from npm, not the
+  // expected `next` — so the printed claim can't contradict the query.
+  assert.match(relFn, /Release complete: npm shows " \+ npmVersion/,
+    'the success line prints the queried npm version, not the expected one');
 });
 
 test('prepare allows a CHANGELOG-only dirty tree (the operator writes notes first)', () => {

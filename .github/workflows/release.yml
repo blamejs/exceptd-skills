@@ -70,7 +70,11 @@ jobs:
       - name: Set up Node 24
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
         with:
-          node-version: '24'
+          # Pin the exact patch ci.yml and docker/test.Dockerfile pin so the
+          # gates here and the published-artifact build run the same Node a
+          # Node-minor-sensitive regression would expose. tests/docker.test.js
+          # asserts these three stay in lockstep.
+          node-version: '24.14.1'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Verify tag matches package.json version
@@ -123,10 +127,10 @@ jobs:
         run: npm run bootstrap
 
       - name: Predeploy gate sequence
-        # 14 gates: verify, tests, catalog validate, manifest snapshot,
-        # lint, watchlist, catalog-meta, sbom, indexes, vendor, package
-        # tarball shape, sign+pack+extract+verify round-trip (v0.12.3),
-        # plus the offline cve/rfc gates.
+        # Runs the full publish-gate sequence. The authoritative gate list +
+        # ordering lives in scripts/predeploy.js (the GATES array) — read it
+        # there rather than maintaining a duplicate enumeration here that
+        # drifts as gates are added or removed.
         run: npm run predeploy
 
       - name: End-to-end scenarios (staged-IoC harness)
@@ -225,7 +229,10 @@ jobs:
       - name: Set up Node 24 + npm provenance support
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.0.0
         with:
-          node-version: '24'
+          # Same exact patch as ci.yml / docker/test.Dockerfile — the publish
+          # path must not build the tarball on a different Node than the gates
+          # verified against.
+          node-version: '24.14.1'
           registry-url: 'https://registry.npmjs.org'
           # `always-auth: true` makes the published .npmrc authenticate
           # against NPM_TOKEN — required because we don't `npm install`

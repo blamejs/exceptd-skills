@@ -90,6 +90,42 @@ function splitSteps(yaml) {
   return steps;
 }
 
+/**
+ * Extract the body of a block scalar introduced by `<key>: |` (or `>`) from a
+ * step body. Captures every following line that is blank or indented deeper
+ * than the key line, and stops at the first non-blank line indented at or
+ * below the key. Returns the captured body (possibly multi-line) or null when
+ * the key does not introduce a block scalar.
+ *
+ * A regex alone cannot do this reliably: the only sound terminator is "the
+ * next line whose indentation returns to the key's level or shallower," which
+ * depends on the key's own indent. JS regex also has no end-of-input anchor
+ * usable here (`\Z` is an identity escape matching the literal letter Z, not
+ * an anchor), so the scan is done line by line.
+ */
+function extractBlockScalar(body, key) {
+  const lines = body.split("\n");
+  const keyRe = new RegExp("^(\\s*)" + key + ":\\s*[|>][+-]?[0-9]*\\s*$");
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(keyRe);
+    if (!m) continue;
+    const baseIndent = m[1].length;
+    const out = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      const ln = lines[j];
+      if (ln.trim() === "") {
+        out.push(ln);
+        continue;
+      }
+      const indent = ln.match(/^\s*/)[0].length;
+      if (indent > baseIndent) out.push(ln);
+      else break;
+    }
+    return out.join("\n");
+  }
+  return null;
+}
+
 test("every workflow file parses with at least one job", () => {
   const files = listWorkflows();
   assert.ok(files.length >= 5, `expected >=5 workflow files, got ${files.length}`);
@@ -106,10 +142,9 @@ test("no ${{ steps.*.outputs.* }} inside github-script template literal", () => 
     for (const step of steps) {
       // Only check steps that invoke actions/github-script.
       if (!/uses:\s*actions\/github-script@/.test(step.body)) continue;
-      // Extract the script: | block.
-      const scriptMatch = step.body.match(/^\s*script:\s*\|[^\n]*\n([\s\S]*?)(?=^\s{8,12}\S|^\s{0,6}\S|\Z)/m);
-      if (!scriptMatch) continue;
-      const script = scriptMatch[1];
+      // Extract the script: | block body.
+      const script = extractBlockScalar(step.body, "script");
+      if (script == null) continue;
       assert.doesNotMatch(
         script,
         /\$\{\{\s*steps\.[^}]+\.outputs\./,
@@ -142,16 +177,15 @@ test("no ${{ inputs.* }} or untrusted github.event.* inside bash run: blocks (mu
     for (const step of steps) {
       // Skip github-script steps — that surface is covered by the prior test.
       if (/uses:\s*actions\/github-script@/.test(step.body)) continue;
-      // Only consider steps that have a `run:` line.
-      if (!/^\s*run:\s/.test(step.body) && !/^\s*run:\s*\|/.test(step.body)) continue;
+      // Only consider steps that have a `run:` line. The `run:` line lives on a
+      // later line of the step body (which starts with the `      - ` list
+      // item), so the anchor must be multi-line.
+      if (!/^\s*run:\s/m.test(step.body)) continue;
 
-      // Extract the run: block content. Accept both single-line and
-      // block-scalar forms.
-      const runMatch = step.body.match(/^\s*run:\s*\|[^\n]*\n([\s\S]*?)(?=^\s{8,12}\S|^\s{0,6}\S|\Z)/m);
-      let runBody;
-      if (runMatch) {
-        runBody = runMatch[1];
-      } else {
+      // Extract the run: block content. Accept both block-scalar and
+      // single-line forms.
+      let runBody = extractBlockScalar(step.body, "run");
+      if (runBody == null) {
         const single = step.body.match(/^\s*run:\s*(.+)$/m);
         runBody = single ? single[1] : "";
       }
@@ -173,6 +207,69 @@ test("no ${{ inputs.* }} or untrusted github.event.* inside bash run: blocks (mu
       );
     }
   }
+});
+
+// Self-tests for the two interpolation scanners above. If the block-scalar
+// extraction or the step gating ever degrades to a no-op, the per-workflow
+// tests pass vacuously. These plant synthetic violations and assert the
+// extraction + detection actually fires, so the scanners cannot silently
+// stop verifying anything.
+test("github-script scanner catches a planted steps.*.outputs.* interpolation", () => {
+  const yaml = [
+    "jobs:",
+    "  demo:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    "      - name: planted",
+    "        uses: actions/github-script@" + "0".repeat(40),
+    "        with:",
+    "          script: |",
+    "            const report = `${{ steps.currency.outputs.report }}`;",
+    "            console.log(report);",
+    "      - name: next",
+    "        run: echo done",
+  ].join("\n");
+  const steps = splitSteps(yaml);
+  const ghStep = steps.find((s) => /uses:\s*actions\/github-script@/.test(s.body));
+  assert.ok(ghStep, "splitSteps must isolate the github-script step");
+  const script = extractBlockScalar(ghStep.body, "script");
+  assert.ok(script && script.length > 0, "extractBlockScalar must capture the script body");
+  assert.match(
+    script,
+    /\$\{\{\s*steps\.[^}]+\.outputs\./,
+    "the planted steps.*.outputs.* interpolation must be detected inside the script body"
+  );
+  // The trailing `run:` step must not leak into the captured script body.
+  assert.doesNotMatch(script, /echo done/);
+});
+
+test("bash run: scanner catches a planted inputs.* interpolation", () => {
+  const yaml = [
+    "jobs:",
+    "  demo:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    "      - name: planted",
+    "        run: |",
+    "          eval ${{ inputs.evil }}",
+    "          echo safe",
+    "      - name: next",
+    "        run: echo done",
+  ].join("\n");
+  const steps = splitSteps(yaml);
+  const runStep = steps.find((s) => s.name === "planted");
+  assert.ok(runStep, "splitSteps must isolate the planted run step");
+  // The gate that decides whether to scan a step must recognize the run: line.
+  assert.ok(/^\s*run:\s/m.test(runStep.body), "run: line must be detected with the multi-line anchor");
+  const runBody = extractBlockScalar(runStep.body, "run");
+  assert.ok(runBody && runBody.length > 0, "extractBlockScalar must capture the run body");
+  assert.match(
+    runBody,
+    /\$\{\{\s*inputs\./,
+    "the planted inputs.* interpolation must be detected inside the run body"
+  );
+  // The trailing step must not leak into the captured run body.
+  assert.doesNotMatch(runBody, /echo done/);
 });
 
 test("every third-party action reference is SHA-pinned (40-char hex)", () => {

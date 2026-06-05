@@ -122,6 +122,24 @@ test("Dockerfile Node version matches the CI workflow Node version", () => {
     `Dockerfile pins Node ${dockerNode} but ci.yml pins ${ciNode}. ` +
       `Bump both in the same commit so local Docker matches CI.`
   );
+
+  // Third leg of the lockstep: the release workflow builds and publishes
+  // the tarball, so every node-version it declares must match the version
+  // the gates verified against. A floating or drifted pin here means the
+  // published artifact was built on a Node no gate ever ran.
+  const rel = read(path.join(ROOT, ".github", "workflows", "release.yml"));
+  const relMatches = [...rel.matchAll(/node-version:\s*'([^']+)'/g)].map((m) => m[1]);
+  assert.ok(relMatches.length > 0, "release.yml must declare node-version pins");
+  for (const v of relMatches) {
+    assert.match(v, /^\d+\.\d+\.\d+$/,
+      `release.yml node-version '${v}' must be an exact major.minor.patch pin`);
+    assert.equal(
+      v,
+      ciNode,
+      `release.yml pins Node ${v} but ci.yml pins ${ciNode}. ` +
+        `Bump all three (ci.yml, docker/test.Dockerfile, release.yml) in the same commit.`
+    );
+  }
 });
 
 test("Dockerfile defines both predeploy and fresh-bootstrap targets", () => {

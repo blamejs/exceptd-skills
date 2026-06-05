@@ -1776,8 +1776,9 @@ function dispatchPlaybook(cmd, argv) {
   } catch (e) {
     // v0.11.14 (#131): when the operator typed a skill name (kernel-lpe-triage)
     // and got "Playbook not found," surface the playbooks that load that skill.
-    // 13 playbooks vs 38 skills with many-to-many: operators routinely confuse
-    // the two because the website (and AGENTS.md) describe both as runnable.
+    // Playbooks and skills are a many-to-many mapping: operators routinely
+    // confuse the two because the website (and AGENTS.md) describe both as
+    // runnable.
     const m = e && e.message && e.message.match(/^Playbook not found: ([^\s(]+)/);
     if (m) {
       const wanted = m[1];
@@ -2448,10 +2449,10 @@ async function cmdCollect(runner, args, runOpts, pretty) {
   let mod;
   try { mod = require(collectorPath); }
   catch (e) {
-    return emitError(`collect: failed to load collector ${path.relative(PKG_ROOT, collectorPath)}: ${e.message}`, { verb: "collect", playbook_id: playbookId, exit_code: 2 }, pretty);
+    return emitError(`collect: failed to load collector ${path.relative(PKG_ROOT, collectorPath)}: ${e.message}`, { verb: "collect", playbook_id: playbookId }, pretty);
   }
   if (typeof mod.collect !== "function") {
-    return emitError(`collect: collector at ${path.relative(PKG_ROOT, collectorPath)} does not export a collect() function`, { verb: "collect", playbook_id: playbookId, exit_code: 2 }, pretty);
+    return emitError(`collect: collector at ${path.relative(PKG_ROOT, collectorPath)} does not export a collect() function`, { verb: "collect", playbook_id: playbookId }, pretty);
   }
 
   // --cwd <path> overrides process.cwd(). Validated as an existing
@@ -2476,7 +2477,7 @@ async function cmdCollect(runner, args, runOpts, pretty) {
   } catch (e) {
     return emitError(
       `collect: collector for "${playbookId}" threw an unhandled exception: ${e.message}. File a bug — collectors must catch their own errors and surface them via collector_errors[].`,
-      { verb: "collect", playbook_id: playbookId, stack: e.stack || null, exit_code: 2 },
+      { verb: "collect", playbook_id: playbookId, stack: e.stack || null },
       pretty,
     );
   }
@@ -2538,7 +2539,7 @@ async function cmdCollect(runner, args, runOpts, pretty) {
     } catch (e) {
       return emitError(
         `collect: --resolve failed for "${playbookId}": ${e.message}`,
-        { verb: "collect", playbook_id: playbookId, exit_code: 2 },
+        { verb: "collect", playbook_id: playbookId },
         pretty,
       );
     }
@@ -6045,7 +6046,7 @@ function _playbookSignalCatalog(runner, playbookId) {
   try {
     const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
     if (!pb) return null;
-    const inds = (pb.phases?.look?.indicators || []).filter(i => i && i.id);
+    const inds = (pb.phases?.detect?.indicators || []).filter(i => i && i.id);
     if (inds.length === 0) return null;
     return Object.fromEntries(inds.map(i => [i.id, 'inconclusive']));
   } catch { return null; }
@@ -8369,6 +8370,17 @@ function cmdAsk(runner, args, runOpts, pretty) {
  */
 function cmdCi(runner, args, runOpts, pretty) {
   const scope = args.scope;
+  // A value-less `--max-rwep` parses as boolean true and would coerce to
+  // Number(true) === 1 — a finite, non-negative cap that slips past the
+  // numeric guard below and silently sets an extraordinarily strict gate.
+  // Treat the forgotten value as a usage error, same as a non-numeric one.
+  if (args["max-rwep"] === true) {
+    return emitError(
+      "ci: --max-rwep requires a non-negative number.",
+      { verb: "ci", flag: "max-rwep" },
+      pretty,
+    );
+  }
   const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
   // Reject a non-numeric / negative cap rather than silently coercing it.
   // `--max-rwep abc` previously became Number→NaN→0, degenerating the gate to

@@ -79,6 +79,7 @@
       "webapp-security"
     ],
     "CWE-918": [
+      "ai-c2-detection",
       "api-security",
       "attack-surface-pentest",
       "log-injection-telemetry",
@@ -292,73 +293,142 @@
       "kernel-lpe-triage"
     ],
     "D3-EAL": [
+      "ai-attack-surface",
       "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
       "kernel-lpe-triage",
       "mcp-agent-trust",
-      "supply-chain-integrity"
+      "mlops-security",
+      "sector-energy",
+      "sector-federal-government",
+      "supply-chain-integrity",
+      "webapp-security"
+    ],
+    "D3-PA": [
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage"
     ],
     "D3-PHRA": [
       "defensive-countermeasure-mapping",
       "kernel-lpe-triage"
     ],
     "D3-PSEP": [
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "fuzz-testing-strategy",
+      "kernel-lpe-triage",
+      "sector-energy"
+    ],
+    "D3-SCP": [
+      "defensive-countermeasure-mapping",
       "kernel-lpe-triage"
     ],
     "D3-IOPR": [
+      "age-gates-child-safety",
       "ai-attack-surface",
       "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
       "cloud-iam-incident",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
       "fuzz-testing-strategy",
       "idp-incident-response",
+      "incident-response-playbook",
+      "mlops-security",
       "rag-pipeline-security",
       "ransomware-response",
-      "sector-telecom"
+      "sector-financial",
+      "sector-healthcare",
+      "sector-telecom",
+      "webapp-security"
     ],
     "D3-NTA": [
       "ai-attack-surface",
       "ai-c2-detection",
+      "api-security",
       "attack-surface-pentest",
       "cloud-iam-incident",
+      "cloud-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
       "idp-incident-response",
+      "incident-response-playbook",
       "rag-pipeline-security",
       "ransomware-response",
-      "sector-telecom"
+      "sector-energy",
+      "sector-financial",
+      "sector-telecom",
+      "webapp-security"
     ],
-    "D3-CBAN": [
-      "cloud-iam-incident",
+    "D3-FAPA": [
+      "ai-attack-surface",
       "defensive-countermeasure-mapping",
-      "idp-incident-response",
-      "mcp-agent-trust",
-      "supply-chain-integrity"
+      "rag-pipeline-security"
     ],
     "D3-CSPP": [
+      "age-gates-child-safety",
+      "ai-attack-surface",
       "ai-c2-detection",
+      "api-security",
       "attack-surface-pentest",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "identity-assurance",
+      "incident-response-playbook",
       "mcp-agent-trust",
       "rag-pipeline-security",
-      "ransomware-response"
+      "ransomware-response",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "D3-CAA": [
+      "cloud-iam-incident",
+      "mcp-agent-trust"
+    ],
+    "D3-CBAN": [
+      "api-security",
+      "cloud-iam-incident",
+      "cloud-security",
+      "defensive-countermeasure-mapping",
+      "idp-incident-response",
+      "mcp-agent-trust",
+      "sector-federal-government",
+      "sector-financial",
+      "supply-chain-integrity"
     ],
     "D3-EHB": [
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "mcp-agent-trust",
+      "mlops-security",
+      "sector-federal-government",
       "supply-chain-integrity"
     ],
     "D3-MFA": [
+      "age-gates-child-safety",
+      "api-security",
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
+      "email-security-anti-phishing",
+      "identity-assurance",
       "idp-incident-response",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
+    ],
+    "D3-FCR": [
+      "rag-pipeline-security"
     ],
     "D3-CA": [
       "ai-c2-detection",
@@ -370,13 +440,18 @@
     ],
     "D3-NI": [
       "ai-c2-detection",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
+      "sector-energy",
       "sector-telecom"
     ],
     "D3-NTPM": [
       "ai-c2-detection",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "sector-energy",
       "sector-telecom"
     ],
     "D3-FE": [
@@ -387,21 +462,10 @@
       "defensive-countermeasure-mapping",
       "pqc-first"
     ],
-    "D3-FAPA": [
-      "defensive-countermeasure-mapping"
-    ],
-    "D3-PA": [
-      "defensive-countermeasure-mapping"
-    ],
     "D3-RPA": [
       "defensive-countermeasure-mapping",
+      "incident-response-playbook",
       "ransomware-response"
-    ],
-    "D3-SCP": [
-      "defensive-countermeasure-mapping"
-    ],
-    "D3-CAA": [
-      "cloud-iam-incident"
     ]
   },
   "framework_gaps": {
@@ -414,9 +478,12 @@
       "privacy-consent-ops"
     ],
     "ISO-27001-2022-A.8.8": [
+      "attack-surface-pentest",
       "coordinated-vuln-disclosure",
       "kernel-lpe-triage",
-      "mail-server-hardening"
+      "mail-server-hardening",
+      "ot-ics-security",
+      "sector-energy"
     ],
     "PCI-DSS-4.0-6.3.3": [
       "kernel-lpe-triage",
@@ -435,6 +502,17 @@
     ],
     "CIS-Controls-v8-Control7": [
       "exploit-scoring",
+      "kernel-lpe-triage"
+    ],
+    "UK-CAF-D1": [
+      "coordinated-vuln-disclosure",
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "sector-energy",
+      "sector-healthcare"
+    ],
+    "AU-Essential-8-Patch": [
+      "coordinated-vuln-disclosure",
       "kernel-lpe-triage"
     ],
     "ALL-AI-PIPELINE-INTEGRITY": [
@@ -485,6 +563,42 @@
       "ai-attack-surface",
       "identity-assurance",
       "sector-financial"
+    ],
+    "EU-AI-Act-Art-15": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "mcp-agent-trust",
+      "mlops-security",
+      "rag-pipeline-security"
+    ],
+    "UK-CAF-A1": [
+      "ai-attack-surface",
+      "ai-risk-management",
+      "attack-surface-pentest",
+      "mcp-agent-trust",
+      "mlops-security",
+      "sector-federal-government",
+      "sector-financial",
+      "supply-chain-integrity",
+      "threat-modeling-methodology"
+    ],
+    "AU-Essential-8-App-Hardening": [
+      "ai-attack-surface",
+      "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
+      "attack-surface-pentest",
+      "container-runtime-security",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "mcp-agent-trust",
+      "mlops-security",
+      "ot-ics-security",
+      "rag-pipeline-security",
+      "sector-federal-government",
+      "supply-chain-integrity",
+      "threat-modeling-methodology",
+      "webapp-security"
     ],
     "ALL-MCP-TOOL-TRUST": [
       "mcp-agent-trust"
@@ -544,6 +658,17 @@
       "mlops-security",
       "rag-pipeline-security"
     ],
+    "UK-CAF-B2": [
+      "age-gates-child-safety",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "identity-assurance",
+      "ot-ics-security",
+      "rag-pipeline-security",
+      "vc-wallet-trust",
+      "webapp-security"
+    ],
     "NIST-800-53-SC-7": [
       "ai-c2-detection",
       "dlp-gap-analysis"
@@ -560,6 +685,29 @@
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "incident-response-playbook"
+    ],
+    "NIS2-Art21-incident-handling": [
+      "age-gates-child-safety",
+      "ai-c2-detection",
+      "api-security",
+      "cloud-security",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "identity-assurance",
+      "incident-response-playbook",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "supply-chain-integrity",
+      "threat-modeling-methodology",
+      "webapp-security"
+    ],
+    "UK-CAF-C1": [
+      "ai-c2-detection",
+      "dlp-gap-analysis",
+      "email-security-anti-phishing"
     ],
     "NIST-800-53-SC-28": [
       "dlp-gap-analysis",
@@ -627,6 +775,12 @@
       "identity-assurance",
       "sector-financial"
     ],
+    "AU-Essential-8-MFA": [
+      "age-gates-child-safety",
+      "cloud-security",
+      "identity-assurance",
+      "sector-financial"
+    ],
     "NIST-800-82r3": [
       "ot-ics-security",
       "sector-energy"
@@ -638,6 +792,11 @@
     "NERC-CIP-007-6-R4": [
       "ot-ics-security",
       "sector-energy"
+    ],
+    "AU-Essential-8-Backup": [
+      "incident-response-playbook",
+      "sector-energy",
+      "sector-healthcare"
     ],
     "FCC-CPNI-4.1": [
       "sector-telecom"
@@ -739,9 +898,6 @@
     ],
     "OFAC-Sanctions-Threat-Actor-Negotiation": [
       "idp-incident-response"
-    ],
-    "UK-CAF-B2": [
-      "vc-wallet-trust"
     ],
     "NIS2-Art21-network-security": [
       "audit-log-integrity",
@@ -1174,8 +1330,44 @@
     "RFC-9106": [
       "pqc-first"
     ],
+    "ISO-29147": [
+      "coordinated-vuln-disclosure"
+    ],
+    "ISO-30111": [
+      "coordinated-vuln-disclosure"
+    ],
+    "RFC-9116": [
+      "coordinated-vuln-disclosure"
+    ],
+    "CSAF-2.0": [
+      "coordinated-vuln-disclosure"
+    ],
     "RFC-9622": [
       "sector-telecom"
+    ],
+    "RFC-6545": [
+      "incident-response-playbook"
+    ],
+    "RFC-6546": [
+      "incident-response-playbook"
+    ],
+    "RFC-7970": [
+      "incident-response-playbook"
+    ],
+    "RFC-7489": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-6376": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-7208": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8616": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8461": [
+      "email-security-anti-phishing"
     ],
     "RFC-8693": [
       "cloud-iam-incident"

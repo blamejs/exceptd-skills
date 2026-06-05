@@ -1913,6 +1913,7 @@
       "CAPEC-664"
     ],
     "skills_referencing": [
+      "ai-c2-detection",
       "api-security",
       "attack-surface-pentest",
       "log-injection-telemetry",

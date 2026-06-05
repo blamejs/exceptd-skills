@@ -112,35 +112,35 @@
       "type": "skill_review",
       "artifact": "compliance-theater",
       "path": "skills/compliance-theater/skill.md",
-      "note": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns"
+      "note": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns with specific detection tests"
     },
     {
       "date": "2026-05-22",
       "type": "skill_review",
       "artifact": "rag-pipeline-security",
       "path": "skills/rag-pipeline-security/skill.md",
-      "note": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection"
+      "note": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection — no current framework coverage"
     },
     {
       "date": "2026-05-22",
       "type": "skill_review",
       "artifact": "policy-exception-gen",
       "path": "skills/policy-exception-gen/skill.md",
-      "note": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching"
+      "note": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching, with compensating controls and auditor-ready justification"
     },
     {
       "date": "2026-05-22",
       "type": "skill_review",
       "artifact": "pqc-first",
       "path": "skills/pqc-first/skill.md",
-      "note": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF evolution"
+      "note": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution"
     },
     {
       "date": "2026-05-22",
       "type": "skill_review",
       "artifact": "skill-update-loop",
       "path": "skills/skill-update-loop/skill.md",
-      "note": "Meta-skill for keeping all exceptd skills current — CISA KEV triggers, ATLAS version updates, framework amendments, forward_watch resolution, currency scoring"
+      "note": "Meta-skill for keeping all exceptd skills current — fires on new CVEs, ATLAS updates, framework changes, and forward_watch triggers"
     },
     {
       "date": "2026-05-22",
@@ -161,7 +161,7 @@
       "type": "skill_review",
       "artifact": "ransomware-response",
       "path": "skills/ransomware-response/skill.md",
-      "note": "Ransomware-specific incident response — OFAC SDN sanctions screening as payment-posture blocker, EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF cross-jurisdiction sanctions lookups, decryptor availability via No More Ransom + vendor-specific catalogs, cyber-insurance carrier 24h notification, negotiator-engagement legal posture, immutable-backup viability test, PHI exfil-before-encrypt as distinct breach class, parallel jurisdiction clocks"
+      "note": "Ransomware-specific incident response — OFAC sanctions screening as payment-posture blocker, EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF cross-jurisdiction sanctions lookups, decryptor availability via No More Ransom + vendor-specific catalogs, cyber-insurance carrier 24h notification, negotiator-engagement legal posture, immutable-backup viability test, PHI exfil-before-encrypt as distinct breach class, parallel jurisdiction clocks (NIS2 24h / DORA 4h / GDPR 72h / SEC 8-K 96h / HIPAA 60d / CIRCIA 72h / NYDFS 500.17 24h ransom-payment)"
     },
     {
       "date": "2026-05-19",
@@ -235,7 +235,7 @@
       "type": "skill_review",
       "artifact": "ai-attack-surface",
       "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with gap flags"
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with explicit framework gap flags"
     },
     {
       "date": "2026-05-17",
@@ -249,14 +249,14 @@
       "type": "skill_review",
       "artifact": "ai-c2-detection",
       "path": "skills/ai-c2-detection/skill.md",
-      "note": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures"
+      "note": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures, response playbook"
     },
     {
       "date": "2026-05-15",
       "type": "skill_review",
       "artifact": "kernel-lpe-triage",
       "path": "skills/kernel-lpe-triage/skill.md",
-      "note": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, live-patch vs. reboot remediation"
+      "note": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations"
     },
     {
       "date": "2026-05-15",
@@ -291,7 +291,7 @@
       "type": "skill_review",
       "artifact": "sector-telecom",
       "path": "skills/sector-telecom/skill.md",
-      "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security"
+      "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805."
     },
     {
       "date": "2026-05-15",
@@ -305,7 +305,7 @@
       "type": "skill_review",
       "artifact": "cloud-iam-incident",
       "path": "skills/cloud-iam-incident/skill.md",
-      "note": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks, IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse"
+      "note": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks (IAM Identity Center / Workload Identity Federation / Azure managed identity), IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse"
     },
     {
       "date": "2026-05-15",
@@ -455,7 +455,7 @@
       "type": "skill_review",
       "artifact": "security-maturity-tiers",
       "path": "skills/security-maturity-tiers/skill.md",
-      "note": "Three-tier implementation roadmap — MVP (ship this week), Practical (scalable today), Overkill (defense-in-depth)"
+      "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth"
     }
   ]
 }

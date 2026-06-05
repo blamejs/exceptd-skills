@@ -271,7 +271,7 @@ jobs:
               if (updates.length > 30) body += '\n_(+' + (updates.length - 30) + ' more — see refresh-report.json artifact)_\n';
               body += '\n';
             }
-            body += '### Gate status\n\n- [x] \`lint-skills\`\n- [x] \`validate-indexes\`\n- [x] \`tests/*.test.js\`\n\n';
+            body += '### Gate status\n\n- [x] \`lint-skills\`\n- [x] \`validate-indexes\`\n- [x] \`validate-cve-catalog --strict\`\n- [x] \`validate-playbooks\`\n\nStructural validators only — the full \`tests/*.test.js\` suite gates the **merge** via required CI checks, not this PR\x27s creation (its curation-completeness checks cannot pass on the uncurated drafts this import produces).\n\n';
             body += 'Each upsert bumped \`last_verified\` to today and rebuilt \`data/_indexes/\`.\n\n';
             body += '> 🤖 Auto-generated. Human review required before merge.\n';
             require('fs').writeFileSync('/tmp/pr-body.md', body);
@@ -349,13 +349,16 @@ jobs:
 
       - name: Download refresh-data bundle
         if: needs.refresh-data.outputs.upsert_diffs != '0'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v5.0.0
+        # download-artifact v8 reads artifacts written by upload-artifact v5
+        # above — both use the v4+ artifact backend, so the cross-major
+        # upload(v5)/download(v8) round-trip is compatible.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: refresh-bundle-${{ github.run_id }}
           path: /tmp/refresh-bundle
 
       - name: Download refresh-report.json
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v5.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: refresh-report-${{ github.run_id }}
           path: .

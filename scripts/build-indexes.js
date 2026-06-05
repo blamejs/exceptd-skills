@@ -3,7 +3,7 @@
  * scripts/build-indexes.js
  *
  * Produces pre-computed indexes under `data/_indexes/` so AI consumers
- * and downstream tooling don't have to scan all 38 skills + 10 catalogs
+ * and downstream tooling don't have to scan every skill + catalog
  * to answer routine cross-reference questions.
  *
  * Outputs (17 total):
@@ -56,6 +56,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const lint = require("../lib/lint-skills.js");
 
 const ROOT = path.join(__dirname, "..");
 const ABS = (p) => path.join(ROOT, p);
@@ -109,15 +110,47 @@ Examples:
 
 // --- Source loading (shared in-memory snapshot) -------------------------
 
+// Cross-reference fields the derived indexes key on. The manifest carries a
+// cache of these, but the skill frontmatter is the authoritative source — the
+// linter and staleness gate read frontmatter. Overlaying the parsed
+// frontmatter onto each skill record here means the indexes reflect the skill
+// bodies even when the manifest cache has drifted (e.g. dropping UK-CAF / AU
+// control mappings from framework_gaps). Array fields are overlaid only when
+// present in frontmatter; description is a scalar.
+const FRONTMATTER_ARRAY_FIELDS = [
+  "framework_gaps", "d3fend_refs", "cwe_refs", "atlas_refs",
+  "attack_refs", "rfc_refs", "triggers", "data_deps",
+];
+const FRONTMATTER_SCALAR_FIELDS = ["description"];
+
+function authoritativeSkill(entry, body) {
+  const { frontmatter } = lint.extractFrontmatterBlock(body);
+  const fm = lint.parseFrontmatter(frontmatter);
+  const merged = { ...entry };
+  for (const field of FRONTMATTER_ARRAY_FIELDS) {
+    if (Array.isArray(fm[field])) merged[field] = fm[field];
+  }
+  for (const field of FRONTMATTER_SCALAR_FIELDS) {
+    if (typeof fm[field] === "string") merged[field] = fm[field];
+  }
+  return merged;
+}
+
 function loadSources() {
   const manifest = readJson(ABS("manifest.json"));
-  const skills = manifest.skills;
-  const skillNames = new Set(skills.map((s) => s.name));
   const catalogFiles = fs.readdirSync(ABS("data")).filter((f) => f.endsWith(".json")).map((f) => "data/" + f);
 
   // Per-skill body cache so multiple builders don't re-read the same file.
   const skillBodies = {};
-  for (const s of skills) skillBodies[s.name] = fs.readFileSync(ABS(s.path), "utf8");
+  for (const s of manifest.skills) skillBodies[s.name] = fs.readFileSync(ABS(s.path), "utf8");
+
+  // Build the skill records from the authoritative frontmatter, falling back
+  // to the manifest cache for fields frontmatter doesn't carry (signatures,
+  // dlp_refs, etc.). Downstream builders read cross-reference arrays from
+  // these records, so this is the single point that keeps the indexes aligned
+  // with the skill bodies.
+  const skills = manifest.skills.map((s) => authoritativeSkill(s, skillBodies[s.name]));
+  const skillNames = new Set(skills.map((s) => s.name));
 
   const ctx = {
     root: ROOT,
@@ -157,7 +190,7 @@ const OUTPUTS = [
   {
     name: "xref",
     file: "xref.json",
-    deps: [isManifest],
+    deps: [isManifest, isAnySkillBody],
     build: (ctx) => {
       const xref = {
         cwe_refs: {}, d3fend_refs: {}, framework_gaps: {},
@@ -181,7 +214,7 @@ const OUTPUTS = [
   {
     name: "trigger-table",
     file: "trigger-table.json",
-    deps: [isManifest],
+    deps: [isManifest, isAnySkillBody],
     build: (ctx) => {
       const t = {};
       for (const s of ctx.skills) {
@@ -279,6 +312,7 @@ const OUTPUTS = [
     file: "chains.json",
     deps: [
       isManifest,
+      isAnySkillBody,
       isCatalog("cve-catalog"),
       isCatalog("cwe-catalog"),
       isCatalog("framework-control-gaps"),
@@ -429,7 +463,7 @@ const OUTPUTS = [
   {
     name: "frequency",
     file: "frequency.json",
-    deps: [isManifest, isAnyCatalog],
+    deps: [isManifest, isAnySkillBody, isAnyCatalog],
     build: (ctx) => {
       const { buildFrequency } = require("./builders/frequency");
       return buildFrequency({
@@ -445,7 +479,7 @@ const OUTPUTS = [
   {
     name: "activity-feed",
     file: "activity-feed.json",
-    deps: [isManifest, isAnyCatalog],
+    deps: [isManifest, isAnySkillBody, isAnyCatalog],
     build: (ctx) => {
       const { buildActivityFeed } = require("./builders/activity-feed");
       return buildActivityFeed({ root: ctx.root, manifest: ctx.manifest, skills: ctx.skills, catalogFiles: ctx.catalogFiles });

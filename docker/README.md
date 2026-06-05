@@ -19,12 +19,13 @@ If none of those describe you, just run `npm run predeploy` directly.
 
 ## Targets
 
-Two build targets defined in `test.Dockerfile`:
+Three build targets defined in `test.Dockerfile`:
 
 | Target           | What it does                                                                                       | When to run                                                                 |
 |------------------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
 | `predeploy`      | Runs `npm run predeploy` against the repo state as-is.                                              | Day-to-day: "does my change break a gate on Linux/Node 24.14.1?"             |
 | `fresh-bootstrap`| Wipes inherited signing state, runs `npm run bootstrap`, then `npm run predeploy`.                  | After touching the signing toolchain or onboarding docs.                    |
+| `e2e`            | Runs `npm run test:e2e` — the end-to-end scenario gate that release.yml also runs.                  | After changing a playbook's detection layer or an e2e scenario fixture.      |
 
 ## Run
 
@@ -34,6 +35,9 @@ npm run test:docker
 
 # Full ceremony from a fresh state.
 npm run test:docker:fresh
+
+# End-to-end scenario gate.
+npm run test:docker:e2e
 ```
 
 Equivalent raw docker invocations:
@@ -44,6 +48,9 @@ docker run --rm exceptd-test:predeploy
 
 docker build --target fresh-bootstrap -t exceptd-test:fresh-bootstrap -f docker/test.Dockerfile .
 docker run --rm exceptd-test:fresh-bootstrap
+
+docker build --target e2e             -t exceptd-test:e2e             -f docker/test.Dockerfile .
+docker run --rm exceptd-test:e2e
 ```
 
 ## What it does NOT cover

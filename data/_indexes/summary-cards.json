@@ -5,7 +5,7 @@
   },
   "skills": {
     "kernel-lpe-triage": {
-      "description": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, live-patch vs. reboot remediation",
+      "description": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations",
       "threat_context_excerpt": "An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7–9, Ubuntu 18.04–24.04, Debian 9–12, CentOS, Fedora, Amazon Linux 2/2023, SUSE 12/15, Alpine, and derivatives.",
       "produces": "The triage produces a structured Kernel LPE Exposure Assessment per host or fleet snapshot. The shape below is consumed downstream by `exploit-scoring` (which converts the per-CVE exposure into RWEP bands), by `incident-response-playbook` (which uses the affected-host count to scope IR), and by `compliance-theater` (which compares the deployed-mitigation field against the org's claimed SI-2 / A.8.8 patch SLA). Operators surfacing the output to auditors should preserve the CISA KEV due-date field verbatim — federal due dates are the authoritative regulatory clock, not internal SLAs.\n\nProduce th ...",
       "key_xrefs": {
@@ -19,8 +19,10 @@
         "d3fend_refs": [
           "D3-ASLR",
           "D3-EAL",
+          "D3-PA",
           "D3-PHRA",
-          "D3-PSEP"
+          "D3-PSEP",
+          "D3-SCP"
         ],
         "framework_gaps": [
           "NIST-800-53-SI-2",
@@ -28,7 +30,9 @@
           "PCI-DSS-4.0-6.3.3",
           "NIS2-Art21-patch-management",
           "NIST-800-53-SC-8",
-          "CIS-Controls-v8-Control7"
+          "CIS-Controls-v8-Control7",
+          "UK-CAF-D1",
+          "AU-Essential-8-Patch"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -42,12 +46,12 @@
         ],
         "dlp_refs": []
       },
-      "trigger_count": 9,
+      "trigger_count": 11,
       "atlas_count": 0,
       "attack_count": 2,
-      "framework_gap_count": 6,
+      "framework_gap_count": 8,
       "cwe_count": 5,
-      "d3fend_count": 4,
+      "d3fend_count": 6,
       "rfc_count": 3,
       "last_threat_review": "2026-05-15",
       "path": "skills/kernel-lpe-triage/skill.md",
@@ -60,7 +64,7 @@
       ]
     },
     "ai-attack-surface": {
-      "description": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with gap flags",
+      "description": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with explicit framework gap flags",
       "threat_context_excerpt": "The AI attack surface is not speculative. It is actively exploited. The following are confirmed, documented threats as of mid-2026.",
       "produces": "The assessment produces a structured AI Attack Surface Assessment report. The shape below is consumed downstream by `mcp-agent-trust` (which converts the MCP Trust Assessment section into per-server policy), by `rag-pipeline-security` (which picks up any RAG-pipeline entries from the Surface Inventory), and by `incident-response-playbook` (which scopes IR against the prompt-injection and AI-C2 exposure bands). CSAF-style auditor evidence bundles consume the Framework Gaps and ATLAS TTP Coverage Gaps sections verbatim — preserve the framework-control IDs as cited.\n\n```\n## AI Attack Surface Asse ...",
       "key_xrefs": {
@@ -71,7 +75,10 @@
         ],
         "d3fend_refs": [
           "D3-IOPR",
-          "D3-NTA"
+          "D3-NTA",
+          "D3-EAL",
+          "D3-FAPA",
+          "D3-CSPP"
         ],
         "framework_gaps": [
           "ALL-AI-PIPELINE-INTEGRITY",
@@ -82,7 +89,10 @@
           "NIST-800-53-SI-3",
           "OWASP-LLM-Top-10-2025-LLM01",
           "OWASP-LLM-Top-10-2025-LLM02",
-          "SOC2-CC6-logical-access"
+          "SOC2-CC6-logical-access",
+          "EU-AI-Act-Art-15",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0043",
@@ -105,9 +115,9 @@
       "trigger_count": 9,
       "atlas_count": 8,
       "attack_count": 3,
-      "framework_gap_count": 9,
+      "framework_gap_count": 12,
       "cwe_count": 3,
-      "d3fend_count": 2,
+      "d3fend_count": 5,
       "rfc_count": 0,
       "last_threat_review": "2026-05-17",
       "path": "skills/ai-attack-surface/skill.md",
@@ -129,6 +139,7 @@
           "CWE-94"
         ],
         "d3fend_refs": [
+          "D3-CAA",
           "D3-CBAN",
           "D3-CSPP",
           "D3-EAL",
@@ -142,7 +153,10 @@
           "NIST-800-53-SA-12",
           "OWASP-LLM-Top-10-2025-LLM06",
           "SOC2-CC9-vendor-management",
-          "SWIFT-CSCF-v2026-1.1"
+          "SWIFT-CSCF-v2026-1.1",
+          "EU-AI-Act-Art-15",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0010",
@@ -168,9 +182,9 @@
       "trigger_count": 10,
       "atlas_count": 3,
       "attack_count": 3,
-      "framework_gap_count": 7,
+      "framework_gap_count": 10,
       "cwe_count": 8,
-      "d3fend_count": 5,
+      "d3fend_count": 6,
       "rfc_count": 7,
       "last_threat_review": "2026-05-17",
       "path": "skills/mcp-agent-trust/skill.md",
@@ -207,7 +221,7 @@
       "handoff_targets": []
     },
     "compliance-theater": {
-      "description": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns",
+      "description": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns with specific detection tests",
       "threat_context_excerpt": "The defining mid-2026 reality is that an organization can pass a clean ISO 27001:2022, SOC 2 Type II, or PCI DSS 4.0 audit while remaining exposed to KEV-listed deterministic LPEs and zero-interaction RCEs. The contrast cases drive every theater pattern below:",
       "produces": "The skill produces a structured Compliance Theater Assessment that scores each of the seven theater patterns and surfaces the auditor-facing remediation language for any flagged pattern. The shape below is consumed downstream by `policy-exception-gen` (which converts theater flags into defensible exceptions with concrete compensating controls), by `framework-gap-analysis` (which escalates any newly discovered theater pattern into a Framework Lag Declaration), and by `global-grc` (which rolls up theater findings across EU/UK/AU/ISO jurisdictions). Auditor-facing remediation language is the load ...",
       "key_xrefs": {
@@ -263,7 +277,7 @@
       "handoff_targets": []
     },
     "rag-pipeline-security": {
-      "description": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection",
+      "description": "RAG-specific threat model — embedding manipulation, vector store poisoning, retrieval filter bypass, indirect prompt injection — no current framework coverage",
       "threat_context_excerpt": "Retrieval-Augmented Generation (RAG) pipelines introduce a unique attack surface that exists at the intersection of traditional data security and AI-specific vulnerabilities. No current compliance framework has adequate controls for this attack surface. The threats in this skill are not theoretical — they have been demonstrated in research and observed in production incidents. Operational context: 41% of 2025 zero-days were AI-discovered (GTIG 2025); the first AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass), and Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical ...",
       "produces": "The skill produces a structured RAG Pipeline Security Assessment covering vector-store inventory, embedding-model trust posture, retrieval-policy coverage, and observed exfiltration risk per corpus. The shape below is consumed downstream by `ai-attack-surface` (which integrates the per-corpus risk band into the broader AI surface report), by `dlp-gap-analysis` (which picks up the retrieval-policy gaps as DLP-channel findings), and by `mlops-security` (which inherits the embedding-model trust assessment). Operators feeding the output into auditor evidence should preserve the per-corpus retrieva ...",
       "key_xrefs": {
@@ -273,6 +287,8 @@
         ],
         "d3fend_refs": [
           "D3-CSPP",
+          "D3-FCR",
+          "D3-FAPA",
           "D3-IOPR",
           "D3-NTA"
         ],
@@ -280,7 +296,10 @@
           "ISO-27001-2022-A.8.28",
           "NIST-800-53-SI-12",
           "NIST-AI-RMF-MEASURE-2.5",
-          "OWASP-LLM-Top-10-2025-LLM08"
+          "OWASP-LLM-Top-10-2025-LLM08",
+          "EU-AI-Act-Art-15",
+          "UK-CAF-B2",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0020",
@@ -297,9 +316,9 @@
       "trigger_count": 7,
       "atlas_count": 4,
       "attack_count": 1,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 2,
-      "d3fend_count": 3,
+      "d3fend_count": 5,
       "rfc_count": 0,
       "last_threat_review": "2026-05-22",
       "path": "skills/rag-pipeline-security/skill.md",
@@ -312,11 +331,13 @@
       ]
     },
     "ai-c2-detection": {
-      "description": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures",
+      "description": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures, response playbook",
       "threat_context_excerpt": "The AI-as-adversary reality that motivates this skill is now operationally documented: 41% of 2025 zero-days were AI-discovered (GTIG 2025), the first AI-built in-the-wild zero-day was confirmed 2026-05-11 (GTIG AI 2FA-bypass case), and Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical AI-driven autonomous-discovery anchor — Zellic's agentic auditor surfaced an 18-year-old Linux kernel primitive. C2 channels riding the same agentic AI infrastructure are the next logical step; CTID Secure AI v2 (2026-05-06, replaces v1) treats AI-API C2 detection as an in-scope control class.",
       "produces": "The skill produces a structured AI C2 Detection Assessment covering per-host AI-API egress baselines, behavioral anomaly indicators, and SesameOp-class C2-pattern findings. The shape below is consumed downstream by `incident-response-playbook` (which scopes IR against confirmed C2 indicators), by `ai-attack-surface` (which integrates the detection-gap section into the broader AI surface report), and by `compliance-theater` (which compares the AI-API monitoring coverage against any SI-4 / CC7 anomaly-detection compliance claim). Preserve the per-host egress-baseline shape verbatim — it is the l ...",
       "key_xrefs": {
-        "cwe_refs": [],
+        "cwe_refs": [
+          "CWE-918"
+        ],
         "d3fend_refs": [
           "D3-CA",
           "D3-CSPP",
@@ -330,7 +351,10 @@
           "NIST-800-53-SI-3",
           "NIST-800-53-SC-7",
           "ISO-27001-2022-A.8.16",
-          "SOC2-CC7-anomaly-detection"
+          "SOC2-CC7-anomaly-detection",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-C1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0096",
@@ -354,8 +378,8 @@
       "trigger_count": 9,
       "atlas_count": 2,
       "attack_count": 3,
-      "framework_gap_count": 4,
-      "cwe_count": 0,
+      "framework_gap_count": 7,
+      "cwe_count": 1,
       "d3fend_count": 7,
       "rfc_count": 6,
       "last_threat_review": "2026-05-17",
@@ -369,7 +393,7 @@
       ]
     },
     "policy-exception-gen": {
-      "description": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching",
+      "description": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching, with compensating controls and auditor-ready justification",
       "threat_context_excerpt": "Most non-trivial mid-2026 production architectures break the literal reading of at least one major framework control. Serverless functions break asset-inventory language; immutable container images break in-place patch-window language; LLM API dependencies break change-management language; Zero Trust environments break network-segmentation language. Where the organization has no defensible exception process, only two outcomes remain: (1) the organization claims compliance falsely (theater) or (2) the audit blocks the architecture entirely.",
       "produces": "Produce a complete, signed exception document using the applicable template above, populated with:\n- Specific control ID and text\n- Specific system or environment scope\n- Specific architectural constraint\n- Specific compensating controls with tool names and SLAs\n- Residual risk statement\n- Named risk owner\n- Expiration date or condition\n\n---",
       "key_xrefs": {
@@ -467,7 +491,7 @@
       "handoff_targets": []
     },
     "pqc-first": {
-      "description": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF evolution",
+      "description": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution",
       "threat_context_excerpt": "The post-quantum migration is not a planning exercise. It is an operational deadline against an adversary that is already collecting ciphertext.",
       "produces": "The skill produces a structured PQC Readiness Assessment that scores the org's post-quantum migration posture against the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204, SLH-DSA / FIPS 205), CNSA 2.0, and the BSI / ANSSI / NCSC migration guidance. The shape below is consumed downstream by `crypto` playbook runs (which feed the assessment into the analysis correlation step), by `framework-gap-analysis` (for SC-8 / SC-13 / A.8.24 / A.10 lag declarations), and by `compliance-theater` (which compares the harvest-now-decrypt-later exposure against the org's data-classification claims). Pr ...",
       "key_xrefs": {
@@ -508,7 +532,7 @@
       "handoff_targets": []
     },
     "skill-update-loop": {
-      "description": "Meta-skill for keeping all exceptd skills current — CISA KEV triggers, ATLAS version updates, framework amendments, forward_watch resolution, currency scoring",
+      "description": "Meta-skill for keeping all exceptd skills current — fires on new CVEs, ATLAS updates, framework changes, and forward_watch triggers",
       "threat_context_excerpt": "The threat context this skill defends against is not a specific adversary technique — it is the **drift attack against the platform's own currency**: an exceptd installation whose skills, catalogs, framework references, and ATLAS pins age silently between releases until the operator-facing analysis is calibrated to a threat model that no longer exists.",
       "produces": "The skill produces a Skill Update Loop Report covering per-skill `last_threat_review` currency, ATLAS / ATT&CK / D3FEND / CWE catalog version drift, CISA KEV additions since the last review, and the priority queue of skills requiring body updates before the next release. The shape below is consumed downstream by the release-cadence maintainer workflow, by `data/_meta` tracking, and by the predeploy `watchlist` gate. Preserve the per-skill drift columns verbatim — they are the auditable trigger for each forced body refresh.\n\n```\n## Skill Update Loop Report\n\n**Date:** YYYY-MM-DD\n**Last Full Revi ...",
       "key_xrefs": {
@@ -532,7 +556,7 @@
       "handoff_targets": []
     },
     "security-maturity-tiers": {
-      "description": "Three-tier implementation roadmap — MVP (ship this week), Practical (scalable today), Overkill (defense-in-depth)",
+      "description": "Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth",
       "threat_context_excerpt": "The 2026 threat baseline forces an MVP that would have looked like a Practical tier in 2022. The cardinal observed change: attacker capability now compresses the time from disclosure to reliable exploitation to hours for an entire class of vulnerabilities, and AI-mediated attack surfaces (prompt injection, MCP supply chain, AI-API C2) sit outside the perimeter and identity controls every framework relies on. The implications by tier:",
       "produces": "The skill produces a Security Maturity Roadmap that scores each in-scope domain against the published tier definitions and surfaces the next-tier upgrade path with budget bands and dependency ordering. The shape below is consumed downstream by `policy-exception-gen` (for domains where the operator chooses a lower tier than the threat model requires), by `compliance-theater` (which compares the claimed tier against deployed controls), and by `global-grc` (for cross-jurisdictional tier obligations). Preserve the per-domain tier rows verbatim — they are the auditable baseline for the upgrade plan ...",
       "key_xrefs": {
@@ -608,7 +632,10 @@
           "NIST-800-115",
           "OWASP-Pen-Testing-Guide-v5",
           "PTES-Pre-engagement",
-          "NIS2-Art21-patch-management"
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0043",
@@ -627,7 +654,7 @@
       "trigger_count": 11,
       "atlas_count": 3,
       "attack_count": 4,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 11,
       "d3fend_count": 3,
       "rfc_count": 0,
@@ -700,7 +727,10 @@
           "ISO-IEC-42001-2023-clause-6.1.2",
           "HIPAA-Security-Rule-164.312(a)(1)",
           "SOC2-CC7-anomaly-detection",
-          "NIST-800-53-SC-28"
+          "NIST-800-53-SC-28",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-C1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0096",
@@ -722,7 +752,7 @@
       "trigger_count": 14,
       "atlas_count": 3,
       "attack_count": 4,
-      "framework_gap_count": 6,
+      "framework_gap_count": 9,
       "cwe_count": 2,
       "d3fend_count": 5,
       "rfc_count": 2,
@@ -757,7 +787,10 @@
           "HITRUST-CSF-v11.4-09.l",
           "SWIFT-CSCF-v2026-1.1",
           "FedRAMP-Rev5-Moderate",
-          "CMMC-2.0-Level-2"
+          "CMMC-2.0-Level-2",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0010",
@@ -776,7 +809,7 @@
       "trigger_count": 14,
       "atlas_count": 2,
       "attack_count": 3,
-      "framework_gap_count": 10,
+      "framework_gap_count": 13,
       "cwe_count": 5,
       "d3fend_count": 3,
       "rfc_count": 1,
@@ -843,13 +876,19 @@
           "CWE-862",
           "CWE-863"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-MFA",
+          "D3-CSPP"
+        ],
         "framework_gaps": [
           "NIST-800-63B-rev4",
           "NIST-800-53-AC-2",
           "ISO-27001-2022-A.8.30",
           "SOC2-CC6-logical-access",
-          "PSD2-RTS-SCA"
+          "PSD2-RTS-SCA",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-MFA"
         ],
         "atlas_refs": [
           "AML.T0051"
@@ -871,9 +910,9 @@
       "trigger_count": 16,
       "atlas_count": 1,
       "attack_count": 3,
-      "framework_gap_count": 5,
+      "framework_gap_count": 8,
       "cwe_count": 7,
-      "d3fend_count": 0,
+      "d3fend_count": 2,
       "rfc_count": 5,
       "last_threat_review": "2026-05-11",
       "path": "skills/identity-assurance/skill.md",
@@ -901,7 +940,10 @@
           "NIST-800-82r3",
           "IEC-62443-3-3",
           "NERC-CIP-007-6-R4",
-          "NIS2-Art21-patch-management"
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B2",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0010"
@@ -918,7 +960,7 @@
       "trigger_count": 15,
       "atlas_count": 1,
       "attack_count": 4,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
@@ -950,20 +992,28 @@
         "framework_gaps": [
           "NIST-800-218-SSDF",
           "ISO-27001-2022-A.8.8",
-          "SOC2-CC9-vendor-management"
+          "SOC2-CC9-vendor-management",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-D1",
+          "AU-Essential-8-Patch"
         ],
         "atlas_refs": [],
         "attack_refs": [],
-        "rfc_refs": [],
+        "rfc_refs": [
+          "ISO-29147",
+          "ISO-30111",
+          "RFC-9116",
+          "CSAF-2.0"
+        ],
         "dlp_refs": []
       },
       "trigger_count": 12,
       "atlas_count": 0,
       "attack_count": 0,
-      "framework_gap_count": 3,
+      "framework_gap_count": 6,
       "cwe_count": 1,
       "d3fend_count": 0,
-      "rfc_count": 0,
+      "rfc_count": 4,
       "last_threat_review": "2026-05-11",
       "path": "skills/coordinated-vuln-disclosure/skill.md",
       "handoff_targets": [
@@ -989,7 +1039,10 @@
           "ISO-27001-2022-A.8.28",
           "ISO-IEC-23894-2023-clause-7",
           "ISO-IEC-42001-2023-clause-6.1.2",
-          "NIST-800-218-SSDF"
+          "NIST-800-218-SSDF",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [],
         "attack_refs": [],
@@ -999,7 +1052,7 @@
       "trigger_count": 13,
       "atlas_count": 0,
       "attack_count": 0,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
@@ -1040,12 +1093,21 @@
           "CWE-918",
           "CWE-1188"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-IOPR",
+          "D3-NTA",
+          "D3-CSPP",
+          "D3-EAL",
+          "D3-MFA"
+        ],
         "framework_gaps": [
           "OWASP-ASVS-v5.0-V14",
           "OWASP-LLM-Top-10-2025-LLM01",
           "NIST-800-218-SSDF",
-          "ISO-27001-2022-A.8.28"
+          "ISO-27001-2022-A.8.28",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0051"
@@ -1066,9 +1128,9 @@
       "trigger_count": 15,
       "atlas_count": 1,
       "attack_count": 3,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 17,
-      "d3fend_count": 0,
+      "d3fend_count": 5,
       "rfc_count": 4,
       "last_threat_review": "2026-05-11",
       "path": "skills/webapp-security/skill.md",
@@ -1092,12 +1154,17 @@
           "CWE-1426",
           "CWE-1039"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-IOPR"
+        ],
         "framework_gaps": [
           "ISO-IEC-42001-2023-clause-6.1.2",
           "ISO-IEC-23894-2023-clause-7",
           "NIST-AI-RMF-MEASURE-2.5",
-          "OWASP-LLM-Top-10-2025-LLM01"
+          "OWASP-LLM-Top-10-2025-LLM01",
+          "EU-AI-Act-Art-15",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0051",
@@ -1111,9 +1178,9 @@
       "trigger_count": 13,
       "atlas_count": 3,
       "attack_count": 0,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 2,
-      "d3fend_count": 0,
+      "d3fend_count": 1,
       "rfc_count": 0,
       "last_threat_review": "2026-05-15",
       "path": "skills/ai-risk-management/skill.md",
@@ -1142,12 +1209,19 @@
           "CWE-862",
           "CWE-1426"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-IOPR",
+          "D3-CSPP",
+          "D3-MFA"
+        ],
         "framework_gaps": [
           "HIPAA-Security-Rule-164.312(a)(1)",
           "HITRUST-CSF-v11.4-09.l",
           "ISO-27001-2022-A.8.30",
-          "NIST-800-53-AC-2"
+          "NIST-800-53-AC-2",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-D1",
+          "AU-Essential-8-Backup"
         ],
         "atlas_refs": [
           "AML.T0051",
@@ -1167,9 +1241,9 @@
       "trigger_count": 14,
       "atlas_count": 2,
       "attack_count": 3,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 4,
-      "d3fend_count": 0,
+      "d3fend_count": 3,
       "rfc_count": 2,
       "last_threat_review": "2026-05-11",
       "path": "skills/sector-healthcare/skill.md",
@@ -1200,12 +1274,20 @@
           "CWE-798",
           "CWE-352"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-MFA",
+          "D3-CBAN",
+          "D3-NTA",
+          "D3-IOPR"
+        ],
         "framework_gaps": [
           "PSD2-RTS-SCA",
           "SWIFT-CSCF-v2026-1.1",
           "NIST-800-53-AC-2",
-          "SOC2-CC6-logical-access"
+          "SOC2-CC6-logical-access",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-A1",
+          "AU-Essential-8-MFA"
         ],
         "atlas_refs": [
           "AML.T0096",
@@ -1228,9 +1310,9 @@
       "trigger_count": 17,
       "atlas_count": 2,
       "attack_count": 4,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 5,
-      "d3fend_count": 0,
+      "d3fend_count": 4,
       "rfc_count": 4,
       "last_threat_review": "2026-05-15",
       "path": "skills/sector-financial/skill.md",
@@ -1258,12 +1340,19 @@
           "CWE-1395",
           "CWE-829"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-EAL",
+          "D3-EHB",
+          "D3-CBAN"
+        ],
         "framework_gaps": [
           "FedRAMP-Rev5-Moderate",
           "CMMC-2.0-Level-2",
           "NIST-800-218-SSDF",
-          "SLSA-v1.0-Build-L3"
+          "SLSA-v1.0-Build-L3",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -1280,9 +1369,9 @@
       "trigger_count": 16,
       "atlas_count": 0,
       "attack_count": 3,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 3,
-      "d3fend_count": 0,
+      "d3fend_count": 3,
       "rfc_count": 2,
       "last_threat_review": "2026-05-11",
       "path": "skills/sector-federal-government/skill.md",
@@ -1309,12 +1398,21 @@
           "CWE-306",
           "CWE-1037"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-NI",
+          "D3-NTPM",
+          "D3-NTA",
+          "D3-EAL",
+          "D3-PSEP"
+        ],
         "framework_gaps": [
           "NERC-CIP-007-6-R4",
           "NIST-800-82r3",
           "IEC-62443-3-3",
-          "NIS2-Art21-patch-management"
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-D1",
+          "AU-Essential-8-Backup"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -1329,9 +1427,9 @@
       "trigger_count": 15,
       "atlas_count": 0,
       "attack_count": 4,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 4,
-      "d3fend_count": 0,
+      "d3fend_count": 5,
       "rfc_count": 0,
       "last_threat_review": "2026-05-11",
       "path": "skills/sector-energy/skill.md",
@@ -1352,7 +1450,7 @@
       ]
     },
     "sector-telecom": {
-      "description": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security",
+      "description": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805.",
       "threat_context_excerpt": "**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The 2024–2026 campaign — disclosed in successive Five Eyes joint advisories from October 2024 onward (CISA / NSA / FBI joint product reissued through 2025–2026) — compromised at least nine US carriers (publicly named: AT&T, Verizon, T-Mobile US, Lumen, Charter, Cox, Windstream, Consolidated, plus undisclosed others) and extended to AU / CA / NZ / UK Tier-1 carriers. Threat actor TTPs map to T1199 (Trusted Relationship) via OEM vendor supply chain, T1098 (Account Manipulation) for persistent admin access on NMS, and ...",
       "produces": "The investigation evidence bundle has this shape:\n\n```json\n{\n  \"session_id\": \"telecom-<iso>\",\n  \"playbook_id\": \"sector-telecom\",\n  \"classification\": \"detected | clean | not_detected | inconclusive\",\n  \"evidence_hash\": \"sha256:...\",\n  \"telecom_specific_findings\": {\n    \"li_gateway_audit\": {\n      \"anomalous_activations\": 0,\n      \"activations_outside_ticket\": 0,\n      \"outbound_tunnel_to_non_allowlist_ip\": 0\n    },\n    \"gnb_attestation_state\": {\n      \"expected_hashes_compared\": 0,\n      \"drifted_basestations\": [],\n      \"downgrade_events\": 0\n    },\n    \"signaling_anomaly_count\": {\n      \"ss7_p ...",
       "key_xrefs": {
@@ -1421,12 +1519,21 @@
           "CWE-77",
           "CWE-1188"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-IOPR",
+          "D3-NTA",
+          "D3-CSPP",
+          "D3-MFA",
+          "D3-CBAN"
+        ],
         "framework_gaps": [
           "OWASP-ASVS-v5.0-V14",
           "NIST-800-218-SSDF",
           "ISO-27001-2022-A.8.28",
-          "NIST-800-53-AC-2"
+          "NIST-800-53-AC-2",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0096",
@@ -1451,9 +1558,9 @@
       "trigger_count": 14,
       "atlas_count": 2,
       "attack_count": 3,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 9,
-      "d3fend_count": 0,
+      "d3fend_count": 5,
       "rfc_count": 7,
       "last_threat_review": "2026-05-18",
       "path": "skills/api-security/skill.md",
@@ -1479,12 +1586,21 @@
           "CWE-1188",
           "CWE-798"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-NTA",
+          "D3-NTPM",
+          "D3-EAL",
+          "D3-IOPR",
+          "D3-CBAN"
+        ],
         "framework_gaps": [
           "NIST-800-53-CM-7",
           "ISO-27001-2022-A.8.30",
           "SOC2-CC9-vendor-management",
-          "FedRAMP-Rev5-Moderate"
+          "FedRAMP-Rev5-Moderate",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-MFA"
         ],
         "atlas_refs": [
           "AML.T0010",
@@ -1507,9 +1623,9 @@
       "trigger_count": 15,
       "atlas_count": 2,
       "attack_count": 4,
-      "framework_gap_count": 4,
+      "framework_gap_count": 7,
       "cwe_count": 6,
-      "d3fend_count": 0,
+      "d3fend_count": 5,
       "rfc_count": 4,
       "last_threat_review": "2026-05-11",
       "path": "skills/cloud-security/skill.md",
@@ -1540,11 +1656,21 @@
           "CWE-787",
           "CWE-1395"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-EAL",
+          "D3-EHB",
+          "D3-PSEP",
+          "D3-NI",
+          "D3-NTPM",
+          "D3-IOPR"
+        ],
         "framework_gaps": [
           "NIST-800-53-CM-7",
           "ISO-27001-2022-A.8.28",
-          "SLSA-v1.0-Build-L3"
+          "SLSA-v1.0-Build-L3",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0010"
@@ -1564,9 +1690,9 @@
       "trigger_count": 17,
       "atlas_count": 1,
       "attack_count": 4,
-      "framework_gap_count": 3,
+      "framework_gap_count": 6,
       "cwe_count": 5,
-      "d3fend_count": 0,
+      "d3fend_count": 6,
       "rfc_count": 2,
       "last_threat_review": "2026-05-15",
       "path": "skills/container-runtime-security/skill.md",
@@ -1601,13 +1727,20 @@
           "CWE-1357",
           "CWE-502"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-EHB",
+          "D3-EAL",
+          "D3-IOPR"
+        ],
         "framework_gaps": [
           "NIST-800-218-SSDF",
           "SLSA-v1.0-Build-L3",
           "ISO-IEC-42001-2023-clause-6.1.2",
           "NIST-AI-RMF-MEASURE-2.5",
-          "OWASP-LLM-Top-10-2025-LLM08"
+          "OWASP-LLM-Top-10-2025-LLM08",
+          "EU-AI-Act-Art-15",
+          "UK-CAF-A1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [
           "AML.T0010",
@@ -1628,9 +1761,9 @@
       "trigger_count": 16,
       "atlas_count": 5,
       "attack_count": 2,
-      "framework_gap_count": 5,
+      "framework_gap_count": 8,
       "cwe_count": 4,
-      "d3fend_count": 0,
+      "d3fend_count": 3,
       "rfc_count": 1,
       "last_threat_review": "2026-05-22",
       "path": "skills/mlops-security/skill.md",
@@ -1650,11 +1783,19 @@
       "produces": "The skill produces seven artifacts per IR program assessment or live incident.\n\n### 1. Incident Classification Record\n\n```\nIncident ID: INC-<YYYY>-<NNNN>\nAwareness timestamp: <ISO timestamp — the regulator-clock anchor>\nDeclared severity: <Sev1/2/3>\nIncident commander: <named>\nClassification:\n  ATT&CK techniques: <T-IDs with sub-techniques>\n  ATLAS techniques: <AML.T-IDs, if applicable>\n  Incident class: <ransomware/exfiltration/identity/supply-chain/AI-system/BEC/DoS/insider/other>\n  Sector flag: <healthcare/financial/energy/federal/none>\n  AI-class flag: <victim/vector/attacker/none>\n  Cross ...",
       "key_xrefs": {
         "cwe_refs": [],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-RPA",
+          "D3-NTA",
+          "D3-IOPR",
+          "D3-CSPP"
+        ],
         "framework_gaps": [
           "NIST-800-53-AC-2",
           "ISO-27001-2022-A.8.16",
-          "SOC2-CC7-anomaly-detection"
+          "SOC2-CC7-anomaly-detection",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-D1",
+          "AU-Essential-8-Backup"
         ],
         "atlas_refs": [
           "AML.T0096",
@@ -1667,16 +1808,20 @@
           "T1567",
           "T1078"
         ],
-        "rfc_refs": [],
+        "rfc_refs": [
+          "RFC-6545",
+          "RFC-6546",
+          "RFC-7970"
+        ],
         "dlp_refs": []
       },
       "trigger_count": 13,
       "atlas_count": 3,
       "attack_count": 4,
-      "framework_gap_count": 3,
+      "framework_gap_count": 6,
       "cwe_count": 0,
-      "d3fend_count": 0,
-      "rfc_count": 0,
+      "d3fend_count": 4,
+      "rfc_count": 3,
       "last_threat_review": "2026-05-22",
       "path": "skills/incident-response-playbook/skill.md",
       "handoff_targets": [
@@ -1700,7 +1845,7 @@
       ]
     },
     "ransomware-response": {
-      "description": "Ransomware-specific incident response — OFAC SDN sanctions screening as payment-posture blocker, EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF cross-jurisdiction sanctions lookups, decryptor availability via No More Ransom + vendor-specific catalogs, cyber-insurance carrier 24h notification, negotiator-engagement legal posture, immutable-backup viability test, PHI exfil-before-encrypt as distinct breach class, parallel jurisdiction clocks",
+      "description": "Ransomware-specific incident response — OFAC sanctions screening as payment-posture blocker, EU Reg 2014/833 + UK OFSI + AU DFAT + JP MOF cross-jurisdiction sanctions lookups, decryptor availability via No More Ransom + vendor-specific catalogs, cyber-insurance carrier 24h notification, negotiator-engagement legal posture, immutable-backup viability test, PHI exfil-before-encrypt as distinct breach class, parallel jurisdiction clocks (NIS2 24h / DORA 4h / GDPR 72h / SEC 8-K 96h / HIPAA 60d / CIRCIA 72h / NYDFS 500.17 24h ransom-payment)",
       "threat_context_excerpt": "Ransomware is the highest-volume critical-infrastructure incident class and the dominant economic-harm cyber category, and its operational shape changed materially between the 2020-2022 frame and the 2024-2026 frame.",
       "produces": "The skill produces six ransomware-specific artifacts that augment the parent IR playbook's seven artifacts.\n\n### 1. Encryption Confirmation Record\n\n```\nIncident ID: INC-<YYYY>-<NNNN>\nEncryption confirmed: <yes/no>\nEncrypted-host count: <N>\nFamily fingerprint: <family + confidence>\nRansom note IoCs:\n  - Leak-site URL: <onion address>\n  - Contact identifier: <email/Tox/Session>\n  - Crypto-wallet addresses: <list>\n  - Family signature: <text fingerprint>\nShadow Copy deletion observed: <yes/no + timestamp + invoking process>\nLiving-off-the-land tools observed: <list — PsExec/WMI/PowerShell/AnyDesk ...",
       "key_xrefs": {
@@ -1759,11 +1904,19 @@
       "produces": "The skill produces a structured assessment with these sections:\n\n1. **DMARC enforcement scorecard** — table of all owned domains × `{SPF, DKIM, DMARC policy, sp=, pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains at `p=reject` with `pct=100`) / (total sending domains).\n2. **Email-auth coverage matrix** — per-protocol deployment status (SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / TLSRPT) with gap flags.\n3. **Passkey rollout percentage** — overall and per-role-class (executive, finance, IT-admin, helpdesk, general workforce), with target = 100% for pr ...",
       "key_xrefs": {
         "cwe_refs": [],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-NTA",
+          "D3-CSPP",
+          "D3-IOPR",
+          "D3-MFA"
+        ],
         "framework_gaps": [
           "NIST-800-53-SI-3",
           "ISO-27001-2022-A.8.16",
-          "SOC2-CC7-anomaly-detection"
+          "SOC2-CC7-anomaly-detection",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-C1",
+          "AU-Essential-8-App-Hardening"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -1773,16 +1926,22 @@
           "T1566.003",
           "T1078"
         ],
-        "rfc_refs": [],
+        "rfc_refs": [
+          "RFC-7489",
+          "RFC-6376",
+          "RFC-7208",
+          "RFC-8616",
+          "RFC-8461"
+        ],
         "dlp_refs": []
       },
       "trigger_count": 17,
       "atlas_count": 0,
       "attack_count": 5,
-      "framework_gap_count": 3,
+      "framework_gap_count": 6,
       "cwe_count": 0,
-      "d3fend_count": 0,
-      "rfc_count": 0,
+      "d3fend_count": 4,
+      "rfc_count": 5,
       "last_threat_review": "2026-05-18",
       "path": "skills/email-security-anti-phishing/skill.md",
       "handoff_targets": [
@@ -1804,11 +1963,18 @@
           "CWE-287",
           "CWE-862"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-MFA",
+          "D3-IOPR",
+          "D3-CSPP"
+        ],
         "framework_gaps": [
           "ISO-27001-2022-A.8.30",
           "NIST-800-53-AC-2",
-          "SOC2-CC6-logical-access"
+          "SOC2-CC6-logical-access",
+          "NIS2-Art21-incident-handling",
+          "UK-CAF-B2",
+          "AU-Essential-8-MFA"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -1818,12 +1984,12 @@
         "rfc_refs": [],
         "dlp_refs": []
       },
-      "trigger_count": 19,
+      "trigger_count": 20,
       "atlas_count": 0,
       "attack_count": 2,
-      "framework_gap_count": 3,
+      "framework_gap_count": 6,
       "cwe_count": 3,
-      "d3fend_count": 0,
+      "d3fend_count": 3,
       "rfc_count": 0,
       "last_threat_review": "2026-05-11",
       "path": "skills/age-gates-child-safety/skill.md",
@@ -1841,7 +2007,7 @@
       ]
     },
     "cloud-iam-incident": {
-      "description": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks, IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse",
+      "description": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks (IAM Identity Center / Workload Identity Federation / Azure managed identity), IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse",
       "threat_context_excerpt": "Cloud-IAM compromise has been the dominant cloud-breach root cause across all three major hyperscalers (AWS, GCP, Azure) from 2024 through mid-2026. The threat surface has shifted materially since 2023 and the conventional defensive posture — Service Control Policies, root-account MFA, posture tools like AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud, and quarterly access reviews — captures progressively less of the actual attack surface as adversary capability evolves.",
       "produces": "The output is the operator-facing cloud-IAM incident assessment. Every section is mandatory; missing data is reported as \"no evidence\" so absence is auditable. The audit-log coverage table anchors the entire assessment — gaps there propagate to every downstream finding as reduced confidence. Produce this structure verbatim:\n\n```\n## Cloud IAM Incident Assessment\n\n**Assessment Date:** YYYY-MM-DD\n**Account(s) in scope:** [list]\n**Cloud provider(s):** [AWS / GCP / Azure]\n**Regulatory exposure:** [EU GDPR / NIS2 / DORA / UK / NYDFS / AU / SG / JP / CA / ...]\n**Critical or important functions in sco ...",
       "key_xrefs": {

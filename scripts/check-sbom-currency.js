@@ -31,6 +31,39 @@ function resolveRoot(argv) {
   return path.join(__dirname, "..");
 }
 
+// Entry count for a data/*.json catalog: keys minus the _meta sentinel. The
+// catalogs are objects keyed by entry id (CVE-…, CWE-…, T…, AML.T…, D3-…,
+// RFC-…) with a single _meta block, so the live entry total is the key count
+// excluding _meta.
+function catalogEntryCount(dataDir, file) {
+  const p = path.join(dataDir, file);
+  // A --root pointed at a partial tree (no such catalog file) skips that
+  // token's check rather than crashing — catalog PRESENCE is asserted by
+  // the cardinality check above and the per-component hash check below,
+  // not by the description parser.
+  if (!fs.existsSync(p)) return null;
+  const j = JSON.parse(fs.readFileSync(p, "utf8"));
+  if (Array.isArray(j)) return j.length;
+  if (j && typeof j === "object") {
+    return Object.keys(j).filter((k) => k !== "_meta").length;
+  }
+  return 0;
+}
+
+// The description string embeds per-catalog ENTRY counts as free text, e.g.
+// "11 catalogs (439 CVEs / 177 CWEs / 805 ATT&CK + ICS / 170 ATLAS /
+// 468 D3FEND / 8888 RFCs)". Each token maps to one data/*.json catalog whose
+// live entry count must match. `label` is the regex-escaped text that follows
+// the number in the description.
+const DESCRIPTION_ENTRY_TOKENS = [
+  { file: "cve-catalog.json", label: "CVEs" },
+  { file: "cwe-catalog.json", label: "CWEs" },
+  { file: "attack-techniques.json", label: "ATT&CK \\+ ICS" },
+  { file: "atlas-ttps.json", label: "ATLAS" },
+  { file: "d3fend-catalog.json", label: "D3FEND" },
+  { file: "rfc-references.json", label: "RFCs" },
+];
+
 function checkSbomCurrency(root) {
   const sbomPath = path.join(root, "sbom.cdx.json");
   const manifestPath = path.join(root, "manifest.json");
@@ -62,6 +95,45 @@ function checkSbomCurrency(root) {
   }
   if (sbom.bomFormat !== "CycloneDX" || sbom.specVersion !== "1.6") {
     errors.push("SBOM is not CycloneDX 1.6");
+  }
+
+  // The SBOM ships per-catalog entry counts and a skill count embedded as free
+  // text in metadata.component.description (propagated verbatim from
+  // package.json). The numeric properties above only cover catalog/skill
+  // CARDINALITY (file count + skill count), so a catalog's entry total can
+  // drift past the count baked into the description while the dedicated SBOM
+  // gate still passes. Parse each token out of the description and assert it
+  // against the live entry count so a stale published-SBOM description fails
+  // the gate.
+  const description =
+    (sbom.metadata && sbom.metadata.component && sbom.metadata.component.description) || "";
+  for (const { file, label } of DESCRIPTION_ENTRY_TOKENS) {
+    const live = catalogEntryCount(dataDir, file);
+    if (live === null) continue;
+    const m = description.match(new RegExp("(\\d+)\\s+" + label + "\\b"));
+    if (!m) {
+      errors.push(
+        `SBOM description is missing the "${file.replace(/\.json$/, "")}" entry-count token (${label}) — regenerate via \`npm run refresh-sbom\``
+      );
+      continue;
+    }
+    const stated = Number(m[1]);
+    if (stated !== live) {
+      errors.push(
+        `SBOM description entry count for ${label} is ${stated} but live ${file} has ${live} — description is stale; update package.json.description and \`npm run refresh-sbom\``
+      );
+    }
+  }
+  // The skill count is embedded in the same description string ("N skills").
+  const skillMatch = description.match(/(\d+)\s+skills\b/);
+  if (!skillMatch) {
+    errors.push(
+      "SBOM description is missing the skill-count token (N skills) — regenerate via `npm run refresh-sbom`"
+    );
+  } else if (Number(skillMatch[1]) !== liveSkills) {
+    errors.push(
+      `SBOM description skill count is ${Number(skillMatch[1])} but live manifest has ${liveSkills} skills — description is stale; update package.json.description and \`npm run refresh-sbom\``
+    );
   }
 
   // component-level cross-check. A renamed or version-bumped

@@ -503,21 +503,27 @@ function cmdRelease() {
   if (runId) {
     _run("gh", ["run", "watch", runId, "--exit-status"], { allowFail: true });
     var concl = _capture("gh", ["run", "view", runId, "--json", "conclusion", "--jq", ".conclusion"]).stdout;
+    // A non-success conclusion is a hard failure: the publish either failed or
+    // is unconfirmable, and either way the release is not done. Warning-and-
+    // continuing let a stalled publish read as a clean release.
     if (concl !== "success") {
-      console.error("warning: release.yml conclusion=" + concl + " — re-check before trusting npm");
-    } else {
-      _ok("release.yml: success");
+      throw new Error("release: release.yml conclusion=" + (concl || "(unknown)") +
+        " — the publish workflow did not finish successfully; re-check release.yml before treating the release as done");
     }
+    _ok("release.yml: success");
   } else {
-    console.log("no release.yml run found yet (tag push may still be propagating)");
+    throw new Error("release: no release.yml run found for the tag — the publish workflow has not started; " +
+      "confirm the tag was pushed and the workflow fired before treating the release as done");
   }
 
   _section("verify npm");
   var npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
   console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") + "   (expected " + next + ")");
+  // Require a POSITIVE confirmation: the queried npm version must equal `next`.
+  // The hard failure is asserted at the end of the phase (after the tarball
+  // verify). An empty stdout (registry/auth/network failure) is treated as a
+  // mismatch — an unconfirmable publish is a failure, not a success.
   if (npmVersion === next) _ok("npm matches " + next);
-  // A mismatch is asserted as a hard failure at the end of the phase (after
-  // the tarball verify), so a stalled publish can't read as a clean release.
 
   _section("fresh-tarball signature verify");
   // Verify against the EXACT bytes a downstream consumer installs — the
@@ -535,18 +541,19 @@ function cmdRelease() {
     throw new Error("release: scripts/verify-shipped-tarball.js missing — cannot verify the shipped artifact");
   }
 
-  // An npm-version mismatch after the workflow finished is not mere
-  // propagation lag — fail so a stalled/failed publish can't read as a
-  // completed release. (A genuinely in-flight publish is caught by the
-  // workflow-conclusion check above; by the time we query npm post-watch the
-  // version should be live.)
-  if (npmVersion && npmVersion !== next) {
-    throw new Error("release: npm shows " + npmVersion + " but expected " + next +
-      " — publish did not complete; re-check release.yml before treating the release as done");
+  // Require a positive npm confirmation after the workflow finished. A version
+  // that is empty (query failed) OR != next is not mere propagation lag — fail
+  // so a stalled/failed/unconfirmable publish can't read as a completed
+  // release. (A genuinely in-flight publish is caught by the workflow-
+  // conclusion check above; by the time we query npm post-watch the version
+  // should be live.) The message reports the value actually queried.
+  if (npmVersion !== next) {
+    throw new Error("release: npm shows " + (npmVersion || "(unable to query)") + " but expected " + next +
+      " — publish did not complete or could not be confirmed; re-check release.yml before treating the release as done");
   }
 
   console.log("\nThe landing site auto-injects the version from jsDelivr @latest — no manual deploy.");
-  console.log("Release complete: npm shows " + next + " and the shipped tarball verifies.");
+  console.log("Release complete: npm shows " + npmVersion + " and the shipped tarball verifies.");
 }
 
 function cmdAll(opts) {

@@ -49,14 +49,14 @@ test('EXIT_CODES is frozen — runtime mutation must not silently succeed', () =
     `EXIT_CODES.BLOCKED must remain 4 even after attempted reassignment (threw=${threw})`);
 });
 
-test('listExitCodes() returns exactly 11 entries with name + summary', () => {
-  // Cycle 9 B1 (v0.12.29): added UNKNOWN_COMMAND (10) to split dispatcher
-  // refusals from DETECTED_ESCALATE (2). When new exit codes land, bump
-  // this count to match — the explicit-count assertion is the contract
-  // that catches accidental additions.
+test('listExitCodes() returns exactly 12 entries with name + summary', () => {
+  // The explicit-count assertion is the contract that catches accidental
+  // additions — when a new exit code lands, bump this count to match.
+  // Latest addition: WATCH_LOCK_CONTENTION (75), documenting the watch
+  // daemon's lock-contention exit so `doctor --exit-codes` covers it.
   const list = listExitCodes();
   assert.ok(Array.isArray(list), 'listExitCodes returns an array');
-  assert.equal(list.length, 11, `expected 11 exit-code entries; got ${list.length}`);
+  assert.equal(list.length, 12, `expected 12 exit-code entries; got ${list.length}`);
   for (const entry of list) {
     assert.equal(typeof entry.code, 'number', 'each entry has numeric code');
     assert.equal(typeof entry.name, 'string', 'each entry has string name');

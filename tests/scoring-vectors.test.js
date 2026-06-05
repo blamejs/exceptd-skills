@@ -40,6 +40,7 @@ const {
   ACTIVE_EXPLOITATION_LADDER,
   RECOGNISED_FACTOR_KEYS,
 } = require('../lib/scoring.js');
+const { _activeExploitationLadder: RUNNER_EXPLOITATION_LADDER } = require('../lib/playbook-runner.js');
 
 const VECTORS = [
   {
@@ -230,12 +231,34 @@ test('validateFactors emits a specific message for Infinity blast_radius', () =>
   );
 });
 
-// audit J F4: ACTIVE_EXPLOITATION_LADDER aligns with playbook-runner.
-test('ACTIVE_EXPLOITATION_LADDER matches the playbook-runner ladder (audit J F4)', () => {
+// The catalog scorer (lib/scoring.js) and the runtime evaluator
+// (lib/playbook-runner.js) each consume an active-exploitation ladder; they
+// must agree value-for-value or the same finding scores differently in the
+// two paths. Compare the two ladders directly so a change to one without the
+// other fails here.
+test('ACTIVE_EXPLOITATION_LADDER matches the playbook-runner ladder', () => {
+  // Pin the canonical scoring-side values, including the explicitly-mapped
+  // theoretical: 0 (deliberately not a ?? 0 fall-through, so a regression
+  // dropping the key is caught).
   assert.equal(ACTIVE_EXPLOITATION_LADDER.confirmed, 1.0);
   assert.equal(ACTIVE_EXPLOITATION_LADDER.suspected, 0.5);
   assert.equal(ACTIVE_EXPLOITATION_LADDER.unknown, 0.25);
+  assert.equal(ACTIVE_EXPLOITATION_LADDER.theoretical, 0);
   assert.equal(ACTIVE_EXPLOITATION_LADDER.none, 0);
+
+  // The runtime ladder must be present and identical to the scoring ladder.
+  assert.ok(
+    RUNNER_EXPLOITATION_LADDER && typeof RUNNER_EXPLOITATION_LADDER === 'object',
+    'playbook-runner must export _activeExploitationLadder for cross-checking',
+  );
+  assert.deepEqual(
+    RUNNER_EXPLOITATION_LADDER,
+    ACTIVE_EXPLOITATION_LADDER,
+    'the playbook-runner ladder must match lib/scoring.js value-for-value (including theoretical)',
+  );
+  // theoretical must be explicitly carried on both sides.
+  assert.equal(RUNNER_EXPLOITATION_LADDER.theoretical, 0,
+    'the runtime ladder must map theoretical to 0 explicitly');
 });
 
 // deriveRwepFromFactors detects shape correctly.
