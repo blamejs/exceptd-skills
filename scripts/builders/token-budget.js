@@ -26,10 +26,10 @@
  *     }
  *   }
  *
- * Plus a totals block:
+ * Corpus totals live under the top-level `_meta` block:
  *   {
- *     total_chars, total_approx_tokens,
- *     by_recipe: { … } — placeholder consumers can use to estimate bundles
+ *     schema_version, tokenizer_note, approx_chars_per_token,
+ *     total_chars, total_approx_tokens, skill_count
  *   }
  */
 

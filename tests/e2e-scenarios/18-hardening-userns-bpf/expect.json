@@ -1,7 +1,11 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.1.id": "unprivileged-userns-enabled",
+    "phases.detect.indicators.1.verdict": "hit",
+    "phases.detect.indicators.2.id": "unprivileged-bpf-allowed",
+    "phases.detect.indicators.2.verdict": "hit"
   },
   "json_path_min": {
     "phases.analyze.rwep.adjusted": 15

@@ -90,3 +90,22 @@ test('live CHANGELOG top section extracts non-empty and passes the operator-faci
   assert.ok(section.length > 0, 'live release notes must be non-empty (no workflow fallback)');
   assert.equal(G.lintOperatorClean(section).length, 0, 'live release notes must be operator-facing-clean');
 });
+
+test("missingReleasedHeadings flags a released version whose heading was replaced", () => {
+  // The failure shape: a new entry REPLACES the previous release heading
+  // instead of inserting above it, merging the prior notes into the new
+  // section. The guard catches it by requiring a heading per released tag.
+  const missing = G.missingReleasedHeadings(SAMPLE, ["0.15.50", "0.15.5", "0.15.49"]);
+  assert.deepEqual(missing, ["0.15.49"], "the version with no surviving heading must be reported");
+  assert.deepEqual(G.missingReleasedHeadings(SAMPLE, ["0.15.50", "0.15.5"]), [],
+    "all headings present -> no findings");
+});
+
+test("every tagged release keeps its heading in the live CHANGELOG", () => {
+  const text = fs.readFileSync(path.join(__dirname, "..", "CHANGELOG.md"), "utf8");
+  const released = G.releasedVersionsFromTags();
+  // Tolerate tagless environments (shallow checkout); locally there are tags.
+  const missing = G.missingReleasedHeadings(text, released);
+  assert.deepEqual(missing, [],
+    "released versions missing their CHANGELOG heading: " + missing.join(", "));
+});

@@ -1,6 +1,8 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.11.id": "agent-persistence-vscode-folder-open-task",
+    "phases.detect.indicators.11.verdict": "hit"
   }
 }

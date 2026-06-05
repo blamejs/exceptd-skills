@@ -38,7 +38,7 @@ version: "1.0.0"
 | PoC Public | [Yes/No] | [+20/0] |
 | AI-Assisted | [Yes/No] | [+15/0] |
 | Active Exploitation | [Confirmed/Suspected/No] | [+20/+10/0] |
-| Blast Radius | [description] | [0-15] |
+| Blast Radius | [description] | [0-30] |
 | Patch Available | [Yes/No] | [-15/0] |
 | Live Patch Available | [Yes/No] | [-10/0] |
 | Reboot Required | [Yes/No] | [+5/0] |

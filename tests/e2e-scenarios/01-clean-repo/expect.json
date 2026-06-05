@@ -2,6 +2,10 @@
   "json_path_equals": {
     "ok": true,
     "phases.detect.classification": "not_detected",
+    "phases.detect.indicators.8.id": "tanstack-worm-payload-files",
+    "phases.detect.indicators.8.verdict": "miss",
+    "phases.detect.indicators.14.id": "npm-registry-no-cooldown",
+    "phases.detect.indicators.14.verdict": "miss",
     "phases.analyze.compliance_theater_check.verdict": "clear"
   },
   "json_path_present": [

@@ -4,8 +4,8 @@
  * Unit coverage for lib/exit-codes.js.
  *
  * EXIT_CODES is the canonical map of per-verb exit codes. The map MUST:
- *   - export every code the CLI table in printGlobalHelp() advertises
- *     (0..9, ten total entries);
+ *   - export every code the CLI advertises: the contiguous 0-10 range
+ *     plus the sparse WATCH_LOCK_CONTENTION (75), twelve entries total;
  *   - never duplicate a numeric code (two semantic names sharing one
  *     code is the v0.12.23 collision class — RAN_NO_EVIDENCE / SESSION_ID_COLLISION
  *     both at 3 prior to v0.12.24);

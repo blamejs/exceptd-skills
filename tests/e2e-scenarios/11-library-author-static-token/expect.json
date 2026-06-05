@@ -1,7 +1,9 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.0.id": "publish-workflow-uses-static-token",
+    "phases.detect.indicators.0.verdict": "hit"
   },
   "json_path_min": {
     "phases.analyze.rwep.adjusted": 18

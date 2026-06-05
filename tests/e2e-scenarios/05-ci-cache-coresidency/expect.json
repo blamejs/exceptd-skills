@@ -1,6 +1,8 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.13.id": "ci-cache-poisoning-co-residency",
+    "phases.detect.indicators.13.verdict": "hit"
   }
 }

@@ -100,6 +100,35 @@ function readPackageVersion() {
   return JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')).version;
 }
 
+// Every previously released version must keep its own `## <version> ` heading.
+// The release flow edits the TOP of the file; an edit that replaces the prior
+// release's heading instead of inserting above it silently merges that
+// release's notes into the new section — the extract then spans multiple
+// releases and the public release body republishes old notes under the new
+// version. Tags are the authoritative record of what was released.
+// Tags whose release never published: the tag-push event was dropped (e.g.
+// a GitHub Actions outage) and — because the v* ruleset forbids re-pushing a
+// tag — the recovery is a version bump re-released with the same notes under
+// the NEW heading. The orphan tag therefore legitimately has no CHANGELOG
+// entry of its own. Tag exists, npm/GitHub Release do not.
+const ORPHAN_RELEASE_TAGS = new Set(['0.13.111', '0.15.25']);
+
+function releasedVersionsFromTags() {
+  try {
+    const out = require('node:child_process').execFileSync('git', ['tag', '-l', 'v*'], { cwd: ROOT, encoding: 'utf8' });
+    return out.split(/\r?\n/)
+      .map((t) => (t.match(/^v(\d+\.\d+\.\d+)$/) || [])[1])
+      .filter((v) => v && !ORPHAN_RELEASE_TAGS.has(v));
+  } catch {
+    // git absent or tags not fetched (shallow checkout) — nothing to check.
+    return [];
+  }
+}
+
+function missingReleasedHeadings(text, versions) {
+  return versions.filter((v) => !headingLine(text, v));
+}
+
 function main() {
   const version = process.argv[2] || readPackageVersion();
   if (!/^\d+\.\d+\.\d+$/.test(version)) {
@@ -130,6 +159,14 @@ function main() {
     return;
   }
 
+  const missing = missingReleasedHeadings(text, releasedVersionsFromTags());
+  if (missing.length > 0) {
+    console.error('[check-changelog-extract] FAIL: released version(s) lost their CHANGELOG heading: ' + missing.map((v) => '## ' + v).join(', '));
+    console.error('[check-changelog-extract] A new entry must be INSERTED ABOVE the previous release heading, never replace it — otherwise the prior release\'s notes merge into the new section and republish in the new release body.');
+    process.exitCode = 1;
+    return;
+  }
+
   const section = extractSection(text, version);
   if (section.length === 0) {
     console.error('[check-changelog-extract] FAIL: v' + version + ' section is empty — the release body would fall back to the generic "Release of v' + version + '." line.');
@@ -153,6 +190,6 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { extractSection, headingLine, lintOperatorClean, FORBIDDEN };
+module.exports = { extractSection, headingLine, lintOperatorClean, FORBIDDEN, missingReleasedHeadings, releasedVersionsFromTags };
 
 if (require.main === module) main();

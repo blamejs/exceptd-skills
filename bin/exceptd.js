@@ -4449,7 +4449,7 @@ function persistAttestation(args) {
   if (!/^[A-Za-z0-9._-]{1,64}\.json$/.test(filename || "")) {
     return {
       ok: false,
-      error: `Refusing to persist attestation with unsafe filename: ${JSON.stringify(filename).slice(0, 80)}.`,
+      error: `Refusing to persist attestation with unsafe filename: ${String(JSON.stringify(filename)).slice(0, 80)}.`,
       existingPath: null,
     };
   }
@@ -4526,7 +4526,17 @@ function persistAttestation(args) {
             fs.renameSync(jsonTmp, filePath);
           }
           // Slot won — place the sidecar (sigPath is fresh on a create).
-          fs.renameSync(sigTmp, sigPath);
+          try {
+            fs.renameSync(sigTmp, sigPath);
+          } catch (sigErr) {
+            // The body landed but its sidecar did not. Left in place, the
+            // orphaned unsigned body would hold the slot forever: every
+            // retry collides with EEXIST and verification reports the
+            // attestation unsigned. Release the slot before rethrowing so
+            // the create can be retried cleanly.
+            try { fs.unlinkSync(filePath); } catch { /* best-effort slot release */ }
+            throw sigErr;
+          }
           try { fs.unlinkSync(jsonTmp); } catch { /* hard-link path leaves a second name */ }
         } else {
           // Force-overwrite, under the persist lock: atomic replace of both.
@@ -4913,7 +4923,12 @@ function verifyAttestationSidecar(attFile) {
   if (pubKey) {
     const pinError = assertExpectedFingerprint(pubKey);
     if (pinError) {
-      return { file: attFile, signed: false, verified: false, reason: pinError };
+      // A pin mismatch means the host's public key is NOT the published
+      // one — verification against it would prove nothing. Carry a tamper
+      // class so consumers (reattest's refusal predicate, the sidecar
+      // classifier) treat this as tamper evidence, not a benign
+      // unsigned-attestation config state.
+      return { file: attFile, signed: false, verified: false, tamper_class: "fingerprint-mismatch", reason: pinError };
     }
   }
   if (!fs.existsSync(sigPath)) {
@@ -5137,25 +5152,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // tampering. `verified === false && signed === true` is the real tamper
   // signal.
   const verify = verifyAttestationSidecar(attFile);
-  // Collapse tamper-class detection. Any non-benign sidecar state
-  // (signed-but-invalid, sidecar-corrupt, unsigned-substitution) refuses
-  // replay unless --force-replay is set. A predicate of only
-  // `verify.signed && !verify.verified` would miss corrupt-JSON sidecars
-  // and substituted "unsigned" sidecars on a host WITH a private key —
-  // both of which let replay proceed against forged input.
-  const isSignedTamper = verify.signed && !verify.verified;
-  const isClassTamper = !verify.signed && (
-    verify.tamper_class === "sidecar-corrupt"
-    || verify.tamper_class === "unsigned-substitution"
-    // Extend tamper-class refusal to algorithm-unsupported sidecars —
-    // anything other than "Ed25519" or "unsigned". Without explicit
-    // refusal, a sidecar that throws inside crypto.verify (e.g.
-    // signature_base64 missing on a downgrade-bait shape) emerges as
-    // signed:true + verified:false through the catch block by accident.
-    // The strict pre-check surfaces the class directly; refuse on it too.
-    || verify.tamper_class === "algorithm-unsupported"
-  );
-  if ((isSignedTamper || isClassTamper) && !args["force-replay"]) {
+  if (isTamperedSidecarVerify(verify) && !args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] TAMPERED: attestation at ${attFile} failed Ed25519 verification (${verify.reason}). Refusing to replay against forged input. Pass --force-replay to override (the replay output records sidecar_verify so the audit trail captures the override).\n`);
     const body = {
       ok: false,
@@ -5170,7 +5167,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
     process.exitCode = EXIT_CODES.TAMPERED;
     return;
   }
-  if ((isSignedTamper || isClassTamper) && args["force-replay"]) {
+  if (isTamperedSidecarVerify(verify) && args["force-replay"]) {
     process.stderr.write(`[exceptd reattest] WARNING: --force-replay overriding failed signature verification on ${attFile} (${verify.reason}). The replay output records sidecar_verify so the override is audit-visible.\n`);
   } else if (!verify.signed && verify.reason && verify.reason.includes("no .sig sidecar") && !args["force-replay"]) {
     // missing-sidecar is NOT benign. The previous flow accepted
@@ -5456,6 +5453,39 @@ function cmdReattest(runner, args, runOpts, pretty) {
  * sidecar_verify object so auditors can filter override events by class
  * without regexing the human-readable reason string.
  */
+/**
+ * Tamper predicate over a verifyAttestationSidecar() result. Collapses
+ * tamper-class detection: any non-benign sidecar state refuses replay
+ * unless --force-replay is set. A predicate of only
+ * `verify.signed && !verify.verified` would miss corrupt-JSON sidecars,
+ * substituted "unsigned" sidecars on a host WITH a private key,
+ * downgrade-bait algorithm shapes, and a keys/public.pem failing the
+ * EXPECTED_FINGERPRINT pin — each of which would let replay proceed
+ * against forged input. Keeping the class list HERE (one shared helper)
+ * means a new tamper class added to the verifier has exactly one refusal
+ * site to extend.
+ */
+function isTamperedSidecarVerify(verify) {
+  if (!verify || typeof verify !== "object") return false;
+  const isSignedTamper = verify.signed && !verify.verified;
+  const isClassTamper = !verify.signed && (
+    verify.tamper_class === "sidecar-corrupt"
+    || verify.tamper_class === "unsigned-substitution"
+    // Anything other than "Ed25519" or "unsigned": a sidecar that throws
+    // inside crypto.verify (e.g. signature_base64 missing on a
+    // downgrade-bait shape) would otherwise emerge as signed:true +
+    // verified:false through the catch block by accident. The strict
+    // pre-check surfaces the class directly; refuse on it too.
+    || verify.tamper_class === "algorithm-unsupported"
+    // A keys/public.pem that fails the EXPECTED_FINGERPRINT pin is the
+    // key-swap attack the pin exists for — verification "against" the
+    // swapped key proves nothing, so replay refuses exactly like the
+    // other tamper classes (attest verify already refuses on this).
+    || verify.tamper_class === "fingerprint-mismatch"
+  );
+  return Boolean(isSignedTamper || isClassTamper);
+}
+
 function classifySidecarVerify(verify) {
   if (!verify || typeof verify !== "object") return "unknown";
   if (verify.signed && verify.verified) return "verified";
@@ -5465,6 +5495,7 @@ function classifySidecarVerify(verify) {
   // `algorithm-unsupported` is its own class label so log scrapers /
   // dashboards can filter downgrade-bait events without parsing the reason.
   if (verify.tamper_class === "algorithm-unsupported") return "algorithm-unsupported";
+  if (verify.tamper_class === "fingerprint-mismatch") return "fingerprint-mismatch";
   if (typeof verify.reason === "string" && verify.reason.startsWith("attestation explicitly unsigned")) return "explicitly-unsigned";
   if (typeof verify.reason === "string" && verify.reason.includes("no .sig sidecar")) return "no-sidecar";
   if (typeof verify.reason === "string" && verify.reason.includes("no public key")) return "no-public-key";
@@ -6944,6 +6975,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
             // /grant:r <USER>:F` to strip inherited entries.
             const aclCheck = checkWindowsAcl(childAbs);
             if (aclCheck.ok) continue;
+            // Resolve the grant principal defensively: an unset USERNAME
+            // would otherwise interpolate "undefined:F", and icacls applies
+            // /inheritance:r BEFORE failing on the unresolvable account —
+            // stripping every inherited entry and locking the file out.
+            // os.userInfo() works even when the env var is absent.
+            const aclUser = process.env.USERNAME || (() => {
+              try { return require('os').userInfo().username; } catch { return null; }
+            })();
             findings.push({
               path: `${displayRoot}/${childRel}`,
               mode: null,
@@ -6951,7 +6990,9 @@ function cmdDoctor(runner, args, runOpts, pretty) {
               issue: 'broader_than_user_only_acl',
               acl_extra_principals: aclCheck.extraPrincipals,
               hint: `icacls "${childAbs}" /inheritance:r /grant:r %USERNAME%:F  # NEW-CTRL-050: AI-assistant configs holding MCP tokens / API keys must restrict ACL to the workstation user`,
-              fix_command: ['icacls', childAbs, '/inheritance:r', '/grant:r', `${process.env.USERNAME}:F`],
+              ...(aclUser
+                ? { fix_command: ['icacls', childAbs, '/inheritance:r', '/grant:r', `${aclUser}:F`] }
+                : { fix_unavailable: 'current user name unresolvable (USERNAME unset); apply the hint manually' }),
             });
             continue;
           }
@@ -9021,4 +9062,10 @@ function cmdCi(runner, args, runOpts, pretty) {
 
 if (require.main === module) main();
 
-module.exports = { COMMANDS, PKG_ROOT, PLAYBOOK_VERBS, persistAttestation };
+module.exports = {
+  COMMANDS, PKG_ROOT, PLAYBOOK_VERBS, persistAttestation,
+  // internal helpers exposed for tests
+  _isTamperedSidecarVerify: isTamperedSidecarVerify,
+  _classifySidecarVerify: classifySidecarVerify,
+  _verifyAttestationSidecar: verifyAttestationSidecar,
+};

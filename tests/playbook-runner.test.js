@@ -1090,6 +1090,29 @@ describe('run (end-to-end)', () => {
     assert.equal(a.evidence_hash, b.evidence_hash);
   });
 
+  it('deterministic session-id derivation failure releases the mutex lock and _activeRuns entry', () => {
+    // canonicalStringify throws EVIDENCE_TOO_DEEP for pathological nesting.
+    // The throw happens after the run lock and _activeRuns registration —
+    // if either leaks, every subsequent run of the playbook is blocked for
+    // the life of this PID.
+    let deep = {};
+    let p = deep;
+    for (let i = 0; i < 205; i++) { p.x = {}; p = p.x; }
+    const submission = { signals: { nested: deep } };
+    assert.throws(
+      () => runner.run('kernel', 'all-catalogued-kernel-cves', submission, { ...KERNEL_PREFLIGHT, bundleDeterministic: true }),
+      (e) => e.code === 'EVIDENCE_TOO_DEEP',
+      'pathological nesting must surface EVIDENCE_TOO_DEEP'
+    );
+    assert.equal(runner._activeRuns.has('kernel'), false,
+      '_activeRuns entry must be released when the derivation throws');
+    // The cross-process lockfile must also be released: a follow-up run of
+    // the same playbook must not be blocked by the mutex.
+    const again = runner.run('kernel', 'all-catalogued-kernel-cves', {}, KERNEL_PREFLIGHT);
+    assert.notEqual(again.blocked_by, 'mutex', // allow-notEqual: refusal-pin (asserting the absence of one specific blocked state; any non-mutex outcome is acceptable here)
+      'a leaked lockfile would block the follow-up run with blocked_by:"mutex"');
+  });
+
   it('preflight failure short-circuits run', () => {
     // Use a synthetic playbook with score=45 to force the hard block
     const dir = tmpDir('runblock');
